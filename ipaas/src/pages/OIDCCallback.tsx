@@ -23,7 +23,7 @@ import { Alert, Box, CircularProgress, Typography } from '@wso2/oxygen-ui';
 import { useAuth } from '../auth/AuthContext';
 import { validateAndClearOIDCState, getAndClearRedirectUrl } from '../auth/tokenManager';
 import { authenticatedFetch } from '../auth/tokenManager';
-import { loginUrl, orgUrl, projectHomeUrl } from '../paths';
+import { loginUrl, orgHomeUrl, projectHomeUrl } from '../paths';
 
 async function resolvePostLoginUrl(): Promise<string> {
   try {
@@ -53,13 +53,13 @@ async function resolvePostLoginUrl(): Promise<string> {
             /* fall through to org page */
           }
         }
-        return orgUrl(handle);
+        return orgHomeUrl(handle);
       }
     }
   } catch {
     /* ignore — fall through to default */
   }
-  return orgUrl('default');
+  return orgHomeUrl('default');
 }
 
 export default function OIDCCallback(): JSX.Element {

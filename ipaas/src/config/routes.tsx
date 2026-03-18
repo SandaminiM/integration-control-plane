@@ -1,5 +1,6 @@
 import { type RouteProps, Navigate } from 'react-router';
 import { cookiePolicyUrl, loginUrl, orgRoleDetailUrl, privacyPolicyUrl, projectRoleDetailUrl, componentRoleDetailUrl, projectGroupDetailUrl, componentGroupDetailUrl, loggersSegment } from '../paths';
+import OrgHomeRedirect from '../components/OrgHomeRedirect';
 import CreateUser from '../pages/CreateUser';
 import EditUser from '../pages/EditUser';
 import CreateRole from '../pages/CreateRole';
@@ -74,7 +75,9 @@ const routes: AppRoute[] = [
           {
             element: <AppLayout />,
             children: [
+              { path: 'organizations/:orgHandler', element: <OrgHomeRedirect /> },
               ...generateMatrixRoutes(MATRIX),
+              { path: 'organizations/:orgHandler/home', element: createElement(withScope(Projects, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/home', element: createElement(withScope(Project, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/new', element: createElement(withScope(CreateProject, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new', element: createElement(withScope(CreateComponent, ['projects'])) },

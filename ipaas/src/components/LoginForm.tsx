@@ -125,8 +125,7 @@ export default function LoginForm(): JSX.Element {
           color="secondary"
           sx={{ my: 1 }}
           onClick={() => handleSSOLogin('google')}
-          disabled={loading || ssoLoading}
-        >
+          disabled={loading || ssoLoading}>
           {ssoLoading && ssoProvider === 'google' ? 'Redirecting...' : 'Continue with Google'}
         </Button>
         <Button
@@ -136,8 +135,7 @@ export default function LoginForm(): JSX.Element {
           color="secondary"
           sx={{ my: 1 }}
           onClick={() => handleSSOLogin('github')}
-          disabled={loading || ssoLoading}
-        >
+          disabled={loading || ssoLoading}>
           {ssoLoading && ssoProvider === 'github' ? 'Redirecting...' : 'Continue with GitHub'}
         </Button>
       </Box>
@@ -147,17 +145,7 @@ export default function LoginForm(): JSX.Element {
       <Box display="flex" flexDirection="column" gap={2}>
         <Box display="flex" flexDirection="column" gap={0.5}>
           <InputLabel htmlFor="username">Username</InputLabel>
-          <OutlinedInput
-            type="text"
-            id="username"
-            name="username"
-            placeholder="Enter your username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            size="small"
-            required
-            disabled={loading}
-          />
+          <OutlinedInput type="text" id="username" name="username" placeholder="Enter your username" value={username} onChange={(e) => setUsername(e.target.value)} size="small" required disabled={loading} />
         </Box>
         <Box display="flex" flexDirection="column" gap={0.5}>
           <InputLabel htmlFor="password">Password</InputLabel>
@@ -165,15 +153,7 @@ export default function LoginForm(): JSX.Element {
             type={showPassword ? 'text' : 'password'}
             endAdornment={
               <InputAdornment position="end">
-                <IconButton
-                  aria-label={
-                    showPassword ? 'hide the password' : 'display the password'
-                  }
-                  onClick={handleClickShowPassword}
-                  onMouseDown={handleMouseDownPassword}
-                  onMouseUp={handleMouseUpPassword}
-                  edge="end"
-                >
+                <IconButton aria-label={showPassword ? 'hide the password' : 'display the password'} onClick={handleClickShowPassword} onMouseDown={handleMouseDownPassword} onMouseUp={handleMouseUpPassword} edge="end">
                   {showPassword ? <EyeOff /> : <Eye />}
                 </IconButton>
               </InputAdornment>
@@ -194,25 +174,13 @@ export default function LoginForm(): JSX.Element {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-          }}
-        >
-          <FormControlLabel
-            control={<Checkbox name="remember-me-checkbox" />}
-            label="Remember me"
-          />
+          }}>
+          <FormControlLabel control={<Checkbox name="remember-me-checkbox" />} label="Remember me" />
           <Link href="">Forgot your password?</Link>
         </Box>
 
         <input type="hidden" id="sessionDataKey" name="sessionDataKey" value="" />
-        <Button
-          variant="contained"
-          color="primary"
-          type="submit"
-          fullWidth
-          sx={{ mt: 2 }}
-          disabled={loading || isLockedOut}
-          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : undefined}
-        >
+        <Button variant="contained" color="primary" type="submit" fullWidth sx={{ mt: 2 }} disabled={loading || isLockedOut} startIcon={loading ? <CircularProgress size={20} color="inherit" /> : undefined}>
           {isLockedOut ? `Locked (${lockoutSeconds}s)` : loading ? 'Signing In...' : 'Sign In'}
         </Button>
       </Box>

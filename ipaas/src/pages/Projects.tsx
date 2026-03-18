@@ -21,10 +21,11 @@ import { Clock, Folder, LayoutGrid, List, Plus, RefreshCw, Settings } from '@wso
 import SearchField from '../components/SearchField';
 import { useNavigate } from 'react-router';
 import { useState, type JSX } from 'react';
-import { useProjects, type GqlProject } from '../api/queries';
+import { useProjectsByOrg, type GqlProject } from '../api/queries';
 import EmptyListing from '../components/EmptyListing';
 import { formatDistanceToNow } from '../utils/time';
-import { resourceUrl, narrow, newProjectUrl, type OrgScope } from '../nav';
+import { newProjectUrl, type OrgScope } from '../nav';
+import { projectHomeUrl } from '../paths';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { Permissions } from '../constants/permissions';
 import Authorized from '../components/Authorized';
@@ -64,7 +65,7 @@ export default function Projects(scope: OrgScope): JSX.Element {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const { hasOrgPermission } = useAccessControl();
   const canCreateProject = hasOrgPermission(Permissions.PROJECT_MANAGE);
-  const { data: projects, isLoading, refetch } = useProjects();
+  const { data: projects, isLoading, refetch } = useProjectsByOrg(scope.org);
 
   const filtered = (projects ?? []).filter((p) => {
     if (!query) return true;
@@ -123,7 +124,7 @@ export default function Projects(scope: OrgScope): JSX.Element {
           <Grid container spacing={2}>
             {paginated.map((p) => (
               <Grid key={p.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                <ProjectCard project={p} onClick={() => navigate(resourceUrl(narrow(scope, p.handler), 'overview'))} />
+                <ProjectCard project={p} onClick={() => navigate(projectHomeUrl(scope.org, p.id))} />
               </Grid>
             ))}
           </Grid>

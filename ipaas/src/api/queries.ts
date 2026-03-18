@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { gql } from './graphql';
+import { authenticatedFetch } from '../auth/tokenManager';
 
 export interface GqlProject {
   id: string;
@@ -58,6 +59,37 @@ export function useProjects() {
     queryKey: ['projects', id],
     queryFn: () => gql<{ projects: GqlProject[] }>(projectsQuery(id)).then((d) => d.projects),
     enabled: id > 0,
+  });
+}
+
+interface OrgEntry {
+  handle?: string;
+  orgHandle?: string;
+  id?: string | number;
+  orgId?: string | number;
+}
+
+export function useOrgs() {
+  return useQuery({
+    queryKey: ['orgs'],
+    queryFn: async () => {
+      const res = await authenticatedFetch(`${window.API_CONFIG.choreoOrgApiUrl}/orgs`);
+      if (!res.ok) throw new Error('Failed to fetch orgs');
+      const data = await res.json();
+      const list: OrgEntry[] = Array.isArray(data) ? data : (data.list ?? data.organizations ?? []);
+      return list.map((o) => ({ handle: o.handle ?? o.orgHandle ?? '', numericId: parseInt(String(o.id ?? o.orgId ?? '0'), 10) })).filter((o) => o.handle && o.numericId > 0);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useProjectsByOrg(orgHandle: string) {
+  const { data: orgs } = useOrgs();
+  const numericId = orgs?.find((o) => o.handle === orgHandle)?.numericId ?? 0;
+  return useQuery({
+    queryKey: ['projects', numericId],
+    queryFn: () => gql<{ projects: GqlProject[] }>(projectsQuery(numericId)).then((d) => d.projects),
+    enabled: numericId > 0,
   });
 }
 

@@ -123,6 +123,36 @@ export async function authenticatedFetch(url: string, options: RequestInit = {})
   return res;
 }
 
+export async function switchOrgToken(orgHandle: string): Promise<void> {
+  const currentToken = getAccessToken();
+  const { stsTokenEndpoint, stsClientId, stsScope } = window.API_CONFIG;
+  if (!currentToken || !stsTokenEndpoint || !stsClientId) return;
+
+  const res = await fetch(stsTokenEndpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+      client_id: stsClientId,
+      subject_token: currentToken,
+      subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+      requested_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+      ...(stsScope ? { scope: stsScope } : {}),
+      orgHandle,
+    }).toString(),
+  });
+
+  if (!res.ok) throw new Error(`Org token exchange failed (${res.status})`);
+
+  const data: { access_token: string; expires_in?: number } = await res.json();
+  saveTokens({
+    token: data.access_token,
+    expiresIn: data.expires_in ?? 3600,
+    refreshToken: getRefreshToken() ?? '',
+    refreshTokenExpiresIn: 86400,
+  });
+}
+
 export async function revokeToken(): Promise<void> {
   try {
     const token = getAccessToken();
