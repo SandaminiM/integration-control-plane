@@ -45,12 +45,14 @@ import {
   useAppShell,
   useNotifications,
 } from '@wso2/oxygen-ui';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
 import { useNavigate, Outlet, NavLink } from 'react-router';
 import Logo from '../components/Logo';
 import { BarChart3, Bell, Building, ChevronDown, ChevronRight, Layers, LayoutDashboard, LogOut, Plus, ScrollText, Search, Server, Shield, Sliders, User as UserIcon, X } from '@wso2/oxygen-ui-icons-react';
-import { useProjectByHandler, useProjects, useComponents } from '../api/queries';
+import { useProject, useProjectByHandler, useProjects, useComponents } from '../api/queries';
+import { fetchOrgPermissions } from '../api/auth';
+import { authenticatedFetch } from '../auth/tokenManager';
 import { mockNotifications } from '../mock-data/mockNotifications';
 import { useScope, useResource, resourceUrl, broaden, narrow, newProjectUrl, newComponentUrl, sidebarItems, hasProject, hasComponent, type Resource } from '../nav';
 import { cookiePolicyUrl, loginUrl, orgUrl, privacyPolicyUrl, profileUrl } from '../paths';
@@ -80,8 +82,8 @@ export default function AppLayout(): JSX.Element {
   const scope = useScope();
   const resource = useResource();
 
-  const { username, displayName, logout } = useAuth();
-  const { hasAnyPermission } = useAccessControl();
+  const { username, displayName, logout, userId, isOidcUser } = useAuth();
+  const { hasAnyPermission, setOrgPermissions } = useAccessControl();
 
   const { state: shell, actions } = useAppShell({ initialCollapsed: true });
   const [tabIndex, setTabIndex] = useState(0);
@@ -104,10 +106,57 @@ export default function AppLayout(): JSX.Element {
     return notifications;
   };
 
-  const { data: project } = useProjectByHandler(hasProject(scope) ? scope.project : '');
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const projectParam = hasProject(scope) ? scope.project : '';
+  const isProjectUuid = UUID_RE.test(projectParam);
+  const { data: projectByHandler } = useProjectByHandler(!isProjectUuid ? projectParam : '');
+  const { data: projectById } = useProject(isProjectUuid ? projectParam : '');
+  const project = isProjectUuid ? projectById : projectByHandler;
   const projectId = project?.id ?? '';
   const { data: projects = [] } = useProjects();
   const { data: components = [] } = useComponents(scope.org, projectId);
+
+  const orgPermsLoadedRef = useRef('');
+  useEffect(() => {
+    if (!userId || !scope.org || orgPermsLoadedRef.current === scope.org) return;
+    orgPermsLoadedRef.current = scope.org;
+    if (isOidcUser) {
+      // OIDC users are authorized via Choreo STS — grant all ICP permissions locally
+      setOrgPermissions(Object.values(Permissions));
+      return;
+    }
+    fetchOrgPermissions(scope.org, userId)
+      .then((data) => setOrgPermissions(data.permissionNames))
+      .catch(() => setOrgPermissions([]));
+  }, [scope.org, userId, isOidcUser, setOrgPermissions]);
+
+  // Recover org numeric ID if it was not saved during OIDC callback (e.g. old sessions)
+  const [, setOrgIdVersion] = useState(0);
+  const orgIdFetchedRef = useRef(false);
+  useEffect(() => {
+    if (!isOidcUser || !userId || window.API_CONFIG.asgardeoOrgNumericId || orgIdFetchedRef.current) return;
+    orgIdFetchedRef.current = true;
+    authenticatedFetch(`${window.API_CONFIG.choreoOrgApiUrl}/orgs`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        const orgs: Array<{ handle?: string; orgHandle?: string; org_handle?: string; id?: string | number; orgId?: string | number }> =
+          data.list ?? data.organizations ?? (Array.isArray(data) ? data : []);
+        for (const org of orgs) {
+          const numericId = org.id ?? org.orgId;
+          if (numericId) {
+            const parsedId = typeof numericId === 'string' ? parseInt(numericId, 10) : numericId;
+            if (!isNaN(parsedId) && parsedId > 0) {
+              window.API_CONFIG.asgardeoOrgNumericId = parsedId;
+              localStorage.setItem('icp_org_numeric_id', String(parsedId));
+              setOrgIdVersion((v) => v + 1); // trigger re-render so queries re-evaluate orgId()
+            }
+            break;
+          }
+        }
+      })
+      .catch(() => {});
+  }, [isOidcUser, userId]);
 
   // Find component UUID for permission checks
   const currentComponent = hasComponent(scope) ? components.find((c) => c.handler === scope.component) : undefined;
@@ -164,7 +213,26 @@ export default function AppLayout(): JSX.Element {
               ref={orgCardRef}
               role="button"
               tabIndex={0}
-              sx={{ display: 'inline-flex', alignSelf: 'center', cursor: 'pointer' }}
+              sx={{
+                display: 'inline-flex',
+                alignSelf: 'center',
+                cursor: 'pointer',
+                borderRadius: 1,
+                border: '1px solid',
+                borderColor: 'divider',
+                bgcolor: 'background.paper',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  bgcolor: 'action.hover',
+                  boxShadow: 1,
+                },
+                '&:focus-visible': {
+                  outline: '2px solid',
+                  outlineColor: 'primary.main',
+                  outlineOffset: 2,
+                },
+              }}
               onClick={() => navigate(orgUrl(scope.org))}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -178,7 +246,15 @@ export default function AppLayout(): JSX.Element {
                 onChange={() => {}}
                 onOpen={() => {}}
                 size="small"
-                sx={{ minWidth: 180 }}
+                sx={{
+                  minWidth: 180,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    border: 'none',
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    border: 'none',
+                  },
+                }}
                 IconComponent={() => null}
                 SelectDisplayProps={{ 'aria-label': 'Select organization' }}
                 renderValue={() => (
@@ -285,7 +361,26 @@ export default function AppLayout(): JSX.Element {
                   ref={projectCardRef}
                   role="button"
                   tabIndex={0}
-                  sx={{ position: 'relative', display: 'inline-flex', cursor: 'pointer' }}
+                  sx={{
+                    position: 'relative',
+                    display: 'inline-flex',
+                    cursor: 'pointer',
+                    borderRadius: 1,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      bgcolor: 'action.hover',
+                      boxShadow: 1,
+                    },
+                    '&:focus-visible': {
+                      outline: '2px solid',
+                      outlineColor: 'primary.main',
+                      outlineOffset: 2,
+                    },
+                  }}
                   onClick={() => navigate(resourceUrl({ level: 'projects' as const, org: scope.org, project: scope.project }, 'overview'))}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -299,7 +394,15 @@ export default function AppLayout(): JSX.Element {
                     onChange={() => {}}
                     onOpen={() => {}}
                     size="small"
-                    sx={{ minWidth: 160 }}
+                    sx={{
+                      minWidth: 160,
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    }}
                     IconComponent={({ ownerState: _ownerState, ...props }) => (
                       <span
                         {...props}
@@ -433,7 +536,26 @@ export default function AppLayout(): JSX.Element {
                 ref={integrationCardRef}
                 role="button"
                 tabIndex={0}
-                sx={{ position: 'relative', display: 'inline-flex', cursor: 'pointer' }}
+                sx={{
+                  position: 'relative',
+                  display: 'inline-flex',
+                  cursor: 'pointer',
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    bgcolor: 'action.hover',
+                    boxShadow: 1,
+                  },
+                  '&:focus-visible': {
+                    outline: '2px solid',
+                    outlineColor: 'primary.main',
+                    outlineOffset: 2,
+                  },
+                }}
                 onClick={() => navigate(resourceUrl(scope, 'overview'))}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -447,7 +569,15 @@ export default function AppLayout(): JSX.Element {
                   onChange={() => {}}
                   onOpen={() => {}}
                   size="small"
-                  sx={{ minWidth: 160 }}
+                  sx={{
+                    minWidth: 160,
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  }}
                   IconComponent={({ ownerState: _ownerState, ...props }) => (
                     <span
                       {...props}
@@ -471,7 +601,7 @@ export default function AppLayout(): JSX.Element {
                     </span>
                   )}
                   SelectDisplayProps={{ 'aria-label': 'Select integration' }}
-                  renderValue={() => <ComplexSelect.MenuItem.Text primary={scope.component} secondary="Integration" />}
+                  renderValue={() => <ComplexSelect.MenuItem.Text primary={currentComponent?.displayName ?? scope.component} secondary="Integration" />}
                   label="Integrations">
                   {components.map((c) => (
                     <ComplexSelect.MenuItem key={c.id} value={c.handler}>

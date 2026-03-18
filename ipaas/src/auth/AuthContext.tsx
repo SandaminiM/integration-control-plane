@@ -179,8 +179,9 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
               orgHandle = h;
               const numericId = org.id ?? org.orgId;
               if (numericId) {
-                window.API_CONFIG.asgardeoOrgNumericId = numericId;
-                localStorage.setItem('icp_org_numeric_id', String(numericId));
+                const parsedId = typeof numericId === 'string' ? parseInt(numericId, 10) : numericId;
+                window.API_CONFIG.asgardeoOrgNumericId = parsedId;
+                localStorage.setItem('icp_org_numeric_id', String(parsedId));
               }
               break;
             }

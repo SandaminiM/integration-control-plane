@@ -23,77 +23,69 @@ export interface GqlComponent {
   displayType: string;
   description: string;
   status: string;
-  componentType: string;
+  componentType?: string;
   componentSubType: string | null;
   version: string;
   createdAt: string;
   lastBuildDate: string;
 }
 
-const PROJECTS_QUERY = `
-  query GetProjects($orgId: Int!) {
-    projects(orgId: $orgId) {
-      id, orgId, name, handler, description, version,
-      createdDate, updatedAt, region, type
-    }
-  }`;
+const PROJECT_FIELDS = 'id, orgId, name, handler, description, version, createdDate, updatedAt, region, type';
 
-const PROJECT_QUERY = `
-  query GetProject($orgId: Int!, $projectId: String!) {
-    project(orgId: $orgId, projectId: $projectId) {
-      id, orgId, name, handler, description, version,
-      createdDate, updatedAt, region, type
-    }
-  }`;
+// Inline query helpers — matches devant pattern; avoids typed-variable schema mismatches
+function projectsQuery(id: number) {
+  return `{ projects(orgId: ${id}) { ${PROJECT_FIELDS} } }`;
+}
+function projectQuery(id: number, projectId: string) {
+  return `{ project(orgId: ${id}, projectId: "${projectId}") { ${PROJECT_FIELDS} } }`;
+}
+function projectByHandlerQuery(id: number, handler: string) {
+  return `{ projectByHandler(orgId: ${id}, projectHandler: "${handler}") { ${PROJECT_FIELDS} } }`;
+}
 
-const PROJECT_BY_HANDLER_QUERY = `
-  query GetProjectByHandler($orgId: Int!, $projectHandler: String!) {
-    projectByHandler(orgId: $orgId, projectHandler: $projectHandler) {
-      id, orgId, name, handler, description, version,
-      createdDate, updatedAt, region, type
-    }
-  }`;
-
-const COMPONENTS_QUERY = `
-  query GetComponents($orgHandler: String!, $projectId: String!) {
-    components(orgHandler: $orgHandler, projectId: $projectId) {
-      projectId, id, name, handler, displayName, displayType,
-      description, status, componentType, componentSubType,
-      version, createdAt, lastBuildDate
-    }
-  }`;
+// Inline query to match devant pattern; componentType excluded as it is not in the schema
+function componentsQuery(orgHandler: string, projectId: string) {
+  return `{ components(orgHandler: "${orgHandler}", projectId: "${projectId}") { projectId, id, name, handler, displayName, displayType, description, status, componentSubType, version, createdAt, lastBuildDate } }`;
+}
 
 function orgId(): number {
-  return window.API_CONFIG.asgardeoOrgNumericId ?? 1;
+  return window.API_CONFIG.asgardeoOrgNumericId ?? 0;
 }
 
 export function useProjects() {
+  const id = orgId();
   return useQuery({
-    queryKey: ['projects'],
-    queryFn: () => gql<{ projects: GqlProject[] }>(PROJECTS_QUERY, { orgId: orgId() }).then((d) => d.projects),
+    queryKey: ['projects', id],
+    queryFn: () => gql<{ projects: GqlProject[] }>(projectsQuery(id)).then((d) => d.projects),
+    enabled: id > 0,
   });
 }
 
 export function useProject(projectId: string) {
+  const id = orgId();
   return useQuery({
-    queryKey: ['project', projectId],
-    queryFn: () => gql<{ project: GqlProject }>(PROJECT_QUERY, { orgId: orgId(), projectId }).then((d) => d.project),
-    enabled: !!projectId,
+    queryKey: ['project', projectId, id],
+    queryFn: () => gql<{ project: GqlProject }>(projectQuery(id, projectId)).then((d) => d.project),
+    enabled: !!projectId && id > 0,
   });
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function useProjectByHandler(handler: string) {
+  const id = orgId();
   return useQuery({
-    queryKey: ['project', 'handler', handler],
-    queryFn: () => gql<{ projectByHandler: GqlProject }>(PROJECT_BY_HANDLER_QUERY, { orgId: orgId(), projectHandler: handler }).then((d) => d.projectByHandler),
-    enabled: !!handler,
+    queryKey: ['project', 'handler', handler, id],
+    queryFn: () => gql<{ projectByHandler: GqlProject }>(projectByHandlerQuery(id, handler)).then((d) => d.projectByHandler),
+    // Guard: never call if handler is empty or looks like a UUID (should use useProject instead)
+    enabled: !!handler && id > 0 && !UUID_RE.test(handler),
   });
 }
 
 export function useComponents(orgHandler: string, projectId: string) {
   return useQuery({
     queryKey: ['components', orgHandler, projectId],
-    queryFn: () => gql<{ components: GqlComponent[] }>(COMPONENTS_QUERY, { orgHandler, projectId }).then((d) => d.components),
+    queryFn: () => gql<{ components: GqlComponent[] }>(componentsQuery(orgHandler, projectId)).then((d) => d.components),
     enabled: !!orgHandler && !!projectId,
   });
 }
@@ -106,7 +98,7 @@ const COMPONENT_BY_HANDLER_QUERY = `
   query GetComponent($projectId: String!, $componentHandler: String!) {
     component(projectId: $projectId, componentHandler: $componentHandler) {
       projectId, id, name, handler, displayName, displayType,
-      description, status, componentType, componentSubType,
+      description, status, componentSubType,
       version, createdAt, lastBuildDate, orgHandler
     }
   }`;

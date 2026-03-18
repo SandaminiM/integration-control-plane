@@ -34,7 +34,8 @@ async function resolvePostLoginUrl(): Promise<string> {
       for (const org of orgs) {
         const handle = org.handle ?? org.orgHandle ?? org.org_handle;
         if (!handle) continue;
-        const orgId = org.id ?? org.orgId;
+        const rawOrgId = org.id ?? org.orgId;
+        const orgId = rawOrgId !== undefined ? (typeof rawOrgId === 'string' ? parseInt(rawOrgId, 10) : rawOrgId) : undefined;
         if (orgId) {
           // Try to navigate to first project's home page
           try {

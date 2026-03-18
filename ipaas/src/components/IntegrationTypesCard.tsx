@@ -23,7 +23,8 @@ import type { JSX } from 'react';
 
 export default function IntegrationTypesCard({ components }: { components: GqlComponent[] }): JSX.Element {
   const counts = components.reduce<Record<string, number>>((acc, c) => {
-    acc[c.componentType] = (acc[c.componentType] || 0) + 1;
+    const type = c.componentType ?? 'Unknown';
+    acc[type] = (acc[type] || 0) + 1;
     return acc;
   }, {});
 
