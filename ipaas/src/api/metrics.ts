@@ -15,6 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 import { useQuery } from '@tanstack/react-query';
 import { observabilityMetricsApiUrl } from '../paths';
 import { authenticatedFetch } from '../auth/tokenManager';

@@ -1,3 +1,21 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { gql } from './graphql';
 import { authenticatedFetch } from '../auth/tokenManager';
@@ -33,21 +51,28 @@ export interface GqlComponent {
 
 const PROJECT_FIELDS = 'id, orgId, name, handler, description, version, createdDate, updatedAt, region, type';
 
-// Inline query helpers — matches devant pattern; avoids typed-variable schema mismatches
-function projectsQuery(id: number) {
-  return `{ projects(orgId: ${id}) { ${PROJECT_FIELDS} } }`;
-}
-function projectQuery(id: number, projectId: string) {
-  return `{ project(orgId: ${id}, projectId: "${projectId}") { ${PROJECT_FIELDS} } }`;
-}
-function projectByHandlerQuery(id: number, handler: string) {
-  return `{ projectByHandler(orgId: ${id}, projectHandler: "${handler}") { ${PROJECT_FIELDS} } }`;
-}
+const PROJECTS_QUERY = `
+  query GetProjects($orgId: Int!) {
+    projects(orgId: $orgId) { ${PROJECT_FIELDS} }
+  }`;
 
-// Inline query to match devant pattern; componentType excluded as it is not in the schema
-function componentsQuery(orgHandler: string, projectId: string) {
-  return `{ components(orgHandler: "${orgHandler}", projectId: "${projectId}") { projectId, id, name, handler, displayName, displayType, description, status, componentSubType, version, createdAt, lastBuildDate } }`;
-}
+const PROJECT_QUERY = `
+  query GetProject($orgId: Int!, $projectId: String!) {
+    project(orgId: $orgId, projectId: $projectId) { ${PROJECT_FIELDS} }
+  }`;
+
+const PROJECT_BY_HANDLER_QUERY = `
+  query GetProjectByHandler($orgId: Int!, $projectHandler: String!) {
+    projectByHandler(orgId: $orgId, projectHandler: $projectHandler) { ${PROJECT_FIELDS} }
+  }`;
+
+// componentType excluded as it is not in the schema
+const COMPONENTS_QUERY = `
+  query GetComponents($orgHandler: String!, $projectId: String!) {
+    components(orgHandler: $orgHandler, projectId: $projectId) {
+      projectId, id, name, handler, displayName, displayType, description, status, componentSubType, version, createdAt, lastBuildDate
+    }
+  }`;
 
 function orgId(): number {
   return window.API_CONFIG.asgardeoOrgNumericId ?? 0;
@@ -57,7 +82,7 @@ export function useProjects() {
   const id = orgId();
   return useQuery({
     queryKey: ['projects', id],
-    queryFn: () => gql<{ projects: GqlProject[] }>(projectsQuery(id)).then((d) => d.projects),
+    queryFn: () => gql<{ projects: GqlProject[] }>(PROJECTS_QUERY, { orgId: id }).then((d) => d.projects),
     enabled: id > 0,
   });
 }
@@ -88,7 +113,7 @@ export function useProjectsByOrg(orgHandle: string) {
   const numericId = orgs?.find((o) => o.handle === orgHandle)?.numericId ?? 0;
   return useQuery({
     queryKey: ['projects', numericId],
-    queryFn: () => gql<{ projects: GqlProject[] }>(projectsQuery(numericId)).then((d) => d.projects),
+    queryFn: () => gql<{ projects: GqlProject[] }>(PROJECTS_QUERY, { orgId: numericId }).then((d) => d.projects),
     enabled: numericId > 0,
   });
 }
@@ -97,7 +122,7 @@ export function useProject(projectId: string) {
   const id = orgId();
   return useQuery({
     queryKey: ['project', projectId, id],
-    queryFn: () => gql<{ project: GqlProject }>(projectQuery(id, projectId)).then((d) => d.project),
+    queryFn: () => gql<{ project: GqlProject }>(PROJECT_QUERY, { orgId: id, projectId }).then((d) => d.project),
     enabled: !!projectId && id > 0,
   });
 }
@@ -108,7 +133,7 @@ export function useProjectByHandler(handler: string) {
   const id = orgId();
   return useQuery({
     queryKey: ['project', 'handler', handler, id],
-    queryFn: () => gql<{ projectByHandler: GqlProject }>(projectByHandlerQuery(id, handler)).then((d) => d.projectByHandler),
+    queryFn: () => gql<{ projectByHandler: GqlProject }>(PROJECT_BY_HANDLER_QUERY, { orgId: id, projectHandler: handler }).then((d) => d.projectByHandler),
     // Guard: never call if handler is empty or looks like a UUID (should use useProject instead)
     enabled: !!handler && id > 0 && !UUID_RE.test(handler),
   });
@@ -117,7 +142,7 @@ export function useProjectByHandler(handler: string) {
 export function useComponents(orgHandler: string, projectId: string) {
   return useQuery({
     queryKey: ['components', orgHandler, projectId],
-    queryFn: () => gql<{ components: GqlComponent[] }>(componentsQuery(orgHandler, projectId)).then((d) => d.components),
+    queryFn: () => gql<{ components: GqlComponent[] }>(COMPONENTS_QUERY, { orgHandler, projectId }).then((d) => d.components),
     enabled: !!orgHandler && !!projectId,
   });
 }
