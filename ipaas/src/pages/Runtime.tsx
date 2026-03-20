@@ -40,12 +40,12 @@ export default function Runtime(scope: ProjectScope | ComponentScope): JSX.Eleme
   const projectId = project?.id ?? '';
   const { data: component } = useComponentByHandler(projectId, hasComponent(scope) ? scope.component : undefined);
   const componentId = component?.id;
-  const { data: environments = [] } = useEnvironments(projectId);
+  const { data: environments = [] } = useEnvironments(scope.org, projectId);
 
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [deleting, setDeleting] = useState<GqlRuntime | null>(null);
+  const [deleting, setDeleting] = useState<(GqlRuntime & { envId: string }) | null>(null);
   const deleteMutation = useDeleteRuntime();
 
   const runtimeQueries = useQueries({
@@ -56,7 +56,11 @@ export default function Runtime(scope: ProjectScope | ComponentScope): JSX.Eleme
   });
 
   const isLoading = runtimeQueries.some((q) => q.isLoading);
-  const allRuntimes = runtimeQueries.flatMap((q) => q.data ?? []);
+  const allRuntimes = runtimeQueries.flatMap((q, i) => {
+    const envId = environments[i]?.id;
+    if (!envId) return [];
+    return (q.data ?? []).map((r) => ({ ...r, envId }));
+  });
   const filtered = allRuntimes.filter((r) => !query || r.runtimeId.toLowerCase().includes(query.toLowerCase()) || r.runtimeType.toLowerCase().includes(query.toLowerCase()));
   const maxPage = Math.max(0, Math.ceil(filtered.length / rowsPerPage) - 1);
   const safePage = Math.min(page, maxPage);
@@ -152,7 +156,7 @@ export default function Runtime(scope: ProjectScope | ComponentScope): JSX.Eleme
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setDeleting(null)}>Cancel</Button>
-            <Button variant="contained" color="error" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(deleting.runtimeId, { onSuccess: () => setDeleting(null) })}>
+            <Button variant="contained" color="error" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate({ runtimeId: deleting.runtimeId, envId: deleting.envId, projectId }, { onSuccess: () => setDeleting(null) })}>
               Delete
             </Button>
           </DialogActions>

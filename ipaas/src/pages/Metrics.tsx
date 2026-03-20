@@ -240,7 +240,7 @@ export default function Metrics(scope: ProjectScope | ComponentScope): JSX.Eleme
   const projectId = project?.id ?? '';
   const { data: singleComponent, isLoading: loadingComponent } = useComponentByHandler(projectId, isComponent ? scope.component : undefined);
   const { data: components = [], isLoading: loadingComponents } = useComponents(scope.org, projectId);
-  const { data: environments = [], isLoading: loadingEnvironments } = useEnvironments(projectId);
+  const { data: environments = [], isLoading: loadingEnvironments } = useEnvironments(scope.org, projectId);
 
   const [envFilter, setEnvFilter] = useState('');
   const [timeRange, setTimeRange] = useState('Past 1 hour');

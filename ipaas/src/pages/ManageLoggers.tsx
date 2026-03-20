@@ -136,7 +136,7 @@ export default function ManageLoggers(scope: ComponentScope): JSX.Element {
   const { data: project, isLoading: loadingProject } = useProjectByHandler(scope.project);
   const projectId = project?.id ?? '';
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
-  const { data: environments = [], isLoading: loadingEnvironments } = useEnvironments(projectId);
+  const { data: environments = [], isLoading: loadingEnvironments } = useEnvironments(scope.org, projectId);
 
   const handleRefresh = async (envId: string, componentId: string) => {
     setRefreshingEnv(envId);

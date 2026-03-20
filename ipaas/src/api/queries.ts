@@ -177,17 +177,17 @@ export interface GqlEnvironment {
 }
 
 const ENVIRONMENTS_QUERY = `
-  query GetEnvironments($projectId: String!) {
-    environments(orgUuid: "default-org-uuid", type: "external", projectId: $projectId) {
+  query GetEnvironments($orgUuid: String!, $projectId: String!) {
+    environments(orgUuid: $orgUuid, type: "external", projectId: $projectId) {
       id, name, critical
     }
   }`;
 
-export function useEnvironments(projectId: string) {
+export function useEnvironments(orgUuid: string, projectId: string) {
   return useQuery({
-    queryKey: ['environments', projectId],
-    queryFn: () => gql<{ environments: GqlEnvironment[] }>(ENVIRONMENTS_QUERY, { projectId }).then((d) => d.environments),
-    enabled: !!projectId,
+    queryKey: ['environments', orgUuid, projectId],
+    queryFn: () => gql<{ environments: GqlEnvironment[] }>(ENVIRONMENTS_QUERY, { orgUuid, projectId }).then((d) => d.environments),
+    enabled: !!orgUuid && !!projectId,
   });
 }
 

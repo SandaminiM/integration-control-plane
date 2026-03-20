@@ -167,7 +167,7 @@ export default function RuntimeLogs(scope: ProjectScope | ComponentScope): JSX.E
   const projectId = project?.id ?? '';
   const { data: singleComponent, isLoading: loadingComponent } = useComponentByHandler(projectId, hasComponent(scope) ? scope.component : undefined);
   const { data: allComponents = [], isLoading: loadingComponents } = useComponents(scope.org, projectId);
-  const { data: environments = [], isLoading: loadingEnvironments } = useEnvironments(projectId);
+  const { data: environments = [], isLoading: loadingEnvironments } = useEnvironments(scope.org, projectId);
 
   const allComponentIds = hasComponent(scope) ? (singleComponent ? [singleComponent.id] : []) : allComponents.map((c) => c.id);
 
