@@ -32,7 +32,10 @@ export default function ProtectedRoute(): JSX.Element {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    if (!isAuthenticated || !userId) return;
+    if (!isAuthenticated || !userId) {
+      setOrgPermissions([]);
+      return;
+    }
 
     if (isOidcUser) {
       // OIDC users are authorized by Choreo/Asgardeo with an org-scoped STS token.
@@ -42,11 +45,15 @@ export default function ProtectedRoute(): JSX.Element {
     }
 
     // For local-auth users, extract the org handle from the current URL path.
+    // Skip fetching on non-org routes (e.g. /profile, /change-password).
     const orgMatch = pathname.match(/^\/organizations\/([^/]+)/);
-    const orgHandle = orgMatch?.[1] ?? 'default';
-    fetchOrgPermissions(orgHandle, userId)
+    if (!orgMatch) return;
+    fetchOrgPermissions(orgMatch[1], userId)
       .then((data) => setOrgPermissions(data.permissionNames))
-      .catch((err) => console.error('Failed to fetch org permissions', err));
+      .catch((err) => {
+        setOrgPermissions([]);
+        console.error('Failed to fetch org permissions', err);
+      });
   }, [isAuthenticated, userId, isOidcUser, pathname, setOrgPermissions]);
 
   if (!isAuthenticated) {

@@ -29,12 +29,12 @@ export interface CreateProjectInput {
 }
 
 const CREATE_PROJECT = `
-  mutation CreateProject($name: String!, $description: String!, $projectHandler: String!, $orgHandler: String!) {
+  mutation CreateProject($name: String!, $description: String!, $projectHandler: String!, $orgHandler: String!, $orgId: Int!) {
     createProject(project: {
       name: $name,
       description: $description,
       projectHandler: $projectHandler,
-      orgId: 1,
+      orgId: $orgId,
       orgHandler: $orgHandler,
       version: "1.0.0"
     }) {
@@ -53,6 +53,7 @@ export function useCreateProject() {
         description: input.description,
         projectHandler: input.handler,
         orgHandler: input.orgHandler,
+        orgId: window.API_CONFIG.asgardeoOrgNumericId,
       }).then((d) => d.createProject),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
   });
@@ -117,8 +118,11 @@ const DELETE_RUNTIME = `
 export function useDeleteRuntime() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (runtimeId: string) => gql<{ deleteRuntime: string }>(DELETE_RUNTIME, { runtimeId }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['runtimes'] }),
+    mutationFn: ({ runtimeId }: { runtimeId: string; envId: string; projectId: string }) => gql<{ deleteRuntime: string }>(DELETE_RUNTIME, { runtimeId }),
+    onSuccess: (_, { envId, projectId }) => {
+      qc.invalidateQueries({ queryKey: ['runtimes'] });
+      qc.invalidateQueries({ queryKey: ['projectRuntimes', envId, projectId] });
+    },
   });
 }
 
@@ -179,7 +183,7 @@ export function useCreateComponent() {
           name: input.name,
           displayName: input.displayName,
           description: input.description,
-          orgId: 1,
+          orgId: window.API_CONFIG.asgardeoOrgNumericId,
           orgHandler: input.orgHandler,
           projectId: input.projectId,
           componentType: input.componentType,
@@ -223,8 +227,21 @@ export function useUpdateArtifactStatus() {
     onMutate: async (input) => {
       const scope = (q: { queryKey: readonly unknown[] }) => q.queryKey[2] === input.envId && q.queryKey[3] === input.componentId;
       await qc.cancelQueries({ queryKey: ['artifacts', input.artifactType], predicate: scope });
+      const previousArtifacts = qc.getQueriesData<GqlArtifact[]>({ queryKey: ['artifacts', input.artifactType], predicate: scope });
       const newState = input.status === 'active' ? 'enabled' : 'disabled';
       qc.setQueriesData<GqlArtifact[]>({ queryKey: ['artifacts', input.artifactType], predicate: scope }, (old) => old?.map((a) => (a.name === input.artifactName ? { ...a, state: newState } : a)));
+      return { previousArtifacts, scope };
+    },
+    onError: (_err, input, context) => {
+      if (context?.previousArtifacts) {
+        for (const [queryKey, data] of context.previousArtifacts) {
+          qc.setQueryData<GqlArtifact[]>(queryKey, data);
+        }
+      }
+    },
+    onSettled: (_data, _err, input) => {
+      const scope = (q: { queryKey: readonly unknown[] }) => q.queryKey[2] === input.envId && q.queryKey[3] === input.componentId;
+      qc.invalidateQueries({ queryKey: ['artifacts', input.artifactType], predicate: scope });
     },
   });
 }

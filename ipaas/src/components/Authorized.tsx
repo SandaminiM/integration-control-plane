@@ -33,8 +33,14 @@ export default function Authorized({ permissions, children, fallback }: Authoriz
 
   const { data: project } = useProjectByHandler(hasProject(scope) ? scope.project : '');
   const projectId = project?.id;
-  const { data: components = [] } = useComponents(scope.org, projectId ?? '');
-  const currentComponent = hasComponent(scope) ? components.find((c) => c.handler === scope.component) : undefined;
+  const { data: components } = useComponents(scope.org, projectId ?? '');
+
+  // Withhold render until in-flight lookups resolve to avoid evaluating
+  // permissions with undefined IDs (which would incorrectly deny access).
+  if (hasProject(scope) && project === undefined) return fallback ?? null;
+  if (hasComponent(scope) && components === undefined) return fallback ?? null;
+
+  const currentComponent = hasComponent(scope) ? components?.find((c) => c.handler === scope.component) : undefined;
   const componentId = currentComponent?.id;
 
   const permList = Array.isArray(permissions) ? permissions : [permissions];

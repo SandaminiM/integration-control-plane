@@ -173,20 +173,18 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
         if (baseStsRes.ok) {
           const baseStsData: { access_token: string } = await baseStsRes.json();
           baseStsToken = baseStsData.access_token;
-          finalToken = baseStsToken; // use base STS token as fallback
         } else {
-          console.error(`Initial STS exchange failed (${baseStsRes.status}): ${await baseStsRes.text()}`);
+          throw new Error(`Initial STS exchange failed (${baseStsRes.status}): ${await baseStsRes.text()}`);
         }
       } catch (err) {
-        console.error('Initial STS exchange error:', err);
+        throw new Error(`STS token exchange error: ${err instanceof Error ? err.message : String(err)}`);
       }
 
       // Step 3: Fetch user's org handle using the base STS token
       let orgHandle: string | undefined;
-      const tokenForOrgsApi = baseStsToken ?? asgardeoToken;
       try {
         const orgsRes = await fetch(`${choreoOrgApiUrl}/orgs`, {
-          headers: { Authorization: `Bearer ${tokenForOrgsApi}` },
+          headers: { Authorization: `Bearer ${baseStsToken}` },
         });
         if (orgsRes.ok) {
           const orgsData = await orgsRes.json();
@@ -205,31 +203,33 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
             }
           }
         } else {
-          console.error(`Orgs API returned ${orgsRes.status}: ${await orgsRes.text()}`);
+          throw new Error(`Orgs API returned ${orgsRes.status}: ${await orgsRes.text()}`);
         }
       } catch (err) {
-        console.error('Failed to fetch org handle:', err);
+        throw new Error(`Failed to fetch org handle: ${err instanceof Error ? err.message : String(err)}`);
+      }
+
+      if (!orgHandle) {
+        throw new Error('No organization found for this account. Please contact your administrator.');
       }
 
       // Step 4: Final STS exchange WITH orgHandle — gets the org-scoped token for all Choreo API access.
       // Always use the original Asgardeo token as the subject (same pattern as devant's useOrgTokenExchange).
-      if (orgHandle) {
-        try {
-          const orgStsRes = await fetch(stsTokenEndpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ ...stsBaseParams, orgHandle }).toString(),
-          });
-          if (orgStsRes.ok) {
-            const orgStsData: { access_token: string; expires_in?: number } = await orgStsRes.json();
-            finalToken = orgStsData.access_token;
-            finalExpiresIn = orgStsData.expires_in ?? 3600;
-          } else {
-            console.error(`Org-scoped STS exchange failed (${orgStsRes.status}): ${await orgStsRes.text()}`);
-          }
-        } catch (err) {
-          console.error('Org-scoped STS exchange error:', err);
+      try {
+        const orgStsRes = await fetch(stsTokenEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ ...stsBaseParams, orgHandle }).toString(),
+        });
+        if (orgStsRes.ok) {
+          const orgStsData: { access_token: string; expires_in?: number } = await orgStsRes.json();
+          finalToken = orgStsData.access_token;
+          finalExpiresIn = orgStsData.expires_in ?? 3600;
+        } else {
+          throw new Error(`Org-scoped STS exchange failed (${orgStsRes.status}): ${await orgStsRes.text()}`);
         }
+      } catch (err) {
+        throw new Error(`Org-scoped STS exchange error: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
 

@@ -30,7 +30,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
   const { data: project, isLoading: loadingProject } = useProjectByHandler(scope.project);
   const projectId = project?.id ?? '';
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
-  const { data: environments = [] } = useEnvironments(projectId);
+  const { data: environments = [] } = useEnvironments(scope.org, projectId);
   const [selectedArtifact, setSelectedArtifact] = useState<SelectedArtifact | null>(null);
 
   // Load component permissions using the UUID - only when component is loaded
