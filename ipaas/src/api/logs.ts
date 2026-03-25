@@ -17,13 +17,13 @@
  */
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { observabilityLogsApiUrl } from '../paths';
 import { authenticatedFetch } from '../auth/tokenManager';
 
 export interface LogsRequest {
+  projectId: string;
   componentIdList: string[];
   environmentId: string;
-  environmentList: string[];
+  environmentList: string;
   logLevels: string[];
   startTime: string;
   endTime: string;
@@ -76,8 +76,9 @@ const COLUMN_MAP: Record<string, keyof LogRow> = {
   ComponentVersionId: 'componentVersionId',
 };
 
-export async function fetchLogs(req: LogsRequest): Promise<LogRow[]> {
-  const res = await authenticatedFetch(observabilityLogsApiUrl(), {
+export async function fetchLogs(req: LogsRequest, logsApiUrl: string): Promise<LogRow[]> {
+  const url = logsApiUrl;
+  const res = await authenticatedFetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
@@ -102,19 +103,19 @@ export async function fetchLogs(req: LogsRequest): Promise<LogRow[]> {
   });
 }
 
-export function useInfiniteLogs(req: LogsRequest | null, refetchInterval: number | false = false) {
+export function useInfiniteLogs(req: LogsRequest | null, refetchInterval: number | false = false, logsApiUrl?: string) {
   return useInfiniteQuery({
-    queryKey: ['logs', req],
+    queryKey: ['logs', req, logsApiUrl],
     queryFn: async ({ pageParam }) => {
       const pageReq = pageParam ? { ...req!, ...(req!.sort === 'desc' ? { endTime: pageParam } : { startTime: pageParam }) } : req!;
-      return fetchLogs(pageReq);
+      return fetchLogs(pageReq, logsApiUrl!);
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => {
       if (!req || lastPage.length < req.limit) return undefined;
       return lastPage[lastPage.length - 1]?.timestamp;
     },
-    enabled: !!req,
+    enabled: !!req && !!logsApiUrl,
     refetchInterval,
   });
 }
