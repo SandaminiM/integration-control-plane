@@ -53,10 +53,11 @@ export function useLogsFilters(): LogsFiltersState {
 
   const { startTime, endTime } = useMemo(() => {
     if (timePreset === 'custom') {
-      return {
-        startTime: new Date(customStart).toISOString(),
-        endTime: new Date(customEnd).toISOString(),
-      };
+      const start = new Date(customStart);
+      const end = new Date(customEnd);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        return { startTime: start.toISOString(), endTime: end.toISOString() };
+      }
     }
     const preset = TIME_PRESETS.find((p) => p.label === timePreset);
     const hours = preset?.hours ?? DEFAULT_HOURS;

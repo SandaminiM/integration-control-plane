@@ -114,8 +114,8 @@ export default function LogsPanel({ isLoading, error, logs, hasNextPage, isFetch
         maxHeight: 'calc(100vh - 300px)',
         padding: '16px',
       }}>
-      {logs.map((log) => {
-        const key = `${log.timestamp}-${log.logLine.slice(0, 50)}`;
+      {logs.map((log, index) => {
+        const key = `${index}-${log.timestamp}-${log.logLine.slice(0, 50)}`;
         return <LogEntry key={key} log={log} expanded={expanded.has(key)} onToggle={() => toggle(key)} />;
       })}
       <div ref={sentinelRef} />

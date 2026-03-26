@@ -79,7 +79,7 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
       searchPhrase,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [component?.id, envIdsKey, levelFilterKey, startTime, endTime, searchPhrase, sortDir, logsApiUrl]);
+  }, [component?.id, envIdsKey, levelFilterKey, startTime, endTime, searchPhrase, sortDir, logsApiUrl, project?.region]);
 
   const { data, isLoading, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteComponentLogs(logsRequest, autoFetch ? AUTO_FETCH_INTERVAL : false, logsApiUrl);
 
