@@ -134,3 +134,8 @@ export const choreologgingProjectLogsApiUrl = (gatewayHost: string): string => {
   const { sysApiPrefix } = window.API_CONFIG;
   return `https://${sysApiPrefix}.${gatewayHost}/systemapis/choreologgingapi/0.2.0/logs/project/application?live=true`;
 };
+
+export const choreologgingComponentLogsApiUrl = (gatewayHost: string): string => {
+  const { sysApiPrefix } = window.API_CONFIG;
+  return `https://${sysApiPrefix}.${gatewayHost}/systemapis/choreologgingapi/0.2.0/logs/component/application?live=true`;
+};

@@ -30,64 +30,51 @@ import {
 } from '@wso2/oxygen-ui';
 import { Download, RefreshCw, X } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import type { LogRow, LogsRequest } from '../../api/logs';
+import type { ComponentLogsRequest, LogRow, LogsRequest } from '../../api/logs';
 import SearchField from '../../components/SearchField';
-import { LOG_LEVELS, TIME_PRESETS, downloadLogs, toLocalInput } from './utils';
+import type { LogsFiltersState } from '../../hooks/useLogsFilters';
+import { LOG_LEVELS, TIME_PRESETS, downloadLogs } from './utils';
 
 export interface LogsFiltersProps {
+  /** All filter state from useLogsFilters() */
+  filters: LogsFiltersState;
+  /** Available environments to populate the environment dropdown */
   environments: { id: string; name: string }[];
-  envFilter: string[];
-  onEnvFilterChange: (v: string[]) => void;
-  levelFilter: string[];
-  onLevelFilterChange: (v: string[]) => void;
-  timePreset: string;
-  onTimePresetChange: (v: string) => void;
-  customStart: string;
-  onCustomStartChange: (v: string) => void;
-  customEnd: string;
-  onCustomEndChange: (v: string) => void;
-  sortDir: 'asc' | 'desc';
-  onSortDirChange: (v: 'asc' | 'desc') => void;
-  searchPhrase: string;
-  onSearchPhraseChange: (v: string) => void;
-  autoFetch: boolean;
-  onAutoFetchChange: (v: boolean) => void;
+  /** Current fetched logs — used for the download button */
   logs: LogRow[];
-  logsRequest: LogsRequest | null;
+  /** Disables the Refresh button until a valid request can be built */
+  logsRequest: LogsRequest | ComponentLogsRequest | null;
   onRefetch: () => void;
 }
 
 export default function LogsFilters({
+  filters,
   environments,
-  envFilter,
-  onEnvFilterChange,
-  levelFilter,
-  onLevelFilterChange,
-  timePreset,
-  onTimePresetChange,
-  customStart,
-  onCustomStartChange,
-  customEnd,
-  onCustomEndChange,
-  sortDir,
-  onSortDirChange,
-  searchPhrase,
-  onSearchPhraseChange,
-  autoFetch,
-  onAutoFetchChange,
   logs,
   logsRequest,
   onRefetch,
 }: LogsFiltersProps): JSX.Element {
+  const {
+    envFilter, setEnvFilter,
+    levelFilter, setLevelFilter,
+    timePreset, setTimePreset,
+    customStart, setCustomStart,
+    customEnd, setCustomEnd,
+    sortDir, setSortDir,
+    searchPhrase, setSearchPhrase,
+    autoFetch, setAutoFetch,
+  } = filters;
+
   return (
     <>
       {/* Filter toolbar */}
       <Stack direction="row" gap={1.5} sx={{ mb: 1 }} flexWrap="wrap" alignItems="center">
+
         {/* Environment filter */}
         <Select
           multiple
           value={envFilter}
-          onChange={(e) => onEnvFilterChange(e.target.value as string[])}
+          onChange={(e) => setEnvFilter(e.target.value as string[])}
           displayEmpty
           renderValue={(selected) => {
             const sel = selected as string[];
@@ -112,7 +99,7 @@ export default function LogsFilters({
         <Select
           multiple
           value={levelFilter}
-          onChange={(e) => onLevelFilterChange(e.target.value as string[])}
+          onChange={(e) => setLevelFilter(e.target.value as string[])}
           displayEmpty
           renderValue={(selected) => {
             const sel = selected as string[];
@@ -136,10 +123,10 @@ export default function LogsFilters({
             value={timePreset}
             onChange={(e) => {
               const v = e.target.value as string;
-              onTimePresetChange(v);
+              setTimePreset(v);
               if (v === 'custom') {
-                onCustomEndChange(toLocalInput(new Date()));
-                onCustomStartChange(toLocalInput(new Date(Date.now() - 24 * 3600_000)));
+                setCustomEnd(new Date().toISOString().slice(0, 16));
+                setCustomStart(new Date(Date.now() - 24 * 3600_000).toISOString().slice(0, 16));
               }
             }}
             size="small"
@@ -154,7 +141,7 @@ export default function LogsFilters({
           </Select>
           {timePreset !== '' && (
             <Tooltip title="Clear time filter (defaults to 30 days)">
-              <IconButton size="small" onClick={() => onTimePresetChange('')}>
+              <IconButton size="small" onClick={() => setTimePreset('')}>
                 <X size={14} />
               </IconButton>
             </Tooltip>
@@ -164,7 +151,7 @@ export default function LogsFilters({
         {/* Sort direction */}
         <Select
           value={sortDir}
-          onChange={(e) => onSortDirChange(e.target.value as 'asc' | 'desc')}
+          onChange={(e) => setSortDir(e.target.value as 'asc' | 'desc')}
           size="small"
           sx={{ minWidth: 120 }}
           inputProps={{ 'aria-label': 'Sort direction' }}>
@@ -175,14 +162,14 @@ export default function LogsFilters({
         {/* Search */}
         <SearchField
           value={searchPhrase}
-          onChange={onSearchPhraseChange}
+          onChange={setSearchPhrase}
           placeholder="Search logs..."
           sx={{ minWidth: 200, flex: 1 }}
         />
 
         {/* Auto fetch */}
         <FormControlLabel
-          control={<Checkbox checked={autoFetch} onChange={(_, c) => onAutoFetchChange(c)} size="small" />}
+          control={<Checkbox checked={autoFetch} onChange={(_, c) => setAutoFetch(c)} size="small" />}
           label="Auto Fetch"
           sx={{ mr: 0, whiteSpace: 'nowrap' }}
           slotProps={{ typography: { variant: 'body2' } }}
@@ -218,7 +205,7 @@ export default function LogsFilters({
             size="small"
             label="Start"
             value={customStart}
-            onChange={(e) => onCustomStartChange(e.target.value)}
+            onChange={(e) => setCustomStart(e.target.value)}
             slotProps={{ inputLabel: { shrink: true } }}
           />
           <TextField
@@ -226,7 +213,7 @@ export default function LogsFilters({
             size="small"
             label="End"
             value={customEnd}
-            onChange={(e) => onCustomEndChange(e.target.value)}
+            onChange={(e) => setCustomEnd(e.target.value)}
             slotProps={{ inputLabel: { shrink: true } }}
           />
           <Button variant="contained" size="small" onClick={onRefetch}>

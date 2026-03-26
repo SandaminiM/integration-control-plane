@@ -33,6 +33,19 @@ export interface LogsRequest {
   searchPhrase: string;
 }
 
+export interface ComponentLogsRequest {
+  componentId: string;
+  environmentId: string;
+  versionIdList: string[];
+  logLevels: string[];
+  startTime: string;
+  endTime: string;
+  limit: number;
+  sort: 'asc' | 'desc';
+  region: string;
+  searchPhrase: string;
+}
+
 export interface LogRow {
   timestamp: string;
   level: string;
@@ -76,16 +89,15 @@ const COLUMN_MAP: Record<string, keyof LogRow> = {
   ComponentVersionId: 'componentVersionId',
 };
 
-export async function fetchLogs(req: LogsRequest, logsApiUrl: string): Promise<LogRow[]> {
-  const url = logsApiUrl;
+async function postLogs(url: string, body: unknown): Promise<LogRow[]> {
   const res = await authenticatedFetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(req),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`${res.status}: ${body}`);
+    const text = await res.text();
+    throw new Error(`${res.status}: ${text}`);
   }
   const json: { columns: Column[]; rows: (string | null)[][] } = await res.json();
   const indexMap: Record<number, keyof LogRow> = {};
@@ -103,12 +115,37 @@ export async function fetchLogs(req: LogsRequest, logsApiUrl: string): Promise<L
   });
 }
 
+export async function fetchLogs(req: LogsRequest, logsApiUrl: string): Promise<LogRow[]> {
+  return postLogs(logsApiUrl, req);
+}
+
+export async function fetchComponentLogs(req: ComponentLogsRequest, logsApiUrl: string): Promise<LogRow[]> {
+  return postLogs(logsApiUrl, req);
+}
+
 export function useInfiniteLogs(req: LogsRequest | null, refetchInterval: number | false = false, logsApiUrl?: string) {
   return useInfiniteQuery({
     queryKey: ['logs', req, logsApiUrl],
     queryFn: async ({ pageParam }) => {
       const pageReq = pageParam ? { ...req!, ...(req!.sort === 'desc' ? { endTime: pageParam } : { startTime: pageParam }) } : req!;
       return fetchLogs(pageReq, logsApiUrl!);
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => {
+      if (!req || lastPage.length < req.limit) return undefined;
+      return lastPage[lastPage.length - 1]?.timestamp;
+    },
+    enabled: !!req && !!logsApiUrl,
+    refetchInterval,
+  });
+}
+
+export function useInfiniteComponentLogs(req: ComponentLogsRequest | null, refetchInterval: number | false = false, logsApiUrl?: string) {
+  return useInfiniteQuery({
+    queryKey: ['component-logs', req, logsApiUrl],
+    queryFn: async ({ pageParam }) => {
+      const pageReq = pageParam ? { ...req!, ...(req!.sort === 'desc' ? { endTime: pageParam } : { startTime: pageParam }) } : req!;
+      return fetchComponentLogs(pageReq, logsApiUrl!);
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => {

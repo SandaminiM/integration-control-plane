@@ -16,38 +16,41 @@
  * under the License.
  */
 
-import {
-  CircularProgress,
-  MenuItem,
-  PageContent,
-  Select,
-} from '@wso2/oxygen-ui';
+import { CircularProgress, PageContent } from '@wso2/oxygen-ui';
 import { ScrollText } from '@wso2/oxygen-ui-icons-react';
-import { useMemo, useState, type JSX } from 'react';
-import { useOrgs, useProjectsByOrg, useComponents, useEnvironments, useAllEnvironments, useCloudDataPlanes } from '../api/queries';
-import { useInfiniteLogs, type LogsRequest } from '../api/logs';
-import { choreologgingProjectLogsApiUrl } from '../config/api';
+import { useMemo, type JSX } from 'react';
+import {
+  useOrgs,
+  useProjectsByOrg,
+  useComponentByHandler,
+  useEnvironments,
+  useAllEnvironments,
+  useCloudDataPlanes,
+} from '../api/queries';
+import { useInfiniteComponentLogs, type ComponentLogsRequest } from '../api/logs';
+import { choreologgingComponentLogsApiUrl } from '../config/api';
 import { AUTO_FETCH_INTERVAL, PAGE_SIZE } from './logs/utils';
 import LogsFilters from './logs/LogsFilters';
 import LogsPageLayout from './logs/LogsPageLayout';
 import LogsPanel from './logs/LogsPanel';
 import EmptyListing from '../components/EmptyListing';
+import NotFound from '../components/NotFound';
 import { useLogsFilters } from '../hooks/useLogsFilters';
-import type { ProjectScope } from '../nav';
+import { broaden, resourceUrl, type ComponentScope } from '../nav';
 
-export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
+export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Element {
   const filters = useLogsFilters();
   const { envFilter, levelFilter, sortDir, searchPhrase, autoFetch, startTime, endTime } = filters;
 
   const { data: orgs, isLoading: loadingOrgs } = useOrgs();
   const { data: projects, isLoading: loadingProjects } = useProjectsByOrg(scope.org);
 
-  const loadingProject = loadingOrgs || loadingProjects;
   const project = projects?.find((p) => p.id === scope.project || p.handler === scope.project);
   const projectId = project?.id ?? '';
   const orgUuid = orgs?.find((o) => o.handle === scope.org)?.uuid ?? '';
 
-  const { data: allComponents = [], isLoading: loadingComponents } = useComponents(scope.org, projectId);
+  const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
+
   const { data: projectEnvs = [], isLoading: loadingProjectEnvs } = useEnvironments(orgUuid, projectId);
   const { data: globalEnvs = [], isLoading: loadingGlobalEnvs } = useAllEnvironments();
   // Prefer project-scoped environments (needs UUID); fall back to global when UUID unavailable
@@ -56,30 +59,24 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
 
   const { data: cdps, isLoading: loadingCdps } = useCloudDataPlanes(orgUuid);
 
-  const [integrationFilter, setIntegrationFilter] = useState('all');
-
-  const componentIds =
-    integrationFilter !== 'all' ? [integrationFilter] : allComponents.map((c) => c.id);
   const selectedEnvIds = envFilter.length > 0 ? envFilter : environments.map((e) => e.id);
   const primaryEnv = environments.find((e) => selectedEnvIds.includes(e.id));
 
-  const componentIdsKey = componentIds.join(',');
   const envIdsKey = selectedEnvIds.join(',');
   const levelFilterKey = levelFilter.join(',');
 
   const logsApiUrl = useMemo(() => {
     if (!primaryEnv?.dpId || !cdps) return undefined;
     const cdp = cdps.find((c) => c.id.toLowerCase() === primaryEnv.dpId!.toLowerCase());
-    return cdp ? choreologgingProjectLogsApiUrl(cdp.external_gateway_virtual_host) : undefined;
+    return cdp ? choreologgingComponentLogsApiUrl(cdp.external_gateway_virtual_host) : undefined;
   }, [primaryEnv?.dpId, cdps]);
 
-  const logsRequest = useMemo<LogsRequest | null>(() => {
-    if (componentIds.length === 0 || !primaryEnv || !logsApiUrl) return null;
+  const logsRequest = useMemo<ComponentLogsRequest | null>(() => {
+    if (!component || !primaryEnv || !logsApiUrl) return null;
     return {
-      projectId,
-      componentIdList: componentIds,
+      componentId: component.id,
       environmentId: primaryEnv.id,
-      environmentList: primaryEnv.name,
+      versionIdList: [],
       logLevels: levelFilter,
       startTime,
       endTime,
@@ -89,9 +86,9 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
       searchPhrase,
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [componentIdsKey, envIdsKey, levelFilterKey, startTime, endTime, searchPhrase, sortDir, projectId, logsApiUrl]);
+  }, [component?.id, envIdsKey, levelFilterKey, startTime, endTime, searchPhrase, sortDir, logsApiUrl]);
 
-  const { data, isLoading, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteLogs(
+  const { data, isLoading, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteComponentLogs(
     logsRequest,
     autoFetch ? AUTO_FETCH_INTERVAL : false,
     logsApiUrl,
@@ -99,7 +96,7 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
 
   const logs = useMemo(() => data?.pages.flat() ?? [], [data]);
 
-  if (loadingProject || loadingComponents || loadingEnvironments || loadingCdps) {
+  if (loadingOrgs || loadingProjects || loadingComponent || loadingEnvironments || loadingCdps) {
     return (
       <PageContent sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
         <CircularProgress />
@@ -107,15 +104,13 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
     );
   }
 
-  if (allComponents.length === 0) {
+  if (!component) {
     return (
-      <PageContent>
-        <EmptyListing
-          icon={<ScrollText size={48} />}
-          title="No integrations found"
-          description="Add an integration to this project before viewing runtime logs."
-        />
-      </PageContent>
+      <NotFound
+        message="Integration not found"
+        backTo={resourceUrl(broaden(scope)!, 'overview')}
+        backLabel="Back to Project"
+      />
     );
   }
 
@@ -131,26 +126,9 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
     );
   }
 
-  const integrationSelect = (
-    <Select
-      value={integrationFilter}
-      onChange={(e) => setIntegrationFilter(e.target.value as string)}
-      size="small"
-      sx={{ minWidth: 200 }}
-      inputProps={{ 'aria-label': 'Integration' }}>
-      <MenuItem value="all">All Integrations</MenuItem>
-      {allComponents.map((c) => (
-        <MenuItem key={c.id} value={c.id}>
-          {c.displayName || c.name}
-        </MenuItem>
-      ))}
-    </Select>
-  );
-
   return (
     <LogsPageLayout
       title="Runtime Logs"
-      headerAction={integrationSelect}
       filtersElement={
         <LogsFilters
           filters={filters}
