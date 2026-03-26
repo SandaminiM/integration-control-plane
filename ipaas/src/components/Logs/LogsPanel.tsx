@@ -36,25 +36,16 @@ interface LogsPanelProps {
   onClearFilters: () => void;
 }
 
-export default function LogsPanel({
-  isLoading,
-  error,
-  logs,
-  hasNextPage,
-  isFetchingNextPage,
-  onRefetch,
-  onFetchNextPage,
-  onClearFilters,
-}: LogsPanelProps): JSX.Element {
-  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+export default function LogsPanel({ isLoading, error, logs, hasNextPage, isFetchingNextPage, onRefetch, onFetchNextPage, onClearFilters }: LogsPanelProps): JSX.Element {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const sentinelRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const toggle = (i: number) =>
+  const toggle = (key: string) =>
     setExpanded((prev) => {
       const next = new Set(prev);
-      if (next.has(i)) next.delete(i);
-      else next.add(i);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
 
@@ -97,8 +88,7 @@ export default function LogsPanel({
           No logs found
         </Typography>
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ maxWidth: 420 }}>
-          No log entries matched your current filters for the selected time range. Try widening
-          the time range, clearing some filters, or refreshing.
+          No log entries matched your current filters for the selected time range. Try widening the time range, clearing some filters, or refreshing.
         </Typography>
         <Stack direction="row" gap={1}>
           <Button variant="outlined" size="small" startIcon={<RefreshCw size={14} />} onClick={onRefetch}>
@@ -124,13 +114,12 @@ export default function LogsPanel({
         maxHeight: 'calc(100vh - 300px)',
         padding: '16px',
       }}>
-      {logs.map((log, i) => (
-        <LogEntry key={i} log={log} expanded={expanded.has(i)} onToggle={() => toggle(i)} />
-      ))}
+      {logs.map((log) => {
+        const key = `${log.timestamp}-${log.logLine.slice(0, 50)}`;
+        return <LogEntry key={key} log={log} expanded={expanded.has(key)} onToggle={() => toggle(key)} />;
+      })}
       <div ref={sentinelRef} />
-      {isFetchingNextPage && (
-        <CircularProgress size={20} sx={{ display: 'block', mx: 'auto', my: 1 }} />
-      )}
+      {isFetchingNextPage && <CircularProgress size={20} sx={{ display: 'block', mx: 'auto', my: 1 }} />}
       {!hasNextPage && (
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 1 }}>
           End of logs

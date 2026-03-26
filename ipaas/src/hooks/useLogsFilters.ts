@@ -17,7 +17,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { DEFAULT_HOURS, TIME_PRESETS, toLocalInput } from '../pages/logs/utils';
+import { DEFAULT_HOURS, TIME_PRESETS, toLocalInput } from '../utils/logs';
 
 export interface LogsFiltersState {
   envFilter: string[];
@@ -45,9 +45,7 @@ export function useLogsFilters(): LogsFiltersState {
   const [envFilter, setEnvFilter] = useState<string[]>([]);
   const [levelFilter, setLevelFilter] = useState<string[]>([]);
   const [timePreset, setTimePreset] = useState<string>('Past 24 hours');
-  const [customStart, setCustomStart] = useState(() =>
-    toLocalInput(new Date(Date.now() - 24 * 3600_000))
-  );
+  const [customStart, setCustomStart] = useState(() => toLocalInput(new Date(Date.now() - 24 * 3600_000)));
   const [customEnd, setCustomEnd] = useState(() => toLocalInput(new Date()));
   const [searchPhrase, setSearchPhrase] = useState('');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');

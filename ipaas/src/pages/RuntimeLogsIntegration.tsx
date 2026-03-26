@@ -19,20 +19,13 @@
 import { CircularProgress, PageContent } from '@wso2/oxygen-ui';
 import { ScrollText } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, type JSX } from 'react';
-import {
-  useOrgs,
-  useProjectsByOrg,
-  useComponentByHandler,
-  useEnvironments,
-  useAllEnvironments,
-  useCloudDataPlanes,
-} from '../api/queries';
+import { useOrgs, useProjectsByOrg, useComponentByHandler, useEnvironments, useAllEnvironments, useCloudDataPlanes } from '../api/queries';
 import { useInfiniteComponentLogs, type ComponentLogsRequest } from '../api/logs';
 import { choreologgingComponentLogsApiUrl } from '../config/api';
-import { AUTO_FETCH_INTERVAL, PAGE_SIZE } from './logs/utils';
-import LogsFilters from './logs/LogsFilters';
-import LogsPageLayout from './logs/LogsPageLayout';
-import LogsPanel from './logs/LogsPanel';
+import { AUTO_FETCH_INTERVAL, DEFAULT_DP_REGION, PAGE_SIZE } from '../utils/logs';
+import LogsFilters from '../components/Logs/LogsFilters';
+import LogsPageLayout from '../components/Logs/LogsPageLayout';
+import LogsPanel from '../components/Logs/LogsPanel';
 import EmptyListing from '../components/EmptyListing';
 import NotFound from '../components/NotFound';
 import { useLogsFilters } from '../hooks/useLogsFilters';
@@ -76,23 +69,19 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
     return {
       componentId: component.id,
       environmentId: primaryEnv.id,
-      versionIdList: [],
+      versionIdList: [], // Empty list fetches logs for all versions; version filtering is not yet implemented in the UI
       logLevels: levelFilter,
       startTime,
       endTime,
       limit: PAGE_SIZE,
       sort: sortDir,
-      region: 'US',
+      region: project?.region || DEFAULT_DP_REGION,
       searchPhrase,
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [component?.id, envIdsKey, levelFilterKey, startTime, endTime, searchPhrase, sortDir, logsApiUrl]);
 
-  const { data, isLoading, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteComponentLogs(
-    logsRequest,
-    autoFetch ? AUTO_FETCH_INTERVAL : false,
-    logsApiUrl,
-  );
+  const { data, isLoading, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteComponentLogs(logsRequest, autoFetch ? AUTO_FETCH_INTERVAL : false, logsApiUrl);
 
   const logs = useMemo(() => data?.pages.flat() ?? [], [data]);
 
@@ -105,23 +94,13 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
   }
 
   if (!component) {
-    return (
-      <NotFound
-        message="Integration not found"
-        backTo={resourceUrl(broaden(scope)!, 'overview')}
-        backLabel="Back to Project"
-      />
-    );
+    return <NotFound message="Integration not found" backTo={resourceUrl(broaden(scope)!, 'overview')} backLabel="Back to Project" />;
   }
 
   if (environments.length === 0) {
     return (
       <PageContent>
-        <EmptyListing
-          icon={<ScrollText size={48} />}
-          title="No environments available"
-          description="No deployment environments were found for this project. Deploy your integration first."
-        />
+        <EmptyListing icon={<ScrollText size={48} />} title="No environments available" description="No deployment environments were found for this project. Deploy your integration first." />
       </PageContent>
     );
   }
@@ -129,27 +108,8 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
   return (
     <LogsPageLayout
       title="Runtime Logs"
-      filtersElement={
-        <LogsFilters
-          filters={filters}
-          environments={environments}
-          logs={logs}
-          logsRequest={logsRequest}
-          onRefetch={refetch}
-        />
-      }
-      logPanelElement={
-        <LogsPanel
-          isLoading={isLoading}
-          error={error}
-          logs={logs}
-          hasNextPage={hasNextPage}
-          isFetchingNextPage={isFetchingNextPage}
-          onRefetch={refetch}
-          onFetchNextPage={fetchNextPage}
-          onClearFilters={filters.clearFilters}
-        />
-      }
+      filtersElement={<LogsFilters filters={filters} environments={environments} logs={logs} logsRequest={logsRequest} onRefetch={refetch} />}
+      logPanelElement={<LogsPanel isLoading={isLoading} error={error} logs={logs} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} onRefetch={refetch} onFetchNextPage={fetchNextPage} onClearFilters={filters.clearFilters} />}
     />
   );
 }

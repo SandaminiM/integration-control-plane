@@ -20,17 +20,9 @@ import { Chip, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronRight, Copy } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
 import type { LogRow } from '../../api/logs';
-import { DISPLAY_FIELDS, copyLog, formatValue, levelColor } from './utils';
+import { DISPLAY_FIELDS, copyLog, formatValue, levelColor } from '../../utils/logs';
 
-export default function LogEntry({
-  log,
-  expanded,
-  onToggle,
-}: {
-  log: LogRow;
-  expanded: boolean;
-  onToggle: () => void;
-}): JSX.Element {
+export default function LogEntry({ log, expanded, onToggle }: { log: LogRow; expanded: boolean; onToggle: () => void }): JSX.Element {
   return (
     <>
       <Stack
@@ -48,15 +40,10 @@ export default function LogEntry({
           '&:hover': { bgcolor: 'action.hover' },
           '&:hover .log-actions': { visibility: 'visible' },
         }}>
-        <IconButton
-          size="small"
-          aria-label={expanded ? 'Collapse log entry' : 'Expand log entry'}
-          sx={{ p: 0, mr: 0.5 }}>
+        <IconButton size="small" aria-label={expanded ? 'Collapse log entry' : 'Expand log entry'} sx={{ p: 0, mr: 0.5 }}>
           {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </IconButton>
-        <Typography
-          component="span"
-          sx={{ fontFamily: 'monospace', fontSize: 12, color: levelColor(log.level), whiteSpace: 'nowrap', mr: 1 }}>
+        <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, color: levelColor(log.level), whiteSpace: 'nowrap', mr: 1 }}>
           {new Date(log.timestamp).toLocaleString()}
         </Typography>
         <Chip
@@ -73,9 +60,7 @@ export default function LogEntry({
           }}
         />
         {log.serviceType && (
-          <Typography
-            component="span"
-            sx={{ fontFamily: 'monospace', fontSize: 12, color: 'text.secondary', whiteSpace: 'nowrap', mr: 1 }}>
+          <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, color: 'text.secondary', whiteSpace: 'nowrap', mr: 1 }}>
             {log.serviceType}
           </Typography>
         )}
@@ -121,18 +106,11 @@ export default function LogEntry({
             const val = formatValue(log[key]);
             if (!val) return null;
             return (
-              <Stack
-                key={key}
-                direction="row"
-                sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 0.5, gap: 2 }}>
-                <Typography
-                  component="span"
-                  sx={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, minWidth: 160, flexShrink: 0 }}>
+              <Stack key={key} direction="row" sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 0.5, gap: 2 }}>
+                <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, minWidth: 160, flexShrink: 0 }}>
                   {label}
                 </Typography>
-                <Typography
-                  component="span"
-                  sx={{ fontFamily: 'monospace', fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
                   {key === 'timestamp' ? new Date(val).toLocaleString() : val}
                 </Typography>
               </Stack>

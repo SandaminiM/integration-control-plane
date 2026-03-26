@@ -26,12 +26,7 @@ interface LogsPageLayoutProps {
   logPanelElement: ReactNode;
 }
 
-export default function LogsPageLayout({
-  title,
-  headerAction,
-  filtersElement,
-  logPanelElement,
-}: LogsPageLayoutProps): JSX.Element {
+export default function LogsPageLayout({ title, headerAction, filtersElement, logPanelElement }: LogsPageLayoutProps): JSX.Element {
   return (
     <PageContent>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>

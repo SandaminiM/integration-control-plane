@@ -227,9 +227,7 @@ export function useCloudDataPlanes(orgUuid: string) {
   return useQuery({
     queryKey: ['cloud-data-planes', orgUuid],
     queryFn: async () => {
-      const res = await authenticatedFetch(
-        `${choreoDevopsApiUrl()}/api/v1/clusters/clouddataplanes?org_uuid=${encodeURIComponent(orgUuid)}`
-      );
+      const res = await authenticatedFetch(`${choreoDevopsApiUrl()}/api/v1/clusters/clouddataplanes?org_uuid=${encodeURIComponent(orgUuid)}`);
       if (!res.ok) throw new Error(`Failed to fetch cloud data planes: ${res.status}`);
       return res.json() as Promise<CloudDataPlane[]>;
     },

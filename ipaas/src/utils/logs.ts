@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import type { LogRow } from '../../api/logs';
+import type { LogRow } from '../api/logs';
 
 export const LOG_LEVELS = ['INFO', 'WARN', 'ERROR', 'DEBUG'] as const;
 
@@ -32,6 +32,7 @@ export const TIME_PRESETS: { label: string; hours: number }[] = [
 export const DEFAULT_HOURS = 720;
 export const AUTO_FETCH_INTERVAL = 10_000;
 export const PAGE_SIZE = 100;
+export const DEFAULT_DP_REGION = 'US';
 
 export const LEVEL_COLORS: Record<string, string> = {
   ERROR: '#e53935',
@@ -86,9 +87,7 @@ export function copyLog(log: LogRow) {
 }
 
 export function downloadLogs(logs: LogRow[]) {
-  const text = logs
-    .map((l) => `${new Date(l.timestamp).toLocaleString()} [${l.level}] ${l.logLine}`)
-    .join('\n');
+  const text = logs.map((l) => `${new Date(l.timestamp).toLocaleString()} [${l.level}] ${l.logLine}`).join('\n');
   const blob = new Blob([text], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
