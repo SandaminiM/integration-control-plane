@@ -34,11 +34,11 @@ export const AUTO_FETCH_INTERVAL = 10_000;
 export const PAGE_SIZE = 100;
 export const DEFAULT_DP_REGION = 'US';
 
-export const LEVEL_COLORS: Record<string, string> = {
-  ERROR: '#e53935',
-  WARN: '#f9a825',
-  INFO: '#1e88e5',
-  DEBUG: '#78909c',
+export const LEVEL_COLORS: Record<string, { bg: string; text: string }> = {
+  ERROR: { bg: '#ffebee', text: '#b71c1c' },
+  WARN:  { bg: '#fff3e0', text: '#e65100' },
+  INFO:  { bg: '#e3f2fd', text: '#0d47a1' },
+  DEBUG: { bg: '#eceff1', text: '#37474f' },
 };
 
 export const DISPLAY_FIELDS: { key: keyof LogRow; label: string }[] = [
@@ -60,8 +60,8 @@ export const DISPLAY_FIELDS: { key: keyof LogRow; label: string }[] = [
   { key: 'componentVersionId', label: 'Component Version ID' },
 ];
 
-export function levelColor(level: string): string {
-  return LEVEL_COLORS[level] ?? '#78909c';
+export function levelColor(level: string): { bg: string; text: string } {
+  return LEVEL_COLORS[level] ?? { bg: '#eceff1', text: '#37474f' };
 }
 
 export function formatValue(value: unknown): string {

@@ -148,7 +148,7 @@ export default function LogsFilters({ filters, environments, logs, logsRequest, 
 
       {/* Custom date range inputs */}
       {timePreset === 'custom' && (
-        <Stack direction="row" gap={1.5} sx={{ mb: 2 }} alignItems="center">
+        <Stack direction="row" gap={1.5} sx={{ mb: 2 }} flexWrap="wrap" alignItems="center">
           <TextField type="datetime-local" size="small" label="Start" value={customStart} onChange={(e) => setCustomStart(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
           <TextField type="datetime-local" size="small" label="End" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
           <Button variant="contained" size="small" onClick={onRefetch}>

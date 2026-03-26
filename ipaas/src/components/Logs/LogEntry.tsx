@@ -43,7 +43,7 @@ export default function LogEntry({ log, expanded, onToggle }: { log: LogRow; exp
         <IconButton size="small" aria-label={expanded ? 'Collapse log entry' : 'Expand log entry'} sx={{ p: 0, mr: 0.5 }}>
           {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </IconButton>
-        <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, color: levelColor(log.level), whiteSpace: 'nowrap', mr: 1 }}>
+        <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, color: levelColor(log.level).text, whiteSpace: 'nowrap', mr: 1 }}>
           {new Date(log.timestamp).toLocaleString()}
         </Typography>
         <Chip
@@ -54,8 +54,8 @@ export default function LogEntry({ log, expanded, onToggle }: { log: LogRow; exp
             fontSize: 10,
             height: 18,
             mr: 1,
-            bgcolor: levelColor(log.level),
-            color: '#fff',
+            bgcolor: levelColor(log.level).bg,
+            color: levelColor(log.level).text,
             fontWeight: 700,
           }}
         />

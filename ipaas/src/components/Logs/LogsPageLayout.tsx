@@ -29,7 +29,7 @@ interface LogsPageLayoutProps {
 export default function LogsPageLayout({ title, headerAction, filtersElement, logPanelElement }: LogsPageLayoutProps): JSX.Element {
   return (
     <PageContent>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'flex-start', sm: 'center' }} justifyContent="space-between" gap={1} sx={{ mb: 2 }}>
         <Typography variant="h1">{title}</Typography>
         {headerAction}
       </Stack>
