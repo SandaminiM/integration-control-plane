@@ -18,7 +18,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { gql } from './graphql';
-import { authenticatedFetch } from '../auth/tokenManager';
+import { authenticatedFetch, getOrgUuidFromToken } from '../auth/tokenManager';
 import { choreoDevopsApiUrl } from '../config/api';
 
 export interface GqlProject {
@@ -32,6 +32,7 @@ export interface GqlProject {
   updatedAt: string;
   region: string;
   type: string;
+  defaultDeploymentPipelineId: string;
 }
 
 export interface GqlComponent {
@@ -48,9 +49,11 @@ export interface GqlComponent {
   version: string;
   createdAt: string;
   lastBuildDate: string;
+  labels?: string | string[];
+  apiId?: string;
 }
 
-const PROJECT_FIELDS = 'id, orgId, name, handler, description, version, createdDate, updatedAt, region, type';
+const PROJECT_FIELDS = 'id, orgId, name, handler, description, version, createdDate, updatedAt, region, type, defaultDeploymentPipelineId';
 
 const PROJECTS_QUERY = `
   query GetProjects($orgId: Int!) {
@@ -160,6 +163,7 @@ export function useComponents(orgHandler: string, projectId: string) {
 
 export interface GqlComponentDetail extends GqlComponent {
   orgHandler: string;
+  deploymentTracks?: { id: string }[];
 }
 
 const COMPONENT_BY_HANDLER_QUERY = `
@@ -167,7 +171,8 @@ const COMPONENT_BY_HANDLER_QUERY = `
     component(projectId: $projectId, componentHandler: $componentHandler) {
       projectId, id, name, handler, displayName, displayType,
       description, status, componentSubType,
-      version, createdAt, lastBuildDate, orgHandler
+      version, createdAt, lastBuildDate, orgHandler, labels, apiId,
+      deploymentTracks { id }
     }
   }`;
 
@@ -179,10 +184,26 @@ export function useComponentByHandler(projectId: string, handler: string | undef
   });
 }
 
+const PROJECT_COMPONENT_LABELS_QUERY = `
+  query GetProjectComponentLabels($projectId: String!, $orgId: Int!) {
+    projectComponentLabels(projectId: $projectId, orgId: $orgId)
+  }`;
+
+export function useProjectComponentLabels(projectId: string) {
+  const id = orgId();
+  return useQuery({
+    queryKey: ['projectComponentLabels', projectId],
+    queryFn: () => gql<{ projectComponentLabels: string[] }>(PROJECT_COMPONENT_LABELS_QUERY, { projectId, orgId: id }).then((d) => d.projectComponentLabels ?? []),
+    enabled: !!projectId && id > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export interface GqlEnvironment {
   id: string;
   name: string;
   critical: boolean;
+  templateId?: string;
   dpId?: string;
   description?: string;
   createdAt?: string;
@@ -191,14 +212,17 @@ export interface GqlEnvironment {
 const ENVIRONMENTS_QUERY = `
   query GetEnvironments($orgUuid: String!, $projectId: String!) {
     environments(orgUuid: $orgUuid, type: "external", projectId: $projectId) {
-      id, name, critical, dpId
+      id, name, critical, templateId, dpId
     }
   }`;
 
 export function useEnvironments(orgUuid: string, projectId: string) {
   return useQuery({
     queryKey: ['environments', orgUuid, projectId],
-    queryFn: () => gql<{ environments: GqlEnvironment[] }>(ENVIRONMENTS_QUERY, { orgUuid, projectId }).then((d) => d.environments),
+    queryFn: () => {
+      const uuid = getOrgUuidFromToken() ?? orgUuid;
+      return gql<{ environments: GqlEnvironment[] }>(ENVIRONMENTS_QUERY, { orgUuid: uuid, projectId }).then((d) => d.environments);
+    },
     enabled: !!orgUuid && !!projectId,
   });
 }
@@ -372,7 +396,7 @@ const ARTIFACT_QUERY_MAP: Record<string, { queryName: string; field: string; fie
     queryName: 'automationsByEnvironmentAndComponent',
     field: 'automationsByEnvironmentAndComponent',
     fields: 'packageOrg, packageName, packageVersion',
-    gqlFields: 'packageOrg, packageName, packageVersion, runtimeIds, runtimes { runtimeId, status, executionTimestamps }, executionTimestamp',
+    gqlFields: 'packageOrg, packageName, packageVersion, runtimeIds, runtimes { runtimeId, status }, executionTimestamp',
   },
   MessageStore: {
     queryName: 'messageStoresByEnvironmentAndComponent',
@@ -415,10 +439,11 @@ export function useArtifacts(artifactType: string, envId: string, componentId: s
       const data = await gql<Record<string, GqlArtifact[]>>(`query ArtifactQuery($environmentId: String!, $componentId: String!) { ${mapping.field}(environmentId: $environmentId, componentId: $componentId) { ${mapping.gqlFields} } }`, {
         environmentId: envId,
         componentId,
-      });
+      }).catch(() => ({}) as Record<string, GqlArtifact[]>);
       return data[mapping.field] ?? [];
     },
     enabled: !!artifactType && !!envId && !!componentId && !!mapping && (options?.enabled ?? true),
+    retry: false,
   });
 }
 
@@ -537,6 +562,245 @@ export function useArtifactWsdl(componentId: string, artifactType: string, artif
         runtimeId,
       }).then((d) => d.artifactWsdlByComponent),
     enabled: !!componentId && !!artifactType && !!artifactName && !!envId,
+  });
+}
+
+// ── Component repository & commit history ──
+
+export interface GqlRepository {
+  gitProvider: string;
+  organizationApp: string;
+  nameApp: string;
+  branch: string;
+  appSubPath: string;
+  bitbucketServerUrl?: string;
+  serverUrl?: string;
+  projectApp?: string;
+}
+
+export interface GqlCommit {
+  sha: string;
+  message: string;
+  isLatest: boolean;
+  author: {
+    name: string;
+    date: string;
+    email: string;
+    avatarUrl: string;
+  };
+}
+
+const COMPONENT_REPOSITORY_QUERY = `
+  query GetComponentRepository($projectId: String!, $componentHandler: String!) {
+    component(projectId: $projectId, componentHandler: $componentHandler) {
+      repository {
+        gitProvider, organizationApp, nameApp, branch, appSubPath,
+        bitbucketServerUrl, serverUrl, projectApp
+      }
+    }
+  }`;
+
+export function useComponentRepository(projectId: string, componentHandler: string) {
+  return useQuery({
+    queryKey: ['componentRepository', projectId, componentHandler],
+    queryFn: () => gql<{ component: { repository: GqlRepository } }>(COMPONENT_REPOSITORY_QUERY, { projectId, componentHandler }).then((d) => d.component?.repository ?? null),
+    enabled: !!projectId && !!componentHandler,
+  });
+}
+
+const COMMIT_HISTORY_QUERY = `
+  query GetCommitHistory($componentId: String!, $branch: String!) {
+    commitHistory(componentId: $componentId, branch: $branch) {
+      sha, message, isLatest,
+      author { name, date, email, avatarUrl }
+    }
+  }`;
+
+export function useCommitHistory(componentId: string, branch: string) {
+  return useQuery({
+    queryKey: ['commitHistory', componentId, branch],
+    queryFn: () => gql<{ commitHistory: GqlCommit[] }>(COMMIT_HISTORY_QUERY, { componentId, branch }).then((d) => d.commitHistory ?? []),
+    enabled: !!componentId && !!branch,
+  });
+}
+
+// ── Execution / Schedule configs ──
+
+export interface GqlExecutionConfigs {
+  cronjobFrequency: string;
+  cronjobTimezone: string;
+  cronjobAllowConcurrency?: boolean;
+  timeoutSeconds?: number;
+  retryCount?: number;
+}
+
+const EXECUTION_CONFIGS_QUERY = `
+  query GetExecutionConfigs($componentId: String!, $releaseId: String!) {
+    executionConfigs(componentId: $componentId, releaseId: $releaseId) {
+      cronjobFrequency, cronjobTimezone, cronjobAllowConcurrency, timeoutSeconds, retryCount
+    }
+  }`;
+
+export function useExecutionConfigs(componentId: string, releaseId: string) {
+  return useQuery({
+    queryKey: ['executionConfigs', componentId, releaseId],
+    queryFn: () =>
+      gql<{ executionConfigs: GqlExecutionConfigs }>(EXECUTION_CONFIGS_QUERY, { componentId, releaseId })
+        .then((d) => d.executionConfigs)
+        .catch(() => null),
+    enabled: !!componentId && !!releaseId,
+    retry: false,
+  });
+}
+
+// ── Component Deployment (for real releaseId) ──
+
+export interface GqlComponentDeployment {
+  releaseId: string;
+  cron: string;
+  cronTimezone: string;
+  build?: { buildId: string };
+}
+
+const COMPONENT_DEPLOYMENT_QUERY = `
+  query GetComponentDeployment($orgHandler: String!, $orgUuid: String!, $componentId: String!, $versionId: String!, $environmentId: String!) {
+    componentDeployment(orgHandler: $orgHandler, orgUuid: $orgUuid, componentId: $componentId, versionId: $versionId, environmentId: $environmentId) {
+      releaseId, cron, cronTimezone, build { buildId }
+    }
+  }`;
+
+export function useComponentDeployment(orgHandler: string, orgUuid: string, componentId: string, versionId: string, environmentId: string) {
+  return useQuery({
+    queryKey: ['componentDeployment', orgHandler, componentId, versionId, environmentId],
+    queryFn: () =>
+      gql<{ componentDeployment: GqlComponentDeployment }>(COMPONENT_DEPLOYMENT_QUERY, { orgHandler, orgUuid, componentId, versionId, environmentId })
+        .then((d) => d.componentDeployment)
+        .catch(() => null),
+    enabled: !!orgHandler && !!orgUuid && !!componentId && !!versionId && !!environmentId,
+    retry: false,
+  });
+}
+
+// ── Deployment execution history ──
+
+export interface GqlDeploymentStatus {
+  id: number;
+  sha: string;
+  started_at: string;
+  completed_at: string;
+  status: string;
+  conclusion: string;
+  conclusionV2: string;
+  isAutoDeploy: boolean;
+  name: string;
+  failureReason: number;
+  sourceCommitId: string;
+  buildRef?: string;
+}
+
+const DEPLOYMENT_STATUS_QUERY = `
+  query GetDeploymentStatus($versionId: String!, $componentId: String!) {
+    deploymentStatusByVersion(versionId: $versionId, componentId: $componentId) {
+      id, sha, started_at, completed_at, status, conclusion, conclusionV2, isAutoDeploy, name, failureReason, sourceCommitId, buildRef
+    }
+  }`;
+
+export function useDeploymentStatus(componentId: string, versionId: string) {
+  return useQuery({
+    queryKey: ['deploymentStatus', componentId, versionId],
+    queryFn: () =>
+      gql<{ deploymentStatusByVersion: GqlDeploymentStatus[] }>(DEPLOYMENT_STATUS_QUERY, { versionId, componentId })
+        .then((d) => d.deploymentStatusByVersion ?? [])
+        .catch(() => []),
+    enabled: !!componentId && !!versionId,
+    retry: false,
+    refetchInterval: 15000,
+  });
+}
+
+export interface TaskExecution {
+  id: string;
+  startTime: string;
+  completionTime: string;
+  runId: string;
+  revisionId: string;
+  failedReason: string;
+  status: string;
+}
+
+export function useTaskExecutions(releaseId: string) {
+  const baseUrl = window.API_CONFIG?.systemApisBaseUrl ?? '';
+  return useQuery({
+    queryKey: ['taskExecutions', releaseId, baseUrl],
+    queryFn: async (): Promise<TaskExecution[]> => {
+      if (!baseUrl || !releaseId) return [];
+      const url = `${baseUrl}/systemapis/choreoobsapi/0.3.0/tasks/executions?releaseId=${releaseId}&limit=10&verbose=true`;
+      const res = await authenticatedFetch(url);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!baseUrl && !!releaseId,
+    retry: false,
+    staleTime: 0,
+  });
+}
+
+export function useTaskExecutionCount(releaseId: string) {
+  const baseUrl = window.API_CONFIG?.systemApisBaseUrl ?? '';
+  return useQuery({
+    queryKey: ['taskExecutionCount', releaseId, baseUrl],
+    queryFn: async (): Promise<number | null> => {
+      if (!baseUrl || !releaseId) return null;
+      const to = new Date();
+      const from = new Date(to);
+      from.setDate(to.getDate() - 30);
+      const url = `${baseUrl}/systemapis/choreoobsapi/0.3.0/tasks/executions/count?releaseId=${releaseId}&from=${from.toISOString()}&to=${to.toISOString()}`;
+      const res = await authenticatedFetch(url);
+      if (!res.ok) return null;
+      const data: { count: number } = await res.json();
+      return data.count ?? null;
+    },
+    enabled: !!baseUrl && !!releaseId,
+    retry: false,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  });
+}
+
+// ── Schema-based configurable values ──
+
+export interface SchemaConfigValue {
+  value: string;
+  environmentUuid?: string;
+}
+
+export interface SchemaConfigItem {
+  key: string;
+  values: SchemaConfigValue[];
+  valueType?: string;
+  isRequired?: boolean;
+  isSensitive?: boolean;
+}
+
+export interface SchemaConfigData {
+  jsonSchema?: string; // base64-encoded JSON schema
+  mappingId?: string;
+  configurations: SchemaConfigItem[];
+}
+
+export function useSchemaConfig(projectId: string, componentId: string, envId: string, deploymentTrackId: string, commitHash?: string) {
+  return useQuery({
+    queryKey: ['schemaConfig', projectId, componentId, envId, deploymentTrackId, commitHash],
+    queryFn: async (): Promise<SchemaConfigData | null> => {
+      const base = new URL(window.API_CONFIG.graphqlUrl).origin;
+      const qs = commitHash ? `?commitHash=${encodeURIComponent(commitHash)}` : '';
+      const url = `${base}/configuration-schema/v1.0/projects/${projectId}/components/${componentId}/env-template/${envId}/deployment-track/${deploymentTrackId}/configurations${qs}`;
+      const res = await authenticatedFetch(url);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!projectId && !!componentId && !!envId && !!deploymentTrackId && !!commitHash,
+    retry: false,
   });
 }
 
