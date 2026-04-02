@@ -27,7 +27,8 @@ import { useProject, useProjectByHandler, useComponents, type GqlComponent } fro
 import { useDeleteComponent } from '../api/mutations';
 import NotFound from '../components/NotFound';
 import { formatDistanceToNow } from '../utils/time';
-import { resourceUrl, narrow, broaden, newComponentUrl, type ProjectScope } from '../nav';
+import { resourceUrl, broaden, newComponentUrl, type ProjectScope } from '../nav';
+import { componentOverviewUrl } from '../paths';
 import { Permissions } from '../constants/permissions';
 import Authorized from '../components/Authorized';
 import { useLoadProjectPermissions } from '../hooks/usePermissionLoader';
@@ -203,6 +204,7 @@ function IntegrationsTable({
           }}
           rowsPerPageOptions={[10, 20, 50]}
           sx={{ mt: 1 }}
+          SelectProps={{ inputProps: { 'aria-label': 'rows per page' } }}
         />
       )}
 
@@ -256,7 +258,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
             onRefresh={refetchComponents}
             scope={scope}
             projectId={projectId}
-            onSelect={(handler) => navigate(resourceUrl(narrow(scope, handler), 'overview'))}
+            onSelect={(handler) => navigate(componentOverviewUrl(scope.org, projectId, handler))}
           />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>

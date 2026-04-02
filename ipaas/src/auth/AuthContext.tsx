@@ -21,7 +21,7 @@ import type { JSX, ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { loginApiUrl, loginUrl } from '../paths';
-import { saveTokens, clearTokens, getAccessToken, revokeToken, setOnAuthFailure, generateAndSaveOIDCState, generatePKCE, saveCodeVerifier, getAndClearCodeVerifier } from './tokenManager';
+import { saveTokens, clearTokens, getAccessToken, revokeToken, setOnAuthFailure, generateAndSaveOIDCState, generatePKCE, saveCodeVerifier, getAndClearCodeVerifier, saveAsgardeoToken, getAsgardeoToken, getOrRefreshAsgardeoToken } from './tokenManager';
 
 const USER_KEY = 'icp_user';
 
@@ -76,6 +76,16 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       navigate(loginUrl());
     });
   }, [navigate, queryClient]);
+
+  // Bootstrap the Asgardeo token for existing sessions that pre-date saveAsgardeoToken.
+  // Runs once on mount; no-ops if already cached or if not an OIDC session.
+  useEffect(() => {
+    if (isAuthenticated && !getAsgardeoToken()) {
+      getOrRefreshAsgardeoToken().catch(() => {
+        /* best-effort */
+      });
+    }
+  }, [isAuthenticated]);
 
   const login = useCallback(async (username: string, password: string) => {
     const res = await fetch(loginApiUrl(), {
@@ -148,6 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     const tokenData: { access_token: string; id_token?: string; refresh_token?: string; expires_in?: number } = await tokenRes.json();
 
     const asgardeoToken = tokenData.access_token;
+    saveAsgardeoToken(asgardeoToken);
     let finalToken = asgardeoToken;
     let finalExpiresIn = tokenData.expires_in ?? 3600;
 
@@ -193,6 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
             const h = org.handle ?? org.orgHandle ?? org.org_handle;
             if (h) {
               orgHandle = h;
+              localStorage.setItem('icp_org_handle', h);
               const numericId = org.id ?? org.orgId;
               if (numericId) {
                 const parsedId = typeof numericId === 'string' ? parseInt(numericId, 10) : numericId;

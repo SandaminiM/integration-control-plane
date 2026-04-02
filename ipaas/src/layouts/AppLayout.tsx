@@ -56,7 +56,7 @@ import { fetchOrgPermissions } from '../api/auth';
 import { authenticatedFetch, switchOrgToken } from '../auth/tokenManager';
 import { mockNotifications } from '../mock-data/mockNotifications';
 import { useScope, useResource, resourceUrl, broaden, narrow, newProjectUrl, newComponentUrl, sidebarItems, hasProject, hasComponent, type Resource } from '../nav';
-import { cookiePolicyUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, projectHomeUrl } from '../paths';
+import { componentOverviewUrl, cookiePolicyUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, projectHomeUrl } from '../paths';
 import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions';
@@ -259,7 +259,7 @@ export default function AppLayout(): JSX.Element {
                 size="small"
                 sx={{ minWidth: 180 }}
                 IconComponent={({ ownerState: _ownerState, ...props }) => (
-                  <span {...props} style={{ position: 'absolute', top: 'auto', bottom: '0', right: '6px', display: 'flex', pointerEvents: 'none' }}>
+                  <span {...props} aria-hidden="true" style={{ position: 'absolute', top: 'auto', bottom: '0', right: '6px', display: 'flex', pointerEvents: 'none' }}>
                     <ChevronDown size={18} />
                   </span>
                 )}
@@ -441,6 +441,7 @@ export default function AppLayout(): JSX.Element {
                         {...props}
                         role="button"
                         tabIndex={0}
+                        aria-label="Change project"
                         style={{ position: 'absolute', top: 'auto', bottom: '0', right: '6px', display: 'flex', pointerEvents: 'all', cursor: 'pointer' }}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -561,8 +562,8 @@ export default function AppLayout(): JSX.Element {
                             setComponentMenuAnchor(null);
                             setComponentSearch('');
                             const newScope = narrow({ level: 'projects', org: scope.org, project: scope.project }, c.handler);
-                            const target = resource ?? 'overview';
-                            navigate(resourceUrl(newScope, canAccessResource(newScope, target, projectId, c.id)));
+                            const resolvedTarget = canAccessResource(newScope, resource ?? 'overview', projectId, c.id);
+                            navigate(resolvedTarget === 'overview' ? componentOverviewUrl(scope.org, scope.project, c.handler) : resourceUrl(newScope, resolvedTarget));
                           }}>
                           {c.displayName}
                         </MenuItem>
@@ -596,6 +597,7 @@ export default function AppLayout(): JSX.Element {
                       {...props}
                       role="button"
                       tabIndex={0}
+                      aria-label="Change integration"
                       style={{ position: 'absolute', top: 'auto', bottom: '0', right: '6px', display: 'flex', pointerEvents: 'all', cursor: 'pointer' }}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -616,6 +618,12 @@ export default function AppLayout(): JSX.Element {
                   SelectDisplayProps={{ 'aria-label': 'Select integration' }}
                   renderValue={() => <ComplexSelect.MenuItem.Text primary={getComponentDisplayName()} secondary="Integration" />}
                   label="Integrations">
+                  {/* Fallback keeps the value valid while components are loading */}
+                  {!components.some((c) => c.handler === scope.component) && (
+                    <ComplexSelect.MenuItem key="__current" value={scope.component} sx={{ display: 'none' }}>
+                      <ComplexSelect.MenuItem.Text primary="" secondary="" />
+                    </ComplexSelect.MenuItem>
+                  )}
                   {components.map((c) => (
                     <ComplexSelect.MenuItem key={c.id} value={c.handler}>
                       <ComplexSelect.MenuItem.Text primary={c.displayName} secondary={c.displayType} />

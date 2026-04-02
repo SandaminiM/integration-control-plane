@@ -16,21 +16,33 @@
  * under the License.
  */
 
-import { Avatar, Box, CircularProgress, PageContent, Stack, Typography } from '@wso2/oxygen-ui';
-import { useState, type JSX } from 'react';
-import { useProjectByHandler, useComponentByHandler, useEnvironments } from '../api/queries';
+import { Box, CircularProgress, Divider, PageContent } from '@wso2/oxygen-ui';
+import { Fragment, useState, type JSX } from 'react';
+import { useProject, useProjectByHandler, useComponentByHandler, useEnvironments, useComponentRepository, useCommitHistory } from '../api/queries';
 import NotFound from '../components/NotFound';
 import { ArtifactDetail } from '../components/ArtifactDetail';
-import Environment from '../components/EntryPoints';
+import Environment from '../components/EnvironmentCard';
+import PromoteButton from '../components/EnvironmentCard/PromoteButton';
+import ComponentHeader from '../components/ComponentHeader';
 import type { SelectedArtifact } from '../components/artifact-config';
 import { resourceUrl, broaden, type ComponentScope } from '../nav';
 import { useLoadComponentPermissions } from '../hooks/usePermissionLoader';
+import BuildCard from '../components/BuildCard';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default function Component(scope: ComponentScope): JSX.Element {
-  const { data: project, isLoading: loadingProject } = useProjectByHandler(scope.project);
+  // Support both UUID and handler in the URL — only one query will be enabled at a time
+  const isUuid = UUID_RE.test(scope.project);
+  const { data: projectByHandler, isLoading: loadingByHandler } = useProjectByHandler(scope.project);
+  const { data: projectById, isLoading: loadingById } = useProject(isUuid ? scope.project : '');
+  const project = projectByHandler ?? projectById;
+  const loadingProject = isUuid ? loadingById : loadingByHandler;
   const projectId = project?.id ?? '';
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
   const { data: environments = [] } = useEnvironments(scope.org, projectId);
+  const { data: repository } = useComponentRepository(projectId, scope.component);
+  const { data: commits = [] } = useCommitHistory(component?.id ?? '', repository?.branch ?? '');
   const [selectedArtifact, setSelectedArtifact] = useState<SelectedArtifact | null>(null);
 
   // Load component permissions using the UUID - only when component is loaded
@@ -45,6 +57,9 @@ export default function Component(scope: ComponentScope): JSX.Element {
     );
   if (!component) return <NotFound message="Component not found" backTo={resourceUrl(broaden(scope)!, 'overview')} backLabel="Back to Project" />;
 
+  const displayType = component.displayType ?? '';
+  const latestCommit = commits.find((c) => c.isLatest) ?? commits[0] ?? null;
+
   return (
     <>
       <style>
@@ -57,25 +72,44 @@ export default function Component(scope: ComponentScope): JSX.Element {
       </style>
       <Box sx={{ position: 'relative', overflow: 'hidden', flex: 1 }}>
         <PageContent>
-          <Stack component="header" direction="row" alignItems="center" gap={2} sx={{ mb: 1 }}>
-            <Avatar sx={{ width: 56, height: 56, fontSize: 24, bgcolor: 'text.primary', color: 'background.paper' }}>{component.displayName?.[0]?.toUpperCase() ?? 'C'}</Avatar>
-            <Typography variant="h1">{component.displayName ?? scope.component}</Typography>
-          </Stack>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 4, ml: 9 }}>
-            {component.description || '+ Add Description'}
-          </Typography>
-          {environments.map((env) => (
-            <Environment
-              key={env.id}
-              env={env}
-              componentId={component.id}
-              projectId={projectId}
-              componentType={component.componentType}
-              componentHandler={component.handler}
-              projectHandler={project?.handler ?? ''}
-              onSelectArtifact={(a, type, envId) => setSelectedArtifact({ artifact: a, artifactType: type, envId, componentId: component.id, projectId })}
-              onOpenDrawerForTab={(a, type, envId, tab) => setSelectedArtifact({ artifact: a, artifactType: type, envId, componentId: component.id, projectId, initialTab: tab })}
-            />
+          {/* Component header */}
+          <ComponentHeader component={component} project={project} repository={repository} latestCommit={latestCommit} orgHandler={scope.org} projectId={projectId} />
+
+          {/* Latest build card */}
+          <BuildCard componentId={component.id} versionId={component.deploymentTracks?.[0]?.id ?? ''} orgHandler={scope.org} projectId={projectId} latestCommit={latestCommit} />
+
+          <Divider sx={{ mb: 3 }} />
+
+          {/* Environment cards with Promote between them */}
+          {environments.map((env, index) => (
+            <Fragment key={env.id}>
+              <Environment
+                env={env}
+                componentId={component.id}
+                projectId={projectId}
+                componentType={component.componentType ?? ''}
+                displayType={displayType}
+                componentHandler={component.handler}
+                projectHandler={project?.handler ?? ''}
+                orgHandler={scope.org}
+                versionId={component.deploymentTracks?.[0]?.id ?? ''}
+                deploymentPipelineId={project?.defaultDeploymentPipelineId ?? ''}
+                latestCommit={latestCommit}
+                apiId={component.apiId}
+              />
+              {index < environments.length - 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                  <PromoteButton
+                    orgHandler={scope.org}
+                    componentId={component.id}
+                    versionId={component.deploymentTracks?.[0]?.id ?? ''}
+                    deploymentPipelineId={project?.defaultDeploymentPipelineId ?? ''}
+                    sourceEnvId={env.id}
+                    targetEnvId={environments[index + 1].id}
+                  />
+                </Box>
+              )}
+            </Fragment>
           ))}
         </PageContent>
         <ArtifactDetail selected={selectedArtifact} onClose={() => setSelectedArtifact(null)} />
