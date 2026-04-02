@@ -76,8 +76,8 @@ export default function AlertsConfigurePage(props: AlertsConfigurePageProps): JS
   const { data: alertRulesResponse, isFetching: isAlertRulesFetching } = useGetAlertRules(alertingBaseUrl, componentId, selectedEnvironment?.id ?? '');
   const { data: alertRulesCountUsage, isFetching: isAlertRulesCountFetching } = useGetAlertRulesCount(alertingBaseUrl, componentId, selectedEnvironment?.id ?? '');
 
-  const { deleteAlertRuleMutation } = useDeleteAlertRule(alertingBaseUrl);
-  const { updateAlertRuleMutation } = useUpdateAlertRule(alertingBaseUrl);
+  const { deleteAlertRuleMutation, isDeleteAlertRuleLoading } = useDeleteAlertRule(alertingBaseUrl);
+  const { updateAlertRuleMutation, isUpdateAlertRuleLoading } = useUpdateAlertRule(alertingBaseUrl);
 
   const tabItems = useMemo(() => getAlertTypesTabItems(), []);
 
@@ -123,23 +123,25 @@ export default function AlertsConfigurePage(props: AlertsConfigurePageProps): JS
   const handleConfirmDialog = async (type: 'delete' | 'toggle', rule: AlertRule | undefined) => {
     if (!rule) return;
     if (type === 'delete') {
-      setIsDeleteAlertRule(false);
       try {
         await deleteAlertRuleMutation(rule);
         handleNotify('Alert rule deleted successfully', 'success');
       } catch {
         handleNotify('Failed to delete alert rule', 'error');
+      } finally {
+        setIsDeleteAlertRule(false);
+        setSelectedAlertRule(undefined);
       }
-      setSelectedAlertRule(undefined);
     } else {
-      setIsToggleAlertRule(false);
       try {
         await updateAlertRuleMutation(rule);
         handleNotify('Alert rule updated successfully', 'success');
       } catch {
         handleNotify('Failed to update alert rule', 'error');
+      } finally {
+        setIsToggleAlertRule(false);
+        setSelectedAlertRule(undefined);
       }
-      setSelectedAlertRule(undefined);
     }
   };
 
@@ -163,10 +165,10 @@ export default function AlertsConfigurePage(props: AlertsConfigurePageProps): JS
           {snackbar.message}
         </Alert>
       </Snackbar>
-      <AlertRuleDeleteDialog isOpen={isDeleteAlertRule} isLoading={false} alertType={selectedAlertRule?.type} handleClose={() => handleCloseDialog('delete')} handleConfirm={() => handleConfirmDialog('delete', selectedAlertRule)} />
+      <AlertRuleDeleteDialog isOpen={isDeleteAlertRule} isLoading={isDeleteAlertRuleLoading} alertType={selectedAlertRule?.type} handleClose={() => handleCloseDialog('delete')} handleConfirm={() => handleConfirmDialog('delete', selectedAlertRule)} />
       <AlertRuleToggleDialog
         isOpen={isToggleAlertRule}
-        isLoading={false}
+        isLoading={isUpdateAlertRuleLoading}
         alertType={selectedAlertRule?.type}
         isEnabled={selectedAlertRule?.enabled}
         handleClose={() => handleCloseDialog('toggle')}
