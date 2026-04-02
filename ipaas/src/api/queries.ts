@@ -192,9 +192,18 @@ export function useComponents(orgHandler: string, projectId: string) {
   });
 }
 
+export interface GqlApiVersion {
+  id: string;
+  apiVersion: string;
+  branch: string;
+  latest: boolean;
+  accessibility?: string;
+}
+
 export interface GqlComponentDetail extends GqlComponent {
   orgHandler: string;
   deploymentTracks?: { id: string }[];
+  apiVersions?: GqlApiVersion[];
 }
 
 const COMPONENT_BY_HANDLER_QUERY = `
@@ -204,6 +213,7 @@ const COMPONENT_BY_HANDLER_QUERY = `
       description, status, componentSubType,
       version, createdAt, lastBuildDate, orgHandler, labels, apiId,
       deploymentTracks { id }
+      apiVersions { id, apiVersion, branch, latest, accessibility }
     }
   }`;
 

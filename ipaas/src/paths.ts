@@ -149,7 +149,7 @@ export function orgAnalyticsLogsUrl(orgHandler: string): string {
 // Route segments
 // ---------------------------------------------------------------------------
 
-export const loggersSegment = 'loggers';
+export const alertsSegment = 'alerts';
 
 // ---------------------------------------------------------------------------
 // External links
