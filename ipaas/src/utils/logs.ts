@@ -36,8 +36,8 @@ export const DEFAULT_DP_REGION = 'US';
 
 export const LEVEL_COLORS: Record<string, { bg: string; text: string }> = {
   ERROR: { bg: '#ffebee', text: '#b71c1c' },
-  WARN:  { bg: '#fff3e0', text: '#e65100' },
-  INFO:  { bg: '#e3f2fd', text: '#0d47a1' },
+  WARN: { bg: '#fff3e0', text: '#e65100' },
+  INFO: { bg: '#e3f2fd', text: '#0d47a1' },
   DEBUG: { bg: '#eceff1', text: '#37474f' },
 };
 

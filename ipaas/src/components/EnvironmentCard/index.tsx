@@ -49,6 +49,7 @@ export default function Environment({ env, componentId, projectId, componentType
   const [configureOpen, setConfigureOpen] = useState(false);
   const [notification, setNotification] = useState<{ text: string; severity: 'success' | 'error' } | null>(null);
   const [pendingTriggerTime, setPendingTriggerTime] = useState<number | null>(null);
+  const [pendingTriggerArgs, setPendingTriggerArgs] = useState<string[] | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [runWithArgsOpen, setRunWithArgsOpen] = useState(false);
   const trigger = useTriggerComponent();
@@ -195,15 +196,27 @@ export default function Environment({ env, componentId, projectId, componentType
           hasDeployment={!!envDeployment}
           scheduleDescription={scheduleDescription}
           releaseId={envReleaseId}
+          projectId={projectId}
+          componentId={componentId}
+          deploymentTrackId={versionId}
+          environmentId={env.id}
           orgHandler={orgHandler}
           projectHandler={projectHandler}
           componentHandler={componentHandler}
           envCritical={env.critical ?? false}
           pendingTriggerTime={pendingTriggerTime}
-          onTriggerResolved={() => setPendingTriggerTime(null)}
+          pendingTriggerArgs={pendingTriggerArgs}
+          onTriggerResolved={() => {
+            setPendingTriggerTime(null);
+            setPendingTriggerArgs(null);
+          }}
+          onRunSuccess={() => {
+            setNotification({ text: 'Execution triggered successfully', severity: 'success' });
+            setPendingTriggerTime(Date.now());
+            queryClient.invalidateQueries({ queryKey: ['taskExecutions'] });
+          }}
           envId={env.id}
           envName={env.name}
-          projectId={projectId}
           apiId={apiId ?? componentId}
           notification={notification}
         />
@@ -212,9 +225,10 @@ export default function Environment({ env, componentId, projectId, componentType
       <RunWithArgsDialog
         open={runWithArgsOpen}
         onClose={() => setRunWithArgsOpen(false)}
-        onRunSuccess={() => {
+        onRunSuccess={(args) => {
           setNotification({ text: 'Execution triggered successfully', severity: 'success' });
           setPendingTriggerTime(Date.now());
+          setPendingTriggerArgs(args.length > 0 ? args : null);
           queryClient.invalidateQueries({ queryKey: ['taskExecutions'] });
         }}
         envCritical={env.critical}

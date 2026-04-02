@@ -38,6 +38,10 @@ interface ScheduleDialogProps {
 }
 
 export default function ScheduleDialog({ open, onClose, onSaveSuccess, onSaveError, envId, envName: _envName, componentId, orgHandler, versionId, deploymentPipelineId }: ScheduleDialogProps) {
+  const handleClose = () => {
+    (document.activeElement as HTMLElement)?.blur();
+    onClose();
+  };
   const [tab, setTab] = useState(0);
   const [intervalCount, setIntervalCount] = useState(1);
   const [intervalUnit, setIntervalUnit] = useState<IntervalUnit>('Minute');
@@ -131,12 +135,12 @@ export default function ScheduleDialog({ open, onClose, onSaveSuccess, onSaveErr
   };
 
   return (
-    <Drawer anchor="right" open={open} onClose={onClose} variant="temporary" sx={drawerSx}>
+    <Drawer anchor="right" open={open} onClose={handleClose} variant="temporary" sx={drawerSx}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
           Schedule
         </Typography>
-        <IconButton size="small" aria-label="close" onClick={onClose}>
+        <IconButton size="small" aria-label="close" onClick={handleClose}>
           <X size={16} />
         </IconButton>
       </Stack>
@@ -258,7 +262,7 @@ export default function ScheduleDialog({ open, onClose, onSaveSuccess, onSaveErr
 
       <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
         <Button onClick={onClose}>Back</Button>
-        <Button variant="contained" onClick={handleSave} disabled={deployTrack.isPending || !deployment?.build?.buildId}>
+        <Button variant="contained" onClick={handleSave} disabled={deployTrack.isPending || !deployment?.build?.buildId} startIcon={deployTrack.isPending ? <CircularProgress color="inherit" size={16} /> : undefined}>
           {deployTrack.isPending ? 'Updating…' : 'Update'}
         </Button>
       </Stack>

@@ -190,6 +190,10 @@ export interface ConfigureDrawerProps {
 }
 
 export default function ConfigureDrawer({ open, onClose, projectId, componentId, envId, deploymentTrackId, commitHash }: ConfigureDrawerProps) {
+  const handleClose = () => {
+    (document.activeElement as HTMLElement)?.blur();
+    onClose();
+  };
   const { data, isLoading, isError } = useSchemaConfig(projectId, componentId, envId, deploymentTrackId, commitHash);
   const save = useSaveSchemaConfig();
   const [values, setValues] = useState<Record<string, string>>({});
@@ -276,12 +280,12 @@ export default function ConfigureDrawer({ open, onClose, projectId, componentId,
   const hasRequiredMissing = requiredFields.some((f) => !values[f.key]);
 
   return (
-    <Drawer anchor="right" open={open} onClose={onClose} variant="temporary" sx={drawerSx}>
+    <Drawer anchor="right" open={open} onClose={handleClose} variant="temporary" sx={drawerSx}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
           Configurations
         </Typography>
-        <IconButton size="small" aria-label="close" onClick={onClose}>
+        <IconButton size="small" aria-label="close" onClick={handleClose}>
           <X size={16} />
         </IconButton>
       </Stack>
@@ -291,7 +295,7 @@ export default function ConfigureDrawer({ open, onClose, projectId, componentId,
       {hasSchema && (
         <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
           <Button onClick={onClose}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave} disabled={save.isPending || hasRequiredMissing}>
+          <Button variant="contained" onClick={handleSave} disabled={save.isPending || hasRequiredMissing} startIcon={save.isPending ? <CircularProgress color="inherit" size={16} /> : undefined}>
             {save.isPending ? 'Saving…' : 'Update'}
           </Button>
         </Stack>

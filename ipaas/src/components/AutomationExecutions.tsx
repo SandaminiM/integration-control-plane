@@ -19,19 +19,25 @@
 import { Button, CircularProgress, IconButton, ListingTable, TablePagination, Typography } from '@wso2/oxygen-ui';
 import { CheckCircle2, ChevronRight, XCircle } from '@wso2/oxygen-ui-icons-react';
 import { Fragment, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTaskExecutions, type TaskExecution } from '../api/queries';
 import ExecutionDrawer from './EnvironmentCard/ExecutionDrawer';
+import LogsDrawer from './EnvironmentCard/LogsDrawer';
 
 interface AutomationExecutionsProps {
   releaseId: string;
+  projectId: string;
+  componentId: string;
+  deploymentTrackId: string;
+  environmentId: string;
   orgHandler: string;
   projectHandler: string;
   componentHandler: string;
   envCritical: boolean;
   pendingTriggerTime?: number | null;
+  pendingTriggerArgs?: string[] | null;
   onTriggerResolved?: () => void;
+  onRunSuccess?: () => void;
 }
 
 const QUEUED_SENTINEL = '__queued__';
@@ -80,12 +86,26 @@ const QUEUED_EXECUTION: TaskExecution = {
   status: 'Queued',
 };
 
-export default function AutomationExecutions({ releaseId, orgHandler, projectHandler, componentHandler, envCritical, pendingTriggerTime, onTriggerResolved }: AutomationExecutionsProps) {
-  const navigate = useNavigate();
+export default function AutomationExecutions({
+  releaseId,
+  projectId,
+  componentId,
+  deploymentTrackId,
+  environmentId,
+  orgHandler,
+  projectHandler,
+  componentHandler,
+  envCritical,
+  pendingTriggerTime,
+  pendingTriggerArgs: _pendingTriggerArgs,
+  onTriggerResolved,
+  onRunSuccess,
+}: AutomationExecutionsProps) {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [selectedExecution, setSelectedExecution] = useState<TaskExecution | null>(null);
+  const [logsExecution, setLogsExecution] = useState<TaskExecution | null>(null);
 
   const { data: executions = [], isLoading } = useTaskExecutions(releaseId);
 
@@ -143,8 +163,6 @@ export default function AutomationExecutions({ releaseId, orgHandler, projectHan
   const safePage = Math.min(page, maxPage);
   const paged = allExecutions.slice(safePage * rowsPerPage, safePage * rowsPerPage + rowsPerPage);
 
-  const logsUrl = `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/logs`;
-
   if (isLoading) {
     return <CircularProgress size={24} sx={{ display: 'block', mx: 'auto', py: 4 }} />;
   }
@@ -196,7 +214,7 @@ export default function AutomationExecutions({ releaseId, orgHandler, projectHan
                         --
                       </Typography>
                     ) : (
-                      <Button variant="text" size="small" onClick={() => navigate(logsUrl)}>
+                      <Button variant="text" size="small" onClick={() => setLogsExecution(e)}>
                         View Logs
                       </Button>
                     )}
@@ -228,7 +246,22 @@ export default function AutomationExecutions({ releaseId, orgHandler, projectHan
         />
       </ListingTable.Container>
 
-      <ExecutionDrawer open={!!selectedExecution} execution={selectedExecution} onClose={() => setSelectedExecution(null)} orgHandler={orgHandler} projectHandler={projectHandler} componentHandler={componentHandler} />
+      <ExecutionDrawer
+        open={!!selectedExecution}
+        execution={selectedExecution}
+        onClose={() => setSelectedExecution(null)}
+        onRunSuccess={onRunSuccess}
+        orgHandler={orgHandler}
+        projectHandler={projectHandler}
+        componentHandler={componentHandler}
+        projectId={projectId}
+        componentId={componentId}
+        releaseId={releaseId}
+        deploymentTrackId={deploymentTrackId}
+        environmentId={environmentId}
+      />
+
+      <LogsDrawer open={!!logsExecution} onClose={() => setLogsExecution(null)} executionId={logsExecution?.id ?? ''} componentId={componentId} deploymentTrackId={deploymentTrackId} environmentId={environmentId} />
     </Fragment>
   );
 }

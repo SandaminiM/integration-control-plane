@@ -139,13 +139,7 @@ export function nextCronRunMs(cron: string): number | null {
   const limit = new Date(candidate.getTime() + 366 * 24 * 60 * 60 * 1000);
 
   while (candidate <= limit) {
-    if (
-      validMonths.has(candidate.getMonth() + 1) &&
-      validDoms.has(candidate.getDate()) &&
-      validDows.has(candidate.getDay()) &&
-      validHours.has(candidate.getHours()) &&
-      validMins.has(candidate.getMinutes())
-    ) {
+    if (validMonths.has(candidate.getMonth() + 1) && validDoms.has(candidate.getDate()) && validDows.has(candidate.getDay()) && validHours.has(candidate.getHours()) && validMins.has(candidate.getMinutes())) {
       return candidate.getTime();
     }
     candidate.setMinutes(candidate.getMinutes() + 1);

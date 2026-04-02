@@ -744,6 +744,62 @@ export function useTaskExecutions(releaseId: string) {
   });
 }
 
+const EXECUTION_ARGUMENTS_QUERY = `
+  query GetExecutionArguments($id: String!, $componentId: String!, $releaseId: String!) {
+    execution(input: { id: $id, componentId: $componentId, releaseId: $releaseId }) {
+      arguments {
+        argumentName
+        argumentValue
+      }
+    }
+  }`;
+
+interface ExecutionArgument {
+  argumentName: string;
+  argumentValue: string;
+}
+
+export function useExecutionArguments(runId: string, componentId: string, releaseId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['executionArguments', runId, componentId, releaseId],
+    queryFn: () =>
+      gql<{ execution: { arguments: ExecutionArgument[] } }>(EXECUTION_ARGUMENTS_QUERY, { id: runId, componentId, releaseId })
+        .then((d) => d.execution?.arguments ?? [])
+        .catch(() => []),
+    enabled: enabled && !!runId && !!componentId && !!releaseId,
+    retry: false,
+    staleTime: 60000,
+  });
+}
+
+export interface ExecutionLogEntry {
+  timestamp: string;
+  message: string;
+}
+
+export function useExecutionLogs(componentId: string, deploymentTrackId: string, executionId: string, environmentId: string, enabled: boolean) {
+  const baseUrl = window.API_CONFIG?.systemApisBaseUrl ?? '';
+  return useQuery({
+    queryKey: ['executionLogs', componentId, deploymentTrackId, executionId, environmentId, baseUrl],
+    queryFn: async (): Promise<ExecutionLogEntry[]> => {
+      if (!baseUrl || !componentId || !deploymentTrackId || !executionId || !environmentId) return [];
+      const url = `${baseUrl}/systemapis/choreologgingapi/0.2.0/components/${componentId}/deployment-tracks/${deploymentTrackId}/executions/${executionId}/logs?environmentId=${environmentId}&offset=0&limit=10000`;
+      const res = await authenticatedFetch(url);
+      if (!res.ok) return [];
+      const data: { columns: { name: string }[]; rows: string[][] } = await res.json();
+      const logIdx = data.columns?.findIndex((c) => c.name === 'LogEntry') ?? -1;
+      const timeIdx = data.columns?.findIndex((c) => c.name === 'TimeGenerated') ?? -1;
+      return (data.rows ?? []).map((row) => ({
+        timestamp: timeIdx >= 0 ? row[timeIdx] : '',
+        message: logIdx >= 0 ? row[logIdx] : (row[0] ?? ''),
+      }));
+    },
+    enabled: enabled && !!baseUrl && !!componentId && !!deploymentTrackId && !!executionId && !!environmentId,
+    retry: false,
+    staleTime: 30000,
+  });
+}
+
 export function useTaskExecutionCount(releaseId: string) {
   const baseUrl = window.API_CONFIG?.systemApisBaseUrl ?? '';
   return useQuery({

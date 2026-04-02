@@ -27,15 +27,20 @@ interface EnvironmentCardBodyProps {
   hasDeployment: boolean;
   scheduleDescription: string | null;
   releaseId: string;
+  projectId: string;
+  componentId: string;
+  deploymentTrackId: string;
+  environmentId: string;
   orgHandler: string;
   projectHandler: string;
   componentHandler: string;
   envCritical: boolean;
   pendingTriggerTime: number | null;
+  pendingTriggerArgs?: string[] | null;
   onTriggerResolved: () => void;
+  onRunSuccess?: () => void;
   envId?: string;
   envName?: string;
-  projectId?: string;
   apiId?: string;
   notification?: { text: string; severity: 'success' | 'error' } | null;
 }
@@ -46,15 +51,20 @@ export default function EnvironmentCardBody({
   hasDeployment,
   scheduleDescription,
   releaseId,
+  projectId,
+  componentId,
+  deploymentTrackId,
+  environmentId,
   orgHandler,
   projectHandler,
   componentHandler,
   envCritical,
   pendingTriggerTime,
+  pendingTriggerArgs,
   onTriggerResolved,
+  onRunSuccess,
   envId,
   envName,
-  projectId,
   apiId,
   notification,
 }: EnvironmentCardBodyProps) {
@@ -78,7 +88,21 @@ export default function EnvironmentCardBody({
         )
       )}
       {isAutomation && !loadingEnvDeployment && hasDeployment && (
-        <AutomationExecutions releaseId={releaseId} orgHandler={orgHandler} projectHandler={projectHandler} componentHandler={componentHandler} envCritical={envCritical} pendingTriggerTime={pendingTriggerTime} onTriggerResolved={onTriggerResolved} />
+        <AutomationExecutions
+          releaseId={releaseId}
+          projectId={projectId}
+          componentId={componentId}
+          deploymentTrackId={deploymentTrackId}
+          environmentId={environmentId}
+          orgHandler={orgHandler}
+          projectHandler={projectHandler}
+          componentHandler={componentHandler}
+          envCritical={envCritical}
+          pendingTriggerTime={pendingTriggerTime}
+          pendingTriggerArgs={pendingTriggerArgs}
+          onTriggerResolved={onTriggerResolved}
+          onRunSuccess={onRunSuccess}
+        />
       )}
       {isAutomation && !loadingEnvDeployment && !hasDeployment && (
         <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>

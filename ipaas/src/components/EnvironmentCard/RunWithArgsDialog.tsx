@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Drawer, IconButton, Link, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, Drawer, IconButton, Link, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { Plus, Trash2, X } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
 import { useTriggerComponent } from '../../api/mutations';
@@ -24,7 +24,7 @@ import { useTriggerComponent } from '../../api/mutations';
 export interface RunWithArgsDialogProps {
   open: boolean;
   onClose: () => void;
-  onRunSuccess?: () => void;
+  onRunSuccess?: (args: string[]) => void;
   envCritical?: boolean | null;
   orgHandler: string;
   projectId: string;
@@ -53,8 +53,9 @@ export default function RunWithArgsDialog({ open, onClose, onRunSuccess, orgHand
       { orgHandler, projectId, componentId, releaseId, args: execArgs },
       {
         onSuccess: () => {
+          const resolvedArgs = args.filter((a) => a.trim() !== '');
           handleClose();
-          onRunSuccess?.();
+          onRunSuccess?.(resolvedArgs);
         },
         onError: (err) => setRunError(err instanceof Error ? err.message : 'Failed to execute'),
       },
@@ -62,6 +63,7 @@ export default function RunWithArgsDialog({ open, onClose, onRunSuccess, orgHand
   };
 
   const handleClose = () => {
+    (document.activeElement as HTMLElement)?.blur();
     setArgs(['']);
     setRunError(null);
     onClose();
@@ -94,7 +96,7 @@ export default function RunWithArgsDialog({ open, onClose, onRunSuccess, orgHand
       </Stack>
 
       <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>
-        <Alert severity="info" sx={{ mb: 2 }}>
+        <Alert severity="info" variant="outlined" sx={{ mb: 2 }}>
           <Typography variant="body2">
             To learn more about runtime arguments, see the{' '}
             <Link href="https://wso2.com/ballerina/icp/docs/" target="_blank" rel="noopener noreferrer" variant="body2">
@@ -140,7 +142,7 @@ export default function RunWithArgsDialog({ open, onClose, onRunSuccess, orgHand
 
       <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
         <Button onClick={handleClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleRun} disabled={trigger.isPending || !releaseId}>
+        <Button variant="contained" onClick={handleRun} disabled={trigger.isPending || !releaseId} startIcon={trigger.isPending ? <CircularProgress color="inherit" size={16} /> : undefined}>
           {trigger.isPending ? 'Executing…' : 'Execute'}
         </Button>
       </Stack>
