@@ -35,13 +35,9 @@ export async function gql<T>(query: string, variables?: Record<string, unknown>)
     if (tokenIsUnscoped) {
       const { refreshAccessToken } = await import('../auth/tokenManager');
       await refreshAccessToken();
-      const { getAccessToken } = await import('../auth/tokenManager');
-      const token = getAccessToken();
-      const headers = new Headers({ 'Content-Type': 'application/json' });
-      if (token) headers.set('Authorization', `Bearer ${token}`);
-      res = await fetch(window.API_CONFIG.graphqlUrl, {
+      res = await authenticatedFetch(window.API_CONFIG.graphqlUrl, {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, variables }),
       });
     }

@@ -58,7 +58,8 @@ export function intervalToCron(count: number, unit: IntervalUnit): string {
     case 'Day':
       return `0 0 */${n} * *`;
     case 'Week':
-      return `0 0 * * ${n % 7}`;
+      // 5-field cron has no weekly step; encode as a multiple of 7 days
+      return `0 0 */${n * 7} * *`;
     case 'Month':
       return `0 0 1 */${n} *`;
   }
@@ -75,10 +76,9 @@ export function cronToInterval(cron: string): { count: number; unit: IntervalUni
     return { count: parseInt(hour.slice(2), 10) || 1, unit: 'Hour' };
   }
   if (min === '0' && hour === '0' && dom.startsWith('*/') && month === '*' && dow === '*') {
-    return { count: parseInt(dom.slice(2), 10) || 1, unit: 'Day' };
-  }
-  if (min === '0' && hour === '0' && dom === '*' && month === '*' && dow !== '*') {
-    return { count: parseInt(dow, 10) || 1, unit: 'Week' };
+    const n = parseInt(dom.slice(2), 10) || 1;
+    if (n % 7 === 0) return { count: n / 7, unit: 'Week' };
+    return { count: n, unit: 'Day' };
   }
   if (min === '0' && hour === '0' && dom === '1' && month.startsWith('*/') && dow === '*') {
     return { count: parseInt(month.slice(2), 10) || 1, unit: 'Month' };
@@ -101,52 +101,57 @@ export function buildCronFromParts(fields: Record<CronField, string>): string {
   return `${fields.minute} ${fields.hour} ${fields.dom} ${fields.month} ${fields.dow}`;
 }
 
-export function nextCronRunMs(cron: string): number | null {
-  const interval = cronToInterval(cron);
-  if (!interval) return null;
-  const now = new Date();
-  const { count, unit } = interval;
-  const next = new Date(now);
-  switch (unit) {
-    case 'Minute': {
-      const nextMin = (Math.floor(now.getMinutes() / count) + 1) * count;
-      next.setSeconds(0, 0);
-      if (nextMin >= 60) {
-        next.setMinutes(0);
-        next.setHours(now.getHours() + 1);
-      } else {
-        next.setMinutes(nextMin);
-      }
-      break;
+function expandCronField(field: string, min: number, max: number): Set<number> {
+  const values = new Set<number>();
+  for (const part of field.split(',')) {
+    if (part === '*') {
+      for (let i = min; i <= max; i++) values.add(i);
+    } else if (part.startsWith('*/')) {
+      const step = parseInt(part.slice(2), 10) || 1;
+      for (let i = min; i <= max; i += step) values.add(i);
+    } else if (part.includes('-')) {
+      const [lo, hi] = part.split('-').map(Number);
+      for (let i = lo; i <= hi; i++) values.add(i);
+    } else {
+      const v = parseInt(part, 10);
+      if (!isNaN(v)) values.add(v);
     }
-    case 'Hour': {
-      const nextH = (Math.floor(now.getHours() / count) + 1) * count;
-      next.setMinutes(0, 0, 0);
-      if (nextH >= 24) {
-        next.setHours(0);
-        next.setDate(now.getDate() + 1);
-      } else {
-        next.setHours(nextH);
-      }
-      break;
-    }
-    case 'Day':
-      next.setDate(now.getDate() + 1);
-      next.setHours(0, 0, 0, 0);
-      break;
-    case 'Week':
-      next.setDate(now.getDate() + (7 - now.getDay()));
-      next.setHours(0, 0, 0, 0);
-      break;
-    case 'Month':
-      next.setMonth(now.getMonth() + 1);
-      next.setDate(1);
-      next.setHours(0, 0, 0, 0);
-      break;
-    default:
-      return null;
   }
-  return next.getTime();
+  return values;
+}
+
+export function nextCronRunMs(cron: string): number | null {
+  const parts = cron.trim().split(/\s+/);
+  if (parts.length !== 5) return null;
+  const [minF, hourF, domF, monthF, dowF] = parts;
+
+  const validMins = expandCronField(minF, 0, 59);
+  const validHours = expandCronField(hourF, 0, 23);
+  const validDoms = expandCronField(domF, 1, 31);
+  const validMonths = expandCronField(monthF, 1, 12);
+  const validDows = expandCronField(dowF, 0, 6);
+
+  // Advance to the start of the next minute
+  const candidate = new Date();
+  candidate.setSeconds(0, 0);
+  candidate.setMinutes(candidate.getMinutes() + 1);
+
+  const limit = new Date(candidate.getTime() + 366 * 24 * 60 * 60 * 1000);
+
+  while (candidate <= limit) {
+    if (
+      validMonths.has(candidate.getMonth() + 1) &&
+      validDoms.has(candidate.getDate()) &&
+      validDows.has(candidate.getDay()) &&
+      validHours.has(candidate.getHours()) &&
+      validMins.has(candidate.getMinutes())
+    ) {
+      return candidate.getTime();
+    }
+    candidate.setMinutes(candidate.getMinutes() + 1);
+  }
+
+  return null;
 }
 
 export function formatTimeUntil(ms: number): string {
@@ -161,9 +166,82 @@ export function formatTimeUntil(ms: number): string {
   return remMins > 0 ? `${hours}h ${remMins}m` : `${hours}h`;
 }
 
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function isSimple(field: string): boolean {
+  return !field.includes('/') && !field.includes(',') && !field.includes('-');
+}
+
 export function describeCron(cron: string): string {
   const interval = cronToInterval(cron);
-  if (!interval) return '';
-  const { count, unit } = interval;
-  return `Executes every ${count === 1 ? unit.toLowerCase() : `${count} ${unit.toLowerCase()}s`}`;
+  if (interval) {
+    const { count, unit } = interval;
+    return `Executes every ${count === 1 ? unit.toLowerCase() : `${count} ${unit.toLowerCase()}s`}`;
+  }
+
+  const parts = cron.trim().split(/\s+/);
+  if (parts.length !== 5) return cron;
+  const [min, hour, dom, month, dow] = parts;
+
+  const descs: string[] = [];
+
+  // Minute + hour combined
+  const specificMin = min !== '*' && isSimple(min);
+  const specificHour = hour !== '*' && isSimple(hour);
+
+  if (min === '*' || min === '*/1') {
+    descs.push('every minute');
+  } else if (min.startsWith('*/')) {
+    const n = parseInt(min.slice(2), 10);
+    descs.push(`every ${n} minutes`);
+  } else if (specificMin && specificHour) {
+    const h = parseInt(hour, 10);
+    const m = parseInt(min, 10);
+    if (h === 0 && m === 0) {
+      descs.push('at midnight');
+    } else {
+      const period = h < 12 ? 'AM' : 'PM';
+      const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      descs.push(`at ${displayH}:${m.toString().padStart(2, '0')} ${period}`);
+    }
+  } else if (hour.startsWith('*/')) {
+    const n = parseInt(hour.slice(2), 10);
+    descs.push(n === 1 ? 'every hour' : `every ${n} hours`);
+  }
+
+  // DOM
+  if (dom !== '*') {
+    if (dom.startsWith('*/')) {
+      const n = parseInt(dom.slice(2), 10);
+      descs.push(n === 1 ? 'every day' : `every ${n} days`);
+    } else if (isSimple(dom)) {
+      descs.push(`on day ${dom}`);
+    }
+  }
+
+  // Month
+  if (month !== '*') {
+    if (month.startsWith('*/')) {
+      const n = parseInt(month.slice(2), 10);
+      descs.push(n === 1 ? 'every month' : `every ${n} months`);
+    } else if (isSimple(month)) {
+      const m = parseInt(month, 10);
+      descs.push(`in ${MONTH_NAMES[m - 1] ?? month}`);
+    }
+  }
+
+  // DOW
+  if (dow !== '*') {
+    if (dow.startsWith('*/')) {
+      const n = parseInt(dow.slice(2), 10);
+      descs.push(n === 1 ? 'every day of the week' : `every ${n} days of the week`);
+    } else if (isSimple(dow)) {
+      const d = parseInt(dow, 10);
+      descs.push(`on ${DAY_NAMES[d] ?? dow}`);
+    }
+  }
+
+  if (descs.length === 0) return cron;
+  return `Executes ${descs.join(', ')}`;
 }

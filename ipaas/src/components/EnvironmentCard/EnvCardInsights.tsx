@@ -78,14 +78,20 @@ export default function EnvCardInsights({ envName, envId, projectId, apiId }: En
     };
   }, []);
 
-  // Fetch and match insights environment once
+  // Fetch and match insights environment; reset state before each new lookup
   useEffect(() => {
+    setInsightsEnv(null);
+    setInsights(null);
+    setLoading(true);
+
     if (!orgUuid || !projectId) {
       setLoading(false);
       return;
     }
+
+    let cancelled = false;
     fetchInsightsEnvironments(orgUuid, projectId).then((envs) => {
-      if (!mounted.current) return;
+      if (cancelled || !mounted.current) return;
       const match = envs.find((e) => e.externalEnvId === envId || e.name?.toLowerCase() === envName?.toLowerCase());
       if (match) {
         setInsightsEnv(match);
@@ -93,22 +99,30 @@ export default function EnvCardInsights({ envName, envId, projectId, apiId }: En
         setLoading(false);
       }
     });
+    return () => {
+      cancelled = true;
+    };
   }, [orgUuid, projectId, envId, envName]);
 
   // Fetch metrics once env is found, then poll every 10s
   useEffect(() => {
     if (!insightsEnv || !apiId) return;
 
+    let cancelled = false;
+
     const fetchData = async () => {
       const data = await fetchComponentInsights(orgUuid, insightsEnv, apiId);
-      if (!mounted.current) return;
+      if (cancelled || !mounted.current) return;
       setInsights(data);
       setLoading(false);
     };
 
     fetchData();
     const interval = setInterval(fetchData, 10_000);
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [insightsEnv, apiId, orgUuid]);
 
   return (

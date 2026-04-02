@@ -40,9 +40,10 @@ export interface BuildRunLogs {
 }
 
 export async function fetchBuildRunLogs(orgHandler: string, projectId: string, componentId: string, runId: string): Promise<BuildRunLogs | null> {
-  const base = window.API_CONFIG.choreoOrgApiUrl.replace(/\/orgs\/[^/]+$/, '');
-  const url = `${base}/component-mgt/1.0.0/orgs/${orgHandler}/projects/${projectId}/components/${componentId}/runs/${runId}/logs`;
   try {
+    const base = window.API_CONFIG?.choreoOrgApiUrl?.replace(/\/orgs\/[^/]+$/, '');
+    if (!base) return null;
+    const url = `${base}/component-mgt/1.0.0/orgs/${orgHandler}/projects/${projectId}/components/${componentId}/runs/${runId}/logs`;
     const res = await authenticatedFetch(url);
     if (!res.ok) return null;
     const json = await res.json();

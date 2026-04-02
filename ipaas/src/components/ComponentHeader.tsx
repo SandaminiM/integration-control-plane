@@ -277,44 +277,50 @@ export default function ComponentHeader({ component, project, repository, latest
             )}
           </Box>
         </Stack>
-        {devantOrigin && (
-          <Box sx={{ position: 'relative' }}>
-            <ButtonGroup variant="outlined" size="small" ref={splitButtonRef}>
-              <Button startIcon={<Cloud size={14} />} onClick={handleOpenInCloud} sx={{ whiteSpace: 'nowrap' }}>
-                Open in Cloud&nbsp;
-                <Chip label="Beta" size="small" color="primary" sx={{ height: 16, fontSize: 10, cursor: 'pointer' }} />
-              </Button>
-              <Button size="small" sx={{ px: 0.5 }} aria-label="More options" aria-expanded={splitOpen} onClick={() => setSplitOpen((prev) => !prev)}>
-                <ChevronDown size={14} />
-              </Button>
-            </ButtonGroup>
-            <Popper open={splitOpen} anchorEl={splitButtonRef.current} placement="bottom-end" transition disablePortal style={{ zIndex: 1300 }}>
-              {({ TransitionProps }) => (
-                <Grow {...TransitionProps}>
-                  <Paper elevation={3}>
-                    <ClickAwayListener onClickAway={() => setSplitOpen(false)}>
-                      <MenuList dense sx={{ minWidth: 200 }}>
-                        <MenuItem onClick={handleOpenInCloud} selected>
-                          <Stack direction="row" alignItems="center" gap={1}>
-                            <Cloud size={14} />
-                            <Typography variant="body2">Open in Cloud</Typography>
-                            <Chip label="Beta" size="small" color="primary" sx={{ height: 16, fontSize: 10 }} />
-                          </Stack>
-                        </MenuItem>
-                        <MenuItem onClick={handleOpenInVSCode}>
-                          <Stack direction="row" alignItems="center" gap={1}>
-                            <Code2 size={14} />
-                            <Typography variant="body2">Open in VS Code</Typography>
-                          </Stack>
-                        </MenuItem>
-                      </MenuList>
-                    </ClickAwayListener>
-                  </Paper>
-                </Grow>
-              )}
-            </Popper>
-          </Box>
-        )}
+        <Box sx={{ position: 'relative' }}>
+          {devantOrigin ? (
+            <>
+              <ButtonGroup variant="outlined" size="small" ref={splitButtonRef}>
+                <Button startIcon={<Cloud size={14} />} onClick={handleOpenInCloud} sx={{ whiteSpace: 'nowrap' }}>
+                  Open in Cloud&nbsp;
+                  <Chip label="Beta" size="small" color="primary" sx={{ height: 16, fontSize: 10, cursor: 'pointer' }} />
+                </Button>
+                <Button size="small" sx={{ px: 0.5 }} aria-label="More options" aria-expanded={splitOpen} onClick={() => setSplitOpen((prev) => !prev)}>
+                  <ChevronDown size={14} />
+                </Button>
+              </ButtonGroup>
+              <Popper open={splitOpen} anchorEl={splitButtonRef.current} placement="bottom-end" transition disablePortal style={{ zIndex: 1300 }}>
+                {({ TransitionProps }) => (
+                  <Grow {...TransitionProps}>
+                    <Paper elevation={3}>
+                      <ClickAwayListener onClickAway={() => setSplitOpen(false)}>
+                        <MenuList dense sx={{ minWidth: 200 }}>
+                          <MenuItem onClick={handleOpenInCloud} selected>
+                            <Stack direction="row" alignItems="center" gap={1}>
+                              <Cloud size={14} />
+                              <Typography variant="body2">Open in Cloud</Typography>
+                              <Chip label="Beta" size="small" color="primary" sx={{ height: 16, fontSize: 10 }} />
+                            </Stack>
+                          </MenuItem>
+                          <MenuItem onClick={handleOpenInVSCode}>
+                            <Stack direction="row" alignItems="center" gap={1}>
+                              <Code2 size={14} />
+                              <Typography variant="body2">Open in VS Code</Typography>
+                            </Stack>
+                          </MenuItem>
+                        </MenuList>
+                      </ClickAwayListener>
+                    </Paper>
+                  </Grow>
+                )}
+              </Popper>
+            </>
+          ) : (
+            <Button variant="outlined" size="small" startIcon={<Code2 size={14} />} onClick={handleOpenInVSCode}>
+              Open in VS Code
+            </Button>
+          )}
+        </Box>
       </Stack>
       <Stack direction="row" alignItems="flex-start" gap={1} onMouseEnter={() => setDescHovered(true)} onMouseLeave={() => setDescHovered(false)}>
         <Box sx={{ position: 'relative', flex: 1, cursor: descEditing ? 'text' : descValue ? 'text' : 'pointer' }} onClick={() => !descEditing && setDescEditing(true)}>

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, CircularProgress, Divider, Drawer, IconButton, Link, Stack, Tab, Tabs, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, CircularProgress, Divider, Drawer, IconButton, Stack, Tab, Tabs, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { CheckCircle2, Copy, X, XCircle } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -192,19 +192,12 @@ export default function ExecutionDrawer({ execution, open, onClose, orgHandler, 
           {/* Arguments tab */}
           {tab === 1 && (
             <Box sx={{ px: 2, py: 2 }}>
-              <Alert severity="info" sx={{ mb: 2 }}>
-                <Typography variant="body2">
-                  To learn more about runtime arguments, see the{' '}
-                  <Link href="https://wso2.com/ballerina/icp/docs/" target="_blank" rel="noopener noreferrer" variant="body2">
-                    WSO2 Integration Platform Documentation
-                  </Link>
-                  .
-                </Typography>
-              </Alert>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                Arguments
+                Runtime Arguments
               </Typography>
-              <Box sx={{ bgcolor: 'action.hover', borderRadius: 1, px: 1.5, py: 1, fontFamily: 'monospace', fontSize: '0.75rem', wordBreak: 'break-all' }}>{execution.runId ? execution.runId : '[]'}</Box>
+              <Box sx={{ bgcolor: 'action.hover', borderRadius: 1, px: 1.5, py: 1, fontFamily: 'monospace', fontSize: '0.75rem', wordBreak: 'break-all' }}>
+                {execution.arguments ? execution.arguments : 'No arguments provided'}
+              </Box>
             </Box>
           )}
         </Box>

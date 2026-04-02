@@ -217,13 +217,11 @@ const ENVIRONMENTS_QUERY = `
   }`;
 
 export function useEnvironments(orgUuid: string, projectId: string) {
+  const effectiveOrgUuid = getOrgUuidFromToken() ?? orgUuid;
   return useQuery({
-    queryKey: ['environments', orgUuid, projectId],
-    queryFn: () => {
-      const uuid = getOrgUuidFromToken() ?? orgUuid;
-      return gql<{ environments: GqlEnvironment[] }>(ENVIRONMENTS_QUERY, { orgUuid: uuid, projectId }).then((d) => d.environments);
-    },
-    enabled: !!orgUuid && !!projectId,
+    queryKey: ['environments', effectiveOrgUuid, projectId],
+    queryFn: () => gql<{ environments: GqlEnvironment[] }>(ENVIRONMENTS_QUERY, { orgUuid: effectiveOrgUuid, projectId }).then((d) => d.environments),
+    enabled: !!effectiveOrgUuid && !!projectId,
   });
 }
 
@@ -726,6 +724,7 @@ export interface TaskExecution {
   revisionId: string;
   failedReason: string;
   status: string;
+  arguments?: string | null;
 }
 
 export function useTaskExecutions(releaseId: string) {

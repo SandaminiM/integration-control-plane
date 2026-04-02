@@ -35,13 +35,14 @@ interface PromoteButtonProps {
 
 export default function PromoteButton({ orgHandler, componentId, versionId, deploymentPipelineId, sourceEnvId, targetEnvId }: PromoteButtonProps) {
   const orgUuid = getOrgUuidFromToken() ?? '';
-  const { data: sourceDeployment } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, sourceEnvId);
-  const { data: targetDeployment } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, targetEnvId);
+  const { data: sourceDeployment, isLoading: sourceLoading } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, sourceEnvId);
+  const { data: targetDeployment, isLoading: targetLoading } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, targetEnvId);
   const promote = usePromote();
 
+  const deploymentsLoading = sourceLoading || targetLoading;
   const buildId = sourceDeployment?.build?.buildId;
   const sourceReleaseId = sourceDeployment?.releaseId;
-  const alreadyPromoted = !!buildId && buildId === targetDeployment?.build?.buildId;
+  const alreadyPromoted = !deploymentsLoading && !!buildId && buildId === targetDeployment?.build?.buildId;
 
   const handlePromote = () => {
     if (!buildId || !sourceReleaseId || alreadyPromoted) return;
@@ -60,7 +61,7 @@ export default function PromoteButton({ orgHandler, componentId, versionId, depl
     <Authorized permissions={Permissions.ENVIRONMENT_MANAGE}>
       <Tooltip title={tooltipTitle}>
         <span>
-          <Button variant="outlined" size="small" startIcon={<ArrowDown size={14} />} disabled={!buildId || !sourceReleaseId || alreadyPromoted || promote.isPending} onClick={handlePromote}>
+          <Button variant="outlined" size="small" startIcon={<ArrowDown size={14} />} disabled={deploymentsLoading || !buildId || !sourceReleaseId || alreadyPromoted || promote.isPending} onClick={handlePromote}>
             {promote.isPending ? 'Promoting…' : 'Promote'}
           </Button>
         </span>

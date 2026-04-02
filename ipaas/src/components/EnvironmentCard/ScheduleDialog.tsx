@@ -56,7 +56,19 @@ export default function ScheduleDialog({ open, onClose, onSaveSuccess, onSaveErr
   const deployTrack = useDeployDeploymentTrack();
 
   useEffect(() => {
-    if (!existingConfigs || !open) return;
+    if (!open) return;
+    if (!existingConfigs) {
+      // No saved schedule — reset to defaults
+      setTimezone('UTC');
+      setTimeoutSeconds('');
+      setAllowConcurrency(false);
+      setRetryCount('');
+      setTab(0);
+      setIntervalCount(1);
+      setIntervalUnit('Minute');
+      setCronFields({ minute: '*/1', hour: '*', dom: '*', month: '*', dow: '*' });
+      return;
+    }
     const freq = existingConfigs.cronjobFrequency || '*/1 * * * *';
     const tz = existingConfigs.cronjobTimezone || 'UTC';
     setTimezone(tz);
@@ -86,7 +98,7 @@ export default function ScheduleDialog({ open, onClose, onSaveSuccess, onSaveErr
         deploymentPipelineId,
         cron: cronExpression,
         cronTimezone: timezone,
-        jobTimeoutSeconds: timeoutSeconds ? parseInt(timeoutSeconds, 10) : 300,
+        ...(timeoutSeconds ? { jobTimeoutSeconds: parseInt(timeoutSeconds, 10) } : {}),
         cronJobAllowConcurrency: allowConcurrency,
       },
       {

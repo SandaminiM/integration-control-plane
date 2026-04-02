@@ -60,7 +60,7 @@ export default function RunButton({ envCritical, disabled, pending, onRun, onRun
         <Button startIcon={<Play size={14} />} aria-label={selectedAction === 'runWithArgs' ? `${label} with Arguments` : label} onClick={handlePrimaryClick}>
           {selectedAction === 'runWithArgs' ? `${label} with Arguments` : label}
         </Button>
-        <Button size="small" sx={{ px: 0.5 }} aria-label="More run options" aria-expanded={splitOpen} onClick={() => setSplitOpen((prev) => !prev)}>
+        <Button size="small" sx={{ px: 0.5 }} aria-label="More run options" aria-expanded={splitOpen} aria-haspopup="menu" aria-controls="menu-run-options" onClick={() => setSplitOpen((prev) => !prev)}>
           <ChevronDown size={14} />
         </Button>
       </ButtonGroup>
@@ -70,7 +70,7 @@ export default function RunButton({ envCritical, disabled, pending, onRun, onRun
           <Grow {...TransitionProps}>
             <Paper elevation={3}>
               <ClickAwayListener onClickAway={() => setSplitOpen(false)}>
-                <MenuList dense sx={{ minWidth: 120 }}>
+                <MenuList id="menu-run-options" dense sx={{ minWidth: 120 }}>
                   <MenuItem onClick={() => handleMenuSelect('run')}>{label}</MenuItem>
                   <MenuItem onClick={() => handleMenuSelect('runWithArgs')}>{label} with Arguments</MenuItem>
                 </MenuList>

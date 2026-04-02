@@ -89,10 +89,11 @@ export default function AutomationExecutions({ releaseId, orgHandler, projectHan
 
   const { data: executions = [], isLoading } = useTaskExecutions(releaseId);
 
-  // Only poll while there is something to wait for: a pending trigger or an in-progress execution.
-  // Once all executions reach a terminal state and no trigger is pending, stop polling.
+  // Only poll while there is something to wait for: a pending trigger, an in-progress execution,
+  // or an extended-poll window opened after the 60s sentinel timeout fires.
   const hasInProgress = executions.some((e) => isInProgress(e.status, e.completionTime));
-  const shouldPoll = !!pendingTriggerTime || hasInProgress;
+  const [extendPoll, setExtendPoll] = useState(false);
+  const shouldPoll = !!pendingTriggerTime || hasInProgress || extendPoll;
 
   useEffect(() => {
     if (!releaseId || !shouldPoll) return;
@@ -112,12 +113,27 @@ export default function AutomationExecutions({ releaseId, orgHandler, projectHan
     }
   }, [executions, pendingTriggerTime, onTriggerResolved]);
 
-  // Auto-clear sentinel after 60s in case the API never returns the new execution
+  // Auto-clear sentinel after 60s in case the API never returns the new execution.
+  // Keep polling alive via extendPoll so a delayed execution is still detected.
   useEffect(() => {
     if (!pendingTriggerTime) return;
-    const timer = setTimeout(() => onTriggerResolved?.(), 60000);
+    const timer = setTimeout(() => {
+      onTriggerResolved?.();
+      setExtendPoll(true);
+    }, 60000);
     return () => clearTimeout(timer);
   }, [pendingTriggerTime, onTriggerResolved]);
+
+  // Stop extended polling once an execution arrives or after a further 60s give-up.
+  useEffect(() => {
+    if (!extendPoll) return;
+    if (executions.length > 0) {
+      setExtendPoll(false);
+      return;
+    }
+    const timer = setTimeout(() => setExtendPoll(false), 60000);
+    return () => clearTimeout(timer);
+  }, [extendPoll, executions]);
 
   // Show the queued sentinel row at position 0 while pendingTriggerTime is set and no new exec arrived
   const showQueued = !!pendingTriggerTime && (executions.length === 0 || parseInt(executions[0].startTime, 10) * 1000 < pendingTriggerTime - 5000);

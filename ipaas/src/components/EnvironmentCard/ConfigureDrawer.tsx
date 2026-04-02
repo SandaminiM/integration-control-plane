@@ -38,7 +38,9 @@ function flattenSchema(properties: Record<string, Record<string, unknown>>, requ
     const dotKey = dotPrefix ? `${dotPrefix}.${name}` : name;
     const slashPath = slashPrefix ? `${slashPrefix}/${name}` : name;
     if (prop.type === 'object' && prop.properties) {
-      fields.push(...flattenSchema(prop.properties, prop.required ?? [], dotKey, slashPath));
+      const parentIsRequired = required.includes(name);
+      const childRequired = parentIsRequired ? ((prop.required as string[]) ?? []) : [];
+      fields.push(...flattenSchema(prop.properties as Record<string, Record<string, unknown>>, childRequired, dotKey, slashPath));
     } else {
       fields.push({
         key: dotKey,

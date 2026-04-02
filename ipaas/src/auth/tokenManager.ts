@@ -19,7 +19,6 @@
 import { refreshTokenApiUrl, revokeTokenApiUrl } from '../paths';
 
 const ACCESS_TOKEN_KEY = 'icp_auth_token';
-const ASGARDEO_TOKEN_KEY = 'icp_asgardeo_token';
 const REFRESH_TOKEN_KEY = 'icp_refresh_token';
 const TOKEN_EXPIRES_AT_KEY = 'icp_token_expires_at';
 const REFRESH_TOKEN_EXPIRES_AT_KEY = 'icp_refresh_token_expires_at';
@@ -35,9 +34,12 @@ interface TokenData {
   refreshTokenExpiresIn: number;
 }
 
+const ASGARDEO_TOKEN_EXPIRY_BUFFER_MS = 60_000;
+
 let refreshPromise: Promise<void> | null = null;
 let asgardeoTokenPromise: Promise<string | null> | null = null;
 let onAuthFailure: (() => void) | null = null;
+let asgardeoTokenMemory: { token: string; expiresAt: number } | null = null;
 
 export function setOnAuthFailure(callback: () => void): void {
   onAuthFailure = callback;
@@ -55,16 +57,21 @@ export function getAccessToken(): string | null {
   return localStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
-export function saveAsgardeoToken(token: string): void {
-  localStorage.setItem(ASGARDEO_TOKEN_KEY, token);
+export function saveAsgardeoToken(token: string, expiresIn?: number): void {
+  asgardeoTokenMemory = { token, expiresAt: Date.now() + (expiresIn ?? 3600) * 1000 };
 }
 
 export function getAsgardeoToken(): string | null {
-  return localStorage.getItem(ASGARDEO_TOKEN_KEY);
+  if (!asgardeoTokenMemory) return null;
+  if (Date.now() >= asgardeoTokenMemory.expiresAt - ASGARDEO_TOKEN_EXPIRY_BUFFER_MS) {
+    asgardeoTokenMemory = null;
+    return null;
+  }
+  return asgardeoTokenMemory.token;
 }
 
 export function clearAsgardeoToken(): void {
-  localStorage.removeItem(ASGARDEO_TOKEN_KEY);
+  asgardeoTokenMemory = null;
 }
 
 export function getRefreshToken(): string | null {
@@ -72,8 +79,8 @@ export function getRefreshToken(): string | null {
 }
 
 export function clearTokens(): void {
+  asgardeoTokenMemory = null;
   localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(ASGARDEO_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(TOKEN_EXPIRES_AT_KEY);
   localStorage.removeItem(REFRESH_TOKEN_EXPIRES_AT_KEY);
@@ -107,8 +114,8 @@ export async function getOrRefreshAsgardeoToken(): Promise<string | null> {
         console.warn('[tokenManager] Asgardeo token refresh failed:', res.status);
         return null;
       }
-      const data: { access_token: string; refresh_token?: string } = await res.json();
-      saveAsgardeoToken(data.access_token);
+      const data: { access_token: string; refresh_token?: string; expires_in?: number } = await res.json();
+      saveAsgardeoToken(data.access_token, data.expires_in);
       // Asgardeo rotates refresh tokens — save the new one to avoid invalid_grant on next refresh
       if (data.refresh_token) {
         localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh_token);
@@ -178,10 +185,14 @@ export async function refreshAccessToken(): Promise<void> {
           }
           return;
         }
-        // Internal backend returned error (non-OIDC auth failure)
-        clearTokens();
-        onAuthFailure?.();
-        return;
+        // Only clear session for explicit auth failures; treat transient errors as non-fatal
+        if (res.status === 401 || res.status === 403) {
+          clearTokens();
+          onAuthFailure?.();
+          return;
+        }
+        // 5xx / 429 / etc. — transient; fall through to OIDC refresh
+        throw new Error(`Transient refresh error: ${res.status}`);
       } catch {
         // Network error — internal backend not reachable, fall through to OIDC refresh
       }
@@ -215,7 +226,7 @@ export async function refreshAccessToken(): Promise<void> {
 
       const asgardeoData: { access_token: string; refresh_token?: string; expires_in?: number } = await asgardeoRes.json();
       const newRefreshToken = asgardeoData.refresh_token ?? refreshToken;
-      saveAsgardeoToken(asgardeoData.access_token);
+      saveAsgardeoToken(asgardeoData.access_token, asgardeoData.expires_in);
 
       if (!stsTokenEndpoint || !stsClientId) {
         saveTokens({ token: asgardeoData.access_token, expiresIn: asgardeoData.expires_in ?? 3600, refreshToken: newRefreshToken, refreshTokenExpiresIn: 86400 });
@@ -360,6 +371,16 @@ export async function revokeToken(): Promise<void> {
     const token = getAccessToken();
     const refreshToken = getRefreshToken();
     if (!token) return;
+
+    // OIDC sessions don't use the local backend — skip to avoid ERR_CONNECTION_REFUSED
+    let isOidcSession = false;
+    try {
+      const stored = localStorage.getItem('icp_user');
+      if (stored) isOidcSession = JSON.parse(stored).isOidcUser === true;
+    } catch {
+      /* ignore */
+    }
+    if (isOidcSession) return;
 
     await fetch(revokeTokenApiUrl(), {
       method: 'POST',

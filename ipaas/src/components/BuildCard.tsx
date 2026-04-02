@@ -150,12 +150,16 @@ export default function BuildCard({ componentId, versionId, orgHandler, projectI
       setLogsLoading(false);
     };
 
+    let interval: ReturnType<typeof setInterval> | undefined;
+
     load();
-    if (!isInProgress) return;
-    const interval = setInterval(load, 5000);
+    if (isInProgress) {
+      interval = setInterval(load, 5000);
+    }
+
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      if (interval !== undefined) clearInterval(interval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expanded, runId, orgHandler, projectId, componentId, isInProgress]);

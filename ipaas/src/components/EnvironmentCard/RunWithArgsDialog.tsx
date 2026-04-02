@@ -53,7 +53,7 @@ export default function RunWithArgsDialog({ open, onClose, onRunSuccess, orgHand
       { orgHandler, projectId, componentId, releaseId, args: execArgs },
       {
         onSuccess: () => {
-          onClose();
+          handleClose();
           onRunSuccess?.();
         },
         onError: (err) => setRunError(err instanceof Error ? err.message : 'Failed to execute'),
