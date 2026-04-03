@@ -21,7 +21,7 @@ import type { JSX, ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { loginApiUrl, loginUrl } from '../paths';
-import { saveTokens, clearTokens, getAccessToken, revokeToken, setOnAuthFailure, generateAndSaveOIDCState, generatePKCE, saveCodeVerifier, getAndClearCodeVerifier, saveAsgardeoToken, getAsgardeoToken, getOrRefreshAsgardeoToken } from './tokenManager';
+import { saveTokens, clearTokens, getAccessToken, revokeToken, setOnAuthFailure, generateAndSaveOIDCState, generatePKCE, saveCodeVerifier, getAndClearCodeVerifier, saveAsgardeoToken, getAsgardeoToken, getOrRefreshAsgardeoToken, saveOidcAuthMetadata, clearOidcAuthMetadata } from './tokenManager';
 
 const USER_KEY = 'icp_user';
 
@@ -164,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     let finalToken = asgardeoToken;
     let finalExpiresIn = tokenData.expires_in ?? 3600;
 
+    let orgHandle: string | undefined;
     if (stsTokenEndpoint && stsClientId) {
       const stsBaseParams = {
         grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
@@ -194,7 +195,6 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       }
 
       // Step 3: Fetch user's org handle using the base STS token
-      let orgHandle: string | undefined;
       try {
         const orgsRes = await fetch(`${choreoOrgApiUrl}/orgs`, {
           headers: { Authorization: `Bearer ${baseStsToken}` },
@@ -265,6 +265,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     }
 
     saveTokens({ token: finalToken, expiresIn: finalExpiresIn, refreshToken: tokenData.refresh_token ?? '', refreshTokenExpiresIn: 86400 });
+    saveOidcAuthMetadata(orgHandle);
     const user: UserInfo = { userId, username, displayName, pictureUrl, isOidcUser: true, requirePasswordChange: false };
     localStorage.setItem(USER_KEY, JSON.stringify(user));
     setUserInfo(user);
@@ -283,6 +284,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   const logout = useCallback(async () => {
     await revokeToken();
     clearTokens();
+    clearOidcAuthMetadata();
     localStorage.removeItem(USER_KEY);
     setUserInfo(null);
     setIsAuthenticated(false);

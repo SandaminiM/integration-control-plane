@@ -16,16 +16,12 @@
  * under the License.
  */
 
-/**
- * Centralized API configuration.
- * Configuration is loaded from /config.json at runtime (modifiable after build).
- * Stored on window.API_CONFIG for global access.
- */
-
 interface RuntimeConfig {
   VITE_GRAPHQL_URL?: string;
   VITE_AUTH_BASE_URL?: string;
   VITE_OBSERVABILITY_URL?: string;
+  VITE_ALERTING_URL?: string;
+  SYSTEM_APIS_BASE_URL?: string;
   ASGARDEO_CLIENT_ID?: string;
   ASGARDEO_AUTHORIZE_ENDPOINT?: string;
   ASGARDEO_TOKEN_ENDPOINT?: string;
@@ -36,7 +32,6 @@ interface RuntimeConfig {
   STS_SCOPE?: string;
   CHOREO_ORG_API_URL?: string;
   ASGARDEO_ORG_NUMERIC_ID?: string;
-  SYSTEM_APIS_BASE_URL?: string;
   SYS_API_PREFIX?: string;
 }
 
@@ -44,6 +39,7 @@ export interface ApiConfig {
   graphqlUrl: string;
   authBaseUrl: string;
   observabilityUrl: string;
+  alertingUrl: string;
   asgardeoClientId: string;
   asgardeoAuthorizeEndpoint: string;
   asgardeoTokenEndpoint: string;
@@ -70,6 +66,7 @@ const DEFAULT_CONFIG: ApiConfig = {
   graphqlUrl: 'https://apis.preview-dv.choreo.dev/projects/1.0.0/graphql',
   authBaseUrl: 'https://localhost:9445/auth',
   observabilityUrl: 'https://localhost:9448/icp/observability',
+  alertingUrl: 'https://localhost:9448/icp/alerting',
   asgardeoClientId: '',
   asgardeoAuthorizeEndpoint: 'https://dev.api.asgardeo.io/t/a/oauth2/authorize',
   asgardeoTokenEndpoint: 'https://dev.api.asgardeo.io/t/a/oauth2/token',
@@ -100,6 +97,8 @@ export async function loadConfig(): Promise<void> {
       graphqlUrl: config.VITE_GRAPHQL_URL || DEFAULT_CONFIG.graphqlUrl,
       authBaseUrl: config.VITE_AUTH_BASE_URL || DEFAULT_CONFIG.authBaseUrl,
       observabilityUrl: config.VITE_OBSERVABILITY_URL || DEFAULT_CONFIG.observabilityUrl,
+      alertingUrl: config.VITE_ALERTING_URL
+        || (config.SYSTEM_APIS_BASE_URL ? `${config.SYSTEM_APIS_BASE_URL}/systemapis/choreo-alerting-api/v1.0` : DEFAULT_CONFIG.alertingUrl),
       asgardeoClientId: config.ASGARDEO_CLIENT_ID || DEFAULT_CONFIG.asgardeoClientId,
       asgardeoAuthorizeEndpoint: config.ASGARDEO_AUTHORIZE_ENDPOINT || DEFAULT_CONFIG.asgardeoAuthorizeEndpoint,
       asgardeoTokenEndpoint: config.ASGARDEO_TOKEN_ENDPOINT || DEFAULT_CONFIG.asgardeoTokenEndpoint,
@@ -134,6 +133,12 @@ export const oidcCallbackApiUrl = (): string => `${window.API_CONFIG.authBaseUrl
 export const choreoDevopsApiUrl = (): string => window.API_CONFIG.choreoOrgApiUrl.replace('/orgs/1.0.0', '/devops/1.0.0');
 export const changePasswordApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/change-password`;
 export const forceChangePasswordApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/force-change-password`;
+export const choreoAlertingApiUrl = (gatewayHost: string): string => {
+  const { alertingUrl, sysApiPrefix } = window.API_CONFIG;
+  if (alertingUrl) return alertingUrl;
+  return `https://${sysApiPrefix}.${gatewayHost}/systemapis/choreo-alerting-api/v1.0`;
+};
+
 export const choreologgingProjectLogsApiUrl = (gatewayHost: string): string => {
   const { sysApiPrefix } = window.API_CONFIG;
   return `https://${sysApiPrefix}.${gatewayHost}/systemapis/choreologgingapi/0.2.0/logs/project/application?live=true`;

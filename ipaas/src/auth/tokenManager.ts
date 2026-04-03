@@ -24,6 +24,8 @@ const TOKEN_EXPIRES_AT_KEY = 'icp_token_expires_at';
 const REFRESH_TOKEN_EXPIRES_AT_KEY = 'icp_refresh_token_expires_at';
 const REDIRECT_URL_KEY = 'icp_redirect_url';
 const OIDC_STATE_KEY = 'icp_oidc_state';
+const OIDC_AUTH_MODE_KEY = 'icp_auth_mode';
+const OIDC_ORG_HANDLE_KEY = 'icp_org_handle';
 
 const EXPIRY_BUFFER_MS = 30_000;
 
@@ -37,9 +39,11 @@ interface TokenData {
 const ASGARDEO_TOKEN_EXPIRY_BUFFER_MS = 60_000;
 
 let refreshPromise: Promise<void> | null = null;
-let asgardeoTokenPromise: Promise<string | null> | null = null;
+let asgardeoRefreshPromise: Promise<AsgardeoTokenData | null> | null = null;
 let onAuthFailure: (() => void) | null = null;
 let asgardeoTokenMemory: { token: string; expiresAt: number } | null = null;
+
+type AsgardeoTokenData = { access_token: string; refresh_token?: string; expires_in?: number };
 
 export function setOnAuthFailure(callback: () => void): void {
   onAuthFailure = callback;
@@ -86,20 +90,19 @@ export function clearTokens(): void {
   localStorage.removeItem(REFRESH_TOKEN_EXPIRES_AT_KEY);
 }
 
-// Returns the raw Asgardeo token (needed for APIs that don't accept STS tokens).
-// Falls back to a fresh Asgardeo token obtained via refresh_token if nothing is cached.
-// Deduplicates concurrent calls to avoid refresh token rotation race conditions.
-export async function getOrRefreshAsgardeoToken(): Promise<string | null> {
+// Shared single-flight Asgardeo token refresh — ensures refreshOidcAccessToken and
+// getOrRefreshAsgardeoToken never race on the same refresh token.
+async function doAsgardeoRefresh(): Promise<AsgardeoTokenData | null> {
   const cached = getAsgardeoToken();
-  if (cached) return cached;
+  if (cached) return { access_token: cached };
 
-  if (asgardeoTokenPromise) return asgardeoTokenPromise;
+  if (asgardeoRefreshPromise) return asgardeoRefreshPromise;
 
   const refreshToken = getRefreshToken();
   const { asgardeoClientId, asgardeoTokenEndpoint } = window.API_CONFIG;
   if (!refreshToken || !asgardeoClientId || !asgardeoTokenEndpoint) return null;
 
-  asgardeoTokenPromise = (async () => {
+  asgardeoRefreshPromise = (async () => {
     try {
       const res = await fetch(asgardeoTokenEndpoint, {
         method: 'POST',
@@ -111,31 +114,148 @@ export async function getOrRefreshAsgardeoToken(): Promise<string | null> {
         }).toString(),
       });
       if (!res.ok) {
-        console.warn('[tokenManager] Asgardeo token refresh failed:', res.status);
+        if (res.status === 401 || res.status === 403) {
+          throw new Error(`Asgardeo refresh auth failure: ${res.status}`);
+        }
+        console.warn('[tokenManager] Asgardeo token refresh transient error:', res.status);
         return null;
       }
-      const data: { access_token: string; refresh_token?: string; expires_in?: number } = await res.json();
+      const data: AsgardeoTokenData = await res.json();
       saveAsgardeoToken(data.access_token, data.expires_in);
-      // Asgardeo rotates refresh tokens — save the new one to avoid invalid_grant on next refresh
       if (data.refresh_token) {
         localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh_token);
       }
-      return data.access_token;
+      return data;
     } catch (err) {
+      if (err instanceof Error && err.message.startsWith('Asgardeo refresh auth failure')) throw err;
       console.warn('[tokenManager] Asgardeo token refresh error:', err);
       return null;
     }
   })().finally(() => {
-    asgardeoTokenPromise = null;
+    asgardeoRefreshPromise = null;
   });
 
-  return asgardeoTokenPromise;
+  return asgardeoRefreshPromise;
+}
+
+// Returns the raw Asgardeo token (needed for APIs that don't accept STS tokens).
+// Falls back to a fresh Asgardeo token via doAsgardeoRefresh if nothing is cached.
+export async function getOrRefreshAsgardeoToken(): Promise<string | null> {
+  try {
+    const data = await doAsgardeoRefresh();
+    return data?.access_token ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function isAccessTokenExpired(): boolean {
   const expiresAt = localStorage.getItem(TOKEN_EXPIRES_AT_KEY);
   if (!expiresAt) return true;
   return Date.now() >= Number(expiresAt) - EXPIRY_BUFFER_MS;
+}
+
+export function saveOidcAuthMetadata(orgHandle?: string): void {
+  localStorage.setItem(OIDC_AUTH_MODE_KEY, 'oidc');
+  if (orgHandle) {
+    localStorage.setItem(OIDC_ORG_HANDLE_KEY, orgHandle);
+  }
+}
+
+export function clearOidcAuthMetadata(): void {
+  localStorage.removeItem(OIDC_AUTH_MODE_KEY);
+  localStorage.removeItem(OIDC_ORG_HANDLE_KEY);
+}
+
+async function refreshOidcAccessToken(refreshToken: string): Promise<void> {
+  const { stsTokenEndpoint, stsClientId, stsScope, choreoOrgApiUrl } = window.API_CONFIG;
+
+  // Step 1: Refresh Asgardeo access token (serialized with getOrRefreshAsgardeoToken)
+  let tokenData: AsgardeoTokenData | null;
+  try {
+    tokenData = await doAsgardeoRefresh();
+  } catch {
+    // Definitive auth failure (401/403 from Asgardeo)
+    clearTokens();
+    onAuthFailure?.();
+    return;
+  }
+  if (!tokenData) {
+    // Transient failure — don't kill the session
+    return;
+  }
+
+  const newRefreshToken = tokenData.refresh_token ?? refreshToken;
+
+  if (!stsTokenEndpoint || !stsClientId) {
+    saveTokens({ token: tokenData.access_token, expiresIn: tokenData.expires_in ?? 3600, refreshToken: newRefreshToken, refreshTokenExpiresIn: 86400 });
+    return;
+  }
+
+  // Step 2: STS exchange with orgHandle for org-scoped token.
+  // If orgHandle is missing (e.g. old session predating the fix), look it up from the orgs API.
+  try {
+    let orgHandle: string | null = localStorage.getItem(OIDC_ORG_HANDLE_KEY);
+    if (!orgHandle && choreoOrgApiUrl) {
+      try {
+        const baseStsRes = await fetch(stsTokenEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+            client_id: stsClientId,
+            subject_token: tokenData.access_token,
+            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            requested_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+            ...(stsScope ? { scope: stsScope } : {}),
+          }).toString(),
+        });
+        if (baseStsRes.ok) {
+          const { access_token: baseStsToken } = (await baseStsRes.json()) as { access_token: string };
+          const orgsRes = await fetch(`${choreoOrgApiUrl}/orgs`, { headers: { Authorization: `Bearer ${baseStsToken}` } });
+          if (orgsRes.ok) {
+            const orgsData = await orgsRes.json();
+            const orgs: Array<{ handle?: string; orgHandle?: string; org_handle?: string }> = orgsData.list ?? orgsData.organizations ?? (Array.isArray(orgsData) ? orgsData : []);
+            for (const org of orgs) {
+              const h = org.handle ?? org.orgHandle ?? org.org_handle;
+              if (h) { orgHandle = h; localStorage.setItem(OIDC_ORG_HANDLE_KEY, h); break; }
+            }
+          }
+        }
+      } catch {
+        // fall through — STS exchange will proceed without orgHandle
+      }
+    }
+
+    const stsParams: Record<string, string> = {
+      grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+      client_id: stsClientId,
+      subject_token: tokenData.access_token,
+      subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+      requested_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+      ...(stsScope ? { scope: stsScope } : {}),
+      ...(orgHandle ? { orgHandle } : {}),
+    };
+
+    const stsRes = await fetch(stsTokenEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(stsParams).toString(),
+    });
+
+    if (!stsRes.ok) {
+      if (stsRes.status === 401 || stsRes.status === 403) {
+        clearTokens();
+        onAuthFailure?.();
+      }
+      return;
+    }
+
+    const stsData: { access_token: string; expires_in?: number } = await stsRes.json();
+    saveTokens({ token: stsData.access_token, expiresIn: stsData.expires_in ?? 3600, refreshToken: newRefreshToken, refreshTokenExpiresIn: 86400 });
+  } catch {
+    // Network/transient STS error — don't kill the session
+  }
 }
 
 export async function refreshAccessToken(): Promise<void> {
@@ -198,110 +318,8 @@ export async function refreshAccessToken(): Promise<void> {
       }
     }
 
-    // OIDC refresh path: use stored Asgardeo refresh token
-    const { asgardeoClientId, asgardeoTokenEndpoint, stsTokenEndpoint, stsClientId, stsScope } = window.API_CONFIG;
-    if (!asgardeoClientId || !asgardeoTokenEndpoint) {
-      clearTokens();
-      onAuthFailure?.();
-      return;
-    }
-
-    try {
-      // Step 1: Refresh Asgardeo tokens
-      const asgardeoRes = await fetch(asgardeoTokenEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-          client_id: asgardeoClientId,
-        }).toString(),
-      });
-
-      if (!asgardeoRes.ok) {
-        clearTokens();
-        onAuthFailure?.();
-        return;
-      }
-
-      const asgardeoData: { access_token: string; refresh_token?: string; expires_in?: number } = await asgardeoRes.json();
-      const newRefreshToken = asgardeoData.refresh_token ?? refreshToken;
-      saveAsgardeoToken(asgardeoData.access_token, asgardeoData.expires_in);
-
-      if (!stsTokenEndpoint || !stsClientId) {
-        saveTokens({ token: asgardeoData.access_token, expiresIn: asgardeoData.expires_in ?? 3600, refreshToken: newRefreshToken, refreshTokenExpiresIn: 86400 });
-        return;
-      }
-
-      // Step 2: STS exchange with orgHandle for org-scoped token
-      // If orgHandle is missing from localStorage (e.g., old session predating the fix),
-      // fetch it from the orgs API using a base STS token — mirrors the OIDC login flow.
-      let orgHandle = localStorage.getItem('icp_org_handle');
-      if (!orgHandle) {
-        const { choreoOrgApiUrl } = window.API_CONFIG;
-        if (choreoOrgApiUrl) {
-          try {
-            const baseStsRes = await fetch(stsTokenEndpoint, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-              body: new URLSearchParams({
-                grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-                client_id: stsClientId,
-                subject_token: asgardeoData.access_token,
-                subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-                requested_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-                ...(stsScope ? { scope: stsScope } : {}),
-              }).toString(),
-            });
-            if (baseStsRes.ok) {
-              const { access_token: baseStsToken } = (await baseStsRes.json()) as { access_token: string };
-              const orgsRes = await fetch(`${choreoOrgApiUrl}/orgs`, { headers: { Authorization: `Bearer ${baseStsToken}` } });
-              if (orgsRes.ok) {
-                const orgsData = await orgsRes.json();
-                const orgs: Array<{ handle?: string; orgHandle?: string; org_handle?: string }> = orgsData.list ?? orgsData.organizations ?? (Array.isArray(orgsData) ? orgsData : []);
-                for (const org of orgs) {
-                  const h = org.handle ?? org.orgHandle ?? org.org_handle;
-                  if (h) {
-                    orgHandle = h;
-                    localStorage.setItem('icp_org_handle', h);
-                    break;
-                  }
-                }
-              }
-            }
-          } catch {
-            // fall through — STS exchange will proceed without orgHandle
-          }
-        }
-      }
-      const stsParams: Record<string, string> = {
-        grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-        client_id: stsClientId,
-        subject_token: asgardeoData.access_token,
-        subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-        requested_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-        ...(stsScope ? { scope: stsScope } : {}),
-        ...(orgHandle ? { orgHandle } : {}),
-      };
-
-      const stsRes = await fetch(stsTokenEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(stsParams).toString(),
-      });
-
-      if (!stsRes.ok) {
-        clearTokens();
-        onAuthFailure?.();
-        return;
-      }
-
-      const stsData: { access_token: string; expires_in?: number } = await stsRes.json();
-      saveTokens({ token: stsData.access_token, expiresIn: stsData.expires_in ?? 3600, refreshToken: newRefreshToken, refreshTokenExpiresIn: 86400 });
-    } catch {
-      clearTokens();
-      onAuthFailure?.();
-    }
+    // OIDC refresh path
+    await refreshOidcAccessToken(refreshToken);
   })().finally(() => {
     refreshPromise = null;
   });
