@@ -21,9 +21,78 @@ import { PlugZap } from '@wso2/oxygen-ui-icons-react';
 import type { GqlComponent } from '../api/queries';
 import type { JSX } from 'react';
 
+function getDisplayLabel(displayType: string, componentSubType: string | null): string {
+  switch (componentSubType) {
+    case 'ballerinaFileIntegration':
+    case 'miFileIntegration':
+      return 'File Integration';
+    case 'aiAgent':
+      return 'AI Agent';
+    case 'mcpServer':
+      return 'MCP Server';
+  }
+  switch (displayType) {
+    case 'ballerinaService':
+    case 'buildpackService':
+    case 'byoiService':
+    case 'byocService':
+    case 'miApiService':
+    case 'graphql':
+    case 'thirdPartyApi':
+    case 'prismMockService':
+    case 'service':
+      return 'Integration as API';
+    case 'scheduledTask':
+    case 'byocCronjob':
+    case 'byoiCronjob':
+    case 'miCronjob':
+    case 'buildpackCronJob':
+      return 'Automation';
+    case 'manualTrigger':
+      return 'Manual Trigger';
+    case 'proxy':
+    case 'gitProxy':
+      return 'REST API Proxy';
+    case 'webhook':
+    case 'byocWebhook':
+    case 'miWebhook':
+    case 'buildpackWebhook':
+    case 'ballerinaWebhook':
+      return 'Webhook';
+    case 'byocEventHandler':
+    case 'miEventHandler':
+    case 'buildpackEventHandler':
+    case 'ballerinaEventHandler':
+      return 'Event Integration';
+    case 'restApi':
+    case 'byocRestApi':
+    case 'miRestApi':
+    case 'buildRestApi':
+      return 'Integration as an API';
+    case 'byocWebApp':
+    case 'byocWebAppsDockerfileLess':
+    case 'byoiWebApp':
+    case 'buildpackWebApp':
+      return 'Web Application';
+    case 'byocTestRunner':
+    case 'buildpackTestRunner':
+    case 'byocTestRunnerDockerfileLess':
+      return 'Test Runner';
+    case 'externalConsumer':
+      return 'External Consumer';
+    case 'byocJob':
+    case 'byoiJob':
+    case 'miJob':
+    case 'buildpackJob':
+      return 'Manual Task';
+    default:
+      return displayType ?? 'Unknown';
+  }
+}
+
 export default function IntegrationTypesCard({ components }: { components: GqlComponent[] }): JSX.Element {
   const counts = components.reduce<Record<string, number>>((acc, c) => {
-    const type = c.componentType ?? 'Unknown';
+    const type = getDisplayLabel(c.displayType ?? '', c.componentSubType ?? null);
     acc[type] = (acc[type] || 0) + 1;
     return acc;
   }, {});

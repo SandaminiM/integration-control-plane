@@ -112,8 +112,7 @@ export default function LoginForm(): JSX.Element {
 
       {error && (
         <Alert severity="error" sx={{ my: 2 }}>
-          {error}
-          {isLockedOut && ` Try again in ${lockoutSeconds}s.`}
+          {isLockedOut ? `${error} Try again in ${lockoutSeconds}s.` : error}
         </Alert>
       )}
 

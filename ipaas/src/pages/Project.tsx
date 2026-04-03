@@ -20,6 +20,8 @@ import { Alert, Avatar, Button, CircularProgress, Dialog, DialogActions, DialogC
 import { Plus, PlugZap, RefreshCw, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import EmptyListing from '../components/EmptyListing';
 import IntegrationTypesCard from '../components/IntegrationTypesCard';
+import ArchitectureCard from '../components/ArchitectureCard';
+import ContributorsCard from '../components/ContributorsCard';
 import SearchField from '../components/SearchField';
 import { useNavigate } from 'react-router';
 import { useState, type JSX } from 'react';
@@ -91,7 +93,7 @@ function IntegrationsTable({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleting, setDeleting] = useState<GqlComponent | null>(null);
   const q = query.trim().toLowerCase();
-  const filtered = components.filter((c) => !q || c.displayName.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q) || c.componentType?.toLowerCase().includes(q));
+  const filtered = components.filter((c) => !q || c.displayName.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q) || c.displayType?.toLowerCase().includes(q));
   const maxPage = Math.max(0, Math.ceil(filtered.length / rowsPerPage) - 1);
   const safePage = Math.min(page, maxPage);
   const paginated = filtered.slice(safePage * rowsPerPage, safePage * rowsPerPage + rowsPerPage);
@@ -163,7 +165,7 @@ function IntegrationsTable({
                       {c.description || ''}
                     </Typography>
                   </ListingTable.Cell>
-                  <ListingTable.Cell>{c.componentType}</ListingTable.Cell>
+                  <ListingTable.Cell>{c.displayType}</ListingTable.Cell>
                   <ListingTable.Cell>
                     <Typography variant="body2" color="text.secondary">
                       {formatDistanceToNow(c.lastBuildDate)}
@@ -263,7 +265,9 @@ export default function Project(scope: ProjectScope): JSX.Element {
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack gap={3}>
+            <ArchitectureCard projectId={projectId} components={components} isLoading={loadingComponents} onRefresh={refetchComponents} />
             <IntegrationTypesCard components={components} />
+            <ContributorsCard projectId={projectId} />
           </Stack>
         </Grid>
       </Grid>
