@@ -95,7 +95,11 @@ function IntegrationsTable({
   const [deleting, setDeleting] = useState<GqlComponent | null>(null);
   const q = query.trim().toLowerCase();
   const filtered = components
-    .filter((c) => !q || c.displayName.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q) || c.displayType?.toLowerCase().includes(q))
+    .filter((c) => {
+      if (!q) return true;
+      const label = getDisplayLabel(c.displayType ?? '', c.componentSubType ?? null);
+      return c.displayName.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q) || label.toLowerCase().includes(q);
+    })
     .sort((a, b) => {
       const aSupported = SUPPORTED_DISPLAY_TYPES.has(a.displayType ?? '');
       const bSupported = SUPPORTED_DISPLAY_TYPES.has(b.displayType ?? '');
@@ -169,7 +173,7 @@ function IntegrationsTable({
                           }
                         : undefined
                     }
-                    sx={!isSupported ? { opacity: 0.45, cursor: 'default', pointerEvents: 'none' } : undefined}>
+                    sx={!isSupported ? { opacity: 0.45, cursor: 'default' } : undefined}>
                     <ListingTable.Cell>
                       <Stack direction="row" alignItems="center" gap={1.5}>
                         <Avatar sx={{ width: 32, height: 32, fontSize: 14, bgcolor: 'action.hover', color: 'text.primary' }}>{c.displayName[0].toUpperCase()}</Avatar>
@@ -282,7 +286,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack gap={3}>
-            <ArchitectureCard projectId={projectId} components={components} isLoading={loadingComponents} onRefresh={refetchComponents} />
+            <ArchitectureCard projectId={projectId} components={components} isLoading={loadingComponents} isRefreshing={fetchingComponents && !loadingComponents} onRefresh={refetchComponents} />
             <IntegrationTypesCard components={components} />
             <ContributorsCard projectId={projectId} />
           </Stack>
