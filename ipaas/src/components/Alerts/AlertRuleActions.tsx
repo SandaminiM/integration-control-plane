@@ -42,7 +42,6 @@ export default function AlertRuleActions(props: AlertRuleActionsProps): JSX.Elem
             checked={rowData.enabled}
             disabled={disabled}
             onChange={(e) => {
-              rowData.enabled = e.target.checked;
               setIsToggleAlertRule(true);
               setSelectedAlertRule({ ...rowData });
               e.stopPropagation();

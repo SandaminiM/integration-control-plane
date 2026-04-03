@@ -30,8 +30,8 @@ interface AlertRuleToggleDialogProps {
 
 export default function AlertRuleToggleDialog(props: AlertRuleToggleDialogProps): JSX.Element {
   const { isOpen, alertType, isEnabled, isLoading, handleClose, handleConfirm } = props;
-  const action = isEnabled ? 'enable' : 'disable';
-  const actionLabel = isEnabled ? 'Enable' : 'Disable';
+  const action = isEnabled ? 'disable' : 'enable';
+  const actionLabel = isEnabled ? 'Disable' : 'Enable';
 
   return (
     <Dialog open={isOpen} fullWidth maxWidth="sm">
@@ -40,7 +40,7 @@ export default function AlertRuleToggleDialog(props: AlertRuleToggleDialogProps)
         <Typography variant="body1" gutterBottom>
           Are you sure you want to {action} the <strong>{alertType}</strong> type alert rule?
         </Typography>
-        <Typography variant="body2">{isEnabled ? 'This action will start generating new alerts for the alert rule.' : 'This action will prevent the alert rule from generating new alerts until it is enabled again.'}</Typography>
+        <Typography variant="body2">{isEnabled ? 'This action will prevent the alert rule from generating new alerts until it is enabled again.' : 'This action will start generating new alerts for the alert rule.'}</Typography>
       </DialogContent>
       <DialogActions>
         <Button variant="outlined" onClick={handleClose} disabled={isLoading}>

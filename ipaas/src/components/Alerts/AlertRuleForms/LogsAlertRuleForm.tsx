@@ -30,8 +30,9 @@ export default function LogsAlertRuleForm(props: AlertRuleFormProps): JSX.Elemen
 
   const [isCollapseOpen, setIsCollapseOpen] = useState(false);
   const alertRule: AlertRule =
-    selectedAlertRule ||
-    ({
+    selectedAlertRule
+      ? { ...selectedAlertRule }
+      : ({
       projectId,
       componentId,
       environmentId: environment.id,
@@ -56,12 +57,19 @@ export default function LogsAlertRuleForm(props: AlertRuleFormProps): JSX.Elemen
   const [emailList, setEmailList] = useState<string[]>(selectedAlertRule?.emails ?? []);
   const [errorSearchPhrase, setErrorSearchPhrase] = useState<string | null>(null);
   const [errorCount, setErrorCount] = useState<string | null>(null);
+  const [errorEmailList, setErrorEmailList] = useState<string | null>(null);
 
   useEffect(() => {
     setIsAlertRuleHalfConfigured(false);
     const searchParams = new URLSearchParams(window.location.search);
     const querySearchPhrase = searchParams.get('searchPhrase');
-    if (querySearchPhrase) setSearchPhrase(querySearchPhrase);
+    if (querySearchPhrase) {
+      setSearchPhrase(querySearchPhrase);
+      searchParams.delete('searchPhrase');
+      const qs = searchParams.toString();
+      const newUrl = `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`;
+      window.history.replaceState(null, '', newUrl);
+    }
   }, [setIsAlertRuleHalfConfigured]);
 
   const handleSearchPhraseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,14 +107,19 @@ export default function LogsAlertRuleForm(props: AlertRuleFormProps): JSX.Elemen
     setEmailList([]);
     setErrorSearchPhrase('');
     setErrorCount('');
+    setErrorEmailList(null);
     setIsAlertRuleHalfConfigured(false);
   };
 
   const validate = (): AlertRule | null => {
     setErrorSearchPhrase('');
     setErrorCount('');
+    setErrorEmailList(null);
     let valid = true;
-    if (emailList.length === 0) valid = false;
+    if (emailList.length === 0) {
+      setErrorEmailList(alertRuleConfigErrorMessages.required);
+      valid = false;
+    }
     if (!searchPhrase) {
       setErrorSearchPhrase(alertRuleConfigErrorMessages.searchPhrase);
       valid = false;
@@ -138,6 +151,8 @@ export default function LogsAlertRuleForm(props: AlertRuleFormProps): JSX.Elemen
               setEmailList(emails);
               setIsAlertRuleHalfConfigured(true);
             }}
+            error={!!errorEmailList}
+            helperText={errorEmailList ?? undefined}
           />
         </Grid>
       </Grid>

@@ -54,14 +54,14 @@ function formatCellValue(value: unknown, columnType: string): string {
 }
 
 export default function AlertsHistoryPage({ componentId, environments, cloudDataPlanes }: AlertsHistoryPageProps): JSX.Element {
-  const [selectedEnvironment, setSelectedEnvironment] = useState<GqlEnvironment>(environments[0]);
+  const [selectedEnvironment, setSelectedEnvironment] = useState<GqlEnvironment | undefined>(environments[0]);
   const [timeRangeHours, setTimeRangeHours] = useState(1);
 
   const alertingBaseUrl = useMemo(() => {
     if (!selectedEnvironment?.dpId || !cloudDataPlanes.length) return '';
     const cdp = cloudDataPlanes.find((c) => c.id.toLowerCase() === selectedEnvironment.dpId!.toLowerCase());
     return cdp ? choreoAlertingApiUrl(cdp.external_gateway_virtual_host) : '';
-  }, [selectedEnvironment?.dpId, cloudDataPlanes]);
+  }, [selectedEnvironment, cloudDataPlanes]);
 
   const { startTime, endTime } = useMemo(() => {
     const now = new Date();
@@ -71,6 +71,14 @@ export default function AlertsHistoryPage({ componentId, environments, cloudData
   }, [timeRangeHours]);
 
   const { data: historyData, isFetching } = useGetAlertHistory(alertingBaseUrl, componentId, selectedEnvironment?.id ?? '', startTime, endTime);
+
+  if (!environments.length) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 4, gap: 1 }}>
+        <Typography variant="body1" color="text.secondary">No environments available.</Typography>
+      </Box>
+    );
+  }
 
   const columns = historyData?.columns ?? [];
   const rows = historyData?.rows ?? [];
@@ -82,7 +90,7 @@ export default function AlertsHistoryPage({ componentId, environments, cloudData
         <Autocomplete
           options={environments}
           getOptionLabel={(e) => e.name}
-          value={selectedEnvironment}
+          value={selectedEnvironment ?? null}
           onChange={(_, v) => {
             if (v) setSelectedEnvironment(v);
           }}

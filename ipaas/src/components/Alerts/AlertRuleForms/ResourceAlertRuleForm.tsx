@@ -30,8 +30,9 @@ export default function ResourceAlertRuleForm(props: AlertRuleFormProps): JSX.El
 
   const [isCollapseOpen, setIsCollapseOpen] = useState(false);
   const alertRule: AlertRule =
-    selectedAlertRule ||
-    ({
+    selectedAlertRule
+      ? { ...selectedAlertRule }
+      : ({
       projectId,
       componentId,
       environmentId: environment.id,
@@ -55,6 +56,7 @@ export default function ResourceAlertRuleForm(props: AlertRuleFormProps): JSX.El
   const [period, setPeriod] = useState<AlertRulePeriodOption>(selectedAlertRule?.period ? (getAlertPeriodOptions().find((o) => o.value === selectedAlertRule.period) ?? getAlertPeriodOptions()[0]) : getAlertPeriodOptions()[0]);
   const [emailList, setEmailList] = useState<string[]>(selectedAlertRule?.emails ?? []);
   const [errorThreshold, setErrorThreshold] = useState('');
+  const [errorEmailList, setErrorEmailList] = useState<string | null>(null);
 
   useEffect(() => {
     setIsAlertRuleHalfConfigured(false);
@@ -78,13 +80,18 @@ export default function ResourceAlertRuleForm(props: AlertRuleFormProps): JSX.El
     setPeriod(getAlertPeriodOptions()[0]);
     setEmailList([]);
     setErrorThreshold('');
+    setErrorEmailList(null);
     setIsAlertRuleHalfConfigured(false);
   };
 
   const validate = (): AlertRule | null => {
     setErrorThreshold('');
+    setErrorEmailList(null);
     let valid = true;
-    if (emailList.length === 0) valid = false;
+    if (emailList.length === 0) {
+      setErrorEmailList(alertRuleConfigErrorMessages.required);
+      valid = false;
+    }
     if (!threshold || threshold < ALERT_RULE_THRESHOLD_MIN || threshold > ALERT_RULE_THRESHOLD_MAX) {
       setErrorThreshold(alertRuleConfigErrorMessages.threshold);
       valid = false;
@@ -126,6 +133,8 @@ export default function ResourceAlertRuleForm(props: AlertRuleFormProps): JSX.El
               setEmailList(emails);
               setIsAlertRuleHalfConfigured(true);
             }}
+            error={!!errorEmailList}
+            helperText={errorEmailList ?? undefined}
           />
         </Grid>
       </Grid>

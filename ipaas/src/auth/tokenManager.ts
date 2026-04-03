@@ -39,9 +39,11 @@ interface TokenData {
 const ASGARDEO_TOKEN_EXPIRY_BUFFER_MS = 60_000;
 
 let refreshPromise: Promise<void> | null = null;
-let asgardeoTokenPromise: Promise<string | null> | null = null;
+let asgardeoRefreshPromise: Promise<AsgardeoTokenData | null> | null = null;
 let onAuthFailure: (() => void) | null = null;
 let asgardeoTokenMemory: { token: string; expiresAt: number } | null = null;
+
+type AsgardeoTokenData = { access_token: string; refresh_token?: string; expires_in?: number };
 
 export function setOnAuthFailure(callback: () => void): void {
   onAuthFailure = callback;
@@ -88,20 +90,19 @@ export function clearTokens(): void {
   localStorage.removeItem(REFRESH_TOKEN_EXPIRES_AT_KEY);
 }
 
-// Returns the raw Asgardeo token (needed for APIs that don't accept STS tokens).
-// Falls back to a fresh Asgardeo token obtained via refresh_token if nothing is cached.
-// Deduplicates concurrent calls to avoid refresh token rotation race conditions.
-export async function getOrRefreshAsgardeoToken(): Promise<string | null> {
+// Shared single-flight Asgardeo token refresh — ensures refreshOidcAccessToken and
+// getOrRefreshAsgardeoToken never race on the same refresh token.
+async function doAsgardeoRefresh(): Promise<AsgardeoTokenData | null> {
   const cached = getAsgardeoToken();
-  if (cached) return cached;
+  if (cached) return { access_token: cached };
 
-  if (asgardeoTokenPromise) return asgardeoTokenPromise;
+  if (asgardeoRefreshPromise) return asgardeoRefreshPromise;
 
   const refreshToken = getRefreshToken();
   const { asgardeoClientId, asgardeoTokenEndpoint } = window.API_CONFIG;
   if (!refreshToken || !asgardeoClientId || !asgardeoTokenEndpoint) return null;
 
-  asgardeoTokenPromise = (async () => {
+  asgardeoRefreshPromise = (async () => {
     try {
       const res = await fetch(asgardeoTokenEndpoint, {
         method: 'POST',
@@ -113,25 +114,39 @@ export async function getOrRefreshAsgardeoToken(): Promise<string | null> {
         }).toString(),
       });
       if (!res.ok) {
-        console.warn('[tokenManager] Asgardeo token refresh failed:', res.status);
+        if (res.status === 401 || res.status === 403) {
+          throw new Error(`Asgardeo refresh auth failure: ${res.status}`);
+        }
+        console.warn('[tokenManager] Asgardeo token refresh transient error:', res.status);
         return null;
       }
-      const data: { access_token: string; refresh_token?: string; expires_in?: number } = await res.json();
+      const data: AsgardeoTokenData = await res.json();
       saveAsgardeoToken(data.access_token, data.expires_in);
-      // Asgardeo rotates refresh tokens — save the new one to avoid invalid_grant on next refresh
       if (data.refresh_token) {
         localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh_token);
       }
-      return data.access_token;
+      return data;
     } catch (err) {
+      if (err instanceof Error && err.message.startsWith('Asgardeo refresh auth failure')) throw err;
       console.warn('[tokenManager] Asgardeo token refresh error:', err);
       return null;
     }
   })().finally(() => {
-    asgardeoTokenPromise = null;
+    asgardeoRefreshPromise = null;
   });
 
-  return asgardeoTokenPromise;
+  return asgardeoRefreshPromise;
+}
+
+// Returns the raw Asgardeo token (needed for APIs that don't accept STS tokens).
+// Falls back to a fresh Asgardeo token via doAsgardeoRefresh if nothing is cached.
+export async function getOrRefreshAsgardeoToken(): Promise<string | null> {
+  try {
+    const data = await doAsgardeoRefresh();
+    return data?.access_token ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function isAccessTokenExpired(): boolean {
@@ -153,43 +168,33 @@ export function clearOidcAuthMetadata(): void {
 }
 
 async function refreshOidcAccessToken(refreshToken: string): Promise<void> {
-  const { asgardeoTokenEndpoint, asgardeoClientId, stsTokenEndpoint, stsClientId, stsScope, choreoOrgApiUrl } = window.API_CONFIG;
+  const { stsTokenEndpoint, stsClientId, stsScope, choreoOrgApiUrl } = window.API_CONFIG;
 
-  if (!asgardeoTokenEndpoint || !asgardeoClientId) {
+  // Step 1: Refresh Asgardeo access token (serialized with getOrRefreshAsgardeoToken)
+  let tokenData: AsgardeoTokenData | null;
+  try {
+    tokenData = await doAsgardeoRefresh();
+  } catch {
+    // Definitive auth failure (401/403 from Asgardeo)
     clearTokens();
     onAuthFailure?.();
     return;
   }
+  if (!tokenData) {
+    // Transient failure — don't kill the session
+    return;
+  }
 
+  const newRefreshToken = tokenData.refresh_token ?? refreshToken;
+
+  if (!stsTokenEndpoint || !stsClientId) {
+    saveTokens({ token: tokenData.access_token, expiresIn: tokenData.expires_in ?? 3600, refreshToken: newRefreshToken, refreshTokenExpiresIn: 86400 });
+    return;
+  }
+
+  // Step 2: STS exchange with orgHandle for org-scoped token.
+  // If orgHandle is missing (e.g. old session predating the fix), look it up from the orgs API.
   try {
-    // Step 1: Use Asgardeo refresh token to get a new Asgardeo access token
-    const tokenRes = await fetch(asgardeoTokenEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken,
-        client_id: asgardeoClientId,
-      }).toString(),
-    });
-
-    if (!tokenRes.ok) {
-      clearTokens();
-      onAuthFailure?.();
-      return;
-    }
-
-    const tokenData: { access_token: string; refresh_token?: string; expires_in?: number } = await tokenRes.json();
-    const newRefreshToken = tokenData.refresh_token ?? refreshToken;
-    saveAsgardeoToken(tokenData.access_token, tokenData.expires_in);
-
-    if (!stsTokenEndpoint || !stsClientId) {
-      saveTokens({ token: tokenData.access_token, expiresIn: tokenData.expires_in ?? 3600, refreshToken: newRefreshToken, refreshTokenExpiresIn: 86400 });
-      return;
-    }
-
-    // Step 2: STS exchange with orgHandle for org-scoped token.
-    // If orgHandle is missing (e.g. old session predating the fix), look it up from the orgs API.
     let orgHandle: string | null = localStorage.getItem(OIDC_ORG_HANDLE_KEY);
     if (!orgHandle && choreoOrgApiUrl) {
       try {
@@ -239,16 +244,17 @@ async function refreshOidcAccessToken(refreshToken: string): Promise<void> {
     });
 
     if (!stsRes.ok) {
-      clearTokens();
-      onAuthFailure?.();
+      if (stsRes.status === 401 || stsRes.status === 403) {
+        clearTokens();
+        onAuthFailure?.();
+      }
       return;
     }
 
     const stsData: { access_token: string; expires_in?: number } = await stsRes.json();
     saveTokens({ token: stsData.access_token, expiresIn: stsData.expires_in ?? 3600, refreshToken: newRefreshToken, refreshTokenExpiresIn: 86400 });
   } catch {
-    clearTokens();
-    onAuthFailure?.();
+    // Network/transient STS error — don't kill the session
   }
 }
 

@@ -29,13 +29,14 @@ interface AlertRuleDiscardDialogProps {
 
 export default function AlertRuleDiscardDialog(props: AlertRuleDiscardDialogProps): JSX.Element {
   const { isOpen, alertType, isLoading, handleClose, handleConfirm } = props;
+  const label = alertType ?? 'alert';
 
   return (
     <Dialog open={isOpen} fullWidth maxWidth="sm">
       <DialogTitle>Discard Changes</DialogTitle>
       <DialogContent>
         <Typography variant="body1" gutterBottom>
-          Are you sure you want to discard the <strong>{alertType}</strong> type alert rule?
+          Are you sure you want to discard the <strong>{label}</strong> type alert rule?
         </Typography>
         <Typography variant="body2">This will remove all unsaved changes made to the alert rule.</Typography>
       </DialogContent>

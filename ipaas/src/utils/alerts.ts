@@ -82,7 +82,7 @@ export const getAlertRuleExplanation = (alertType: AlertTypes, metric?: AlertTyp
     case AlertTypes.LOGS:
       return `The email recipient(s) will receive an alert if the ${searchPhrase === null ? 'given logs search phrase' : `phrase "${searchPhrase}"`} is found in the application logs for at least ${threshold ? `${threshold} times` : 'given count'} during ${period}`;
     case AlertTypes.BUILD:
-      return 'The email recipient(s) will receive an alert if a build fails occurs for the component in the selected deployment track.';
+      return 'The email recipient(s) will receive an alert if a build failure occurs for the component in the selected deployment track.';
     default:
       return '';
   }

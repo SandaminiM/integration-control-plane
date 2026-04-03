@@ -32,7 +32,6 @@ interface RuntimeConfig {
   STS_SCOPE?: string;
   CHOREO_ORG_API_URL?: string;
   ASGARDEO_ORG_NUMERIC_ID?: string;
-  SYSTEM_APIS_BASE_URL?: string;
   SYS_API_PREFIX?: string;
 }
 
@@ -135,7 +134,8 @@ export const choreoDevopsApiUrl = (): string => window.API_CONFIG.choreoOrgApiUr
 export const changePasswordApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/change-password`;
 export const forceChangePasswordApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/force-change-password`;
 export const choreoAlertingApiUrl = (gatewayHost: string): string => {
-  const { sysApiPrefix } = window.API_CONFIG;
+  const { alertingUrl, sysApiPrefix } = window.API_CONFIG;
+  if (alertingUrl) return alertingUrl;
   return `https://${sysApiPrefix}.${gatewayHost}/systemapis/choreo-alerting-api/v1.0`;
 };
 

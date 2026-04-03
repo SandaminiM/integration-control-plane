@@ -22,7 +22,7 @@ import { type JSX, useEffect, useMemo, useState } from 'react';
 import type { CloudDataPlane, GqlEnvironment } from '../../api/queries';
 import { choreoAlertingApiUrl } from '../../config/api';
 import { useDeleteAlertRule, useGetAlertRules, useGetAlertRulesCount, useUpdateAlertRule } from '../../hooks/alerts';
-import { AlertTypeConstants, AlertTypes, type AlertRule, type AlertTypeOption } from '../../types/alerts';
+import { AlertComponentType, AlertTypeConstants, AlertTypes, type AlertRule, type AlertTypeOption } from '../../types/alerts';
 import { ALERTS_CREATE_NEW_RULE_BUTTON_TEXT } from '../../constants/alerts';
 import { getAlertTypeOptionByValue, getAlertTypesTabItems } from '../../utils/alerts';
 import AlertRuleDeleteDialog from './AlertRuleDialogs/AlertRuleDeleteDialog';
@@ -44,6 +44,8 @@ interface AlertsConfigurePageProps {
 
 export default function AlertsConfigurePage(props: AlertsConfigurePageProps): JSX.Element {
   const { componentId, projectId, projectName, versionId, versionName, isProxy, hasPublicOrOrgVisibility, environments, cloudDataPlanes } = props;
+
+  const componentType = isProxy ? AlertComponentType.API_PROXY : AlertComponentType.SERVICE;
 
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
@@ -73,8 +75,8 @@ export default function AlertsConfigurePage(props: AlertsConfigurePageProps): JS
     return cdp ? choreoAlertingApiUrl(cdp.external_gateway_virtual_host) : '';
   }, [selectedEnvironment?.dpId, cloudDataPlanes]);
 
-  const { data: alertRulesResponse, isFetching: isAlertRulesFetching } = useGetAlertRules(alertingBaseUrl, componentId, selectedEnvironment?.id ?? '');
-  const { data: alertRulesCountUsage, isFetching: isAlertRulesCountFetching } = useGetAlertRulesCount(alertingBaseUrl, componentId, selectedEnvironment?.id ?? '');
+  const { data: alertRulesResponse, isFetching: isAlertRulesFetching } = useGetAlertRules(alertingBaseUrl, componentId, selectedEnvironment?.id ?? '', componentType);
+  const { data: alertRulesCountUsage, isFetching: isAlertRulesCountFetching } = useGetAlertRulesCount(alertingBaseUrl, componentId, selectedEnvironment?.id ?? '', componentType);
 
   const { deleteAlertRuleMutation, isDeleteAlertRuleLoading } = useDeleteAlertRule(alertingBaseUrl);
   const { updateAlertRuleMutation, isUpdateAlertRuleLoading } = useUpdateAlertRule(alertingBaseUrl);
@@ -134,7 +136,7 @@ export default function AlertsConfigurePage(props: AlertsConfigurePageProps): JS
       }
     } else {
       try {
-        await updateAlertRuleMutation(rule);
+        await updateAlertRuleMutation({ ...rule, enabled: !rule.enabled });
         handleNotify('Alert rule updated successfully', 'success');
       } catch {
         handleNotify('Failed to update alert rule', 'error');

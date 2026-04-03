@@ -44,8 +44,9 @@ export default function BuildAlertRuleForm(props: AlertRuleFormProps): JSX.Eleme
   } = props;
 
   const alertRule: AlertRule =
-    selectedAlertRule ||
-    ({
+    selectedAlertRule
+      ? { ...selectedAlertRule }
+      : ({
       projectId,
       componentId,
       environmentId: environment.id,

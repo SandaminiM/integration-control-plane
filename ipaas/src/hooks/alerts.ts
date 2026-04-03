@@ -27,26 +27,25 @@ import {
 } from '../api/alerts';
 import { AlertComponentType, AlertTypeConstants, type AlertHistoryResponse, type AlertRule, type AlertRuleCountUsage } from '../types/alerts';
 
-const COMPONENT_TYPE = AlertComponentType.SERVICE;
-
 export function useGetAlertRulesCount(
   alertingBaseUrl: string,
   componentId: string,
-  environmentId: string
+  environmentId: string,
+  componentType: AlertComponentType = AlertComponentType.SERVICE
 ): { data: AlertRuleCountUsage | undefined; isFetching: boolean; refetch: () => void } {
   const { data, isFetching, refetch } = useQuery({
-    queryKey: ['getAlertRulesCount', componentId, environmentId],
-    queryFn: () => getAlertRulesCount(alertingBaseUrl, componentId, environmentId, COMPONENT_TYPE),
+    queryKey: ['getAlertRulesCount', componentId, environmentId, componentType],
+    queryFn: () => getAlertRulesCount(alertingBaseUrl, componentId, environmentId, componentType),
     enabled: !!alertingBaseUrl && !!componentId && !!environmentId,
   });
   return { data, isFetching, refetch };
 }
 
-export function useGetAlertRules(alertingBaseUrl: string, componentId: string, environmentId: string) {
+export function useGetAlertRules(alertingBaseUrl: string, componentId: string, environmentId: string, componentType: AlertComponentType = AlertComponentType.SERVICE) {
   return useQuery({
-    queryKey: ['getAlertRules', componentId, environmentId],
+    queryKey: ['getAlertRules', componentId, environmentId, componentType],
     queryFn: async () => {
-      const rules = await getAlertRules(alertingBaseUrl, componentId, environmentId, COMPONENT_TYPE);
+      const rules = await getAlertRules(alertingBaseUrl, componentId, environmentId, componentType);
       if (!rules || rules.length === 0) return undefined;
 
       const sorted = [...rules].sort(

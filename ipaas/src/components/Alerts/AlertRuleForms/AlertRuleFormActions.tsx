@@ -52,15 +52,14 @@ export default function AlertRuleFormActions(props: AlertRuleFormActionsProps): 
         onNotify?.('Alert rule created successfully', 'success');
       }
       setSelectedAlertTypeEnvVersion(alertRule.type, alertRule.environmentId);
+      cleanUpForm();
+      goBackToAlertRules();
     } catch {
       if (isEditAlertRule) {
         onNotify?.('Failed to update alert rule', 'error');
       } else {
         onNotify?.('Failed to create the alert rule', 'error');
       }
-    } finally {
-      cleanUpForm();
-      goBackToAlertRules();
     }
   };
 

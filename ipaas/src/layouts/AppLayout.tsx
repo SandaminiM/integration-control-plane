@@ -206,7 +206,7 @@ export default function AppLayout(): JSX.Element {
       case 'logs':
         return 'logs';
       case 'alerts':
-        return 'alerts';
+        return hasComponent(targetScope) ? 'alerts' : 'overview';
       case 'metrics':
         return 'metrics';
       case 'runtimes':

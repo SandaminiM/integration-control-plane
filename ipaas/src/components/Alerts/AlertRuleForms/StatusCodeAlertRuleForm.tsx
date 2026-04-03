@@ -30,8 +30,9 @@ export default function StatusCodeAlertRuleForm(props: AlertRuleFormProps): JSX.
 
   const [isCollapseOpen, setIsCollapseOpen] = useState(false);
   const alertRule: AlertRule =
-    selectedAlertRule ||
-    ({
+    selectedAlertRule
+      ? { ...selectedAlertRule }
+      : ({
       projectId,
       componentId,
       environmentId: environment.id,
@@ -56,6 +57,7 @@ export default function StatusCodeAlertRuleForm(props: AlertRuleFormProps): JSX.
   const [interval, setIntervalState] = useState<AlertRulePeriodOption>(selectedAlertRule?.interval ? (getAlertPeriodOptions().find((o) => o.value === selectedAlertRule.interval) ?? getAlertPeriodOptions()[0]) : getAlertPeriodOptions()[0]);
   const [emailList, setEmailList] = useState<string[]>(selectedAlertRule?.emails ?? []);
   const [errorCount, setErrorCount] = useState('');
+  const [errorEmailList, setErrorEmailList] = useState<string | null>(null);
 
   useEffect(() => {
     setIsAlertRuleHalfConfigured(false);
@@ -79,13 +81,18 @@ export default function StatusCodeAlertRuleForm(props: AlertRuleFormProps): JSX.
     setIntervalState(getAlertPeriodOptions()[0]);
     setEmailList([]);
     setErrorCount('');
+    setErrorEmailList(null);
     setIsAlertRuleHalfConfigured(false);
   };
 
   const validate = (): AlertRule | null => {
     setErrorCount('');
+    setErrorEmailList(null);
     let valid = true;
-    if (emailList.length === 0) valid = false;
+    if (emailList.length === 0) {
+      setErrorEmailList(alertRuleConfigErrorMessages.required);
+      valid = false;
+    }
     if (!count || count < ALERT_RULE_THRESHOLD_MIN || count > ALERT_RULE_THRESHOLD_MAX) {
       setErrorCount(alertRuleConfigErrorMessages.threshold);
       valid = false;
@@ -123,6 +130,8 @@ export default function StatusCodeAlertRuleForm(props: AlertRuleFormProps): JSX.
               setEmailList(emails);
               setIsAlertRuleHalfConfigured(true);
             }}
+            error={!!errorEmailList}
+            helperText={errorEmailList ?? undefined}
           />
         </Grid>
       </Grid>
