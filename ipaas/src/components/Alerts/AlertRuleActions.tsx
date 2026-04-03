@@ -41,6 +41,7 @@ export default function AlertRuleActions(props: AlertRuleActionsProps): JSX.Elem
             size="small"
             checked={rowData.enabled}
             disabled={disabled}
+            slotProps={{ input: { 'aria-label': `Toggle alert rule ${rowData.enabled ? 'off' : 'on'}` } }}
             onChange={(e) => {
               setIsToggleAlertRule(true);
               setSelectedAlertRule({ ...rowData });

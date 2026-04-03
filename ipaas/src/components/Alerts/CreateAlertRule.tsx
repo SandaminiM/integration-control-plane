@@ -146,7 +146,7 @@ export default function CreateAlertRule(props: CreateAlertRuleProps): JSX.Elemen
   const title = isEditAlertRule ? ALERTS_EDIT_RULE_TITLE.replace('{alertType}', alertType.label) : ALERTS_CREATE_NEW_RULE_TITLE.replace('{alertType}', alertType.label);
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 1 }}>
       <AlertRuleDiscardDialog
         isOpen={showDiscardDialog}
         alertType={alertType.label}
@@ -158,13 +158,13 @@ export default function CreateAlertRule(props: CreateAlertRuleProps): JSX.Elemen
         isLoading={false}
       />
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, mt: -2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3, mt: -2 }}>
         <Button variant="text" size="small" startIcon={<ArrowLeft size={16} />} onClick={goBackToAlertRules}>
           {ALERTS_CREATE_NEW_RULE_BACK_BUTTON_TEXT}
         </Button>
       </Box>
 
-      <Typography variant="h5" sx={{ mb: 3 }}>
+      <Typography variant="h5" sx={{ mb: 5 }}>
         {title}
       </Typography>
 
