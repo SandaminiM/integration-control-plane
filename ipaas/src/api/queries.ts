@@ -157,7 +157,7 @@ export interface ProjectContributor {
   id: number;
   displayName: string;
   email: string;
-  pictureUrl: string;
+  pictureUrl: string | null;
   totalContributions: number;
 }
 

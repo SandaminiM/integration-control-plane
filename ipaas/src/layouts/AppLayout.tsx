@@ -84,7 +84,7 @@ export default function AppLayout(): JSX.Element {
   const resource = useResource();
 
   const queryClient = useQueryClient();
-  const { username, displayName, logout, userId, isOidcUser } = useAuth();
+  const { username, displayName, pictureUrl, logout, userId, isOidcUser } = useAuth();
   const { hasAnyPermission, setOrgPermissions } = useAccessControl();
 
   const { state: shell, actions } = useAppShell({ initialCollapsed: true });
@@ -658,8 +658,8 @@ export default function AppLayout(): JSX.Element {
             </Tooltip>
             <Divider orientation="vertical" flexItem sx={{ mx: 1, display: { xs: 'none', sm: 'block' } }} />
             <UserMenu>
-              <UserMenu.Trigger name={displayName || username || 'User'} />
-              <UserMenu.Header name={displayName || username || 'User'} email={username} role="Admin" />
+              <UserMenu.Trigger name={displayName || username || 'User'} avatar={pictureUrl} />
+              <UserMenu.Header name={displayName || username || 'User'} email={username} role="Admin" avatar={pictureUrl} />
               <UserMenu.Item icon={<UserIcon size={18} />} label="Profile" onClick={() => navigate(profileUrl())} />
               <UserMenu.Divider />
               <UserMenu.Logout icon={<LogOut size={18} />} label="Sign Out" onClick={() => setConfirmDialogOpen(true)} />
