@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { AlertTypes, AlertTypeConstants, type AlertTypeOption } from '../types/alerts';
-import { AlertRulePeriod, AlertRulePeriodConstants, AlertMainTypes } from '../constants/alerts';
+import type { AlertTypeOption } from '../types/alerts';
+import { AlertRulePeriod, AlertRulePeriodConstants, AlertMainTypes, AlertTypes, AlertTypeConstants } from '../constants/alerts';
 
 export const getAlertTypesTabItems = () =>
   [AlertMainTypes.LATENCY, AlertMainTypes.TRAFFIC, AlertMainTypes.STATUS_CODE, AlertMainTypes.RESOURCES, AlertMainTypes.LOGS, AlertMainTypes.BUILD].map((type) => ({

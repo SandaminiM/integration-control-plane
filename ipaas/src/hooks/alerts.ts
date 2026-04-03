@@ -25,7 +25,8 @@ import {
   updateAlertRule,
   getAlertHistory,
 } from '../api/alerts';
-import { AlertComponentType, AlertTypeConstants, type AlertHistoryResponse, type AlertRule, type AlertRuleCountUsage } from '../types/alerts';
+import { AlertComponentType, AlertTypeConstants } from '../constants/alerts';
+import type { AlertHistoryResponse, AlertRule, AlertRuleCountUsage } from '../types/alerts';
 
 export function useGetAlertRulesCount(
   alertingBaseUrl: string,

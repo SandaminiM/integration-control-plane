@@ -18,8 +18,8 @@
 
 import { Box, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { type JSX, useEffect, useState } from 'react';
-import { AlertTypeConstants, type AlertRule } from '../../types/alerts';
-import { type AlertRulePeriodConstants } from '../../constants/alerts';
+import type { AlertRule } from '../../types/alerts';
+import { AlertTypeConstants, type AlertRulePeriodConstants } from '../../constants/alerts';
 import { getAlertRuleMetricNameByValue, getAlertRulePeriodNameByValue } from '../../utils/alerts';
 import AlertRuleActions from './AlertRuleActions';
 import AlertRuleEmails from './AlertRuleEmails';

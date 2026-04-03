@@ -20,8 +20,8 @@ import { Autocomplete, Box, Button, Grid, TextField, Typography } from '@wso2/ox
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { type JSX, useEffect, useState } from 'react';
 import type { GqlEnvironment } from '../../api/queries';
-import { AlertTypeConstants, type AlertRule, type AlertRuleFormProps, type AlertTypeOption } from '../../types/alerts';
-import { ALERTS_CREATE_NEW_RULE_BACK_BUTTON_TEXT, ALERTS_CREATE_NEW_RULE_TITLE, ALERTS_EDIT_RULE_TITLE } from '../../constants/alerts';
+import type { AlertRule, AlertRuleFormProps, AlertTypeOption } from '../../types/alerts';
+import { ALERTS_CREATE_NEW_RULE_BACK_BUTTON_TEXT, ALERTS_CREATE_NEW_RULE_TITLE, ALERTS_EDIT_RULE_TITLE, AlertTypeConstants } from '../../constants/alerts';
 import { getAlertTypeOptionByValue, getAlertTypeOptions } from '../../utils/alerts';
 import AlertRuleDiscardDialog from './AlertRuleDialogs/AlertRuleDiscardDialog';
 import LatencyAlertRuleForm from './AlertRuleForms/LatencyAlertRuleForm';

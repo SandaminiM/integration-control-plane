@@ -17,7 +17,8 @@
  */
 
 import { authenticatedFetch } from '../auth/tokenManager';
-import type { AlertComponentType, AlertHistoryResponse, AlertRule, AlertRuleCountUsage } from '../types/alerts';
+import type { AlertComponentType } from '../constants/alerts';
+import type { AlertHistoryResponse, AlertRule, AlertRuleCountUsage } from '../types/alerts';
 
 function buildQueryString(params: Record<string, string>): string {
   return new URLSearchParams(params).toString();

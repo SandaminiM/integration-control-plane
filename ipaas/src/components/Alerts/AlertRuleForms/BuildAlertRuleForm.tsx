@@ -18,9 +18,9 @@
 
 import { Alert, Box, Grid } from '@wso2/oxygen-ui';
 import { type JSX, useEffect, useState } from 'react';
-import { NOTIFICATION_BUILD_ALERT_EXIST, NOTIFICATION_BUILD_ALERT_EXIST_TITLE } from '../../../constants/alerts';
+import { NOTIFICATION_BUILD_ALERT_EXIST, NOTIFICATION_BUILD_ALERT_EXIST_TITLE, AlertComponentType, AlertTypeConstants, AlertTypes } from '../../../constants/alerts';
 import { alertRuleConfigErrorMessages, getAlertRuleExplanation } from '../../../utils/alerts';
-import { AlertComponentType, AlertTypeConstants, AlertTypes, type AlertRule, type AlertRuleFormProps } from '../../../types/alerts';
+import type { AlertRule, AlertRuleFormProps } from '../../../types/alerts';
 import AlertRuleFormActions from './AlertRuleFormActions';
 import EmailTagInput from '../../EmailTagInput';
 

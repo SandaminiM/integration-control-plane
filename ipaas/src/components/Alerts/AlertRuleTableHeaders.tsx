@@ -19,8 +19,7 @@
 import { Box, TableCell, TableRow, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Info } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import { AlertTypeConstants } from '../../types/alerts';
-import { TOOLTIP_COUNT, TOOLTIP_INTERVAL, TOOLTIP_PERIOD, TOOLTIP_THRESHOLD } from '../../constants/alerts';
+import { AlertTypeConstants, TOOLTIP_COUNT, TOOLTIP_INTERVAL, TOOLTIP_PERIOD, TOOLTIP_THRESHOLD } from '../../constants/alerts';
 
 interface AlertRuleTableHeadersProps {
   category: AlertTypeConstants;
