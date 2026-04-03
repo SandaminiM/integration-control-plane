@@ -46,10 +46,10 @@ function flattenSchema(properties: Record<string, Record<string, unknown>>, requ
         key: dotKey,
         leafKey: name,
         parentPath: slashPrefix,
-        type: prop.type === 'array' ? 'object[]' : (prop.type ?? 'string'),
-        description: prop.description,
+        type: prop.type === 'array' ? 'object[]' : ((prop.type as string) ?? 'string'),
+        description: prop.description as string | undefined,
         required: required.includes(name),
-        isSensitive: prop['x-sensitive'] ?? false,
+        isSensitive: (prop['x-sensitive'] as boolean) ?? false,
       });
     }
   }

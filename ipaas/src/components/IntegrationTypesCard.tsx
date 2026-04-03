@@ -20,10 +20,11 @@ import { Card, CardContent, Divider, Stack, Typography } from '@wso2/oxygen-ui';
 import { PlugZap } from '@wso2/oxygen-ui-icons-react';
 import type { GqlComponent } from '../api/queries';
 import type { JSX } from 'react';
+import { getDisplayLabel } from '../constants/integrations';
 
 export default function IntegrationTypesCard({ components }: { components: GqlComponent[] }): JSX.Element {
   const counts = components.reduce<Record<string, number>>((acc, c) => {
-    const type = c.componentType ?? 'Unknown';
+    const type = getDisplayLabel(c.displayType ?? '', c.componentSubType ?? null);
     acc[type] = (acc[type] || 0) + 1;
     return acc;
   }, {});

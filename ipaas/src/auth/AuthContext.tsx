@@ -29,6 +29,7 @@ interface UserInfo {
   userId: string;
   username: string;
   displayName: string;
+  pictureUrl?: string;
   isOidcUser: boolean;
   requirePasswordChange: boolean;
 }
@@ -38,6 +39,7 @@ interface AuthContextValue {
   userId: string;
   username: string;
   displayName: string;
+  pictureUrl?: string;
   isOidcUser: boolean;
   requirePasswordChange: boolean;
   clearRequirePasswordChange: () => void;
@@ -249,19 +251,21 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     let userId = crypto.randomUUID();
     let username = '';
     let displayName = '';
+    let pictureUrl: string | undefined;
     if (tokenData.id_token) {
       try {
         const payload = JSON.parse(atob(tokenData.id_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
         userId = payload.sub ?? userId;
         username = payload.username ?? payload.preferred_username ?? payload.email ?? payload.sub ?? '';
         displayName = payload.name ?? payload.given_name ?? username;
+        pictureUrl = payload.picture ?? undefined;
       } catch {
         /* use defaults */
       }
     }
 
     saveTokens({ token: finalToken, expiresIn: finalExpiresIn, refreshToken: tokenData.refresh_token ?? '', refreshTokenExpiresIn: 86400 });
-    const user: UserInfo = { userId, username, displayName, isOidcUser: true, requirePasswordChange: false };
+    const user: UserInfo = { userId, username, displayName, pictureUrl, isOidcUser: true, requirePasswordChange: false };
     localStorage.setItem(USER_KEY, JSON.stringify(user));
     setUserInfo(user);
     setIsAuthenticated(true);
@@ -291,6 +295,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       userId: userInfo?.userId ?? '',
       username: userInfo?.username ?? '',
       displayName: userInfo?.displayName ?? '',
+      pictureUrl: userInfo?.pictureUrl,
       isOidcUser: userInfo?.isOidcUser ?? false,
       requirePasswordChange: userInfo?.requirePasswordChange ?? false,
       clearRequirePasswordChange,

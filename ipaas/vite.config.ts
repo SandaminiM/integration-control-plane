@@ -28,6 +28,9 @@ export default defineConfig({
     port: 3000,
     https: {},
   },
+  resolve: {
+    dedupe: ['react', 'react-dom', 'react/jsx-runtime'],
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

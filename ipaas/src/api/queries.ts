@@ -153,6 +153,37 @@ export function useProjectByHandler(handler: string) {
   });
 }
 
+export interface ProjectContributor {
+  id: number;
+  displayName: string;
+  email: string;
+  pictureUrl: string | null;
+  totalContributions: number;
+}
+
+const PROJECT_CONTRIBUTORS_QUERY = `
+  query GetProjectContributors($orgId: Int!, $projectId: String!) {
+    project(orgId: $orgId, projectId: $projectId) {
+      projectContributorsData {
+        contributorCount
+        contributors { id, pictureUrl, email, displayName, totalContributions }
+      }
+    }
+  }`;
+
+export function useProjectContributors(projectId: string) {
+  const id = orgId();
+  return useQuery({
+    queryKey: ['projectContributors', projectId, id],
+    queryFn: () =>
+      gql<{ project: { projectContributorsData: { contributorCount: number; contributors: ProjectContributor[] } } }>(PROJECT_CONTRIBUTORS_QUERY, { orgId: id, projectId })
+        .then((d) => d.project?.projectContributorsData?.contributors ?? [])
+        .catch(() => []),
+    enabled: !!projectId && id > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useComponents(orgHandler: string, projectId: string) {
   return useQuery({
     queryKey: ['components', orgHandler, projectId],
