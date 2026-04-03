@@ -32,6 +32,7 @@ import { formatDistanceToNow } from '../utils/time';
 import { resourceUrl, broaden, newComponentUrl, type ProjectScope } from '../nav';
 import { componentOverviewUrl } from '../paths';
 import { Permissions } from '../constants/permissions';
+import { SUPPORTED_DISPLAY_TYPES, getDisplayLabel } from '../constants/integrations';
 import Authorized from '../components/Authorized';
 import { useLoadProjectPermissions } from '../hooks/usePermissionLoader';
 
@@ -93,7 +94,14 @@ function IntegrationsTable({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleting, setDeleting] = useState<GqlComponent | null>(null);
   const q = query.trim().toLowerCase();
-  const filtered = components.filter((c) => !q || c.displayName.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q) || c.displayType?.toLowerCase().includes(q));
+  const filtered = components
+    .filter((c) => !q || c.displayName.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q) || c.displayType?.toLowerCase().includes(q))
+    .sort((a, b) => {
+      const aSupported = SUPPORTED_DISPLAY_TYPES.has(a.displayType ?? '');
+      const bSupported = SUPPORTED_DISPLAY_TYPES.has(b.displayType ?? '');
+      if (aSupported === bSupported) return 0;
+      return aSupported ? -1 : 1;
+    });
   const maxPage = Math.max(0, Math.ceil(filtered.length / rowsPerPage) - 1);
   const safePage = Math.min(page, maxPage);
   const paginated = filtered.slice(safePage * rowsPerPage, safePage * rowsPerPage + rowsPerPage);
@@ -139,56 +147,65 @@ function IntegrationsTable({
               </ListingTable.Row>
             </ListingTable.Head>
             <ListingTable.Body>
-              {paginated.map((c) => (
-                <ListingTable.Row
-                  key={c.id}
-                  variant="card"
-                  clickable
-                  hover
-                  tabIndex={0}
-                  aria-label={`View details for ${c.displayName}`}
-                  onClick={() => onSelect(c.handler)}
-                  onKeyDown={(e) => {
-                    if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-                      if (e.key === ' ') e.preventDefault();
-                      onSelect(c.handler);
+              {paginated.map((c) => {
+                const isSupported = SUPPORTED_DISPLAY_TYPES.has(c.displayType ?? '');
+                return (
+                  <ListingTable.Row
+                    key={c.id}
+                    variant="card"
+                    clickable={isSupported}
+                    hover={isSupported}
+                    tabIndex={isSupported ? 0 : -1}
+                    aria-label={`View details for ${c.displayName}`}
+                    aria-disabled={!isSupported}
+                    onClick={isSupported ? () => onSelect(c.handler) : undefined}
+                    onKeyDown={
+                      isSupported
+                        ? (e) => {
+                            if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                              if (e.key === ' ') e.preventDefault();
+                              onSelect(c.handler);
+                            }
+                          }
+                        : undefined
                     }
-                  }}>
-                  <ListingTable.Cell>
-                    <Stack direction="row" alignItems="center" gap={1.5}>
-                      <Avatar sx={{ width: 32, height: 32, fontSize: 14, bgcolor: 'action.hover', color: 'text.primary' }}>{c.displayName[0].toUpperCase()}</Avatar>
-                      {c.displayName}
-                    </Stack>
-                  </ListingTable.Cell>
-                  <ListingTable.Cell>
-                    <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 200 }}>
-                      {c.description || ''}
-                    </Typography>
-                  </ListingTable.Cell>
-                  <ListingTable.Cell>{c.displayType}</ListingTable.Cell>
-                  <ListingTable.Cell>
-                    <Typography variant="body2" color="text.secondary">
-                      {formatDistanceToNow(c.lastBuildDate)}
-                    </Typography>
-                  </ListingTable.Cell>
-                  <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
+                    sx={!isSupported ? { opacity: 0.45, cursor: 'default', pointerEvents: 'none' } : undefined}>
                     <ListingTable.Cell>
-                      <Tooltip title="Delete">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          aria-label={`Delete ${c.displayName}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleting(c);
-                          }}>
-                          <Trash2 size={16} />
-                        </IconButton>
-                      </Tooltip>
+                      <Stack direction="row" alignItems="center" gap={1.5}>
+                        <Avatar sx={{ width: 32, height: 32, fontSize: 14, bgcolor: 'action.hover', color: 'text.primary' }}>{c.displayName[0].toUpperCase()}</Avatar>
+                        {c.displayName}
+                      </Stack>
                     </ListingTable.Cell>
-                  </Authorized>
-                </ListingTable.Row>
-              ))}
+                    <ListingTable.Cell>
+                      <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 200 }}>
+                        {c.description || ''}
+                      </Typography>
+                    </ListingTable.Cell>
+                    <ListingTable.Cell>{getDisplayLabel(c.displayType ?? '', c.componentSubType ?? null)}</ListingTable.Cell>
+                    <ListingTable.Cell>
+                      <Typography variant="body2" color="text.secondary">
+                        {formatDistanceToNow(c.lastBuildDate)}
+                      </Typography>
+                    </ListingTable.Cell>
+                    <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
+                      <ListingTable.Cell>
+                        <Tooltip title="Delete">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            aria-label={`Delete ${c.displayName}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleting(c);
+                            }}>
+                            <Trash2 size={16} />
+                          </IconButton>
+                        </Tooltip>
+                      </ListingTable.Cell>
+                    </Authorized>
+                  </ListingTable.Row>
+                );
+              })}
             </ListingTable.Body>
           </ListingTable>
         </ListingTable.Container>
