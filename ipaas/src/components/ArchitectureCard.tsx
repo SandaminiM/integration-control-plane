@@ -24,12 +24,12 @@ import { useMemo } from 'react';
 import type { GqlComponent } from '../api/queries';
 import type { JSX } from 'react';
 
-function getComponentType(displayType: string, componentSubType: string | null): ComponentType {
+function getComponentType(displayType: string, componentSubType: string | null): ComponentType | null {
   if (componentSubType === 'ballerinaFileIntegration' || componentSubType === 'miFileIntegration') {
     return ComponentType.EVENT_HANDLER;
   }
   if (componentSubType === 'aiAgent' || componentSubType === 'mcpServer') {
-    return ComponentType.SERVICE;
+    return null;
   }
   switch (displayType) {
     case 'ballerinaService':
@@ -84,7 +84,7 @@ function getComponentType(displayType: string, componentSubType: string | null):
     case 'externalConsumer':
       return ComponentType.EXTERNAL_CONSUMER;
     default:
-      return ComponentType.SERVICE;
+      return null;
   }
 }
 
@@ -147,17 +147,20 @@ function getDefaultServices(componentId: string, componentType: ComponentType): 
 }
 
 function buildProjectModel(projectId: string, components: GqlComponent[]): Project {
-  const diagramComponents: Component[] = components.map((c) => {
-    const type = getComponentType(c.displayType ?? '', c.componentSubType ?? null);
-    return {
-      id: c.id,
-      label: c.displayName,
-      version: c.version ?? '1.0.0',
-      type,
-      services: getDefaultServices(c.id, type),
-      connections: [],
-    };
-  });
+  const diagramComponents: Component[] = components
+    .map((c) => {
+      const type = getComponentType(c.displayType ?? '', c.componentSubType ?? null);
+      if (type === null) return null;
+      return {
+        id: c.id,
+        label: c.displayName,
+        version: c.version ?? '1.0.0',
+        type,
+        services: getDefaultServices(c.id, type),
+        connections: [],
+      };
+    })
+    .filter((c): c is Component => c !== null);
 
   return {
     id: projectId,
@@ -167,7 +170,7 @@ function buildProjectModel(projectId: string, components: GqlComponent[]): Proje
   };
 }
 
-export default function ArchitectureCard({ projectId, components, isLoading, onRefresh }: { projectId: string; components: GqlComponent[]; isLoading: boolean; onRefresh: () => void }): JSX.Element {
+export default function ArchitectureCard({ projectId, components, isLoading, isRefreshing, onRefresh }: { projectId: string; components: GqlComponent[]; isLoading: boolean; isRefreshing: boolean; onRefresh: () => void }): JSX.Element {
   const project = useMemo(() => buildProjectModel(projectId, components), [projectId, components]);
 
   return (
@@ -183,9 +186,9 @@ export default function ArchitectureCard({ projectId, components, isLoading, onR
               size="small"
               aria-label="Refresh architecture"
               onClick={onRefresh}
-              disabled={isLoading}
+              disabled={isRefreshing}
               sx={
-                isLoading
+                isRefreshing
                   ? {
                       '@keyframes spin': { from: { transform: 'rotate(0deg)' }, to: { transform: 'rotate(360deg)' } },
                       '& svg': { animation: 'spin 1s linear infinite' },
