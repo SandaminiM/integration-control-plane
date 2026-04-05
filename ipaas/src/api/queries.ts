@@ -606,6 +606,15 @@ export function useArtifactWsdl(componentId: string, artifactType: string, artif
 
 // ── Component repository & commit history ──
 
+export interface GqlBuildpackConfig {
+  versionId: string;
+  buildContext: string;
+  isUnitTestEnabled: boolean;
+  languageVersion: string;
+  pullLatestSubmodules: boolean;
+  enableTrivyScan: boolean;
+}
+
 export interface GqlRepository {
   gitProvider: string;
   organizationApp: string;
@@ -615,6 +624,8 @@ export interface GqlRepository {
   bitbucketServerUrl?: string;
   serverUrl?: string;
   projectApp?: string;
+  isBuildConfigurationMigrated?: boolean;
+  buildpackConfig?: GqlBuildpackConfig[];
 }
 
 export interface GqlCommit {
@@ -634,7 +645,9 @@ const COMPONENT_REPOSITORY_QUERY = `
     component(projectId: $projectId, componentHandler: $componentHandler) {
       repository {
         gitProvider, organizationApp, nameApp, branch, appSubPath,
-        bitbucketServerUrl, serverUrl, projectApp
+        bitbucketServerUrl, serverUrl, projectApp,
+        isBuildConfigurationMigrated,
+        buildpackConfig { versionId, buildContext, isUnitTestEnabled, languageVersion, pullLatestSubmodules, enableTrivyScan }
       }
     }
   }`;

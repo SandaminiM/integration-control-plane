@@ -50,7 +50,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { JSX } from 'react';
 import { useNavigate, Outlet, NavLink } from 'react-router';
 import Logo from '../components/Logo';
-import { BarChart3, Bell, ChevronDown, ChevronRight, Layers, LayoutDashboard, LogOut, Plus, ScrollText, Search, Server, Shield, User as UserIcon, X } from '@wso2/oxygen-ui-icons-react';
+import { BarChart3, Bell, ChevronDown, ChevronRight, Hammer, Layers, LayoutDashboard, LogOut, Plus, ScrollText, Search, Server, Shield, User as UserIcon, X } from '@wso2/oxygen-ui-icons-react';
 import { useProject, useProjectByHandler, useProjects, useComponents, useOrgs } from '../api/queries';
 import { fetchOrgPermissions } from '../api/auth';
 import { authenticatedFetch, switchOrgToken } from '../auth/tokenManager';
@@ -69,10 +69,11 @@ const SIDEBAR_ICONS: Record<Resource, JSX.Element> = {
   runtimes: <Server size={20} />,
   environments: <Layers size={20} />,
   'access-control': <Shield size={20} />,
+  build: <Hammer size={20} />,
 };
 
 const SIDEBAR_CATEGORIES: { label: string; resources: Resource[] }[] = [
-  { label: '', resources: ['overview'] },
+  { label: '', resources: ['overview', 'build'] },
   { label: 'Observability', resources: ['logs', 'alerts', 'metrics'] },
   { label: 'Infrastructure', resources: ['runtimes', 'environments'] },
   { label: 'Management', resources: ['access-control'] },
@@ -207,6 +208,8 @@ export default function AppLayout(): JSX.Element {
         return 'logs';
       case 'alerts':
         return hasComponent(targetScope) ? 'alerts' : 'overview';
+      case 'build':
+        return 'build';
       case 'metrics':
         return 'metrics';
       case 'runtimes':

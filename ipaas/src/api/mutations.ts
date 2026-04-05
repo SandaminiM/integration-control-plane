@@ -21,6 +21,7 @@ import { gql } from './graphql';
 import { authenticatedFetch, refreshAccessToken } from '../auth/tokenManager';
 import type { GqlArtifact, GqlComponent, GqlEnvironment, GqlProject, SchemaConfigItem } from './queries';
 import { toBackendArtifactType } from './artifactToggleMutations';
+import type { DeployComponentInput, UpdateBuildpackConfigsInput } from '../types/build';
 
 export interface CreateProjectInput {
   name: string;
@@ -420,6 +421,61 @@ export function useDeployDeploymentTrack() {
   });
 }
 
+// ── Build trigger (deploy component) ──
+
+const DEPLOY_COMPONENT = `
+  mutation DeployComponent(
+    $componentId: String!
+    $versionId: String!
+    $envId: String!
+    $sha: String!
+    $branch: String
+    $shaDate: String
+    $gitRefType: String
+    $cron: String
+    $cronTimezone: String
+    $commitTag: String
+  ) {
+    deployComponent(deployment: {
+      componentId: $componentId,
+      versionId: $versionId,
+      envId: $envId,
+      sha: $sha,
+      branch: $branch,
+      shaDate: $shaDate,
+      gitRefType: $gitRefType,
+      cron: $cron,
+      cronTimezone: $cronTimezone,
+      commitTag: $commitTag
+    }) {
+      message
+      success
+    }
+  }`;
+
+export function useTriggerBuild() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: DeployComponentInput) =>
+      gql<{ deployComponent: { message: string; success: boolean } }>(DEPLOY_COMPONENT, {
+        componentId: input.componentId,
+        versionId: input.versionId,
+        envId: input.envId,
+        sha: input.sha,
+        branch: input.branch,
+        shaDate: input.shaDate ?? '',
+        gitRefType: input.gitRefType,
+        cron: input.cron ?? null,
+        cronTimezone: input.cronTimezone ?? '',
+        commitTag: input.commitTag ?? null,
+      }).then((d) => d.deployComponent),
+    onSuccess: (_data, input) => {
+      // Immediately refresh build history after a build is triggered
+      qc.invalidateQueries({ queryKey: ['deploymentStatus', input.componentId, input.versionId] });
+    },
+  });
+}
+
 // ── Promote ──
 
 const PROMOTE_MUTATION = `
@@ -527,6 +583,52 @@ export function useUpdateComponent() {
     onSuccess: (_data, input) => {
       qc.invalidateQueries({ queryKey: ['component', input.projectId, input.handler] });
       qc.invalidateQueries({ queryKey: ['components'] });
+    },
+  });
+}
+
+// ── Buildpack build configuration ──
+
+const UPDATE_BUILDPACK_BUILD_CONFIGURATIONS = `
+  mutation updateBuildpackBuildConfigurations(
+    $componentId: String!,
+    $buildContext: String,
+    $versionId: String!,
+    $languageVersion: String,
+    $environmentVariables: [BuildpackBuildEnvironmentVariable!],
+    $isUnitTestEnabled: Boolean,
+    $pullLatestSubmodules: Boolean,
+    $enableTrivyScan: Boolean
+  ) {
+    updateBuildpackBuildConfigurations(input: {
+      componentId: $componentId,
+      buildContext: $buildContext,
+      versionId: $versionId,
+      languageVersion: $languageVersion,
+      environmentVariables: $environmentVariables,
+      isUnitTestEnabled: $isUnitTestEnabled,
+      pullLatestSubmodules: $pullLatestSubmodules,
+      enableTrivyScan: $enableTrivyScan
+    })
+  }`;
+
+export function useUpdateBuildpackConfigs() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateBuildpackConfigsInput) =>
+      gql<{ updateBuildpackBuildConfigurations: string }>(UPDATE_BUILDPACK_BUILD_CONFIGURATIONS, {
+        componentId: input.componentId,
+        versionId: input.versionId,
+        buildContext: input.buildContext,
+        languageVersion: input.languageVersion,
+        environmentVariables: input.environmentVariables,
+        isUnitTestEnabled: input.isUnitTestEnabled,
+        pullLatestSubmodules: input.pullLatestSubmodules,
+        enableTrivyScan: input.enableTrivyScan,
+      }).then((d) => d.updateBuildpackBuildConfigurations),
+    onSuccess: (_data, input) => {
+      qc.invalidateQueries({ queryKey: ['componentRepository'] });
+      qc.invalidateQueries({ queryKey: ['deploymentStatus', input.componentId] });
     },
   });
 }

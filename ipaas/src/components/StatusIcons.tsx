@@ -16,15 +16,28 @@
  * under the License.
  */
 
-import { Box, CircularProgress } from '@wso2/oxygen-ui';
-import { Check, Clock, X } from '@wso2/oxygen-ui-icons-react';
+import { Box } from '@wso2/oxygen-ui';
+import { Check, Clock, Loader, X } from '@wso2/oxygen-ui-icons-react';
+import type { BuildStep } from '../api/builds';
 
 interface StatusIconProps {
   size?: number;
 }
 
 export function InProgressIcon({ size = 20 }: StatusIconProps) {
-  return <CircularProgress size={size} />;
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        flexShrink: 0,
+        color: 'primary.main',
+        animation: 'spin 3s linear infinite',
+        '@keyframes spin': { from: { transform: 'rotate(0deg)' }, to: { transform: 'rotate(360deg)' } },
+      }}>
+      <Loader size={size} />
+    </Box>
+  );
 }
 
 export function SuccessIcon({ size = 20 }: StatusIconProps) {
@@ -36,12 +49,13 @@ export function SuccessIcon({ size = 20 }: StatusIconProps) {
         height: size,
         borderRadius: '50%',
         bgcolor: 'success.main',
+        color: 'common.white',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
       }}>
-      <Check size={iconSize} style={{ color: '#fff' }} />
+      <Check size={iconSize} />
     </Box>
   );
 }
@@ -55,12 +69,13 @@ export function QueuedIcon({ size = 20 }: StatusIconProps) {
         height: size,
         borderRadius: '50%',
         bgcolor: 'action.disabledBackground',
+        color: 'grey.600',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
       }}>
-      <Clock size={iconSize} style={{ color: '#757575' }} />
+      <Clock size={iconSize} />
     </Box>
   );
 }
@@ -74,12 +89,67 @@ export function FailedIcon({ size = 20 }: StatusIconProps) {
         height: size,
         borderRadius: '50%',
         bgcolor: 'error.main',
+        color: 'common.white',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
       }}>
-      <X size={iconSize} style={{ color: '#fff' }} />
+      <X size={iconSize} />
     </Box>
   );
+}
+
+export function StageIcon({ status, size = 18 }: { status: 'success' | 'error' | 'active' | 'pending'; size?: number }) {
+  if (status === 'active') return <InProgressIcon size={size} />;
+  if (status === 'success') return <SuccessIcon size={size} />;
+  if (status === 'error') return <FailedIcon size={size} />;
+  return <QueuedIcon size={size} />;
+}
+
+function BlinkingBlueDot() {
+  return (
+    <Box
+      sx={{
+        width: 9,
+        height: 9,
+        borderRadius: '50%',
+        bgcolor: 'info.main',
+        flexShrink: 0,
+        animation: 'stepBlink 1.4s ease-in-out infinite',
+        '@keyframes stepBlink': {
+          '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+          '50%': { opacity: 0.2, transform: 'scale(0.7)' },
+        },
+      }}
+    />
+  );
+}
+
+function StatusDot({ color }: { color: string }) {
+  return <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: color, flexShrink: 0 }} />;
+}
+
+function PendingDot() {
+  return (
+    <Box
+      sx={{
+        width: 8,
+        height: 8,
+        borderRadius: '50%',
+        border: '1.5px solid',
+        borderColor: 'text.disabled',
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
+export function SubStepIcon({ step }: { step: BuildStep }) {
+  if (step.status === 'in_progress') return <BlinkingBlueDot />;
+  const c = step.conclusion?.toLowerCase();
+  if (c === 'success') return <StatusDot color="success.main" />;
+  if (c === 'failure' || c === 'failed') return <StatusDot color="error.main" />;
+  if (c === 'skipped') return <StatusDot color="text.disabled" />;
+  return <PendingDot />;
 }
