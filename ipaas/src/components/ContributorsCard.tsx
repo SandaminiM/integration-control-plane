@@ -41,7 +41,11 @@ export default function ContributorsCard({ projectId }: { projectId: string }): 
         <Stack direction="row" flexWrap="wrap" gap={1}>
           {contributors.map((contributor) => (
             <Tooltip key={contributor.id} title={`${contributor.displayName || contributor.email} · ${contributor.totalContributions} contributions`}>
-              <Avatar src={contributor.pictureUrl || undefined} sx={{ width: 32, height: 32, fontSize: 14, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
+              <Avatar
+                src={contributor.pictureUrl || undefined}
+                tabIndex={0}
+                aria-label={`${contributor.displayName || contributor.email}: ${contributor.totalContributions} contributions`}
+                sx={{ width: 32, height: 32, fontSize: 14, bgcolor: 'primary.main', color: 'primary.contrastText', cursor: 'default' }}>
                 {(contributor.displayName || contributor.email)[0].toUpperCase()}
               </Avatar>
             </Tooltip>

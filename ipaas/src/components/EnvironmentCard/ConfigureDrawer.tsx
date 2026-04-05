@@ -38,18 +38,17 @@ function flattenSchema(properties: Record<string, Record<string, unknown>>, requ
     const dotKey = dotPrefix ? `${dotPrefix}.${name}` : name;
     const slashPath = slashPrefix ? `${slashPrefix}/${name}` : name;
     if (prop.type === 'object' && prop.properties) {
-      const parentIsRequired = required.includes(name);
-      const childRequired = parentIsRequired ? ((prop.required as string[]) ?? []) : [];
+      const childRequired = Array.isArray(prop.required) ? (prop.required as string[]) : [];
       fields.push(...flattenSchema(prop.properties as Record<string, Record<string, unknown>>, childRequired, dotKey, slashPath));
     } else {
       fields.push({
         key: dotKey,
         leafKey: name,
         parentPath: slashPrefix,
-        type: prop.type === 'array' ? 'object[]' : ((prop.type as string) ?? 'string'),
-        description: prop.description as string | undefined,
+        type: typeof prop.type === 'string' && prop.type === 'array' ? 'object[]' : typeof prop.type === 'string' ? prop.type : 'string',
+        description: typeof prop.description === 'string' ? prop.description : undefined,
         required: required.includes(name),
-        isSensitive: (prop['x-sensitive'] as boolean) ?? false,
+        isSensitive: typeof prop['x-sensitive'] === 'boolean' ? prop['x-sensitive'] : false,
       });
     }
   }
@@ -199,7 +198,12 @@ export default function ConfigureDrawer({ open, onClose, projectId, componentId,
   const [values, setValues] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const fields = useMemo(() => parseFields(data?.jsonSchema), [data?.jsonSchema]);
+  const fields = useMemo(() => {
+    const base = parseFields(data?.jsonSchema);
+    const reqKeys = new Set((data?.configurations ?? []).filter((c) => c.isRequired).map((c) => c.key));
+    if (!reqKeys.size) return base;
+    return base.map((f) => ({ ...f, required: f.required || reqKeys.has(f.key) }));
+  }, [data]);
   const requiredFields = useMemo(() => fields.filter((f) => f.required), [fields]);
   const optionalFields = useMemo(() => fields.filter((f) => !f.required), [fields]);
   const requiredGroups = useMemo(() => groupFields(requiredFields), [requiredFields]);
