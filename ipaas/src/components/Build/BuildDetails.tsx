@@ -90,13 +90,23 @@ export default function BuildDetails({ componentId, versionId, build, onLogsTogg
               Build ID
             </Typography>
             <Stack direction="row" alignItems="center" gap={0.75}>
-              <Chip
-                label={build.isAutoDeploy ? 'Automatic' : 'Manual'}
-                size="small"
-                variant="outlined"
-                color={build.isAutoDeploy ? 'primary' : 'info'}
-                sx={{ fontSize: '0.65rem', height: (theme) => theme.spacing(2.25) }}
-              />
+              {build.isTriggeredAtCreation ? (
+                <Chip
+                  label="Initial Build"
+                  size="small"
+                  variant="outlined"
+                  color="default"
+                  sx={{ fontSize: '0.65rem', height: (theme) => theme.spacing(2.25) }}
+                />
+              ) : (
+                <Chip
+                  label={build.isAutoDeploy ? 'Automatic' : 'Manual'}
+                  size="small"
+                  variant="outlined"
+                  color={build.isAutoDeploy ? 'primary' : 'info'}
+                  sx={{ fontSize: '0.65rem', height: (theme) => theme.spacing(2.25) }}
+                />
+              )}
               <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
                 #{build.id}
               </Typography>

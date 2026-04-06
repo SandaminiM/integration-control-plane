@@ -198,13 +198,23 @@ export default function BuildHistory({ componentId, versionId, envId, branch, bu
                     <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
                       #{build.id}
                     </Typography>
-                    <Chip
-                      label={build.isAutoDeploy ? 'Automatic' : 'Manual'}
-                      size="small"
-                      variant="outlined"
-                      color={build.isAutoDeploy ? 'primary' : 'info'}
-                      sx={{ fontSize: '0.65rem', height: (theme) => theme.spacing(2.25) }}
-                    />
+                    {build.isTriggeredAtCreation ? (
+                      <Chip
+                        label="Initial Build"
+                        size="small"
+                        variant="outlined"
+                        color="default"
+                        sx={{ fontSize: '0.65rem', height: (theme) => theme.spacing(2.25) }}
+                      />
+                    ) : (
+                      <Chip
+                        label={build.isAutoDeploy ? 'Automatic' : 'Manual'}
+                        size="small"
+                        variant="outlined"
+                        color={build.isAutoDeploy ? 'primary' : 'info'}
+                        sx={{ fontSize: '0.65rem', height: (theme) => theme.spacing(2.25) }}
+                      />
+                    )}
                   </Stack>
                 </ListingTable.Cell>
 

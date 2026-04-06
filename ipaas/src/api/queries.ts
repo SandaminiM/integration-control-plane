@@ -744,6 +744,7 @@ export interface GqlDeploymentStatus {
   conclusion: string;
   conclusionV2: string;
   isAutoDeploy: boolean;
+  isTriggeredAtCreation: boolean;
   name: string;
   failureReason: number;
   sourceCommitId: string;
@@ -753,7 +754,7 @@ export interface GqlDeploymentStatus {
 const DEPLOYMENT_STATUS_QUERY = `
   query GetDeploymentStatus($versionId: String!, $componentId: String!) {
     deploymentStatusByVersion(versionId: $versionId, componentId: $componentId) {
-      id, sha, started_at, completed_at, status, conclusion, conclusionV2, isAutoDeploy, name, failureReason, sourceCommitId, buildRef
+      id, sha, started_at, completed_at, status, conclusion, conclusionV2, isAutoDeploy, isTriggeredAtCreation, name, failureReason, sourceCommitId, buildRef
     }
   }`;
 
