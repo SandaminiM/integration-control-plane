@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Button, Chip, CircularProgress, IconButton, ListingTable, Stack, TablePagination, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Button, Chip, CircularProgress, IconButton, ListingTable, Snackbar, Stack, TablePagination, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { GitBranch, GitCommit, Settings } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
@@ -46,6 +46,9 @@ export default function BuildHistory({ componentId, versionId, envId, branch, bu
   const [selectedBuild, setSelectedBuild] = useState<GqlDeploymentStatus | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+  const handleNotify = (message: string, severity: 'success' | 'error') => setSnackbar({ open: true, message, severity });
 
   const [searchParams, setSearchParams] = useSearchParams();
   const triggerBuild = useTriggerBuild();
@@ -278,7 +281,14 @@ export default function BuildHistory({ componentId, versionId, envId, branch, bu
         onCommitBuild={handleCommitBuild}
         isBuildTriggering={isBuilding}
         repository={repository}
+        onNotify={handleNotify}
       />
+
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar((s) => ({ ...s, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+        <Alert onClose={() => setSnackbar((s) => ({ ...s, open: false }))} severity={snackbar.severity} variant="filled" sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 }

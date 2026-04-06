@@ -763,8 +763,7 @@ export function useDeploymentStatus(componentId: string, versionId: string) {
     queryKey: ['deploymentStatus', componentId, versionId],
     queryFn: () =>
       gql<{ deploymentStatusByVersion: GqlDeploymentStatus[] }>(DEPLOYMENT_STATUS_QUERY, { versionId, componentId })
-        .then((d) => d.deploymentStatusByVersion ?? [])
-        .catch(() => []),
+        .then((d) => d.deploymentStatusByVersion ?? []),
     enabled: !!componentId && !!versionId,
     retry: false,
     refetchInterval: 15000,

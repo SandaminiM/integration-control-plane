@@ -18,7 +18,7 @@
 
 import { Box, Button, CircularProgress, Divider, FormControlLabel, Link, Stack, Switch, Typography } from '@wso2/oxygen-ui';
 import { GitBranch } from '@wso2/oxygen-ui-icons-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useUpdateBuildpackConfigs } from '../../api/mutations';
 import type { GqlRepository } from '../../api/queries';
 import { gitProviderLabel, repoUrl, Row } from '../../utils/build';
@@ -27,34 +27,52 @@ interface BuildConfigPanelProps {
   repository: GqlRepository;
   componentId: string;
   versionId: string;
+  onClose: () => void;
+  onNotify: (message: string, severity: 'success' | 'error') => void;
 }
 
-export default function BuildConfigPanel({ repository, componentId, versionId }: BuildConfigPanelProps) {
-  const { organizationApp, nameApp, branch, gitProvider, buildpackConfig } = repository;
+export default function BuildConfigPanel({ repository, componentId, versionId, onClose, onNotify }: BuildConfigPanelProps) {
+  const { organizationApp, nameApp, branch, gitProvider, buildpackConfig, isBuildConfigurationMigrated } = repository;
   const url = repoUrl(repository);
 
   const versionConfig = buildpackConfig?.find((c) => c.versionId === versionId) ?? buildpackConfig?.[0];
+
   const [isUnitTestEnabled, setIsUnitTestEnabled] = useState(versionConfig?.isUnitTestEnabled ?? false);
   const [savedUnitTestEnabled, setSavedUnitTestEnabled] = useState(versionConfig?.isUnitTestEnabled ?? false);
+
+  const [isPullLatestSubmodules, setIsPullLatestSubmodules] = useState(versionConfig?.pullLatestSubmodules ?? false);
+  const [savedPullLatestSubmodules, setSavedPullLatestSubmodules] = useState(versionConfig?.pullLatestSubmodules ?? false);
+
+  const pendingSaveValue = useRef({ isUnitTestEnabled, isPullLatestSubmodules });
 
   const updateBuildpackConfigs = useUpdateBuildpackConfigs();
 
   const handleSaveBuildConfig = () => {
+    pendingSaveValue.current = { isUnitTestEnabled, isPullLatestSubmodules };
     updateBuildpackConfigs.mutate(
       {
         componentId,
         versionId,
         buildContext: versionConfig?.buildContext ?? '',
         languageVersion: versionConfig?.languageVersion ?? '',
+        environmentVariables: [],
         isUnitTestEnabled,
-        pullLatestSubmodules: versionConfig?.pullLatestSubmodules ?? false,
+        pullLatestSubmodules: isPullLatestSubmodules,
         enableTrivyScan: versionConfig?.enableTrivyScan ?? false,
       },
-      { onSuccess: () => setSavedUnitTestEnabled(isUnitTestEnabled) },
+      {
+        onSuccess: () => {
+          setSavedUnitTestEnabled(pendingSaveValue.current.isUnitTestEnabled);
+          setSavedPullLatestSubmodules(pendingSaveValue.current.isPullLatestSubmodules);
+          onClose();
+          onNotify('Build configuration saved successfully.', 'success');
+        },
+        onError: () => onNotify('Failed to save build configuration. Please try again.', 'error'),
+      },
     );
   };
 
-  const isDirty = isUnitTestEnabled !== savedUnitTestEnabled;
+  const isDirty = isUnitTestEnabled !== savedUnitTestEnabled || isPullLatestSubmodules !== savedPullLatestSubmodules;
 
   return (
     <Stack gap={2}>
@@ -114,6 +132,25 @@ export default function BuildConfigPanel({ repository, componentId, versionId }:
               sx={{ m: 0 }}
             />
           </Stack>
+
+          {isBuildConfigurationMigrated && (
+            <>
+              <Divider />
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Stack gap={0.25}>
+                  <Typography variant="body2">Pull Latest Submodules</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Pull the latest version of all git submodules during the build
+                  </Typography>
+                </Stack>
+                <FormControlLabel
+                  control={<Switch checked={isPullLatestSubmodules} onChange={(e) => setIsPullLatestSubmodules(e.target.checked)} size="small" />}
+                  label=""
+                  sx={{ m: 0 }}
+                />
+              </Stack>
+            </>
+          )}
 
           <Stack direction="row" justifyContent="flex-end" sx={{ pt: 0.5 }}>
             <Button

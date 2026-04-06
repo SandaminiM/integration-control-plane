@@ -37,9 +37,10 @@ interface BuildRightDrawerProps {
   onCommitBuild: (commit: GqlCommit) => void;
   isBuildTriggering: boolean;
   repository: GqlRepository | null;
+  onNotify: (message: string, severity: 'success' | 'error') => void;
 }
 
-export default function BuildRightDrawer({ open, onClose, drawerType, selectedBuild, componentId, versionId, commits, commitsLoading, onCommitBuild, isBuildTriggering, repository }: BuildRightDrawerProps) {
+export default function BuildRightDrawer({ open, onClose, drawerType, selectedBuild, componentId, versionId, commits, commitsLoading, onCommitBuild, isBuildTriggering, repository, onNotify }: BuildRightDrawerProps) {
   const title = drawerType ? BUILD_DRAWER_TITLES[drawerType] : '';
   const [logsOpen, setLogsOpen] = useState(false);
 
@@ -64,7 +65,7 @@ export default function BuildRightDrawer({ open, onClose, drawerType, selectedBu
       );
     }
     if (drawerType === BuildDrawerType.BuildConfig && repository) {
-      return <BuildConfigPanel repository={repository} componentId={componentId} versionId={versionId} />;
+      return <BuildConfigPanel repository={repository} componentId={componentId} versionId={versionId} onClose={onClose} onNotify={onNotify} />;
     }
     return null;
   };
