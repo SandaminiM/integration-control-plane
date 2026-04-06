@@ -18,10 +18,11 @@
 
 import { Box, Button, CircularProgress, Divider, FormControlLabel, Link, Stack, Switch, Typography } from '@wso2/oxygen-ui';
 import { GitBranch } from '@wso2/oxygen-ui-icons-react';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useUpdateBuildpackConfigs } from '../../api/mutations';
 import type { GqlRepository } from '../../api/queries';
 import { gitProviderLabel, repoUrl, Row } from '../../utils/build';
+import BuildEnvVarsEditor, { type BuildEnvVar } from './BuildEnvVarsEditor';
 
 interface BuildConfigPanelProps {
   repository: GqlRepository;
@@ -37,33 +38,44 @@ export default function BuildConfigPanel({ repository, componentId, versionId, o
 
   const versionConfig = buildpackConfig?.find((c) => c.versionId === versionId) ?? buildpackConfig?.[0];
 
+  const initialEnvVars: BuildEnvVar[] = versionConfig?.keyValues?.map(({ id, key, value }) => ({ id, key, value })) ?? [];
+
   const [isUnitTestEnabled, setIsUnitTestEnabled] = useState(versionConfig?.isUnitTestEnabled ?? false);
   const [savedUnitTestEnabled, setSavedUnitTestEnabled] = useState(versionConfig?.isUnitTestEnabled ?? false);
 
   const [isPullLatestSubmodules, setIsPullLatestSubmodules] = useState(versionConfig?.pullLatestSubmodules ?? false);
   const [savedPullLatestSubmodules, setSavedPullLatestSubmodules] = useState(versionConfig?.pullLatestSubmodules ?? false);
 
-  const pendingSaveValue = useRef({ isUnitTestEnabled, isPullLatestSubmodules });
+  const [envVars, setEnvVars] = useState<BuildEnvVar[]>(initialEnvVars);
+  const [savedEnvVars, setSavedEnvVars] = useState<BuildEnvVar[]>(initialEnvVars);
+  const [hasEnvVarError, setHasEnvVarError] = useState(false);
+
+  const pendingSaveValue = useRef({ isUnitTestEnabled, isPullLatestSubmodules, envVars });
 
   const updateBuildpackConfigs = useUpdateBuildpackConfigs();
 
+  const handleEnvVarsChange = useCallback((vars: BuildEnvVar[]) => setEnvVars(vars), []);
+  const handleEnvVarError = useCallback((hasError: boolean) => setHasEnvVarError(hasError), []);
+
   const handleSaveBuildConfig = () => {
-    pendingSaveValue.current = { isUnitTestEnabled, isPullLatestSubmodules };
+    pendingSaveValue.current = { isUnitTestEnabled, isPullLatestSubmodules, envVars: [...envVars] };
     updateBuildpackConfigs.mutate(
       {
         componentId,
         versionId,
         buildContext: versionConfig?.buildContext ?? '',
         languageVersion: versionConfig?.languageVersion ?? '',
-        environmentVariables: [],
+        environmentVariables: envVars,
         isUnitTestEnabled,
         pullLatestSubmodules: isPullLatestSubmodules,
         enableTrivyScan: versionConfig?.enableTrivyScan ?? false,
       },
       {
         onSuccess: () => {
-          setSavedUnitTestEnabled(pendingSaveValue.current.isUnitTestEnabled);
-          setSavedPullLatestSubmodules(pendingSaveValue.current.isPullLatestSubmodules);
+          const saved = pendingSaveValue.current;
+          setSavedUnitTestEnabled(saved.isUnitTestEnabled);
+          setSavedPullLatestSubmodules(saved.isPullLatestSubmodules);
+          setSavedEnvVars(saved.envVars);
           onClose();
           onNotify('Build configuration saved successfully.', 'success');
         },
@@ -72,7 +84,10 @@ export default function BuildConfigPanel({ repository, componentId, versionId, o
     );
   };
 
-  const isDirty = isUnitTestEnabled !== savedUnitTestEnabled || isPullLatestSubmodules !== savedPullLatestSubmodules;
+  const isDirty =
+    isUnitTestEnabled !== savedUnitTestEnabled ||
+    isPullLatestSubmodules !== savedPullLatestSubmodules ||
+    JSON.stringify(envVars) !== JSON.stringify(savedEnvVars);
 
   return (
     <Stack gap={2}>
@@ -152,12 +167,16 @@ export default function BuildConfigPanel({ repository, componentId, versionId, o
             </>
           )}
 
+          <Divider />
+
+          <BuildEnvVarsEditor value={envVars} onChange={handleEnvVarsChange} onHasError={handleEnvVarError} />
+
           <Stack direction="row" justifyContent="flex-end" sx={{ pt: 0.5 }}>
             <Button
               variant="contained"
               size="small"
               onClick={handleSaveBuildConfig}
-              disabled={!isDirty || updateBuildpackConfigs.isPending}
+              disabled={!isDirty || hasEnvVarError || updateBuildpackConfigs.isPending}
               startIcon={updateBuildpackConfigs.isPending ? <CircularProgress color="inherit" size={14} /> : undefined}
             >
               {updateBuildpackConfigs.isPending ? 'Saving' : 'Save'}

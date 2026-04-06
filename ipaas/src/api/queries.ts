@@ -613,6 +613,7 @@ export interface GqlBuildpackConfig {
   languageVersion: string;
   pullLatestSubmodules: boolean;
   enableTrivyScan: boolean;
+  keyValues?: Array<{ id?: string; key: string; value: string }>;
 }
 
 export interface GqlRepository {
@@ -647,7 +648,7 @@ const COMPONENT_REPOSITORY_QUERY = `
         gitProvider, organizationApp, nameApp, branch, appSubPath,
         bitbucketServerUrl, serverUrl, projectApp,
         isBuildConfigurationMigrated,
-        buildpackConfig { versionId, buildContext, isUnitTestEnabled, languageVersion, pullLatestSubmodules, enableTrivyScan }
+        buildpackConfig { versionId, buildContext, isUnitTestEnabled, languageVersion, pullLatestSubmodules, enableTrivyScan, keyValues { id, key, value } }
       }
     }
   }`;
