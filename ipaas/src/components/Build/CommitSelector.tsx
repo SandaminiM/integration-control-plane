@@ -18,7 +18,7 @@
 
 import { Box, Button, CircularProgress, Divider, InputAdornment, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { GitCommit, Search } from '@wso2/oxygen-ui-icons-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { GqlCommit } from '../../api/queries';
 
 interface CommitSelectorProps {
@@ -31,6 +31,14 @@ interface CommitSelectorProps {
 export default function CommitSelector({ commits, commitsLoading, onBuild, isBuildTriggering }: CommitSelectorProps) {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<GqlCommit | null>(commits[0] ?? null);
+
+  useEffect(() => {
+    if (commits.length === 0) {
+      setSelected(null);
+      return;
+    }
+    setSelected((prev) => (prev && commits.some((c) => c.sha === prev.sha) ? prev : commits[0]));
+  }, [commits]);
 
   const filtered = search
     ? commits.filter((c) => c.message.toLowerCase().includes(search.toLowerCase()) || c.sha.toLowerCase().includes(search.toLowerCase()))
@@ -74,7 +82,11 @@ export default function CommitSelector({ commits, commitsLoading, onBuild, isBui
           return (
             <Box
               key={commit.sha}
+              role="button"
+              tabIndex={0}
+              aria-selected={isSelected}
               onClick={() => setSelected(commit)}
+              onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(commit); } }}
               sx={{
                 p: 1.5,
                 mb: 0.5,
@@ -84,6 +96,7 @@ export default function CommitSelector({ commits, commitsLoading, onBuild, isBui
                 cursor: 'pointer',
                 bgcolor: isSelected ? 'action.selected' : 'transparent',
                 '&:hover': { bgcolor: 'action.hover' },
+                '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
               }}>
               <Stack direction="row" alignItems="flex-start" gap={1}>
                 <GitCommit size={14} style={{ opacity: 0.55, flexShrink: 0, marginTop: 2 }} />

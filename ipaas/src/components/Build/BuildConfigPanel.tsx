@@ -17,7 +17,7 @@
  */
 
 import { Box, Button, CircularProgress, Divider, FormControlLabel, Link, Stack, Switch, Typography } from '@wso2/oxygen-ui';
-import { GitBranch, GitFork } from '@wso2/oxygen-ui-icons-react';
+import { GitBranch } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
 import { useUpdateBuildpackConfigs } from '../../api/mutations';
 import type { GqlRepository } from '../../api/queries';
@@ -30,7 +30,7 @@ interface BuildConfigPanelProps {
 }
 
 export default function BuildConfigPanel({ repository, componentId, versionId }: BuildConfigPanelProps) {
-  const { organizationApp, nameApp, branch, appSubPath, gitProvider, buildpackConfig } = repository;
+  const { organizationApp, nameApp, branch, gitProvider, buildpackConfig } = repository;
   const url = repoUrl(repository);
 
   const versionConfig = buildpackConfig?.find((c) => c.versionId === versionId) ?? buildpackConfig?.[0];
@@ -46,7 +46,6 @@ export default function BuildConfigPanel({ repository, componentId, versionId }:
         versionId,
         buildContext: versionConfig?.buildContext ?? '',
         languageVersion: versionConfig?.languageVersion ?? '',
-        environmentVariables: [],
         isUnitTestEnabled,
         pullLatestSubmodules: versionConfig?.pullLatestSubmodules ?? false,
         enableTrivyScan: versionConfig?.enableTrivyScan ?? false,
@@ -91,17 +90,6 @@ export default function BuildConfigPanel({ repository, componentId, versionId }:
               </Typography>
             </Stack>
           </Row>
-
-          {appSubPath && (
-            <Row label="Build Path">
-              <Stack direction="row" alignItems="center" gap={0.5}>
-                <GitFork size={13} style={{ opacity: 0.6 }} />
-                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                  {appSubPath}
-                </Typography>
-              </Stack>
-            </Row>
-          )}
         </Stack>
       </Box>
 

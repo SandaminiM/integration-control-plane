@@ -18,6 +18,7 @@
 
 import { Box, Drawer, IconButton, Stack, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
+import { useEffect, useState } from 'react';
 import type { GqlCommit, GqlDeploymentStatus, GqlRepository } from '../../api/queries';
 import { BUILD_DRAWER_TITLES, BuildDrawerType } from '../../constants/build';
 import BuildConfigPanel from './BuildConfigPanel';
@@ -40,10 +41,14 @@ interface BuildRightDrawerProps {
 
 export default function BuildRightDrawer({ open, onClose, drawerType, selectedBuild, componentId, versionId, commits, commitsLoading, onCommitBuild, isBuildTriggering, repository }: BuildRightDrawerProps) {
   const title = drawerType ? BUILD_DRAWER_TITLES[drawerType] : '';
+  const [logsOpen, setLogsOpen] = useState(false);
+
+  // Reset log panel state whenever the drawer type changes or drawer closes
+  useEffect(() => { setLogsOpen(false); }, [drawerType, open]);
 
   const renderContent = () => {
     if (drawerType === BuildDrawerType.BuildLogs && selectedBuild) {
-      return <BuildDetails componentId={componentId} versionId={versionId} build={selectedBuild} />;
+      return <BuildDetails componentId={componentId} versionId={versionId} build={selectedBuild} onLogsToggle={setLogsOpen} />;
     }
     if (drawerType === BuildDrawerType.CommitSelector) {
       return (
@@ -65,7 +70,7 @@ export default function BuildRightDrawer({ open, onClose, drawerType, selectedBu
   };
 
   return (
-    <Drawer anchor="right" open={open} onClose={onClose} variant="temporary" sx={{ '& .MuiDrawer-paper': { width: { xs: '100%', sm: 688 } } }}>
+    <Drawer anchor="right" open={open} onClose={onClose} variant="temporary" sx={{ '& .MuiDrawer-paper': { width: { xs: '100%', sm: logsOpen ? 720 : 480 } } }}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
           {title}

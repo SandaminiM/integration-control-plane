@@ -19,37 +19,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GqlDeploymentStatus } from '../api/queries';
 
-interface DeployInput {
-  componentId: string;
-  id: string;
-  imageId: string;
-  environmentId: string;
-  deploymentPipelineId: string;
-}
-
 interface BuildAutoEffectsConfig {
   builds: GqlDeploymentStatus[];
-  deploymentPipelineId: string;
-  envId: string;
-  componentId: string;
-  versionId: string;
-  imageId: string;
-  deployFn: (input: DeployInput) => void;
   onAutoOpen: (build: GqlDeploymentStatus) => void;
 }
 
-export function useBuildAutoEffects(config: BuildAutoEffectsConfig) {
-  const { builds, deploymentPipelineId, envId, componentId, versionId, imageId } = config;
-
+export function useBuildAutoEffects({ builds, onAutoOpen }: BuildAutoEffectsConfig) {
   const [justTriggered, setJustTriggered] = useState(false);
   const autoOpenedRef = useRef<Set<number>>(new Set());
-  const autoDeployedRef = useRef<Set<number>>(new Set());
 
-  // Stable refs for callbacks so effects don't re-fire on every render
-  const deployFnRef = useRef(config.deployFn);
-  deployFnRef.current = config.deployFn;
-  const onAutoOpenRef = useRef(config.onAutoOpen);
-  onAutoOpenRef.current = config.onAutoOpen;
+  const onAutoOpenRef = useRef(onAutoOpen);
+  onAutoOpenRef.current = onAutoOpen;
 
   const hasInProgress = builds.some((b) => b.status === 'in_progress' || b.status === 'queued');
 
@@ -58,7 +38,7 @@ export function useBuildAutoEffects(config: BuildAutoEffectsConfig) {
     if (hasInProgress && justTriggered) setJustTriggered(false);
   }, [hasInProgress, justTriggered]);
 
-  // Auto-open drawer when a build transitions to in_progress
+  // Auto-open the details drawer when a build transitions to in_progress
   useEffect(() => {
     const build = builds.find((b) => b.status === 'in_progress' && !autoOpenedRef.current.has(b.id));
     if (build) {
@@ -66,21 +46,6 @@ export function useBuildAutoEffects(config: BuildAutoEffectsConfig) {
       onAutoOpenRef.current(build);
     }
   }, [builds]);
-
-  // Auto-deploy after a successful build.
-  useEffect(() => {
-    if (!deploymentPipelineId || !envId || !componentId || !versionId || !imageId) return;
-    const successBuild = builds.find(
-      (b) =>
-        b.status === 'completed' &&
-        (b.conclusionV2 === 'success' || b.conclusion === 'success') &&
-        !autoDeployedRef.current.has(b.id),
-    );
-    if (successBuild) {
-      autoDeployedRef.current.add(successBuild.id);
-      deployFnRef.current({ componentId, id: versionId, imageId, environmentId: envId, deploymentPipelineId });
-    }
-  }, [builds, imageId, deploymentPipelineId, envId, componentId, versionId]);
 
   const markAsOpened = useCallback((buildId: number) => {
     autoOpenedRef.current.add(buildId);

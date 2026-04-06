@@ -82,7 +82,6 @@ export default function BuildLogViewer({ logs, logsLoading, showLogs }: BuildLog
               m: 0,
               p: 2,
               bgcolor: theme.syntax.dark.background,
-              borderRadius: 1,
               fontFamily: 'monospace',
               fontSize: '0.75rem',
               lineHeight: 1.6,

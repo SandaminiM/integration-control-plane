@@ -36,7 +36,7 @@ export interface UpdateBuildpackConfigsInput {
   versionId: string;
   buildContext: string;
   languageVersion: string;
-  environmentVariables: { key: string; value: string }[];
+  environmentVariables?: { key: string; value: string }[];
   isUnitTestEnabled: boolean;
   pullLatestSubmodules: boolean;
   enableTrivyScan: boolean;

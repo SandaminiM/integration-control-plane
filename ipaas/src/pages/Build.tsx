@@ -37,7 +37,7 @@ export default function Build(scope: ComponentScope): JSX.Element {
 
   const apiVersions = component?.apiVersions ?? [];
   const activeVersion = apiVersions.find((v) => v.latest) ?? apiVersions[0];
-  const versionId = activeVersion?.id ?? componentId;
+  const versionId = activeVersion?.id ?? '';
 
   const { data: orgs, isLoading: loadingOrgs } = useOrgs();
   const orgUuid = orgs?.find((o) => o.handle === scope.org)?.uuid ?? '';
@@ -73,13 +73,10 @@ export default function Build(scope: ComponentScope): JSX.Element {
   return (
     <PageContent>
       <BuildHistory
-        orgHandler={scope.org}
-        orgUuid={orgUuid}
         componentId={componentId}
         versionId={versionId}
         envId={envId}
         branch={branch}
-        deploymentPipelineId={project?.defaultDeploymentPipelineId ?? ''}
         builds={builds}
         buildsLoading={loadingBuilds}
         commits={commits}

@@ -16,12 +16,12 @@
  * under the License.
  */
 
-import { Button, Chip, CircularProgress, IconButton, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Button, Chip, CircularProgress, IconButton, ListingTable, Stack, TablePagination, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { GitBranch, GitCommit, Settings } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { useDeployDeploymentTrack, useTriggerBuild } from '../../api/mutations';
-import { useComponentDeployment, type GqlCommit, type GqlDeploymentStatus, type GqlRepository } from '../../api/queries';
+import { useTriggerBuild } from '../../api/mutations';
+import { type GqlCommit, type GqlDeploymentStatus, type GqlRepository } from '../../api/queries';
 import { BuildDrawerType } from '../../constants/build';
 import { useBuildAutoEffects } from '../../hooks/useBuildAutoEffects';
 import { formatDistanceToNow } from '../../utils/time';
@@ -29,13 +29,10 @@ import BuildRightDrawer from './BuildRightDrawer';
 import BuildStatusLabel from './BuildStatusLabel';
 
 interface BuildHistoryProps {
-  orgHandler: string;
-  orgUuid: string;
   componentId: string;
   versionId: string;
   envId: string;
   branch: string;
-  deploymentPipelineId: string;
   builds: GqlDeploymentStatus[];
   buildsLoading: boolean;
   commits: GqlCommit[];
@@ -43,17 +40,15 @@ interface BuildHistoryProps {
   repository: GqlRepository | null;
 }
 
-export default function BuildHistory({ orgHandler, orgUuid, componentId, versionId, envId, branch, deploymentPipelineId, builds, buildsLoading, commits, commitsLoading, repository }: BuildHistoryProps) {
+export default function BuildHistory({ componentId, versionId, envId, branch, builds, buildsLoading, commits, commitsLoading, repository }: BuildHistoryProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerType, setDrawerType] = useState<BuildDrawerType | null>(null);
   const [selectedBuild, setSelectedBuild] = useState<GqlDeploymentStatus | null>(null);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const triggerBuild = useTriggerBuild();
-  const deployTrack = useDeployDeploymentTrack();
-  const { data: componentDeployment } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, envId);
 
   const handleAutoOpen = useCallback((build: GqlDeploymentStatus) => {
     setSelectedBuild(build);
@@ -63,12 +58,6 @@ export default function BuildHistory({ orgHandler, orgUuid, componentId, version
 
   const { justTriggered, setJustTriggered, hasInProgress, markAsOpened } = useBuildAutoEffects({
     builds,
-    deploymentPipelineId,
-    envId,
-    componentId,
-    versionId,
-    imageId: componentDeployment?.build?.buildId ?? '',
-    deployFn: deployTrack.mutate,
     onAutoOpen: handleAutoOpen,
   });
 
@@ -92,14 +81,19 @@ export default function BuildHistory({ orgHandler, orgUuid, componentId, version
   const handleBuildLatest = () => {
     if (!latestCommit || !envId) return;
     setJustTriggered(true);
-    triggerBuild.mutate({ componentId, versionId, envId, sha: latestCommit.sha, branch, shaDate: latestCommit.author?.date ?? '', gitRefType: 'commit' });
+    triggerBuild.mutate(
+      { componentId, versionId, envId, sha: latestCommit.sha, branch, shaDate: latestCommit.author?.date ?? '', gitRefType: 'commit' },
+      { onError: () => setJustTriggered(false) },
+    );
   };
 
   const handleViewDetails = (build: GqlDeploymentStatus) => {
     setSelectedBuild(build);
     setDrawerType(BuildDrawerType.BuildLogs);
     setDrawerOpen(true);
-    setSearchParams({ buildId: String(build.id) }, { replace: true });
+    const params = new URLSearchParams(searchParams);
+    params.set('buildId', String(build.id));
+    setSearchParams(params, { replace: true });
   };
 
   const handleSelectCommit = () => {
@@ -115,13 +109,18 @@ export default function BuildHistory({ orgHandler, orgUuid, componentId, version
   const handleCommitBuild = (commit: GqlCommit) => {
     if (!envId) return;
     setJustTriggered(true);
-    triggerBuild.mutate({ componentId, versionId, envId, sha: commit.sha, branch, shaDate: commit.author?.date ?? '', gitRefType: 'commit' });
+    triggerBuild.mutate(
+      { componentId, versionId, envId, sha: commit.sha, branch, shaDate: commit.author?.date ?? '', gitRefType: 'commit' },
+      { onError: () => setJustTriggered(false) },
+    );
   };
 
   const handleCloseDrawer = () => {
     setDrawerOpen(false);
     setDrawerType(null);
-    setSearchParams({}, { replace: true });
+    const params = new URLSearchParams(searchParams);
+    params.delete('buildId');
+    setSearchParams(params, { replace: true });
   };
 
   return (
@@ -161,40 +160,40 @@ export default function BuildHistory({ orgHandler, orgUuid, componentId, version
         </Stack>
       </Stack>
 
-      <TableContainer>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>Build ID</TableCell>
-              <TableCell>Commit</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Time</TableCell>
-              <TableCell align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
+      <ListingTable.Container elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+        <ListingTable size="small">
+          <ListingTable.Head>
+            <ListingTable.Row>
+              <ListingTable.Cell>Build ID</ListingTable.Cell>
+              <ListingTable.Cell>Commit</ListingTable.Cell>
+              <ListingTable.Cell>Status</ListingTable.Cell>
+              <ListingTable.Cell>Time</ListingTable.Cell>
+              <ListingTable.Cell align="right">Actions</ListingTable.Cell>
+            </ListingTable.Row>
+          </ListingTable.Head>
 
-          <TableBody>
+          <ListingTable.Body>
             {buildsLoading && builds.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+              <ListingTable.Row>
+                <ListingTable.Cell colSpan={5} align="center" sx={{ py: 4 }}>
                   <CircularProgress size={24} />
-                </TableCell>
-              </TableRow>
+                </ListingTable.Cell>
+              </ListingTable.Row>
             )}
 
             {!buildsLoading && builds.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+              <ListingTable.Row>
+                <ListingTable.Cell colSpan={5} align="center" sx={{ py: 4 }}>
                   <Typography color="text.secondary" variant="body2">
                     No builds yet. Click &ldquo;Build Latest&rdquo; to start your first build.
                   </Typography>
-                </TableCell>
-              </TableRow>
+                </ListingTable.Cell>
+              </ListingTable.Row>
             )}
 
             {builds.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((build) => (
-              <TableRow key={build.id} hover>
-                <TableCell>
+              <ListingTable.Row key={build.id} hover>
+                <ListingTable.Cell>
                   <Stack direction="row" alignItems="center" gap={0.75}>
                     <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
                       #{build.id}
@@ -207,9 +206,9 @@ export default function BuildHistory({ orgHandler, orgUuid, componentId, version
                       sx={{ fontSize: '0.65rem', height: (theme) => theme.spacing(2.25) }}
                     />
                   </Stack>
-                </TableCell>
+                </ListingTable.Cell>
 
-                <TableCell>
+                <ListingTable.Cell>
                   {build.sourceCommitId ? (
                     <Stack direction="row" alignItems="center" gap={0.5}>
                       <GitCommit size={12} style={{ opacity: 0.55 }} />
@@ -222,28 +221,30 @@ export default function BuildHistory({ orgHandler, orgUuid, componentId, version
                       —
                     </Typography>
                   )}
-                </TableCell>
+                </ListingTable.Cell>
 
-                <TableCell>
+                <ListingTable.Cell>
                   <BuildStatusLabel status={build.status} conclusion={build.conclusionV2 || build.conclusion} />
-                </TableCell>
+                </ListingTable.Cell>
 
-                <TableCell>
+                <ListingTable.Cell>
                   <Typography variant="body2" color="text.secondary">
                     {build.started_at ? formatDistanceToNow(build.started_at) : '—'}
                   </Typography>
-                </TableCell>
+                </ListingTable.Cell>
 
-                <TableCell align="right">
-                  <Button variant="text" size="small" onClick={() => handleViewDetails(build)} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>
-                    View Details
-                  </Button>
-                </TableCell>
-              </TableRow>
+                <ListingTable.Cell align="right">
+                  <ListingTable.RowActions>
+                    <Button variant="text" size="small" onClick={() => handleViewDetails(build)} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>
+                      View Details
+                    </Button>
+                  </ListingTable.RowActions>
+                </ListingTable.Cell>
+              </ListingTable.Row>
             ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          </ListingTable.Body>
+        </ListingTable>
+      </ListingTable.Container>
 
       <TablePagination
         component="div"
@@ -252,7 +253,7 @@ export default function BuildHistory({ orgHandler, orgUuid, componentId, version
         onPageChange={(_e, newPage) => setPage(newPage)}
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
-        rowsPerPageOptions={[10, 25, 50]}
+        rowsPerPageOptions={[5, 10, 25]}
       />
 
       <BuildRightDrawer

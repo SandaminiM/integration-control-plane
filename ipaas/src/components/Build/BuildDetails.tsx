@@ -29,9 +29,10 @@ interface BuildDetailsProps {
   componentId: string;
   versionId: string;
   build: GqlDeploymentStatus;
+  onLogsToggle?: (open: boolean) => void;
 }
 
-export default function BuildDetails({ componentId, versionId, build }: BuildDetailsProps) {
+export default function BuildDetails({ componentId, versionId, build, onLogsToggle }: BuildDetailsProps) {
   const [logs, setLogs] = useState<BuildRunLogs | null>(null);
   const [logsLoading, setLogsLoading] = useState(true);
   const [buildIdCopied, setBuildIdCopied] = useState(false);
@@ -140,7 +141,7 @@ export default function BuildDetails({ componentId, versionId, build }: BuildDet
         }
         return (
           <Box sx={{ mt: 2, background: 'transparent' }}>
-            <BuildAccordionStepper logs={logs!} logsLoading={logsLoading} isInProgress={isInProgress} />
+            <BuildAccordionStepper logs={logs!} logsLoading={logsLoading} isInProgress={isInProgress} onLogsToggle={onLogsToggle} />
           </Box>
         );
       })()}

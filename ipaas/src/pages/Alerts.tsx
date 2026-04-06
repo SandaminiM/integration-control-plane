@@ -67,7 +67,7 @@ export default function Alerts(scope: ComponentScope): JSX.Element {
 
   const apiVersions = component.apiVersions ?? [];
   const activeVersion = apiVersions.find((v) => v.latest) ?? apiVersions[0];
-  const versionId = activeVersion?.id ?? componentId;
+  const versionId = activeVersion?.id ?? '';
   const versionName = activeVersion ? `${activeVersion.branch} | ${activeVersion.apiVersion}` : componentId;
   const isProxy = /proxy/i.test(component.displayType ?? '');
   const hasPublicOrOrgVisibility = apiVersions.some((v) => v.accessibility === 'Public' || v.accessibility === 'Organization');

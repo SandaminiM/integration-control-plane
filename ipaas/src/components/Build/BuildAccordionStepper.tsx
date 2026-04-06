@@ -29,9 +29,10 @@ interface BuildAccordionStepperProps {
   logs: BuildRunLogs;
   logsLoading: boolean;
   isInProgress?: boolean;
+  onLogsToggle?: (open: boolean) => void;
 }
 
-export default function BuildAccordionStepper({ logs, logsLoading, isInProgress }: BuildAccordionStepperProps) {
+export default function BuildAccordionStepper({ logs, logsLoading, isInProgress, onLogsToggle }: BuildAccordionStepperProps) {
   const [expanded, setExpanded] = useState<Set<string>>(() => {
     const initial = new Set<string>();
     for (const { key } of BUILD_STAGES) {
@@ -102,11 +103,14 @@ export default function BuildAccordionStepper({ logs, logsLoading, isInProgress 
               direction="row"
               alignItems="center"
               onClick={hasSubSteps ? () => toggleExpand(key) : undefined}
+              onKeyDown={hasSubSteps ? (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpand(key); } } : undefined}
+              {...(hasSubSteps ? { role: 'button', tabIndex: 0, 'aria-expanded': isExpanded, 'aria-controls': `substeps-${key}` } : {})}
               sx={{
                 cursor: hasSubSteps ? 'pointer' : 'default',
                 userSelect: 'none',
                 borderRadius: 1,
                 '&:hover': hasSubSteps ? { bgcolor: 'action.hover' } : undefined,
+                '&:focus-visible': hasSubSteps ? { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 } : undefined,
               }}
             >
               <Box
@@ -133,7 +137,7 @@ export default function BuildAccordionStepper({ logs, logsLoading, isInProgress 
                   <Button
                     variant="text"
                     size="small"
-                    onClick={(e) => { e.stopPropagation(); setShowBuildLogs((v) => !v); }}
+                    onClick={(e) => { e.stopPropagation(); setShowBuildLogs((v) => { onLogsToggle?.(!v); return !v; }); }}
                     disabled={!hasBuildLog}
                     sx={{ fontSize: '0.75rem', px: 0.75, py: 0, minWidth: 0, textTransform: 'none' }}
                   >
@@ -160,7 +164,7 @@ export default function BuildAccordionStepper({ logs, logsLoading, isInProgress 
 
             {/* Sub-step rows */}
             {showSubs && (
-              <Stack sx={{ pt: 1.5, pb: 1.5 }}>
+              <Stack id={`substeps-${key}`} sx={{ pt: 1.5, pb: 1.5 }}>
                 {steps.map((step, i) => {
                   const isSkipped = step.conclusion?.toLowerCase() === 'skipped';
                   const isStepActive = step.status === 'in_progress';
