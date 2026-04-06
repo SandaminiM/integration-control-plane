@@ -41,3 +41,9 @@ export interface UpdateBuildpackConfigsInput {
   pullLatestSubmodules: boolean;
   enableTrivyScan: boolean;
 }
+
+export interface BuildEnvVar {
+  id?: string;
+  key: string;
+  value: string;
+}

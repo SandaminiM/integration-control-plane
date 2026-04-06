@@ -126,3 +126,12 @@ export function repoUrl(repository: GqlRepository): string {
       return '';
   }
 }
+
+export function validateBuildEnvVar(vars: Array<{ key: string; value: string }>, index: number, envKeyRegex: RegExp): string | null {
+  const { key, value } = vars[index];
+  if (!key.trim()) return 'Key is required';
+  if (!envKeyRegex.test(key)) return 'Key must start with a letter or _ and contain only letters, digits, or _';
+  if (vars.some((v, i) => i !== index && v.key === key)) return 'Key already exists';
+  if (!value.trim()) return 'Value is required';
+  return null;
+}

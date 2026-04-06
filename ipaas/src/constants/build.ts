@@ -49,3 +49,6 @@ export const STEPPER_ICON_PY = 8;
 export const STEPPER_LINE_TOP = STEPPER_ICON_PY + STEPPER_ICON_SIZE + 2;
 /** How far the connector line extends past its container to reach the next icon */
 export const STEPPER_LINE_BOTTOM_EXT = STEPPER_ICON_PY + STEPPER_ICON_SIZE / 2;
+
+/** Regex for valid environment variable key names */
+export const ENV_KEY_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;

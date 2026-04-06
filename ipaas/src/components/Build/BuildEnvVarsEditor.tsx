@@ -19,12 +19,9 @@
 import { Box, Button, IconButton, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo } from 'react';
-
-export interface BuildEnvVar {
-  id?: string;
-  key: string;
-  value: string;
-}
+import { ENV_KEY_RE } from '../../constants/build';
+import type { BuildEnvVar } from '../../types/build';
+import { validateBuildEnvVar } from '../../utils/build';
 
 interface BuildEnvVarsEditorProps {
   value: BuildEnvVar[];
@@ -32,19 +29,8 @@ interface BuildEnvVarsEditorProps {
   onHasError: (hasError: boolean) => void;
 }
 
-const ENV_KEY_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
-
-function validateRow(vars: BuildEnvVar[], index: number): string | null {
-  const { key, value } = vars[index];
-  if (!key.trim()) return 'Key is required';
-  if (!ENV_KEY_RE.test(key)) return 'Key must start with a letter or _ and contain only letters, digits, or _';
-  if (vars.some((v, i) => i !== index && v.key === key)) return 'Key already exists';
-  if (!value.trim()) return 'Value is required';
-  return null;
-}
-
 export default function BuildEnvVarsEditor({ value, onChange, onHasError }: BuildEnvVarsEditorProps) {
-  const errors = useMemo(() => value.map((_, i) => validateRow(value, i)), [value]);
+  const errors = useMemo(() => value.map((_, i) => validateBuildEnvVar(value, i, ENV_KEY_RE)), [value]);
   const hasError = errors.some(Boolean);
 
   useEffect(() => {
