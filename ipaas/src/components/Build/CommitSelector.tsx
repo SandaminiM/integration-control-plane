@@ -47,7 +47,7 @@ export default function CommitSelector({ commits, commitsLoading, onBuild, isBui
   if (commitsLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-        <CircularProgress size={24} />
+        <CircularProgress size={24} color="inherit" />
       </Box>
     );
   }

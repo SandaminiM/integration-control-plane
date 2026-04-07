@@ -17,7 +17,7 @@
  */
 
 import { Alert, Button, Chip, CircularProgress, IconButton, ListingTable, Snackbar, Stack, TablePagination, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { GitBranch, GitCommit, Settings } from '@wso2/oxygen-ui-icons-react';
+import { GitCommit, Settings } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useTriggerBuild } from '../../api/mutations';
@@ -134,7 +134,7 @@ export default function BuildHistory({ componentId, versionId, envId, branch, bu
         <Stack direction="row" alignItems="center" gap={1}>
           <Tooltip title={hasInProgress ? 'A build is already in progress' : !latestCommit ? 'No commits available' : ''}>
             <span>
-              <Button variant="outlined" size="small" startIcon={<GitBranch size={14} />} onClick={handleSelectCommit} disabled={isBuilding || commitsLoading || commits.length === 0}>
+              <Button variant="outlined" size="small" onClick={handleSelectCommit} disabled={isBuilding || commitsLoading || commits.length === 0}>
                 Show Commits
               </Button>
             </span>
@@ -179,7 +179,7 @@ export default function BuildHistory({ componentId, versionId, envId, branch, bu
             {buildsLoading && builds.length === 0 && (
               <ListingTable.Row>
                 <ListingTable.Cell colSpan={5} align="center" sx={{ py: 4 }}>
-                  <CircularProgress size={24} />
+                  <CircularProgress size={24} color="inherit" />
                 </ListingTable.Cell>
               </ListingTable.Row>
             )}
@@ -257,17 +257,17 @@ export default function BuildHistory({ componentId, versionId, envId, branch, bu
             ))}
           </ListingTable.Body>
         </ListingTable>
-      </ListingTable.Container>
 
-      <TablePagination
-        component="div"
-        count={builds.length}
-        page={page}
-        onPageChange={(_e, newPage) => setPage(newPage)}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
-        rowsPerPageOptions={[5, 10, 25]}
-      />
+        <TablePagination
+          component="div"
+          count={builds.length}
+          page={page}
+          onPageChange={(_e, newPage) => setPage(newPage)}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
+          rowsPerPageOptions={[5, 10, 25]}
+        />
+      </ListingTable.Container>
 
       <BuildRightDrawer
         open={drawerOpen}
