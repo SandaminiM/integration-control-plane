@@ -138,7 +138,7 @@ export default function BuildDetails({ componentId, versionId, build, onLogsTogg
         if (showSpinner) {
           return (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 2, mt: 1 }}>
-              <CircularProgress size={24} color="inherit" />
+              <CircularProgress size={24} color="primary" />
             </Box>
           );
         }

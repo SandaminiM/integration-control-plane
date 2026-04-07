@@ -179,7 +179,7 @@ export default function BuildHistory({ componentId, versionId, envId, branch, bu
             {buildsLoading && builds.length === 0 && (
               <ListingTable.Row>
                 <ListingTable.Cell colSpan={5} align="center" sx={{ py: 4 }}>
-                  <CircularProgress size={24} color="inherit" />
+                  <CircularProgress size={24} color="primary" />
                 </ListingTable.Cell>
               </ListingTable.Row>
             )}
