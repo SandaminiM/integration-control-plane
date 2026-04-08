@@ -1,0 +1,160 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { Alert, Box, Chip, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Check, Copy } from '@wso2/oxygen-ui-icons-react';
+import { useEffect, useRef, useState } from 'react';
+import { fetchBuildLogs, type BuildRunLogs } from '../../api/builds';
+import type { GqlDeploymentStatus } from '../../api/queries';
+import { BUILD_STAGES } from '../../constants/build';
+import { formatBuildDate, getStepStatus } from '../../utils/build';
+import BuildAccordionStepper from './BuildAccordionStepper';
+
+interface BuildDetailsProps {
+  componentId: string;
+  versionId: string;
+  build: GqlDeploymentStatus;
+  onLogsToggle?: (open: boolean) => void;
+}
+
+export default function BuildDetails({ componentId, versionId, build, onLogsToggle }: BuildDetailsProps) {
+  const [logs, setLogs] = useState<BuildRunLogs | null>(null);
+  const [logsLoading, setLogsLoading] = useState(true);
+  const [buildIdCopied, setBuildIdCopied] = useState(false);
+  const mountedRef = useRef(true);
+
+  const handleCopyBuildId = () => {
+    void navigator.clipboard.writeText(String(build.id));
+    setBuildIdCopied(true);
+    setTimeout(() => setBuildIdCopied(false), 1500);
+  };
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const workflowName = build.buildRef ?? String(build.id);
+  const isInProgress = build.status === 'in_progress';
+
+  useEffect(() => {
+    if (!workflowName || !componentId || !versionId) return;
+
+    let cancelled = false;
+    setLogs(null);
+    setLogsLoading(true);
+
+    const load = async () => {
+      const data = await fetchBuildLogs(componentId, versionId, workflowName);
+      if (cancelled || !mountedRef.current) return;
+      setLogs(data);
+      setLogsLoading(false);
+    };
+
+    let interval: ReturnType<typeof setInterval> | undefined;
+    load();
+    if (isInProgress) {
+      interval = setInterval(load, 5000);
+    }
+
+    return () => {
+      cancelled = true;
+      if (interval !== undefined) clearInterval(interval);
+    };
+  }, [componentId, versionId, workflowName, isInProgress]);
+
+  return (
+    <Stack gap={2}>
+      {/* Build metadata */}
+      <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2 }}>
+        <Stack gap={1}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Typography variant="body2" color="text.secondary">
+              Build ID
+            </Typography>
+            <Stack direction="row" alignItems="center" gap={0.75}>
+              {build.isTriggeredAtCreation ? (
+                <Chip
+                  label="Initial Build"
+                  size="small"
+                  variant="outlined"
+                  color="default"
+                  sx={{ fontSize: '0.65rem', height: (theme) => theme.spacing(2.25) }}
+                />
+              ) : (
+                <Chip
+                  label={build.isAutoDeploy ? 'Automatic' : 'Manual'}
+                  size="small"
+                  variant="outlined"
+                  color={build.isAutoDeploy ? 'primary' : 'info'}
+                  sx={{ fontSize: '0.65rem', height: (theme) => theme.spacing(2.25) }}
+                />
+              )}
+              <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                #{build.id}
+              </Typography>
+              <Tooltip title={buildIdCopied ? 'Copied!' : 'Copy build ID'}>
+                <IconButton size="small" onClick={handleCopyBuildId} sx={{ p: 0.25 }}>
+                  {buildIdCopied ? <Check size={13} /> : <Copy size={13} />}
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          </Stack>
+
+          {build.started_at && (
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Typography variant="body2" color="text.secondary">
+                Started Time
+              </Typography>
+              <Typography variant="body2">{formatBuildDate(build.started_at)}</Typography>
+            </Stack>
+          )}
+        </Stack>
+      </Box>
+
+      {/* Stage stepper */}
+      {(() => {
+        const hasDecodedStages = logs !== null && BUILD_STAGES.some(({ key }) => getStepStatus(logs, key as 'init' | 'build' | 'deploy') !== 'pending');
+        const showSpinner = (logsLoading && !logs) || (isInProgress && !hasDecodedStages);
+        const showWarning = !showSpinner && !hasDecodedStages;
+
+        if (showSpinner) {
+          return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2, mt: 1 }}>
+              <CircularProgress size={24} color="primary" />
+            </Box>
+          );
+        }
+        if (showWarning) {
+          return (
+            <Alert severity="warning" variant="outlined" sx={{ mt: 2, bgcolor: 'transparent' }}>
+              Build logs could not be retrieved. They may still be processing, have expired, or are temporarily unavailable.
+            </Alert>
+          );
+        }
+        return (
+          <Box sx={{ mt: 2, background: 'transparent' }}>
+            <BuildAccordionStepper logs={logs!} logsLoading={logsLoading} isInProgress={isInProgress} onLogsToggle={onLogsToggle} />
+          </Box>
+        );
+      })()}
+    </Stack>
+  );
+}

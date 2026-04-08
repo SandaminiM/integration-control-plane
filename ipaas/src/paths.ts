@@ -145,11 +145,16 @@ export function orgAnalyticsLogsUrl(orgHandler: string): string {
   return `/organizations/${orgHandler}/analytics/logs`;
 }
 
+export function componentBuildUrl(orgHandler: string, projectHandler: string, componentHandler: string): string {
+  return `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/build`;
+}
+
 // ---------------------------------------------------------------------------
 // Route segments
 // ---------------------------------------------------------------------------
 
 export const alertsSegment = 'alerts';
+export const buildsSegment = 'build';
 
 // ---------------------------------------------------------------------------
 // External links

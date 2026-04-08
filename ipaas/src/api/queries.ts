@@ -606,6 +606,16 @@ export function useArtifactWsdl(componentId: string, artifactType: string, artif
 
 // ── Component repository & commit history ──
 
+export interface GqlBuildpackConfig {
+  versionId: string;
+  buildContext: string;
+  isUnitTestEnabled: boolean;
+  languageVersion: string;
+  pullLatestSubmodules: boolean;
+  enableTrivyScan: boolean;
+  keyValues?: Array<{ id?: string; key: string; value: string }>;
+}
+
 export interface GqlRepository {
   gitProvider: string;
   organizationApp: string;
@@ -615,6 +625,8 @@ export interface GqlRepository {
   bitbucketServerUrl?: string;
   serverUrl?: string;
   projectApp?: string;
+  isBuildConfigurationMigrated?: boolean;
+  buildpackConfig?: GqlBuildpackConfig[];
 }
 
 export interface GqlCommit {
@@ -634,7 +646,9 @@ const COMPONENT_REPOSITORY_QUERY = `
     component(projectId: $projectId, componentHandler: $componentHandler) {
       repository {
         gitProvider, organizationApp, nameApp, branch, appSubPath,
-        bitbucketServerUrl, serverUrl, projectApp
+        bitbucketServerUrl, serverUrl, projectApp,
+        isBuildConfigurationMigrated,
+        buildpackConfig { versionId, buildContext, isUnitTestEnabled, languageVersion, pullLatestSubmodules, enableTrivyScan, keyValues { id, key, value } }
       }
     }
   }`;
@@ -731,6 +745,7 @@ export interface GqlDeploymentStatus {
   conclusion: string;
   conclusionV2: string;
   isAutoDeploy: boolean;
+  isTriggeredAtCreation: boolean;
   name: string;
   failureReason: number;
   sourceCommitId: string;
@@ -740,7 +755,7 @@ export interface GqlDeploymentStatus {
 const DEPLOYMENT_STATUS_QUERY = `
   query GetDeploymentStatus($versionId: String!, $componentId: String!) {
     deploymentStatusByVersion(versionId: $versionId, componentId: $componentId) {
-      id, sha, started_at, completed_at, status, conclusion, conclusionV2, isAutoDeploy, name, failureReason, sourceCommitId, buildRef
+      id, sha, started_at, completed_at, status, conclusion, conclusionV2, isAutoDeploy, isTriggeredAtCreation, name, failureReason, sourceCommitId, buildRef
     }
   }`;
 
@@ -749,8 +764,7 @@ export function useDeploymentStatus(componentId: string, versionId: string) {
     queryKey: ['deploymentStatus', componentId, versionId],
     queryFn: () =>
       gql<{ deploymentStatusByVersion: GqlDeploymentStatus[] }>(DEPLOYMENT_STATUS_QUERY, { versionId, componentId })
-        .then((d) => d.deploymentStatusByVersion ?? [])
-        .catch(() => []),
+        .then((d) => d.deploymentStatusByVersion ?? []),
     enabled: !!componentId && !!versionId,
     retry: false,
     refetchInterval: 15000,

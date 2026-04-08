@@ -52,3 +52,21 @@ export async function fetchBuildRunLogs(orgHandler: string, projectId: string, c
     return null;
   }
 }
+
+export async function fetchBuildLogs(componentId: string, versionId: string, workflowName: string): Promise<BuildRunLogs | null> {
+  try {
+    const baseUrl = window.API_CONFIG?.systemApisBaseUrl;
+    if (!baseUrl) return null;
+    const url = `${baseUrl}/systemapis/choreologgingapi/0.2.0/logs/component/build`;
+    const res = await authenticatedFetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ componentId, deploymentTrackId: versionId, workflowName }),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return (json?.data as BuildRunLogs) ?? null;
+  } catch {
+    return null;
+  }
+}
