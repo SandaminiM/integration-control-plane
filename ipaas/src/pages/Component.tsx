@@ -28,8 +28,7 @@ import type { SelectedArtifact } from '../components/artifact-config';
 import { resourceUrl, broaden, type ComponentScope } from '../nav';
 import { useLoadComponentPermissions } from '../hooks/usePermissionLoader';
 import BuildCard from '../components/BuildCard';
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { UUID_RE } from '../utils/string';
 
 export default function Component(scope: ComponentScope): JSX.Element {
   // Support both UUID and handler in the URL — only one query will be enabled at a time

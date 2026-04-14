@@ -20,8 +20,7 @@ import type { ReactNode, JSX } from 'react';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { useScope, hasProject, hasComponent } from '../nav';
 import { useProject, useProjectByHandler, useComponents } from '../api/queries';
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { UUID_RE } from '../utils/string';
 
 interface AuthorizedProps {
   permissions: string | string[];

@@ -17,23 +17,11 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  createAlertRule,
-  deleteAlertRule,
-  getAlertRules,
-  getAlertRulesCount,
-  updateAlertRule,
-  getAlertHistory,
-} from '../api/alerts';
+import { createAlertRule, deleteAlertRule, getAlertRules, getAlertRulesCount, updateAlertRule, getAlertHistory } from '../api/alerts';
 import { AlertComponentType, AlertTypeConstants } from '../constants/alerts';
 import type { AlertHistoryResponse, AlertRule, AlertRuleCountUsage } from '../types/alerts';
 
-export function useGetAlertRulesCount(
-  alertingBaseUrl: string,
-  componentId: string,
-  environmentId: string,
-  componentType: AlertComponentType = AlertComponentType.SERVICE
-): { data: AlertRuleCountUsage | undefined; isFetching: boolean; refetch: () => void } {
+export function useGetAlertRulesCount(alertingBaseUrl: string, componentId: string, environmentId: string, componentType: AlertComponentType = AlertComponentType.SERVICE): { data: AlertRuleCountUsage | undefined; isFetching: boolean; refetch: () => void } {
   const { data, isFetching, refetch } = useQuery({
     queryKey: ['getAlertRulesCount', componentId, environmentId, componentType],
     queryFn: () => getAlertRulesCount(alertingBaseUrl, componentId, environmentId, componentType),
@@ -49,11 +37,7 @@ export function useGetAlertRules(alertingBaseUrl: string, componentId: string, e
       const rules = await getAlertRules(alertingBaseUrl, componentId, environmentId, componentType);
       if (!rules || rules.length === 0) return undefined;
 
-      const sorted = [...rules].sort(
-        (a, b) =>
-          new Date(b.createdTimestamp ?? '').getTime() -
-          new Date(a.createdTimestamp ?? '').getTime()
-      );
+      const sorted = [...rules].sort((a, b) => new Date(b.createdTimestamp ?? '').getTime() - new Date(a.createdTimestamp ?? '').getTime());
 
       const processed: { [key in AlertTypeConstants]?: AlertRule[] } = {
         [AlertTypeConstants.LATENCY]: [],
@@ -118,13 +102,7 @@ export function useDeleteAlertRule(alertingBaseUrl: string) {
   };
 }
 
-export function useGetAlertHistory(
-  alertingBaseUrl: string,
-  componentId: string,
-  environmentId: string,
-  startTime: string,
-  endTime: string
-) {
+export function useGetAlertHistory(alertingBaseUrl: string, componentId: string, environmentId: string, startTime: string, endTime: string) {
   return useQuery<AlertHistoryResponse>({
     queryKey: ['getAlertHistory', componentId, environmentId, startTime, endTime],
     queryFn: () => getAlertHistory(alertingBaseUrl, componentId, environmentId, startTime, endTime),

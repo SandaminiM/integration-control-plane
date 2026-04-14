@@ -29,25 +29,24 @@ export default function ResourceAlertRuleForm(props: AlertRuleFormProps): JSX.El
   const { environment, componentId, projectId, versionId, versionName, projectName, environmentName, selectedAlertRule, isEditAlertRule, goBackToAlertRules, setSelectedAlertTypeEnvVersion, setIsAlertRuleHalfConfigured, alertingBaseUrl, onNotify } = props;
 
   const [isCollapseOpen, setIsCollapseOpen] = useState(false);
-  const alertRule: AlertRule =
-    selectedAlertRule
-      ? { ...selectedAlertRule }
-      : ({
-      projectId,
-      componentId,
-      environmentId: environment.id,
-      versionId,
-      componentType: AlertComponentType.SERVICE,
-      projectName,
-      environmentName,
-      versionName: versionName,
-      id: '',
-      type: AlertTypeConstants.RESOURCES,
-      metric: null,
-      threshold: null,
-      emails: [],
-      enabled: true,
-    } as AlertRule);
+  const alertRule: AlertRule = selectedAlertRule
+    ? { ...selectedAlertRule }
+    : ({
+        projectId,
+        componentId,
+        environmentId: environment.id,
+        versionId,
+        componentType: AlertComponentType.SERVICE,
+        projectName,
+        environmentName,
+        versionName: versionName,
+        id: '',
+        type: AlertTypeConstants.RESOURCES,
+        metric: null,
+        threshold: null,
+        emails: [],
+        enabled: true,
+      } as AlertRule);
 
   const resourceMetrics = getAlertMetricOptions(AlertTypeConstants.RESOURCES);
 

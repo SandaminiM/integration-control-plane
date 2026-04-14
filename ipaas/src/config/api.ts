@@ -33,6 +33,8 @@ interface RuntimeConfig {
   CHOREO_ORG_API_URL?: string;
   ASGARDEO_ORG_NUMERIC_ID?: string;
   SYS_API_PREFIX?: string;
+  GITHUB_APP_CLIENT_ID?: string;
+  GITHUB_APP_AUTH_REDIRECTION_URL?: string;
 }
 
 export interface ApiConfig {
@@ -52,6 +54,8 @@ export interface ApiConfig {
   asgardeoOrgNumericId?: number;
   systemApisBaseUrl?: string;
   sysApiPrefix: string;
+  githubAppClientId?: string;
+  githubAppAuthRedirectUrl?: string;
 }
 
 // Extend window interface
@@ -78,6 +82,8 @@ const DEFAULT_CONFIG: ApiConfig = {
   choreoOrgApiUrl: 'https://apis.preview-dv.choreo.dev/orgs/1.0.0',
   systemApisBaseUrl: '',
   sysApiPrefix: '783c6c4d-8b9b-4190-b70a-e717ab1ee739-systemapis',
+  githubAppClientId: '',
+  githubAppAuthRedirectUrl: `${window.location.origin}/github-callback`,
 };
 
 /**
@@ -97,8 +103,7 @@ export async function loadConfig(): Promise<void> {
       graphqlUrl: config.VITE_GRAPHQL_URL || DEFAULT_CONFIG.graphqlUrl,
       authBaseUrl: config.VITE_AUTH_BASE_URL || DEFAULT_CONFIG.authBaseUrl,
       observabilityUrl: config.VITE_OBSERVABILITY_URL || DEFAULT_CONFIG.observabilityUrl,
-      alertingUrl: config.VITE_ALERTING_URL
-        || (config.SYSTEM_APIS_BASE_URL ? `${config.SYSTEM_APIS_BASE_URL}/systemapis/choreo-alerting-api/v1.0` : DEFAULT_CONFIG.alertingUrl),
+      alertingUrl: config.VITE_ALERTING_URL || (config.SYSTEM_APIS_BASE_URL ? `${config.SYSTEM_APIS_BASE_URL}/systemapis/choreo-alerting-api/v1.0` : DEFAULT_CONFIG.alertingUrl),
       asgardeoClientId: config.ASGARDEO_CLIENT_ID || DEFAULT_CONFIG.asgardeoClientId,
       asgardeoAuthorizeEndpoint: config.ASGARDEO_AUTHORIZE_ENDPOINT || DEFAULT_CONFIG.asgardeoAuthorizeEndpoint,
       asgardeoTokenEndpoint: config.ASGARDEO_TOKEN_ENDPOINT || DEFAULT_CONFIG.asgardeoTokenEndpoint,
@@ -115,6 +120,8 @@ export async function loadConfig(): Promise<void> {
         return stored ? parseInt(stored, 10) : undefined;
       })(),
       sysApiPrefix: config.SYS_API_PREFIX || DEFAULT_CONFIG.sysApiPrefix,
+      githubAppClientId: config.GITHUB_APP_CLIENT_ID,
+      githubAppAuthRedirectUrl: config.GITHUB_APP_AUTH_REDIRECTION_URL || `${window.location.origin}/ghapp`,
     };
 
     console.info('✓ Runtime configuration loaded from config.json');
@@ -131,6 +138,7 @@ export const revokeTokenApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}
 export const oidcAuthorizeApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/oidc/authorize-url`;
 export const oidcCallbackApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/login/oidc`;
 export const choreoDevopsApiUrl = (): string => window.API_CONFIG.choreoOrgApiUrl.replace('/orgs/1.0.0', '/devops/1.0.0');
+export const componentMgtApiUrl = (): string => window.API_CONFIG.choreoOrgApiUrl.replace('/orgs/1.0.0', '/component-mgt/1.0.0');
 export const changePasswordApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/change-password`;
 export const forceChangePasswordApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/force-change-password`;
 export const choreoAlertingApiUrl = (gatewayHost: string): string => {

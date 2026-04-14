@@ -35,7 +35,10 @@ import AppLayout from '../layouts/AppLayout';
 import ProtectedRoute from '../auth/ProtectedRoute';
 import Projects from '../pages/Projects';
 import CreateProject from '../pages/CreateProject';
-import CreateComponent from '../pages/CreateComponent';
+import CreateIntegrationOptions from '../pages/CreateIntegrationOptions';
+import ImportIntegration from '../pages/ImportIntegration';
+import BrowseSamples from '../pages/BrowseSamples';
+import GitHubOAuthCallback from '../pages/GitHubOAuthCallback';
 import Project from '../pages/Project';
 import Component from '../pages/Component';
 import RuntimeLogsProject from '../pages/RuntimeLogsProject';
@@ -58,6 +61,7 @@ import { createElement } from 'react';
 import Build from '../pages/Build';
 import OrgBuild from '../pages/OrgBuild';
 import ProjectBuild from '../pages/ProjectBuild';
+import CloudEditorDeployment from '../pages/CloudEditorDeployment';
 
 export interface AppRoute extends Omit<RouteProps, 'children'> {
   children?: AppRoute[];
@@ -88,10 +92,13 @@ const routes: AppRoute[] = [
     ],
   },
   { path: '/signin', element: <OIDCCallback /> },
+  { path: '/github-callback', element: <GitHubOAuthCallback /> },
+  { path: '/ghapp', element: <GitHubOAuthCallback /> },
   {
     element: <ProtectedRoute />,
     children: [
       { path: '/change-password', element: <ForceChangePassword /> },
+      { path: '/editor', element: <CloudEditorDeployment /> },
       {
         element: <ScopeResolver />,
         children: [
@@ -104,7 +111,9 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/projects/:projectHandler/home', element: createElement(withScope(Project, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/overview', element: createElement(withScope(Component, ['components'])) },
               { path: 'organizations/:orgHandler/projects/new', element: createElement(withScope(CreateProject, ['organizations'])) },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/components/new', element: createElement(withScope(CreateComponent, ['projects'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/components/new', element: createElement(withScope(CreateIntegrationOptions, ['projects'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/components/new/import', element: createElement(withScope(ImportIntegration, ['projects'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/components/new/samples', element: createElement(withScope(BrowseSamples, ['projects'])) },
               { path: 'organizations/:orgHandler/environments/new', element: createElement(withScope(CreateEnvironment, ['organizations'])) },
               { path: 'organizations/:orgHandler/environments/:envId/edit', element: <EditEnvironment /> },
               { path: 'organizations/:orgHandler/settings/access-control/users/new', element: <CreateUser /> },

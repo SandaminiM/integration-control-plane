@@ -18,19 +18,16 @@
 
 import { CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
-import { useComponentByHandler, useCommitHistory, useDeploymentStatus, useEnvironments, useOrgs, useProject, useProjectByHandler, useComponentRepository } from '../api/queries';
+import { useComponentByHandler, useCommitHistory, useDeploymentStatus, useEnvironments, useOrgs, useComponentRepository } from '../api/queries';
 import BuildHistory from '../components/Build/BuildHistory';
 import type { ComponentScope } from '../nav';
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { UUID_RE } from '../utils/string';
+import { useProjectId } from '../hooks/useProjectId';
 
 export default function Build(scope: ComponentScope): JSX.Element {
   const isProjectUuid = UUID_RE.test(scope.project);
-
-  const { data: projectByHandler, isLoading: loadingProject } = useProjectByHandler(!isProjectUuid ? scope.project : '');
-  const { data: projectByUuid } = useProject(isProjectUuid ? scope.project : '');
-  const project = isProjectUuid ? projectByUuid : projectByHandler;
-  const projectId = isProjectUuid ? scope.project : (project?.id ?? '');
+  const { projectId: projectIdFromHook, isLoading: loadingProject } = useProjectId(scope.project);
+  const projectId = isProjectUuid ? scope.project : projectIdFromHook;
 
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
   const componentId = component?.id ?? '';
@@ -72,17 +69,7 @@ export default function Build(scope: ComponentScope): JSX.Element {
 
   return (
     <PageContent>
-      <BuildHistory
-        componentId={componentId}
-        versionId={versionId}
-        envId={envId}
-        branch={branch}
-        builds={builds}
-        buildsLoading={loadingBuilds}
-        commits={commits}
-        commitsLoading={loadingCommits}
-        repository={repository ?? null}
-      />
+      <BuildHistory componentId={componentId} versionId={versionId} envId={envId} branch={branch} builds={builds} buildsLoading={loadingBuilds} commits={commits} commitsLoading={loadingCommits} repository={repository ?? null} />
     </PageContent>
   );
 }

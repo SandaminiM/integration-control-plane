@@ -70,8 +70,7 @@ export default function BuildLogViewer({ logs, logsLoading, showLogs }: BuildLog
                 zIndex: 1,
                 color: copied ? 'success.light' : 'grey.500',
                 '&:hover': { color: 'grey.200', bgcolor: 'grey.800' },
-              }}
-            >
+              }}>
               {copied ? <Check size={14} /> : <Copy size={14} />}
             </IconButton>
           </Tooltip>
@@ -90,8 +89,7 @@ export default function BuildLogViewer({ logs, logsLoading, showLogs }: BuildLog
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-all',
               color: theme.syntax.dark.text,
-            })}
-          >
+            })}>
             {logText === null ? 'No log data available' : logText || 'Waiting for build logs...'}
           </Box>
         </Box>

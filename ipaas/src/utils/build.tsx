@@ -101,11 +101,16 @@ export function formatBuildDate(iso: string): string {
 
 export function gitProviderLabel(provider: string): string {
   switch (provider?.toLowerCase()) {
-    case 'github': return 'GitHub';
-    case 'gitlab': return 'GitLab';
-    case 'bitbucket': return 'Bitbucket';
-    case 'bitbucket_server': return 'Bitbucket Server';
-    default: return provider ?? '—';
+    case 'github':
+      return 'GitHub';
+    case 'gitlab':
+      return 'GitLab';
+    case 'bitbucket':
+      return 'Bitbucket';
+    case 'bitbucket_server':
+      return 'Bitbucket Server';
+    default:
+      return provider ?? '—';
   }
 }
 

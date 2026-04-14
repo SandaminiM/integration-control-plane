@@ -218,7 +218,11 @@ async function refreshOidcAccessToken(refreshToken: string): Promise<void> {
             const orgs: Array<{ handle?: string; orgHandle?: string; org_handle?: string }> = orgsData.list ?? orgsData.organizations ?? (Array.isArray(orgsData) ? orgsData : []);
             for (const org of orgs) {
               const h = org.handle ?? org.orgHandle ?? org.org_handle;
-              if (h) { orgHandle = h; localStorage.setItem(OIDC_ORG_HANDLE_KEY, h); break; }
+              if (h) {
+                orgHandle = h;
+                localStorage.setItem(OIDC_ORG_HANDLE_KEY, h);
+                break;
+              }
             }
           }
         }

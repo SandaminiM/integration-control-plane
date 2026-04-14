@@ -77,6 +77,14 @@ export function newComponentUrl(orgHandler: string, projectHandler: string): str
   return `/organizations/${orgHandler}/projects/${projectHandler}/components/new`;
 }
 
+export function importComponentUrl(orgHandler: string, projectHandler: string): string {
+  return `/organizations/${orgHandler}/projects/${projectHandler}/components/new/import`;
+}
+
+export function browseSamplesUrl(orgHandler: string, projectHandler: string): string {
+  return `/organizations/${orgHandler}/projects/${projectHandler}/components/new/samples`;
+}
+
 export function editComponentUrl(orgHandler: string, projectHandler: string, componentId: string): string {
   return `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentId}/edit`;
 }
@@ -166,7 +174,13 @@ export const external = {
   vite: 'https://vite.dev',
   react: 'https://react.dev',
   oxygenUi: 'https://github.com/wso2/oxygen-ui/tree/next',
+  githubNew: 'https://github.com/new',
 } as const;
+
+// Build GitHub OAuth authorization URL for repository access
+export function buildGitHubOAuthUrl(redirectUri: string, clientId: string, scope = 'repo,read:user'): string {
+  return `https://github.com/login/oauth/authorize?redirect_uri=${encodeURIComponent(redirectUri)}&client_id=${clientId}&scope=${scope}`;
+}
 
 // ---------------------------------------------------------------------------
 // Mock-data path constants

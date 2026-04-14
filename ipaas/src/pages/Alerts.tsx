@@ -18,22 +18,19 @@
 
 import { Box, Button, ButtonGroup, CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
 import { type JSX, useState } from 'react';
-import { useCloudDataPlanes, useComponentByHandler, useEnvironments, useOrgs, useProject, useProjectByHandler } from '../api/queries';
+import { useCloudDataPlanes, useComponentByHandler, useEnvironments, useOrgs } from '../api/queries';
 import AlertsConfigurePage from '../components/Alerts/AlertsConfigurePage';
 import AlertsHistoryPage from '../components/Alerts/AlertsHistoryPage';
 import type { ComponentScope } from '../nav';
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { UUID_RE } from '../utils/string';
+import { useProjectId } from '../hooks/useProjectId';
 
 export default function Alerts(scope: ComponentScope): JSX.Element {
   const [activeTab, setActiveTab] = useState(0);
 
   const isProjectUuid = UUID_RE.test(scope.project);
-
-  const { data: projectByHandler, isLoading: loadingProject } = useProjectByHandler(!isProjectUuid ? scope.project : '');
-  const { data: projectByUuid } = useProject(isProjectUuid ? scope.project : '');
-  const project = isProjectUuid ? projectByUuid : projectByHandler;
-  const projectId = isProjectUuid ? scope.project : (project?.id ?? '');
+  const { projectId: projectIdFromHook, project, isLoading: loadingProject } = useProjectId(scope.project);
+  const projectId = isProjectUuid ? scope.project : projectIdFromHook;
 
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
   const componentId = component?.id ?? '';

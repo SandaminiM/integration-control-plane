@@ -22,13 +22,7 @@ import { useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
 import { useCreateProject, type CreateProjectInput } from '../api/mutations';
 import { resourceUrl, narrow, type OrgScope } from '../nav';
-
-function toHandler(name: string) {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-}
+import { toHandler } from '../utils/string';
 
 export default function CreateProject(scope: OrgScope): JSX.Element {
   const navigate = useNavigate();
