@@ -330,7 +330,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
             </Typography>
           </Stack>
         ) : (
-          <Stack direction="row" spacing={1.5} alignItems="center" pt={2.5} sx={{ minHeight: 50 }}>
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minHeight: 50 }}>
             <Button
               variant="outlined"
               startIcon={
@@ -620,15 +620,15 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
 
         {/* Technology */}
         <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+          <Typography variant="h5" sx={{ mb: 2, mt: 5 }}>
             Technology
           </Typography>
           <TechnologySelector selected={selectedTechnology} detectedMode={detectedMode} enabled={showBranchAndSubPath} onSelect={setSelectedTechnology} />
         </Box>
 
         {/* Integration Type */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+        <Box sx={{ mb: 5 }}>
+          <Typography variant="h5" sx={{ mb: 2, mt: 5 }}>
             Integration Type
           </Typography>
           <IntegrationTypeSelector selected={selectedIntegrationType} onSelect={setSelectedIntegrationType} />

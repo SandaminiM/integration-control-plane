@@ -57,7 +57,7 @@ export default function IntegrationTypeSelector({ selected, onSelect }: Integrat
                   {opt.title}
                 </Typography>
                 <Tooltip title="View documentation" placement="top">
-                  <Box component="a" href={opt.docLink} target="_blank" rel="noopener noreferrer" onClick={(e: MouseEvent) => e.stopPropagation()} sx={{ display: 'flex', color: 'text.disabled', '&:hover': { color: 'text.secondary' }, ml: 0.5, flexShrink: 0 }}>
+                  <Box component="a" href={opt.docLink} target="_blank" rel="noopener noreferrer" aria-label={`View documentation for ${opt.title}`} onClick={(e: MouseEvent) => e.stopPropagation()} sx={{ display: 'flex', color: 'text.disabled', '&:hover': { color: 'text.secondary' }, ml: 0.5, flexShrink: 0 }}>
                     <ExternalLink size={13} />
                   </Box>
                 </Tooltip>
