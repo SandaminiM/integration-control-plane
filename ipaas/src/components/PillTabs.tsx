@@ -17,7 +17,7 @@
  */
 
 import { Box, Typography } from '@wso2/oxygen-ui';
-import type { JSX } from 'react';
+import type { JSX, KeyboardEvent } from 'react';
 
 interface PillTabsProps {
   value: number;
@@ -30,7 +30,7 @@ export default function PillTabs({ value, onChange, tabs }: PillTabsProps): JSX.
   const tabWidthCalc = `calc((100% - ${8 + (count - 1) * 4}px) / ${count})`;
 
   return (
-    <Box sx={{ position: 'relative', display: 'flex', bgcolor: 'action.hover', borderRadius: 2, p: 0.5, gap: 0.5 }}>
+    <Box role="tablist" sx={{ position: 'relative', display: 'flex', bgcolor: 'action.hover', borderRadius: 2, p: 0.5, gap: 0.5 }}>
       {/* Sliding indicator */}
       <Box
         sx={{
@@ -50,7 +50,11 @@ export default function PillTabs({ value, onChange, tabs }: PillTabsProps): JSX.
       {tabs.map((tab, index) => (
         <Box
           key={tab.label}
+          role="tab"
+          tabIndex={0}
+          aria-selected={value === index}
           onClick={() => onChange(index)}
+          onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(index); } }}
           sx={{
             flex: 1,
             textAlign: 'center',
@@ -61,6 +65,7 @@ export default function PillTabs({ value, onChange, tabs }: PillTabsProps): JSX.
             userSelect: 'none',
             position: 'relative',
             zIndex: 1,
+            '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: -2 },
           }}>
           <Typography
             variant="body2"

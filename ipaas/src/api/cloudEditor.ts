@@ -52,7 +52,15 @@ export async function getOrCreateSampleRegistry(orgUuid: string): Promise<Contai
   const registries = await getContainerRegistries(orgUuid);
   const existing = registries.find((r) => r.host === CHOREO_SAMPLES_REGISTRY_HOST);
   if (existing) return existing;
-  return createContainerRegistry(orgUuid);
+  try {
+    return await createContainerRegistry(orgUuid);
+  } catch {
+    // A concurrent request may have already created the registry; re-fetch before failing.
+    const updated = await getContainerRegistries(orgUuid);
+    const created = updated.find((r) => r.host === CHOREO_SAMPLES_REGISTRY_HOST);
+    if (created) return created;
+    throw new Error('Failed to create or find sample container registry');
+  }
 }
 
 export async function callCreateCodeServer(params: { userId: string; organizationId: string; projectId: string; componentId: string; orgHandle: string; imageUrl: string; registryId: string; sourceCommitHash?: string }): Promise<string> {

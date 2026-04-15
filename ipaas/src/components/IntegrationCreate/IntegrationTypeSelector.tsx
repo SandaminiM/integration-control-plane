@@ -18,7 +18,7 @@
 
 import { Box, Card, CardContent, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ExternalLink } from '@wso2/oxygen-ui-icons-react';
-import type { JSX, MouseEvent } from 'react';
+import type { JSX, KeyboardEvent, MouseEvent } from 'react';
 import type { IntegrationType } from '../../types/import';
 import { INTEGRATION_TYPES } from '../../constants/import';
 
@@ -35,7 +35,11 @@ export default function IntegrationTypeSelector({ selected, onSelect }: Integrat
         return (
           <Card
             key={opt.id}
+            role="button"
+            tabIndex={0}
+            aria-pressed={isActive}
             onClick={() => onSelect(opt.id)}
+            onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(opt.id); } }}
             sx={{
               width: '25%',
               minWidth: 180,
@@ -45,6 +49,7 @@ export default function IntegrationTypeSelector({ selected, onSelect }: Integrat
               cursor: 'pointer',
               transition: 'border-color 0.15s, background-color 0.15s',
               '&:hover': { borderColor: isActive ? 'primary.main' : 'primary.light' },
+              '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
             }}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
               <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 0.5 }}>

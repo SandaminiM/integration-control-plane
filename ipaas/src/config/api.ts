@@ -120,8 +120,8 @@ export async function loadConfig(): Promise<void> {
         return stored ? parseInt(stored, 10) : undefined;
       })(),
       sysApiPrefix: config.SYS_API_PREFIX || DEFAULT_CONFIG.sysApiPrefix,
-      githubAppClientId: config.GITHUB_APP_CLIENT_ID,
-      githubAppAuthRedirectUrl: config.GITHUB_APP_AUTH_REDIRECTION_URL || `${window.location.origin}/ghapp`,
+      githubAppClientId: config.GITHUB_APP_CLIENT_ID || DEFAULT_CONFIG.githubAppClientId,
+      githubAppAuthRedirectUrl: config.GITHUB_APP_AUTH_REDIRECTION_URL || DEFAULT_CONFIG.githubAppAuthRedirectUrl,
     };
 
     console.info('✓ Runtime configuration loaded from config.json');

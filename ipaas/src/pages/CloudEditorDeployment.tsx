@@ -47,8 +47,8 @@ export default function CloudEditorDeployment(): JSX.Element {
           sourceCommitHash: params.get('sourceCommitHash') ?? '',
         };
 
-        if (!deploymentParams.orgUuid || !deploymentParams.projectId || !deploymentParams.codeServerSample) {
-          throw new Error('Missing required deployment parameters. Please close this window and try again.');
+        if (!deploymentParams.orgUuid || !deploymentParams.projectId || !deploymentParams.codeServerSample || !deploymentParams.userId || !deploymentParams.orgHandle) {
+          throw new Error('Missing required deployment parameters (userId/orgHandle). Please close this window and try again.');
         }
 
         let codeServerSample: ChoreoSampleImage;
@@ -79,10 +79,19 @@ export default function CloudEditorDeployment(): JSX.Element {
           sourceCommitHash: deploymentParams.sourceCommitHash || undefined,
         });
 
-        // 4. Normalize protocol and redirect — replace() so the loading page is not in back history
+        // 4. Validate URL is HTTPS and redirect — replace() so the loading page is not in back history
         setStep(CLOUD_EDITOR_STEPS.redirecting);
-        const editorUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
-        window.location.replace(editorUrl);
+        let editorUrl: URL;
+        try {
+          const normalized = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
+          editorUrl = new URL(normalized);
+        } catch {
+          throw new Error('Invalid editor URL returned from server. Please close this window and try again.');
+        }
+        if (editorUrl.protocol !== 'https:') {
+          throw new Error('Editor URL must use HTTPS. Please close this window and try again.');
+        }
+        window.location.replace(editorUrl.toString());
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
       }

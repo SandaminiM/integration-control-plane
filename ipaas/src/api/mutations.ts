@@ -197,7 +197,7 @@ function buildCreateComponentQuery(input: CreateComponentInput): string {
         projectId: ${gqlStr(input.projectId)},
         labels: "",
         version: "v1.0",
-        description: """${input.description}""",
+        description: ${gqlStr(input.description)},
         apiId: "",
         ballerinaVersion: "swan-lake-alpha5",
         triggerChannels: "",
@@ -233,7 +233,7 @@ function buildCreateMiComponentQuery(input: CreateComponentInput): string {
       component: {
         name: ${gqlStr(input.name)},
         displayName: ${gqlStr(input.displayName)},
-        description: """${input.description}""",
+        description: ${gqlStr(input.description)},
         orgId: ${orgId},
         orgHandler: ${gqlStr(input.orgHandler)},
         projectId: ${gqlStr(input.projectId)},

@@ -87,7 +87,7 @@ export default function FilterSection({ title, items, selected, onToggle, labelF
                 borderRadius: 0.5,
                 '&:hover': { bgcolor: 'action.hover' },
               }}>
-              <Checkbox size="small" checked={selected.has(item)} onChange={() => onToggle(item)} sx={{ p: 0.5 }} tabIndex={-1} />
+              <Checkbox size="small" checked={selected.has(item)} onChange={() => onToggle(item)} sx={{ p: 0.5 }} />
               <Typography variant="body2" sx={{ fontSize: 13, userSelect: 'none' }}>
                 {labelFn ? labelFn(item) : item}
               </Typography>

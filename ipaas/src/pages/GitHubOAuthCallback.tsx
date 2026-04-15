@@ -18,13 +18,14 @@
 
 import { Box, CircularProgress, Typography } from '@wso2/oxygen-ui';
 import { useEffect, type JSX } from 'react';
+import { GITHUB_AUTH } from '../constants/import';
 
 export default function GitHubOAuthCallback(): JSX.Element {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const state = params.get('state');
-    const channel = new BroadcastChannel('EXTERNALOAUTH');
+    const channel = new BroadcastChannel(GITHUB_AUTH.BROADCAST_CHANNEL);
     channel.postMessage({ authCode: code ?? null, state: state ?? null });
     channel.close();
     window.close();

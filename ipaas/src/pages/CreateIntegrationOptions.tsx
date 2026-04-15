@@ -35,6 +35,7 @@ import GitLabIcon from '../assets/icons/GitLabIcon';
 import BitBucketIcon from '../assets/icons/BitBucketIcon';
 import AzureIcon from '../assets/icons/AzureIcon';
 import { displayTypeFromSample } from '../constants/integrations';
+import { GITHUB_AUTH } from '../constants/import';
 import { FEATURED_SAMPLES, FEATURED_PREBUILT } from '../constants/samples';
 import { CARD_HOVER_SX, PROVIDER_ICON_SX } from '../constants/styles';
 import { resourceUrl, narrow, type ProjectScope } from '../nav';
@@ -95,16 +96,16 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
 
     const state = generateAndSaveGitHubState();
     const url = buildGitHubOAuthUrl(githubAppAuthRedirectUrl ?? '', githubAppClientId, state);
-    const popup = window.open(url, 'github-oauth', 'width=800,height=600');
+    const popup = window.open(url, 'github-oauth', GITHUB_AUTH.POPUP_DIMENSIONS);
 
-    const channel = new BroadcastChannel('EXTERNALOAUTH');
+    const channel = new BroadcastChannel(GITHUB_AUTH.BROADCAST_CHANNEL);
     const pollClosed = setInterval(() => {
       if (popup?.closed) {
         clearInterval(pollClosed);
         channel.close();
         setIsImportAuthenticating(false);
       }
-    }, 500);
+    }, GITHUB_AUTH.POPUP_POLL_INTERVAL_MS);
 
     channel.onmessage = (event) => {
       clearInterval(pollClosed);
