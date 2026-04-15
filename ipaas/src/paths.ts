@@ -177,9 +177,16 @@ export const external = {
   githubNew: 'https://github.com/new',
 } as const;
 
-// Build GitHub OAuth authorization URL for repository access
-export function buildGitHubOAuthUrl(redirectUri: string, clientId: string, scope = 'repo,read:user'): string {
-  return `https://github.com/login/oauth/authorize?redirect_uri=${encodeURIComponent(redirectUri)}&client_id=${clientId}&scope=${scope}`;
+// Build GitHub OAuth authorization URL for repository access.
+// redirectUri falls back to window.location.origin + '/ghapp' when empty.
+export function buildGitHubOAuthUrl(redirectUri: string, clientId: string, state: string, scope = 'repo,read:user'): string {
+  const params = new URLSearchParams({
+    redirect_uri: redirectUri || `${window.location.origin}/ghapp`,
+    client_id: clientId,
+    scope,
+    state,
+  });
+  return `https://github.com/login/oauth/authorize?${params.toString()}`;
 }
 
 // ---------------------------------------------------------------------------

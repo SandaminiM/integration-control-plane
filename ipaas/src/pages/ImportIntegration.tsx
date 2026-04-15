@@ -32,6 +32,7 @@ import type { IntegrationType, SourceMode, AuthStatus, LocationState } from '../
 import { SAMPLE_REPO_URL, GITHUB_AUTH, FORM_CONFIG } from '../constants/import';
 import { resourceUrl, narrow, type ProjectScope } from '../nav';
 import { buildGitHubOAuthUrl, newComponentUrl } from '../paths';
+import { generateAndSaveGitHubState, validateAndClearGitHubState } from '../auth/tokenManager';
 import { toHandler, formatRepoNameToDisplayName } from '../utils/string';
 import { parseGitHubUrl } from '../utils/github';
 import { detectTechnology } from '../utils/technologyDetection';
@@ -210,12 +211,17 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
     const { githubAppClientId, githubAppAuthRedirectUrl } = window.API_CONFIG;
     if (!githubAppClientId) return;
     setAuthStatus('authenticating');
-    const url = buildGitHubOAuthUrl(githubAppAuthRedirectUrl ?? '', githubAppClientId);
+    const state = generateAndSaveGitHubState();
+    const url = buildGitHubOAuthUrl(githubAppAuthRedirectUrl ?? '', githubAppClientId, state);
     const popup = window.open(url, 'github-oauth', GITHUB_AUTH.POPUP_DIMENSIONS);
     const channel = new BroadcastChannel(GITHUB_AUTH.BROADCAST_CHANNEL);
     channel.onmessage = async (event) => {
       channel.close();
-      const { authCode } = event.data as { authCode: string | null };
+      const { authCode, state: returnedState } = event.data as { authCode: string | null; state: string | null };
+      if (!returnedState || !validateAndClearGitHubState(returnedState)) {
+        setAuthStatus('failed');
+        return;
+      }
       if (!authCode) {
         setAuthStatus('failed');
         return;

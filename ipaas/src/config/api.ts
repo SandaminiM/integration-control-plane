@@ -83,7 +83,7 @@ const DEFAULT_CONFIG: ApiConfig = {
   systemApisBaseUrl: '',
   sysApiPrefix: '783c6c4d-8b9b-4190-b70a-e717ab1ee739-systemapis',
   githubAppClientId: '',
-  githubAppAuthRedirectUrl: `${window.location.origin}/github-callback`,
+  githubAppAuthRedirectUrl: `${window.location.origin}/ghapp`,
 };
 
 /**

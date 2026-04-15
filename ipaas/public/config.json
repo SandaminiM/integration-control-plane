@@ -14,5 +14,5 @@
   "SYSTEM_APIS_BASE_URL": "https://783c6c4d-8b9b-4190-b70a-e717ab1ee739-systemapis.e1-us-east-azure.preview-dv.choreoapis.dev",
   "SYS_API_PREFIX": "783c6c4d-8b9b-4190-b70a-e717ab1ee739-systemapis",
   "GITHUB_APP_CLIENT_ID": "Iv1.f6cf2cd585148ee7",
-  "GITHUB_APP_AUTH_REDIRECTION_URL": "https://localhost:3000/ghapp"
+  "GITHUB_APP_AUTH_REDIRECTION_URL": ""
 }

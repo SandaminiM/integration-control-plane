@@ -23,12 +23,9 @@ export default function GitHubOAuthCallback(): JSX.Element {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
+    const state = params.get('state');
     const channel = new BroadcastChannel('EXTERNALOAUTH');
-    if (code) {
-      channel.postMessage({ authCode: code });
-    } else {
-      channel.postMessage({ authCode: null });
-    }
+    channel.postMessage({ authCode: code ?? null, state: state ?? null });
     channel.close();
     window.close();
   }, []);

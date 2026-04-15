@@ -22,7 +22,7 @@ import { useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
 import { useCreateComponent } from '../api/mutations';
 import { useChoreoSampleImages } from '../api/queries';
-import { getOrgUuidFromToken } from '../auth/tokenManager';
+import { getOrgUuidFromToken, generateAndSaveGitHubState, validateAndClearGitHubState } from '../auth/tokenManager';
 import { useAuth } from '../auth/AuthContext';
 import IDEMockup from '../components/IDEMockup/IDEMockup';
 import PillTabs from '../components/PillTabs';
@@ -93,7 +93,8 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
     }
     setIsImportAuthenticating(true);
 
-    const url = buildGitHubOAuthUrl(githubAppAuthRedirectUrl ?? '', githubAppClientId);
+    const state = generateAndSaveGitHubState();
+    const url = buildGitHubOAuthUrl(githubAppAuthRedirectUrl ?? '', githubAppClientId, state);
     const popup = window.open(url, 'github-oauth', 'width=800,height=600');
 
     const channel = new BroadcastChannel('EXTERNALOAUTH');
@@ -108,7 +109,12 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
     channel.onmessage = (event) => {
       clearInterval(pollClosed);
       channel.close();
-      const { authCode } = event.data as { authCode: string | null };
+      const { authCode, state: returnedState } = event.data as { authCode: string | null; state: string | null };
+      if (!returnedState || !validateAndClearGitHubState(returnedState)) {
+        setIsImportAuthenticating(false);
+        showSnackbar('GitHub authorization failed (invalid state). Please try again.');
+        return;
+      }
       if (!authCode) {
         setIsImportAuthenticating(false);
         showSnackbar('GitHub authorization failed. Please try again.');

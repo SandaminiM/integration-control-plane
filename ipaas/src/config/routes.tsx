@@ -92,7 +92,6 @@ const routes: AppRoute[] = [
     ],
   },
   { path: '/signin', element: <OIDCCallback /> },
-  { path: '/github-callback', element: <GitHubOAuthCallback /> },
   { path: '/ghapp', element: <GitHubOAuthCallback /> },
   {
     element: <ProtectedRoute />,
