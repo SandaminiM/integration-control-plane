@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { Button, CircularProgress, InputAdornment, TextField } from '@wso2/oxygen-ui';
-import { Folder } from '@wso2/oxygen-ui-icons-react';
+import { CircularProgress, IconButton, InputAdornment, TextField, Tooltip } from '@wso2/oxygen-ui';
+import { Folder, Edit } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import type { RepoTreeNode } from '../../api/queries';
 import DirectoryPickerDialog from './DirectoryPickerDialog';
@@ -67,17 +67,20 @@ export default function DirectoryPickerField({ org: _org, repo, branch: _branch,
                 {isValidating || isFetching ? (
                   <CircularProgress size={14} />
                 ) : (
-                  <Button
-                    size="small"
-                    variant="text"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!disabled) setOpen(true);
-                    }}
-                    disabled={disabled}
-                    sx={{ minWidth: 'auto', p: 0.5, fontSize: '0.75rem' }}>
-                    Browse
-                  </Button>
+                  <Tooltip title="Edit path" placement="top">
+                    <span>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!disabled) setOpen(true);
+                        }}
+                        disabled={disabled}
+                        sx={{ color: 'primary.main' }}>
+                        <Edit size={14} />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
                 )}
               </InputAdornment>
             ),

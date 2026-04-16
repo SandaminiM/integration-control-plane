@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Grid, IconButton, InputAdornment, MenuItem, PageContent, Skeleton, Snackbar, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { ArrowLeft, GitBranch, Building2, RefreshCw } from '@wso2/oxygen-ui-icons-react';
+import { Alert, Box, Button, Card, CardContent, CircularProgress, Grid, IconButton, InputAdornment, MenuItem, PageContent, Skeleton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { ArrowLeft, GitBranch, Building2, RefreshCw, GitHub } from '@wso2/oxygen-ui-icons-react';
 import { useState, useEffect, useRef, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { useCreateComponent, useObtainGithubToken, type DisplayType } from '../api/mutations';
@@ -27,7 +27,6 @@ import IntegrationTypeSelector from '../components/IntegrationCreate/Integration
 import TechnologySelector from '../components/IntegrationCreate/TechnologySelector';
 import TechDetectionIcon from '../components/IntegrationCreate/TechDetectionIcon';
 import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
-import GitHubIcon from '../assets/icons/GitHubIcon';
 import type { IntegrationType, SourceMode, AuthStatus, LocationState } from '../types/import';
 import { SAMPLE_REPO_URL, GITHUB_AUTH, FORM_CONFIG } from '../constants/import';
 import { resourceUrl, narrow, type ProjectScope } from '../nav';
@@ -67,12 +66,6 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   const [detectedMode, setDetectedMode] = useState<DetectedMode>(null);
   const [selectedTechnology, setSelectedTechnology] = useState<'MI' | 'BI' | null>(null);
   const [selectedIntegrationType, setSelectedIntegrationType] = useState<IntegrationType | null>(null);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-    open: false,
-    message: '',
-    severity: 'error',
-  });
-  const showSnackbar = (message: string, severity: 'success' | 'error' = 'error') => setSnackbar({ open: true, message, severity });
 
   const activeOrg = isPublicRepo ? parsedOrg : selectedOrg;
   const activeRepo = isPublicRepo ? parsedRepo : selectedRepo;
@@ -272,11 +265,8 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
         ...(isPublicRepo ? { enableAutoDeploy: true } : {}),
       },
       {
-        onSuccess: (component) => {
-          showSnackbar('Integration imported successfully!', 'success');
-          setTimeout(() => navigate(resourceUrl(narrow(scope, component.handler), 'overview')), FORM_CONFIG.SUCCESS_REDIRECT_DELAY_MS);
-        },
-        onError: (err) => showSnackbar(err.message),
+        onSuccess: (component) => navigate(resourceUrl(narrow(scope, component.handler), 'overview')),
+        onError: () => {},
       },
     );
   };
@@ -304,7 +294,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
               <Stack direction="row" alignItems="center" justifyContent="space-between">
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Box sx={{ color: 'common.black', display: 'flex' }}>
-                    <GitHubIcon size={18} />
+                    <GitHub size={18} />
                   </Box>
                   <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'success.main', flexShrink: 0 }} />
                   <Typography variant="body2">Connected to GitHub</Typography>
@@ -330,20 +320,24 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
             </Typography>
           </Stack>
         ) : (
-          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minHeight: 50 }}>
+          <Box>
+            {authStatus === 'failed' && (
+              <Alert severity="error" sx={{ mb: 1.5 }}>
+                GitHub authorization failed. Please try again.
+              </Alert>
+            )}
             <Button
               variant="outlined"
               startIcon={
                 <Box sx={{ color: 'common.black', display: 'flex' }}>
-                  <GitHubIcon size={16} />
+                  <GitHub size={16} />
                 </Box>
               }
               onClick={handleGitHubAuth}
               size="small">
               Authorize with GitHub
             </Button>
-            {authStatus === 'failed' && <Chip label="Authorization failed" color="error" size="small" />}
-          </Stack>
+          </Box>
         )}
       </Box>
     );
@@ -426,7 +420,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
                   startAdornment: (
                     <InputAdornment position="start">
                       <Box sx={{ color: 'common.black', display: 'flex' }}>
-                        <GitHubIcon size={16} />
+                        <GitHub size={16} />
                       </Box>
                     </InputAdornment>
                   ),
@@ -535,16 +529,17 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
     );
   }
 
-  if (createComponent.isPending || createComponent.isSuccess) {
+  if (createComponent.isPending || createComponent.isSuccess || createComponent.isError) {
     const integrationLabel = selectedIntegrationType === 'automation' ? 'Automation' : 'Integration as API';
     return (
-      <PageContent sx={{ pt: 5 }}>
-        <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar((s) => ({ ...s, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-          <Alert onClose={() => setSnackbar((s) => ({ ...s, open: false }))} severity={snackbar.severity} variant="filled" sx={{ width: '100%' }}>
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-        <IntegrationCreationLoader label={integrationLabel} isPending={createComponent.isPending} isSuccess={createComponent.isSuccess} />
+      <PageContent sx={{ pt: 5, display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <IntegrationCreationLoader
+          label={integrationLabel}
+          isPending={createComponent.isPending}
+          isSuccess={createComponent.isSuccess}
+          error={createComponent.isError ? (createComponent.error?.message ?? 'Something went wrong. Please try again.') : null}
+          onBack={() => createComponent.reset()}
+        />
       </PageContent>
     );
   }
@@ -553,12 +548,6 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
 
   return (
     <PageContent sx={{ pt: 5 }}>
-      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar((s) => ({ ...s, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-        <Alert onClose={() => setSnackbar((s) => ({ ...s, open: false }))} severity={snackbar.severity} variant="filled" sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-
       <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(backUrl)} sx={{ mb: 3 }}>
         Back
       </Button>

@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Card, CardContent, Chip, CircularProgress, IconButton, PageContent, Snackbar, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { ArrowLeft, ArrowRight } from '@wso2/oxygen-ui-icons-react';
+import { Alert, Box, Button, Card, CardContent, Chip, CircularProgress, IconButton, PageContent, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { ArrowLeft, ArrowRight, GitHub, GitLab, Bitbucket } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
 import { useCreateComponent } from '../api/mutations';
@@ -30,9 +30,6 @@ import PrebuiltCard from '../components/PrebuiltCard';
 import SampleRowCard from '../components/SampleRowCard';
 import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
 import GitIcon from '../assets/icons/GitIcon';
-import GitHubIcon from '../assets/icons/GitHubIcon';
-import GitLabIcon from '../assets/icons/GitLabIcon';
-import BitBucketIcon from '../assets/icons/BitBucketIcon';
 import AzureIcon from '../assets/icons/AzureIcon';
 import { displayTypeFromSample } from '../constants/integrations';
 import { GITHUB_AUTH } from '../constants/import';
@@ -56,19 +53,14 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
   const [selectedTab, setSelectedTab] = useState(1);
   const [deployingSample, setDeployingSample] = useState<string | null>(null);
   const [isImportAuthenticating, setIsImportAuthenticating] = useState(false);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' }>({
-    open: false,
-    message: '',
-    severity: 'error',
-  });
-  const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' = 'error') => setSnackbar({ open: true, message, severity });
+  const [pageError, setPageError] = useState<{ message: string; severity: 'error' | 'warning' } | null>(null);
 
   const createComponent = useCreateComponent();
 
   const handleOpenCloudEditor = async () => {
     const codeServerSample = (sampleImages ?? []).find((img) => img.name === 'Code Server');
     if (!codeServerSample) {
-      showSnackbar('Cloud Editor is not available. Please try again later.', 'warning');
+      setPageError({ message: 'Cloud Editor is not available. Please try again later.', severity: 'warning' });
       return;
     }
     const deploymentUrl = new URL('/editor', window.location.origin);
@@ -80,7 +72,7 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
     deploymentUrl.searchParams.set('codeServerSample', JSON.stringify(codeServerSample));
     const newTab = window.open(deploymentUrl.toString(), '_blank');
     if (!newTab) {
-      showSnackbar('Please allow popups for this site and try again.', 'warning');
+      setPageError({ message: 'Please allow popups for this site and try again.', severity: 'warning' });
     }
   };
 
@@ -113,12 +105,12 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
       const { authCode, state: returnedState } = event.data as { authCode: string | null; state: string | null };
       if (!returnedState || !validateAndClearGitHubState(returnedState)) {
         setIsImportAuthenticating(false);
-        showSnackbar('GitHub authorization failed (invalid state). Please try again.');
+        setPageError({ message: 'GitHub authorization failed (invalid state). Please try again.', severity: 'error' });
         return;
       }
       if (!authCode) {
         setIsImportAuthenticating(false);
-        showSnackbar('GitHub authorization failed. Please try again.');
+        setPageError({ message: 'GitHub authorization failed. Please try again.', severity: 'error' });
         return;
       }
       navigate(importUrl, { state: { authCode } });
@@ -143,42 +135,38 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
         enableAutoDeploy: true,
       },
       {
-        onSuccess: (component) => {
-          showSnackbar('Integration created successfully!', 'success');
-          setTimeout(() => navigate(resourceUrl(narrow(scope, component.handler), 'overview')), 1500);
-        },
-        onError: (err) => {
-          showSnackbar(err.message);
-          setDeployingSample(null);
-        },
+        onSuccess: (component) => navigate(resourceUrl(narrow(scope, component.handler), 'overview')),
+        onError: () => setDeployingSample(null),
       },
     );
   };
 
-  if (createComponent.isPending || createComponent.isSuccess) {
+  if (createComponent.isPending || createComponent.isSuccess || createComponent.isError) {
     return (
-      <PageContent sx={{ pt: 5 }}>
-        <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar((s) => ({ ...s, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-          <Alert onClose={() => setSnackbar((s) => ({ ...s, open: false }))} severity={snackbar.severity} variant="filled" sx={{ width: '100%' }}>
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-        <IntegrationCreationLoader label="Integration" subLabel={deployingSample || undefined} isPending={createComponent.isPending} isSuccess={createComponent.isSuccess} />
+      <PageContent sx={{ pt: 5, display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <IntegrationCreationLoader
+          label="Integration"
+          subLabel={deployingSample || undefined}
+          isPending={createComponent.isPending}
+          isSuccess={createComponent.isSuccess}
+          error={createComponent.isError ? (createComponent.error?.message ?? 'Something went wrong. Please try again.') : null}
+          onBack={() => { createComponent.reset(); setDeployingSample(null); }}
+        />
       </PageContent>
     );
   }
 
   return (
     <PageContent sx={{ pt: 5 }}>
-      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar((s) => ({ ...s, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-        <Alert onClose={() => setSnackbar((s) => ({ ...s, open: false }))} severity={snackbar.severity} variant="filled" sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-
       <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(resourceUrl(scope, 'overview'))} sx={{ mb: 3 }}>
         Back to Project Home
       </Button>
+
+      {pageError && (
+        <Alert severity={pageError.severity} onClose={() => setPageError(null)} sx={{ mb: 3 }}>
+          {pageError.message}
+        </Alert>
+      )}
 
       <Box
         sx={{
@@ -254,17 +242,17 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                       </Tooltip>
                       <Tooltip title="Import from GitHub" placement="top">
                         <IconButton aria-label="Import from GitHub" onClick={handleImportClick} sx={PROVIDER_ICON_SX}>
-                          <GitHubIcon size={22} />
+                          <GitHub size={24} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from GitLab" placement="top">
                         <IconButton aria-label="Import from GitLab" sx={PROVIDER_ICON_SX}>
-                          <GitLabIcon size={22} />
+                          <GitLab size={22} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from Bitbucket" placement="top">
                         <IconButton aria-label="Import from Bitbucket" sx={PROVIDER_ICON_SX}>
-                          <BitBucketIcon size={22} />
+                          <Bitbucket size={22} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from Azure" placement="top">

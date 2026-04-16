@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, InputAdornment, PageContent, Pagination, TextField, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, InputAdornment, PageContent, Pagination, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Search } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useEffect, type JSX } from 'react';
 import { useNavigate } from 'react-router';
@@ -42,7 +42,6 @@ export default function BrowseSamples(scope: ProjectScope): JSX.Element {
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [deployingSample, setDeployingSample] = useState<string | null>(null);
-  const [deployError, setDeployError] = useState<string | null>(null);
 
   const toggleFilter = (setter: React.Dispatch<React.SetStateAction<Set<string>>>) => (value: string) => {
     setter((prev) => {
@@ -57,7 +56,6 @@ export default function BrowseSamples(scope: ProjectScope): JSX.Element {
 
   const handleDeploy = (sample: Sample) => {
     if (!projectId) return;
-    setDeployError(null);
     setDeployingSample(sample.displayName);
     createComponent.mutate(
       {
@@ -75,10 +73,7 @@ export default function BrowseSamples(scope: ProjectScope): JSX.Element {
       },
       {
         onSuccess: (component) => navigate(resourceUrl(narrow(scope, component.handler), 'overview')),
-        onError: (err) => {
-          setDeployError(err.message);
-          setDeployingSample(null);
-        },
+        onError: () => setDeployingSample(null),
       },
     );
   };
@@ -102,10 +97,17 @@ export default function BrowseSamples(scope: ProjectScope): JSX.Element {
   const pageCount = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  if (createComponent.isPending || createComponent.isSuccess) {
+  if (createComponent.isPending || createComponent.isSuccess || createComponent.isError) {
     return (
-      <PageContent sx={{ pt: 5 }}>
-        <IntegrationCreationLoader label="Integration" subLabel={deployingSample || undefined} isPending={createComponent.isPending} isSuccess={createComponent.isSuccess} />
+      <PageContent sx={{ pt: 5, display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <IntegrationCreationLoader
+          label="Integration"
+          subLabel={deployingSample || undefined}
+          isPending={createComponent.isPending}
+          isSuccess={createComponent.isSuccess}
+          error={createComponent.isError ? (createComponent.error?.message ?? 'Something went wrong. Please try again.') : null}
+          onBack={() => { createComponent.reset(); setDeployingSample(null); }}
+        />
       </PageContent>
     );
   }
@@ -122,12 +124,6 @@ export default function BrowseSamples(scope: ProjectScope): JSX.Element {
       <Typography color="text.secondary" sx={{ mb: 5 }}>
         Deploy a sample to get started quickly.
       </Typography>
-
-      {deployError && (
-        <Alert severity="error" onClose={() => setDeployError(null)} sx={{ mb: 3 }}>
-          {deployError}
-        </Alert>
-      )}
 
       {/* Sidebar + Grid layout */}
       <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start' }}>

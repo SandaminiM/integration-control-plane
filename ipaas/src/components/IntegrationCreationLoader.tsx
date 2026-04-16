@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, CircularProgress, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, Typography } from '@wso2/oxygen-ui';
 import { useEffect, useState, type JSX } from 'react';
 import { CREATION_STEPS, CREATION_STEP_INTERVAL } from '../constants/integrationCreation';
 import type { CreationStep } from '../constants/integrationCreation';
@@ -27,9 +27,11 @@ interface IntegrationCreationLoaderProps {
   subLabel?: string;
   isPending: boolean;
   isSuccess: boolean;
+  error?: string | null;
+  onBack?: () => void;
 }
 
-export default function IntegrationCreationLoader({ label, subLabel, isPending, isSuccess }: IntegrationCreationLoaderProps): JSX.Element {
+export default function IntegrationCreationLoader({ label, subLabel, isPending, isSuccess, error, onBack }: IntegrationCreationLoaderProps): JSX.Element {
   const [creationStep, setCreationStep] = useState<CreationStep>(CREATION_STEPS[0]);
 
   useEffect(() => {
@@ -43,6 +45,29 @@ export default function IntegrationCreationLoader({ label, subLabel, isPending, 
     if (isSuccess) setCreationStep({ progress: 100, text: 'Integration created!' });
   }, [isSuccess]);
 
+  if (error) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flex: 1,
+          gap: 3,
+        }}>
+        <Alert severity="error" sx={{ maxWidth: 480, width: '100%' }}>
+          {error}
+        </Alert>
+        {onBack && (
+          <Button variant="outlined" onClick={onBack}>
+            Go Back
+          </Button>
+        )}
+      </Box>
+    );
+  }
+
   return (
     <Box
       sx={{
@@ -50,7 +75,7 @@ export default function IntegrationCreationLoader({ label, subLabel, isPending, 
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '50vh',
+        flex: 1,
         gap: 3,
       }}>
       <Typography variant="h2">Setting up your {label}…</Typography>
@@ -78,7 +103,7 @@ export default function IntegrationCreationLoader({ label, subLabel, isPending, 
         {creationStep.text}
       </Typography>
       {subLabel && (
-        <Typography color="text.secondary" variant="body2">
+        <Typography color="text.secondary" variant="h4">
           {subLabel}
         </Typography>
       )}
