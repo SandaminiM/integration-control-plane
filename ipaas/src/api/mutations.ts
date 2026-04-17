@@ -160,39 +160,126 @@ export interface ListenerStateInput {
 
 // ── Component CRUD ──
 
+export type DisplayType = 'ballerinaService' | 'scheduledTask' | 'manualTrigger' | 'webhook' | 'miApiService' | 'miCronjob' | 'miJob' | 'miWebhook' | 'miEventHandler';
+
 export interface CreateComponentInput {
   displayName: string;
   name: string;
   description: string;
   orgHandler: string;
   projectId: string;
-  componentType: 'MI' | 'BI';
+  displayType: DisplayType;
+  srcGitRepoUrl?: string;
+  repositoryBranch?: string;
+  repositorySubPath?: string;
+  isPublicRepo?: boolean;
+  enableAutoDeploy?: boolean;
 }
 
-const CREATE_COMPONENT = `
-  mutation CreateComponent($component: ComponentInput!) {
-    createComponent(component: $component) {
-      id, name, displayName, handler, orgId, projectId, createdAt, updatedAt
-    }
-  }`;
+/** Escape a string for embedding in a GraphQL inline query. */
+function gqlStr(value: string): string {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+const MI_DISPLAY_TYPES = new Set<DisplayType>(['miApiService', 'miCronjob', 'miJob', 'miWebhook', 'miEventHandler']);
+
+function buildCreateComponentQuery(input: CreateComponentInput): string {
+  const orgId = window.API_CONFIG.asgardeoOrgNumericId ?? 0;
+  const subPath = (input.repositorySubPath ?? '/').replace(/^\//, '');
+
+  return `mutation{ createComponent(
+      component: {
+        name: ${gqlStr(input.name)},
+        orgId: ${orgId},
+        orgHandler: ${gqlStr(input.orgHandler)},
+        displayName: ${gqlStr(input.displayName)},
+        displayType: ${gqlStr(input.displayType)},
+        projectId: ${gqlStr(input.projectId)},
+        labels: "",
+        version: "v1.0",
+        description: ${gqlStr(input.description)},
+        apiId: "",
+        ballerinaVersion: "swan-lake-alpha5",
+        triggerChannels: "",
+        triggerID: null,
+        httpBase: true,
+        sampleTemplate: "",
+        accessibility: "external",
+        srcGitRepoUrl: ${gqlStr(input.srcGitRepoUrl ?? '')}
+        repositorySubPath: ${gqlStr(subPath)},
+        repositoryType: "UserManagedNonEmpty",
+        repositoryBranch: ${gqlStr(input.repositoryBranch ?? '')},
+        initializeAsBallerinaProject: false,
+        secretRef: "",
+        isPublicRepo: ${input.isPublicRepo ?? false},
+        enableAutoDeploy: ${input.enableAutoDeploy ?? true},
+        enableAutoBuild: true,
+        componentSubType: "",
+        originCloud: "devant",
+        isUnitTestEnabled: true,
+        pullLatestSubmodules: true,
+        isPrebuilt: false
+      }){
+        id, name, displayName, handler, orgId, projectId, createdAt, updatedAt
+      }}`;
+}
+
+function buildCreateMiComponentQuery(input: CreateComponentInput): string {
+  const orgId = window.API_CONFIG.asgardeoOrgNumericId ?? 0;
+  const subPath = (input.repositorySubPath ?? '/').replace(/^\//, '');
+  const srcUrl = (input.srcGitRepoUrl ?? '').replace(/\/$/, ''); // strip trailing slash
+
+  return `mutation{ createIntegrationComponent(
+      component: {
+        name: ${gqlStr(input.name)},
+        displayName: ${gqlStr(input.displayName)},
+        description: ${gqlStr(input.description)},
+        orgId: ${orgId},
+        orgHandler: ${gqlStr(input.orgHandler)},
+        projectId: ${gqlStr(input.projectId)},
+        labels: "",
+        componentType: ${gqlStr(input.displayType)},
+        accessibility: "external",
+        srcGitRepoUrl: ${gqlStr(srcUrl)},
+        srcGitRepoBranch: ${gqlStr(input.repositoryBranch ?? '')},
+        repositorySubPath: ${gqlStr(subPath)},
+        oasFilePath: "",
+        version: "1.0.0",
+        secretRef: "",
+        isPublicRepo: ${input.isPublicRepo ?? false},
+        enableAutoDeploy: ${input.enableAutoDeploy ?? true},
+        enableAutoBuild: true,
+        componentSubType: "",
+        originCloud: "devant"
+      }){
+        id, organizationId, projectId, handle
+      }}`;
+}
 
 export function useCreateComponent() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: CreateComponentInput) =>
-      gql<{ createComponent: GqlComponent }>(CREATE_COMPONENT, {
-        component: {
+    mutationFn: async (input: CreateComponentInput): Promise<GqlComponent> => {
+      if (MI_DISPLAY_TYPES.has(input.displayType)) {
+        const d = await gql<{ createIntegrationComponent: { id: string; handle: string; projectId: string; organizationId: string } }>(buildCreateMiComponentQuery(input));
+        // Normalize the MI response shape to match GqlComponent
+        return {
+          id: d.createIntegrationComponent.id,
+          projectId: d.createIntegrationComponent.projectId,
+          handler: d.createIntegrationComponent.handle,
           name: input.name,
           displayName: input.displayName,
+          displayType: input.displayType,
           description: input.description,
-          orgId: window.API_CONFIG.asgardeoOrgNumericId,
-          orgHandler: input.orgHandler,
-          projectId: input.projectId,
-          componentType: input.componentType,
-          technology: 'WSO2MI',
-          isPublicRepo: false,
-        },
-      }).then((d) => d.createComponent),
+          status: '',
+          componentSubType: null,
+          version: '1.0.0',
+          createdAt: '',
+          lastBuildDate: '',
+        };
+      }
+      return gql<{ createComponent: GqlComponent }>(buildCreateComponentQuery(input)).then((d) => d.createComponent);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['components'] }),
   });
 }
@@ -724,5 +811,21 @@ export function useTriggerComponent() {
     onSuccess: (_data, input) => {
       qc.invalidateQueries({ queryKey: ['taskExecutions', input.releaseId] });
     },
+  });
+}
+
+// GitHub OAuth token exchange
+
+const OBTAIN_USER_TOKEN = `
+  mutation ObtainUserToken($authorizationCode: String!) {
+    obtainUserToken(authorizationCode: $authorizationCode) {
+      success
+      message
+    }
+  }`;
+
+export function useObtainGithubToken() {
+  return useMutation({
+    mutationFn: (authorizationCode: string) => gql<{ obtainUserToken: { success: boolean; message: string } }>(OBTAIN_USER_TOKEN, { authorizationCode }).then((d) => d.obtainUserToken),
   });
 }

@@ -73,14 +73,8 @@ export default function AlertRuleFormActions(props: AlertRuleFormActionsProps): 
       <Button variant="outlined" onClick={handleCancel} disabled={isLoading}>
         {isEditAlertRule ? 'Discard' : 'Cancel'}
       </Button>
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleSave}
-        disabled={isDisabled || isLoading}
-        startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : undefined}
-      >
-        {isLoading ? (isEditAlertRule ? 'Updating...' : 'Creating...') : (isEditAlertRule ? 'Update' : 'Create')}
+      <Button variant="contained" color="primary" onClick={handleSave} disabled={isDisabled || isLoading} startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : undefined}>
+        {isLoading ? (isEditAlertRule ? 'Updating...' : 'Creating...') : isEditAlertRule ? 'Update' : 'Create'}
       </Button>
     </Box>
   );

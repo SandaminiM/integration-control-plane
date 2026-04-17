@@ -35,6 +35,7 @@ import { Permissions } from '../constants/permissions';
 import { SUPPORTED_DISPLAY_TYPES, getDisplayLabel } from '../constants/integrations';
 import Authorized from '../components/Authorized';
 import { useLoadProjectPermissions } from '../hooks/usePermissionLoader';
+import { UUID_RE } from '../utils/string';
 
 function DeleteDialog({ component, scope, projectId, onClose }: { component: GqlComponent; scope: ProjectScope; projectId: string; onClose: () => void }) {
   const [confirmation, setConfirmation] = useState('');
@@ -93,6 +94,8 @@ function IntegrationsTable({
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleting, setDeleting] = useState<GqlComponent | null>(null);
+  const FREE_COMPONENT_LIMIT = 5;
+  const quotaReached = components.length >= FREE_COMPONENT_LIMIT;
   const q = query.trim().toLowerCase();
   const filtered = components
     .filter((c) => {
@@ -126,9 +129,13 @@ function IntegrationsTable({
         </IconButton>
         <SearchField value={query} onChange={setQuery} placeholder="Search" sx={{ flex: 1 }} />
         <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
-          <Button variant="contained" startIcon={<Plus size={16} />} onClick={() => navigate(newComponentUrl(scope))}>
-            Create
-          </Button>
+          <Tooltip title={quotaReached ? `You have reached the limit of ${FREE_COMPONENT_LIMIT} integrations per project` : ''} placement="top">
+            <span>
+              <Button variant="contained" startIcon={<Plus size={16} />} onClick={() => navigate(newComponentUrl(scope))} disabled={quotaReached}>
+                Create
+              </Button>
+            </span>
+          </Tooltip>
         </Authorized>
       </Stack>
 
@@ -235,8 +242,6 @@ function IntegrationsTable({
     </section>
   );
 }
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default function Project(scope: ProjectScope): JSX.Element {
   const navigate = useNavigate();

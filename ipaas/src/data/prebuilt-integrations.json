@@ -1,0 +1,75 @@
+{
+  "prebuiltIntegrations": [
+    {
+      "displayName": "Export Salesforce Opportunities to a Google Sheet",
+      "description": "Periodically exports all Salesforce Opportunities to a Google Sheet.",
+      "componentType": "scheduled-task",
+      "buildPack": "ballerina",
+      "repositoryUrl": "https://github.com/wso2/integration-samples/",
+      "branch": "main",
+      "subDirectory": "/ballerina-integrator",
+      "componentPath": "/salesforceops-to-googlesheets",
+      "thumbnailPath": "",
+      "documentationPath": "/ballerina-integrator/salesforceops-to-googlesheets/README.md",
+      "applications": [
+        "Salesforce",
+        "Google Sheets"
+      ],
+      "imageVersion": "1.0.0",
+      "tags": [
+        "Automation",
+        "CRM"
+      ],
+      "imageUrl": "wso2integrations.azurecr.io/salesforceops_to_googlesheets:0.1.0",
+      "bidirectional": false
+    },
+    {
+      "displayName": "Create Stripe Customer when a new Shopify Customer is Created",
+      "description": "This webhook-based Integration as API listens for new customer creation events in Shopify and creates a corresponding customer in Stripe.",
+      "componentType": "service",
+      "buildPack": "ballerina",
+      "repositoryUrl": "https://github.com/wso2/integration-samples/",
+      "branch": "main",
+      "subDirectory": "/ballerina-integrator",
+      "componentPath": "/new-shopify-customer-to-stripe",
+      "thumbnailPath": "",
+      "documentationPath": "/ballerina-integrator/new-shopify-customer-to-stripe/README.md",
+      "applications": [
+        "Shopify",
+        "Stripe"
+      ],
+      "imageVersion": "1.0.0",
+      "tags": [
+        "HTTP",
+        "REST",
+        "CRM"
+      ],
+      "imageUrl": "wso2integrations.azurecr.io/new_shopify_customer_to_stripe:0.2.0",
+      "bidirectional": false
+    },
+    {
+      "displayName": "Create Salesforce Contact and notify Google Chat",
+      "description": "This Integration as API creates a new contact in Salesforce and sends a notification to a Google Chat space.",
+      "componentType": "service",
+      "buildPack": "ballerina",
+      "repositoryUrl": "https://github.com/wso2/integration-samples/",
+      "branch": "main",
+      "subDirectory": "/ballerina-integrator",
+      "componentPath": "/signup-sfchatsync",
+      "thumbnailPath": "",
+      "documentationPath": "/ballerina-integrator/signup-sfchatsync/README.md",
+      "applications": [
+        "Salesforce",
+        "Google Chat"
+      ],
+      "imageVersion": "1.0.0",
+      "tags": [
+        "HTTP",
+        "REST",
+        "CRM"
+      ],
+      "imageUrl": "wso2integrations.azurecr.io/signup_sfchatsync:0.1.0",
+      "bidirectional": true
+    }
+  ]
+}

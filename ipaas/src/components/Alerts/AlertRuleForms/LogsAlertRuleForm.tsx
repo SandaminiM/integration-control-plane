@@ -19,7 +19,18 @@
 import { Alert, Autocomplete, Box, Collapse, Grid, TextField, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronUp } from '@wso2/oxygen-ui-icons-react';
 import { type JSX, useEffect, useState } from 'react';
-import { ALERT_CREATE_NEW_RULE_ADVANCED_TITLE, ALERT_RULE_LOG_SEARCH_PHRASE_MAX_LENGTH, ALERT_RULE_THRESHOLD_MAX, ALERT_RULE_THRESHOLD_MIN, AlertComponentType, AlertRulePeriodConstants, AlertTypeConstants, AlertTypes, type AlertRulePeriodOption, type AlertRulePeriod } from '../../../constants/alerts';
+import {
+  ALERT_CREATE_NEW_RULE_ADVANCED_TITLE,
+  ALERT_RULE_LOG_SEARCH_PHRASE_MAX_LENGTH,
+  ALERT_RULE_THRESHOLD_MAX,
+  ALERT_RULE_THRESHOLD_MIN,
+  AlertComponentType,
+  AlertRulePeriodConstants,
+  AlertTypeConstants,
+  AlertTypes,
+  type AlertRulePeriodOption,
+  type AlertRulePeriod,
+} from '../../../constants/alerts';
 import { alertRuleConfigErrorMessages, getAlertPeriodOptions, getAlertRuleExplanation } from '../../../utils/alerts';
 import type { AlertRule, AlertRuleFormProps } from '../../../types/alerts';
 import AlertRuleFormActions from './AlertRuleFormActions';
@@ -29,27 +40,26 @@ export default function LogsAlertRuleForm(props: AlertRuleFormProps): JSX.Elemen
   const { environment, componentId, projectId, versionId, versionName, projectName, environmentName, selectedAlertRule, isEditAlertRule, goBackToAlertRules, setSelectedAlertTypeEnvVersion, setIsAlertRuleHalfConfigured, alertingBaseUrl, onNotify } = props;
 
   const [isCollapseOpen, setIsCollapseOpen] = useState(false);
-  const alertRule: AlertRule =
-    selectedAlertRule
-      ? { ...selectedAlertRule }
-      : ({
-      projectId,
-      componentId,
-      environmentId: environment.id,
-      versionId,
-      componentType: AlertComponentType.SERVICE,
-      projectName,
-      environmentName,
-      versionName: versionName,
-      id: '',
-      type: AlertTypeConstants.LOGS,
-      searchPhrase: '',
-      count: 1,
-      interval: AlertRulePeriodConstants.FIVE_MINUTES,
-      logType: 'Application',
-      emails: [],
-      enabled: true,
-    } as AlertRule);
+  const alertRule: AlertRule = selectedAlertRule
+    ? { ...selectedAlertRule }
+    : ({
+        projectId,
+        componentId,
+        environmentId: environment.id,
+        versionId,
+        componentType: AlertComponentType.SERVICE,
+        projectName,
+        environmentName,
+        versionName: versionName,
+        id: '',
+        type: AlertTypeConstants.LOGS,
+        searchPhrase: '',
+        count: 1,
+        interval: AlertRulePeriodConstants.FIVE_MINUTES,
+        logType: 'Application',
+        emails: [],
+        enabled: true,
+      } as AlertRule);
 
   const [searchPhrase, setSearchPhrase] = useState<string | null>(selectedAlertRule?.searchPhrase ?? null);
   const [count, setCount] = useState<number | null>(selectedAlertRule?.count ?? ALERT_RULE_THRESHOLD_MIN);

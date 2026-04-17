@@ -1,0 +1,108 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { CircularProgress, IconButton, InputAdornment, TextField, Tooltip } from '@wso2/oxygen-ui';
+import { Folder, Edit } from '@wso2/oxygen-ui-icons-react';
+import { useState, type JSX } from 'react';
+import type { RepoTreeNode } from '../../api/queries';
+import DirectoryPickerDialog from './DirectoryPickerDialog';
+
+interface DirectoryPickerFieldProps {
+  org: string;
+  repo: string;
+  branch: string;
+  value: string;
+  onChange: (path: string) => void;
+  statusIcon?: React.ReactNode;
+  isValidating?: boolean;
+  isError?: boolean | string;
+  contents: RepoTreeNode[];
+  isFetching: boolean;
+  onRefetch: () => void;
+  disabled?: boolean;
+}
+
+export default function DirectoryPickerField({ org: _org, repo, branch: _branch, value, onChange, statusIcon, isValidating = false, isError = false, contents, isFetching, onRefetch, disabled = false }: DirectoryPickerFieldProps): JSX.Element {
+  const [open, setOpen] = useState(false);
+
+  const helperText = isValidating ? 'Validating…' : isError || 'Path (/ for root)';
+
+  return (
+    <>
+      <TextField
+        label="Repository Sub Path"
+        value={value}
+        fullWidth
+        disabled={disabled}
+        onClick={() => {
+          if (!disabled) setOpen(true);
+        }}
+        slotProps={{
+          input: {
+            readOnly: true,
+            startAdornment: statusIcon ? (
+              <InputAdornment position="start">{statusIcon}</InputAdornment>
+            ) : (
+              <InputAdornment position="start">
+                <Folder size={18} />
+              </InputAdornment>
+            ),
+            endAdornment: (
+              <InputAdornment position="end">
+                {isValidating || isFetching ? (
+                  <CircularProgress size={14} />
+                ) : (
+                  <Tooltip title="Edit path" placement="top">
+                    <span>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!disabled) setOpen(true);
+                        }}
+                        disabled={disabled}
+                        sx={{ color: 'primary.main' }}>
+                        <Edit size={14} />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                )}
+              </InputAdornment>
+            ),
+          },
+        }}
+        error={!!isError && !isValidating}
+        helperText={helperText}
+        sx={{ cursor: disabled ? 'default' : 'pointer' }}
+      />
+
+      <DirectoryPickerDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        onSave={(path) => {
+          onChange(path);
+        }}
+        repoName={repo}
+        contents={contents}
+        isFetching={isFetching}
+        onRefetch={onRefetch}
+        currentValue={value}
+      />
+    </>
+  );
+}

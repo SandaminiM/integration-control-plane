@@ -218,7 +218,11 @@ async function refreshOidcAccessToken(refreshToken: string): Promise<void> {
             const orgs: Array<{ handle?: string; orgHandle?: string; org_handle?: string }> = orgsData.list ?? orgsData.organizations ?? (Array.isArray(orgsData) ? orgsData : []);
             for (const org of orgs) {
               const h = org.handle ?? org.orgHandle ?? org.org_handle;
-              if (h) { orgHandle = h; localStorage.setItem(OIDC_ORG_HANDLE_KEY, h); break; }
+              if (h) {
+                orgHandle = h;
+                localStorage.setItem(OIDC_ORG_HANDLE_KEY, h);
+                break;
+              }
             }
           }
         }
@@ -430,6 +434,21 @@ export function validateAndClearOIDCState(state: string): boolean {
   const savedState = localStorage.getItem(OIDC_STATE_KEY);
   localStorage.removeItem(OIDC_STATE_KEY);
   return savedState === state;
+}
+
+// GitHub OAuth CSRF state — sessionStorage so it's scoped to the initiating tab
+const GITHUB_OAUTH_STATE_KEY = 'icp_github_oauth_state';
+
+export function generateAndSaveGitHubState(): string {
+  const state = crypto.randomUUID();
+  sessionStorage.setItem(GITHUB_OAUTH_STATE_KEY, state);
+  return state;
+}
+
+export function validateAndClearGitHubState(state: string): boolean {
+  const saved = sessionStorage.getItem(GITHUB_OAUTH_STATE_KEY);
+  sessionStorage.removeItem(GITHUB_OAUTH_STATE_KEY);
+  return saved !== null && saved === state;
 }
 
 // ---------------------------------------------------------------------------

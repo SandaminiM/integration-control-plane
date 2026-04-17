@@ -24,30 +24,16 @@ function buildQueryString(params: Record<string, string>): string {
   return new URLSearchParams(params).toString();
 }
 
-export async function getAlertRulesCount(
-  baseUrl: string,
-  componentId: string,
-  environmentId: string,
-  componentType: AlertComponentType
-): Promise<AlertRuleCountUsage> {
+export async function getAlertRulesCount(baseUrl: string, componentId: string, environmentId: string, componentType: AlertComponentType): Promise<AlertRuleCountUsage> {
   const qs = buildQueryString({ componentId, environmentId, componentType });
-  const res = await authenticatedFetch(
-    `${baseUrl}/component/alerts/rules/count?${qs}`
-  );
+  const res = await authenticatedFetch(`${baseUrl}/component/alerts/rules/count?${qs}`);
   if (!res.ok) throw new Error(`Failed to fetch alert rules count: ${res.status}`);
   return res.json() as Promise<AlertRuleCountUsage>;
 }
 
-export async function getAlertRules(
-  baseUrl: string,
-  componentId: string,
-  environmentId: string,
-  componentType: AlertComponentType
-): Promise<AlertRule[]> {
+export async function getAlertRules(baseUrl: string, componentId: string, environmentId: string, componentType: AlertComponentType): Promise<AlertRule[]> {
   const qs = buildQueryString({ componentId, environmentId, componentType });
-  const res = await authenticatedFetch(
-    `${baseUrl}/component/alerts/rules?${qs}`
-  );
+  const res = await authenticatedFetch(`${baseUrl}/component/alerts/rules?${qs}`);
   if (!res.ok) throw new Error(`Failed to fetch alert rules: ${res.status}`);
   return res.json() as Promise<AlertRule[]>;
 }
@@ -63,46 +49,30 @@ export async function createAlertRule(baseUrl: string, alertRule: AlertRule): Pr
 }
 
 export async function updateAlertRule(baseUrl: string, alertRule: AlertRule): Promise<Response> {
-  const res = await authenticatedFetch(
-    `${baseUrl}/component/alerts/rules/${alertRule.id}`,
-    {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(alertRule),
-    }
-  );
+  const res = await authenticatedFetch(`${baseUrl}/component/alerts/rules/${alertRule.id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(alertRule),
+  });
   if (!res.ok) throw new Error(`Failed to update alert rule: ${res.status}`);
   return res;
 }
 
 export async function deleteAlertRule(baseUrl: string, alertRule: AlertRule): Promise<Response> {
-  const res = await authenticatedFetch(
-    `${baseUrl}/component/alerts/rules/${alertRule.id}`,
-    {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        componentId: alertRule.componentId,
-        versionId: alertRule.versionId,
-        environmentId: alertRule.environmentId,
-      }),
-    }
-  );
+  const res = await authenticatedFetch(`${baseUrl}/component/alerts/rules/${alertRule.id}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      componentId: alertRule.componentId,
+      versionId: alertRule.versionId,
+      environmentId: alertRule.environmentId,
+    }),
+  });
   if (!res.ok) throw new Error(`Failed to delete alert rule: ${res.status}`);
   return res;
 }
 
-export async function getAlertHistory(
-  baseUrl: string,
-  componentId: string,
-  environmentId: string,
-  startTime: string,
-  endTime: string,
-  limit = 100,
-  versionIdList: string[] = [],
-  alertTypes: string[] = [],
-  searchPhrase = ''
-): Promise<AlertHistoryResponse> {
+export async function getAlertHistory(baseUrl: string, componentId: string, environmentId: string, startTime: string, endTime: string, limit = 100, versionIdList: string[] = [], alertTypes: string[] = [], searchPhrase = ''): Promise<AlertHistoryResponse> {
   const res = await authenticatedFetch(`${baseUrl}/component/alerts/history/search`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

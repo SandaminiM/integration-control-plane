@@ -24,7 +24,6 @@ export interface AlertTypeOption {
   value: AlertTypeConstants;
 }
 
-
 export interface AlertRule {
   projectId: string;
   componentId: string;

@@ -29,26 +29,25 @@ export default function StatusCodeAlertRuleForm(props: AlertRuleFormProps): JSX.
   const { environment, componentId, projectId, versionId, versionName, projectName, environmentName, selectedAlertRule, isEditAlertRule, goBackToAlertRules, setSelectedAlertTypeEnvVersion, setIsAlertRuleHalfConfigured, alertingBaseUrl, onNotify } = props;
 
   const [isCollapseOpen, setIsCollapseOpen] = useState(false);
-  const alertRule: AlertRule =
-    selectedAlertRule
-      ? { ...selectedAlertRule }
-      : ({
-      projectId,
-      componentId,
-      environmentId: environment.id,
-      versionId,
-      componentType: AlertComponentType.SERVICE,
-      projectName,
-      environmentName,
-      versionName: versionName,
-      id: '',
-      type: AlertTypeConstants.STATUS_CODE,
-      statusCode: null,
-      count: null,
-      interval: null,
-      emails: [],
-      enabled: true,
-    } as AlertRule);
+  const alertRule: AlertRule = selectedAlertRule
+    ? { ...selectedAlertRule }
+    : ({
+        projectId,
+        componentId,
+        environmentId: environment.id,
+        versionId,
+        componentType: AlertComponentType.SERVICE,
+        projectName,
+        environmentName,
+        versionName: versionName,
+        id: '',
+        type: AlertTypeConstants.STATUS_CODE,
+        statusCode: null,
+        count: null,
+        interval: null,
+        emails: [],
+        enabled: true,
+      } as AlertRule);
 
   const statusCodeMetrics = getAlertMetricOptions(AlertTypeConstants.STATUS_CODE);
 

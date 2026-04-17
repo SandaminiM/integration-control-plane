@@ -1,0 +1,83 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { Globe, Clock, Layers, Repeat, Server } from '@wso2/oxygen-ui-icons-react';
+import { Box } from '@wso2/oxygen-ui';
+import type { ReactNode } from 'react';
+import type { IntegrationTypeOption } from '../types/import';
+
+export const SAMPLE_REPO_URL = 'https://github.com/wso2/integration-samples';
+
+export const GITHUB_URL_RE = /^https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\s*$/i;
+
+export const GITHUB_AUTH = {
+  POPUP_DIMENSIONS: 'width=800,height=600',
+  POPUP_POLL_INTERVAL_MS: 500,
+  BROADCAST_CHANNEL: 'EXTERNALOAUTH',
+} as const;
+
+export const FORM_CONFIG = {
+  URL_DEBOUNCE_MS: 600,
+  SUCCESS_REDIRECT_DELAY_MS: 1500,
+} as const;
+
+export const INTEGRATION_TYPES: IntegrationTypeOption[] = [
+  {
+    id: 'service',
+    title: 'Integration as API',
+    description: 'Expose your integration as a REST, GraphQL or WebSocket API',
+    docLink: 'https://wso2.com/devant/docs/quick-start-guides/develop-your-first-integration-as-api',
+    icons: [
+      { icon: <Globe size={16} />, label: 'REST' },
+      { icon: <Layers size={16} />, label: 'GraphQL' },
+    ],
+  },
+  {
+    id: 'automation',
+    title: 'Automation',
+    description: 'Run integrations on a schedule or as a recurring task',
+    docLink: 'https://wso2.com/devant/docs/quick-start-guides/schedule-your-first-automation/',
+    icons: [
+      { icon: <Clock size={16} />, label: 'Scheduled' },
+      { icon: <Repeat size={16} />, label: 'Recurring' },
+    ],
+  },
+];
+
+export const TECH_OPTIONS: { id: 'MI' | 'BI'; label: string; icon: ReactNode }[] = [
+  {
+    id: 'MI',
+    label: 'WSO2 Micro Integrator',
+    icon: <Server size={20} />,
+  },
+  {
+    id: 'BI',
+    label: 'Ballerina Integrator',
+    icon: (
+      <Box
+        component="img"
+        src="https://ballerina.io/favicon.ico"
+        alt="Ballerina"
+        sx={{ width: 20, height: 20, objectFit: 'contain' }}
+        onError={(e) => {
+          (e.currentTarget as HTMLImageElement).style.display = 'none';
+        }}
+      />
+    ),
+  },
+];

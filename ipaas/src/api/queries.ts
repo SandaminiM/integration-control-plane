@@ -18,8 +18,9 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { gql } from './graphql';
-import { authenticatedFetch, getOrgUuidFromToken } from '../auth/tokenManager';
-import { choreoDevopsApiUrl } from '../config/api';
+import { authenticatedFetch, getOrgUuidFromToken, refreshAccessToken } from '../auth/tokenManager';
+import { choreoDevopsApiUrl, componentMgtApiUrl } from '../config/api';
+import { UUID_RE } from '../utils/string';
 
 export interface GqlProject {
   id: string;
@@ -140,8 +141,6 @@ export function useProject(projectId: string) {
     enabled: !!projectId && id > 0,
   });
 }
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function useProjectByHandler(handler: string) {
   const id = orgId();
@@ -762,9 +761,7 @@ const DEPLOYMENT_STATUS_QUERY = `
 export function useDeploymentStatus(componentId: string, versionId: string) {
   return useQuery({
     queryKey: ['deploymentStatus', componentId, versionId],
-    queryFn: () =>
-      gql<{ deploymentStatusByVersion: GqlDeploymentStatus[] }>(DEPLOYMENT_STATUS_QUERY, { versionId, componentId })
-        .then((d) => d.deploymentStatusByVersion ?? []),
+    queryFn: () => gql<{ deploymentStatusByVersion: GqlDeploymentStatus[] }>(DEPLOYMENT_STATUS_QUERY, { versionId, componentId }).then((d) => d.deploymentStatusByVersion ?? []),
     enabled: !!componentId && !!versionId,
     retry: false,
     refetchInterval: 15000,
@@ -933,4 +930,203 @@ export function useRefreshEnvironmentArtifacts() {
       }),
     ]);
   };
+}
+
+// GitHub repo / branch queries
+
+const USER_REPOS_QUERY = `
+  query GetUserRepos {
+    userRepos {
+      orgName
+      repositories { name }
+    }
+  }`;
+
+export interface GqlUserRepo {
+  orgName: string;
+  repositories: { name: string }[];
+}
+
+export function useGitHubUserRepos(enabled: boolean) {
+  return useQuery({
+    queryKey: ['githubUserRepos'],
+    queryFn: () => gql<{ userRepos: GqlUserRepo[] }>(USER_REPOS_QUERY).then((d) => d.userRepos ?? []),
+    enabled,
+    staleTime: 2 * 60 * 1000,
+    retry: false,
+  });
+}
+
+const REPO_BRANCHES_QUERY = `
+  query GetRepoBranches($repositoryOrganization: String!, $repositoryName: String!, $isPublicRepo: Boolean!) {
+    repoBranchList(secretRef: "", repositoryOrganization: $repositoryOrganization, repositoryName: $repositoryName, isPublicRepo: $isPublicRepo) {
+      name
+      isDefault
+    }
+  }`;
+
+export interface GqlRepoBranch {
+  name: string;
+  isDefault: boolean;
+}
+
+export function useRepoBranches(repoOrg: string, repoName: string, isPublicRepo: boolean) {
+  return useQuery({
+    queryKey: ['repoBranches', repoOrg, repoName, isPublicRepo],
+    queryFn: () => gql<{ repoBranchList: GqlRepoBranch[] }>(REPO_BRANCHES_QUERY, { repositoryOrganization: repoOrg, repositoryName: repoName, isPublicRepo }).then((d) => d.repoBranchList ?? []),
+    enabled: !!repoOrg && !!repoName,
+    staleTime: 2 * 60 * 1000,
+    retry: false,
+  });
+}
+
+// Repository metadata / path validation
+
+const REPO_METADATA_QUERY = `
+  query GetRepoMetadata(
+    $organizationName: String!, $repoName: String!, $branch: String!,
+    $subPath: String!, $secretRef: String!, $isPublicRepo: Boolean!
+  ) {
+    repoMetadata(
+      organizationName: $organizationName,
+      repoName: $repoName,
+      branch: $branch,
+      subPath: $subPath,
+      buildpackId: "",
+      dockerFilePath: "",
+      dockerContextPath: "",
+      openAPIPath: "",
+      componentId: "",
+      testRunnerType: "",
+      secretRef: $secretRef,
+      isService: false,
+      isPublicRepo: $isPublicRepo,
+      isGitProxy: false
+    ) {
+      isBareRepo
+      isSubPathEmpty
+      isSubPathValid
+      isValidRepo
+      hasBallerinaTomlInPath
+      hasBallerinaTomlInRoot
+      isDockerfilePathValid
+      hasDockerfileInPath
+      hasPomXmlInPath
+      hasPomXmlInRoot
+      isBuildpackPathValid
+      isProcfileExists
+      isEndpointYamlExists
+    }
+  }`;
+
+export interface GqlRepoMetadata {
+  isBareRepo: boolean;
+  isSubPathEmpty: boolean;
+  isSubPathValid: boolean;
+  isValidRepo: boolean;
+  hasBallerinaTomlInPath: boolean;
+  hasBallerinaTomlInRoot: boolean;
+  isDockerfilePathValid: boolean;
+  hasDockerfileInPath: boolean;
+  hasPomXmlInPath: boolean;
+  hasPomXmlInRoot: boolean;
+  isBuildpackPathValid: boolean;
+  isProcfileExists: boolean;
+  isEndpointYamlExists: boolean;
+}
+
+export type DetectedMode = 'mi' | 'ballerina' | 'empty' | 'non-empty' | null;
+
+export function useRepoMetadata(org: string, repo: string, branch: string, subPath: string, enabled: boolean, isPublicRepo = false) {
+  return useQuery({
+    queryKey: ['repoMetadata', org, repo, branch, subPath, isPublicRepo],
+    queryFn: () =>
+      gql<{ repoMetadata: GqlRepoMetadata }>(REPO_METADATA_QUERY, {
+        organizationName: org,
+        repoName: repo,
+        branch,
+        subPath: subPath.replace(/^\//, ''), // strip leading slash for the API
+        secretRef: '',
+        isPublicRepo,
+      }).then((d) => d.repoMetadata),
+    enabled: enabled && !!org && !!repo && !!branch,
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+}
+
+// Repository directory contents (for file picker)
+
+export interface RepoTreeNode {
+  path: string;
+  subPath: string;
+  type: 'tree' | 'blob';
+  children?: RepoTreeNode[];
+}
+
+export function useRepoContents(org: string, repo: string, branch: string, isPublicRepo = false) {
+  return useQuery({
+    queryKey: ['repoContents', org, repo, branch, isPublicRepo],
+    queryFn: async (): Promise<RepoTreeNode[]> => {
+      const url = `${componentMgtApiUrl()}/repositories/${org}/${repo}/branches/${encodeURIComponent(branch)}/contents?isPublicRepo=${isPublicRepo}`;
+      let res = await authenticatedFetch(url);
+
+      if (res.status === 403) {
+        const stsConfigured = !!window.API_CONFIG.stsTokenEndpoint && !!window.API_CONFIG.stsClientId;
+        const tokenIsUnscoped = stsConfigured && !getOrgUuidFromToken();
+        if (tokenIsUnscoped) {
+          await refreshAccessToken();
+          res = await authenticatedFetch(url);
+        }
+      }
+
+      if (!res.ok) throw new Error(`Failed to fetch repo contents: ${res.status}`);
+      const json = await res.json();
+      return (json?.data ?? json) as RepoTreeNode[];
+    },
+    enabled: !!org && !!repo && !!branch,
+    staleTime: 2 * 60 * 1000,
+    retry: false,
+  });
+}
+
+// Choreo sample images (used for Cloud Editor)
+
+export interface ChoreoSampleImage {
+  name: string;
+  [key: string]: unknown;
+}
+
+export function useChoreoSampleImages(orgUuid: string, projectId: string) {
+  return useQuery({
+    queryKey: ['choreoSampleImages', orgUuid, projectId],
+    queryFn: async () => {
+      const params = new URLSearchParams({ organization_id: orgUuid, project_id: projectId });
+      const res = await authenticatedFetch(`${choreoDevopsApiUrl()}/api/v1/byoi/components/choreo-sample-images?${params}`);
+      if (!res.ok) throw new Error(`Failed to fetch sample images: ${res.status}`);
+      const json = await res.json();
+      return (json?.data?.images ?? []) as ChoreoSampleImage[];
+    },
+    enabled: !!orgUuid && !!projectId,
+    staleTime: 10 * 60 * 1000,
+    retry: false,
+  });
+}
+
+export interface ComponentNameAvailability {
+  componentNameUnique: boolean;
+  alternateComponentName: string;
+}
+
+export function useComponentNameAvailability(projectId: string, componentNameCandidate: string) {
+  return useQuery({
+    queryKey: ['componentNameAvailability', projectId, componentNameCandidate],
+    queryFn: () =>
+      gql<{ componentNameAvailability: ComponentNameAvailability }>(`query { componentNameAvailability(projectId: "${projectId}", componentNameCandidate: "${componentNameCandidate}") { componentNameUnique alternateComponentName } }`).then(
+        (d) => d.componentNameAvailability,
+      ),
+    enabled: !!projectId && !!componentNameCandidate && componentNameCandidate.length >= 3,
+    staleTime: 0,
+    retry: false,
+  });
 }

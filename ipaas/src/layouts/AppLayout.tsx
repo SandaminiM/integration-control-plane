@@ -60,6 +60,7 @@ import { componentOverviewUrl, cookiePolicyUrl, loginUrl, orgHomeUrl, privacyPol
 import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions';
+import { UUID_RE } from '../utils/string';
 
 const SIDEBAR_ICONS: Record<Resource, JSX.Element> = {
   overview: <LayoutDashboard size={20} />,
@@ -112,7 +113,6 @@ export default function AppLayout(): JSX.Element {
     return notifications;
   };
 
-  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const projectParam = hasProject(scope) ? scope.project : '';
   const isProjectUuid = UUID_RE.test(projectParam);
   const { data: projectByHandler } = useProjectByHandler(!isProjectUuid ? projectParam : '');

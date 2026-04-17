@@ -77,6 +77,14 @@ export function newComponentUrl(orgHandler: string, projectHandler: string): str
   return `/organizations/${orgHandler}/projects/${projectHandler}/components/new`;
 }
 
+export function importComponentUrl(orgHandler: string, projectHandler: string): string {
+  return `/organizations/${orgHandler}/projects/${projectHandler}/components/new/import`;
+}
+
+export function browseSamplesUrl(orgHandler: string, projectHandler: string): string {
+  return `/organizations/${orgHandler}/projects/${projectHandler}/components/new/samples`;
+}
+
 export function editComponentUrl(orgHandler: string, projectHandler: string, componentId: string): string {
   return `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentId}/edit`;
 }
@@ -166,7 +174,20 @@ export const external = {
   vite: 'https://vite.dev',
   react: 'https://react.dev',
   oxygenUi: 'https://github.com/wso2/oxygen-ui/tree/next',
+  githubNew: 'https://github.com/new',
 } as const;
+
+// Build GitHub OAuth authorization URL for repository access.
+// redirectUri falls back to window.location.origin + '/ghapp' when empty.
+export function buildGitHubOAuthUrl(redirectUri: string, clientId: string, state: string, scope = 'repo,read:user'): string {
+  const params = new URLSearchParams({
+    redirect_uri: redirectUri || `${window.location.origin}/ghapp`,
+    client_id: clientId,
+    scope,
+    state,
+  });
+  return `https://github.com/login/oauth/authorize?${params.toString()}`;
+}
 
 // ---------------------------------------------------------------------------
 // Mock-data path constants

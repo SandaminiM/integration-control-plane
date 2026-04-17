@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Autocomplete, Box, Button, CircularProgress, Snackbar, Tab, Tabs, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Autocomplete, Box, Button, CircularProgress, Tab, Tabs, TextField, Typography } from '@wso2/oxygen-ui';
 import { Plus } from '@wso2/oxygen-ui-icons-react';
 import { type JSX, useEffect, useMemo, useState } from 'react';
 import type { CloudDataPlane, GqlEnvironment } from '../../api/queries';
@@ -47,14 +47,8 @@ export default function AlertsConfigurePage(props: AlertsConfigurePageProps): JS
 
   const componentType = isProxy ? AlertComponentType.API_PROXY : AlertComponentType.SERVICE;
 
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-    open: false,
-    message: '',
-    severity: 'success',
-  });
-  const handleNotify = (message: string, severity: 'success' | 'error') => {
-    setSnackbar({ open: true, message, severity });
-  };
+  const [notification, setNotification] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
+  const handleNotify = (message: string, severity: 'success' | 'error') => setNotification({ message, severity });
 
   const [selectedTab, setSelectedTab] = useState(0);
   const [selectedAlertType, setSelectedAlertType] = useState<AlertTypeOption>({
@@ -122,6 +116,11 @@ export default function AlertsConfigurePage(props: AlertsConfigurePageProps): JS
     else setIsToggleAlertRule(false);
   };
 
+  const handleOpenCreateRule = () => {
+    setNotification(null);
+    setCreateNewRule(true);
+  };
+
   const handleConfirmDialog = async (type: 'delete' | 'toggle', rule: AlertRule | undefined) => {
     if (!rule) return;
     if (type === 'delete') {
@@ -162,11 +161,6 @@ export default function AlertsConfigurePage(props: AlertsConfigurePageProps): JS
 
   return (
     <>
-      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar((s) => ({ ...s, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
-        <Alert onClose={() => setSnackbar((s) => ({ ...s, open: false }))} severity={snackbar.severity} variant="filled" sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
       <AlertRuleDeleteDialog isOpen={isDeleteAlertRule} isLoading={isDeleteAlertRuleLoading} alertType={selectedAlertRule?.type} handleClose={() => handleCloseDialog('delete')} handleConfirm={() => handleConfirmDialog('delete', selectedAlertRule)} />
       <AlertRuleToggleDialog
         isOpen={isToggleAlertRule}
@@ -204,7 +198,7 @@ export default function AlertsConfigurePage(props: AlertsConfigurePageProps): JS
                   {alertRulesCountUsage.count}/{alertRulesCountUsage.max} rules
                 </Typography>
               )}
-              <Button variant="contained" size="small" startIcon={<Plus size={14} />} onClick={() => setCreateNewRule(true)} disabled={quotaExceeded}>
+              <Button variant="contained" size="small" startIcon={<Plus size={14} />} onClick={handleOpenCreateRule} disabled={quotaExceeded}>
                 {ALERTS_CREATE_NEW_RULE_BUTTON_TEXT}
               </Button>
             </Box>
@@ -239,6 +233,16 @@ export default function AlertsConfigurePage(props: AlertsConfigurePageProps): JS
         />
       )}
 
+      {!createNewRule && !isEditAlertRule && (
+        <>
+        {notification && (
+          <Alert severity={notification.severity} onClose={() => setNotification(null)} sx={{ mx: 2, my: 2 }}>
+            {notification.message}
+          </Alert>
+        )}
+        </>
+      )}
+
       {isInitialLoad && (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
           <CircularProgress />
@@ -253,7 +257,7 @@ export default function AlertsConfigurePage(props: AlertsConfigurePageProps): JS
           <Typography variant="body2" color="text.secondary">
             Create a new alert rule to get started.
           </Typography>
-          <Button variant="contained" startIcon={<Plus size={14} />} onClick={() => setCreateNewRule(true)} disabled={quotaExceeded}>
+          <Button variant="contained" startIcon={<Plus size={14} />} onClick={handleOpenCreateRule} disabled={quotaExceeded}>
             {ALERTS_CREATE_NEW_RULE_BUTTON_TEXT}
           </Button>
           {quotaExceeded && (

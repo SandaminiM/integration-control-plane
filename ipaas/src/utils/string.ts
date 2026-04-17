@@ -23,3 +23,16 @@ export const toCamelCase = (s: string) => {
   if (words.length === 0) return '';
   return words.map((word, index) => (index === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())).join('');
 };
+
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function toHandler(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+export function formatRepoNameToDisplayName(repoName: string): string {
+  return repoName.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}

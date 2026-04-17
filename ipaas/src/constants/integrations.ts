@@ -16,6 +16,8 @@
  * under the License.
  */
 
+import type { DisplayType } from '../api/mutations';
+
 /**
  * The set of integration display types that are supported by the ipaas.
  * Components whose displayType is not in this set should be treated as read-only / disabled.
@@ -109,4 +111,114 @@ export function getDisplayLabel(displayType: string, componentSubType: string | 
     default:
       return displayType ?? 'Unknown';
   }
+}
+
+export const COMPONENT_TYPE_LABELS: Record<string, string> = {
+  service: 'Integration as API',
+  webhook: 'Webhook',
+  'manual-task': 'Manual Task',
+  'scheduled-task': 'Automation',
+  automation: 'Automation',
+  'ai-agent': 'AI Agent',
+  'event-handler': 'Event Integration',
+  'file-integration': 'File Integration',
+  'test-runner': 'Test Runner',
+  'web-application': 'Web Application',
+};
+
+export function formatComponentType(type: string): string {
+  return COMPONENT_TYPE_LABELS[type] ?? type.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export function displayTypeFromSample(componentType: string, buildPack: string): DisplayType {
+  const isMI = buildPack === 'wso2-mi';
+  switch (componentType) {
+    case 'service':
+      return isMI ? 'miApiService' : 'ballerinaService';
+    case 'scheduled-task':
+      return isMI ? 'miCronjob' : 'scheduledTask';
+    case 'automation':
+      return isMI ? 'miCronjob' : 'scheduledTask';
+    case 'manual-task':
+      return isMI ? 'miJob' : 'manualTrigger';
+    case 'event-handler':
+      return isMI ? 'miEventHandler' : 'webhook';
+    case 'ai-agent':
+      return 'ballerinaService';
+    case 'file-integration':
+      return 'ballerinaService';
+    default:
+      return isMI ? 'miApiService' : 'ballerinaService';
+  }
+}
+
+export const BUILDPACK_LABELS: Record<string, string> = {
+  ballerina: 'Ballerina',
+  'wso2-mi': 'WSO2 MI',
+};
+
+export function formatBuildPack(buildPack: string): string {
+  return BUILDPACK_LABELS[buildPack] ?? buildPack;
+}
+
+/** Normalize 'automation' → 'scheduled-task' so both collapse under one Automation category */
+export function normalizeComponentType(type: string): string {
+  return type === 'automation' ? 'scheduled-task' : type;
+}
+
+export const ALLOWED_SAMPLE_TYPES = new Set(['service', 'scheduled-task', 'automation']);
+
+export const APP_COLORS: Record<string, string> = {
+  S: '#00a1e0', // Salesforce blue
+  G: '#34a853', // Google green
+  St: '#6772e5', // Stripe purple
+  Sh: '#96bf48', // Shopify green
+  Sl: '#4a154b', // Slack purple
+  H: '#ff7a59', // HubSpot orange
+};
+
+export function getAppColor(name: string): string {
+  const twoChar = name.slice(0, 2);
+  return APP_COLORS[twoChar] ?? APP_COLORS[name.charAt(0)] ?? '#6366f1';
+}
+
+// ── Application connector icon URLs (same CDN as Devant) ─────────────────────
+
+const CONNECTOR_ICON_CDN = 'https://devant-cdn.wso2.com/console/connector-icons/v1/';
+
+const APPLICATION_ICONS: Record<string, string> = {
+  Salesforce: `${CONNECTOR_ICON_CDN}Salesforce.svg`,
+  'Google Sheets': `${CONNECTOR_ICON_CDN}GoogleSheets.svg`,
+  'Google Chat': `${CONNECTOR_ICON_CDN}GoogleChat.svg`,
+  'Google Forms': `${CONNECTOR_ICON_CDN}GoogleForms.svg`,
+  'Google Drive': `${CONNECTOR_ICON_CDN}GoogleDrive.svg`,
+  Gmail: `${CONNECTOR_ICON_CDN}Gmail.svg`,
+  GitHub: `${CONNECTOR_ICON_CDN}GitHub.svg`,
+  QuickBooks: `${CONNECTOR_ICON_CDN}QuickBooks.svg`,
+  Stripe: `${CONNECTOR_ICON_CDN}Stripe.svg`,
+  HubSpot: `${CONNECTOR_ICON_CDN}HubSpot.svg`,
+  Mailchimp: `${CONNECTOR_ICON_CDN}Mailchimp.svg`,
+  BambooHR: `${CONNECTOR_ICON_CDN}BambooHR.svg`,
+  Slack: `${CONNECTOR_ICON_CDN}Slack.svg`,
+  Shopify: `${CONNECTOR_ICON_CDN}Shopify.svg`,
+  Xero: `${CONNECTOR_ICON_CDN}Xero.svg`,
+  Zendesk: `${CONNECTOR_ICON_CDN}Zendesk.svg`,
+  Airtable: `${CONNECTOR_ICON_CDN}Airtable.svg`,
+  LinkedIn: `${CONNECTOR_ICON_CDN}LinkedIn.svg`,
+  Workday: `${CONNECTOR_ICON_CDN}Workday.svg`,
+  'Active Directory': `${CONNECTOR_ICON_CDN}ActiveDirectory.svg`,
+  PayPal: `${CONNECTOR_ICON_CDN}Paypal.svg`,
+  OpenAI: `${CONNECTOR_ICON_CDN}OpenAI.svg`,
+  'AWS S3': `${CONNECTOR_ICON_CDN}AWS-S3.svg`,
+  PostgreSQL: `${CONNECTOR_ICON_CDN}PostgreSQL.svg`,
+  WooCommerce: `${CONNECTOR_ICON_CDN}WooCommerce.svg`,
+  ADP: `${CONNECTOR_ICON_CDN}ADP.svg`,
+  Twilio: `${CONNECTOR_ICON_CDN}Twilio.svg`,
+  Twitter: `${CONNECTOR_ICON_CDN}Twitter.svg`,
+  Jira: `${CONNECTOR_ICON_CDN}Jira.svg`,
+  NetSuite: `${CONNECTOR_ICON_CDN}NetSuite.svg`,
+};
+
+export function getAppIconUrl(name: string): string | undefined {
+  return APPLICATION_ICONS[name];
 }

@@ -43,23 +43,22 @@ export default function BuildAlertRuleForm(props: AlertRuleFormProps): JSX.Eleme
     onNotify,
   } = props;
 
-  const alertRule: AlertRule =
-    selectedAlertRule
-      ? { ...selectedAlertRule }
-      : ({
-      projectId,
-      componentId,
-      environmentId: environment.id,
-      versionId,
-      componentType: AlertComponentType.SERVICE,
-      projectName,
-      environmentName,
-      versionName: versionName,
-      id: '',
-      type: AlertTypeConstants.BUILD,
-      emails: [],
-      enabled: true,
-    } as AlertRule);
+  const alertRule: AlertRule = selectedAlertRule
+    ? { ...selectedAlertRule }
+    : ({
+        projectId,
+        componentId,
+        environmentId: environment.id,
+        versionId,
+        componentType: AlertComponentType.SERVICE,
+        projectName,
+        environmentName,
+        versionName: versionName,
+        id: '',
+        type: AlertTypeConstants.BUILD,
+        emails: [],
+        enabled: true,
+      } as AlertRule);
 
   const [buildAlertRulesForVersion, setBuildAlertRulesForVersion] = useState<AlertRule[]>(buildAlertRules.filter((r) => r.versionId === versionId));
   useEffect(() => {

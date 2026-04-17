@@ -1,0 +1,61 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { Box, Typography } from '@wso2/oxygen-ui';
+import { useState, type JSX } from 'react';
+import { getAppColor, getAppIconUrl } from '../constants/integrations';
+
+export default function AppAvatar({ name }: { name: string }): JSX.Element {
+  const iconUrl = getAppIconUrl(name);
+  const [imgFailed, setImgFailed] = useState(false);
+  const bg = getAppColor(name);
+
+  if (iconUrl && !imgFailed) {
+    return (
+      <Box
+        sx={{
+          width: 28,
+          height: 28,
+          borderRadius: 0.75,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          overflow: 'hidden',
+        }}>
+        <Box component="img" src={iconUrl} alt={name} onError={() => setImgFailed(true)} sx={{ width: 28, height: 28, objectFit: 'contain' }} />
+      </Box>
+    );
+  }
+
+  return (
+    <Box
+      sx={{
+        width: 28,
+        height: 28,
+        borderRadius: 0.75,
+        bgcolor: bg,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+      <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#fff', lineHeight: 1 }}>{name.slice(0, 2).toUpperCase()}</Typography>
+    </Box>
+  );
+}

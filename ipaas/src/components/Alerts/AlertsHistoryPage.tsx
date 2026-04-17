@@ -75,7 +75,9 @@ export default function AlertsHistoryPage({ componentId, environments, cloudData
   if (!environments.length) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 4, gap: 1 }}>
-        <Typography variant="body1" color="text.secondary">No environments available.</Typography>
+        <Typography variant="body1" color="text.secondary">
+          No environments available.
+        </Typography>
       </Box>
     );
   }
