@@ -22,8 +22,14 @@ import type { DisplayType } from '../api/mutations';
  * The set of integration display types that are supported by the ipaas.
  * Components whose displayType is not in this set should be treated as read-only / disabled.
  */
+/**
+ * Component display types that are "generic services" (Integration as API / REST API variants).
+ * These get the service-specific environment card: deployment status, endpoint URLs, stop/start actions.
+ */
+export const GENERIC_SERVICE_TYPES = new Set(['ballerinaService', 'byocService', 'byoiService', 'miApiService', 'restApi', 'byocRestApi', 'miRestApi', 'buildRestApi', 'graphql', 'buildpackService']);
+
 export const SUPPORTED_DISPLAY_TYPES = new Set([
-  'restAPI',
+  'restApi',
   'manualTrigger',
   'scheduledTask',
   'webhook',

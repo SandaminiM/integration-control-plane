@@ -1,0 +1,14 @@
+[
+  {
+    "title": "Env-wise Access Control",
+    "description": "Enable environment-level access control for integrations"
+  },
+  {
+    "title": "Resource Authorization",
+    "description": "Enable fine-grained resource authorization"
+  },
+{
+    "title": "Enable Runtime Arguments Schema",
+    "description": "Enable runtime arguments schema configuration for integrations"
+  }
+]

@@ -84,10 +84,8 @@ export default function LogsDrawer({ open, onClose, executionId, componentId, de
   return (
     <Drawer anchor="right" open={open} onClose={handleClose} variant="temporary" sx={drawerSx}>
       {/* Header */}
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-          Latest Logs
-        </Typography>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
+        <Typography variant="h5">Latest Logs</Typography>
         <IconButton size="small" aria-label="close" onClick={handleClose}>
           <X size={16} />
         </IconButton>

@@ -55,6 +55,8 @@ import ProjectGroupDetail from '../pages/ProjectGroupDetail';
 import ComponentGroupDetail from '../pages/ComponentGroupDetail';
 import Profile from '../pages/Profile';
 import ForceChangePassword from '../pages/ForceChangePassword';
+import ComingSoon from '../pages/ComingSoon';
+import ManageLoggers from '../pages/ManageLoggers';
 import Alerts from '../pages/Alerts';
 import { ScopeResolver, generateMatrixRoutes, withScope, type Matrix } from '../nav';
 import { createElement } from 'react';
@@ -126,6 +128,18 @@ const routes: AppRoute[] = [
               { path: projectGroupDetailUrl(':orgHandler', ':projectHandler', ':groupId'), element: <ProjectGroupDetail /> },
               { path: componentGroupDetailUrl(':orgHandler', ':projectHandler', ':componentHandler', ':groupId'), element: <ComponentGroupDetail /> },
               { path: '/profile', element: <Profile /> },
+              {
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test/console',
+                element: <ComingSoon title="Coming Soon" description="The test console is currently under development. You'll be able to test your integrations directly from here." />,
+              },
+              {
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/lifecycle',
+                element: <ComingSoon title="Coming Soon" description="Lifecycle management is currently under development. You'll be able to manage your API lifecycle directly from here." />,
+              },
+              {
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/documents',
+                element: <ComingSoon title="Coming Soon" description="API documentation is currently under development. You'll be able to manage your API documents directly from here." />,
+              },
             ],
           },
         ],

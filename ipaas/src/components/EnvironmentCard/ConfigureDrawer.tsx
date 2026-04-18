@@ -16,13 +16,508 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Chip, CircularProgress, Collapse, Drawer, IconButton, Stack, TextField, Typography } from '@wso2/oxygen-ui';
-import { ChevronDown, ChevronUp, Plus, X } from '@wso2/oxygen-ui-icons-react';
-import { useEffect, useMemo, useState } from 'react';
-import { useSchemaConfig, type SchemaConfigItem } from '../../api/queries';
-import { useSaveSchemaConfig } from '../../api/mutations';
+import { Alert, Box, Button, Checkbox, Chip, CircularProgress, Collapse, Drawer, IconButton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Building2, Check, ChevronDown, ChevronUp, Copy, Folder, Globe, Pencil, Plus, Settings, X } from '@wso2/oxygen-ui-icons-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEnvEndpoints, useGetConfigMgt, useSchemaConfig, type ConfigMgtItem, type GqlEnvEndpoint, type SchemaConfigItem } from '../../api/queries';
+import { usePostConfigMgt, useRedeployDeployment, useUpdateEndpoint, useSaveSchemaConfig, type ConfigMgtSaveItem } from '../../api/mutations';
+import ManageDrawer from './ManageDrawer';
 
-interface FlatField {
+// ── Schema parsing ────────────────────────────────────────────────────────────
+
+interface ParsedField {
+  key: string;
+  displayName: string;
+  group: string;
+  type: string;
+  description?: string;
+  required: boolean;
+  isSensitive: boolean;
+}
+
+function parseSchema(base64: string | undefined, configMount: ConfigMgtItem[] | undefined): ParsedField[] {
+  if (!base64) return [];
+  try {
+    const root = JSON.parse(atob(base64));
+    const fields: ParsedField[] = [];
+
+    function flatten(props: Record<string, Record<string, unknown>>, required: string[], keyPrefix: string, group: string, displayPrefix: string) {
+      for (const [name, prop] of Object.entries(props)) {
+        const fullKey = `${keyPrefix}.${name}`;
+        const display = displayPrefix ? `${displayPrefix}.${name}` : name;
+
+        if (prop.type === 'object' && prop.properties) {
+          const nestedRequired = Array.isArray(prop.required) ? (prop.required as string[]) : [];
+          flatten(prop.properties as Record<string, Record<string, unknown>>, nestedRequired, fullKey, group, display);
+        } else {
+          fields.push({
+            key: fullKey,
+            displayName: display,
+            group,
+            type: typeof prop.type === 'string' ? prop.type : 'string',
+            description: typeof prop.description === 'string' ? prop.description : undefined,
+            required: required.includes(name),
+            isSensitive: typeof prop['x-sensitive'] === 'boolean' ? (prop['x-sensitive'] as boolean) : false,
+          });
+        }
+      }
+    }
+
+    for (const [org, orgSchema] of Object.entries((root.properties ?? {}) as Record<string, Record<string, unknown>>)) {
+      for (const [pkg, pkgSchema] of Object.entries((orgSchema.properties ?? {}) as Record<string, Record<string, unknown>>)) {
+        const group = `${org}.${pkg}`;
+        const pkgRequired = Array.isArray((pkgSchema as Record<string, unknown>).required) ? ((pkgSchema as Record<string, unknown>).required as string[]) : [];
+        flatten(((pkgSchema as Record<string, unknown>).properties ?? {}) as Record<string, Record<string, unknown>>, pkgRequired, `${org}.${pkg}`, group, '');
+      }
+    }
+
+    const reqKeys = new Set((configMount ?? []).filter((c) => c.isRequired).map((c) => c.configKeyName));
+    return fields.map((f) => ({ ...f, required: f.required || reqKeys.has(f.key) }));
+  } catch {
+    return [];
+  }
+}
+
+function buildInitialValues(configMount: ConfigMgtItem[] | undefined): Record<string, string> {
+  const vals: Record<string, string> = {};
+  for (const item of configMount ?? []) {
+    vals[item.configKeyName] = item.configurationValue?.value ?? '';
+  }
+  return vals;
+}
+
+// ── Config field components ───────────────────────────────────────────────────
+
+interface FieldRowProps {
+  displayName: string;
+  type: string;
+  description?: string;
+  isSensitive: boolean;
+  value: string;
+  onChange: (v: string) => void;
+}
+
+function FieldRow({ displayName, type, description, isSensitive, value, onChange }: FieldRowProps) {
+  return (
+    <Box sx={{ mb: 1.5 }}>
+      <Stack direction="row" alignItems="center" gap={0.75} sx={{ mb: 0.5 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+          {displayName}
+        </Typography>
+        <Chip label={type} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
+      </Stack>
+      {description && (
+        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mb: 0.25 }}>
+          {description}
+        </Typography>
+      )}
+      <TextField size="small" fullWidth type={isSensitive ? 'password' : 'text'} placeholder="Enter a value" value={value} onChange={(e) => onChange(e.target.value)} />
+    </Box>
+  );
+}
+
+interface PackageGroupProps {
+  label: string;
+  fields: ParsedField[];
+  values: Record<string, string>;
+  onChange: (key: string, value: string) => void;
+}
+
+function PackageGroup({ label, fields, values, onChange }: PackageGroupProps) {
+  const [open, setOpen] = useState(true);
+  return (
+    <Box sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" onClick={() => setOpen((p) => !p)} sx={{ px: 1.5, py: 0.75, cursor: 'pointer', userSelect: 'none', borderBottom: open ? '1px solid' : 'none', borderColor: 'divider' }}>
+        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 500 }}>
+          {label}
+        </Typography>
+        {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+      </Stack>
+      <Collapse in={open}>
+        <Box sx={{ px: 1.5, pb: 1.5, pt: 1 }}>
+          {fields.map((f) => (
+            <FieldRow key={f.key} displayName={f.displayName} type={f.type} description={f.description} isSensitive={f.isSensitive} value={values[f.key] ?? ''} onChange={(v) => onChange(f.key, v)} />
+          ))}
+        </Box>
+      </Collapse>
+    </Box>
+  );
+}
+
+interface DefaultableConfigurablesAccordionProps {
+  groups: { label: string; fields: ParsedField[] }[];
+  values: Record<string, string>;
+  onChange: (key: string, value: string) => void;
+}
+
+function DefaultableConfigurablesAccordion({ groups, values, onChange }: DefaultableConfigurablesAccordionProps) {
+  const [open, setOpen] = useState(true);
+  return (
+    <Box sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        onClick={() => setOpen((p) => !p)}
+        sx={{ px: 2, py: 1.25, cursor: 'pointer', userSelect: 'none', borderBottom: open ? '1px solid' : 'none', borderColor: 'divider', bgcolor: 'action.hover' }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+          Defaultable Configurables
+        </Typography>
+        {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+      </Stack>
+      <Collapse in={open}>
+        <Box sx={{ p: 1.5 }}>
+          {groups.map((g) => (
+            <PackageGroup key={g.label} label={g.label} fields={g.fields} values={values} onChange={onChange} />
+          ))}
+        </Box>
+      </Collapse>
+    </Box>
+  );
+}
+
+// ── Step indicator ────────────────────────────────────────────────────────────
+
+const STEPS = ['Configurations', 'Endpoints'];
+
+function StepIndicator({ step }: { step: number }) {
+  return (
+    <Stack direction="row" alignItems="center" sx={{ px: 2, py: 1.25, borderBottom: '1px solid', borderColor: 'divider' }}>
+      {STEPS.map((label, idx) => {
+        const num = idx + 1;
+        const isActive = num === step;
+        const isDone = num < step;
+        return (
+          <Stack key={label} direction="row" alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+            <Stack direction="row" alignItems="center" gap={0.75} sx={{ minWidth: 0 }}>
+              <Box
+                sx={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  bgcolor: isActive ? 'primary.main' : isDone ? 'success.main' : 'action.disabledBackground',
+                  color: isActive || isDone ? 'primary.contrastText' : 'text.disabled',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                }}>
+                {num}
+              </Box>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? 'text.primary' : 'text.secondary',
+                  whiteSpace: 'nowrap',
+                }}>
+                {label}
+              </Typography>
+            </Stack>
+            {idx < STEPS.length - 1 && <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider', mx: 0.75 }} />}
+          </Stack>
+        );
+      })}
+    </Stack>
+  );
+}
+
+// ── Endpoint components ───────────────────────────────────────────────────────
+
+const VISIBILITY_OPTS = [
+  {
+    key: 'Public',
+    label: 'Public',
+    Icon: Globe,
+    description: 'Allows any client to access the endpoint, regardless of location or organization.',
+  },
+  {
+    key: 'Organization',
+    label: 'Organization',
+    Icon: Building2,
+    description: 'Allows any integration within the same organization to access the endpoint.',
+  },
+  {
+    key: 'Project',
+    label: 'Project',
+    Icon: Folder,
+    description: 'Allows any integration within the same project to access the endpoint.',
+  },
+] as const;
+
+function getStatusColor(state?: string | null) {
+  if (!state) return 'text.disabled';
+  const s = state.toUpperCase();
+  if (s === 'ACTIVE') return 'success.main';
+  if (s === 'ERROR') return 'error.main';
+  if (s === 'IN_PROGRESS' || s === 'PENDING' || s === 'PROGRESSING') return 'warning.main';
+  return 'text.disabled';
+}
+
+function CopyBtn({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handle = useCallback(() => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [text]);
+  return (
+    <Tooltip title={copied ? 'Copied!' : 'Copy'}>
+      <IconButton size="small" onClick={handle} sx={{ p: 0.25, flexShrink: 0 }}>
+        {copied ? <Check size={13} /> : <Copy size={13} />}
+      </IconButton>
+    </Tooltip>
+  );
+}
+
+interface EndpointCardProps {
+  ep: GqlEnvEndpoint;
+  onEdit: (ep: GqlEnvEndpoint) => void;
+  onSettings: (ep: GqlEnvEndpoint) => void;
+  defaultExpanded?: boolean;
+}
+
+function EndpointCard({ ep, onEdit, onSettings, defaultExpanded = false }: EndpointCardProps) {
+  const [open, setOpen] = useState(defaultExpanded);
+  const visRows = VISIBILITY_OPTS.map((v) => {
+    const url = v.key === 'Public' ? ep.publicUrl || ep.defaultPublicUrl || ep.invokeUrl || '' : v.key === 'Organization' ? ep.organizationUrl || ep.defaultOrganizationUrl || '' : ep.projectUrl || '';
+    const active = !ep.networkVisibilities?.length || ep.networkVisibilities.includes(v.key);
+    return { ...v, url, active };
+  }).filter((r) => r.url && r.active);
+
+  const fallbackUrl = visRows.length === 0 ? ep.invokeUrl || '' : '';
+
+  return (
+    <Box sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+      {/* Header */}
+      <Stack direction="row" alignItems="center" gap={1} sx={{ px: 1.5, py: 1, borderBottom: open ? '1px solid' : 'none', borderColor: 'divider' }}>
+        {/* Status dot */}
+        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: getStatusColor(ep.state), flexShrink: 0 }} onClick={() => setOpen((p) => !p)} />
+        {/* Name */}
+        <Typography variant="body2" sx={{ fontWeight: 500, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => setOpen((p) => !p)}>
+          {ep.displayName}
+        </Typography>
+        {/* Edit */}
+        <Tooltip title="Edit endpoint">
+          <IconButton
+            size="small"
+            sx={{ p: 0.5, flexShrink: 0 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(ep);
+            }}>
+            <Pencil size={14} />
+          </IconButton>
+        </Tooltip>
+        {/* Settings */}
+        <Tooltip title="API settings">
+          <IconButton
+            size="small"
+            sx={{ p: 0.5, flexShrink: 0 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSettings(ep);
+            }}>
+            <Settings size={14} />
+          </IconButton>
+        </Tooltip>
+        {/* Chevron */}
+        <IconButton size="small" sx={{ p: 0.25, flexShrink: 0 }} onClick={() => setOpen((p) => !p)}>
+          {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </IconButton>
+      </Stack>
+
+      {/* Expanded content */}
+      <Collapse in={open}>
+        <Box sx={{ px: 1.5, py: 1.25 }}>
+          {/* Details box */}
+          <Box sx={{ mb: 1.25, border: '1px solid', borderColor: 'divider', borderRadius: 1, px: 1.5, py: 1 }}>
+            {[
+              { label: 'Port', value: ep.port != null ? String(ep.port) : null },
+              { label: 'Status', value: ep.state ?? null },
+              { label: 'Type', value: ep.type ?? null },
+              { label: 'Context', value: ep.apiContext ?? null },
+              { label: 'Schema', value: ep.apiDefinitionPath ?? null },
+            ].map(({ label, value }) =>
+              value ? (
+                <Stack key={label} direction="row" alignItems="center" sx={{ py: 0.3 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, width: 72, flexShrink: 0 }}>
+                    {label}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontFamily: label === 'Schema' ? 'monospace' : undefined }}>
+                    {value}
+                  </Typography>
+                </Stack>
+              ) : null,
+            )}
+            {/* Network Visibilities row */}
+            {ep.networkVisibilities && ep.networkVisibilities.length > 0 && (
+              <Stack direction="row" alignItems="center" sx={{ py: 0.3 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, width: 72, flexShrink: 0 }}>
+                  Visibility
+                </Typography>
+                <Stack direction="row" gap={0.5} flexWrap="wrap">
+                  {ep.networkVisibilities.map((v) => (
+                    <Chip key={v} label={v} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
+                  ))}
+                </Stack>
+              </Stack>
+            )}
+          </Box>
+
+          {/* URLs box */}
+          {(visRows.length > 0 || fallbackUrl) && (
+            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+              {visRows.map((r, i) => (
+                <Box key={r.key} sx={{ px: 1.5, py: 0.75, borderBottom: i < visRows.length - 1 || !!fallbackUrl ? '1px solid' : 'none', borderColor: 'divider' }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.25 }}>
+                    {r.label} URL
+                  </Typography>
+                  <Stack direction="row" alignItems="center" gap={0.5} sx={{ minWidth: 0 }}>
+                    <Typography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
+                      {r.url}
+                    </Typography>
+                    <CopyBtn text={r.url} />
+                  </Stack>
+                </Box>
+              ))}
+              {fallbackUrl && (
+                <Box sx={{ px: 1.5, py: 0.75 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.25 }}>
+                    Public URL
+                  </Typography>
+                  <Stack direction="row" alignItems="center" gap={0.5} sx={{ minWidth: 0 }}>
+                    <Typography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
+                      {fallbackUrl}
+                    </Typography>
+                    <CopyBtn text={fallbackUrl} />
+                  </Stack>
+                </Box>
+              )}
+            </Box>
+          )}
+        </Box>
+      </Collapse>
+    </Box>
+  );
+}
+
+// ── ManageEndpoint (inline edit view) ─────────────────────────────────────────
+
+interface ManageEndpointProps {
+  ep: GqlEnvEndpoint;
+  componentId: string;
+  versionId: string;
+  releaseId: string;
+  onBack: () => void;
+}
+
+function ManageEndpoint({ ep, componentId, versionId, releaseId, onBack }: ManageEndpointProps) {
+  const [visibilities, setVisibilities] = useState<string[]>(ep.networkVisibilities ?? [ep.visibility ?? 'Public']);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const updateEp = useUpdateEndpoint();
+
+  const handleToggle = (key: string) => {
+    setVisibilities((prev) => (prev.includes(key) ? prev.filter((v) => v !== key) : [...prev, key]));
+  };
+
+  const handleSave = () => {
+    setSaveError(null);
+    updateEp.mutate(
+      { componentId, versionId, releaseId, endpointId: ep.id, displayName: ep.displayName, networkVisibilities: visibilities },
+      {
+        onSuccess: onBack,
+        onError: (err) => setSaveError(err instanceof Error ? err.message : 'Failed to update endpoint'),
+      },
+    );
+  };
+
+  return (
+    <Box>
+      {/* Endpoint details (read-only) */}
+      <Box sx={{ mb: 2 }}>
+        {[
+          { label: 'Name', value: ep.displayName },
+          { label: 'Port', value: ep.port != null ? String(ep.port) : null },
+          { label: 'Status', value: ep.state ?? null },
+          { label: 'Type', value: ep.type ?? null },
+          { label: 'Context', value: ep.apiContext ?? null },
+          { label: 'Schema', value: ep.apiDefinitionPath ?? null },
+        ].map(({ label, value }) =>
+          value ? (
+            <Typography key={label} variant="body2" sx={{ mb: 0.5 }}>
+              <Box component="span" sx={{ fontWeight: 700 }}>
+                {label}
+              </Box>
+              : {value}
+            </Typography>
+          ) : null,
+        )}
+      </Box>
+
+      {/* Network visibility */}
+      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+        Network Visibility
+      </Typography>
+      <Stack gap={1} sx={{ mb: 2 }}>
+        {VISIBILITY_OPTS.map(({ key, label, Icon, description }) => {
+          const checked = visibilities.includes(key);
+          return (
+            <Box
+              key={key}
+              onClick={() => handleToggle(key)}
+              sx={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 1.25,
+                p: 1.5,
+                border: '1px solid',
+                borderColor: checked ? 'primary.main' : 'divider',
+                borderRadius: 1,
+                cursor: 'pointer',
+                transition: 'border-color 0.15s',
+                '&:hover': { borderColor: 'primary.main' },
+              }}>
+              <Box sx={{ display: 'flex', color: 'primary.main', mt: 0.25, flexShrink: 0 }}>
+                <Icon size={18} />
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {label}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {description}
+                </Typography>
+              </Box>
+              <Checkbox checked={checked} size="small" sx={{ p: 0, flexShrink: 0, mt: 0.25 }} onClick={(e) => e.stopPropagation()} onChange={() => handleToggle(key)} />
+            </Box>
+          );
+        })}
+      </Stack>
+
+      {saveError && (
+        <Alert severity="error" sx={{ mb: 1 }}>
+          {saveError}
+        </Alert>
+      )}
+
+      <Stack direction="row" justifyContent="flex-end" gap={1}>
+        <Button onClick={onBack}>Cancel</Button>
+        <Button variant="contained" onClick={handleSave} disabled={updateEp.isPending || visibilities.length === 0} startIcon={updateEp.isPending ? <CircularProgress color="inherit" size={16} /> : undefined}>
+          {updateEp.isPending ? 'Updating…' : 'Update'}
+        </Button>
+      </Stack>
+    </Box>
+  );
+}
+
+// ── Automation configure drawer ───────────────────────────────────────────────
+
+interface AutoFlatField {
   key: string;
   leafKey: string;
   parentPath: string;
@@ -32,14 +527,14 @@ interface FlatField {
   isSensitive: boolean;
 }
 
-function flattenSchema(properties: Record<string, Record<string, unknown>>, required: string[], dotPrefix = '', slashPrefix = ''): FlatField[] {
-  const fields: FlatField[] = [];
+function autoFlattenSchema(properties: Record<string, Record<string, unknown>>, required: string[], dotPrefix = '', slashPrefix = ''): AutoFlatField[] {
+  const fields: AutoFlatField[] = [];
   for (const [name, prop] of Object.entries(properties)) {
     const dotKey = dotPrefix ? `${dotPrefix}.${name}` : name;
     const slashPath = slashPrefix ? `${slashPrefix}/${name}` : name;
     if (prop.type === 'object' && prop.properties) {
       const childRequired = Array.isArray(prop.required) ? (prop.required as string[]) : [];
-      fields.push(...flattenSchema(prop.properties as Record<string, Record<string, unknown>>, childRequired, dotKey, slashPath));
+      fields.push(...autoFlattenSchema(prop.properties as Record<string, Record<string, unknown>>, childRequired, dotKey, slashPath));
     } else {
       fields.push({
         key: dotKey,
@@ -48,41 +543,40 @@ function flattenSchema(properties: Record<string, Record<string, unknown>>, requ
         type: typeof prop.type === 'string' && prop.type === 'array' ? 'object[]' : typeof prop.type === 'string' ? prop.type : 'string',
         description: typeof prop.description === 'string' ? prop.description : undefined,
         required: required.includes(name),
-        isSensitive: typeof prop['x-sensitive'] === 'boolean' ? prop['x-sensitive'] : false,
+        isSensitive: typeof prop['x-sensitive'] === 'boolean' ? (prop['x-sensitive'] as boolean) : false,
       });
     }
   }
   return fields;
 }
 
-function parseFields(base64: string | undefined): FlatField[] {
+function autoParseFields(base64: string | undefined): AutoFlatField[] {
   if (!base64) return [];
   try {
     const schema = JSON.parse(atob(base64));
-    return flattenSchema(schema.properties ?? {}, schema.required ?? []);
+    return autoFlattenSchema(schema.properties ?? {}, schema.required ?? []);
   } catch {
     return [];
   }
 }
 
-// Groups fields by parentPath, returns [{groupPath, fields}] sorted by groupPath
-function groupFields(fields: FlatField[]): { groupPath: string; fields: FlatField[] }[] {
-  const map = new Map<string, FlatField[]>();
+function autoGroupFields(fields: AutoFlatField[]): { groupPath: string; fields: AutoFlatField[] }[] {
+  const map = new Map<string, AutoFlatField[]>();
   for (const f of fields) {
     const g = f.parentPath || f.leafKey;
     if (!map.has(g)) map.set(g, []);
     map.get(g)!.push(f);
   }
-  return Array.from(map.entries()).map(([groupPath, fields]) => ({ groupPath, fields }));
+  return Array.from(map.entries()).map(([groupPath, groupFields]) => ({ groupPath, fields: groupFields }));
 }
 
-interface FieldRowProps {
-  field: FlatField;
+interface AutoFieldRowProps {
+  field: AutoFlatField;
   value: string;
   onChange: (v: string) => void;
 }
 
-function FieldRow({ field, value, onChange }: FieldRowProps) {
+function AutoFieldRow({ field, value, onChange }: AutoFieldRowProps) {
   return (
     <Box sx={{ mb: 1.5 }}>
       <Stack direction="row" alignItems="center" gap={0.75} sx={{ mb: 0.5 }}>
@@ -107,14 +601,14 @@ function FieldRow({ field, value, onChange }: FieldRowProps) {
   );
 }
 
-interface FieldGroupProps {
+interface AutoFieldGroupProps {
   groupPath: string;
-  fields: FlatField[];
+  fields: AutoFlatField[];
   values: Record<string, string>;
   onChange: (key: string, value: string) => void;
 }
 
-function FieldGroup({ groupPath, fields, values, onChange }: FieldGroupProps) {
+function AutoFieldGroup({ groupPath, fields, values, onChange }: AutoFieldGroupProps) {
   const [open, setOpen] = useState(true);
   return (
     <Box sx={{ mx: 1.5, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
@@ -127,7 +621,7 @@ function FieldGroup({ groupPath, fields, values, onChange }: FieldGroupProps) {
       <Collapse in={open}>
         <Box sx={{ px: 1.5, pb: 1.5, pt: 1 }}>
           {fields.map((field) => (
-            <FieldRow key={field.key} field={field} value={values[field.key] ?? ''} onChange={(v) => onChange(field.key, v)} />
+            <AutoFieldRow key={field.key} field={field} value={values[field.key] ?? ''} onChange={(v) => onChange(field.key, v)} />
           ))}
         </Box>
       </Collapse>
@@ -135,15 +629,15 @@ function FieldGroup({ groupPath, fields, values, onChange }: FieldGroupProps) {
   );
 }
 
-interface SectionProps {
+interface AutoSectionProps {
   title: string;
-  groups: { groupPath: string; fields: FlatField[] }[];
+  groups: { groupPath: string; fields: AutoFlatField[] }[];
   values: Record<string, string>;
   onChange: (key: string, value: string) => void;
   defaultOpen?: boolean;
 }
 
-function Section({ title, groups, values, onChange, defaultOpen = true }: SectionProps) {
+function AutoSection({ title, groups, values, onChange, defaultOpen = true }: AutoSectionProps) {
   const [open, setOpen] = useState(defaultOpen);
   if (groups.length === 0) return null;
   return (
@@ -157,7 +651,7 @@ function Section({ title, groups, values, onChange, defaultOpen = true }: Sectio
       <Collapse in={open}>
         <Box sx={{ pt: 1 }}>
           {groups.map(({ groupPath, fields }) => (
-            <FieldGroup key={groupPath} groupPath={groupPath} fields={fields} values={values} onChange={onChange} />
+            <AutoFieldGroup key={groupPath} groupPath={groupPath} fields={fields} values={values} onChange={onChange} />
           ))}
         </Box>
       </Collapse>
@@ -165,20 +659,7 @@ function Section({ title, groups, values, onChange, defaultOpen = true }: Sectio
   );
 }
 
-const drawerSx = {
-  '& .MuiDrawer-paper': {
-    width: 440,
-    position: 'fixed',
-    top: 64,
-    height: 'calc(100% - 64px)',
-    borderLeft: '1px solid',
-    borderColor: 'divider',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-} as const;
-
-export interface ConfigureDrawerProps {
+interface AutomationConfigureDrawerProps {
   open: boolean;
   onClose: () => void;
   projectId: string;
@@ -188,26 +669,28 @@ export interface ConfigureDrawerProps {
   commitHash?: string;
 }
 
-export default function ConfigureDrawer({ open, onClose, projectId, componentId, envId, deploymentTrackId, commitHash }: ConfigureDrawerProps) {
+function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envId, deploymentTrackId, commitHash }: AutomationConfigureDrawerProps) {
   const handleClose = () => {
     (document.activeElement as HTMLElement)?.blur();
     onClose();
   };
+
   const { data, isLoading, isError } = useSchemaConfig(projectId, componentId, envId, deploymentTrackId, commitHash);
   const save = useSaveSchemaConfig();
   const [values, setValues] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const fields = useMemo(() => {
-    const base = parseFields(data?.jsonSchema);
+    const base = autoParseFields(data?.jsonSchema);
     const reqKeys = new Set((data?.configurations ?? []).filter((c) => c.isRequired).map((c) => c.key));
     if (!reqKeys.size) return base;
     return base.map((f) => ({ ...f, required: f.required || reqKeys.has(f.key) }));
   }, [data]);
+
   const requiredFields = useMemo(() => fields.filter((f) => f.required), [fields]);
   const optionalFields = useMemo(() => fields.filter((f) => !f.required), [fields]);
-  const requiredGroups = useMemo(() => groupFields(requiredFields), [requiredFields]);
-  const optionalGroups = useMemo(() => groupFields(optionalFields), [optionalFields]);
+  const requiredGroups = useMemo(() => autoGroupFields(requiredFields), [requiredFields]);
+  const optionalGroups = useMemo(() => autoGroupFields(optionalFields), [optionalFields]);
 
   useEffect(() => {
     if (open) {
@@ -246,7 +729,6 @@ export default function ConfigureDrawer({ open, onClose, projectId, componentId,
         </Box>
       );
     }
-
     if (isError || data === null) {
       return (
         <Box sx={{ py: 4, px: 2, textAlign: 'center' }}>
@@ -256,7 +738,6 @@ export default function ConfigureDrawer({ open, onClose, projectId, componentId,
         </Box>
       );
     }
-
     if (!data?.jsonSchema || fields.length === 0) {
       return (
         <Box sx={{ py: 4, px: 2, textAlign: 'center' }}>
@@ -266,11 +747,10 @@ export default function ConfigureDrawer({ open, onClose, projectId, componentId,
         </Box>
       );
     }
-
     return (
       <>
-        <Section title="Required" groups={requiredGroups} values={values} onChange={handleChange} />
-        <Section title="Optional" groups={optionalGroups} values={values} onChange={handleChange} defaultOpen={false} />
+        <AutoSection title="Required" groups={requiredGroups} values={values} onChange={handleChange} />
+        <AutoSection title="Optional" groups={optionalGroups} values={values} onChange={handleChange} defaultOpen={false} />
         {saveError && (
           <Alert severity="error" sx={{ mt: 1 }}>
             {saveError}
@@ -285,17 +765,13 @@ export default function ConfigureDrawer({ open, onClose, projectId, componentId,
 
   return (
     <Drawer anchor="right" open={open} onClose={handleClose} variant="temporary" sx={drawerSx}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-          Configurations
-        </Typography>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
+        <Typography variant="h5">Configurations</Typography>
         <IconButton size="small" aria-label="close" onClick={handleClose}>
           <X size={16} />
         </IconButton>
       </Stack>
-
       <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>{renderContent()}</Box>
-
       {hasSchema && (
         <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
           <Button onClick={onClose}>Cancel</Button>
@@ -305,5 +781,276 @@ export default function ConfigureDrawer({ open, onClose, projectId, componentId,
         </Stack>
       )}
     </Drawer>
+  );
+}
+
+// ── Drawer ────────────────────────────────────────────────────────────────────
+
+const drawerSx = {
+  '& .MuiDrawer-paper': {
+    width: 440,
+    position: 'fixed',
+    top: 64,
+    height: 'calc(100% - 64px)',
+    borderLeft: '1px solid',
+    borderColor: 'divider',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+} as const;
+
+export interface ConfigureDrawerProps {
+  open: boolean;
+  onClose: () => void;
+  orgHandler: string;
+  projectId: string;
+  componentId: string;
+  envId: string;
+  versionId: string;
+  componentName: string;
+  projectHandler: string;
+  commitHash?: string;
+  releaseId?: string;
+  displayType?: string;
+  releaseMgtReleaseId?: string;
+  releaseMgtDeploymentId?: string;
+  isAutomation?: boolean;
+  envTemplateId?: string;
+}
+
+export default function ConfigureDrawer(props: ConfigureDrawerProps) {
+  if (props.isAutomation) {
+    return <AutomationConfigureDrawer open={props.open} onClose={props.onClose} projectId={props.projectId} componentId={props.componentId} envId={props.envTemplateId ?? props.envId} deploymentTrackId={props.versionId} commitHash={props.commitHash} />;
+  }
+  return <GenericServiceConfigureDrawer {...props} />;
+}
+
+function GenericServiceConfigureDrawer({ open, onClose, orgHandler, projectId, componentId, envId, versionId, componentName, projectHandler, commitHash, releaseId, displayType, releaseMgtReleaseId, releaseMgtDeploymentId }: ConfigureDrawerProps) {
+  const [step, setStep] = useState(1);
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [managingEp, setManagingEp] = useState<GqlEnvEndpoint | null>(null);
+  const [manageDrawerOpen, setManageDrawerOpen] = useState(false);
+  const [manageApimId, setManageApimId] = useState<string | null>(null);
+
+  const handleClose = () => {
+    (document.activeElement as HTMLElement)?.blur();
+    onClose();
+  };
+
+  const { data, isLoading, isError, error } = useGetConfigMgt(orgHandler, projectId, componentId, envId, versionId, componentName, commitHash, open);
+  const { data: endpoints = [] } = useEnvEndpoints(open ? componentId : '', open ? versionId : '', open && releaseId ? releaseId : '');
+  const queryClient = useQueryClient();
+  const save = usePostConfigMgt();
+  const redeploy = useRedeployDeployment();
+
+  const fields = useMemo(() => parseSchema(data?.jsonSchema, data?.configurationMount), [data]);
+
+  const defaultGroup = useMemo(() => {
+    if (!data?.defaultPackage) return '';
+    const [org, pkg] = data.defaultPackage.split('/');
+    return org && pkg ? `${org}.${pkg}` : '';
+  }, [data?.defaultPackage]);
+
+  const groups = useMemo(() => {
+    const byGroup = new Map<string, ParsedField[]>();
+    for (const f of fields) {
+      if (!byGroup.has(f.group)) byGroup.set(f.group, []);
+      byGroup.get(f.group)!.push(f);
+    }
+    return Array.from(byGroup.entries()).map(([group, groupFields]) => ({
+      label: group === defaultGroup ? componentName : group,
+      fields: groupFields,
+    }));
+  }, [fields, defaultGroup, componentName]);
+
+  // Tracks whether we have seeded values for the current open session, so that
+  // subsequent data refetches while the drawer is open don't clobber edits.
+  const seededRef = useRef(false);
+
+  // Reset UI state when the drawer opens; seed immediately if data is already available.
+  useEffect(() => {
+    if (!open) return;
+    setStep(1);
+    setSaveError(null);
+    setManagingEp(null);
+    if (data !== undefined) {
+      setValues(buildInitialValues(data?.configurationMount));
+      seededRef.current = true;
+    } else {
+      seededRef.current = false;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]); // intentionally omit data — seeding on open only
+
+  // Seed values when data arrives for the first time after the drawer opened.
+  useEffect(() => {
+    if (!open || seededRef.current || data === undefined) return;
+    setValues(buildInitialValues(data?.configurationMount));
+    seededRef.current = true;
+  }, [open, data]);
+
+  const handleChange = (key: string, value: string) => {
+    setValues((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleApply = () => {
+    setSaveError(null);
+    if (!commitHash) {
+      setSaveError('Cannot save: commit information is not available.');
+      return;
+    }
+    if (releaseId && !displayType) {
+      setSaveError('Cannot save: component type is not available.');
+      return;
+    }
+    const configs: ConfigMgtSaveItem[] = fields
+      .filter((f) => values[f.key] !== undefined && values[f.key] !== '')
+      .map((f) => {
+        const mountItem = data?.configurationMount?.find((c) => c.configKeyName === f.key);
+        return {
+          configKeyName: f.key,
+          valueType: f.type,
+          valueOrSource: values[f.key],
+          isRequired: f.required,
+          metadata: { isSecret: mountItem?.metadata?.isSecret ?? f.isSensitive },
+          configPackageName: mountItem?.configPackageName ?? f.group.split('.')[1] ?? '',
+          configPackageOrganization: mountItem?.configPackageOrganization ?? f.group.split('.')[0] ?? '',
+        };
+      });
+
+    save.mutate(
+      { orgHandler, projectId, componentId, envId, versionId, moduleName: componentName, commitHash, configs },
+      {
+        onSuccess: () => {
+          if (releaseId) {
+            redeploy.mutate(
+              { orgHandler, componentId, releaseId, type: displayType!, releaseMgtReleaseId, releaseMgtDeploymentId },
+              {
+                onSettled: () => {
+                  queryClient.invalidateQueries({ queryKey: ['envEndpoints'] });
+                  queryClient.invalidateQueries({ queryKey: ['componentDeployment'] });
+                  onClose();
+                },
+              },
+            );
+          } else {
+            onClose();
+          }
+        },
+        onError: (err) => setSaveError(err instanceof Error ? err.message : 'Failed to save configuration'),
+      },
+    );
+  };
+
+  const handleNext = () => {
+    if (step < 2) setStep((s) => s + 1);
+    else handleApply();
+  };
+
+  const handlePrev = () => {
+    if (step > 1) setStep((s) => s - 1);
+    else handleClose();
+  };
+
+  const handleSettings = (ep: GqlEnvEndpoint) => {
+    setManageApimId(ep.apimId ?? null);
+    setManageDrawerOpen(true);
+  };
+
+  // ── Step content ──────────────────────────────────────────────────────────
+
+  const renderConfigurations = () => {
+    if (isLoading) {
+      return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 6 }}>
+          <CircularProgress size={32} />
+        </Box>
+      );
+    }
+    if (isError) {
+      return <Alert severity="error">{error instanceof Error ? error.message : 'Failed to load configuration.'}</Alert>;
+    }
+    if (!fields.length) {
+      return (
+        <Box sx={{ py: 4, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            No configurable values found for this component.
+          </Typography>
+        </Box>
+      );
+    }
+    return (
+      <Box>
+        <DefaultableConfigurablesAccordion groups={groups} values={values} onChange={handleChange} />
+        {saveError && (
+          <Alert severity="error" sx={{ mt: 1 }}>
+            {saveError}
+          </Alert>
+        )}
+      </Box>
+    );
+  };
+
+  const renderEndpoints = () => {
+    if (managingEp) {
+      return <ManageEndpoint ep={managingEp} componentId={componentId} versionId={versionId} releaseId={releaseId ?? ''} onBack={() => setManagingEp(null)} />;
+    }
+    if (!endpoints.length) {
+      return (
+        <Box sx={{ py: 4, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            No endpoints available for this deployment.
+          </Typography>
+        </Box>
+      );
+    }
+    return (
+      <Box>
+        {endpoints.map((ep, idx) => (
+          <EndpointCard key={ep.id} ep={ep} defaultExpanded={idx === 0} onEdit={setManagingEp} onSettings={handleSettings} />
+        ))}
+      </Box>
+    );
+  };
+
+  const stepContent = step === 1 ? renderConfigurations() : renderEndpoints();
+  const prevLabel = step === 1 ? 'Cancel' : 'Back';
+  const isApplying = save.isPending || redeploy.isPending;
+  const nextLabel = step === 2 ? (isApplying ? 'Applying…' : 'Apply') : 'Next';
+  const nextDisabled = (step === 1 && isLoading) || (step === 2 && isApplying);
+  // Hide footer buttons when in ManageEndpoint (it has its own buttons)
+  const showFooter = !(step === 2 && managingEp !== null);
+
+  return (
+    <>
+    <Drawer anchor="right" open={open} onClose={handleClose} variant="temporary" sx={drawerSx}>
+      {/* Header */}
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
+        <Typography variant="h5">Configure</Typography>
+        <IconButton size="small" aria-label="close" onClick={handleClose}>
+          <X size={16} />
+        </IconButton>
+      </Stack>
+
+      {/* Step indicator */}
+      <StepIndicator step={step} />
+
+      {/* Scrollable content */}
+      <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>{stepContent}</Box>
+
+      {/* Footer */}
+      {showFooter && (
+        <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
+          <Button onClick={handlePrev}>{prevLabel}</Button>
+          <Button variant="contained" onClick={handleNext} disabled={nextDisabled} startIcon={step === 2 && isApplying ? <CircularProgress color="inherit" size={16} /> : undefined}>
+            {nextLabel}
+          </Button>
+        </Stack>
+      )}
+    </Drawer>
+
+    <ManageDrawer open={manageDrawerOpen} onClose={() => setManageDrawerOpen(false)} apimId={manageApimId} />
+    </>
   );
 }

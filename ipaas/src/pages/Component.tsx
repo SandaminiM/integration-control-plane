@@ -17,13 +17,15 @@
  */
 
 import { Box, CircularProgress, Divider, PageContent } from '@wso2/oxygen-ui';
-import { Fragment, useState, type JSX } from 'react';
-import { useProject, useProjectByHandler, useComponentByHandler, useEnvironments, useComponentRepository, useCommitHistory } from '../api/queries';
+import { Fragment, useEffect, useState, type JSX } from 'react';
+import { useProject, useProjectByHandler, useComponentByHandler, useEnvironments, useCommitHistory, useComponentEndpoints, useApimApi } from '../api/queries';
+import BusinessInfo from '../components/BusinessInfo';
 import NotFound from '../components/NotFound';
 import { ArtifactDetail } from '../components/ArtifactDetail';
 import Environment from '../components/EnvironmentCard';
 import PromoteButton from '../components/EnvironmentCard/PromoteButton';
 import ComponentHeader from '../components/ComponentHeader';
+import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import type { SelectedArtifact } from '../components/artifact-config';
 import { resourceUrl, broaden, type ComponentScope } from '../nav';
 import { useLoadComponentPermissions } from '../hooks/usePermissionLoader';
@@ -40,8 +42,26 @@ export default function Component(scope: ComponentScope): JSX.Element {
   const projectId = project?.id ?? '';
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
   const { data: environments = [] } = useEnvironments(scope.org, projectId);
-  const { data: repository } = useComponentRepository(projectId, scope.component);
+  const repository = component?.repository ?? null;
   const { data: commits = [] } = useCommitHistory(component?.id ?? '', repository?.branch ?? '');
+
+  const tracks = component?.deploymentTracks ?? [];
+  const [selectedTrackId, setSelectedTrackId] = useState('');
+
+  // Initialise / sync selected track when component loads or tracks change
+  useEffect(() => {
+    if (!tracks.length) return;
+    setSelectedTrackId((prev) => {
+      if (prev && tracks.some((t) => t.id === prev)) return prev;
+      return tracks.find((t) => t.latest)?.id ?? tracks[0].id;
+    });
+  }, [component?.id, tracks.length]);
+
+  const versionId = selectedTrackId;
+
+  const { data: endpoints = [] } = useComponentEndpoints(component?.id ?? '', versionId);
+  const apimId = endpoints.find((e) => e.apimId)?.apimId ?? null;
+  const { data: apimApiInfo } = useApimApi(apimId);
   const [selectedArtifact, setSelectedArtifact] = useState<SelectedArtifact | null>(null);
 
   // Load component permissions using the UUID - only when component is loaded
@@ -70,12 +90,15 @@ export default function Component(scope: ComponentScope): JSX.Element {
         `}
       </style>
       <Box sx={{ position: 'relative', overflow: 'hidden', flex: 1 }}>
+        {/* Deployment track bar */}
+        {tracks.length > 0 && <DeploymentTrackBar tracks={tracks} selectedId={versionId} onChange={setSelectedTrackId} orgHandler={scope.org} projectHandler={project?.handler ?? ''} componentHandler={component.handler} />}
+
         <PageContent>
           {/* Component header */}
-          <ComponentHeader component={component} project={project} repository={repository} latestCommit={latestCommit} orgHandler={scope.org} projectId={projectId} />
+          <ComponentHeader component={component} project={project} repository={repository} latestCommit={latestCommit} orgHandler={scope.org} projectId={projectId} apimId={apimId} />
 
           {/* Latest build card */}
-          <BuildCard componentId={component.id} versionId={component.deploymentTracks?.[0]?.id ?? ''} orgHandler={scope.org} projectId={projectId} latestCommit={latestCommit} />
+          <BuildCard componentId={component.id} versionId={versionId} orgHandler={scope.org} projectId={projectId} latestCommit={latestCommit} />
 
           <Divider sx={{ mb: 3 }} />
 
@@ -84,6 +107,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
             <Fragment key={env.id}>
               <Environment
                 env={env}
+                prevEnv={index > 0 ? environments[index - 1] : undefined}
                 componentId={component.id}
                 projectId={projectId}
                 componentType={component.componentType ?? ''}
@@ -91,25 +115,30 @@ export default function Component(scope: ComponentScope): JSX.Element {
                 componentHandler={component.handler}
                 projectHandler={project?.handler ?? ''}
                 orgHandler={scope.org}
-                versionId={component.deploymentTracks?.[0]?.id ?? ''}
+                versionId={versionId}
                 deploymentPipelineId={project?.defaultDeploymentPipelineId ?? ''}
                 latestCommit={latestCommit}
                 apiId={component.apiId}
               />
               {index < environments.length - 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-                  <PromoteButton
-                    orgHandler={scope.org}
-                    componentId={component.id}
-                    versionId={component.deploymentTracks?.[0]?.id ?? ''}
-                    deploymentPipelineId={project?.defaultDeploymentPipelineId ?? ''}
-                    sourceEnvId={env.id}
-                    targetEnvId={environments[index + 1].id}
-                  />
+                  <PromoteButton orgHandler={scope.org} componentId={component.id} versionId={versionId} deploymentPipelineId={project?.defaultDeploymentPipelineId ?? ''} sourceEnvId={env.id} targetEnvId={environments[index + 1].id} />
                 </Box>
               )}
             </Fragment>
           ))}
+
+          {/* Subscription Plans, Documents, and Compliance cards — shown for API-enabled components */}
+          {apimId && (
+            <BusinessInfo
+              projectId={projectId}
+              componentId={component.id}
+              apimId={apimId}
+              apimApiInfo={apimApiInfo}
+              activePolicies={apimApiInfo?.policies ?? []}
+              docsPath={`/organizations/${scope.org}/projects/${projectId}/components/${component.handler}/documents`}
+            />
+          )}
         </PageContent>
         <ArtifactDetail selected={selectedArtifact} onClose={() => setSelectedArtifact(null)} />
       </Box>

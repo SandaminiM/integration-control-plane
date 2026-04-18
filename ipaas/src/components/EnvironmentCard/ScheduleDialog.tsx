@@ -136,10 +136,8 @@ export default function ScheduleDialog({ open, onClose, onSaveSuccess, onSaveErr
 
   return (
     <Drawer anchor="right" open={open} onClose={handleClose} variant="temporary" sx={drawerSx}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-          Schedule
-        </Typography>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
+        <Typography variant="h5">Schedule</Typography>
         <IconButton size="small" aria-label="close" onClick={handleClose}>
           <X size={16} />
         </IconButton>

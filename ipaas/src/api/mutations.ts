@@ -610,6 +610,10 @@ export interface StopDeploymentInput {
   orgHandler: string;
   componentId: string;
   releaseId: string;
+  /** Component displayType. Defaults to 'scheduledTask' for backward-compat with automation. */
+  type?: string;
+  /** Whether to clear the cron schedule. Defaults to true for automation. */
+  clearCron?: boolean;
 }
 
 export function useStopDeployment() {
@@ -620,13 +624,27 @@ export function useStopDeployment() {
         orgHandler: input.orgHandler,
         componentId: input.componentId,
         releaseId: input.releaseId,
-        type: 'scheduledTask',
-        clearCron: true,
+        type: input.type ?? 'scheduledTask',
+        clearCron: input.clearCron ?? true,
       }).then((d) => d.stopDeployment),
     onSuccess: (_data, input) => {
       qc.invalidateQueries({ queryKey: ['executionConfigs', input.componentId] });
       qc.invalidateQueries({ queryKey: ['componentDeployment'] });
     },
+  });
+}
+
+const REDEPLOY_DEPLOYMENT = `
+  mutation RedeployDeployment($orgHandler: String!, $componentId: String!, $releaseId: String!, $type: String!, $releaseMgtReleaseId: String, $releaseMgtDeploymentId: String) {
+    redeployDeployment(orgHandler: $orgHandler, componentId: $componentId, releaseId: $releaseId, type: $type, applyConfigUpdates: false, releaseMgtReleaseId: $releaseMgtReleaseId, releaseMgtDeploymentId: $releaseMgtDeploymentId)
+  }`;
+
+export function useRedeployDeployment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { orgHandler: string; componentId: string; releaseId: string; type: string; releaseMgtReleaseId?: string; releaseMgtDeploymentId?: string }) =>
+      gql<{ redeployDeployment: string }>(REDEPLOY_DEPLOYMENT, input).then((d) => d.redeployDeployment),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['componentDeployment'] }),
   });
 }
 
@@ -751,6 +769,87 @@ export function useSaveSchemaConfig() {
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['schemaConfig', vars.projectId, vars.componentId, vars.envId, vars.deploymentTrackId] });
+    },
+  });
+}
+
+export interface ConfigMgtSaveItem {
+  configKeyName: string;
+  valueType: string;
+  valueOrSource: string;
+  valueReference?: string;
+  isRequired: boolean;
+  metadata?: { isSecret?: boolean };
+  configPackageName?: string;
+  configPackageOrganization?: string;
+}
+
+interface PostConfigMgtInput {
+  orgHandler: string;
+  projectId: string;
+  componentId: string;
+  envId: string;
+  versionId: string;
+  moduleName: string;
+  commitHash: string;
+  configs: ConfigMgtSaveItem[];
+}
+
+export function usePostConfigMgt() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: PostConfigMgtInput) => {
+      const base = new URL(window.API_CONFIG.graphqlUrl).origin;
+      const url = `${base}/config-mgt/1.0.0/orgs/${encodeURIComponent(input.orgHandler)}/projects/${encodeURIComponent(input.projectId)}/components/${encodeURIComponent(input.componentId)}/envs/${encodeURIComponent(input.envId)}/${encodeURIComponent(input.versionId)}/configurations`;
+      const res = await authenticatedFetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          moduleName: input.moduleName,
+          commitHash: input.commitHash,
+          applyNow: true,
+          operation: 0,
+          sourceUuid: '',
+          configs: input.configs,
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      return res.json().catch(() => ({}));
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['configMgt', vars.orgHandler, vars.projectId, vars.componentId, vars.envId, vars.versionId] });
+    },
+  });
+}
+
+// ── Update endpoint network visibility ──
+
+export function useUpdateEndpoint() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { componentId: string; versionId: string; releaseId: string; endpointId: string; displayName: string; networkVisibilities: string[] }) => {
+      const networkVisibilitiesGql = `[${input.networkVisibilities.map(gqlStr).join(', ')}]`;
+      const query = `mutation Update {
+        updateComponentEndpoint(
+          input: {
+            componentId: ${gqlStr(input.componentId)}
+            versionId: ${gqlStr(input.versionId)}
+            releaseId: ${gqlStr(input.releaseId)}
+            endpointId: ${gqlStr(input.endpointId)}
+            displayName: ${gqlStr(input.displayName)}
+            networkVisibilities: ${networkVisibilitiesGql}
+          }
+        ) {
+          id displayName networkVisibilities visibility invokeUrl publicUrl organizationUrl projectUrl
+        }
+      }`;
+      return gql<{ updateComponentEndpoint: object }>(query, {});
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['envEndpoints'] });
     },
   });
 }

@@ -19,17 +19,21 @@
 import { Card, CardContent } from '@wso2/oxygen-ui';
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useComponentDeployment, useExecutionConfigs, useSchemaConfig, type GqlEnvironment } from '../../api/queries';
+import { useNavigate } from 'react-router';
+import { useComponentDeployment, useEnvEndpoints, useExecutionConfigs, useSchemaConfig, type GqlEnvironment, type GqlEnvEndpoint } from '../../api/queries';
 import { getOrgUuidFromToken } from '../../auth/tokenManager';
-import { useTriggerComponent } from '../../api/mutations';
+import { useTriggerComponent, useStopDeployment, useRedeployDeployment } from '../../api/mutations';
+import { GENERIC_SERVICE_TYPES } from '../../constants/integrations';
 import { nextCronRunMs, formatTimeUntil, describeCron } from '../../utils/cronUtils';
 import EnvironmentCardHeader from './EnvironmentCardHeader';
 import EnvironmentCardBody from './EnvironmentCardBody';
 import RunWithArgsDialog from './RunWithArgsDialog';
 import ConfigureDrawer from './ConfigureDrawer';
+import ServiceLogsDrawer from './ServiceLogsDrawer';
 
 interface EnvironmentProps {
   env: GqlEnvironment;
+  prevEnv?: GqlEnvironment;
   componentId: string;
   projectId: string;
   componentType: string;
@@ -43,19 +47,60 @@ interface EnvironmentProps {
   apiId?: string;
 }
 
-export default function Environment({ env, componentId, projectId, componentType: _componentType, displayType, componentHandler, projectHandler, orgHandler, versionId, deploymentPipelineId, latestCommit, apiId }: EnvironmentProps) {
+export default function Environment({ env, prevEnv, componentId, projectId, componentType: _componentType, displayType, componentHandler, projectHandler, orgHandler, versionId, deploymentPipelineId, latestCommit, apiId }: EnvironmentProps) {
   const isAutomation = (displayType ?? '').toLowerCase() === 'scheduledtask';
+  const isGenericService = GENERIC_SERVICE_TYPES.has(displayType ?? '');
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [configureOpen, setConfigureOpen] = useState(false);
-  const [notification, setNotification] = useState<{ text: string; severity: 'success' | 'error' } | null>(null);
+  const [logsOpen, setLogsOpen] = useState(false);
+const [notification, setNotification] = useState<{ text: string; severity: 'success' | 'error' } | null>(null);
   const [pendingTriggerTime, setPendingTriggerTime] = useState<number | null>(null);
   const [pendingTriggerArgs, setPendingTriggerArgs] = useState<string[] | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [runWithArgsOpen, setRunWithArgsOpen] = useState(false);
   const trigger = useTriggerComponent();
+  const stopMutation = useStopDeployment();
+  const redeployMutation = useRedeployDeployment();
   const envOrgUuid = getOrgUuidFromToken() ?? '';
-  const { data: envDeployment, isLoading: loadingEnvDeployment } = useComponentDeployment(isAutomation ? orgHandler : '', isAutomation ? envOrgUuid : '', isAutomation ? componentId : '', isAutomation ? versionId : '', isAutomation ? env.id : '');
+
+  const fetchDeployment = isAutomation || isGenericService;
+  // Poll for transitional states or briefly after explicit stop/redeploy actions
+  const [serviceRefetchInterval, setServiceRefetchInterval] = useState<number | false>(false);
+  const [shouldPollOnce, setShouldPollOnce] = useState(false);
+  const { data: envDeployment, isLoading: loadingEnvDeployment } = useComponentDeployment(
+    fetchDeployment ? orgHandler : '',
+    fetchDeployment ? envOrgUuid : '',
+    fetchDeployment ? componentId : '',
+    fetchDeployment ? versionId : '',
+    fetchDeployment ? env.id : '',
+    { refetchInterval: isGenericService ? serviceRefetchInterval : undefined },
+  );
+
+  const deploymentStatusV2 = envDeployment?.deploymentStatusV2 ?? null;
+
+  // Poll only while transitional (IN_PROGRESS) or briefly after explicit user actions
+  useEffect(() => {
+    if (!isGenericService) return;
+    const isTransitional = deploymentStatusV2 === 'IN_PROGRESS';
+    setServiceRefetchInterval(isTransitional || shouldPollOnce ? 8000 : false);
+    // Clear the once-flag when status has settled to a stable state
+    if (shouldPollOnce && !isTransitional) {
+      setShouldPollOnce(false);
+    }
+  }, [isGenericService, deploymentStatusV2, shouldPollOnce]);
+
   const envReleaseId = envDeployment?.releaseId ?? '';
+
+  // Per-env endpoint URLs for generic services, filtered by releaseId
+  const { data: envEndpoints = [] } = useEnvEndpoints(isGenericService ? componentId : '', isGenericService ? versionId : '', isGenericService ? envReleaseId : '');
+
+  // Previous env deployment + endpoints (for swagger comparison)
+  const prevEnvEnabled = isGenericService && !!prevEnv;
+  const { data: prevEnvDeployment } = useComponentDeployment(prevEnvEnabled ? orgHandler : '', prevEnvEnabled ? envOrgUuid : '', prevEnvEnabled ? componentId : '', prevEnvEnabled ? versionId : '', prevEnvEnabled ? prevEnv!.id : '');
+  const prevEnvReleaseId = prevEnvDeployment?.releaseId ?? '';
+  const { data: prevEnvEndpoints = [] } = useEnvEndpoints(prevEnvEnabled && !!prevEnvReleaseId ? componentId : '', prevEnvEnabled && !!prevEnvReleaseId ? versionId : '', prevEnvEnabled && !!prevEnvReleaseId ? prevEnvReleaseId : '');
+
   const { data: scheduleConfig } = useExecutionConfigs(isAutomation ? componentId : '', isAutomation ? envReleaseId : '');
   const scheduleDescription = scheduleConfig?.cronjobFrequency ? `${describeCron(scheduleConfig.cronjobFrequency)}, in time zone ${scheduleConfig.cronjobTimezone || 'UTC'}` : null;
 
@@ -140,11 +185,39 @@ export default function Environment({ env, componentId, projectId, componentType
     );
   };
 
+  const handleStop = () => {
+    stopMutation.mutate(
+      { orgHandler, componentId, releaseId: envReleaseId, type: displayType ?? '', clearCron: false },
+      {
+        onSuccess: () => { setShouldPollOnce(true); setNotification({ text: 'Deployment stopped successfully', severity: 'success' }); },
+        onError: (err) => setNotification({ text: err instanceof Error ? err.message : 'Failed to stop deployment', severity: 'error' }),
+      },
+    );
+  };
+
+  const handleRedeploy = () => {
+    redeployMutation.mutate(
+      {
+        orgHandler,
+        componentId,
+        releaseId: envReleaseId,
+        type: displayType ?? '',
+        releaseMgtReleaseId: envDeployment?.releaseMgtDeployment?.releaseMgtReleaseId,
+        releaseMgtDeploymentId: envDeployment?.releaseMgtDeployment?.releaseMgtDeploymentId,
+      },
+      {
+        onSuccess: () => { setShouldPollOnce(true); setNotification({ text: 'Deployment started successfully', severity: 'success' }); },
+        onError: (err) => setNotification({ text: err instanceof Error ? err.message : 'Failed to start deployment', severity: 'error' }),
+      },
+    );
+  };
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['componentDeployment'] }),
+        queryClient.invalidateQueries({ queryKey: ['envEndpoints'] }),
         queryClient.invalidateQueries({ queryKey: ['executionConfigs'] }),
         queryClient.invalidateQueries({ queryKey: ['taskExecutions'] }),
         queryClient.invalidateQueries({ queryKey: ['schemaConfig'] }),
@@ -162,6 +235,11 @@ export default function Environment({ env, componentId, projectId, componentType
           envCritical={env.critical}
           latestCommit={latestCommit}
           isAutomation={isAutomation}
+          isGenericService={isGenericService}
+          deploymentStatusV2={deploymentStatusV2}
+          isActionPending={stopMutation.isPending || redeployMutation.isPending}
+          onStop={handleStop}
+          onRedeploy={handleRedeploy}
           nextRunLabel={nextRunLabel}
           isRefreshing={isRefreshing}
           deployTrackIsPending={trigger.isPending}
@@ -187,13 +265,18 @@ export default function Environment({ env, componentId, projectId, componentType
           onRunWithArgs={() => setRunWithArgsOpen(true)}
           onRefresh={handleRefresh}
           onConfigure={() => setConfigureOpen(true)}
+          onViewLogs={isGenericService ? () => setLogsOpen(true) : undefined}
+          onTest={isGenericService ? () => navigate(`/organizations/${orgHandler}/projects/${projectId}/components/${componentHandler}/test/console`) : undefined}
           hasMissingConfigs={hasMissingConfigs}
         />
 
         <EnvironmentCardBody
           isAutomation={isAutomation}
+          isGenericService={isGenericService}
           loadingEnvDeployment={loadingEnvDeployment}
           hasDeployment={!!envDeployment}
+          deploymentStatusV2={deploymentStatusV2}
+          envEndpoints={envEndpoints}
           scheduleDescription={scheduleDescription}
           releaseId={envReleaseId}
           projectId={projectId}
@@ -217,7 +300,10 @@ export default function Environment({ env, componentId, projectId, componentType
           }}
           envId={env.id}
           envName={env.name}
+          apimEnvId={env.apimEnvId}
           apiId={apiId ?? componentId}
+          prevEnvEndpoints={prevEnvEndpoints as GqlEnvEndpoint[]}
+          prevEnvName={prevEnv?.name}
           notification={notification}
         />
       </CardContent>
@@ -238,7 +324,35 @@ export default function Environment({ env, componentId, projectId, componentType
         releaseId={envReleaseId}
       />
 
-      <ConfigureDrawer open={configureOpen} onClose={() => setConfigureOpen(false)} projectId={projectId} componentId={componentId} envId={envTemplateId} deploymentTrackId={versionId} commitHash={latestCommit?.sha} />
+      <ConfigureDrawer
+        open={configureOpen}
+        onClose={() => setConfigureOpen(false)}
+        orgHandler={orgHandler}
+        projectId={projectId}
+        componentId={componentId}
+        envId={env.id}
+        versionId={versionId}
+        componentName={componentHandler}
+        projectHandler={projectHandler}
+        commitHash={latestCommit?.sha}
+        releaseId={envReleaseId}
+        displayType={displayType}
+        releaseMgtReleaseId={envDeployment?.releaseMgtDeployment?.releaseMgtReleaseId}
+        releaseMgtDeploymentId={envDeployment?.releaseMgtDeployment?.releaseMgtDeploymentId}
+        isAutomation={isAutomation}
+        envTemplateId={envTemplateId}
+      />
+
+      {isGenericService && (
+        <ServiceLogsDrawer
+          open={logsOpen}
+          onClose={() => setLogsOpen(false)}
+          componentId={componentId}
+          environmentId={env.id}
+          envName={env.name}
+          versionId={versionId}
+        />
+      )}
     </Card>
   );
 }

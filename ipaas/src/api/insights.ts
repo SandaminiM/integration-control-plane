@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import { useQuery } from '@tanstack/react-query';
 import { authenticatedFetch } from '../auth/tokenManager';
 
 function getInsightsQueryUrl(): string | null {
@@ -66,6 +67,15 @@ export async function fetchInsightsEnvironments(orgUuid: string, projectId: stri
     { org: { orgId: orgUuid }, projectId },
   );
   return result?.data?.listEnvironments ?? [];
+}
+
+export function useInsightsEnvironments(orgUuid: string, projectId: string) {
+  return useQuery({
+    queryKey: ['insightsEnvironments', orgUuid, projectId],
+    queryFn: () => fetchInsightsEnvironments(orgUuid, projectId),
+    enabled: !!orgUuid && !!projectId,
+    staleTime: 5 * 60_000,
+  });
 }
 
 function getEnvironmentIds(env: InsightsEnvironment): string[] {

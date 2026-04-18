@@ -37,8 +37,15 @@ const STAGES = [
   { key: 'deploy' as const, label: 'Finalization' },
 ];
 
-function getStepStatus(logs: BuildRunLogs | null, key: 'init' | 'build' | 'deploy'): 'success' | 'error' | 'active' | 'pending' {
-  const stage = logs?.[key];
+function getStepStatus(logs: BuildRunLogs | null | undefined, key: 'init' | 'build' | 'deploy', conclusion?: string): 'success' | 'error' | 'active' | 'pending' {
+  if (logs === undefined) return 'pending';
+  if (logs === null) {
+    // Logs unavailable (expired/error) — infer from overall build conclusion
+    if (conclusion === 'success') return 'success';
+    if (conclusion === 'failure' || conclusion === 'failed') return 'error';
+    return 'pending';
+  }
+  const stage = logs[key];
   if (!stage) return 'pending';
   if (stage.status === 'in_progress') return 'active';
   if (stage.status === 'completed') {
@@ -48,8 +55,12 @@ function getStepStatus(logs: BuildRunLogs | null, key: 'init' | 'build' | 'deplo
   return 'pending';
 }
 
-function activeStepIndex(logs: BuildRunLogs | null): number {
-  if (!logs) return 0;
+function activeStepIndex(logs: BuildRunLogs | null | undefined, conclusion?: string): number {
+  if (logs === undefined) return 0;
+  if (logs === null) {
+    if (conclusion === 'success') return 3;
+    return 0;
+  }
   const init = getStepStatus(logs, 'init');
   const build = getStepStatus(logs, 'build');
   if (init === 'active') return 0;
@@ -69,8 +80,9 @@ function safeAtob(encoded: string): string {
 }
 
 // Returns null = no logs available (expired), '' = still loading, string = actual content
-function buildLogText(logs: BuildRunLogs | null): string | null {
-  if (!logs) return '';
+function buildLogText(logs: BuildRunLogs | null | undefined): string | null {
+  if (logs === undefined) return ''; // not yet loaded → "Waiting..."
+  if (logs === null) return null; // explicitly unavailable (410/error) → "No log data available"
 
   const parts: string[] = [];
   let anyLogFieldPresent = false;
@@ -113,9 +125,8 @@ export default function BuildCard({ componentId, versionId, orgHandler, projectI
   const { data: deployments = [] } = useDeploymentStatus(componentId, versionId);
   const lastBuild = deployments[0] ?? null;
 
-  const [expanded, setExpanded] = useState(true);
   const [showLogs, setShowLogs] = useState(false);
-  const [logs, setLogs] = useState<BuildRunLogs | null>(null);
+  const [logs, setLogs] = useState<BuildRunLogs | null | undefined>(undefined);
   const [logsLoading, setLogsLoading] = useState(false);
   const logsRef = useRef<HTMLPreElement>(null);
   const mountedRef = useRef(true);
@@ -127,10 +138,22 @@ export default function BuildCard({ componentId, versionId, orgHandler, projectI
     };
   }, []);
 
+  // Collapse when build is successfully completed; expand for failed or in-progress. User can override.
+  const isSuccess = !!lastBuild && lastBuild.status === 'completed' && lastBuild.conclusion === 'success';
+  const [expandedOverride, setExpandedOverride] = useState<boolean | null>(null);
+
+  // Reset override whenever the build changes so auto-behavior applies to each new build
+  useEffect(() => {
+    setExpandedOverride(null);
+  }, [lastBuild?.id]);
+
+  const expanded = expandedOverride !== null ? expandedOverride : !isSuccess;
+  const toggleExpanded = () => setExpandedOverride(!expanded);
+
   // Reset log view when build changes
   useEffect(() => {
     setShowLogs(false);
-    setLogs(null);
+    setLogs(undefined);
   }, [lastBuild?.id]);
 
   const runId = lastBuild?.buildRef ?? String(lastBuild?.id ?? '');
@@ -141,7 +164,7 @@ export default function BuildCard({ componentId, versionId, orgHandler, projectI
     if (!expanded || !runId || !orgHandler || !projectId || !componentId) return;
 
     let cancelled = false;
-    if (showLogs && !logs) setLogsLoading(true);
+    if (showLogs && logs === undefined) setLogsLoading(true);
 
     const load = async () => {
       const data = await fetchBuildRunLogs(orgHandler, projectId, componentId, runId);
@@ -256,14 +279,14 @@ export default function BuildCard({ componentId, versionId, orgHandler, projectI
             size="small"
             startIcon={<List size={14} />}
             onClick={() => {
-              if (!expanded) setExpanded(true);
+              if (!expanded) setExpandedOverride(true);
               setShowLogs((v) => !v);
             }}
             sx={{ textTransform: 'none', fontSize: '0.75rem' }}>
             {showLogs ? 'Hide Logs' : 'View Logs'}
           </Button>
           <Tooltip title={expanded ? 'Collapse' : 'Expand'}>
-            <IconButton size="small" onClick={() => setExpanded((v) => !v)}>
+            <IconButton size="small" onClick={toggleExpanded}>
               {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </IconButton>
           </Tooltip>
@@ -275,9 +298,9 @@ export default function BuildCard({ componentId, versionId, orgHandler, projectI
         <Divider sx={{ mb: 2 }} />
 
         {/* Horizontal stepper */}
-        <Stepper activeStep={activeStepIndex(logs)} alternativeLabel nonLinear sx={{ mb: showLogs ? 2 : 0 }}>
+        <Stepper activeStep={activeStepIndex(logs, conclusion)} alternativeLabel nonLinear sx={{ mb: showLogs ? 2 : 0 }}>
           {STAGES.map(({ key, label }) => {
-            const stepStatus = getStepStatus(logs, key);
+            const stepStatus = getStepStatus(logs, key, conclusion);
             let icon: React.ReactNode;
             if (stepStatus === 'active') icon = <InProgressIcon size={24} />;
             else if (stepStatus === 'success') icon = <SuccessIcon size={24} />;
@@ -297,7 +320,7 @@ export default function BuildCard({ componentId, versionId, orgHandler, projectI
         {showLogs && (
           <>
             <Divider sx={{ mb: 1.5 }} />
-            {logsLoading && !logs ? (
+            {logsLoading && logs === undefined ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
                 <CircularProgress size={24} />
               </Box>
