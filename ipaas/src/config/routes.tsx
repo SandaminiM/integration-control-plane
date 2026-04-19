@@ -56,7 +56,6 @@ import ComponentGroupDetail from '../pages/ComponentGroupDetail';
 import Profile from '../pages/Profile';
 import ForceChangePassword from '../pages/ForceChangePassword';
 import ComingSoon from '../pages/ComingSoon';
-import ManageLoggers from '../pages/ManageLoggers';
 import Alerts from '../pages/Alerts';
 import { ScopeResolver, generateMatrixRoutes, withScope, type Matrix } from '../nav';
 import { createElement } from 'react';

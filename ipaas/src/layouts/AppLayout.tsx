@@ -50,7 +50,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { JSX } from 'react';
 import { useNavigate, Outlet, NavLink } from 'react-router';
 import Logo from '../components/Logo';
-import { BarChart3, Bell, ChevronDown, ChevronRight, Hammer, Layers, LayoutDashboard, LogOut, Plus, ScanEye, ScrollText, Search, Server, Shield, Sliders, User as UserIcon, X } from '@wso2/oxygen-ui-icons-react';
+import { BarChart3, Bell, ChevronDown, ChevronRight, Hammer, Layers, LayoutDashboard, LogOut, Plus, ScanEye, ScrollText, Search, Server, Shield, User as UserIcon, X } from '@wso2/oxygen-ui-icons-react';
 import FeaturePreviewModal from '../components/FeaturePreview/FeaturePreviewModal';
 import { useProject, useProjectByHandler, useProjects, useComponents, useOrgs } from '../api/queries';
 import { SUPPORTED_DISPLAY_TYPES } from '../constants/integrations';

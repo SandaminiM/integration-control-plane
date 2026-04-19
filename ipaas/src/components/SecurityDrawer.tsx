@@ -16,7 +16,31 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Checkbox, CircularProgress, Collapse, Divider, Drawer, FormControlLabel, IconButton, InputAdornment, MenuItem, Select, Stack, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import {
+  Alert,
+  Box,
+  Button,
+  Checkbox,
+  CircularProgress,
+  Collapse,
+  Divider,
+  Drawer,
+  FormControlLabel,
+  IconButton,
+  InputAdornment,
+  MenuItem,
+  Select,
+  Stack,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsLeft, ChevronsRight, Plus, Search, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -28,13 +52,13 @@ const API_KEY = 'api_key';
 const ITEMS_PER_PAGE = 5;
 
 const METHOD_COLORS: Record<string, { badgeBg: string }> = {
-  GET:     { badgeBg: '#0095FF' },
-  POST:    { badgeBg: '#36B475' },
-  PUT:     { badgeBg: '#FF9D52' },
-  DELETE:  { badgeBg: '#FE523C' },
-  PATCH:   { badgeBg: '#01CEB5' },
+  GET: { badgeBg: '#0095FF' },
+  POST: { badgeBg: '#36B475' },
+  PUT: { badgeBg: '#FF9D52' },
+  DELETE: { badgeBg: '#FE523C' },
+  PATCH: { badgeBg: '#01CEB5' },
   OPTIONS: { badgeBg: '#0566C8' },
-  HEAD:    { badgeBg: '#7B55D5' },
+  HEAD: { badgeBg: '#7B55D5' },
 };
 const DEFAULT_METHOD_COLORS = { badgeBg: '#9e9e9e' };
 
@@ -96,7 +120,9 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
       }
       setLoading(false);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [open, apimId]);
 
   const toggleScheme = (scheme: string) => {
@@ -263,25 +289,18 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
                           const key = `${verb}-${op.target}`;
                           const colors = METHOD_COLORS[verb] ?? DEFAULT_METHOD_COLORS;
                           const isExpanded = expandedOps.has(key);
-                          const toggle = () => setExpandedOps((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(key)) next.delete(key); else next.add(key);
-                            return next;
-                          });
+                          const toggle = () =>
+                            setExpandedOps((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(key)) next.delete(key);
+                              else next.add(key);
+                              return next;
+                            });
                           return (
                             <Box key={key} sx={{ border: `0.5px solid ${colors.badgeBg}`, borderRadius: 0.5, overflow: 'hidden' }}>
-                              <Stack
-                                direction="row"
-                                alignItems="center"
-                                gap={1.5}
-                                onClick={toggle}
-                                sx={{ px: 1, py: 0.75, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}>
-                                <Box sx={{ bgcolor: colors.badgeBg, color: '#fff', fontWeight: 700, fontSize: '11px', minWidth: 64, px: 1, py: 0.5, borderRadius: 0.5, textAlign: 'center', flexShrink: 0 }}>
-                                  {verb}
-                                </Box>
-                                <Typography sx={{ flex: 1, fontSize: '13px', fontWeight: 500, fontFamily: 'monospace', color: '#222228', wordBreak: 'break-word' }}>
-                                  {op.target}
-                                </Typography>
+                              <Stack direction="row" alignItems="center" gap={1.5} onClick={toggle} sx={{ px: 1, py: 0.75, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}>
+                                <Box sx={{ bgcolor: colors.badgeBg, color: '#fff', fontWeight: 700, fontSize: '11px', minWidth: 64, px: 1, py: 0.5, borderRadius: 0.5, textAlign: 'center', flexShrink: 0 }}>{verb}</Box>
+                                <Typography sx={{ flex: 1, fontSize: '13px', fontWeight: 500, fontFamily: 'monospace', color: '#222228', wordBreak: 'break-word' }}>{op.target}</Typography>
                                 {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                               </Stack>
                               <Collapse in={isExpanded}>
@@ -289,31 +308,43 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
                                   <Stack gap={1.5}>
                                     {/* Security toggle */}
                                     <Stack direction="row" alignItems="center" gap={1}>
-                                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Security</Typography>
+                                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        Security
+                                      </Typography>
                                       <Tooltip title="Enable or disable security for this resource">
-                                        <Box component="span" sx={{ fontSize: 12, color: 'text.secondary', cursor: 'help' }}>?</Box>
+                                        <Box component="span" sx={{ fontSize: 12, color: 'text.secondary', cursor: 'help' }}>
+                                          ?
+                                        </Box>
                                       </Tooltip>
                                       <Switch
                                         size="small"
                                         checked={(operationAuthTypes[key] ?? 'Application & Application User') !== 'None'}
-                                        onChange={(e) => setOperationAuthTypes((prev) => ({
-                                          ...prev,
-                                          [key]: e.target.checked ? 'Application & Application User' : 'None',
-                                        }))}
+                                        onChange={(e) =>
+                                          setOperationAuthTypes((prev) => ({
+                                            ...prev,
+                                            [key]: e.target.checked ? 'Application & Application User' : 'None',
+                                          }))
+                                        }
                                         color="primary"
                                       />
                                     </Stack>
                                     {/* Permissions (Scopes) */}
                                     <Stack gap={0.5}>
-                                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Permissions (Scopes)</Typography>
+                                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        Permissions (Scopes)
+                                      </Typography>
                                       {op.scopes?.length ? (
                                         <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ mt: 0.5 }}>
                                           {op.scopes.map((s) => (
-                                            <Box key={s} sx={{ bgcolor: 'action.selected', borderRadius: 0.75, px: 1, py: 0.25, fontSize: '0.75rem' }}>{s}</Box>
+                                            <Box key={s} sx={{ bgcolor: 'action.selected', borderRadius: 0.75, px: 1, py: 0.25, fontSize: '0.75rem' }}>
+                                              {s}
+                                            </Box>
                                           ))}
                                         </Stack>
                                       ) : (
-                                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>No permissions added</Typography>
+                                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                                          No permissions added
+                                        </Typography>
                                       )}
                                     </Stack>
                                   </Stack>

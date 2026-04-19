@@ -53,7 +53,9 @@ export default function ComplianceCard({ projectId, componentId, apimId }: Props
   return (
     <Card sx={{ display: 'flex', flexDirection: 'column' }}>
       <Stack direction="row" alignItems="center" sx={{ px: 2, pt: 2, pb: 1 }}>
-        <Typography variant="h6">Compliance Summary</Typography>
+        <Typography variant="h6" component="h3">
+          Compliance Summary
+        </Typography>
       </Stack>
       <Divider />
       <CardContent sx={{ flexGrow: 1, pb: (theme) => `${theme.spacing(2)} !important` }}>
@@ -73,10 +75,10 @@ export default function ComplianceCard({ projectId, componentId, apimId }: Props
             {/* Stacked horizontal bar */}
             <Box sx={{ display: 'flex', height: 10, borderRadius: 1, overflow: 'hidden', bgcolor: 'divider' }}>
               <Tooltip title={`Adhered: ${adheredPct.toFixed(1)}%`}>
-                <Box sx={{ width: `${adheredPct}%`, bgcolor: '#36b475', transition: 'width 0.4s' }} />
+                <Box role="img" aria-label={`Adhered: ${adheredPct.toFixed(1)}%`} sx={{ width: `${adheredPct}%`, bgcolor: '#36b475', transition: 'width 0.4s' }} />
               </Tooltip>
               <Tooltip title={`Violated: ${violatedPct.toFixed(1)}%`}>
-                <Box sx={{ width: `${violatedPct}%`, bgcolor: '#e0e0e0', transition: 'width 0.4s' }} />
+                <Box role="img" aria-label={`Violated: ${violatedPct.toFixed(1)}%`} sx={{ width: `${violatedPct}%`, bgcolor: '#e0e0e0', transition: 'width 0.4s' }} />
               </Tooltip>
             </Box>
 

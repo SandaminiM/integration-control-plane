@@ -16,26 +16,7 @@
  * under the License.
  */
 
-import {
-  Alert,
-  Box,
-  Button,
-  Checkbox,
-  CircularProgress,
-  Collapse,
-  Divider,
-  Drawer,
-  FormControlLabel,
-  FormHelperText,
-  IconButton,
-  InputAdornment,
-  MenuItem,
-  Radio,
-  RadioGroup,
-  Stack,
-  TextField,
-  Typography,
-} from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Checkbox, CircularProgress, Collapse, Divider, Drawer, FormControlLabel, FormHelperText, IconButton, InputAdornment, MenuItem, Radio, RadioGroup, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronUp, Search, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useReducer, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -226,17 +207,21 @@ function RateLimitInputs({ policy, onChange }: { policy: RateLimitPolicy; onChan
 
 // ── Method badge (matches SwaggerOperationsList) ───────────────────────────────
 
-interface MethodColors { cardBg: string; border: string; badgeBg: string; }
+interface MethodColors {
+  cardBg: string;
+  border: string;
+  badgeBg: string;
+}
 
 const METHOD_COLORS: Record<string, MethodColors> = {
-  GET:     { cardBg: '#F4FAFF',                  border: '#C1E4FC',                  badgeBg: '#0095FF' },
-  POST:    { cardBg: '#F5FFF7',                  border: '#CDF1DF',                  badgeBg: '#36B475' },
-  PUT:     { cardBg: '#FFFBF6',                  border: '#FEE6C8',                  badgeBg: '#FF9D52' },
-  DELETE:  { cardBg: 'rgba(252,237,237,0.5)',     border: 'rgba(248,194,194,0.69)',    badgeBg: '#FE523C' },
-  PATCH:   { cardBg: 'rgba(1,206,181,0.08)',      border: 'rgba(1,206,181,0.28)',      badgeBg: '#01CEB5' },
-  OPTIONS: { cardBg: 'rgba(5,102,200,0.07)',      border: 'rgba(5,102,200,0.2)',       badgeBg: '#0566C8' },
-  HEAD:    { cardBg: 'rgba(123,85,213,0.08)',     border: 'rgba(123,85,213,0.18)',     badgeBg: '#7B55D5' },
-  TRACE:   { cardBg: '#f5f5f5',                  border: '#d0d0d0',                  badgeBg: '#785446' },
+  GET: { cardBg: '#F4FAFF', border: '#C1E4FC', badgeBg: '#0095FF' },
+  POST: { cardBg: '#F5FFF7', border: '#CDF1DF', badgeBg: '#36B475' },
+  PUT: { cardBg: '#FFFBF6', border: '#FEE6C8', badgeBg: '#FF9D52' },
+  DELETE: { cardBg: 'rgba(252,237,237,0.5)', border: 'rgba(248,194,194,0.69)', badgeBg: '#FE523C' },
+  PATCH: { cardBg: 'rgba(1,206,181,0.08)', border: 'rgba(1,206,181,0.28)', badgeBg: '#01CEB5' },
+  OPTIONS: { cardBg: 'rgba(5,102,200,0.07)', border: 'rgba(5,102,200,0.2)', badgeBg: '#0566C8' },
+  HEAD: { cardBg: 'rgba(123,85,213,0.08)', border: 'rgba(123,85,213,0.18)', badgeBg: '#7B55D5' },
+  TRACE: { cardBg: '#f5f5f5', border: '#d0d0d0', badgeBg: '#785446' },
 };
 const DEFAULT_METHOD_COLORS: MethodColors = { cardBg: '#f5f5f5', border: '#e0e0e0', badgeBg: '#9e9e9e' };
 
@@ -282,7 +267,10 @@ export default function ManageDrawer({ open, onClose, apimId }: ManageDrawerProp
 
   const validateTimeout = (val: string) => {
     const n = Number(val);
-    if (!val || isNaN(n) || n <= 0) { setTimeoutError('Timeout must be a positive number'); return false; }
+    if (!val || isNaN(n) || n <= 0) {
+      setTimeoutError('Timeout must be a positive number');
+      return false;
+    }
     setTimeoutError(null);
     return true;
   };
@@ -339,9 +327,7 @@ export default function ManageDrawer({ open, onClose, apimId }: ManageDrawerProp
   };
 
   const operations = apimApiInfo?.operations ?? [];
-  const filteredOps = operations.filter((op) =>
-    `${op.verb} ${op.target}`.toLowerCase().includes(opSearch.toLowerCase()),
-  );
+  const filteredOps = operations.filter((op) => `${op.verb} ${op.target}`.toLowerCase().includes(opSearch.toLowerCase()));
 
   return (
     <Drawer anchor="right" open={open} onClose={handleClose} variant="temporary" sx={drawerSx}>
@@ -376,18 +362,11 @@ export default function ManageDrawer({ open, onClose, apimId }: ManageDrawerProp
 
             {/* CORS */}
             <Section title="CORS">
-              <FormControlLabel
-                control={<Checkbox checked={state.corsEnabled} onChange={(e) => dispatch({ corsEnabled: e.target.checked })} size="small" />}
-                label={<Typography variant="body2">Enable</Typography>}
-                sx={{ mb: 1 }}
-              />
+              <FormControlLabel control={<Checkbox checked={state.corsEnabled} onChange={(e) => dispatch({ corsEnabled: e.target.checked })} size="small" />} label={<Typography variant="body2">Enable</Typography>} sx={{ mb: 1 }} />
               <Collapse in={state.corsEnabled} unmountOnExit>
                 <Box sx={{ mt: 1 }}>
                   <ConfigRow label="Access Control Allow Origin">
-                    <FormControlLabel
-                      control={<Checkbox checked={state.allowAllOrigins} onChange={(e) => dispatch({ allowAllOrigins: e.target.checked })} size="small" />}
-                      label={<Typography variant="body2">Allow All</Typography>}
-                    />
+                    <FormControlLabel control={<Checkbox checked={state.allowAllOrigins} onChange={(e) => dispatch({ allowAllOrigins: e.target.checked })} size="small" />} label={<Typography variant="body2">Allow All</Typography>} />
                     {!state.allowAllOrigins && (
                       <Box sx={{ mt: 0.5 }}>
                         <TagInput values={state.origins} onChange={(v) => dispatch({ origins: v })} placeholder="Enter origins and press Enter" />
@@ -410,10 +389,7 @@ export default function ManageDrawer({ open, onClose, apimId }: ManageDrawerProp
             {/* Rate Limiting */}
             <Section title="Rate Limiting">
               <ConfigRow label="Rate Limiting Level">
-                <RadioGroup
-                  row
-                  value={state.rateLimitLevel}
-                  onChange={(e) => dispatch({ rateLimitLevel: e.target.value as RateLimitLevel })}>
+                <RadioGroup row value={state.rateLimitLevel} onChange={(e) => dispatch({ rateLimitLevel: e.target.value as RateLimitLevel })}>
                   <FormControlLabel value="UNLIMITED" control={<Radio size="small" />} label={<Typography variant="body2">Unlimited</Typography>} />
                   <FormControlLabel value="API_LEVEL" control={<Radio size="small" />} label={<Typography variant="body2">API Level</Typography>} />
                   <FormControlLabel value="RESOURCE_LEVEL" control={<Radio size="small" />} label={<Typography variant="body2">Resource Level</Typography>} />
@@ -460,33 +436,23 @@ export default function ManageDrawer({ open, onClose, apimId }: ManageDrawerProp
                       const policy = state.resourceLevelPolicies[key] ?? DEFAULT_RATE_LIMIT;
                       const colors = METHOD_COLORS[op.verb.toUpperCase()] ?? DEFAULT_METHOD_COLORS;
                       const isExpanded = expandedOps.has(key);
-                      const toggle = () => setExpandedOps((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(key)) next.delete(key); else next.add(key);
-                        return next;
-                      });
+                      const toggle = () =>
+                        setExpandedOps((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(key)) next.delete(key);
+                          else next.add(key);
+                          return next;
+                        });
                       return (
                         <Box key={key} sx={{ border: `0.5px solid ${colors.badgeBg}`, borderRadius: 0.5, overflow: 'hidden', mb: 1 }}>
-                          <Stack
-                            direction="row"
-                            alignItems="center"
-                            gap={1.5}
-                            onClick={toggle}
-                            sx={{ px: 1, py: 0.75, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}>
-                            <Box sx={{ bgcolor: colors.badgeBg, color: '#fff', fontWeight: 700, fontSize: '11px', minWidth: 64, px: 1, py: 0.5, borderRadius: 0.5, textAlign: 'center', flexShrink: 0 }}>
-                              {op.verb.toUpperCase()}
-                            </Box>
-                            <Typography sx={{ flex: 1, fontSize: '13px', fontWeight: 500, fontFamily: 'monospace', color: '#222228', wordBreak: 'break-word' }}>
-                              {op.target}
-                            </Typography>
+                          <Stack direction="row" alignItems="center" gap={1.5} onClick={toggle} sx={{ px: 1, py: 0.75, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}>
+                            <Box sx={{ bgcolor: colors.badgeBg, color: '#fff', fontWeight: 700, fontSize: '11px', minWidth: 64, px: 1, py: 0.5, borderRadius: 0.5, textAlign: 'center', flexShrink: 0 }}>{op.verb.toUpperCase()}</Box>
+                            <Typography sx={{ flex: 1, fontSize: '13px', fontWeight: 500, fontFamily: 'monospace', color: '#222228', wordBreak: 'break-word' }}>{op.target}</Typography>
                             {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                           </Stack>
                           <Collapse in={isExpanded}>
                             <Box sx={{ px: 2, py: 1.5, borderTop: `0.5px solid ${colors.badgeBg}`, bgcolor: 'background.default' }}>
-                              <RateLimitInputs
-                                policy={policy}
-                                onChange={(p) => dispatch({ resourceLevelPolicies: { ...state.resourceLevelPolicies, [key]: p } })}
-                              />
+                              <RateLimitInputs policy={policy} onChange={(p) => dispatch({ resourceLevelPolicies: { ...state.resourceLevelPolicies, [key]: p } })} />
                             </Box>
                           </Collapse>
                         </Box>
@@ -505,7 +471,10 @@ export default function ManageDrawer({ open, onClose, apimId }: ManageDrawerProp
                   fullWidth
                   type="number"
                   value={state.timeout}
-                  onChange={(e) => { dispatch({ timeout: e.target.value }); if (timeoutError) validateTimeout(e.target.value); }}
+                  onChange={(e) => {
+                    dispatch({ timeout: e.target.value });
+                    if (timeoutError) validateTimeout(e.target.value);
+                  }}
                   onBlur={() => validateTimeout(state.timeout)}
                   error={!!timeoutError}
                   inputProps={{ min: 1 }}
@@ -520,12 +489,10 @@ export default function ManageDrawer({ open, onClose, apimId }: ManageDrawerProp
       {/* Footer */}
       <Divider />
       <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 2, py: 1.5, flexShrink: 0 }}>
-        <Button onClick={handleClose} disabled={saving}>Cancel</Button>
-        <Button
-          variant="contained"
-          onClick={handleApply}
-          disabled={saving || isLoading || !apimId}
-          startIcon={saving ? <CircularProgress color="inherit" size={16} /> : undefined}>
+        <Button onClick={handleClose} disabled={saving}>
+          Cancel
+        </Button>
+        <Button variant="contained" onClick={handleApply} disabled={saving || isLoading || !apimId} startIcon={saving ? <CircularProgress color="inherit" size={16} /> : undefined}>
           {saving ? 'Applying…' : 'Apply'}
         </Button>
       </Stack>

@@ -825,7 +825,22 @@ export default function ConfigureDrawer(props: ConfigureDrawerProps) {
   return <GenericServiceConfigureDrawer {...props} />;
 }
 
-function GenericServiceConfigureDrawer({ open, onClose, orgHandler, projectId, componentId, envId, versionId, componentName, projectHandler, commitHash, releaseId, displayType, releaseMgtReleaseId, releaseMgtDeploymentId }: ConfigureDrawerProps) {
+function GenericServiceConfigureDrawer({
+  open,
+  onClose,
+  orgHandler,
+  projectId,
+  componentId,
+  envId,
+  versionId,
+  componentName,
+  projectHandler: _projectHandler,
+  commitHash,
+  releaseId,
+  displayType,
+  releaseMgtReleaseId,
+  releaseMgtDeploymentId,
+}: ConfigureDrawerProps) {
   const [step, setStep] = useState(1);
   const [values, setValues] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -880,7 +895,7 @@ function GenericServiceConfigureDrawer({ open, onClose, orgHandler, projectId, c
     } else {
       seededRef.current = false;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]); // intentionally omit data — seeding on open only
 
   // Seed values when data arrives for the first time after the drawer opened.
@@ -1024,33 +1039,33 @@ function GenericServiceConfigureDrawer({ open, onClose, orgHandler, projectId, c
 
   return (
     <>
-    <Drawer anchor="right" open={open} onClose={handleClose} variant="temporary" sx={drawerSx}>
-      {/* Header */}
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
-        <Typography variant="h5">Configure</Typography>
-        <IconButton size="small" aria-label="close" onClick={handleClose}>
-          <X size={16} />
-        </IconButton>
-      </Stack>
-
-      {/* Step indicator */}
-      <StepIndicator step={step} />
-
-      {/* Scrollable content */}
-      <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>{stepContent}</Box>
-
-      {/* Footer */}
-      {showFooter && (
-        <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
-          <Button onClick={handlePrev}>{prevLabel}</Button>
-          <Button variant="contained" onClick={handleNext} disabled={nextDisabled} startIcon={step === 2 && isApplying ? <CircularProgress color="inherit" size={16} /> : undefined}>
-            {nextLabel}
-          </Button>
+      <Drawer anchor="right" open={open} onClose={handleClose} variant="temporary" sx={drawerSx}>
+        {/* Header */}
+        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
+          <Typography variant="h5">Configure</Typography>
+          <IconButton size="small" aria-label="close" onClick={handleClose}>
+            <X size={16} />
+          </IconButton>
         </Stack>
-      )}
-    </Drawer>
 
-    <ManageDrawer open={manageDrawerOpen} onClose={() => setManageDrawerOpen(false)} apimId={manageApimId} />
+        {/* Step indicator */}
+        <StepIndicator step={step} />
+
+        {/* Scrollable content */}
+        <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>{stepContent}</Box>
+
+        {/* Footer */}
+        {showFooter && (
+          <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
+            <Button onClick={handlePrev}>{prevLabel}</Button>
+            <Button variant="contained" onClick={handleNext} disabled={nextDisabled} startIcon={step === 2 && isApplying ? <CircularProgress color="inherit" size={16} /> : undefined}>
+              {nextLabel}
+            </Button>
+          </Stack>
+        )}
+      </Drawer>
+
+      <ManageDrawer open={manageDrawerOpen} onClose={() => setManageDrawerOpen(false)} apimId={manageApimId} />
     </>
   );
 }

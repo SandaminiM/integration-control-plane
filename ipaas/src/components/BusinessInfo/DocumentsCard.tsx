@@ -33,7 +33,9 @@ export default function DocumentsCard({ apimId, docsPath }: Props) {
   return (
     <Card sx={{ display: 'flex', flexDirection: 'column' }}>
       <Stack direction="row" alignItems="center" sx={{ px: 2, pt: 2, pb: 1 }}>
-        <Typography variant="h6">Documents</Typography>
+        <Typography variant="h6" component="h3">
+          Documents
+        </Typography>
       </Stack>
       <Divider />
       <CardContent sx={{ flexGrow: 1, pb: (theme) => `${theme.spacing(2)} !important` }}>
@@ -77,11 +79,7 @@ export default function DocumentsCard({ apimId, docsPath }: Props) {
             </Stack>
             {docsPath && (
               <Box>
-                <Button
-                  variant="text"
-                  size="small"
-                  startIcon={<ExternalLink size={14} />}
-                  onClick={() => navigate(docsPath)}>
+                <Button variant="text" size="small" startIcon={<ExternalLink size={14} />} onClick={() => navigate(docsPath)}>
                   View More
                 </Button>
               </Box>

@@ -188,17 +188,7 @@ export default function ServiceLogsDrawer({ open, onClose, componentId, environm
 
       {/* Log content */}
       <Box sx={{ flex: 1, overflow: 'hidden', px: 2, pb: 2 }}>
-        <LogsPanel
-          isLoading={isLoading}
-          error={error}
-          logs={logs}
-          hasNextPage={hasNextPage}
-          isFetchingNextPage={isFetchingNextPage}
-          onRefetch={refetch}
-          onFetchNextPage={fetchNextPage}
-          onClearFilters={clearFilters}
-          envName={envName}
-        />
+        <LogsPanel isLoading={isLoading} error={error} logs={logs} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} onRefetch={refetch} onFetchNextPage={fetchNextPage} onClearFilters={clearFilters} envName={envName} />
       </Box>
     </Drawer>
   );

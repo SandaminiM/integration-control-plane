@@ -54,7 +54,7 @@ export default function Environment({ env, prevEnv, componentId, projectId, comp
   const navigate = useNavigate();
   const [configureOpen, setConfigureOpen] = useState(false);
   const [logsOpen, setLogsOpen] = useState(false);
-const [notification, setNotification] = useState<{ text: string; severity: 'success' | 'error' } | null>(null);
+  const [notification, setNotification] = useState<{ text: string; severity: 'success' | 'error' } | null>(null);
   const [pendingTriggerTime, setPendingTriggerTime] = useState<number | null>(null);
   const [pendingTriggerArgs, setPendingTriggerArgs] = useState<string[] | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -189,7 +189,10 @@ const [notification, setNotification] = useState<{ text: string; severity: 'succ
     stopMutation.mutate(
       { orgHandler, componentId, releaseId: envReleaseId, type: displayType ?? '', clearCron: false },
       {
-        onSuccess: () => { setShouldPollOnce(true); setNotification({ text: 'Deployment stopped successfully', severity: 'success' }); },
+        onSuccess: () => {
+          setShouldPollOnce(true);
+          setNotification({ text: 'Deployment stopped successfully', severity: 'success' });
+        },
         onError: (err) => setNotification({ text: err instanceof Error ? err.message : 'Failed to stop deployment', severity: 'error' }),
       },
     );
@@ -206,7 +209,10 @@ const [notification, setNotification] = useState<{ text: string; severity: 'succ
         releaseMgtDeploymentId: envDeployment?.releaseMgtDeployment?.releaseMgtDeploymentId,
       },
       {
-        onSuccess: () => { setShouldPollOnce(true); setNotification({ text: 'Deployment started successfully', severity: 'success' }); },
+        onSuccess: () => {
+          setShouldPollOnce(true);
+          setNotification({ text: 'Deployment started successfully', severity: 'success' });
+        },
         onError: (err) => setNotification({ text: err instanceof Error ? err.message : 'Failed to start deployment', severity: 'error' }),
       },
     );
@@ -343,16 +349,7 @@ const [notification, setNotification] = useState<{ text: string; severity: 'succ
         envTemplateId={envTemplateId}
       />
 
-      {isGenericService && (
-        <ServiceLogsDrawer
-          open={logsOpen}
-          onClose={() => setLogsOpen(false)}
-          componentId={componentId}
-          environmentId={env.id}
-          envName={env.name}
-          versionId={versionId}
-        />
-      )}
+      {isGenericService && <ServiceLogsDrawer open={logsOpen} onClose={() => setLogsOpen(false)} componentId={componentId} environmentId={env.id} envName={env.name} versionId={versionId} />}
     </Card>
   );
 }

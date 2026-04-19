@@ -60,13 +60,11 @@ export default function SubscriptionPlansCard({ activePolicies = [], apimId, api
     <>
       <Card sx={{ display: 'flex', flexDirection: 'column' }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, pt: 2, pb: 1 }}>
-          <Typography variant="h6">Subscription Plans</Typography>
+          <Typography variant="h6" component="h3">
+            Subscription Plans
+          </Typography>
           {apimId && apimApiInfo && (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<ListChecks size={14} />}
-              onClick={() => setDialogOpen(true)}>
+            <Button variant="outlined" size="small" startIcon={<ListChecks size={14} />} onClick={() => setDialogOpen(true)}>
               Activate Plans
             </Button>
           )}
@@ -83,44 +81,39 @@ export default function SubscriptionPlansCard({ activePolicies = [], apimId, api
             </Typography>
           ) : (
             <Stack direction="row" gap={1} sx={{ mt: 0.5 }}>
-              {[...policies].sort((a, b) => planSortIndex(a.name) - planSortIndex(b.name)).map((policy) => {
-                const { bg, text } = planStyle(policy.name);
-                const isActive = activePolicies.length === 0 || activePolicies.includes(policy.name);
-                return (
-                  <Box
-                    key={policy.name}
-                    sx={{
-                      flex: 1,
-                      bgcolor: bg,
-                      color: text,
-                      borderRadius: 1,
-                      px: 1,
-                      py: 1,
-                      textAlign: 'center',
-                      opacity: isActive ? 1 : 0.4,
-                    }}>
-                    <Typography variant="body2" fontWeight={700} sx={{ color: 'inherit' }}>
-                      {policy.name}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: 'inherit' }}>
-                      {formatQuota(policy)}
-                    </Typography>
-                  </Box>
-                );
-              })}
+              {[...policies]
+                .sort((a, b) => planSortIndex(a.name) - planSortIndex(b.name))
+                .map((policy) => {
+                  const { bg, text } = planStyle(policy.name);
+                  const isActive = activePolicies.length === 0 || activePolicies.includes(policy.name);
+                  return (
+                    <Box
+                      key={policy.name}
+                      sx={{
+                        flex: 1,
+                        bgcolor: bg,
+                        color: text,
+                        borderRadius: 1,
+                        px: 1,
+                        py: 1,
+                        textAlign: 'center',
+                        opacity: isActive ? 1 : 0.4,
+                      }}>
+                      <Typography variant="body2" fontWeight={700} sx={{ color: 'inherit' }}>
+                        {policy.name}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'inherit' }}>
+                        {formatQuota(policy)}
+                      </Typography>
+                    </Box>
+                  );
+                })}
             </Stack>
           )}
         </CardContent>
       </Card>
 
-      {apimId && apimApiInfo && (
-        <ActivatePlansDialog
-          open={dialogOpen}
-          onClose={() => setDialogOpen(false)}
-          apimId={apimId}
-          apimApiInfo={apimApiInfo}
-        />
-      )}
+      {apimId && apimApiInfo && <ActivatePlansDialog open={dialogOpen} onClose={() => setDialogOpen(false)} apimId={apimId} apimApiInfo={apimApiInfo} />}
     </>
   );
 }

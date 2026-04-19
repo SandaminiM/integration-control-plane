@@ -211,7 +211,12 @@ export default function SwaggerOperationsList({ swagger }: SwaggerOperationsList
         })}
       </Box>
 
-      <Drawer anchor="right" open={!!selected} onClose={() => setSelected(null)} variant="temporary" sx={{ '& .MuiDrawer-paper': { width: 720, position: 'fixed', top: 64, height: 'calc(100% - 64px)', borderLeft: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: 'column' } }}>
+      <Drawer
+        anchor="right"
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        variant="temporary"
+        sx={{ '& .MuiDrawer-paper': { width: 720, position: 'fixed', top: 64, height: 'calc(100% - 64px)', borderLeft: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: 'column' } }}>
         {selected && <OperationDetails method={selected.method} path={selected.path} swagger={swagger} onClose={() => setSelected(null)} />}
       </Drawer>
     </>
