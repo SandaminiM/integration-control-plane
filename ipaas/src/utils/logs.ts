@@ -44,6 +44,8 @@ export const LEVEL_COLORS: Record<string, { bg: string; text: string }> = {
 export const DISPLAY_FIELDS: { key: keyof LogRow; label: string }[] = [
   { key: 'timestamp', label: 'Timestamp' },
   { key: 'level', label: 'Log Level' },
+  { key: 'gatewayCode', label: 'Gateway Code' },
+  { key: 'statusCode', label: 'Status Code' },
   { key: 'logLine', label: 'Log Entry' },
   { key: 'class', label: 'Class' },
   { key: 'logFilePath', label: 'Log File Path' },
@@ -62,6 +64,14 @@ export const DISPLAY_FIELDS: { key: keyof LogRow; label: string }[] = [
 
 export function levelColor(level: string): { bg: string; text: string } {
   return LEVEL_COLORS[level] ?? { bg: '#eceff1', text: '#37474f' };
+}
+
+export function statusCodeColor(code: string | null): { bg: string; text: string } {
+  const n = parseInt(code ?? '', 10);
+  if (n >= 200 && n < 300) return { bg: '#e3f2fd', text: '#0d47a1' };
+  if (n >= 300 && n < 400) return { bg: '#fff3e0', text: '#e65100' };
+  if (n >= 400 && n < 600) return { bg: '#ffebee', text: '#b71c1c' };
+  return { bg: '#eceff1', text: '#37474f' };
 }
 
 export function formatValue(value: unknown): string {

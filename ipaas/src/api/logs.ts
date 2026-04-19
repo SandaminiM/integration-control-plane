@@ -44,6 +44,8 @@ export interface ComponentLogsRequest {
   sort: 'asc' | 'desc';
   region: string;
   searchPhrase: string;
+  regexPhrase: string;
+  logType?: string;
 }
 
 export interface LogRow {
@@ -63,6 +65,8 @@ export interface LogRow {
   logContext: unknown;
   componentVersion: string;
   componentVersionId: string;
+  gatewayCode: string | null;
+  statusCode: string | null;
 }
 
 interface Column {
@@ -87,6 +91,8 @@ const COLUMN_MAP: Record<string, keyof LogRow> = {
   LogContext: 'logContext',
   ComponentVersion: 'componentVersion',
   ComponentVersionId: 'componentVersionId',
+  GatewayCode: 'gatewayCode',
+  StatusCode: 'statusCode',
 };
 
 async function postLogs(url: string, body: unknown): Promise<LogRow[]> {

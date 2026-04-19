@@ -34,9 +34,11 @@ interface LogsPanelProps {
   onFetchNextPage: () => void;
   /** Called when the user clicks "Clear filters" on the empty state. */
   onClearFilters: () => void;
+  /** Optional environment name shown on each log row. */
+  envName?: string;
 }
 
-export default function LogsPanel({ isLoading, error, logs, hasNextPage, isFetchingNextPage, onRefetch, onFetchNextPage, onClearFilters }: LogsPanelProps): JSX.Element {
+export default function LogsPanel({ isLoading, error, logs, hasNextPage, isFetchingNextPage, onRefetch, onFetchNextPage, onClearFilters, envName }: LogsPanelProps): JSX.Element {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const sentinelRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -116,7 +118,7 @@ export default function LogsPanel({ isLoading, error, logs, hasNextPage, isFetch
       }}>
       {logs.map((log, index) => {
         const key = `${index}-${log.timestamp}-${log.logLine.slice(0, 50)}`;
-        return <LogEntry key={key} log={log} expanded={expanded.has(key)} onToggle={() => toggle(key)} />;
+        return <LogEntry key={key} log={log} expanded={expanded.has(key)} onToggle={() => toggle(key)} envName={envName} />;
       })}
       <div ref={sentinelRef} />
       {isFetchingNextPage && <CircularProgress size={20} sx={{ display: 'block', mx: 'auto', my: 1 }} />}

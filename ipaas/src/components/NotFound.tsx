@@ -29,7 +29,7 @@ interface NotFoundProps {
 export default function NotFound({ message, backTo, backLabel = 'Back' }: NotFoundProps) {
   return (
     <PageContent component="main" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', py: 8 }}>
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="h6" component="h1" gutterBottom>
         {message}
       </Typography>
       <Button variant="outlined" component={Link} to={backTo} startIcon={<ArrowLeft size={18} />}>

@@ -20,6 +20,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { gql } from './graphql';
 import { authenticatedFetch, getOrgUuidFromToken, refreshAccessToken } from '../auth/tokenManager';
 import { choreoDevopsApiUrl, componentMgtApiUrl } from '../config/api';
+import { fetchApimApi, fetchApimSwagger, type ApimApiInfo } from './apim';
 import { UUID_RE } from '../utils/string';
 
 export interface GqlProject {
@@ -52,6 +53,7 @@ export interface GqlComponent {
   lastBuildDate: string;
   labels?: string | string[];
   apiId?: string;
+  serviceAccessMode?: string | null;
 }
 
 const PROJECT_FIELDS = 'id, orgId, name, handler, description, version, createdDate, updatedAt, region, type, defaultDeploymentPipelineId';
@@ -191,6 +193,13 @@ export function useComponents(orgHandler: string, projectId: string) {
   });
 }
 
+export interface GqlDeploymentTrack {
+  id: string;
+  branch?: string;
+  apiVersion?: string;
+  latest?: boolean;
+}
+
 export interface GqlApiVersion {
   id: string;
   apiVersion: string;
@@ -201,18 +210,25 @@ export interface GqlApiVersion {
 
 export interface GqlComponentDetail extends GqlComponent {
   orgHandler: string;
-  deploymentTracks?: { id: string }[];
+  deploymentTracks?: GqlDeploymentTrack[];
   apiVersions?: GqlApiVersion[];
+  repository?: GqlRepository;
 }
 
 const COMPONENT_BY_HANDLER_QUERY = `
   query GetComponent($projectId: String!, $componentHandler: String!) {
     component(projectId: $projectId, componentHandler: $componentHandler) {
       projectId, id, name, handler, displayName, displayType,
-      description, status, componentSubType,
+      description, status, componentSubType, serviceAccessMode,
       version, createdAt, lastBuildDate, orgHandler, labels, apiId,
-      deploymentTracks { id }
+      deploymentTracks { id, branch, apiVersion, latest }
       apiVersions { id, apiVersion, branch, latest, accessibility }
+      repository {
+        gitProvider, organizationApp, nameApp, branch, appSubPath,
+        bitbucketServerUrl, serverUrl, projectApp,
+        isBuildConfigurationMigrated,
+        buildpackConfig { versionId, buildContext, isUnitTestEnabled, languageVersion, pullLatestSubmodules, enableTrivyScan, keyValues { id, key, value } }
+      }
     }
   }`;
 
@@ -221,6 +237,41 @@ export function useComponentByHandler(projectId: string, handler: string | undef
     queryKey: ['component', projectId, handler],
     queryFn: () => gql<{ component: GqlComponentDetail }>(COMPONENT_BY_HANDLER_QUERY, { projectId, componentHandler: handler }).then((d) => d.component),
     enabled: !!projectId && !!handler,
+  });
+}
+
+export interface GqlEndpoint {
+  displayName: string;
+  visibility: string;
+  apimId?: string | null;
+}
+
+const COMPONENT_ENDPOINTS_QUERY = `
+  query GetComponentEndpoints($componentId: String!, $versionId: String!) {
+    componentEndpoints(input: { componentId: $componentId, versionId: $versionId }) {
+      displayName, visibility, apimId
+    }
+  }`;
+
+export function useComponentEndpoints(componentId: string, versionId: string) {
+  return useQuery({
+    queryKey: ['componentEndpoints', componentId, versionId],
+    queryFn: () =>
+      gql<{ componentEndpoints: GqlEndpoint[] }>(COMPONENT_ENDPOINTS_QUERY, { componentId, versionId })
+        .then((d) => d.componentEndpoints ?? [])
+        .catch(() => []),
+    enabled: !!componentId && !!versionId,
+    staleTime: 60_000,
+  });
+}
+
+export function useApimApi(apimId: string | undefined | null) {
+  return useQuery<ApimApiInfo | null>({
+    queryKey: ['apimApi', apimId],
+    queryFn: () => fetchApimApi(apimId!),
+    enabled: !!apimId,
+    staleTime: 30_000,
+    retry: false,
   });
 }
 
@@ -247,12 +298,13 @@ export interface GqlEnvironment {
   dpId?: string;
   description?: string;
   createdAt?: string;
+  apimEnvId?: string;
 }
 
 const ENVIRONMENTS_QUERY = `
   query GetEnvironments($orgUuid: String!, $projectId: String!) {
     environments(orgUuid: $orgUuid, type: "external", projectId: $projectId) {
-      id, name, critical, templateId, dpId
+      id, name, critical, templateId, dpId, apimEnvId
     }
   }`;
 
@@ -707,21 +759,42 @@ export function useExecutionConfigs(componentId: string, releaseId: string) {
 
 // ── Component Deployment (for real releaseId) ──
 
+export interface GqlReleaseMgtDeployment {
+  releaseMgtReleaseId: string;
+  releaseMgtDeploymentId: string;
+}
+
 export interface GqlComponentDeployment {
   releaseId: string;
   cron: string;
   cronTimezone: string;
-  build?: { buildId: string };
+  deploymentStatusV2?: string | null;
+  invokeUrl?: string | null;
+  imageUrl?: string | null;
+  configCount?: number;
+  releaseMgtDeployment?: GqlReleaseMgtDeployment | null;
+  build?: {
+    buildId: string;
+    deployedAt?: string;
+    commit?: {
+      sha: string;
+      message: string;
+      isLatest: boolean;
+      author: { name: string; date: string; email: string; avatarUrl: string };
+    };
+  };
 }
 
 const COMPONENT_DEPLOYMENT_QUERY = `
   query GetComponentDeployment($orgHandler: String!, $orgUuid: String!, $componentId: String!, $versionId: String!, $environmentId: String!) {
     componentDeployment(orgHandler: $orgHandler, orgUuid: $orgUuid, componentId: $componentId, versionId: $versionId, environmentId: $environmentId) {
-      releaseId, cron, cronTimezone, build { buildId }
+      releaseId, cron, cronTimezone, deploymentStatusV2, invokeUrl, imageUrl, configCount,
+      releaseMgtDeployment { releaseMgtReleaseId, releaseMgtDeploymentId },
+      build { buildId, deployedAt, commit { sha, message, isLatest, author { name, date, email, avatarUrl } } }
     }
   }`;
 
-export function useComponentDeployment(orgHandler: string, orgUuid: string, componentId: string, versionId: string, environmentId: string) {
+export function useComponentDeployment(orgHandler: string, orgUuid: string, componentId: string, versionId: string, environmentId: string, options?: { refetchInterval?: number | false }) {
   return useQuery({
     queryKey: ['componentDeployment', orgHandler, componentId, versionId, environmentId],
     queryFn: () =>
@@ -730,7 +803,88 @@ export function useComponentDeployment(orgHandler: string, orgUuid: string, comp
         .catch(() => null),
     enabled: !!orgHandler && !!orgUuid && !!componentId && !!versionId && !!environmentId,
     retry: false,
+    refetchInterval: options?.refetchInterval,
   });
+}
+
+// ── Per-environment endpoints (filtered by releaseId) ──
+
+export interface GqlEnvEndpoint {
+  id: string;
+  releaseId: string;
+  environmentId: string;
+  displayName: string;
+  port?: number | null;
+  type: string;
+  apiContext?: string | null;
+  apiDefinitionPath?: string | null;
+  visibility: string;
+  invokeUrl?: string | null;
+  publicUrl?: string | null;
+  organizationUrl?: string | null;
+  projectUrl?: string | null;
+  defaultPublicUrl?: string | null;
+  defaultOrganizationUrl?: string | null;
+  networkVisibilities?: string[] | null;
+  state?: string | null;
+  apimId?: string | null;
+  apimRevisionId?: string | null;
+}
+
+const ENV_ENDPOINTS_QUERY = `
+  query GetEnvEndpoints($componentId: String!, $versionId: String!, $releaseId: String!) {
+    componentEndpoints(input: {
+      componentId: $componentId,
+      versionId: $versionId,
+      options: { filter: { releaseIds: [$releaseId] } }
+    }) {
+      id, releaseId, environmentId, displayName, port, type, apiContext, apiDefinitionPath,
+      visibility, invokeUrl, publicUrl, organizationUrl, projectUrl,
+      defaultPublicUrl, defaultOrganizationUrl, networkVisibilities, state, apimId, apimRevisionId
+    }
+  }`;
+
+export function useEnvEndpoints(componentId: string, versionId: string, releaseId: string) {
+  return useQuery({
+    queryKey: ['envEndpoints', componentId, versionId, releaseId],
+    queryFn: () =>
+      gql<{ componentEndpoints: GqlEnvEndpoint[] }>(ENV_ENDPOINTS_QUERY, { componentId, versionId, releaseId })
+        .then((d) => d.componentEndpoints ?? [])
+        .catch(() => []),
+    enabled: !!componentId && !!versionId && !!releaseId,
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+export function useApiDefinition(apimRevisionId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['apiDefinition', apimRevisionId],
+    queryFn: () => fetchApimSwagger(apimRevisionId!),
+    enabled: !!apimRevisionId,
+    staleTime: 60_000,
+    retry: false,
+  });
+}
+
+const COMPONENT_ENDPOINT_API_DEFINITION_QUERY = `
+  query ApiDefinition($componentId: String!, $versionId: String!, $endpointId: String!) {
+    componentEndpointApiDefinition(
+      input: {
+        componentId: $componentId
+        versionId: $versionId
+        endpointId: $endpointId
+      }
+    ) {
+      content
+    }
+  }`;
+
+export async function fetchComponentEndpointSpec(componentId: string, versionId: string, endpointId: string): Promise<string | null> {
+  const data = await gql<{ componentEndpointApiDefinition: { content: string } | null }>(COMPONENT_ENDPOINT_API_DEFINITION_QUERY, { componentId, versionId, endpointId });
+  const b64 = data.componentEndpointApiDefinition?.content;
+  if (!b64) return null;
+  return atob(b64);
 }
 
 // ── Deployment execution history ──
@@ -758,13 +912,22 @@ const DEPLOYMENT_STATUS_QUERY = `
     }
   }`;
 
+const TERMINAL_CONCLUSIONS = new Set(['success', 'failure', 'cancelled', 'timed_out', 'neutral', 'skipped']);
+
 export function useDeploymentStatus(componentId: string, versionId: string) {
   return useQuery({
     queryKey: ['deploymentStatus', componentId, versionId],
     queryFn: () => gql<{ deploymentStatusByVersion: GqlDeploymentStatus[] }>(DEPLOYMENT_STATUS_QUERY, { versionId, componentId }).then((d) => d.deploymentStatusByVersion ?? []),
     enabled: !!componentId && !!versionId,
     retry: false,
-    refetchInterval: 15000,
+    refetchInterval: (query) => {
+      const data = query.state.data as GqlDeploymentStatus[] | undefined;
+      if (!data || data.length === 0) return 15000;
+      const allTerminal = data.every(
+        (d) => d.status === 'completed' || TERMINAL_CONCLUSIONS.has((d.conclusionV2 ?? d.conclusion ?? '').toLowerCase()),
+      );
+      return allTerminal ? false : 15000;
+    },
   });
 }
 
@@ -907,6 +1070,50 @@ export function useSchemaConfig(projectId: string, componentId: string, envId: s
       return res.json();
     },
     enabled: !!projectId && !!componentId && !!envId && !!deploymentTrackId && !!commitHash,
+    retry: false,
+  });
+}
+
+// ── config-mgt configurable values ──
+
+export interface ConfigMgtValue {
+  value?: string;
+  valueRef?: string;
+  isSensitive?: boolean;
+}
+
+export interface ConfigMgtItem {
+  configKeyName: string;
+  valueType: string;
+  isSystem?: boolean;
+  isRequired?: boolean;
+  configurationValue?: ConfigMgtValue;
+  metadata?: { isSecret?: boolean };
+  configPackageName: string;
+  configPackageOrganization: string;
+}
+
+export interface ConfigMgtData {
+  jsonSchema?: string;
+  configurationMount?: ConfigMgtItem[];
+  defaultPackage?: string;
+}
+
+export function useGetConfigMgt(orgHandler: string, projectId: string, componentId: string, envId: string, versionId: string, componentName: string, commitHash?: string, drawerOpen = false) {
+  return useQuery({
+    queryKey: ['configMgt', orgHandler, projectId, componentId, envId, versionId, commitHash],
+    queryFn: async (): Promise<ConfigMgtData> => {
+      const base = new URL(window.API_CONFIG.graphqlUrl).origin;
+      const qs = new URLSearchParams({ component_name: componentName, ...(commitHash ? { commit_hash: commitHash } : {}) });
+      const url = `${base}/config-mgt/1.0.0/orgs/${encodeURIComponent(orgHandler)}/projects/${encodeURIComponent(projectId)}/components/${encodeURIComponent(componentId)}/envs/${encodeURIComponent(envId)}/${encodeURIComponent(versionId)}/configurations?${qs}`;
+      const res = await authenticatedFetch(url);
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+      }
+      return res.json();
+    },
+    enabled: drawerOpen && !!orgHandler && !!projectId && !!componentId && !!envId && !!versionId && !!componentName,
     retry: false,
   });
 }

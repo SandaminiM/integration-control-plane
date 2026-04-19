@@ -152,7 +152,12 @@ export const choreologgingProjectLogsApiUrl = (gatewayHost: string): string => {
   return `https://${sysApiPrefix}.${gatewayHost}/systemapis/choreologgingapi/0.2.0/logs/project/application?live=true`;
 };
 
-export const choreologgingComponentLogsApiUrl = (gatewayHost: string): string => {
-  const { sysApiPrefix } = window.API_CONFIG;
-  return `https://${sysApiPrefix}.${gatewayHost}/systemapis/choreologgingapi/0.2.0/logs/component/application?live=true`;
+export const choreologgingComponentLogsApiUrl = (): string => {
+  const base = window.API_CONFIG.systemApisBaseUrl ?? '';
+  return `${base}/systemapis/choreologgingapi/0.2.0/logs/component/application`;
+};
+
+export const choreologgingComponentGatewayLogsApiUrl = (): string => {
+  const base = window.API_CONFIG.systemApisBaseUrl ?? '';
+  return `${base}/systemapis/choreologgingapi/0.2.0/logs/component/gateway?live=true`;
 };

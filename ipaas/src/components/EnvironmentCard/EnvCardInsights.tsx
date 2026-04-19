@@ -16,11 +16,13 @@
  * under the License.
  */
 
-import { Avatar, Box, CircularProgress, Divider, Stack, Typography } from '@wso2/oxygen-ui';
+import { Avatar, Box, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
 import { Activity, AlertTriangle, Clock, TrendingUp } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useRef, useState } from 'react';
 import { getOrgUuidFromToken } from '../../auth/tokenManager';
-import { fetchComponentInsights, fetchInsightsEnvironments, type ComponentInsights, type InsightsEnvironment } from '../../api/insights';
+import { fetchComponentInsights, useInsightsEnvironments, type ComponentInsights } from '../../api/insights';
+
+// ---------- MetricTile ----------
 
 interface MetricTileProps {
   icon: React.ReactNode;
@@ -28,81 +30,83 @@ interface MetricTileProps {
   value: number | null;
   unit?: string;
   loading: boolean;
+  isLast?: boolean;
 }
 
-function MetricTile({ icon, label, value, unit, loading }: MetricTileProps) {
+function MetricTile({ icon, label, value, unit, loading, isLast }: MetricTileProps) {
   return (
-    <Stack direction="row" alignItems="center" gap={1.5} sx={{ flex: 1, minWidth: 0 }}>
-      <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main', flexShrink: 0 }}>{icon}</Avatar>
-      <Box sx={{ minWidth: 0 }}>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', whiteSpace: 'nowrap' }}>
-          {label}
-        </Typography>
-        {loading ? (
-          <CircularProgress size={16} />
-        ) : (
-          <Stack direction="row" alignItems="baseline" gap={0.5}>
-            <Typography variant="body1" fontWeight={600}>
-              {value ?? '—'}
-            </Typography>
-            {unit && value !== null && (
-              <Typography variant="caption" color="text.secondary">
-                {unit}
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        px: 2,
+        py: 1.5,
+        borderRight: isLast ? 'none' : '1px solid',
+        borderColor: 'divider',
+      }}>
+      <Stack direction="row" alignItems="center" gap={1.5} sx={{ width: '100%' }}>
+        <Avatar sx={{ width: 36, height: 36, bgcolor: 'action.selected', flexShrink: 0 }}>{icon}</Avatar>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', whiteSpace: 'nowrap' }}>
+            {label}
+          </Typography>
+          {loading ? (
+            <CircularProgress size={16} />
+          ) : (
+            <Stack direction="row" alignItems="baseline" gap={0.5}>
+              <Typography variant="h6" component="span" fontWeight={600}>
+                {value ?? '—'}
               </Typography>
-            )}
-          </Stack>
-        )}
-      </Box>
-    </Stack>
+              {unit && value !== null && (
+                <Typography variant="caption" color="text.secondary">
+                  {unit}
+                </Typography>
+              )}
+            </Stack>
+          )}
+        </Box>
+      </Stack>
+    </Box>
   );
 }
+
+// ---------- EnvCardInsights ----------
 
 interface EnvCardInsightsProps {
   envName: string;
   envId: string;
+  apimEnvId?: string;
   projectId: string;
   apiId: string;
 }
 
-export default function EnvCardInsights({ envName, envId, projectId, apiId }: EnvCardInsightsProps) {
+export default function EnvCardInsights({ envName, envId, apimEnvId, projectId, apiId }: EnvCardInsightsProps) {
   const orgUuid = getOrgUuidFromToken() ?? '';
   const [insights, setInsights] = useState<ComponentInsights | null>(null);
   const [loading, setLoading] = useState(true);
-  const [insightsEnv, setInsightsEnv] = useState<InsightsEnvironment | null>(null);
   const mounted = useRef(true);
 
   useEffect(() => {
     mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
+    return () => { mounted.current = false; };
   }, []);
 
-  // Fetch and match insights environment; reset state before each new lookup
+  // Shared React Query hook — deduplicated across all env cards for the same project
+  const { data: insightsEnvs } = useInsightsEnvironments(orgUuid, projectId);
+
+  const insightsEnv = insightsEnvs?.find(
+    (e) => (apimEnvId && e.externalEnvId === apimEnvId) || e.externalEnvId === envId || e.name?.toLowerCase() === envName?.toLowerCase(),
+  ) ?? null;
+
+  // When environments loaded but no match found, default to zeros
   useEffect(() => {
-    setInsightsEnv(null);
-    setInsights(null);
-    setLoading(true);
-
-    if (!orgUuid || !projectId) {
+    if (!insightsEnvs || !apiId) return;
+    if (!insightsEnv) {
+      setInsights({ requestCount: 0, errorCount: 0, errorRate: 0, latency: 0 });
       setLoading(false);
-      return;
     }
-
-    let cancelled = false;
-    fetchInsightsEnvironments(orgUuid, projectId).then((envs) => {
-      if (cancelled || !mounted.current) return;
-      const match = envs.find((e) => e.externalEnvId === envId || e.name?.toLowerCase() === envName?.toLowerCase());
-      if (match) {
-        setInsightsEnv(match);
-      } else {
-        setLoading(false);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [orgUuid, projectId, envId, envName]);
+  }, [insightsEnvs, insightsEnv, apiId]);
 
   // Fetch metrics once env is found, then poll every 10s
   useEffect(() => {
@@ -113,7 +117,7 @@ export default function EnvCardInsights({ envName, envId, projectId, apiId }: En
     const fetchData = async () => {
       const data = await fetchComponentInsights(orgUuid, insightsEnv, apiId);
       if (cancelled || !mounted.current) return;
-      setInsights(data);
+      setInsights(data ?? { requestCount: 0, errorCount: 0, errorRate: 0, latency: 0 });
       setLoading(false);
     };
 
@@ -125,18 +129,27 @@ export default function EnvCardInsights({ envName, envId, projectId, apiId }: En
     };
   }, [insightsEnv, apiId, orgUuid]);
 
+  const tiles = [
+    { key: 'traffic', label: 'Total Traffic', icon: <TrendingUp size={16} />, value: insights?.requestCount ?? null, unit: undefined },
+    { key: 'errors', label: 'Error Count', icon: <AlertTriangle size={16} />, value: insights?.errorCount ?? null, unit: undefined },
+    { key: 'errorRate', label: 'Avg Error Rate', icon: <Activity size={16} />, value: insights?.errorRate ?? null, unit: '%' },
+    { key: 'latency', label: 'P99 Latency', icon: <Clock size={16} />, value: insights?.latency ?? null, unit: 'ms' },
+  ] as const;
+
   return (
     <>
-      <Divider sx={{ mt: 2, mb: 1.5 }} />
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-        Last 6 months
-      </Typography>
-      <Stack direction="row" gap={2} flexWrap="wrap">
-        <MetricTile icon={<TrendingUp size={16} />} label="Total Traffic" value={insights?.requestCount ?? null} loading={loading} />
-        <MetricTile icon={<AlertTriangle size={16} />} label="Error Count" value={insights?.errorCount ?? null} loading={loading} />
-        <MetricTile icon={<Activity size={16} />} label="Avg Error Rate" value={insights?.errorRate ?? null} unit="%" loading={loading} />
-        <MetricTile icon={<Clock size={16} />} label="P99 Latency" value={insights?.latency ?? null} unit="ms" loading={loading} />
-      </Stack>
+      {/* Thin separator matching devant's cardHeaderDivider */}
+      <Box sx={{ height: '1px', bgcolor: 'divider', mt: 2 }} />
+      <Box
+        sx={{
+          mt: 2,
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
+        }}>
+        {tiles.map((tile, idx) => (
+          <MetricTile key={tile.key} icon={tile.icon} label={tile.label} value={tile.value} unit={tile.unit} loading={loading} isLast={idx === tiles.length - 1} />
+        ))}
+      </Box>
     </>
   );
 }

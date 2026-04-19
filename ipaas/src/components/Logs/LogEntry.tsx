@@ -20,9 +20,9 @@ import { Chip, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronRight, Copy } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
 import type { LogRow } from '../../api/logs';
-import { DISPLAY_FIELDS, copyLog, formatValue, levelColor } from '../../utils/logs';
+import { DISPLAY_FIELDS, copyLog, formatValue, levelColor, statusCodeColor } from '../../utils/logs';
 
-export default function LogEntry({ log, expanded, onToggle }: { log: LogRow; expanded: boolean; onToggle: () => void }): JSX.Element {
+export default function LogEntry({ log, expanded, onToggle, envName }: { log: LogRow; expanded: boolean; onToggle: () => void; envName?: string }): JSX.Element {
   return (
     <>
       <Stack
@@ -43,22 +43,39 @@ export default function LogEntry({ log, expanded, onToggle }: { log: LogRow; exp
         <IconButton size="small" aria-label={expanded ? 'Collapse log entry' : 'Expand log entry'} sx={{ p: 0, mr: 0.5 }}>
           {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </IconButton>
-        <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, color: levelColor(log.level).text, whiteSpace: 'nowrap', mr: 1 }}>
+        <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, color: levelColor(log.level).text, '[data-color-scheme="dark"] &': { color: '#3D90E0' }, whiteSpace: 'nowrap', mr: 1 }}>
           {new Date(log.timestamp).toLocaleString()}
         </Typography>
-        <Chip
-          label={log.level}
-          size="small"
-          sx={{
-            fontFamily: 'monospace',
-            fontSize: 10,
-            height: 18,
-            mr: 1,
-            bgcolor: levelColor(log.level).bg,
-            color: levelColor(log.level).text,
-            fontWeight: 700,
-          }}
-        />
+        {envName ? (
+          <Tooltip title="Environment">
+            <Chip
+              label={envName}
+              size="small"
+              sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, bgcolor: 'action.selected', color: 'text.secondary', fontWeight: 600 }}
+            />
+          </Tooltip>
+        ) : null}
+        {log.level ? (
+          <Chip
+            label={log.level}
+            size="small"
+            sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, bgcolor: levelColor(log.level).bg, color: levelColor(log.level).text, fontWeight: 700 }}
+          />
+        ) : null}
+        {log.gatewayCode ? (
+          <Chip
+            label={log.gatewayCode}
+            size="small"
+            sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, bgcolor: '#ede7f6', color: '#4527a0', fontWeight: 700 }}
+          />
+        ) : null}
+        {log.statusCode ? (
+          <Chip
+            label={log.statusCode}
+            size="small"
+            sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, bgcolor: statusCodeColor(log.statusCode).bg, color: statusCodeColor(log.statusCode).text, fontWeight: 700 }}
+          />
+        ) : null}
         {log.serviceType && (
           <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, color: 'text.secondary', whiteSpace: 'nowrap', mr: 1 }}>
             {log.serviceType}

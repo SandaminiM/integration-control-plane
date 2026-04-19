@@ -19,9 +19,10 @@
 import { CircularProgress, PageContent } from '@wso2/oxygen-ui';
 import { ScrollText } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, type JSX } from 'react';
-import { useOrgs, useProjectsByOrg, useComponentByHandler, useEnvironments, useAllEnvironments, useCloudDataPlanes } from '../api/queries';
+import { useOrgs, useProjectsByOrg, useComponentByHandler, useEnvironments, useAllEnvironments } from '../api/queries';
 import { useInfiniteComponentLogs, type ComponentLogsRequest } from '../api/logs';
-import { choreologgingComponentLogsApiUrl } from '../config/api';
+import { choreologgingComponentLogsApiUrl, choreologgingComponentGatewayLogsApiUrl } from '../config/api';
+import { GENERIC_SERVICE_TYPES } from '../constants/integrations';
 import { AUTO_FETCH_INTERVAL, DEFAULT_DP_REGION, PAGE_SIZE } from '../utils/logs';
 import LogsFilters from '../components/Logs/LogsFilters';
 import LogsPageLayout from '../components/Logs/LogsPageLayout';
@@ -50,26 +51,21 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
   const environments = orgUuid ? projectEnvs : globalEnvs;
   const loadingEnvironments = orgUuid ? loadingProjectEnvs : loadingGlobalEnvs;
 
-  const { data: cdps, isLoading: loadingCdps } = useCloudDataPlanes(orgUuid);
-
   const selectedEnvIds = envFilter.length > 0 ? envFilter : environments.map((e) => e.id);
   const primaryEnv = environments.find((e) => selectedEnvIds.includes(e.id));
 
   const envIdsKey = selectedEnvIds.join(',');
   const levelFilterKey = levelFilter.join(',');
 
-  const logsApiUrl = useMemo(() => {
-    if (!primaryEnv?.dpId || !cdps) return undefined;
-    const cdp = cdps.find((c) => c.id.toLowerCase() === primaryEnv.dpId!.toLowerCase());
-    return cdp ? choreologgingComponentLogsApiUrl(cdp.external_gateway_virtual_host) : undefined;
-  }, [primaryEnv?.dpId, cdps]);
+  const isGenericService = GENERIC_SERVICE_TYPES.has(component?.displayType ?? '');
+  const logsApiUrl = isGenericService ? choreologgingComponentGatewayLogsApiUrl() : choreologgingComponentLogsApiUrl();
 
   const logsRequest = useMemo<ComponentLogsRequest | null>(() => {
-    if (!component || !primaryEnv || !logsApiUrl) return null;
+    if (!component || !primaryEnv) return null;
     return {
       componentId: component.id,
       environmentId: primaryEnv.id,
-      versionIdList: [], // Empty list fetches logs for all versions; version filtering is not yet implemented in the UI
+      versionIdList: [],
       logLevels: levelFilter,
       startTime,
       endTime,
@@ -77,15 +73,17 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
       sort: sortDir,
       region: project?.region || DEFAULT_DP_REGION,
       searchPhrase,
+      regexPhrase: '',
+      ...(isGenericService ? { logType: 'singleLine' } : {}),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [component?.id, envIdsKey, levelFilterKey, startTime, endTime, searchPhrase, sortDir, logsApiUrl, project?.region]);
+  }, [component?.id, isGenericService, envIdsKey, levelFilterKey, startTime, endTime, searchPhrase, sortDir, project?.region]);
 
   const { data, isLoading, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteComponentLogs(logsRequest, autoFetch ? AUTO_FETCH_INTERVAL : false, logsApiUrl);
 
   const logs = useMemo(() => data?.pages.flat() ?? [], [data]);
 
-  if (loadingOrgs || loadingProjects || loadingComponent || loadingEnvironments || loadingCdps) {
+  if (loadingOrgs || loadingProjects || loadingComponent || loadingEnvironments) {
     return (
       <PageContent sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
         <CircularProgress />
@@ -109,7 +107,7 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
     <LogsPageLayout
       title="Runtime Logs"
       filtersElement={<LogsFilters filters={filters} environments={environments} logs={logs} logsRequest={logsRequest} onRefetch={refetch} />}
-      logPanelElement={<LogsPanel isLoading={isLoading} error={error} logs={logs} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} onRefetch={refetch} onFetchNextPage={fetchNextPage} onClearFilters={filters.clearFilters} />}
+      logPanelElement={<LogsPanel isLoading={isLoading} error={error} logs={logs} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} onRefetch={refetch} onFetchNextPage={fetchNextPage} onClearFilters={filters.clearFilters} envName={primaryEnv?.name} />}
     />
   );
 }

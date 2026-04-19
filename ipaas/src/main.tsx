@@ -25,6 +25,7 @@ import App from './App';
 import { AuthProvider } from './auth/AuthContext';
 import { loadConfig } from './config/api';
 import { AccessControlProvider } from './contexts/AccessControlContext';
+import { FeaturePreviewProvider } from './contexts/FeaturePreviewContext';
 import './index.css';
 
 const queryClient = new QueryClient();
@@ -38,7 +39,9 @@ loadConfig().then(() => {
           <BrowserRouter>
             <AuthProvider>
               <AccessControlProvider>
-                <App />
+                <FeaturePreviewProvider>
+                  <App />
+                </FeaturePreviewProvider>
               </AccessControlProvider>
             </AuthProvider>
           </BrowserRouter>

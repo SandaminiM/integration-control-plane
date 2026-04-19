@@ -50,8 +50,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { JSX } from 'react';
 import { useNavigate, Outlet, NavLink } from 'react-router';
 import Logo from '../components/Logo';
-import { BarChart3, Bell, ChevronDown, ChevronRight, Hammer, Layers, LayoutDashboard, LogOut, Plus, ScrollText, Search, Server, Shield, User as UserIcon, X } from '@wso2/oxygen-ui-icons-react';
+import { BarChart3, Bell, ChevronDown, ChevronRight, Hammer, Layers, LayoutDashboard, LogOut, Plus, ScanEye, ScrollText, Search, Server, Shield, User as UserIcon, X } from '@wso2/oxygen-ui-icons-react';
+import FeaturePreviewModal from '../components/FeaturePreview/FeaturePreviewModal';
 import { useProject, useProjectByHandler, useProjects, useComponents, useOrgs } from '../api/queries';
+import { SUPPORTED_DISPLAY_TYPES } from '../constants/integrations';
 import { fetchOrgPermissions } from '../api/auth';
 import { authenticatedFetch, switchOrgToken } from '../auth/tokenManager';
 import { mockNotifications } from '../mock-data/mockNotifications';
@@ -92,6 +94,7 @@ export default function AppLayout(): JSX.Element {
   const { state: shell, actions } = useAppShell({ initialCollapsed: true });
   const [tabIndex, setTabIndex] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [featurePreviewOpen, setFeaturePreviewOpen] = useState(false);
   const orgCardRef = useRef<HTMLDivElement>(null);
   const projectCardRef = useRef<HTMLDivElement>(null);
   const integrationCardRef = useRef<HTMLDivElement>(null);
@@ -120,7 +123,8 @@ export default function AppLayout(): JSX.Element {
   const project = isProjectUuid ? projectById : projectByHandler;
   const projectId = project?.id ?? '';
   const { data: projects = [] } = useProjects();
-  const { data: components = [] } = useComponents(scope.org, projectId);
+  const { data: allComponents = [] } = useComponents(scope.org, projectId);
+  const components = allComponents.filter((c) => SUPPORTED_DISPLAY_TYPES.has(c.displayType));
 
   // Helper to get project display name with fallback to projects list
   const getProjectDisplayName = () => {
@@ -664,6 +668,7 @@ export default function AppLayout(): JSX.Element {
               <UserMenu.Trigger name={displayName || username || 'User'} avatar={pictureUrl} />
               <UserMenu.Header name={displayName || username || 'User'} email={username} role="Admin" avatar={pictureUrl} />
               <UserMenu.Item icon={<UserIcon size={18} />} label="Profile" onClick={() => navigate(profileUrl())} />
+              <UserMenu.Item icon={<ScanEye size={18} />} label="Feature Preview" onClick={() => setFeaturePreviewOpen(true)} />
               <UserMenu.Divider />
               <UserMenu.Logout icon={<LogOut size={18} />} label="Sign Out" onClick={() => setConfirmDialogOpen(true)} />
             </UserMenu>
@@ -792,6 +797,8 @@ export default function AppLayout(): JSX.Element {
             </NotificationPanel.List>
           )}
         </NotificationPanel>
+
+        <FeaturePreviewModal open={featurePreviewOpen} onClose={() => setFeaturePreviewOpen(false)} />
 
         {/* Confirm Dialog - managed locally */}
         <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)} maxWidth="sm" fullWidth>

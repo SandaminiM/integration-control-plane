@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { Button, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { RefreshCw, Clock, SlidersHorizontal, GitCommit } from '@wso2/oxygen-ui-icons-react';
+import { Box, Button, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { RefreshCw, Clock, SlidersHorizontal, GitCommit, Square, RotateCw, FlaskConical, List } from '@wso2/oxygen-ui-icons-react';
 import ScheduleButton, { type ScheduleButtonProps } from './ScheduleButton';
 import RunButton from './RunButton';
 
@@ -26,6 +26,11 @@ interface EnvironmentCardHeaderProps {
   envCritical?: boolean | null;
   latestCommit?: { sha: string; message: string } | null;
   isAutomation: boolean;
+  isGenericService?: boolean;
+  deploymentStatusV2?: string | null;
+  isActionPending?: boolean;
+  onStop?: () => void;
+  onRedeploy?: () => void;
   hasDeployment?: boolean;
   nextRunLabel: string | null;
   isRefreshing: boolean;
@@ -35,14 +40,29 @@ interface EnvironmentCardHeaderProps {
   onRunWithArgs: () => void;
   onRefresh: () => void;
   onConfigure?: () => void;
+  onViewLogs?: () => void;
+  onTest?: () => void;
   hasMissingConfigs?: boolean;
 }
+
+const STATUS_DOT_MAP: Record<string, { label: string; dotColor: string }> = {
+  ACTIVE: { label: 'Active', dotColor: 'success.main' },
+  ERROR: { label: 'Error', dotColor: 'error.main' },
+  IN_PROGRESS: { label: 'In Progress', dotColor: 'warning.main' },
+  SUSPENDED: { label: 'Suspended', dotColor: 'text.disabled' },
+  NOT_DEPLOYED: { label: 'Not Deployed', dotColor: 'text.disabled' },
+};
 
 export default function EnvironmentCardHeader({
   envName,
   envCritical,
   latestCommit,
   isAutomation,
+  isGenericService,
+  deploymentStatusV2,
+  isActionPending,
+  onStop,
+  onRedeploy,
   hasDeployment,
   nextRunLabel,
   isRefreshing,
@@ -52,19 +72,26 @@ export default function EnvironmentCardHeader({
   onRunWithArgs,
   onRefresh,
   onConfigure,
+  onViewLogs,
+  onTest,
   hasMissingConfigs,
 }: EnvironmentCardHeaderProps) {
+  const statusDot = isGenericService && deploymentStatusV2 ? STATUS_DOT_MAP[deploymentStatusV2] : null;
+  const canStop = isGenericService && (deploymentStatusV2 === 'ACTIVE' || deploymentStatusV2 === 'ERROR');
+  const canStart = isGenericService && deploymentStatusV2 === 'SUSPENDED';
+  const isInProgress = isGenericService && deploymentStatusV2 === 'IN_PROGRESS';
+
   return (
     <Stack direction="row" alignItems="center" justifyContent="space-between">
-      {/* Left: env name + commit info + configure */}
-      <Stack direction="row" alignItems="center" gap={1.5}>
-        <Typography variant="h5" component="h2" sx={{ fontWeight: 600, textTransform: 'capitalize' }}>
+      {/* Left: env name + status chip + commit info + configure */}
+      <Stack direction="row" alignItems="center" gap={1.5} sx={{ minWidth: 0 }}>
+        <Typography variant="h5" component="h2" sx={{ fontWeight: 600, textTransform: 'capitalize', flexShrink: 0 }}>
           {envName}
         </Typography>
         {hasDeployment && latestCommit && (
-          <Stack direction="row" alignItems="center" gap={0.5}>
+          <Stack direction="row" alignItems="center" gap={0.5} sx={{ minWidth: 0 }}>
             <GitCommit size={14} style={{ opacity: 0.55, flexShrink: 0 }} />
-            <Typography variant="body2" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+            <Typography variant="body2" sx={{ fontFamily: 'monospace', color: 'text.secondary', flexShrink: 0 }}>
               {latestCommit.sha.substring(0, 7)}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -72,33 +99,75 @@ export default function EnvironmentCardHeader({
             </Typography>
           </Stack>
         )}
-        {hasDeployment && isAutomation && onConfigure && (
+        {statusDot && (
+          <Stack direction="row" alignItems="center" gap={0.75} sx={{ flexShrink: 0 }}>
+            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: statusDot.dotColor, flexShrink: 0 }} />
+            <Typography variant="body2" color="text.secondary">
+              {statusDot.label}
+            </Typography>
+          </Stack>
+        )}
+        {hasDeployment && onConfigure && (isAutomation || isGenericService) && (
           <Button variant="outlined" size="small" color={hasMissingConfigs ? 'error' : 'primary'} startIcon={<SlidersHorizontal size={14} />} onClick={onConfigure}>
             {hasMissingConfigs ? 'Configure to Continue' : 'Configure'}
           </Button>
         )}
       </Stack>
 
-      {/* Right: Next run + Schedule / Test / Refresh */}
-      {isAutomation && (
-        <Stack direction="row" alignItems="center" gap={1}>
-          {nextRunLabel && (
-            <Stack direction="row" alignItems="center" gap={0.5} sx={{ mr: 1 }}>
-              <Clock size={14} />
-              <Typography variant="body2" color="text.secondary">
-                {nextRunLabel}
-              </Typography>
-            </Stack>
-          )}
-          {scheduleButtonProps && <ScheduleButton {...scheduleButtonProps} disabled={hasMissingConfigs} />}
-          <RunButton envCritical={envCritical} disabled={hasMissingConfigs} pending={deployTrackIsPending} onRun={onRun} onRunWithArgs={onRunWithArgs} />
-          <Tooltip title="Refresh">
-            <IconButton size="small" disabled={isRefreshing} aria-label="Refresh" onClick={onRefresh}>
-              <RefreshCw size={16} style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none', transformOrigin: 'center' }} />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      )}
+      {/* Right: service actions OR automation controls */}
+      <Stack direction="row" alignItems="center" gap={1} sx={{ flexShrink: 0 }}>
+        {isGenericService && (
+          <>
+            {hasDeployment && onTest && !envCritical && (
+              <Button variant="text" size="small" startIcon={<FlaskConical size={14} />} onClick={onTest} sx={{ textTransform: 'none' }}>
+                Test
+              </Button>
+            )}
+            {hasDeployment && onViewLogs && (
+              <Button variant="text" size="small" startIcon={<List size={14} />} onClick={onViewLogs} sx={{ textTransform: 'none' }}>
+                View Logs
+              </Button>
+            )}
+            {(canStop || isInProgress) && (
+              <Tooltip title="Stop deployment">
+                <span>
+                  <Button variant="outlined" size="small" color="error" startIcon={<Square size={14} />} onClick={onStop} disabled={isActionPending || isInProgress}>
+                    Stop
+                  </Button>
+                </span>
+              </Tooltip>
+            )}
+            {canStart && (
+              <Tooltip title="Start deployment">
+                <span>
+                  <Button variant="outlined" size="small" color="success" startIcon={<RotateCw size={14} />} onClick={onRedeploy} disabled={isActionPending}>
+                    Start
+                  </Button>
+                </span>
+              </Tooltip>
+            )}
+          </>
+        )}
+        {isAutomation && (
+          <>
+            {nextRunLabel && (
+              <Stack direction="row" alignItems="center" gap={0.5} sx={{ mr: 0.5 }}>
+                <Clock size={14} />
+                <Typography variant="body2" color="text.secondary">
+                  {nextRunLabel}
+                </Typography>
+              </Stack>
+            )}
+            {scheduleButtonProps && <ScheduleButton {...scheduleButtonProps} disabled={hasMissingConfigs} />}
+            <RunButton envCritical={envCritical} disabled={hasMissingConfigs} pending={deployTrackIsPending} onRun={onRun} onRunWithArgs={onRunWithArgs} />
+          </>
+        )}
+        <Tooltip title="Refresh">
+          <IconButton size="small" disabled={isRefreshing} aria-label="Refresh" onClick={onRefresh}>
+            <RefreshCw size={16} style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none', transformOrigin: 'center' }} />
+          </IconButton>
+        </Tooltip>
+      </Stack>
     </Stack>
   );
 }
