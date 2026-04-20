@@ -81,7 +81,7 @@ export default function IntegrationCreationLoader({ label, subLabel, isPending, 
       <Typography variant="h2">Setting up your {label}…</Typography>
 
       <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-        <CircularProgress variant="determinate" value={creationStep.progress} size={80} thickness={4} sx={{ color: 'primary.main' }} />
+        <CircularProgress variant="determinate" value={creationStep.progress} size={80} thickness={4} style={{ color: 'var(--oxygen-palette-primary-main)' }} />
         <Box
           sx={{
             top: 0,

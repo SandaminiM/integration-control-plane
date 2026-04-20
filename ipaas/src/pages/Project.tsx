@@ -64,8 +64,8 @@ function DeleteDialog({ component, scope, projectId, onClose }: { component: Gql
         <Button variant="outlined" onClick={onClose}>
           Cancel
         </Button>
-        <Button variant="contained" color="error" disabled={!confirmed || mutation.isPending} onClick={handleDelete}>
-          Delete
+        <Button variant="contained" color="error" disabled={!confirmed || mutation.isPending} startIcon={mutation.isPending ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : undefined} onClick={handleDelete}>
+          {mutation.isPending ? 'Deleting...' : 'Delete'}
         </Button>
       </DialogActions>
     </Dialog>
@@ -95,7 +95,8 @@ function IntegrationsTable({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleting, setDeleting] = useState<GqlComponent | null>(null);
   const FREE_COMPONENT_LIMIT = 5;
-  const quotaReached = components.length >= FREE_COMPONENT_LIMIT;
+  const devantComponentCount = components.filter((c) => SUPPORTED_DISPLAY_TYPES.has(c.displayType ?? '')).length;
+  const quotaReached = devantComponentCount >= FREE_COMPONENT_LIMIT;
   const q = query.trim().toLowerCase();
   const filtered = components
     .filter((c) => {
