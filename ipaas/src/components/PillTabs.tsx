@@ -54,7 +54,12 @@ export default function PillTabs({ value, onChange, tabs }: PillTabsProps): JSX.
           tabIndex={0}
           aria-selected={value === index}
           onClick={() => onChange(index)}
-          onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(index); } }}
+          onKeyDown={(e: KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onChange(index);
+            }
+          }}
           sx={{
             flex: 1,
             textAlign: 'center',

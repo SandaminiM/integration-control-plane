@@ -17,7 +17,7 @@
  */
 
 import { Box, CircularProgress, Divider, PageContent } from '@wso2/oxygen-ui';
-import { Fragment, useEffect, useState, type JSX } from 'react';
+import { Fragment, useEffect, useMemo, useState, type JSX } from 'react';
 import { useProject, useProjectByHandler, useComponentByHandler, useEnvironments, useCommitHistory, useComponentEndpoints, useApimApi } from '../api/queries';
 import BusinessInfo from '../components/BusinessInfo';
 import NotFound from '../components/NotFound';
@@ -45,7 +45,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
   const repository = component?.repository ?? null;
   const { data: commits = [] } = useCommitHistory(component?.id ?? '', repository?.branch ?? '');
 
-  const tracks = component?.deploymentTracks ?? [];
+  const tracks = useMemo(() => component?.deploymentTracks ?? [], [component?.deploymentTracks]);
   const [selectedTrackId, setSelectedTrackId] = useState('');
 
   // Initialise / sync selected track when component loads or tracks change
@@ -55,7 +55,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
       if (prev && tracks.some((t) => t.id === prev)) return prev;
       return tracks.find((t) => t.latest)?.id ?? tracks[0].id;
     });
-  }, [component?.id, tracks.length]);
+  }, [component?.id, tracks]);
 
   const versionId = selectedTrackId;
 

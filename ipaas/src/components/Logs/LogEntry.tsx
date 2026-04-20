@@ -48,34 +48,12 @@ export default function LogEntry({ log, expanded, onToggle, envName }: { log: Lo
         </Typography>
         {envName ? (
           <Tooltip title="Environment">
-            <Chip
-              label={envName}
-              size="small"
-              sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, bgcolor: 'action.selected', color: 'text.secondary', fontWeight: 600 }}
-            />
+            <Chip label={envName} size="small" sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, bgcolor: 'action.selected', color: 'text.secondary', fontWeight: 600 }} />
           </Tooltip>
         ) : null}
-        {log.level ? (
-          <Chip
-            label={log.level}
-            size="small"
-            sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, bgcolor: levelColor(log.level).bg, color: levelColor(log.level).text, fontWeight: 700 }}
-          />
-        ) : null}
-        {log.gatewayCode ? (
-          <Chip
-            label={log.gatewayCode}
-            size="small"
-            sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, bgcolor: '#ede7f6', color: '#4527a0', fontWeight: 700 }}
-          />
-        ) : null}
-        {log.statusCode ? (
-          <Chip
-            label={log.statusCode}
-            size="small"
-            sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, bgcolor: statusCodeColor(log.statusCode).bg, color: statusCodeColor(log.statusCode).text, fontWeight: 700 }}
-          />
-        ) : null}
+        {log.level ? <Chip label={log.level} size="small" sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, bgcolor: levelColor(log.level).bg, color: levelColor(log.level).text, fontWeight: 700 }} /> : null}
+        {log.gatewayCode ? <Chip label={log.gatewayCode} size="small" sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, bgcolor: '#ede7f6', color: '#4527a0', fontWeight: 700 }} /> : null}
+        {log.statusCode ? <Chip label={log.statusCode} size="small" sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, bgcolor: statusCodeColor(log.statusCode).bg, color: statusCodeColor(log.statusCode).text, fontWeight: 700 }} /> : null}
         {log.serviceType && (
           <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, color: 'text.secondary', whiteSpace: 'nowrap', mr: 1 }}>
             {log.serviceType}

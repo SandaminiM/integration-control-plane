@@ -16,22 +16,7 @@
  * under the License.
  */
 
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  FormControlLabel,
-  IconButton,
-  Stack,
-  Switch,
-  Typography,
-} from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControlLabel, IconButton, Stack, Switch, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -135,19 +120,7 @@ export default function ActivatePlansDialog({ open, onClose, apimId, apimApiInfo
                 <Typography variant="body1" fontWeight={500}>
                   {policy.name}
                 </Typography>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={!!checked[policy.name]}
-                      onChange={() => handleToggle(policy.name)}
-                      color="primary"
-                      size="small"
-                      inputProps={{ 'aria-label': policy.name }}
-                    />
-                  }
-                  label=""
-                  sx={{ m: 0 }}
-                />
+                <FormControlLabel control={<Switch checked={!!checked[policy.name]} onChange={() => handleToggle(policy.name)} color="primary" size="small" inputProps={{ 'aria-label': policy.name }} />} label="" sx={{ m: 0 }} />
               </Box>
             ))}
             {showError && (
@@ -167,11 +140,7 @@ export default function ActivatePlansDialog({ open, onClose, apimId, apimApiInfo
         <Button variant="outlined" onClick={handleClose} disabled={saving}>
           Cancel
         </Button>
-        <Button
-          variant="contained"
-          onClick={handleSave}
-          disabled={saving || loadingPolicies || showError}
-          startIcon={saving ? <CircularProgress size={14} /> : undefined}>
+        <Button variant="contained" onClick={handleSave} disabled={saving || loadingPolicies || showError} startIcon={saving ? <CircularProgress size={14} /> : undefined}>
           Save
         </Button>
       </DialogActions>

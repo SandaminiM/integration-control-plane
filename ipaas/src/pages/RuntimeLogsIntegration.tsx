@@ -107,7 +107,9 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
     <LogsPageLayout
       title="Runtime Logs"
       filtersElement={<LogsFilters filters={filters} environments={environments} logs={logs} logsRequest={logsRequest} onRefetch={refetch} />}
-      logPanelElement={<LogsPanel isLoading={isLoading} error={error} logs={logs} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} onRefetch={refetch} onFetchNextPage={fetchNextPage} onClearFilters={filters.clearFilters} envName={primaryEnv?.name} />}
+      logPanelElement={
+        <LogsPanel isLoading={isLoading} error={error} logs={logs} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} onRefetch={refetch} onFetchNextPage={fetchNextPage} onClearFilters={filters.clearFilters} envName={primaryEnv?.name} />
+      }
     />
   );
 }

@@ -923,9 +923,7 @@ export function useDeploymentStatus(componentId: string, versionId: string) {
     refetchInterval: (query) => {
       const data = query.state.data as GqlDeploymentStatus[] | undefined;
       if (!data || data.length === 0) return 15000;
-      const allTerminal = data.every(
-        (d) => d.status === 'completed' || TERMINAL_CONCLUSIONS.has((d.conclusionV2 ?? d.conclusion ?? '').toLowerCase()),
-      );
+      const allTerminal = data.every((d) => d.status === 'completed' || TERMINAL_CONCLUSIONS.has((d.conclusionV2 ?? d.conclusion ?? '').toLowerCase()));
       return allTerminal ? false : 15000;
     },
   });

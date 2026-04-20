@@ -26,10 +26,7 @@ interface ComingSoonProps {
   description?: string;
 }
 
-export default function ComingSoon({
-  title = 'Coming Soon',
-  description = 'This feature is currently under development. Check back soon!',
-}: ComingSoonProps): JSX.Element {
+export default function ComingSoon({ title = 'Coming Soon', description = 'This feature is currently under development. Check back soon!' }: ComingSoonProps): JSX.Element {
   const navigate = useNavigate();
 
   return (
