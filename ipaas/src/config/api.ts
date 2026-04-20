@@ -35,6 +35,7 @@ interface RuntimeConfig {
   SYS_API_PREFIX?: string;
   GITHUB_APP_CLIENT_ID?: string;
   GITHUB_APP_AUTH_REDIRECTION_URL?: string;
+  SUBSCRIPTIONS_API_URL?: string;
 }
 
 export interface ApiConfig {
@@ -56,6 +57,7 @@ export interface ApiConfig {
   sysApiPrefix: string;
   githubAppClientId?: string;
   githubAppAuthRedirectUrl?: string;
+  subscriptionsApiUrl: string;
 }
 
 // Extend window interface
@@ -84,6 +86,7 @@ const DEFAULT_CONFIG: ApiConfig = {
   sysApiPrefix: '783c6c4d-8b9b-4190-b70a-e717ab1ee739-systemapis',
   githubAppClientId: '',
   githubAppAuthRedirectUrl: `${window.location.origin}/ghapp`,
+  subscriptionsApiUrl: '/subscriptions-proxy',
 };
 
 /**
@@ -122,6 +125,7 @@ export async function loadConfig(): Promise<void> {
       sysApiPrefix: config.SYS_API_PREFIX || DEFAULT_CONFIG.sysApiPrefix,
       githubAppClientId: config.GITHUB_APP_CLIENT_ID || DEFAULT_CONFIG.githubAppClientId,
       githubAppAuthRedirectUrl: config.GITHUB_APP_AUTH_REDIRECTION_URL || DEFAULT_CONFIG.githubAppAuthRedirectUrl,
+      subscriptionsApiUrl: config.SUBSCRIPTIONS_API_URL || DEFAULT_CONFIG.subscriptionsApiUrl,
     };
 
     console.info('✓ Runtime configuration loaded from config.json');
@@ -137,6 +141,7 @@ export const refreshTokenApiUrl = (): string => `${window.API_CONFIG.authBaseUrl
 export const revokeTokenApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/revoke-token`;
 export const oidcAuthorizeApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/oidc/authorize-url`;
 export const oidcCallbackApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/login/oidc`;
+export const subscriptionsApiUrl = (): string => window.API_CONFIG.subscriptionsApiUrl;
 export const choreoDevopsApiUrl = (): string => window.API_CONFIG.choreoOrgApiUrl.replace('/orgs/1.0.0', '/devops/1.0.0');
 export const componentMgtApiUrl = (): string => window.API_CONFIG.choreoOrgApiUrl.replace('/orgs/1.0.0', '/component-mgt/1.0.0');
 export const changePasswordApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/change-password`;

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 type FeatureMap = Record<string, boolean>;
 
@@ -44,17 +44,20 @@ function loadFromStorage(): FeatureMap {
 export function FeaturePreviewProvider({ children }: { children: React.ReactNode }) {
   const [features, setFeatures] = useState<FeatureMap>(() => loadFromStorage());
 
-  const updateFeatures = (updated: FeatureMap) => {
-    const next = { ...features, ...updated };
-    setFeatures(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  };
+  const updateFeatures = useCallback((updated: FeatureMap) => {
+    setFeatures((prev) => {
+      const next = { ...prev, ...updated };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
-  const value = useMemo(() => ({ features, updateFeatures }), [features]);
+  const value = useMemo(() => ({ features, updateFeatures }), [features, updateFeatures]);
 
   return <FeaturePreviewContext.Provider value={value}>{children}</FeaturePreviewContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useFeaturePreview() {
   return useContext(FeaturePreviewContext);
 }

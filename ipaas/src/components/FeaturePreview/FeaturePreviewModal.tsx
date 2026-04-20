@@ -57,18 +57,7 @@ export default function FeaturePreviewModal({ open, onClose }: FeaturePreviewMod
                     {feature.description}
                   </Typography>
                 </Box>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={!!features[feature.title]}
-                      onChange={(_, checked) => updateFeatures({ [feature.title]: checked })}
-                      color="primary"
-                      size="small"
-                    />
-                  }
-                  label=""
-                  sx={{ m: 0, flexShrink: 0 }}
-                />
+                <FormControlLabel control={<Switch checked={!!features[feature.title]} onChange={(_, checked) => updateFeatures({ [feature.title]: checked })} color="primary" size="small" />} label="" sx={{ m: 0, flexShrink: 0 }} />
               </Stack>
             ))}
           </Stack>

@@ -78,7 +78,13 @@ export async function callCreateCodeServer(params: { userId: string; organizatio
       })
     }`,
     {
-      userId, organizationId, projectId, componentId, orgHandle, imageUrl, registryId,
+      userId,
+      organizationId,
+      projectId,
+      componentId,
+      orgHandle,
+      imageUrl,
+      registryId,
       sourceCommitHash: sourceCommitHash ?? null,
     },
   );

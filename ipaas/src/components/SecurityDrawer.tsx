@@ -165,8 +165,7 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
   const isApiKey = securityScheme.includes(API_KEY);
   const isSecurityDisabled = !isOAuth2 && !isApiKey;
 
-  const operations = api?.operations ?? [];
-  const filteredOps = useMemo(() => operations.filter((op) => op.target.toLowerCase().includes(operationSearch.toLowerCase()) || op.verb.toLowerCase().includes(operationSearch.toLowerCase())), [operations, operationSearch]);
+  const filteredOps = useMemo(() => (api?.operations ?? []).filter((op) => op.target.toLowerCase().includes(operationSearch.toLowerCase()) || op.verb.toLowerCase().includes(operationSearch.toLowerCase())), [api?.operations, operationSearch]);
   const totalPages = Math.max(1, Math.ceil(filteredOps.length / ITEMS_PER_PAGE));
   const pagedOps = filteredOps.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
   const scopes = api?.scopes ?? [];

@@ -39,7 +39,12 @@ export default function IntegrationTypeSelector({ selected, onSelect }: Integrat
             tabIndex={0}
             aria-pressed={isActive}
             onClick={() => onSelect(opt.id)}
-            onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(opt.id); } }}
+            onKeyDown={(e: KeyboardEvent) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelect(opt.id);
+              }
+            }}
             sx={{
               width: '25%',
               minWidth: 180,
@@ -57,7 +62,14 @@ export default function IntegrationTypeSelector({ selected, onSelect }: Integrat
                   {opt.title}
                 </Typography>
                 <Tooltip title="View documentation" placement="top">
-                  <Box component="a" href={opt.docLink} target="_blank" rel="noopener noreferrer" aria-label={`View documentation for ${opt.title}`} onClick={(e: MouseEvent) => e.stopPropagation()} sx={{ display: 'flex', color: 'text.disabled', '&:hover': { color: 'text.secondary' }, ml: 0.5, flexShrink: 0 }}>
+                  <Box
+                    component="a"
+                    href={opt.docLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`View documentation for ${opt.title}`}
+                    onClick={(e: MouseEvent) => e.stopPropagation()}
+                    sx={{ display: 'flex', color: 'text.disabled', '&:hover': { color: 'text.secondary' }, ml: 0.5, flexShrink: 0 }}>
                     <ExternalLink size={13} />
                   </Box>
                 </Tooltip>

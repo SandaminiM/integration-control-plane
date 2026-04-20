@@ -89,15 +89,15 @@ export default function EnvCardInsights({ envName, envId, apimEnvId, projectId, 
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
+    return () => {
+      mounted.current = false;
+    };
   }, []);
 
   // Shared React Query hook — deduplicated across all env cards for the same project
   const { data: insightsEnvs } = useInsightsEnvironments(orgUuid, projectId);
 
-  const insightsEnv = insightsEnvs?.find(
-    (e) => (apimEnvId && e.externalEnvId === apimEnvId) || e.externalEnvId === envId || e.name?.toLowerCase() === envName?.toLowerCase(),
-  ) ?? null;
+  const insightsEnv = insightsEnvs?.find((e) => (apimEnvId && e.externalEnvId === apimEnvId) || e.externalEnvId === envId || e.name?.toLowerCase() === envName?.toLowerCase()) ?? null;
 
   // When environments loaded but no match found, default to zeros
   useEffect(() => {

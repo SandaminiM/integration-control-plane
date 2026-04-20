@@ -106,7 +106,10 @@ export default function BrowseSamples(scope: ProjectScope): JSX.Element {
           isPending={createComponent.isPending}
           isSuccess={createComponent.isSuccess}
           error={createComponent.isError ? (createComponent.error?.message ?? 'Something went wrong. Please try again.') : null}
-          onBack={() => { createComponent.reset(); setDeployingSample(null); }}
+          onBack={() => {
+            createComponent.reset();
+            setDeployingSample(null);
+          }}
         />
       </PageContent>
     );

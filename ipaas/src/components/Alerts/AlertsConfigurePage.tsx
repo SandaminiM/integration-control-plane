@@ -235,11 +235,11 @@ export default function AlertsConfigurePage(props: AlertsConfigurePageProps): JS
 
       {!createNewRule && !isEditAlertRule && (
         <>
-        {notification && (
-          <Alert severity={notification.severity} onClose={() => setNotification(null)} sx={{ mx: 2, my: 2 }}>
-            {notification.message}
-          </Alert>
-        )}
+          {notification && (
+            <Alert severity={notification.severity} onClose={() => setNotification(null)} sx={{ mx: 2, my: 2 }}>
+              {notification.message}
+            </Alert>
+          )}
         </>
       )}
 
