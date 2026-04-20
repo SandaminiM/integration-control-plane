@@ -25,11 +25,12 @@ import ContributorsCard from '../components/ContributorsCard';
 import SearchField from '../components/SearchField';
 import { useNavigate } from 'react-router';
 import { useState, type JSX } from 'react';
-import { useProject, useProjectByHandler, useComponents, type GqlComponent } from '../api/queries';
+import { useProject, useProjectByHandler, useComponents, useOrgs, useOrgComponentLimits, useOrgSubscriptions, type GqlComponent } from '../api/queries';
 import { useDeleteComponent } from '../api/mutations';
 import NotFound from '../components/NotFound';
 import { formatDistanceToNow } from '../utils/time';
 import { resourceUrl, broaden, newComponentUrl, type ProjectScope } from '../nav';
+import { getOrgUuidFromToken } from '../auth/tokenManager';
 import { componentOverviewUrl } from '../paths';
 import { Permissions } from '../constants/permissions';
 import { SUPPORTED_DISPLAY_TYPES, getDisplayLabel } from '../constants/integrations';
@@ -79,6 +80,7 @@ function IntegrationsTable({
   onRefresh,
   scope,
   projectId,
+  orgDevantComponentCount,
   onSelect,
 }: {
   components: GqlComponent[];
@@ -87,6 +89,7 @@ function IntegrationsTable({
   onRefresh: () => void;
   scope: ProjectScope;
   projectId: string;
+  orgDevantComponentCount: number;
   onSelect: (handler: string) => void;
 }) {
   const navigate = useNavigate();
@@ -95,8 +98,7 @@ function IntegrationsTable({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleting, setDeleting] = useState<GqlComponent | null>(null);
   const FREE_COMPONENT_LIMIT = 5;
-  const devantComponentCount = components.filter((c) => SUPPORTED_DISPLAY_TYPES.has(c.displayType ?? '')).length;
-  const quotaReached = devantComponentCount >= FREE_COMPONENT_LIMIT;
+  const quotaReached = orgDevantComponentCount >= FREE_COMPONENT_LIMIT;
   const q = query.trim().toLowerCase();
   const filtered = components
     .filter((c) => {
@@ -130,7 +132,7 @@ function IntegrationsTable({
         </IconButton>
         <SearchField value={query} onChange={setQuery} placeholder="Search" sx={{ flex: 1 }} />
         <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
-          <Tooltip title={quotaReached ? `You have reached the limit of ${FREE_COMPONENT_LIMIT} integrations per project` : ''} placement="top">
+          <Tooltip title={quotaReached ? 'You have exceeded the allocated integration quota. Upgrade your subscription.' : ''} placement="top">
             <span>
               <Button variant="contained" startIcon={<Plus size={16} />} onClick={() => navigate(newComponentUrl(scope))} disabled={quotaReached}>
                 Create
@@ -254,6 +256,12 @@ export default function Project(scope: ProjectScope): JSX.Element {
   const projectId = project?.id ?? '';
   useLoadProjectPermissions(scope.org, projectId);
   const { data: components = [], isLoading: loadingComponents, isFetching: fetchingComponents, refetch: refetchComponents } = useComponents(scope.org, projectId);
+  const { data: orgs = [] } = useOrgs();
+  const orgUuid = getOrgUuidFromToken() ?? orgs.find((o) => o.handle === scope.org)?.uuid ?? '';
+  const { data: orgLimits } = useOrgComponentLimits(orgUuid);
+  const { data: subscriptions } = useOrgSubscriptions(orgUuid);
+  const isUpgraded = (subscriptions ?? []).some((s) => s.subscriptionType === 'devant-subscription' && s.subscriptionStatus === 'active');
+  const orgDevantComponentCount = isUpgraded ? 0 : (orgLimits?.billableComponentCount ?? 0);
 
   if (loadingProject) {
     return (
@@ -287,6 +295,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
             onRefresh={refetchComponents}
             scope={scope}
             projectId={projectId}
+            orgDevantComponentCount={orgDevantComponentCount}
             onSelect={(handler) => navigate(componentOverviewUrl(scope.org, projectId, handler))}
           />
         </Grid>

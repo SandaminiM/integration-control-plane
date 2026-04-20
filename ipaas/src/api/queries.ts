@@ -19,7 +19,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { gql } from './graphql';
 import { authenticatedFetch, getOrgUuidFromToken, refreshAccessToken } from '../auth/tokenManager';
-import { choreoDevopsApiUrl, componentMgtApiUrl } from '../config/api';
+import { choreoDevopsApiUrl, componentMgtApiUrl, subscriptionsApiUrl } from '../config/api';
 import { fetchApimApi, fetchApimSwagger, type ApimApiInfo } from './apim';
 import { UUID_RE } from '../utils/string';
 
@@ -1317,6 +1317,49 @@ export function useChoreoSampleImages(orgUuid: string, projectId: string) {
     enabled: !!orgUuid && !!projectId,
     staleTime: 10 * 60 * 1000,
     retry: false,
+  });
+}
+
+export interface OrgComponentLimits {
+  billableComponentCount: number;
+  componentCount: number;
+}
+
+export function useOrgComponentLimits(orgUuid: string) {
+  return useQuery({
+    queryKey: ['orgComponentLimits', orgUuid],
+    queryFn: async (): Promise<OrgComponentLimits> => {
+      const url = `${componentMgtApiUrl()}/orgs/${encodeURIComponent(orgUuid)}/component-limits?originCloud=devant`;
+      const res = await authenticatedFetch(url);
+      if (!res.ok) throw new Error(`Failed to fetch component limits: ${res.status}`);
+      const json = await res.json();
+      return json.data as OrgComponentLimits;
+    },
+    enabled: !!orgUuid,
+    staleTime: 30 * 1000,
+  });
+}
+
+export interface OrgSubscription {
+  tierId: string;
+  subscriptionId: string;
+  subscriptionType: string;
+  subscriptionStatus: string;
+}
+
+export function useOrgSubscriptions(orgUuid: string) {
+  return useQuery({
+    queryKey: ['orgSubscriptions', orgUuid],
+    queryFn: async (): Promise<OrgSubscription[]> => {
+      const url = `${subscriptionsApiUrl()}/api/organizations/${encodeURIComponent(orgUuid)}/subscriptions?cloudType=devant&origin=choreo-console`;
+      const res = await authenticatedFetch(url);
+      if (!res.ok) throw new Error(`Failed to fetch subscriptions: ${res.status}`);
+      const json = await res.json();
+      return (json.list ?? []) as OrgSubscription[];
+    },
+    enabled: !!orgUuid,
+    staleTime: 5 * 60 * 1000,
+    retry: 0,
   });
 }
 

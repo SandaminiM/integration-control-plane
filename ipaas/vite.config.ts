@@ -27,6 +27,13 @@ export default defineConfig({
   server: {
     port: 3000,
     https: {},
+    proxy: {
+      '/subscriptions-proxy': {
+        target: 'https://subscriptions.dv.wso2.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/subscriptions-proxy/, ''),
+      },
+    },
   },
   resolve: {
     dedupe: ['react', 'react-dom', 'react/jsx-runtime'],
