@@ -85,6 +85,14 @@ export function browseSamplesUrl(orgHandler: string, projectHandler: string): st
   return `/organizations/${orgHandler}/projects/${projectHandler}/components/new/samples`;
 }
 
+export function prebuiltIntegrationsUrl(orgHandler: string, projectHandler: string): string {
+  return `/organizations/${orgHandler}/projects/${projectHandler}/prebuilt-integrations`;
+}
+
+export function importComingSoonUrl(orgHandler: string, projectHandler: string): string {
+  return `/organizations/${orgHandler}/projects/${projectHandler}/components/new/import-coming-soon`;
+}
+
 export function editComponentUrl(orgHandler: string, projectHandler: string, componentId: string): string {
   return `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentId}/edit`;
 }

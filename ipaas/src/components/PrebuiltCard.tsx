@@ -21,10 +21,11 @@ import type { JSX } from 'react';
 import type { PrebuiltIntegration } from '../types/samples';
 import AppAvatar from './AppAvatar';
 
-export default function PrebuiltCard({ integration }: { integration: PrebuiltIntegration }): JSX.Element {
+export default function PrebuiltCard({ integration, onClick }: { integration: PrebuiltIntegration; onClick?: () => void }): JSX.Element {
   return (
     <Tooltip title="Prebuilt Integration Configuration is coming soon" placement="top" arrow>
       <Box
+        onClick={onClick}
         sx={{
           display: 'flex',
           alignItems: 'center',
@@ -34,9 +35,11 @@ export default function PrebuiltCard({ integration }: { integration: PrebuiltInt
           borderColor: 'divider',
           borderRadius: 1.5,
           bgcolor: 'background.paper',
-          cursor: 'default',
+          cursor: onClick ? 'pointer' : 'default',
           userSelect: 'none',
           gap: 1.5,
+          transition: 'border-color 0.15s',
+          ...(onClick ? { '&:hover': { borderColor: 'primary.main' } } : {}),
         }}>
         {/* Application icon flow */}
         <Box

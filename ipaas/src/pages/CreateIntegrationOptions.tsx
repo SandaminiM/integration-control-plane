@@ -36,7 +36,7 @@ import { GITHUB_AUTH } from '../constants/import';
 import { FEATURED_SAMPLES, FEATURED_PREBUILT } from '../constants/samples';
 import { CARD_HOVER_SX, PROVIDER_ICON_SX } from '../constants/styles';
 import { resourceUrl, narrow, type ProjectScope } from '../nav';
-import { importComponentUrl, browseSamplesUrl, buildGitHubOAuthUrl } from '../paths';
+import { importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, importComingSoonUrl, buildGitHubOAuthUrl } from '../paths';
 import type { Sample } from '../types/samples';
 import { toHandler } from '../utils/string';
 import { useProjectId } from '../hooks/useProjectId';
@@ -50,7 +50,7 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
   const { data: sampleImages } = useChoreoSampleImages(orgUuid, projectId);
 
   const [isCloudEditorCardHovered, setIsCloudEditorCardHovered] = useState(false);
-  const [selectedTab, setSelectedTab] = useState(1);
+  const [selectedTab, setSelectedTab] = useState(0);
   const [deployingSample, setDeployingSample] = useState<string | null>(null);
   const [isImportAuthenticating, setIsImportAuthenticating] = useState(false);
   const [pageError, setPageError] = useState<{ message: string; severity: 'error' | 'warning' } | null>(null);
@@ -249,17 +249,17 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from GitLab" placement="top">
-                        <IconButton aria-label="Import from GitLab" sx={PROVIDER_ICON_SX}>
+                        <IconButton aria-label="Import from GitLab" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
                           <GitLab size={22} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from Bitbucket" placement="top">
-                        <IconButton aria-label="Import from Bitbucket" sx={PROVIDER_ICON_SX}>
+                        <IconButton aria-label="Import from Bitbucket" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
                           <Bitbucket size={22} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from Azure" placement="top">
-                        <IconButton aria-label="Import from Azure" sx={PROVIDER_ICON_SX}>
+                        <IconButton aria-label="Import from Azure" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
                           <AzureIcon size={22} />
                         </IconButton>
                       </Tooltip>
@@ -303,11 +303,11 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                   }}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                     {FEATURED_PREBUILT.map((integration) => (
-                      <PrebuiltCard key={integration.displayName} integration={integration} />
+                      <PrebuiltCard key={integration.displayName} integration={integration} onClick={() => navigate(prebuiltIntegrationsUrl(scope.org, scope.project))} />
                     ))}
                   </Box>
                   <Box sx={{ mt: 'auto', pt: 2 }}>
-                    <Button variant="text" color="primary" endIcon={<ArrowRight size={14} />} disabled sx={{ textTransform: 'none', pl: 0 }}>
+                    <Button variant="text" color="primary" endIcon={<ArrowRight size={14} />} onClick={() => navigate(prebuiltIntegrationsUrl(scope.org, scope.project))} sx={{ textTransform: 'none', pl: 0 }}>
                       Explore more prebuilt integrations
                     </Button>
                   </Box>
