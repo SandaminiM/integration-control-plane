@@ -102,11 +102,11 @@ export default function LoginForm(): JSX.Element {
     <form onSubmit={handleLogin}>
       <Box sx={{ mb: 6 }}>
         <Typography variant="h1" gutterBottom>
-          Login to Account
+          Sign In
         </Typography>
 
         <Typography>
-          Don&apos;t have an account <Link href="">Sign up!</Link>
+          Don&apos;t have an account? <Link href="">Sign Up</Link>
         </Typography>
       </Box>
 
