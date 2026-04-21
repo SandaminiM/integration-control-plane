@@ -122,7 +122,7 @@ function OperationDetails({ method, path, swagger, onClose }: OperationDetailsPr
             }}>
             {method}
           </Box>
-          <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 500, wordBreak: 'break-word', color: '#222228' }}>
+          <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 500, wordBreak: 'break-word', color: 'text.primary' }}>
             {path}
           </Typography>
         </Stack>
@@ -200,7 +200,7 @@ export default function SwaggerOperationsList({ swagger }: SwaggerOperationsList
               </Box>
 
               {/* Path */}
-              <Typography sx={{ flex: 1, fontSize: '13px', fontWeight: 500, wordBreak: 'break-word', color: '#222228' }}>{op.path}</Typography>
+              <Typography sx={{ flex: 1, fontSize: '13px', fontWeight: 500, wordBreak: 'break-word', color: 'text.primary' }}>{op.path}</Typography>
 
               {/* View Details */}
               <Button variant="text" size="small" onClick={() => setSelected(op)} sx={{ fontSize: '12px', flexShrink: 0, textTransform: 'none' }}>
