@@ -102,6 +102,31 @@ export async function updateApimApi(apimId: string, body: ApimApiInfo): Promise<
   return res.json() as Promise<ApimApiInfo>;
 }
 
+// Derive the Choreo app base URL (e.g. https://app.preview-dv.choreo.dev) from the org API URL.
+function getChoreoAppBaseUrl(): string | null {
+  const match = (window.API_CONFIG?.choreoOrgApiUrl ?? '').match(/\/\/apis\.([^/]+)/);
+  return match ? `https://app.${match[1]}` : null;
+}
+
+export interface TestSession {
+  sessionId: string;
+  ttl: number;
+  message: string;
+}
+
+export async function fetchTestSession(componentId: string, environmentId: string, endpointId: string, userIdpId: string): Promise<TestSession | null> {
+  const base = getChoreoAppBaseUrl();
+  if (!base) return null;
+  try {
+    const params = new URLSearchParams({ userIdpId, endpointId });
+    const res = await authenticatedFetch(`${base}/proxy/deployer/v1/components/${encodeURIComponent(componentId)}/environment/${encodeURIComponent(environmentId)}/test-session?${params}`);
+    if (!res.ok) return null;
+    return res.json() as Promise<TestSession>;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchApimSwagger(apimRevisionId: string): Promise<unknown> {
   const base = getApimBaseUrl();
   if (!base) return null;

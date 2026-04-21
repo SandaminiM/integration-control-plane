@@ -18,6 +18,7 @@
 
 import { Box, Button, Chip, Divider, MenuItem, Select, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { GitBranch, HelpCircle, Plus } from '@wso2/oxygen-ui-icons-react';
+import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import type { GqlDeploymentTrack } from '../api/queries';
 
@@ -28,6 +29,7 @@ interface DeploymentTrackBarProps {
   orgHandler: string;
   projectHandler: string;
   componentHandler: string;
+  extra?: ReactNode;
 }
 
 const TOOLTIP_TEXT = 'Deployment tracks control the release path of your component versions through different environments.';
@@ -44,7 +46,7 @@ function TrackLabel({ track }: { track: GqlDeploymentTrack }) {
   );
 }
 
-export default function DeploymentTrackBar({ tracks, selectedId, onChange, orgHandler, projectHandler, componentHandler }: DeploymentTrackBarProps) {
+export default function DeploymentTrackBar({ tracks, selectedId, onChange, orgHandler, projectHandler, componentHandler, extra }: DeploymentTrackBarProps) {
   const navigate = useNavigate();
   const basePath = `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/settings/deployment-tracks`;
 
@@ -119,6 +121,7 @@ export default function DeploymentTrackBar({ tracks, selectedId, onChange, orgHa
           </MenuItem>
         ))}
       </Select>
+      {extra}
     </Box>
   );
 }
