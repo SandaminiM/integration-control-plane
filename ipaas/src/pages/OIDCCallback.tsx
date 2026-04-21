@@ -42,12 +42,12 @@ async function resolvePostLoginUrl(): Promise<string> {
             const gqlRes = await authenticatedFetch(window.API_CONFIG.graphqlUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ query: `{ projects(orgId: ${orgId}) { id } }` }),
+              body: JSON.stringify({ query: `{ projects(orgId: ${orgId}) { id handler } }` }),
             });
             if (gqlRes.ok) {
               const gqlData = await gqlRes.json();
-              const projects: Array<{ id: string }> = gqlData.data?.projects ?? [];
-              if (projects.length > 0) return projectHomeUrl(handle, projects[0].id);
+              const projects: Array<{ id: string; handler: string }> = gqlData.data?.projects ?? [];
+              if (projects.length > 0) return projectHomeUrl(handle, projects[0].handler);
             }
           } catch {
             /* fall through to org page */

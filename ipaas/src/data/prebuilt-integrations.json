@@ -11,15 +11,9 @@
       "componentPath": "/salesforceops-to-googlesheets",
       "thumbnailPath": "",
       "documentationPath": "/ballerina-integrator/salesforceops-to-googlesheets/README.md",
-      "applications": [
-        "Salesforce",
-        "Google Sheets"
-      ],
+      "applications": ["Salesforce", "Google Sheets"],
       "imageVersion": "1.0.0",
-      "tags": [
-        "Automation",
-        "CRM"
-      ],
+      "tags": ["Automation", "CRM"],
       "imageUrl": "wso2integrations.azurecr.io/salesforceops_to_googlesheets:0.1.0",
       "bidirectional": false
     },
@@ -34,16 +28,9 @@
       "componentPath": "/new-shopify-customer-to-stripe",
       "thumbnailPath": "",
       "documentationPath": "/ballerina-integrator/new-shopify-customer-to-stripe/README.md",
-      "applications": [
-        "Shopify",
-        "Stripe"
-      ],
+      "applications": ["Shopify", "Stripe"],
       "imageVersion": "1.0.0",
-      "tags": [
-        "HTTP",
-        "REST",
-        "CRM"
-      ],
+      "tags": ["HTTP", "REST", "CRM"],
       "imageUrl": "wso2integrations.azurecr.io/new_shopify_customer_to_stripe:0.2.0",
       "bidirectional": false
     },
@@ -58,16 +45,9 @@
       "componentPath": "/signup-sfchatsync",
       "thumbnailPath": "",
       "documentationPath": "/ballerina-integrator/signup-sfchatsync/README.md",
-      "applications": [
-        "Salesforce",
-        "Google Chat"
-      ],
+      "applications": ["Salesforce", "Google Chat"],
       "imageVersion": "1.0.0",
-      "tags": [
-        "HTTP",
-        "REST",
-        "CRM"
-      ],
+      "tags": ["HTTP", "REST", "CRM"],
       "imageUrl": "wso2integrations.azurecr.io/signup_sfchatsync:0.1.0",
       "bidirectional": true
     }

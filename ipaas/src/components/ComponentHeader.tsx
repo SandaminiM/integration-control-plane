@@ -61,10 +61,11 @@ interface ComponentHeaderProps {
   latestCommit?: GqlCommit | null;
   orgHandler: string;
   projectId: string;
+  projectHandler: string;
   apimId?: string | null;
 }
 
-export default function ComponentHeader({ component, project, repository, latestCommit, orgHandler, projectId, apimId }: ComponentHeaderProps) {
+export default function ComponentHeader({ component, project, repository, latestCommit, orgHandler, projectId, projectHandler, apimId }: ComponentHeaderProps) {
   const navigate = useNavigate();
   const { userId } = useAuth();
   const [copied, setCopied] = useState(false);
@@ -557,7 +558,7 @@ export default function ComponentHeader({ component, project, repository, latest
                 <Button
                   variant="text"
                   size="small"
-                  onClick={() => navigate(`/organizations/${orgHandler}/projects/${projectId}/components/${component.handler}/manage/lifecycle`)}
+                  onClick={() => navigate(`/organizations/${orgHandler}/projects/${projectHandler}/components/${component.handler}/manage/lifecycle`)}
                   startIcon={<Recycle size={14} />}
                   sx={{ color: 'text.secondary', textTransform: 'none', p: 0, minWidth: 0, '&:hover': { background: 'none', textDecoration: 'underline' } }}>
                   Lifecycle Status

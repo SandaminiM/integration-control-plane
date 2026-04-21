@@ -11,11 +11,7 @@
       "thumbnailPath": "https://choreo-shared-choreo-samples-cdne.azureedge.net/icons/hello-world.png",
       "documentationPath": "/ballerina-integrator/hello-world-service/README.md",
       "imageVersion": "1.0.0",
-      "tags": [
-        "HTTP",
-        "Integration",
-        "REST"
-      ],
+      "tags": ["HTTP", "Integration", "REST"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -29,11 +25,7 @@
       "thumbnailPath": "https://choreo-shared-choreo-samples-cdne.azureedge.net/icons/docker-time-logger-schedule.svg",
       "documentationPath": "/scheduled-logger/README.md",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "Automation",
-        "Logging"
-      ],
+      "tags": ["Integration", "Automation", "Logging"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -47,11 +39,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/Testing_Templates.png",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "HTTP",
-        "REST"
-      ],
+      "tags": ["Integration", "HTTP", "REST"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -65,11 +53,7 @@
       "thumbnailPath": "https://choreo-shared-choreo-samples-cdne.azureedge.net/icons/json-to-xml-conversion.png",
       "documentationPath": "/json-to-xml-converter/README.md",
       "imageVersion": "1.0.0",
-      "tags": [
-        "HTTP",
-        "Integration",
-        "REST"
-      ],
+      "tags": ["HTTP", "Integration", "REST"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -83,11 +67,7 @@
       "thumbnailPath": "/Billing.svg",
       "documentationPath": "/currency-converter/README.md",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "REST",
-        "HTTP"
-      ],
+      "tags": ["Integration", "REST", "HTTP"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -101,11 +81,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/Routing_Templates.png",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "HTTP",
-        "REST"
-      ],
+      "tags": ["Integration", "HTTP", "REST"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -119,11 +95,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/DataIntegration_Templates.png",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "Database",
-        "SQL"
-      ],
+      "tags": ["Integration", "Database", "SQL"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -137,12 +109,7 @@
       "thumbnailPath": "https://choreo-shared-choreo-samples-cdne.azureedge.net/icons/weather-to-email-integration.svg",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "SMTP",
-        "EMAIL",
-        "IMAP"
-      ],
+      "tags": ["Integration", "SMTP", "EMAIL", "IMAP"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -156,9 +123,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/ErrorHandling_Templates.png",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration"
-      ],
+      "tags": ["Integration"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -172,10 +137,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/SaaS_Templates.png",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "salesforce"
-      ],
+      "tags": ["Integration", "salesforce"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -189,11 +151,7 @@
       "thumbnailPath": "/file.svg",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "File",
-        "FTP"
-      ],
+      "tags": ["Integration", "File", "FTP"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -207,9 +165,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/Messaging_Templates.png",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration"
-      ],
+      "tags": ["Integration"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -223,11 +179,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/Routing_Templates.png",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "HTTP",
-        "REST"
-      ],
+      "tags": ["Integration", "HTTP", "REST"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -241,10 +193,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/Container_Templates.png",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "DOCKER"
-      ],
+      "tags": ["Integration", "DOCKER"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -258,10 +207,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/Messaging_Templates.png",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "JMS"
-      ],
+      "tags": ["Integration", "JMS"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -275,10 +221,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/Messaging_Templates.png",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "Kafka"
-      ],
+      "tags": ["Integration", "Kafka"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -292,11 +235,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/Routing_Templates.png",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "REST",
-        "HTTP"
-      ],
+      "tags": ["Integration", "REST", "HTTP"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -310,9 +249,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/Task_Templates.png",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration"
-      ],
+      "tags": ["Integration"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -326,10 +263,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/Routing_Templates.png",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "REST"
-      ],
+      "tags": ["Integration", "REST"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -343,10 +277,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/DataIntegration_Templates.png",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "REST"
-      ],
+      "tags": ["Integration", "REST"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -360,10 +291,7 @@
       "thumbnailPath": "https://choreo-shared-choreo-samples-cdne.azureedge.net/icons/mi-rabbitmq-listener.svg",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "RabbitMQ"
-      ],
+      "tags": ["Integration", "RabbitMQ"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -377,11 +305,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/Transformation_Templates.png",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "HTTP",
-        "REST"
-      ],
+      "tags": ["Integration", "HTTP", "REST"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -395,11 +319,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/Transformation_Templates.png",
       "documentationPath": "",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "HTTP",
-        "REST"
-      ],
+      "tags": ["Integration", "HTTP", "REST"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -413,11 +333,7 @@
       "thumbnailPath": "https://choreo-shared-choreo-samples-cdne.azureedge.net/icons/newsapi_headlines-to-email.png",
       "documentationPath": "/daily-email-notifier/README.md",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "Automation",
-        "Email"
-      ],
+      "tags": ["Integration", "Automation", "Email"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -431,11 +347,7 @@
       "thumbnailPath": "/file.svg",
       "documentationPath": "/automated-file-processor/README.md",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Integration",
-        "Automation",
-        "File Processing"
-      ],
+      "tags": ["Integration", "Automation", "File Processing"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -449,10 +361,7 @@
       "thumbnailPath": "/AIAgent.svg",
       "documentationPath": "/math-tutor/README.md",
       "imageVersion": "1.0.0",
-      "tags": [
-        "AzureOpenAi",
-        "Integration"
-      ],
+      "tags": ["AzureOpenAi", "Integration"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -466,10 +375,7 @@
       "thumbnailPath": "/AIAgent.svg",
       "documentationPath": "/pizza-shop-integration/README.md",
       "imageVersion": "1.0.0",
-      "tags": [
-        "OpenAI",
-        "Integration"
-      ],
+      "tags": ["OpenAI", "Integration"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -483,12 +389,7 @@
       "thumbnailPath": "/AIAgent.svg",
       "documentationPath": "/hr-ai-chat-agent/README.md",
       "imageVersion": "1.0.0",
-      "tags": [
-        "RAG",
-        "OpenAI",
-        "Pinecone",
-        "Integration"
-      ],
+      "tags": ["RAG", "OpenAI", "Pinecone", "Integration"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -502,12 +403,7 @@
       "thumbnailPath": "/AIAgent.svg",
       "documentationPath": "/weather-based-activity-recommender/README.md",
       "imageVersion": "1.0.0",
-      "tags": [
-        "Automation",
-        "Integration",
-        "OpenAI",
-        "OpenWeatherMap"
-      ],
+      "tags": ["Automation", "Integration", "OpenAI", "OpenWeatherMap"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     },
     {
@@ -521,10 +417,7 @@
       "thumbnailPath": "https://mi-connectors.wso2.com/samples/icons/Transformation_Templates.png",
       "documentationPath": "/weather-data-listener/README.md",
       "imageVersion": "1.0.0",
-      "tags": [
-        "FTP",
-        "Integration"
-      ],
+      "tags": ["FTP", "Integration"],
       "imageUrl": "choreoanonymouspullable.azurecr.io/samples/reading-list-rest-service-in-go:1.0.0"
     }
   ]

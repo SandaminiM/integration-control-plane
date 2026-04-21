@@ -25,7 +25,7 @@ import ContributorsCard from '../components/ContributorsCard';
 import SearchField from '../components/SearchField';
 import { useNavigate } from 'react-router';
 import { useState, type JSX } from 'react';
-import { useProject, useProjectByHandler, useComponents, useOrgs, useOrgComponentLimits, useOrgSubscriptions, type GqlComponent } from '../api/queries';
+import { useProject, useProjectByHandler, useProjects, useComponents, useOrgs, useOrgComponentLimits, useOrgSubscriptions, type GqlComponent } from '../api/queries';
 import { useDeleteComponent } from '../api/mutations';
 import NotFound from '../components/NotFound';
 import { formatDistanceToNow } from '../utils/time';
@@ -251,8 +251,10 @@ export default function Project(scope: ProjectScope): JSX.Element {
   const isUuid = UUID_RE.test(scope.project);
   const { data: projectById, isLoading: loadingById } = useProject(isUuid ? scope.project : '');
   const { data: projectByHandle, isLoading: loadingByHandle } = useProjectByHandler(isUuid ? '' : scope.project);
-  const project = isUuid ? projectById : projectByHandle;
-  const loadingProject = isUuid ? loadingById : loadingByHandle;
+  const { data: allProjects = [], isLoading: loadingProjects } = useProjects();
+  const projectFromList = !isUuid ? (allProjects.find((p) => p.handler === scope.project) ?? null) : null;
+  const project = isUuid ? projectById : (projectByHandle ?? projectFromList);
+  const loadingProject = !project && (isUuid ? loadingById : loadingByHandle || loadingProjects);
   const projectId = project?.id ?? '';
   useLoadProjectPermissions(scope.org, projectId);
   const { data: components = [], isLoading: loadingComponents, isFetching: fetchingComponents, refetch: refetchComponents } = useComponents(scope.org, projectId);
@@ -296,7 +298,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
             scope={scope}
             projectId={projectId}
             orgDevantComponentCount={orgDevantComponentCount}
-            onSelect={(handler) => navigate(componentOverviewUrl(scope.org, projectId, handler))}
+            onSelect={(handler) => navigate(componentOverviewUrl(scope.org, project?.handler ?? scope.project, handler))}
           />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
