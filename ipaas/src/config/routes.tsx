@@ -165,6 +165,14 @@ const routes: AppRoute[] = [
               { path: componentGroupDetailUrl(':orgHandler', ':projectHandler', ':componentHandler', ':groupId'), element: <ComponentGroupDetail /> },
               { path: '/profile', element: <Profile /> },
               {
+                path: 'organizations/:orgHandler/projects/:projectHandler/prebuilt-integrations',
+                element: <ComingSoon title="Coming Soon" description="Prebuilt integrations are currently under development. You'll be able to browse and deploy prebuilt integrations directly from here." />,
+              },
+              {
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/new/import-coming-soon',
+                element: <ComingSoon title="Coming Soon" description="Importing from this Git provider is currently not available. You'll be able to import integrations from this source soon." />,
+              },
+              {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test',
                 element: <ComingSoon title="Coming Soon" description="Testing tools are currently under development." />,
               },

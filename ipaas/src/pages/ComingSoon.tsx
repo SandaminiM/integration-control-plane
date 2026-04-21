@@ -33,9 +33,9 @@ export default function ComingSoon({ title = 'Coming Soon', description = 'This 
     <PageContent
       sx={{
         display: 'flex',
+        flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '60vh',
       }}>
       <Stack alignItems="center" gap={3} sx={{ maxWidth: 480, textAlign: 'center' }}>
         {/* Illustration */}
