@@ -22,11 +22,12 @@ import type { JSX } from 'react';
 import type { Sample } from '../types/samples';
 import { formatComponentType } from '../constants/integrations';
 
-export default function SampleRowCard({ sample, onDeploy, isDeploying }: { sample: Sample; onDeploy: () => void; isDeploying: boolean }): JSX.Element {
+export default function SampleRowCard({ sample, onDeploy, isDeploying, onClick }: { sample: Sample; onDeploy: () => void; isDeploying: boolean; onClick?: () => void }): JSX.Element {
   const sourceUrl = `${sample.repositoryUrl}tree/${sample.branch ?? 'main'}${sample.subDirectory}${sample.componentPath}`;
 
   return (
     <Box
+      onClick={onClick}
       sx={{
         display: 'flex',
         alignItems: 'center',
@@ -39,6 +40,7 @@ export default function SampleRowCard({ sample, onDeploy, isDeploying }: { sampl
         bgcolor: 'background.paper',
         gap: 1.5,
         transition: 'border-color 0.15s',
+        cursor: onClick ? 'pointer' : 'default',
         '&:hover': { borderColor: 'primary.main' },
       }}>
       {/* Thumbnail */}
