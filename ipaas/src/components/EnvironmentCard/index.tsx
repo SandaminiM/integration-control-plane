@@ -272,7 +272,7 @@ export default function Environment({ env, prevEnv, componentId, projectId, comp
           onRefresh={handleRefresh}
           onConfigure={() => setConfigureOpen(true)}
           onViewLogs={isGenericService ? () => setLogsOpen(true) : undefined}
-          onTest={isGenericService ? () => navigate(`/organizations/${orgHandler}/projects/${projectId}/components/${componentHandler}/test/console`) : undefined}
+          onTest={isGenericService ? () => navigate(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/test/console`) : undefined}
           hasMissingConfigs={hasMissingConfigs}
         />
 

@@ -19,7 +19,7 @@
 import type { ReactNode, JSX } from 'react';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { useScope, hasProject, hasComponent } from '../nav';
-import { useProject, useProjectByHandler, useComponents } from '../api/queries';
+import { useProject, useProjectByHandler, useProjects, useComponents } from '../api/queries';
 import { UUID_RE } from '../utils/string';
 
 interface AuthorizedProps {
@@ -37,7 +37,9 @@ export default function Authorized({ permissions, children, fallback }: Authoriz
   const isProjectUuid = UUID_RE.test(projectParam);
   const { data: projectByHandler } = useProjectByHandler(!isProjectUuid ? projectParam : '');
   const { data: projectById } = useProject(isProjectUuid ? projectParam : '');
-  const project = projectByHandler ?? projectById;
+  const { data: allProjects = [] } = useProjects();
+  const projectFromList = !isProjectUuid && projectParam ? (allProjects.find((p) => p.handler === projectParam) ?? null) : null;
+  const project = isProjectUuid ? projectById : (projectByHandler ?? projectFromList ?? undefined);
   const projectId = project?.id;
   const { data: components } = useComponents(scope.org, projectId ?? '');
 

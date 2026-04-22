@@ -45,45 +45,146 @@ import {
   useAppShell,
   useNotifications,
 } from '@wso2/oxygen-ui';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { JSX } from 'react';
-import { useNavigate, Outlet, NavLink } from 'react-router';
+import { useNavigate, Outlet, NavLink, useLocation } from 'react-router';
 import Logo from '../components/Logo';
-import { BarChart3, Bell, ChevronDown, ChevronRight, Hammer, Layers, LayoutDashboard, LogOut, Plus, ScanEye, ScrollText, Search, Server, Shield, User as UserIcon, X } from '@wso2/oxygen-ui-icons-react';
+import {
+  Activity,
+  Award,
+  BarChart3,
+  Bell,
+  Binoculars,
+  Boxes,
+  Brain,
+  ChevronDown,
+  ChevronRight,
+  ClipboardCheck,
+  ClipboardList,
+  Clock,
+  Cog,
+  CreditCard,
+  Cpu,
+  Database,
+  DatabaseZap,
+  Diamond,
+  Eye,
+  FileText,
+  FlaskConical,
+  GitBranch,
+  Hammer,
+  HardDrive,
+  HeartPulse,
+  KeyRound,
+  Layers,
+  LayoutDashboard,
+  Lightbulb,
+  Link2,
+  LogOut,
+  Maximize2,
+  MessageSquare,
+  Network,
+  Plus,
+  Puzzle,
+  RefreshCw,
+  Rocket,
+  ScanEye,
+  Scale,
+  ScrollText,
+  Search,
+  Server,
+  Settings2,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
+  Terminal,
+  Truck,
+  User as UserIcon,
+  Workflow,
+  X,
+} from '@wso2/oxygen-ui-icons-react';
 import FeaturePreviewModal from '../components/FeaturePreview/FeaturePreviewModal';
 import { useProject, useProjectByHandler, useProjects, useComponents, useOrgs } from '../api/queries';
-import { SUPPORTED_DISPLAY_TYPES } from '../constants/integrations';
+import { SUPPORTED_DISPLAY_TYPES, GENERIC_SERVICE_TYPES } from '../constants/integrations';
 import { fetchOrgPermissions } from '../api/auth';
 import { authenticatedFetch, switchOrgToken } from '../auth/tokenManager';
 import { mockNotifications } from '../mock-data/mockNotifications';
-import { useScope, useResource, resourceUrl, broaden, narrow, newProjectUrl, newComponentUrl, sidebarItems, hasProject, hasComponent, type Resource } from '../nav';
+import { useScope, useResource, resourceUrl, broaden, narrow, newProjectUrl, newComponentUrl, hasProject, hasComponent, type Resource } from '../nav';
 import { componentOverviewUrl, cookiePolicyUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, projectHomeUrl } from '../paths';
 import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions';
 import { UUID_RE } from '../utils/string';
 
-const SIDEBAR_ICONS: Record<Resource, JSX.Element> = {
-  overview: <LayoutDashboard size={20} />,
-  logs: <ScrollText size={20} />,
-  alerts: <Bell size={20} />,
-  metrics: <BarChart3 size={20} />,
-  runtimes: <Server size={20} />,
-  environments: <Layers size={20} />,
-  'access-control': <Shield size={20} />,
-  build: <Hammer size={20} />,
+// Maps each org-scope leaf nav ID to its expandable parent group ID
+const ORG_PARENT_MAP: Record<string, string> = {
+  'org-usage': 'org-insights',
+  'org-delivery': 'org-insights',
+  'org-compliance': 'org-insights',
+  'org-logs': 'org-observability',
+  'org-metrics': 'org-observability',
+  'org-scheduled-ingestion': 'org-rag',
+  'org-service': 'org-rag',
+  'org-retrieval': 'org-rag',
+  'org-databases': 'org-admin',
+  'org-vector-databases': 'org-admin',
+  'org-message-brokers': 'org-admin',
+  'org-third-party': 'org-admin',
+  'org-genai-services': 'org-admin',
+  'org-config-groups': 'org-admin',
+  'org-governance': 'org-admin',
+  'org-cd-pipelines': 'org-admin',
+  'org-data-planes': 'org-admin',
+  'org-environments': 'org-admin',
+  'org-audit-logs': 'org-admin',
+  'org-approvals': 'org-admin',
+  'org-certificates': 'org-admin',
+  'org-settings': 'org-admin',
 };
 
-const SIDEBAR_CATEGORIES: { label: string; resources: Resource[] }[] = [
-  { label: '', resources: ['overview', 'build'] },
-  { label: 'Observability', resources: ['logs', 'alerts', 'metrics'] },
-  { label: 'Infrastructure', resources: ['runtimes', 'environments'] },
-  { label: 'Management', resources: ['access-control'] },
-];
+// Maps each project-scope leaf nav ID to its expandable parent group ID
+const PROJECT_PARENT_MAP: Record<string, string> = {
+  'proj-usage': 'proj-insights',
+  'proj-delivery': 'proj-insights',
+  'proj-compliance': 'proj-insights',
+  'proj-logs': 'proj-observability',
+  'proj-metrics': 'proj-observability',
+  'proj-connections': 'proj-admin',
+  'proj-third-party': 'proj-admin',
+  'proj-genai-services': 'proj-admin',
+  'proj-cd-pipelines': 'proj-admin',
+  'proj-environments': 'proj-admin',
+  'proj-settings': 'proj-admin',
+};
+
+// Maps each component-scope leaf nav ID to its expandable parent group ID
+const COMPONENT_PARENT_MAP: Record<string, string> = {
+  integration: 'develop',
+  lifecycle: 'develop',
+  documents: 'develop',
+  plans: 'develop',
+  console: 'test',
+  'api-chat': 'test',
+  usage: 'insights',
+  delivery: 'insights',
+  compliance: 'insights',
+  alerts: 'observability',
+  logs: 'observability',
+  metrics: 'observability',
+  connections: 'admin',
+  runtime: 'admin',
+  containers: 'admin',
+  'configs-secrets': 'admin',
+  'health-checks': 'admin',
+  scaling: 'admin',
+  storage: 'admin',
+  'component-settings': 'admin',
+};
 
 export default function AppLayout(): JSX.Element {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const scope = useScope();
   const resource = useResource();
 
@@ -92,6 +193,103 @@ export default function AppLayout(): JSX.Element {
   const { hasAnyPermission, setOrgPermissions } = useAccessControl();
 
   const { state: shell, actions } = useAppShell({ initialCollapsed: true });
+
+  // Compute the active nav item ID — uses URL matching for component/org scopes; Matrix resource for project scope
+  const activeNavId = useMemo((): string => {
+    if (!hasProject(scope)) {
+      // Org scope
+      const base = `/organizations/${scope.org}`;
+      const rest = pathname.slice(base.length).replace(/^\//, '');
+      if (!rest || rest === 'home') return 'overview';
+      if (rest.startsWith('build')) return 'build';
+      if (rest.startsWith('develop')) return 'org-develop';
+      if (rest.startsWith('deploy')) return 'org-deploy';
+      if (rest.startsWith('test')) return 'org-test';
+      if (rest.startsWith('insights/usage')) return 'org-usage';
+      if (rest.startsWith('insights/delivery')) return 'org-delivery';
+      if (rest.startsWith('insights/compliance')) return 'org-compliance';
+      if (rest.startsWith('logs')) return 'org-logs';
+      if (rest.startsWith('metrics')) return 'org-metrics';
+      if (rest.startsWith('rag/scheduled-ingestion')) return 'org-scheduled-ingestion';
+      if (rest.startsWith('rag/service')) return 'org-service';
+      if (rest.startsWith('rag/retrieval')) return 'org-retrieval';
+      if (rest.startsWith('admin/databases')) return 'org-databases';
+      if (rest.startsWith('admin/vector-databases')) return 'org-vector-databases';
+      if (rest.startsWith('admin/message-brokers')) return 'org-message-brokers';
+      if (rest.startsWith('admin/third-party')) return 'org-third-party';
+      if (rest.startsWith('admin/genai-services')) return 'org-genai-services';
+      if (rest.startsWith('admin/config-groups')) return 'org-config-groups';
+      if (rest.startsWith('admin/governance')) return 'org-governance';
+      if (rest.startsWith('admin/cd-pipelines')) return 'org-cd-pipelines';
+      if (rest.startsWith('admin/data-planes')) return 'org-data-planes';
+      if (rest.startsWith('environments')) return 'org-environments';
+      if (rest.startsWith('admin/audit-logs')) return 'org-audit-logs';
+      if (rest.startsWith('admin/approvals')) return 'org-approvals';
+      if (rest.startsWith('admin/certificates')) return 'org-certificates';
+      if (rest.startsWith('settings/access-control')) return 'org-settings';
+      return 'overview';
+    }
+    if (!hasComponent(scope)) {
+      // Project scope
+      const projB = `/organizations/${scope.org}/projects/${scope.project}`;
+      const rest = pathname.slice(projB.length).replace(/^\//, '');
+      if (!rest || rest === 'home') return 'proj-overview';
+      if (rest.startsWith('develop')) return 'proj-develop';
+      if (rest.startsWith('build')) return 'proj-build';
+      if (rest.startsWith('deploy')) return 'proj-deploy';
+      if (rest.startsWith('test')) return 'proj-test';
+      if (rest.startsWith('insights/usage')) return 'proj-usage';
+      if (rest.startsWith('insights/delivery')) return 'proj-delivery';
+      if (rest.startsWith('insights/compliance')) return 'proj-compliance';
+      if (rest.startsWith('observe/runtimelogs') || rest.startsWith('logs')) return 'proj-logs';
+      if (rest.startsWith('observe/metrics') || rest.startsWith('metrics')) return 'proj-metrics';
+      if (rest.startsWith('admin/connections')) return 'proj-connections';
+      if (rest.startsWith('admin/third-party')) return 'proj-third-party';
+      if (rest.startsWith('admin/gen-ai-services')) return 'proj-genai-services';
+      if (rest.startsWith('admin/cd-pipelines')) return 'proj-cd-pipelines';
+      if (rest.startsWith('devops/environments') || rest.startsWith('environments')) return 'proj-environments';
+      if (rest.startsWith('settings')) return 'proj-settings';
+      if (rest.startsWith('runtimes')) return 'proj-overview';
+      return 'proj-overview';
+    }
+    const base = `/organizations/${scope.org}/projects/${scope.project}/components/${scope.component}`;
+    const rest = pathname.slice(base.length).replace(/^\//, '');
+    if (!rest || rest === 'overview') return 'overview';
+    if (rest.startsWith('build')) return 'build';
+    if (rest.startsWith('deploy')) return 'deploy';
+    if (rest.startsWith('test/console')) return 'console';
+    if (rest.startsWith('test/api-chat')) return 'api-chat';
+    if (rest.startsWith('test')) return 'test';
+    if (rest.startsWith('manage/lifecycle')) return 'lifecycle';
+    if (rest.startsWith('documents')) return 'documents';
+    if (rest.startsWith('plans')) return 'plans';
+    if (rest.startsWith('insights/usage')) return 'usage';
+    if (rest.startsWith('insights/delivery')) return 'delivery';
+    if (rest.startsWith('insights/compliance')) return 'compliance';
+    if (rest.startsWith('alerts')) return 'alerts';
+    if (rest.startsWith('logs')) return 'logs';
+    if (rest.startsWith('metrics')) return 'metrics';
+    if (rest.startsWith('runtimes')) return 'runtime';
+    if (rest.startsWith('admin/connections')) return 'connections';
+    if (rest.startsWith('admin/containers')) return 'containers';
+    if (rest.startsWith('admin/configs')) return 'configs-secrets';
+    if (rest.startsWith('admin/health-checks')) return 'health-checks';
+    if (rest.startsWith('admin/scaling')) return 'scaling';
+    if (rest.startsWith('admin/storage')) return 'storage';
+    if (rest.startsWith('settings/access-control')) return 'component-settings';
+    return 'overview';
+  }, [pathname, scope]);
+
+  // Auto-expand the parent group when navigating to a child nav item
+  useEffect(() => {
+    const parentMap = hasComponent(scope) ? COMPONENT_PARENT_MAP : !hasProject(scope) ? ORG_PARENT_MAP : PROJECT_PARENT_MAP;
+    const parent = parentMap[activeNavId];
+    if (parent && !shell.expandedMenus[parent]) {
+      actions.toggleMenu(parent);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeNavId]);
+
   const [tabIndex, setTabIndex] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [featurePreviewOpen, setFeaturePreviewOpen] = useState(false);
@@ -101,11 +299,14 @@ export default function AppLayout(): JSX.Element {
   const [projectMenuAnchor, setProjectMenuAnchor] = useState<HTMLElement | null>(null);
   const [projectMenuDir, setProjectMenuDir] = useState<'right' | 'below'>('right');
   const [projectSearch, setProjectSearch] = useState('');
+  const projectSearchRef = useRef<HTMLInputElement>(null);
   const [componentMenuAnchor, setComponentMenuAnchor] = useState<HTMLElement | null>(null);
   const [componentMenuDir, setComponentMenuDir] = useState<'right' | 'below'>('right');
   const [componentSearch, setComponentSearch] = useState('');
+  const componentSearchRef = useRef<HTMLInputElement>(null);
   const [orgMenuAnchor, setOrgMenuAnchor] = useState<HTMLElement | null>(null);
   const [orgSearch, setOrgSearch] = useState('');
+  const orgSearchRef = useRef<HTMLInputElement>(null);
   const { data: orgsData = [] } = useOrgs();
 
   const { notifications, actions: notifActions, unreadCount, unreadNotifications } = useNotifications({ initialNotifications: [...mockNotifications] });
@@ -120,9 +321,10 @@ export default function AppLayout(): JSX.Element {
   const isProjectUuid = UUID_RE.test(projectParam);
   const { data: projectByHandler } = useProjectByHandler(!isProjectUuid ? projectParam : '');
   const { data: projectById } = useProject(isProjectUuid ? projectParam : '');
-  const project = isProjectUuid ? projectById : projectByHandler;
-  const projectId = project?.id ?? '';
   const { data: projects = [] } = useProjects();
+  const projectFromList = !isProjectUuid && projectParam ? (projects.find((p) => p.handler === projectParam) ?? null) : null;
+  const project = isProjectUuid ? projectById : (projectByHandler ?? projectFromList);
+  const projectId = project?.id ?? '';
   const { data: allComponents = [] } = useComponents(scope.org, projectId);
   const components = allComponents.filter((c) => SUPPORTED_DISPLAY_TYPES.has(c.displayType));
 
@@ -231,7 +433,98 @@ export default function AppLayout(): JSX.Element {
     accessControlPerms.push(Permissions.INTEGRATION_EDIT, Permissions.INTEGRATION_MANAGE);
   }
   const canSeeAccessControl = hasAnyPermission(accessControlPerms, projectId || undefined, componentId);
-  const items = sidebarItems(scope, resource).filter((item) => item.resource !== 'access-control' || canSeeAccessControl);
+
+  const orgBase = !hasProject(scope) ? `/organizations/${scope.org}` : '';
+  const projBase = hasProject(scope) && !hasComponent(scope) ? `/organizations/${scope.org}/projects/${scope.project}` : '';
+  const compBase = hasComponent(scope) ? `/organizations/${scope.org}/projects/${scope.project}/components/${scope.component}` : '';
+
+  const handleOrgNavSelect = (id: string) => {
+    const urlMap: Record<string, string> = {
+      overview: `${orgBase}/home`,
+      build: `${orgBase}/build`,
+      'org-develop': `${orgBase}/develop`,
+      'org-deploy': `${orgBase}/deploy`,
+      'org-test': `${orgBase}/test`,
+      'org-usage': `${orgBase}/insights/usage`,
+      'org-delivery': `${orgBase}/insights/delivery`,
+      'org-compliance': `${orgBase}/insights/compliance`,
+      'org-logs': `${orgBase}/logs`,
+      'org-metrics': `${orgBase}/metrics`,
+      'org-scheduled-ingestion': `${orgBase}/rag/scheduled-ingestion`,
+      'org-service': `${orgBase}/rag/service`,
+      'org-retrieval': `${orgBase}/rag/retrieval`,
+      'org-databases': `${orgBase}/admin/databases`,
+      'org-vector-databases': `${orgBase}/admin/vector-databases`,
+      'org-message-brokers': `${orgBase}/admin/message-brokers`,
+      'org-third-party': `${orgBase}/admin/third-party`,
+      'org-genai-services': `${orgBase}/admin/genai-services`,
+      'org-config-groups': `${orgBase}/admin/config-groups`,
+      'org-governance': `${orgBase}/admin/governance`,
+      'org-cd-pipelines': `${orgBase}/admin/cd-pipelines`,
+      'org-data-planes': `${orgBase}/admin/data-planes`,
+      'org-environments': `${orgBase}/environments`,
+      'org-audit-logs': `${orgBase}/admin/audit-logs`,
+      'org-approvals': `${orgBase}/admin/approvals`,
+      'org-certificates': `${orgBase}/admin/certificates`,
+      'org-settings': `${orgBase}/settings/access-control/users`,
+    };
+    const url = urlMap[id];
+    if (url) navigate(url);
+  };
+
+  const handleProjectNavSelect = (id: string) => {
+    const urlMap: Record<string, string> = {
+      'proj-overview': `${projBase}/home`,
+      'proj-develop': `${projBase}/develop`,
+      'proj-build': `${projBase}/build`,
+      'proj-deploy': `${projBase}/deploy`,
+      'proj-test': `${projBase}/test`,
+      'proj-usage': `${projBase}/insights/usage`,
+      'proj-delivery': `${projBase}/insights/delivery`,
+      'proj-compliance': `${projBase}/insights/compliance`,
+      'proj-logs': `${projBase}/observe/runtimelogs`,
+      'proj-metrics': `${projBase}/observe/metrics`,
+      'proj-connections': `${projBase}/admin/connections`,
+      'proj-third-party': `${projBase}/admin/third-party-services`,
+      'proj-genai-services': `${projBase}/admin/gen-ai-services`,
+      'proj-cd-pipelines': `${projBase}/admin/cd-pipelines`,
+      'proj-environments': `${projBase}/devops/environments`,
+      'proj-settings': `${projBase}/settings/project-overview`,
+    };
+    const url = urlMap[id];
+    if (url) navigate(url);
+  };
+
+  const handleComponentNavSelect = (id: string) => {
+    const urlMap: Record<string, string> = {
+      overview: `${compBase}/overview`,
+      integration: `${compBase}/overview`,
+      lifecycle: `${compBase}/manage/lifecycle`,
+      documents: `${compBase}/documents`,
+      plans: `${compBase}/plans`,
+      build: `${compBase}/build`,
+      deploy: `${compBase}/deploy`,
+      test: `${compBase}/test`,
+      console: `${compBase}/test/console`,
+      'api-chat': `${compBase}/test/api-chat`,
+      usage: `${compBase}/insights/usage`,
+      delivery: `${compBase}/insights/delivery`,
+      compliance: `${compBase}/insights/compliance`,
+      alerts: `${compBase}/alerts`,
+      logs: `${compBase}/logs`,
+      metrics: `${compBase}/metrics`,
+      connections: `${compBase}/admin/connections`,
+      runtime: `${compBase}/runtimes`,
+      containers: `${compBase}/admin/containers`,
+      'configs-secrets': `${compBase}/admin/configs`,
+      'health-checks': `${compBase}/admin/health-checks`,
+      scaling: `${compBase}/admin/scaling`,
+      storage: `${compBase}/admin/storage`,
+      'component-settings': `${compBase}/settings/access-control/roles`,
+    };
+    const url = urlMap[id];
+    if (url) navigate(url);
+  };
 
   return (
     <AppShell>
@@ -287,6 +580,7 @@ export default function AppLayout(): JSX.Element {
               }}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
               transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+              TransitionProps={{ onEntered: () => orgSearchRef.current?.focus() }}
               PaperProps={{ sx: { width: 260, mt: 0.5 } }}>
               <Box sx={{ px: 2, pt: 1.5, pb: 1 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
@@ -296,7 +590,7 @@ export default function AppLayout(): JSX.Element {
                   size="small"
                   fullWidth
                   placeholder="Search"
-                  autoFocus
+                  inputRef={orgSearchRef}
                   value={orgSearch}
                   onChange={(e) => setOrgSearch(e.target.value)}
                   InputProps={{
@@ -362,6 +656,7 @@ export default function AppLayout(): JSX.Element {
               anchorOrigin={projectMenuDir === 'right' ? { vertical: 'top', horizontal: 'right' } : { vertical: 'bottom', horizontal: 'left' }}
               transformOrigin={{ vertical: 'top', horizontal: 'left' }}
               marginThreshold={projectMenuDir === 'right' ? 0 : undefined}
+              TransitionProps={{ onEntered: () => projectSearchRef.current?.focus() }}
               PaperProps={{ sx: { width: 260, ...(projectMenuDir === 'right' ? { ml: 1 } : { mt: 0.5 }) } }}>
               <Box sx={{ px: 2, pt: 1.5, pb: 1 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
@@ -371,7 +666,7 @@ export default function AppLayout(): JSX.Element {
                   size="small"
                   fullWidth
                   placeholder="Search"
-                  autoFocus
+                  inputRef={projectSearchRef}
                   value={projectSearch}
                   onChange={(e) => setProjectSearch(e.target.value)}
                   InputProps={{
@@ -412,10 +707,10 @@ export default function AppLayout(): JSX.Element {
                       onClick={() => {
                         setProjectMenuAnchor(null);
                         setProjectSearch('');
-                        const newScope = narrow({ level: 'organizations', org: scope.org }, p.id);
+                        const newScope = narrow({ level: 'organizations', org: scope.org }, p.handler);
                         const target = resource ?? 'overview';
                         const resolvedTarget = canAccessResource(newScope, target, p.id, undefined);
-                        navigate(resolvedTarget === 'overview' ? projectHomeUrl(scope.org, p.id) : resourceUrl(newScope, resolvedTarget));
+                        navigate(resolvedTarget === 'overview' ? projectHomeUrl(scope.org, p.handler) : resourceUrl(newScope, resolvedTarget));
                       }}>
                       {p.name}
                     </MenuItem>
@@ -518,6 +813,7 @@ export default function AppLayout(): JSX.Element {
                   anchorOrigin={componentMenuDir === 'right' ? { vertical: 'top', horizontal: 'right' } : { vertical: 'bottom', horizontal: 'left' }}
                   transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                   marginThreshold={componentMenuDir === 'right' ? 0 : undefined}
+                  TransitionProps={{ onEntered: () => componentSearchRef.current?.focus() }}
                   PaperProps={{ sx: { width: 260, ...(componentMenuDir === 'right' ? { ml: 1 } : { mt: 0.5 }) } }}>
                   <Box sx={{ px: 2, pt: 1.5, pb: 1 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
@@ -527,7 +823,7 @@ export default function AppLayout(): JSX.Element {
                       size="small"
                       fullWidth
                       placeholder="Search"
-                      autoFocus
+                      inputRef={componentSearchRef}
                       value={componentSearch}
                       onChange={(e) => setComponentSearch(e.target.value)}
                       InputProps={{
@@ -679,34 +975,560 @@ export default function AppLayout(): JSX.Element {
       <AppShell.Sidebar>
         <Sidebar
           collapsed={shell.sidebarCollapsed}
-          activeItem={resource ?? 'overview'}
+          activeItem={activeNavId}
           expandedMenus={shell.expandedMenus}
           onSelect={(id) => {
             if (id === 'expand') {
               actions.toggleSidebar();
+            } else if (hasComponent(scope)) {
+              handleComponentNavSelect(id);
+            } else if (!hasProject(scope)) {
+              handleOrgNavSelect(id);
+            } else if (!hasComponent(scope)) {
+              handleProjectNavSelect(id);
             } else {
-              const item = items.find((i) => i.resource === id);
-              if (item) navigate(item.url);
+              handleComponentNavSelect(id);
             }
           }}
           onToggleExpand={actions.toggleMenu}
           sx={{ backgroundColor: 'background.acrylic', backdropFilter: 'blur(3px)' }}>
           <Sidebar.Nav>
-            {SIDEBAR_CATEGORIES.map(({ label, resources }) => {
-              const catItems = items.filter((item) => resources.includes(item.resource));
-              if (catItems.length === 0) return null;
-              return (
-                <Sidebar.Category key={label || 'main'}>
-                  {label && <Sidebar.CategoryLabel>{label}</Sidebar.CategoryLabel>}
-                  {catItems.map((item) => (
-                    <Sidebar.Item key={item.resource} id={item.resource}>
-                      <Sidebar.ItemIcon>{SIDEBAR_ICONS[item.resource]}</Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>{item.label}</Sidebar.ItemLabel>
+            {!hasProject(scope) ? (
+              /* Org-level nav */
+              <Sidebar.Category>
+                <Sidebar.Item id="overview">
+                  <Sidebar.ItemIcon>
+                    <LayoutDashboard size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>Overview</Sidebar.ItemLabel>
+                </Sidebar.Item>
+
+                <Sidebar.Item id="org-develop">
+                  <Sidebar.ItemIcon>
+                    <Lightbulb size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>Develop</Sidebar.ItemLabel>
+                </Sidebar.Item>
+
+                <Sidebar.Item id="build">
+                  <Sidebar.ItemIcon>
+                    <Hammer size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>Build</Sidebar.ItemLabel>
+                </Sidebar.Item>
+
+                <Sidebar.Item id="org-deploy">
+                  <Sidebar.ItemIcon>
+                    <Rocket size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>Deploy</Sidebar.ItemLabel>
+                </Sidebar.Item>
+
+                <Sidebar.Item id="org-test">
+                  <Sidebar.ItemIcon>
+                    <FlaskConical size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
+                </Sidebar.Item>
+
+                <Sidebar.Item id="org-insights">
+                  <Sidebar.ItemIcon>
+                    <BarChart3 size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
+                  <Sidebar.Item id="org-usage">
+                    <Sidebar.ItemIcon>
+                      <Activity size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-delivery">
+                    <Sidebar.ItemIcon>
+                      <Truck size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-compliance">
+                    <Sidebar.ItemIcon>
+                      <ShieldCheck size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                </Sidebar.Item>
+
+                <Sidebar.Item id="org-observability">
+                  <Sidebar.ItemIcon>
+                    <Binoculars size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>Observability</Sidebar.ItemLabel>
+                  <Sidebar.Item id="org-logs">
+                    <Sidebar.ItemIcon>
+                      <ScrollText size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Logs</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-metrics">
+                    <Sidebar.ItemIcon>
+                      <BarChart3 size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Metrics</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                </Sidebar.Item>
+
+                <Sidebar.Item id="org-rag">
+                  <Sidebar.ItemIcon>
+                    <Brain size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>RAG</Sidebar.ItemLabel>
+                  <Sidebar.Item id="org-scheduled-ingestion">
+                    <Sidebar.ItemIcon>
+                      <Clock size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Scheduled Ingestion</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-service">
+                    <Sidebar.ItemIcon>
+                      <Cpu size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Service</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-retrieval">
+                    <Sidebar.ItemIcon>
+                      <Diamond size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Retrieval</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                </Sidebar.Item>
+
+                <Sidebar.Item id="org-admin">
+                  <Sidebar.ItemIcon>
+                    <Settings2 size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
+                  <Sidebar.Item id="org-databases">
+                    <Sidebar.ItemIcon>
+                      <Database size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Databases</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-vector-databases">
+                    <Sidebar.ItemIcon>
+                      <DatabaseZap size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Vector Databases</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-message-brokers">
+                    <Sidebar.ItemIcon>
+                      <MessageSquare size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Message Brokers</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-third-party">
+                    <Sidebar.ItemIcon>
+                      <Puzzle size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Third Party Services</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-genai-services">
+                    <Sidebar.ItemIcon>
+                      <Sparkles size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>GenAI Services</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-config-groups">
+                    <Sidebar.ItemIcon>
+                      <SlidersHorizontal size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Config Groups</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-governance">
+                    <Sidebar.ItemIcon>
+                      <Scale size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Governance</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-cd-pipelines">
+                    <Sidebar.ItemIcon>
+                      <GitBranch size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>CD Pipelines</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-data-planes">
+                    <Sidebar.ItemIcon>
+                      <Network size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Data Planes</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-environments">
+                    <Sidebar.ItemIcon>
+                      <Layers size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Environments</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-audit-logs">
+                    <Sidebar.ItemIcon>
+                      <ClipboardList size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Audit Logs</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-approvals">
+                    <Sidebar.ItemIcon>
+                      <ClipboardCheck size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Approvals</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="org-certificates">
+                    <Sidebar.ItemIcon>
+                      <Award size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Certificates</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  {canSeeAccessControl && (
+                    <Sidebar.Item id="org-settings">
+                      <Sidebar.ItemIcon>
+                        <Cog size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Settings</Sidebar.ItemLabel>
                     </Sidebar.Item>
-                  ))}
-                </Sidebar.Category>
-              );
-            })}
+                  )}
+                </Sidebar.Item>
+              </Sidebar.Category>
+            ) : hasComponent(scope) ? (
+              (() => {
+                const isGenericService = GENERIC_SERVICE_TYPES.has(currentComponent?.displayType ?? '');
+                return (
+                  <>
+                    <Sidebar.Category>
+                      <Sidebar.Item id="overview">
+                        <Sidebar.ItemIcon>
+                          <LayoutDashboard size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Overview</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                    </Sidebar.Category>
+
+                    <Sidebar.Category>
+                      <Sidebar.Item id="develop">
+                        <Sidebar.ItemIcon>
+                          <Lightbulb size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Develop</Sidebar.ItemLabel>
+                        <Sidebar.Item id="integration">
+                          <Sidebar.ItemIcon>
+                            <Workflow size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Integration</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+                        {isGenericService && (
+                          <Sidebar.Item id="lifecycle">
+                            <Sidebar.ItemIcon>
+                              <RefreshCw size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Lifecycle</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        )}
+                        {isGenericService && (
+                          <Sidebar.Item id="documents">
+                            <Sidebar.ItemIcon>
+                              <FileText size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Document</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        )}
+                        {isGenericService && (
+                          <Sidebar.Item id="plans">
+                            <Sidebar.ItemIcon>
+                              <CreditCard size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Plans</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        )}
+                      </Sidebar.Item>
+
+                      <Sidebar.Item id="build">
+                        <Sidebar.ItemIcon>
+                          <Hammer size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Build</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+
+                      <Sidebar.Item id="deploy">
+                        <Sidebar.ItemIcon>
+                          <Rocket size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Deploy</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+
+                      {!isGenericService ? (
+                        <Sidebar.Item id="test">
+                          <Sidebar.ItemIcon>
+                            <FlaskConical size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+                      ) : (
+                        <Sidebar.Item id="test">
+                          <Sidebar.ItemIcon>
+                            <FlaskConical size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
+                          <Sidebar.Item id="console">
+                            <Sidebar.ItemIcon>
+                              <Terminal size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Console</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                          <Sidebar.Item id="api-chat">
+                            <Sidebar.ItemIcon>
+                              <MessageSquare size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>API Chat</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        </Sidebar.Item>
+                      )}
+
+                      {isGenericService && (
+                        <Sidebar.Item id="insights">
+                          <Sidebar.ItemIcon>
+                            <BarChart3 size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
+                          <Sidebar.Item id="usage">
+                            <Sidebar.ItemIcon>
+                              <Activity size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                          <Sidebar.Item id="delivery">
+                            <Sidebar.ItemIcon>
+                              <Truck size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                          <Sidebar.Item id="compliance">
+                            <Sidebar.ItemIcon>
+                              <ShieldCheck size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        </Sidebar.Item>
+                      )}
+
+                      <Sidebar.Item id="observability">
+                        <Sidebar.ItemIcon>
+                          <Eye size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Observability</Sidebar.ItemLabel>
+                        <Sidebar.Item id="alerts">
+                          <Sidebar.ItemIcon>
+                            <Bell size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Alerts</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+                        <Sidebar.Item id="logs">
+                          <Sidebar.ItemIcon>
+                            <ScrollText size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Logs</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+                        <Sidebar.Item id="metrics">
+                          <Sidebar.ItemIcon>
+                            <BarChart3 size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Metrics</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+                      </Sidebar.Item>
+
+                      <Sidebar.Item id="admin">
+                        <Sidebar.ItemIcon>
+                          <Settings2 size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
+                        <Sidebar.Item id="connections">
+                          <Sidebar.ItemIcon>
+                            <Link2 size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Connections</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+                        <Sidebar.Item id="runtime">
+                          <Sidebar.ItemIcon>
+                            <Server size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Runtime</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+                        <Sidebar.Item id="containers">
+                          <Sidebar.ItemIcon>
+                            <Boxes size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Containers</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+                        <Sidebar.Item id="configs-secrets">
+                          <Sidebar.ItemIcon>
+                            <KeyRound size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Configs &amp; Secrets</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+                        {isGenericService && (
+                          <Sidebar.Item id="health-checks">
+                            <Sidebar.ItemIcon>
+                              <HeartPulse size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Health Checks</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        )}
+                        {isGenericService && (
+                          <Sidebar.Item id="scaling">
+                            <Sidebar.ItemIcon>
+                              <Maximize2 size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Scaling</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        )}
+                        <Sidebar.Item id="storage">
+                          <Sidebar.ItemIcon>
+                            <HardDrive size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Storage</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+                        {canSeeAccessControl && (
+                          <Sidebar.Item id="component-settings">
+                            <Sidebar.ItemIcon>
+                              <Cog size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Settings</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        )}
+                      </Sidebar.Item>
+                    </Sidebar.Category>
+                  </>
+                );
+              })()
+            ) : (
+              /* Project-level nav */
+              <Sidebar.Category>
+                <Sidebar.Item id="proj-overview">
+                  <Sidebar.ItemIcon>
+                    <LayoutDashboard size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>Overview</Sidebar.ItemLabel>
+                </Sidebar.Item>
+
+                <Sidebar.Item id="proj-develop">
+                  <Sidebar.ItemIcon>
+                    <Lightbulb size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>Develop</Sidebar.ItemLabel>
+                </Sidebar.Item>
+
+                <Sidebar.Item id="proj-build">
+                  <Sidebar.ItemIcon>
+                    <Hammer size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>Build</Sidebar.ItemLabel>
+                </Sidebar.Item>
+
+                <Sidebar.Item id="proj-deploy">
+                  <Sidebar.ItemIcon>
+                    <Rocket size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>Deploy</Sidebar.ItemLabel>
+                </Sidebar.Item>
+
+                <Sidebar.Item id="proj-test">
+                  <Sidebar.ItemIcon>
+                    <FlaskConical size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
+                </Sidebar.Item>
+
+                <Sidebar.Item id="proj-insights">
+                  <Sidebar.ItemIcon>
+                    <BarChart3 size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
+                  <Sidebar.Item id="proj-usage">
+                    <Sidebar.ItemIcon>
+                      <Activity size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="proj-delivery">
+                    <Sidebar.ItemIcon>
+                      <Truck size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="proj-compliance">
+                    <Sidebar.ItemIcon>
+                      <ShieldCheck size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                </Sidebar.Item>
+
+                <Sidebar.Item id="proj-observability">
+                  <Sidebar.ItemIcon>
+                    <Binoculars size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>Observability</Sidebar.ItemLabel>
+                  <Sidebar.Item id="proj-logs">
+                    <Sidebar.ItemIcon>
+                      <ScrollText size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Logs</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="proj-metrics">
+                    <Sidebar.ItemIcon>
+                      <BarChart3 size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Metrics</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                </Sidebar.Item>
+
+                <Sidebar.Item id="proj-admin">
+                  <Sidebar.ItemIcon>
+                    <Settings2 size={20} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
+                  <Sidebar.Item id="proj-connections">
+                    <Sidebar.ItemIcon>
+                      <Link2 size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Connections</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="proj-third-party">
+                    <Sidebar.ItemIcon>
+                      <Puzzle size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Third Party Services</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="proj-genai-services">
+                    <Sidebar.ItemIcon>
+                      <Sparkles size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>GenAI Services</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="proj-cd-pipelines">
+                    <Sidebar.ItemIcon>
+                      <GitBranch size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>CD Pipelines</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="proj-environments">
+                    <Sidebar.ItemIcon>
+                      <Layers size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Environments</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                  <Sidebar.Item id="proj-settings">
+                    <Sidebar.ItemIcon>
+                      <Cog size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Settings</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                </Sidebar.Item>
+              </Sidebar.Category>
+            )}
           </Sidebar.Nav>
 
           <Sidebar.Footer sx={{ py: 0 }}>

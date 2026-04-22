@@ -18,7 +18,7 @@
 
 import { Box, CircularProgress, Divider, PageContent } from '@wso2/oxygen-ui';
 import { Fragment, useEffect, useMemo, useState, type JSX } from 'react';
-import { useProject, useProjectByHandler, useComponentByHandler, useEnvironments, useCommitHistory, useComponentEndpoints, useApimApi } from '../api/queries';
+import { useProject, useProjectByHandler, useProjects, useComponentByHandler, useEnvironments, useCommitHistory, useComponentEndpoints, useApimApi } from '../api/queries';
 import BusinessInfo from '../components/BusinessInfo';
 import NotFound from '../components/NotFound';
 import { ArtifactDetail } from '../components/ArtifactDetail';
@@ -35,10 +35,14 @@ import { UUID_RE } from '../utils/string';
 export default function Component(scope: ComponentScope): JSX.Element {
   // Support both UUID and handler in the URL — only one query will be enabled at a time
   const isUuid = UUID_RE.test(scope.project);
-  const { data: projectByHandler, isLoading: loadingByHandler } = useProjectByHandler(scope.project);
+  const { data: projectByHandler, isLoading: loadingByHandler } = useProjectByHandler(!isUuid ? scope.project : '');
   const { data: projectById, isLoading: loadingById } = useProject(isUuid ? scope.project : '');
-  const project = projectByHandler ?? projectById;
-  const loadingProject = isUuid ? loadingById : loadingByHandler;
+  // Fallback: find project by handler from the cached projects list (shares cache with AppLayout's useProjects call)
+  const { data: allProjects = [], isLoading: loadingProjects } = useProjects();
+  const projectFromList = !isUuid ? (allProjects.find((p) => p.handler === scope.project) ?? null) : null;
+  const project = projectByHandler ?? projectById ?? projectFromList;
+  // Stop loading as soon as project is resolved from any source; don't block on retrying queries
+  const loadingProject = !project && (isUuid ? loadingById : loadingByHandler || loadingProjects);
   const projectId = project?.id ?? '';
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
   const { data: environments = [] } = useEnvironments(scope.org, projectId);
@@ -95,7 +99,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
 
         <PageContent>
           {/* Component header */}
-          <ComponentHeader component={component} project={project} repository={repository} latestCommit={latestCommit} orgHandler={scope.org} projectId={projectId} apimId={apimId} />
+          <ComponentHeader component={component} project={project} repository={repository} latestCommit={latestCommit} orgHandler={scope.org} projectId={projectId} projectHandler={project?.handler ?? scope.project} apimId={apimId} />
 
           {/* Latest build card */}
           <BuildCard componentId={component.id} versionId={versionId} orgHandler={scope.org} projectId={projectId} latestCommit={latestCommit} />
@@ -136,7 +140,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
               apimId={apimId}
               apimApiInfo={apimApiInfo}
               activePolicies={apimApiInfo?.policies ?? []}
-              docsPath={`/organizations/${scope.org}/projects/${projectId}/components/${component.handler}/documents`}
+              docsPath={`/organizations/${scope.org}/projects/${project?.handler ?? scope.project}/components/${component.handler}/documents`}
             />
           )}
         </PageContent>
