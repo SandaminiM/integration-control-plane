@@ -73,6 +73,8 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   const obtainToken = useObtainGithubToken();
   const createComponent = useCreateComponent();
 
+  const displayNameAutoRef = useRef(false);
+
   // Exchange OAuth code on mount (GitHub mode only)
   const authCodeExchangedRef = useRef(false);
   useEffect(() => {
@@ -112,7 +114,10 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
     setSubPath('/');
     setDetectedMode(null);
     if (options.includeTechnology) setSelectedTechnology(null);
-    if (options.includeDisplayName) setDisplayName('');
+    if (options.includeDisplayName) {
+      setDisplayName('');
+      displayNameAutoRef.current = false;
+    }
   };
 
   const baseHandler = toHandler(displayName);
@@ -153,8 +158,9 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   // GitHub mode: reset downstream when repo changes
   useEffect(() => {
     if (isPublicRepo) return;
-    if (selectedRepo && !displayName) {
+    if (selectedRepo && (!displayName || displayNameAutoRef.current)) {
       setDisplayName(formatRepoNameToDisplayName(selectedRepo));
+      displayNameAutoRef.current = true;
     }
     resetDownstreamState();
   }, [selectedRepo]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -192,12 +198,31 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   // Public mode: auto-populate display name from parsed repo
   useEffect(() => {
     if (!isPublicRepo) return;
-    if (parsedRepo && !displayName) {
+    if (parsedRepo && (!displayName || displayNameAutoRef.current)) {
       setDisplayName(formatRepoNameToDisplayName(parsedRepo));
+      displayNameAutoRef.current = true;
     }
     // displayName intentionally omitted to avoid overwriting manual edits
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parsedRepo]);
+
+  // Auto-update display name when sub path selection changes
+  useEffect(() => {
+    if (!displayNameAutoRef.current && displayName) return;
+    const sourceName = isPublicRepo ? parsedRepo : selectedRepo;
+    if (!sourceName) return;
+    if (subPath && subPath !== '/') {
+      const lastSegment = subPath.split('/').filter(Boolean).pop();
+      if (lastSegment) {
+        setDisplayName(formatRepoNameToDisplayName(lastSegment));
+        displayNameAutoRef.current = true;
+      }
+    } else {
+      setDisplayName(formatRepoNameToDisplayName(sourceName));
+      displayNameAutoRef.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subPath]);
 
   // GitHub OAuth
   const handleGitHubAuth = () => {
@@ -573,7 +598,10 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
               label="Display Name"
               required
               value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              onChange={(e) => {
+                setDisplayName(e.target.value);
+                displayNameAutoRef.current = false;
+              }}
               fullWidth
               error={!!displayName.trim() && !handlerValid}
               helperText={displayName.trim() && !handlerValid ? 'Must be 3–64 chars' : 'Display Name of the Integration'}
