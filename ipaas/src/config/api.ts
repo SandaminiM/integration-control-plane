@@ -36,6 +36,8 @@ interface RuntimeConfig {
   GITHUB_APP_CLIENT_ID?: string;
   GITHUB_APP_AUTH_REDIRECTION_URL?: string;
   SUBSCRIPTIONS_API_URL?: string;
+  SAMPLES_URL?: string;
+  PREBUILT_INTEGRATIONS_URL?: string;
 }
 
 export interface ApiConfig {
@@ -58,6 +60,8 @@ export interface ApiConfig {
   githubAppClientId?: string;
   githubAppAuthRedirectUrl?: string;
   subscriptionsApiUrl: string;
+  samplesUrl?: string;
+  prebuiltIntegrationsUrl?: string;
 }
 
 // Extend window interface
@@ -126,6 +130,8 @@ export async function loadConfig(): Promise<void> {
       githubAppClientId: config.GITHUB_APP_CLIENT_ID || DEFAULT_CONFIG.githubAppClientId,
       githubAppAuthRedirectUrl: config.GITHUB_APP_AUTH_REDIRECTION_URL || DEFAULT_CONFIG.githubAppAuthRedirectUrl,
       subscriptionsApiUrl: config.SUBSCRIPTIONS_API_URL || DEFAULT_CONFIG.subscriptionsApiUrl,
+      samplesUrl: config.SAMPLES_URL || undefined,
+      prebuiltIntegrationsUrl: config.PREBUILT_INTEGRATIONS_URL || undefined,
     };
 
     console.info('✓ Runtime configuration loaded from config.json');

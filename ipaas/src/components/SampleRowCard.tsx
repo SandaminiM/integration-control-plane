@@ -23,7 +23,7 @@ import type { Sample } from '../types/samples';
 import { formatComponentType } from '../constants/integrations';
 
 export default function SampleRowCard({ sample, onDeploy, isDeploying, onClick }: { sample: Sample; onDeploy: () => void; isDeploying: boolean; onClick?: () => void }): JSX.Element {
-  const sourceUrl = `${sample.repositoryUrl}tree/${sample.branch ?? 'main'}${sample.subDirectory}${sample.componentPath}`;
+  const sourceUrl = `${sample.repositoryUrl}tree/${sample.branch ?? 'main'}${sample.subDirectory ?? ''}${sample.componentPath}`;
 
   return (
     <Box

@@ -17,9 +17,14 @@
  */
 
 import type { JSX } from 'react';
-import BuildNotAvailablePlaceholder from '../components/Build/BuildNotAvailablePlaceholder';
+import ComingSoon from './ComingSoon';
 import type { OrgScope } from '../nav';
 
 export default function OrgBuild(_scope: OrgScope): JSX.Element {
-  return <BuildNotAvailablePlaceholder level="organization" />;
+  return (
+    <ComingSoon
+      title="Build Not Available at Organization Level"
+      description="Navigate to a component to view and manage builds."
+    />
+  );
 }

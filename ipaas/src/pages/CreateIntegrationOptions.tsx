@@ -33,19 +33,25 @@ import GitIcon from '../assets/icons/GitIcon';
 import AzureIcon from '../assets/icons/AzureIcon';
 import { displayTypeFromSample } from '../constants/integrations';
 import { GITHUB_AUTH } from '../constants/import';
-import { FEATURED_SAMPLES, FEATURED_PREBUILT } from '../constants/samples';
 import { CARD_HOVER_SX, PROVIDER_ICON_SX } from '../constants/styles';
 import { resourceUrl, narrow, type ProjectScope } from '../nav';
 import { importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, importComingSoonUrl, buildGitHubOAuthUrl } from '../paths';
 import type { Sample } from '../types/samples';
 import { toHandler } from '../utils/string';
 import { useProjectId } from '../hooks/useProjectId';
+import { useSamples } from '../hooks/useSamples';
+import { usePrebuiltIntegrations } from '../hooks/usePrebuiltIntegrations';
 
 export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Element {
   const navigate = useNavigate();
   const { userId } = useAuth();
   const { projectId } = useProjectId(scope.project);
   const orgUuid = getOrgUuidFromToken() ?? '';
+  const { data: samplesData } = useSamples();
+  const { data: prebuiltData } = usePrebuiltIntegrations();
+
+  const featuredSamples = samplesData?.featuredSamples ?? [];
+  const featuredPrebuilt = (prebuiltData?.prebuiltIntegrations ?? []).slice(0, 3);
 
   const { data: sampleImages } = useChoreoSampleImages(orgUuid, projectId);
 
@@ -129,7 +135,7 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
         projectId,
         displayType: displayTypeFromSample(sample.componentType, sample.buildPack),
         srcGitRepoUrl: sample.repositoryUrl,
-        repositorySubPath: `${sample.subDirectory}${sample.componentPath}`,
+        repositorySubPath: `${sample.subDirectory ?? ''}${sample.componentPath}`,
         repositoryBranch: sample.branch ?? 'main',
         isPublicRepo: true,
         enableAutoDeploy: true,
@@ -302,7 +308,7 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                     ...(selectedTab !== 0 ? { visibility: 'hidden', pointerEvents: 'none', zIndex: 0 } : {}),
                   }}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    {FEATURED_PREBUILT.map((integration) => (
+                    {featuredPrebuilt.map((integration) => (
                       <PrebuiltCard key={integration.displayName} integration={integration} onClick={() => navigate(prebuiltIntegrationsUrl(scope.org, scope.project))} />
                     ))}
                   </Box>
@@ -321,7 +327,7 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                     ...(selectedTab !== 1 ? { visibility: 'hidden', pointerEvents: 'none', zIndex: 0 } : {}),
                   }}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    {FEATURED_SAMPLES.map((sample) => (
+                    {featuredSamples.map((sample) => (
                       <SampleRowCard key={sample.displayName} sample={sample} onDeploy={() => handleQuickDeploy(sample)} isDeploying={deployingSample === sample.displayName} />
                     ))}
                   </Box>

@@ -22,24 +22,7 @@ import { useMemo, useState } from 'react';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
 import './swagger-ui-overrides.scss';
-
-interface OperationColors {
-  cardBg: string;
-  border: string;
-  badgeBg: string;
-}
-
-const METHOD_COLORS: Record<string, OperationColors> = {
-  GET: { cardBg: '#F4FAFF', border: '#C1E4FC', badgeBg: '#0095FF' },
-  POST: { cardBg: '#F5FFF7', border: '#CDF1DF', badgeBg: '#36B475' },
-  PUT: { cardBg: '#FFFBF6', border: '#FEE6C8', badgeBg: '#FF9D52' },
-  DELETE: { cardBg: 'rgba(252,237,237,0.5)', border: 'rgba(248,194,194,0.69)', badgeBg: '#FE523C' },
-  OPTIONS: { cardBg: 'rgba(5,102,200,0.07)', border: 'rgba(5,102,200,0.2)', badgeBg: '#0566C8' },
-  PATCH: { cardBg: 'rgba(1,206,181,0.08)', border: 'rgba(1,206,181,0.28)', badgeBg: '#01CEB5' },
-  HEAD: { cardBg: 'rgba(123,85,213,0.08)', border: 'rgba(123,85,213,0.18)', badgeBg: '#7B55D5' },
-  TRACE: { cardBg: '#f5f5f5', border: '#d0d0d0', badgeBg: '#785446' },
-};
-const DEFAULT_COLORS: OperationColors = { cardBg: '#f5f5f5', border: '#e0e0e0', badgeBg: '#9e9e9e' };
+import { getHttpMethodColors } from '../../utils/httpMethods';
 
 const VALID_METHODS = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options', 'trace'];
 
@@ -82,7 +65,7 @@ interface OperationDetailsProps {
 }
 
 function OperationDetails({ method, path, swagger, onClose }: OperationDetailsProps) {
-  const colors = METHOD_COLORS[method] ?? DEFAULT_COLORS;
+  const colors = getHttpMethodColors(method);
 
   const filteredSpec = useMemo(() => {
     const pathItem = swagger.paths?.[path];
@@ -167,7 +150,7 @@ export default function SwaggerOperationsList({ swagger }: SwaggerOperationsList
     <>
       <Box sx={{ mt: 1.5 }}>
         {operations.map((op) => {
-          const colors = METHOD_COLORS[op.method] ?? DEFAULT_COLORS;
+          const colors = getHttpMethodColors(op.method);
           return (
             <Box
               key={`${op.method}-${op.path}`}

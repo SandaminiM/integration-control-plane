@@ -18,6 +18,7 @@
 
 import { Button, Tooltip } from '@wso2/oxygen-ui';
 import { ArrowDown } from '@wso2/oxygen-ui-icons-react';
+import type { ReactNode } from 'react';
 import { useComponentDeployment } from '../../api/queries';
 import { usePromote } from '../../api/mutations';
 import { getOrgUuidFromToken } from '../../auth/tokenManager';
@@ -31,9 +32,12 @@ interface PromoteButtonProps {
   deploymentPipelineId: string;
   sourceEnvId: string;
   targetEnvId: string;
+  icon?: ReactNode;
+  onPromoteStarted?: () => void;
+  onPromoteSettled?: () => void;
 }
 
-export default function PromoteButton({ orgHandler, componentId, versionId, deploymentPipelineId, sourceEnvId, targetEnvId }: PromoteButtonProps) {
+export default function PromoteButton({ orgHandler, componentId, versionId, deploymentPipelineId, sourceEnvId, targetEnvId, icon, onPromoteStarted, onPromoteSettled }: PromoteButtonProps) {
   const orgUuid = getOrgUuidFromToken() ?? '';
   const { data: sourceDeployment, isLoading: sourceLoading } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, sourceEnvId);
   const { data: targetDeployment, isLoading: targetLoading } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, targetEnvId);
@@ -46,13 +50,17 @@ export default function PromoteButton({ orgHandler, componentId, versionId, depl
 
   const handlePromote = () => {
     if (!buildId || !sourceReleaseId || alreadyPromoted) return;
-    promote.mutate({
-      componentId,
-      apiVersionId: versionId,
-      sourceReleaseId,
-      targetEnvironmentId: targetEnvId,
-      deploymentPipelineId,
-    });
+    onPromoteStarted?.();
+    promote.mutate(
+      {
+        componentId,
+        apiVersionId: versionId,
+        sourceReleaseId,
+        targetEnvironmentId: targetEnvId,
+        deploymentPipelineId,
+      },
+      { onSettled: onPromoteSettled },
+    );
   };
 
   const tooltipTitle = !buildId ? 'No build available to promote' : alreadyPromoted ? 'Already deployed in target environment' : '';
@@ -61,7 +69,7 @@ export default function PromoteButton({ orgHandler, componentId, versionId, depl
     <Authorized permissions={Permissions.ENVIRONMENT_MANAGE}>
       <Tooltip title={tooltipTitle}>
         <span>
-          <Button variant="outlined" size="small" startIcon={<ArrowDown size={14} />} disabled={deploymentsLoading || !buildId || !sourceReleaseId || alreadyPromoted || promote.isPending} onClick={handlePromote}>
+          <Button variant="outlined" size="small" startIcon={icon ?? <ArrowDown size={14} />} disabled={deploymentsLoading || !buildId || !sourceReleaseId || alreadyPromoted || promote.isPending} onClick={handlePromote}>
             {promote.isPending ? 'Promoting…' : 'Promote'}
           </Button>
         </span>

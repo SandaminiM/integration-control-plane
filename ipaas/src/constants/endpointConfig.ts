@@ -16,5 +16,6 @@
  * under the License.
  */
 
-// BrowseSamples page constants
-export const PAGE_SIZE = 9;
+export const API_KEY_SCHEME = 'api_key';
+export const OAUTH2_SCHEME = 'oauth2';
+export const OPS_PER_PAGE = 10;

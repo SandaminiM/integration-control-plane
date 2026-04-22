@@ -124,6 +124,56 @@ export async function generateTestKey(apimId: string, keyType: 'Development' | '
   }
 }
 
+// ── Proxy Deployer ─────────────────────────────────────────────────────────────
+
+export function getProxyDeployerBaseUrl(): string {
+  const base = (window.API_CONFIG?.choreoOrgApiUrl ?? '').replace(/\/orgs\/.*$/, '');
+  return `${base}/proxy/deployer/v1`;
+}
+
+export interface DeploySettingsV2Payload {
+  environmentId: string;
+  buildId: string;
+  comment?: string;
+  apiSettings: Record<string, {
+    accessMode: string;
+    settings: {
+      corsConfiguration?: CorsConfiguration & { corsOverrideEnabled?: boolean };
+      throttlingLimit: { requestCount: number; unit: string } | null;
+      operations?: { verb: string; target: string; throttlingLimit: { requestCount: number; unit: string } }[];
+      resiliency?: number;
+    };
+    revisionId?: string;
+    isAsyncAPI?: boolean;
+    multiGatewayDeployment?: boolean;
+  }>;
+}
+
+export async function deploySettingsV2(
+  componentId: string,
+  versionId: string,
+  payload: DeploySettingsV2Payload,
+): Promise<void> {
+  const base = getProxyDeployerBaseUrl();
+  const url = `${base}/components/${encodeURIComponent(componentId)}/versions/${encodeURIComponent(versionId)}/deploy-settings-v2`;
+  let res: Response;
+  try {
+    res = await authenticatedFetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    throw new Error(`deploy-settings-v2 request failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`deploy-settings-v2 failed: ${res.status} ${res.statusText}${text ? ` — ${text}` : ''}`);
+  }
+}
+
+// ── APIM Swagger ───────────────────────────────────────────────────────────────
+
 export async function fetchApimSwagger(apimRevisionId: string): Promise<unknown> {
   const base = getApimBaseUrl();
   if (!base) return null;
