@@ -20,17 +20,21 @@ import { Box, ColorSchemeImage, Divider, Grid, Link, Stack, Typography } from '@
 import { type JSX } from 'react';
 import { Link as NavLink } from 'react-router';
 import LoginForm from '../components/LoginForm';
-import { cookiePolicyUrl, privacyPolicyUrl } from '../paths';
+import { privacyPolicyUrl } from '../paths';
 
 const Footer = () => (
   <Box component="footer" sx={{ mt: 4 }}>
-    <Stack direction="row" justifyContent="center" spacing={1}>
+    <Stack direction="row" justifyContent="center" spacing={1} flexWrap="wrap">
+      <Link href="https://wso2.com/integration-platform/" target="_blank" rel="noopener noreferrer" underline="hover" sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
+        More details at wso2.com/integration-platform
+      </Link>
+      <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
       <Link component={NavLink} to={privacyPolicyUrl()} underline="hover" sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
         Privacy Policy
       </Link>
       <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-      <Link component={NavLink} to={cookiePolicyUrl()} underline="hover" sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
-        Cookie Policy
+      <Link href="https://wso2.com/devant/terms-of-use" target="_blank" rel="noopener noreferrer" underline="hover" sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
+        Terms of Use
       </Link>
     </Stack>
   </Box>
@@ -65,9 +69,25 @@ export default function Login(): JSX.Element {
               Get Started with WSO2 Integration Platform
             </Typography>
             <Box sx={{ maxWidth: 520, width: '100%' }}>
-              <Typography variant="body1" sx={{ color: 'text.secondary', textAlign: 'left', width: '100%' }}>
-                A centralized platform for controlling, managing, and observing your integration solutions with confidence and scale.
+              <Typography variant="h6" sx={{ textAlign: 'left', width: '100%', mb: 1 }}>
+                The AI iPaaS for Smarter Integrations
               </Typography>
+              <Typography variant="body1" sx={{ color: 'text.secondary', textAlign: 'left', width: '100%', mb: 1 }}>
+                A platform for building and managing integrations with AI-assistance.
+              </Typography>
+              <Box component="ul" sx={{ pl: 2, m: 0, color: 'text.secondary' }}>
+                {[
+                  'AI-assisted low-code and pro-code development',
+                  'Built-in support for HTTP, GraphQL, gRPC, WebSockets, TCP, Websub, and much more',
+                  'Integrate GenAI models, knowledge bases, AI Agents, and systems',
+                  'Seamless deployments with CI/CD and Kubernetes',
+                  'Comprehensive analytics and insights to optimize performance',
+                ].map((item) => (
+                  <Typography key={item} component="li" variant="body2" sx={{ mb: 0.5 }}>
+                    {item}
+                  </Typography>
+                ))}
+              </Box>
             </Box>
           </Stack>
           <Box

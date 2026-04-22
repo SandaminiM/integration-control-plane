@@ -102,6 +102,28 @@ export async function updateApimApi(apimId: string, body: ApimApiInfo): Promise<
   return res.json() as Promise<ApimApiInfo>;
 }
 
+export interface GeneratedTestKey {
+  apikey: string;
+  validityTime: number;
+}
+
+export async function generateTestKey(apimId: string, keyType: 'Development' | 'Production'): Promise<GeneratedTestKey | null> {
+  const base = getApimBaseUrl();
+  if (!base) return null;
+  const orgUuid = getOrgUuidFromToken() ?? '';
+  try {
+    const params = new URLSearchParams({ organizationId: orgUuid, keyType });
+    const res = await authenticatedFetch(`${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/generate-key?${params}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+    if (!res.ok) return null;
+    return res.json() as Promise<GeneratedTestKey>;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchApimSwagger(apimRevisionId: string): Promise<unknown> {
   const base = getApimBaseUrl();
   if (!base) return null;

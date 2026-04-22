@@ -63,6 +63,7 @@ import Build from '../pages/Build';
 import OrgBuild from '../pages/OrgBuild';
 import ProjectBuild from '../pages/ProjectBuild';
 import CloudEditorDeployment from '../pages/CloudEditorDeployment';
+import TestConsole from '../pages/TestConsole';
 
 export interface AppRoute extends Omit<RouteProps, 'children'> {
   children?: AppRoute[];
@@ -178,7 +179,7 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test/console',
-                element: <ComingSoon title="Coming Soon" description="The test console is currently under development. You'll be able to test your integrations directly from here." />,
+                element: createElement(withScope(TestConsole, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test/api-chat',
