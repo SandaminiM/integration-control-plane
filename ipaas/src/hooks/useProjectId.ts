@@ -16,19 +16,21 @@
  * under the License.
  */
 
-import { useProject, useProjectByHandler } from '../api/queries';
+import { useProject, useProjectByHandler, useProjects } from '../api/queries';
 import { UUID_RE } from '../utils/string';
 
 export function useProjectId(projectIdentifier: string) {
   const isProjectUuid = UUID_RE.test(projectIdentifier);
   const { data: projectByHandler, isLoading: loadingByHandler } = useProjectByHandler(!isProjectUuid ? projectIdentifier : '');
   const { data: projectById, isLoading: loadingById } = useProject(isProjectUuid ? projectIdentifier : '');
+  const { data: allProjects = [], isLoading: loadingProjects } = useProjects();
 
-  const project = isProjectUuid ? projectById : projectByHandler;
+  const projectFromList = !isProjectUuid ? (allProjects.find((p) => p.handler === projectIdentifier) ?? null) : null;
+  const project = isProjectUuid ? projectById : (projectByHandler ?? projectFromList ?? undefined);
 
   return {
     projectId: project?.id ?? '',
     project,
-    isLoading: loadingByHandler || loadingById,
+    isLoading: isProjectUuid ? loadingById : (loadingByHandler && loadingProjects),
   };
 }

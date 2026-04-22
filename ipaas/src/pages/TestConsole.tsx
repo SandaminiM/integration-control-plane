@@ -210,9 +210,13 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
       {tracks.length > 0 && <DeploymentTrackBar tracks={tracks} selectedId={selectedTrackId} onChange={setSelectedTrackId} orgHandler={scope.org} projectHandler={project?.handler ?? scope.project} componentHandler={component.handler} extra={envSelector} />}
 
       <PageContent>
-        <Button variant="text" size="small" startIcon={<ArrowLeft size={16} />} onClick={() => navigate(componentOverviewUrl(scope.org, project?.handler ?? scope.project, component.handler))} sx={{ mb: 2, textTransform: 'none' }}>
+        <Button variant="text" size="small" startIcon={<ArrowLeft size={16} />} onClick={() => navigate(componentOverviewUrl(scope.org, project?.handler ?? scope.project, component.handler))} sx={{ mb: 3, textTransform: 'none' }}>
           Back to Overview
         </Button>
+
+        <Typography variant="h1" sx={{ mb: 3 }}>
+          Test Console
+        </Typography>
 
         {/* Controls panel */}
         <Box sx={{ maxWidth: 720, mb: 3 }}>
