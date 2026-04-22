@@ -18,7 +18,7 @@
 
 import { Autocomplete, Box, Button, CircularProgress, Divider, IconButton, InputAdornment, MenuItem, OutlinedInput, PageContent, Select, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Check, Copy, Eye, EyeOff, Key } from '@wso2/oxygen-ui-icons-react';
-import { useEffect, useMemo, useState, type JSX } from 'react';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
@@ -116,7 +116,13 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
   const invokeUrl = selectedVisibility?.url ?? '';
 
   // Security header / test key
+  // securityHeaderRef is read inside SwaggerUI's requestInterceptor to avoid stale closures.
+  const securityHeaderRef = useRef('');
   const [securityHeader, setSecurityHeader] = useState('');
+  const updateSecurityHeader = (value: string) => {
+    securityHeaderRef.current = value;
+    setSecurityHeader(value);
+  };
   const [showKey, setShowKey] = useState(false);
   const [fetchingKey, setFetchingKey] = useState(false);
   const [keyError, setKeyError] = useState<string | null>(null);
@@ -131,7 +137,7 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
     try {
       const result = await generateTestKey(selectedEndpoint.apimId, keyType);
       if (result?.apikey) {
-        setSecurityHeader(result.apikey);
+        updateSecurityHeader(result.apikey);
       } else {
         setKeyError('No test key available. Please check your permissions.');
       }
@@ -294,7 +300,7 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
                     size="small"
                     type={showKey ? 'text' : 'password'}
                     value={securityHeader}
-                    onChange={(e) => setSecurityHeader(e.target.value)}
+                    onChange={(e) => updateSecurityHeader(e.target.value)}
                     placeholder="Paste or fetch a test key"
                     sx={{ flex: 1, fontFamily: 'monospace', fontSize: '0.8rem' }}
                     endAdornment={
@@ -358,8 +364,8 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
               plugins={[HideTopPlugin]}
               docExpansion="list"
               requestInterceptor={(request) => {
-                if (securityHeader) {
-                  request.headers['test-key'] = securityHeader;
+                if (securityHeaderRef.current) {
+                  request.headers['test-key'] = securityHeaderRef.current;
                 }
                 return request;
               }}
