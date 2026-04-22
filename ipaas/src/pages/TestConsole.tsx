@@ -22,9 +22,8 @@ import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
-import { fetchApimSwagger, fetchTestSession, type TestSession } from '../api/apim';
+import { fetchApimSwagger, generateTestKey } from '../api/apim';
 import { useComponentByHandler, useComponentDeployment, useEnvEndpoints, useEnvironments, useProject, useProjectByHandler, useProjects, type GqlEnvEndpoint } from '../api/queries';
-import { useAuth } from '../auth/AuthContext';
 import { getOrgUuidFromToken } from '../auth/tokenManager';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import NotFound from '../components/NotFound';
@@ -61,7 +60,6 @@ const HideTopPlugin = () => ({
 
 export default function TestConsole(scope: ComponentScope): JSX.Element {
   const navigate = useNavigate();
-  const { userId } = useAuth();
   const orgUuid = getOrgUuidFromToken() ?? '';
 
   // Project resolution with fallback (same pattern as Component.tsx)
@@ -126,15 +124,16 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
   const [urlCopied, setUrlCopied] = useState(false);
 
   const handleGetTestKey = async () => {
-    if (!component?.id || !selectedEnv?.id || !selectedEndpointId || !userId) return;
+    if (!selectedEndpoint?.apimId) return;
+    const keyType = selectedEnv?.critical ? 'Production' : 'Development';
     setFetchingKey(true);
     setKeyError(null);
     try {
-      const session: TestSession | null = await fetchTestSession(component.id, selectedEnv.id, selectedEndpointId, userId);
-      if (session?.sessionId) {
-        setSecurityHeader(session.sessionId);
+      const result = await generateTestKey(selectedEndpoint.apimId, keyType);
+      if (result?.apikey) {
+        setSecurityHeader(result.apikey);
       } else {
-        setKeyError('No test session available. Please check your permissions.');
+        setKeyError('No test key available. Please check your permissions.');
       }
     } catch {
       setKeyError('Failed to fetch test key.');
@@ -317,7 +316,7 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
                     variant="outlined"
                     size="small"
                     startIcon={fetchingKey ? <CircularProgress size={14} color="inherit" /> : <Key size={14} />}
-                    disabled={fetchingKey || !selectedEndpoint || !userId}
+                    disabled={fetchingKey || !selectedEndpoint?.apimId}
                     onClick={handleGetTestKey}
                     sx={{ whiteSpace: 'nowrap', textTransform: 'none' }}>
                     Get Test Key
@@ -353,7 +352,7 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
               docExpansion="list"
               requestInterceptor={(request) => {
                 if (securityHeader) {
-                  request.headers['Authorization'] = `Bearer ${securityHeader}`;
+                  request.headers['Internal-Key'] = securityHeader;
                 }
                 return request;
               }}
