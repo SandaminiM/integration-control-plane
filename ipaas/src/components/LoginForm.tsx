@@ -106,7 +106,7 @@ export default function LoginForm(): JSX.Element {
         </Typography>
 
         <Typography>
-          Don&apos;t have an account? <Link href="">Sign Up</Link>
+          Don&apos;t have an account? <Link href="/signup">Sign Up</Link>
         </Typography>
       </Box>
 

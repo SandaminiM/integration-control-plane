@@ -23,13 +23,37 @@ import { useNavigate } from 'react-router';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
 import { fetchApimSwagger, generateTestKey } from '../api/apim';
-import { useComponentByHandler, useComponentDeployment, useEnvEndpoints, useEnvironments, useProject, useProjectByHandler, useProjects, type GqlEnvEndpoint } from '../api/queries';
+import { useComponentByHandler, useComponentDeployment, useEnvEndpoints, useEnvironments, type GqlEnvEndpoint } from '../api/queries';
 import { getOrgUuidFromToken } from '../auth/tokenManager';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import NotFound from '../components/NotFound';
+import { useProjectId } from '../hooks/useProjectId';
 import { broaden, resourceUrl, type ComponentScope } from '../nav';
 import { componentOverviewUrl } from '../paths';
-import { UUID_RE } from '../utils/string';
+
+const ENV_STATUS_DOT: Record<string, string> = {
+  ACTIVE: 'success.main',
+  ERROR: 'error.main',
+  FAILED: 'error.main',
+  IN_PROGRESS: 'warning.main',
+  SUSPENDED: 'text.disabled',
+  NOT_DEPLOYED: 'text.disabled',
+};
+
+interface EnvDotProps {
+  orgHandler: string;
+  orgUuid: string;
+  componentId: string;
+  versionId: string;
+  envId: string;
+}
+
+function EnvDot({ orgHandler, orgUuid, componentId, versionId, envId }: EnvDotProps) {
+  const { data: dep } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, envId);
+  const status = dep?.deploymentStatusV2?.toUpperCase() ?? '';
+  const color = ENV_STATUS_DOT[status] ?? 'text.disabled';
+  return <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color, flexShrink: 0 }} />;
+}
 
 interface VisibilityOption {
   label: string;
@@ -62,14 +86,7 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
   const navigate = useNavigate();
   const orgUuid = getOrgUuidFromToken() ?? '';
 
-  // Project resolution with fallback (same pattern as Component.tsx)
-  const isUuid = UUID_RE.test(scope.project);
-  const { data: projectByHandler } = useProjectByHandler(!isUuid ? scope.project : '');
-  const { data: projectById } = useProject(isUuid ? scope.project : '');
-  const { data: allProjects = [] } = useProjects();
-  const projectFromList = !isUuid ? (allProjects.find((p) => p.handler === scope.project) ?? null) : null;
-  const project = isUuid ? projectById : (projectByHandler ?? projectFromList ?? undefined);
-  const projectId = project?.id ?? '';
+  const { projectId, project } = useProjectId(scope.project);
 
   // Component + environments
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
@@ -86,9 +103,13 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
     });
   }, [component?.id, tracks]);
 
-  // Environment tab selection
-  const [selectedEnvIdx, setSelectedEnvIdx] = useState(0);
-  const selectedEnv = environments[selectedEnvIdx] ?? null;
+  // Environment selection (by ID for stability across refetches)
+  const [selectedEnvId, setSelectedEnvId] = useState('');
+  useEffect(() => {
+    if (!environments.length) return;
+    setSelectedEnvId((prev) => (prev && environments.some((e) => e.id === prev) ? prev : environments[0].id));
+  }, [environments]);
+  const selectedEnv = environments.find((e) => e.id === selectedEnvId) ?? null;
 
   // Deployment for selected env (provides releaseId)
   const { data: deployment } = useComponentDeployment(component ? scope.org : '', component ? orgUuid : '', component?.id ?? '', selectedTrackId, selectedEnv?.id ?? '');
@@ -185,10 +206,20 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
   const envSelector = environments.length > 0 && (
     <Select
       size="small"
-      value={selectedEnvIdx}
+      value={selectedEnvId}
       onChange={(e) => {
-        setSelectedEnvIdx(e.target.value as number);
+        setSelectedEnvId(e.target.value as string);
         setSelectedEndpointId('');
+      }}
+      renderValue={(value) => {
+        const env = environments.find((e) => e.id === value);
+        if (!env) return null;
+        return (
+          <Stack direction="row" alignItems="center" gap={0.75}>
+            <EnvDot orgHandler={scope.org} orgUuid={orgUuid} componentId={component?.id ?? ''} versionId={selectedTrackId} envId={env.id} />
+            {env.name}
+          </Stack>
+        );
       }}
       inputProps={{ 'aria-label': 'Environment' }}
       sx={{
@@ -197,9 +228,12 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
         '& .MuiSelect-select': { py: 0.5, px: 1.5 },
         minWidth: 140,
       }}>
-      {environments.map((env, i) => (
-        <MenuItem key={env.id} value={i}>
-          {env.name}
+      {environments.map((env) => (
+        <MenuItem key={env.id} value={env.id}>
+          <Stack direction="row" alignItems="center" gap={0.75}>
+            <EnvDot orgHandler={scope.org} orgUuid={orgUuid} componentId={component?.id ?? ''} versionId={selectedTrackId} envId={env.id} />
+            {env.name}
+          </Stack>
         </MenuItem>
       ))}
     </Select>
