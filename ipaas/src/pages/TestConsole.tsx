@@ -157,6 +157,13 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
       .finally(() => setLoadingSwagger(false));
   }, [selectedEndpoint?.apimId]);
 
+  // Override the swagger spec's server URL with the selected invoke URL so
+  // SwaggerUI try-it-out executes against the actual deployment endpoint.
+  const swaggerWithServer = useMemo(() => {
+    if (!swagger || !invokeUrl) return swagger;
+    return { ...(swagger as Record<string, unknown>), servers: [{ url: invokeUrl }] };
+  }, [swagger, invokeUrl]);
+
   if (loadingComponent) {
     return (
       <PageContent sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
@@ -339,7 +346,7 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress />
           </Box>
-        ) : swagger ? (
+        ) : swaggerWithServer ? (
           <Box
             sx={{
               '& .swagger-ui .topbar': { display: 'none' },
@@ -347,12 +354,12 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
               '& .swagger-ui .scheme-container': { display: 'none' },
             }}>
             <SwaggerUI
-              spec={swagger}
+              spec={swaggerWithServer}
               plugins={[HideTopPlugin]}
               docExpansion="list"
               requestInterceptor={(request) => {
                 if (securityHeader) {
-                  request.headers['Internal-Key'] = securityHeader;
+                  request.headers['test-key'] = securityHeader;
                 }
                 return request;
               }}
