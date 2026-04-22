@@ -176,7 +176,7 @@ export default function LabelDialog({ open, onClose, component, projectId, curre
         <Button variant="outlined" onClick={onClose} disabled={updateComponent.isPending}>
           Cancel
         </Button>
-        <Button variant="contained" onClick={handleSave} disabled={!hasChanges || updateComponent.isPending} startIcon={updateComponent.isPending ? <CircularProgress size={13} /> : undefined}>
+        <Button variant="contained" onClick={handleSave} disabled={!hasChanges || updateComponent.isPending} startIcon={updateComponent.isPending ? <CircularProgress size={13} color="inherit" /> : undefined}>
           Save
         </Button>
       </DialogActions>

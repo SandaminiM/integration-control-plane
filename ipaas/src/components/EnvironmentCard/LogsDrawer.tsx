@@ -133,7 +133,7 @@ export default function LogsDrawer({ open, onClose, executionId, componentId, de
       <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 1 }}>
         {isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <CircularProgress size={32} />
+            <CircularProgress size={32} color="primary" />
           </Box>
         ) : !logs || logs.length === 0 ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>

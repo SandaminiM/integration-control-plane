@@ -724,8 +724,8 @@ function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envI
   const renderContent = () => {
     if (isLoading) {
       return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 6 }}>
-          <CircularProgress size={32} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <CircularProgress size={32} color="primary" />
         </Box>
       );
     }
@@ -978,8 +978,8 @@ function GenericServiceConfigureDrawer({
   const renderConfigurations = () => {
     if (isLoading) {
       return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 6 }}>
-          <CircularProgress size={32} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <CircularProgress size={32} color="primary" />
         </Box>
       );
     }

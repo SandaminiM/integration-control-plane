@@ -656,7 +656,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
             Cancel
           </Button>
           <Button variant="contained" onClick={handleSubmit} disabled={!canSubmit || createComponent.isPending}>
-            {createComponent.isPending ? <CircularProgress size={18} /> : 'Import Integration'}
+            {createComponent.isPending ? <CircularProgress size={18} color="inherit" /> : 'Import Integration'}
           </Button>
         </Stack>
       </Box>

@@ -108,7 +108,7 @@ export default function SampleRowCard({ sample, onDeploy, isDeploying, onClick }
               }}
               disabled={isDeploying}
               sx={{ height: 30, fontSize: 12, px: 2 }}>
-              {isDeploying ? <CircularProgress size={12} /> : 'Deploy'}
+              {isDeploying ? <CircularProgress size={12} color="inherit" /> : 'Deploy'}
             </Button>
           </span>
         </Tooltip>

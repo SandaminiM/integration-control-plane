@@ -206,7 +206,7 @@ function ChangePasswordSection(): JSX.Element {
 
             <Stack direction="row" spacing={1}>
               <Button variant="contained" disabled={!canSubmit} onClick={handleSubmit}>
-                {mutation.isPending ? <CircularProgress size={20} /> : 'Save'}
+                {mutation.isPending ? <CircularProgress size={20} color="inherit" /> : 'Save'}
               </Button>
               <Button variant="outlined" onClick={handleCancel} disabled={mutation.isPending}>
                 Cancel

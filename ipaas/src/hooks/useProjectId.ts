@@ -31,6 +31,6 @@ export function useProjectId(projectIdentifier: string) {
   return {
     projectId: project?.id ?? '',
     project,
-    isLoading: isProjectUuid ? loadingById : (loadingByHandler || loadingProjects),
+    isLoading: isProjectUuid ? loadingById : loadingByHandler || loadingProjects,
   };
 }

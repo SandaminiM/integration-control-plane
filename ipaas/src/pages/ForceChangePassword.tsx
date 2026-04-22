@@ -100,7 +100,7 @@ export default function ForceChangePassword(): JSX.Element {
               <Divider />
 
               <Button type="submit" variant="contained" fullWidth disabled={!canSubmit}>
-                {mutation.isPending ? <CircularProgress size={20} /> : 'Set New Password'}
+                {mutation.isPending ? <CircularProgress size={20} color="inherit" /> : 'Set New Password'}
               </Button>
             </Stack>
           </form>

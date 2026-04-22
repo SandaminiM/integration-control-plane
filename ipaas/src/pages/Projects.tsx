@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Avatar, Button, Card, CardContent, CircularProgress, Grid, IconButton, PageContent, PageTitle, Stack, TablePagination, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
+import { Avatar, Box, Button, Card, CardContent, CircularProgress, Grid, IconButton, PageContent, PageTitle, Stack, TablePagination, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
 import { Clock, Folder, LayoutGrid, List, Plus, RefreshCw, Settings } from '@wso2/oxygen-ui-icons-react';
 import SearchField from '../components/SearchField';
 import { useNavigate } from 'react-router';
@@ -67,6 +67,14 @@ export default function Projects(scope: OrgScope): JSX.Element {
   const canCreateProject = hasOrgPermission(Permissions.PROJECT_MANAGE);
   const { data: projects, isLoading, refetch } = useProjectsByOrg(scope.org);
 
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <CircularProgress color="primary" />
+      </Box>
+    );
+  }
+
   const filtered = (projects ?? []).filter((p) => {
     if (!query) return true;
     const searchQuery = query.trim().toLowerCase();
@@ -108,9 +116,7 @@ export default function Projects(scope: OrgScope): JSX.Element {
         </Authorized>
       </Stack>
 
-      {isLoading ? (
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <EmptyListing
           icon={<Folder size={48} />}
           title="No projects found"
