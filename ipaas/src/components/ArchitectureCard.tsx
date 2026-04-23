@@ -203,7 +203,7 @@ export default function ArchitectureCard({ projectId, components, isLoading, isR
         <div style={{ width: '100%', height: 250, overflow: 'hidden', cursor: 'default' }}>
           {isLoading ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-              <CircularProgress size={32} />
+              <CircularProgress size={32} color="primary" />
             </div>
           ) : components.length === 0 ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>

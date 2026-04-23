@@ -140,7 +140,7 @@ export default function ActivatePlansDialog({ open, onClose, apimId, apimApiInfo
         <Button variant="outlined" onClick={handleClose} disabled={saving}>
           Cancel
         </Button>
-        <Button variant="contained" onClick={handleSave} disabled={saving || loadingPolicies || showError} startIcon={saving ? <CircularProgress size={14} /> : undefined}>
+        <Button variant="contained" onClick={handleSave} disabled={saving || loadingPolicies || showError} startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}>
           Save
         </Button>
       </DialogActions>

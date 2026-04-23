@@ -145,7 +145,9 @@ export default function ScheduleDialog({ open, onClose, onSaveSuccess, onSaveErr
 
       <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>
         {loadingConfigs ? (
-          <CircularProgress size={24} sx={{ display: 'block', mx: 'auto', my: 4 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <CircularProgress size={24} color="primary" />
+          </Box>
         ) : (
           <>
             <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
