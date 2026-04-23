@@ -74,9 +74,9 @@ export default function Component(scope: ComponentScope): JSX.Element {
   const isLoading = loadingProject || loadingComponent;
   if (isLoading)
     return (
-      <PageContent sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
-        <CircularProgress />
-      </PageContent>
+      <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <CircularProgress color="primary" />
+      </Box>
     );
   if (!component) return <NotFound message="Component not found" backTo={resourceUrl(broaden(scope)!, 'overview')} backLabel="Back to Project" />;
 

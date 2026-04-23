@@ -235,7 +235,7 @@ export default function ExecutionDrawer({ execution, open, onClose, onRunSuccess
           <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 1 }}>
             {logsLoading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                <CircularProgress size={28} />
+                <CircularProgress size={28} color="primary" />
               </Box>
             ) : logs.length === 0 ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -361,7 +361,9 @@ export default function ExecutionDrawer({ execution, open, onClose, onRunSuccess
                 </Alert>
 
                 {argsLoading ? (
-                  <CircularProgress size={24} sx={{ display: 'block', mx: 'auto', my: 2 }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+                    <CircularProgress size={24} color="primary" />
+                  </Box>
                 ) : (
                   <Stack gap={1.5}>
                     <Box>

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Avatar, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, IconButton, ListingTable, PageContent, Stack, TablePagination, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Avatar, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, IconButton, ListingTable, PageContent, Stack, TablePagination, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Plus, PlugZap, RefreshCw, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import EmptyListing from '../components/EmptyListing';
 import IntegrationTypesCard from '../components/IntegrationTypesCard';
@@ -65,7 +65,7 @@ function DeleteDialog({ component, scope, projectId, onClose }: { component: Gql
         <Button variant="outlined" onClick={onClose}>
           Cancel
         </Button>
-        <Button variant="contained" color="error" disabled={!confirmed || mutation.isPending} startIcon={mutation.isPending ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : undefined} onClick={handleDelete}>
+        <Button variant="contained" color="error" disabled={!confirmed || mutation.isPending} startIcon={mutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined} onClick={handleDelete}>
           {mutation.isPending ? 'Deleting...' : 'Delete'}
         </Button>
       </DialogActions>
@@ -143,7 +143,7 @@ function IntegrationsTable({
       </Stack>
 
       {isLoading ? (
-        <CircularProgress size={24} sx={{ display: 'block', mx: 'auto', py: 4 }} />
+        <CircularProgress size={24} color="primary" sx={{ display: 'block', mx: 'auto', py: 4 }} />
       ) : filtered.length === 0 ? (
         <EmptyListing icon={<PlugZap size={48} />} title="No integrations found" description={query ? 'Try adjusting your search' : 'Create your first integration to get started'} />
       ) : (
@@ -267,9 +267,9 @@ export default function Project(scope: ProjectScope): JSX.Element {
 
   if (loadingProject) {
     return (
-      <PageContent sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
-        <CircularProgress />
-      </PageContent>
+      <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <CircularProgress color="primary" />
+      </Box>
     );
   }
   if (!project) {

@@ -417,7 +417,7 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
             Cancel
           </Button>
           <Button variant="contained" onClick={() => void handleApply()} disabled={saving || loading || !apimId}>
-            {saving ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : 'Apply'}
+            {saving ? <CircularProgress size={16} color="inherit" /> : 'Apply'}
           </Button>
         </Box>
       </Box>

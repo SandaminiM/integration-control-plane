@@ -323,7 +323,7 @@ export default function EnvironmentCardBody({
 
       {/* Generic service: deployment in progress */}
       {isGenericService && deploymentStatusV2 === 'IN_PROGRESS' && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 2 }}>
           <CircularProgress size={20} sx={{ color: 'warning.main' }} />
         </Box>
       )}

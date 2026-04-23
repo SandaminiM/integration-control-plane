@@ -426,8 +426,8 @@ export default function ManageDrawer({
       {/* Content */}
       <Box sx={{ flex: 1, overflowY: 'auto', px: 2, py: 2 }}>
         {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress />
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <CircularProgress color="primary" />
           </Box>
         ) : !apimId ? (
           <Alert severity="info">No API configured for this endpoint.</Alert>
