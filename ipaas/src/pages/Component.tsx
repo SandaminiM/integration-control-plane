@@ -18,7 +18,7 @@
 
 import { Box, CircularProgress, Divider, PageContent } from '@wso2/oxygen-ui';
 import { Fragment, useEffect, useMemo, useState, type JSX } from 'react';
-import { useProject, useProjectByHandler, useProjects, useComponentByHandler, useEnvironments, useCommitHistory, useComponentEndpoints, useApimApi } from '../api/queries';
+import { useProject, useProjectByHandler, useProjects, useComponentByHandler, useEnvironments, useCommitHistory, useComponentEndpoints, useApimApi, useComponentRepository } from '../api/queries';
 import BusinessInfo from '../components/BusinessInfo';
 import NotFound from '../components/NotFound';
 import { ArtifactDetail } from '../components/ArtifactDetail';
@@ -46,7 +46,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
   const projectId = project?.id ?? '';
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
   const { data: environments = [] } = useEnvironments(scope.org, projectId);
-  const repository = component?.repository ?? null;
+  const { data: repository = null } = useComponentRepository(projectId, scope.component);
   const { data: commits = [] } = useCommitHistory(component?.id ?? '', repository?.branch ?? '');
 
   const tracks = useMemo(() => component?.deploymentTracks ?? [], [component?.deploymentTracks]);

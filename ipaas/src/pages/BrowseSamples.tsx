@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, Button, InputAdornment, PageContent, Pagination, TextField, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, CircularProgress, InputAdornment, PageContent, Pagination, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Search } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useEffect, type JSX } from 'react';
 import { useNavigate } from 'react-router';
@@ -25,7 +25,8 @@ import FilterSection from '../components/FilterSection';
 import SampleGridCard from '../components/SampleGridCard';
 import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
 import { displayTypeFromSample, formatBuildPack, formatComponentType, normalizeComponentType } from '../constants/integrations';
-import { ALL_SAMPLES, PAGE_SIZE, UNIQUE_TYPES, UNIQUE_BUILDPACKS, UNIQUE_TAGS } from '../constants/samples';
+import { PAGE_SIZE } from '../constants/samples';
+import { useSamples } from '../hooks/useSamples';
 import { resourceUrl, narrow, type ProjectScope } from '../nav';
 import { newComponentUrl } from '../paths';
 import type { Sample } from '../types/samples';
@@ -35,6 +36,12 @@ import { useProjectId } from '../hooks/useProjectId';
 export default function BrowseSamples(scope: ProjectScope): JSX.Element {
   const navigate = useNavigate();
   const { projectId } = useProjectId(scope.project);
+  const { data: samplesData, isLoading: isSamplesLoading, isError: isSamplesError } = useSamples();
+
+  const allSamples = samplesData?.samples ?? [];
+  const uniqueTypes = samplesData?.uniqueTypes ?? [];
+  const uniqueBuildPacks = samplesData?.uniqueBuildPacks ?? [];
+  const uniqueTags = samplesData?.uniqueTags ?? [];
 
   const [search, setSearch] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set());
@@ -66,7 +73,7 @@ export default function BrowseSamples(scope: ProjectScope): JSX.Element {
         projectId,
         displayType: displayTypeFromSample(sample.componentType, sample.buildPack),
         srcGitRepoUrl: sample.repositoryUrl,
-        repositorySubPath: `${sample.subDirectory}${sample.componentPath}`,
+        repositorySubPath: `${sample.subDirectory ?? ''}${sample.componentPath}`,
         repositoryBranch: sample.branch ?? 'main',
         isPublicRepo: true,
         enableAutoDeploy: true,
@@ -80,7 +87,7 @@ export default function BrowseSamples(scope: ProjectScope): JSX.Element {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return ALL_SAMPLES.filter((s) => {
+    return allSamples.filter((s) => {
       const matchesType = selectedTypes.size === 0 || selectedTypes.has(normalizeComponentType(s.componentType));
       const matchesBuildPack = selectedBuildPacks.size === 0 || selectedBuildPacks.has(s.buildPack);
       const matchesTags = selectedTags.size === 0 || s.tags.some((t) => selectedTags.has(t));
@@ -96,6 +103,25 @@ export default function BrowseSamples(scope: ProjectScope): JSX.Element {
 
   const pageCount = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  if (isSamplesLoading) {
+    return (
+      <PageContent sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
+        <CircularProgress />
+      </PageContent>
+    );
+  }
+
+  if (isSamplesError) {
+    return (
+      <PageContent sx={{ pt: 5 }}>
+        <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(newComponentUrl(scope.org, scope.project))} sx={{ mb: 2 }}>
+          Back
+        </Button>
+        <Typography color="error">Failed to load samples. Please try again later.</Typography>
+      </PageContent>
+    );
+  }
 
   if (createComponent.isPending || createComponent.isSuccess || createComponent.isError) {
     return (
@@ -157,15 +183,15 @@ export default function BrowseSamples(scope: ProjectScope): JSX.Element {
             }}
           />
 
-          <FilterSection title="Type" items={UNIQUE_TYPES} selected={selectedTypes} onToggle={toggleFilter(setSelectedTypes)} labelFn={formatComponentType} />
+          <FilterSection title="Type" items={uniqueTypes} selected={selectedTypes} onToggle={toggleFilter(setSelectedTypes)} labelFn={formatComponentType} />
 
           <Box sx={{ borderTop: '1px solid', borderColor: 'divider', my: 1 }} />
 
-          <FilterSection title="Technology" items={UNIQUE_BUILDPACKS} selected={selectedBuildPacks} onToggle={toggleFilter(setSelectedBuildPacks)} labelFn={formatBuildPack} />
+          <FilterSection title="Technology" items={uniqueBuildPacks} selected={selectedBuildPacks} onToggle={toggleFilter(setSelectedBuildPacks)} labelFn={formatBuildPack} />
 
           <Box sx={{ borderTop: '1px solid', borderColor: 'divider', my: 1 }} />
 
-          <FilterSection title="Tags" items={UNIQUE_TAGS} selected={selectedTags} onToggle={toggleFilter(setSelectedTags)} />
+          <FilterSection title="Tags" items={uniqueTags} selected={selectedTags} onToggle={toggleFilter(setSelectedTags)} />
         </Box>
 
         {/* Grid */}

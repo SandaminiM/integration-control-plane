@@ -171,6 +171,11 @@ export function componentBuildUrl(orgHandler: string, projectHandler: string, co
 
 export const alertsSegment = 'alerts';
 export const buildsSegment = 'build';
+export const deploySegment = 'deploy';
+
+export function componentDeployUrl(orgHandler: string, projectHandler: string, componentHandler: string): string {
+  return `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/deploy`;
+}
 
 // ---------------------------------------------------------------------------
 // External links

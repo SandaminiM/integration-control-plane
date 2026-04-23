@@ -17,7 +17,7 @@
  */
 
 import { type RouteProps, Navigate } from 'react-router';
-import { cookiePolicyUrl, loginUrl, orgRoleDetailUrl, privacyPolicyUrl, projectRoleDetailUrl, componentRoleDetailUrl, projectGroupDetailUrl, componentGroupDetailUrl, alertsSegment, buildsSegment } from '../paths';
+import { cookiePolicyUrl, loginUrl, orgRoleDetailUrl, privacyPolicyUrl, projectRoleDetailUrl, componentRoleDetailUrl, projectGroupDetailUrl, componentGroupDetailUrl, alertsSegment, buildsSegment, deploySegment } from '../paths';
 import OrgHomeRedirect from '../components/OrgHomeRedirect';
 import CreateUser from '../pages/CreateUser';
 import EditUser from '../pages/EditUser';
@@ -62,8 +62,11 @@ import { createElement } from 'react';
 import Build from '../pages/Build';
 import OrgBuild from '../pages/OrgBuild';
 import ProjectBuild from '../pages/ProjectBuild';
+import OrgDeploy from '../pages/OrgDeploy';
+import ProjectDeploy from '../pages/ProjectDeploy';
 import CloudEditorDeployment from '../pages/CloudEditorDeployment';
 import TestConsole from '../pages/TestConsole';
+import Deploy from '../pages/Deploy';
 
 export interface AppRoute extends Omit<RouteProps, 'children'> {
   children?: AppRoute[];
@@ -74,6 +77,7 @@ const MATRIX: Matrix = {
   logs: { segment: 'logs', pages: { projects: RuntimeLogsProject, components: RuntimeLogsIntegration } },
   alerts: { segment: alertsSegment, pages: { components: Alerts } },
   build: { segment: buildsSegment, pages: { organizations: OrgBuild, projects: ProjectBuild, components: Build } },
+  deploy: { segment: deploySegment, pages: { organizations: OrgDeploy, projects: ProjectDeploy, components: Deploy } },
   metrics: { segment: 'metrics', pages: { projects: Metrics, components: Metrics } },
   runtimes: { segment: 'runtimes', pages: { projects: Runtime, components: Runtime } },
   environments: { segment: 'environments', pages: { organizations: Environments, projects: Environments } },
