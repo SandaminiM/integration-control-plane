@@ -19,7 +19,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { gql } from './graphql';
 import { authenticatedFetch, refreshAccessToken } from '../auth/tokenManager';
-import type { GqlArtifact, GqlComponent, GqlEnvironment, GqlProject, SchemaConfigItem } from './queries';
+import type { GqlArtifact, GqlComponent, GqlEnvironment, GqlProject, SchemaConfigItem, CertMapping } from './queries';
 import { toBackendArtifactType } from './artifactToggleMutations';
 import type { DeployComponentInput, UpdateBuildpackConfigsInput } from '../types/build';
 
@@ -926,5 +926,30 @@ const OBTAIN_USER_TOKEN = `
 export function useObtainGithubToken() {
   return useMutation({
     mutationFn: (authorizationCode: string) => gql<{ obtainUserToken: { success: boolean; message: string } }>(OBTAIN_USER_TOKEN, { authorizationCode }).then((d) => d.obtainUserToken),
+  });
+}
+
+// Certificate mappings
+
+export function usePostCertificateMappings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: CertMapping) => {
+      const base = new URL(window.API_CONFIG.graphqlUrl).origin;
+      const url = `${base}/config-mapping-svc/v1.0/configs/mappings`;
+      const res = await authenticatedFetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      return res.json().catch(() => ({}));
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['certMappings', vars.projectId, vars.componentId, vars.envTemplateId, vars.deploymentTrackId] });
+    },
   });
 }

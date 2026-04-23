@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Button, CircularProgress, IconButton, ListingTable, TablePagination, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, CircularProgress, IconButton, ListingTable, TablePagination, Typography } from '@wso2/oxygen-ui';
 import { CheckCircle2, ChevronRight, XCircle } from '@wso2/oxygen-ui-icons-react';
 import { Fragment, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -164,7 +164,11 @@ export default function AutomationExecutions({
   const paged = allExecutions.slice(safePage * rowsPerPage, safePage * rowsPerPage + rowsPerPage);
 
   if (isLoading) {
-    return <CircularProgress size={24} sx={{ display: 'block', mx: 'auto', py: 4 }} />;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+        <CircularProgress size={24} color="primary" />
+      </Box>
+    );
   }
 
   if (allExecutions.length === 0) {

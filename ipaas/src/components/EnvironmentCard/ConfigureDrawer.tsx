@@ -16,12 +16,12 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Checkbox, Chip, CircularProgress, Collapse, Drawer, IconButton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { Building2, Check, ChevronDown, ChevronUp, Copy, Folder, Globe, Pencil, Plus, Settings, X } from '@wso2/oxygen-ui-icons-react';
+import { Alert, Box, Button, Checkbox, Chip, CircularProgress, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, Drawer, IconButton, MenuItem, Select as MuiSelect, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Building2, Check, ChevronDown, ChevronUp, Copy, Folder, Globe, Link, Pencil, Plus, Settings, Trash2, Upload, X } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEnvEndpoints, useGetConfigMgt, useSchemaConfig, type ConfigMgtItem, type GqlEnvEndpoint, type SchemaConfigItem } from '../../api/queries';
-import { usePostConfigMgt, useRedeployDeployment, useUpdateEndpoint, useSaveSchemaConfig, type ConfigMgtSaveItem } from '../../api/mutations';
+import { useEnvEndpoints, useGetConfigMgt, useSchemaConfig, useCertificateGroups, useCertificateMappings, type ConfigMgtItem, type GqlEnvEndpoint, type SchemaConfigItem, type CertGroup, type CertMapping, type CertMappingConfig } from '../../api/queries';
+import { usePostConfigMgt, useRedeployDeployment, useUpdateEndpoint, useSaveSchemaConfig, usePostCertificateMappings, type ConfigMgtSaveItem } from '../../api/mutations';
 import ManageDrawer from './ManageDrawer';
 
 // ── Schema parsing ────────────────────────────────────────────────────────────
@@ -180,11 +180,12 @@ function DefaultableConfigurablesAccordion({ groups, values, onChange }: Default
 // ── Step indicator ────────────────────────────────────────────────────────────
 
 const STEPS = ['Configurations', 'Endpoints'];
+const AUTOMATION_STEPS = ['Configurations', 'Certificate Mount'];
 
-function StepIndicator({ step }: { step: number }) {
+function StepIndicator({ step, steps }: { step: number; steps: string[] }) {
   return (
     <Stack direction="row" alignItems="center" sx={{ px: 2, py: 1.25, borderBottom: '1px solid', borderColor: 'divider' }}>
-      {STEPS.map((label, idx) => {
+      {steps.map((label, idx) => {
         const num = idx + 1;
         const isActive = num === step;
         const isDone = num < step;
@@ -217,7 +218,7 @@ function StepIndicator({ step }: { step: number }) {
                 {label}
               </Typography>
             </Stack>
-            {idx < STEPS.length - 1 && <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider', mx: 0.75 }} />}
+            {idx < steps.length - 1 && <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider', mx: 0.75 }} />}
           </Stack>
         );
       })}
@@ -570,6 +571,41 @@ function autoGroupFields(fields: AutoFlatField[]): { groupPath: string; fields: 
   return Array.from(map.entries()).map(([groupPath, groupFields]) => ({ groupPath, fields: groupFields }));
 }
 
+// ── Config.toml parser ────────────────────────────────────────────────────────
+// Parses a subset of TOML: section headers ([a.b.c]) and scalar key = "value"
+// lines. Multiline strings and arrays are skipped. Result is a flat map of
+// dot-joined paths → string values, matching the schema key format.
+
+function parseTomlConfig(content: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  let section = '';
+  for (const raw of content.split('\n')) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+    const sectionMatch = /^\[([^\]]+)\]$/.exec(line);
+    if (sectionMatch) {
+      section = sectionMatch[1].trim();
+      continue;
+    }
+    const eqIdx = line.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = line.slice(0, eqIdx).trim();
+    if (!key) continue;
+    const rawVal = line.slice(eqIdx + 1).trim();
+    // Skip multiline strings and arrays
+    if (rawVal.startsWith('"""') || rawVal.startsWith("'''") || rawVal.startsWith('[')) continue;
+    let value: string;
+    if ((rawVal.startsWith('"') && rawVal.endsWith('"')) || (rawVal.startsWith("'") && rawVal.endsWith("'"))) {
+      value = rawVal.slice(1, -1);
+    } else {
+      value = rawVal;
+    }
+    const fullKey = section ? `${section}.${key}` : key;
+    result[fullKey] = value;
+  }
+  return result;
+}
+
 interface AutoFieldRowProps {
   field: AutoFlatField;
   value: string;
@@ -659,6 +695,234 @@ function AutoSection({ title, groups, values, onChange, defaultOpen = true }: Au
   );
 }
 
+// ── Certificate Mount step components ──────────────────────────────────────────
+
+interface LinkedCert {
+  groupUuid: string;
+  groupName: string;
+  groupDisplayName?: string;
+  mountPath: string;
+  keys: { keyUuid: string; key: string; mountedAs: string }[];
+}
+
+interface CertLinkFormProps {
+  availableCerts: CertGroup[];
+  onLink: (cert: CertGroup, mountPath: string) => void;
+  onCancel: () => void;
+}
+
+function CertLinkForm({ availableCerts, onLink, onCancel }: CertLinkFormProps) {
+  const [selectedGroupUuid, setSelectedGroupUuid] = useState('');
+  const [mountPath, setMountPath] = useState('');
+  const mountPathError = mountPath && !mountPath.startsWith('/') ? 'Mount path must start with /' : '';
+  const selected = availableCerts.find((c) => c.groupUuid === selectedGroupUuid) ?? null;
+  const canLink = !!selected && !!mountPath && !mountPathError;
+
+  return (
+    <Box sx={{ border: '1px solid', borderColor: 'primary.main', borderRadius: 1, p: 1.5, mb: 1.5 }}>
+      <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+        Link Certificate
+      </Typography>
+      <TextField
+        size="small"
+        fullWidth
+        label="Mount Path"
+        placeholder="/certs"
+        value={mountPath}
+        onChange={(e) => setMountPath(e.target.value)}
+        error={!!mountPathError}
+        helperText={mountPathError || 'Directory where certificate files will be mounted'}
+        sx={{ mb: 1.5 }}
+      />
+      <MuiSelect size="small" fullWidth displayEmpty value={selectedGroupUuid} onChange={(e) => setSelectedGroupUuid(e.target.value as string)} sx={{ mb: 1.5 }}>
+        <MenuItem value="" disabled>
+          Select a Certificate
+        </MenuItem>
+        {availableCerts.map((c) => (
+          <MenuItem key={c.groupUuid} value={c.groupUuid}>
+            {c.groupDisplayName || c.groupName}
+          </MenuItem>
+        ))}
+      </MuiSelect>
+      <Stack direction="row" gap={1} justifyContent="flex-end">
+        <Button size="small" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button size="small" variant="contained" disabled={!canLink} onClick={() => selected && onLink(selected, mountPath)}>
+          Link
+        </Button>
+      </Stack>
+    </Box>
+  );
+}
+
+interface LinkedCertCardProps {
+  cert: LinkedCert;
+  onUnlink: () => void;
+  onMountPathChange: (path: string) => void;
+}
+
+function LinkedCertCard({ cert, onUnlink, onMountPathChange }: LinkedCertCardProps) {
+  const [open, setOpen] = useState(true);
+  const [mountPath, setMountPath] = useState(cert.mountPath);
+  const mountPathError = mountPath && !mountPath.startsWith('/') ? 'Mount path must start with /' : '';
+
+  return (
+    <Box sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+      <Stack direction="row" alignItems="center" gap={1} sx={{ px: 1.5, py: 1, cursor: 'pointer', borderBottom: open ? '1px solid' : 'none', borderColor: 'divider' }} onClick={() => setOpen((p) => !p)}>
+        <Typography variant="body2" sx={{ fontWeight: 600, flex: 1 }}>
+          {cert.groupDisplayName || cert.groupName}
+        </Typography>
+        <Chip label="Certificate" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
+        <Button
+          size="small"
+          variant="text"
+          color="error"
+          startIcon={<Trash2 size={13} />}
+          onClick={(e) => {
+            e.stopPropagation();
+            onUnlink();
+          }}
+          sx={{ minWidth: 0, px: 0.5 }}>
+          Unlink
+        </Button>
+        {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+      </Stack>
+      <Collapse in={open}>
+        <Box sx={{ px: 1.5, pt: 1, pb: 1.5 }}>
+          <TextField
+            size="small"
+            fullWidth
+            label="Mount Path"
+            value={mountPath}
+            error={!!mountPathError}
+            helperText={mountPathError || 'Directory where certificate files will be mounted'}
+            onChange={(e) => {
+              setMountPath(e.target.value);
+              if (!e.target.value || e.target.value.startsWith('/')) onMountPathChange(e.target.value);
+            }}
+            sx={{ mb: 1 }}
+          />
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0.5, overflow: 'hidden' }}>
+            <Stack direction="row" sx={{ px: 1, py: 0.5, bgcolor: 'action.hover' }}>
+              <Typography variant="caption" sx={{ fontWeight: 600, flex: 1 }}>
+                FILE NAME
+              </Typography>
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                CERTIFICATE KEY NAME
+              </Typography>
+            </Stack>
+            {cert.keys.map((k) => (
+              <Stack key={k.keyUuid} direction="row" alignItems="center" sx={{ px: 1, py: 0.5, borderTop: '1px solid', borderColor: 'divider' }}>
+                <Typography variant="caption" sx={{ fontFamily: 'monospace', flex: 1 }}>
+                  {k.mountedAs}
+                </Typography>
+                <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+                  {k.key}
+                </Typography>
+              </Stack>
+            ))}
+          </Box>
+        </Box>
+      </Collapse>
+    </Box>
+  );
+}
+
+interface CertificateMountStepProps {
+  projectId: string;
+  componentId: string;
+  envId: string;
+  deploymentTrackId: string;
+  open: boolean;
+  linkedCerts: LinkedCert[];
+  onChange: (certs: LinkedCert[]) => void;
+}
+
+function CertificateMountStep({ projectId, componentId, envId: _envId, deploymentTrackId: _deploymentTrackId, open, linkedCerts, onChange }: CertificateMountStepProps) {
+  const { data: certGroups = [], isLoading } = useCertificateGroups(projectId, componentId, open);
+  const [isLinking, setIsLinking] = useState(false);
+  const [unlinkTarget, setUnlinkTarget] = useState<string | null>(null);
+
+  const linkedUuids = new Set(linkedCerts.map((c) => c.groupUuid));
+  const linkable = certGroups.filter((g) => !linkedUuids.has(g.groupUuid));
+
+  const handleLink = (cert: CertGroup, mountPath: string) => {
+    const newCert: LinkedCert = {
+      groupUuid: cert.groupUuid,
+      groupName: cert.groupName,
+      groupDisplayName: cert.groupDisplayName,
+      mountPath,
+      keys: cert.configurations
+        .filter((k) => k.isFile)
+        .map((k) => ({
+          keyUuid: k.keyUuid,
+          key: k.key,
+          mountedAs:
+            k.key
+              .split('/')
+              .pop()
+              ?.toLowerCase()
+              .replace(/[^a-z0-9._-]/g, '_') || k.key,
+        })),
+    };
+    onChange([...linkedCerts, newCert]);
+    setIsLinking(false);
+  };
+
+  const handleUnlink = (groupUuid: string) => {
+    onChange(linkedCerts.filter((c) => c.groupUuid !== groupUuid));
+    setUnlinkTarget(null);
+  };
+
+  const handleMountPathChange = (groupUuid: string, path: string) => {
+    onChange(linkedCerts.map((c) => (c.groupUuid === groupUuid ? { ...c, mountPath: path } : c)));
+  };
+
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+        <CircularProgress size={24} />
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      <Box sx={{ mb: 1.5 }}>
+        <Button variant="outlined" size="small" startIcon={<Link size={14} />} onClick={() => setIsLinking(true)} disabled={isLinking || linkable.length === 0}>
+          Link a Certificate
+        </Button>
+      </Box>
+
+      {isLinking && <CertLinkForm availableCerts={linkable} onLink={handleLink} onCancel={() => setIsLinking(false)} />}
+
+      {linkedCerts.length === 0 && !isLinking ? (
+        <Box sx={{ py: 3, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            No certificates linked. Click &apos;Link a Certificate&apos; to mount certificates to your component.
+          </Typography>
+        </Box>
+      ) : (
+        linkedCerts.map((cert) => <LinkedCertCard key={cert.groupUuid} cert={cert} onUnlink={() => setUnlinkTarget(cert.groupUuid)} onMountPathChange={(path) => handleMountPathChange(cert.groupUuid, path)} />)
+      )}
+
+      <Dialog open={!!unlinkTarget} onClose={() => setUnlinkTarget(null)}>
+        <DialogTitle>Unlink Certificate</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">Are you sure you want to unlink this certificate? This action cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUnlinkTarget(null)}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={() => unlinkTarget && handleUnlink(unlinkTarget)}>
+            Unlink
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+}
+
 interface AutomationConfigureDrawerProps {
   open: boolean;
   onClose: () => void;
@@ -667,18 +931,31 @@ interface AutomationConfigureDrawerProps {
   envId: string;
   deploymentTrackId: string;
   commitHash?: string;
+  orgHandler: string;
+  releaseId?: string;
+  displayType?: string;
+  releaseMgtReleaseId?: string;
+  releaseMgtDeploymentId?: string;
 }
 
-function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envId, deploymentTrackId, commitHash }: AutomationConfigureDrawerProps) {
+function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envId, deploymentTrackId, commitHash, orgHandler, releaseId, displayType, releaseMgtReleaseId, releaseMgtDeploymentId }: AutomationConfigureDrawerProps) {
   const handleClose = () => {
     (document.activeElement as HTMLElement)?.blur();
     onClose();
   };
 
   const { data, isLoading, isError } = useSchemaConfig(projectId, componentId, envId, deploymentTrackId, commitHash);
+  const { data: existingCertMappings } = useCertificateMappings(projectId, componentId, envId, deploymentTrackId, open);
   const save = useSaveSchemaConfig();
+  const saveCertMappings = usePostCertificateMappings();
+  const redeploy = useRedeployDeployment();
+  const [step, setStep] = useState(1);
   const [values, setValues] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [importedFileName, setImportedFileName] = useState<string | null>(null);
+  const [linkedCerts, setLinkedCerts] = useState<LinkedCert[]>([]);
+  const certSeededRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fields = useMemo(() => {
     const base = autoParseFields(data?.jsonSchema);
@@ -692,36 +969,173 @@ function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envI
   const requiredGroups = useMemo(() => autoGroupFields(requiredFields), [requiredFields]);
   const optionalGroups = useMemo(() => autoGroupFields(optionalFields), [optionalFields]);
 
+  // Seed values only on open; avoid clobbering edits on background refetches.
+  const seededRef = useRef(false);
   useEffect(() => {
-    if (open) {
-      setSaveError(null);
+    if (!open) return;
+    setStep(1);
+    setSaveError(null);
+    setImportedFileName(null);
+    certSeededRef.current = false;
+    if (data !== undefined) {
       const initial: Record<string, string> = {};
-      if (data?.configurations) {
-        for (const cfg of data.configurations) {
-          initial[cfg.key] = cfg.values?.[0]?.value ?? '';
-        }
-      }
+      for (const cfg of data?.configurations ?? []) initial[cfg.key] = cfg.values?.[0]?.value ?? '';
       setValues(initial);
+      seededRef.current = true;
+    } else {
+      seededRef.current = false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || seededRef.current || data === undefined) return;
+    const initial: Record<string, string> = {};
+    for (const cfg of data?.configurations ?? []) initial[cfg.key] = cfg.values?.[0]?.value ?? '';
+    setValues(initial);
+    seededRef.current = true;
   }, [open, data]);
+
+  // Seed cert mappings from existing data
+  useEffect(() => {
+    if (!open || certSeededRef.current || !existingCertMappings) return;
+    // Group existing cert mappings by configGroupId
+    const byGroup: Record<string, CertMappingConfig[]> = {};
+    for (const cfg of existingCertMappings.configurations ?? []) {
+      if (!cfg.configGroupId || !cfg.isFile) continue;
+      if (!byGroup[cfg.configGroupId]) byGroup[cfg.configGroupId] = [];
+      byGroup[cfg.configGroupId].push(cfg);
+    }
+    const certs: LinkedCert[] = Object.entries(byGroup).map(([groupId, cfgs]) => {
+      const first = cfgs[0];
+      // mountDirectory is derived from the full key (e.g., /certs/ca.crt → /certs)
+      const fullKey = first.key;
+      const lastSlash = fullKey.lastIndexOf('/');
+      const mountPath = lastSlash > 0 ? fullKey.substring(0, lastSlash) : '/certs';
+      return {
+        groupUuid: groupId,
+        groupName: first.configGroupName || groupId,
+        mountPath,
+        keys: cfgs.map((c) => ({
+          keyUuid: c.configKeyId || '',
+          key: c.configKeyName || c.key,
+          mountedAs: lastSlash > 0 ? c.key.substring(lastSlash + 1) : c.key,
+        })),
+      };
+    });
+    if (certs.length > 0) {
+      setLinkedCerts(certs);
+    }
+    certSeededRef.current = true;
+  }, [open, existingCertMappings]);
 
   const handleChange = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSave = () => {
-    setSaveError(null);
-    const configurations: SchemaConfigItem[] = fields.filter((f) => f.type !== 'object[]' && values[f.key] !== undefined && values[f.key] !== '').map((f) => ({ key: f.key, values: [{ environmentUuid: envId, value: values[f.key] }] }));
-    save.mutate(
-      { projectId, componentId, envId, deploymentTrackId, configurations, commitHash },
-      {
-        onSuccess: onClose,
-        onError: (err) => setSaveError(err instanceof Error ? err.message : 'Failed to save configuration'),
-      },
-    );
+  const handleTomlImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const parsed = parseTomlConfig((ev.target?.result as string) ?? '');
+      setValues((prev) => {
+        const merged = { ...prev };
+        for (const f of fields) {
+          if (f.type === 'object[]') continue;
+          // Exact match first; then suffix match to handle module-relative TOML sections
+          // e.g. field key "org.module.var" matches TOML key "module.var" or "var"
+          if (parsed[f.key] !== undefined) {
+            merged[f.key] = parsed[f.key];
+          } else {
+            for (const [parsedKey, parsedVal] of Object.entries(parsed)) {
+              if (f.key.endsWith('.' + parsedKey)) {
+                merged[f.key] = parsedVal;
+                break;
+              }
+            }
+          }
+        }
+        return merged;
+      });
+      setImportedFileName(file.name);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
-  const renderContent = () => {
+  const handleClearToml = () => {
+    setImportedFileName(null);
+    const initial: Record<string, string> = {};
+    for (const cfg of data?.configurations ?? []) initial[cfg.key] = cfg.values?.[0]?.value ?? '';
+    setValues(initial);
+  };
+
+  const handleNext = () => {
+    if (step < 2) {
+      setStep((s) => s + 1);
+    } else {
+      setSaveError(null);
+      const configurations: SchemaConfigItem[] = fields.filter((f) => f.type !== 'object[]' && values[f.key] !== undefined && values[f.key] !== '').map((f) => ({ key: f.key, values: [{ environmentUuid: envId, value: values[f.key] }] }));
+
+      const doRedeploy = () => {
+        if (releaseId && displayType) {
+          redeploy.mutate({ orgHandler, componentId, releaseId, type: displayType, releaseMgtReleaseId, releaseMgtDeploymentId }, { onSettled: onClose });
+        } else {
+          onClose();
+        }
+      };
+
+      const saveCerts = () => {
+        // Build cert mapping configurations
+        const certConfigs: CertMappingConfig[] = [];
+        for (const cert of linkedCerts) {
+          for (const k of cert.keys) {
+            certConfigs.push({
+              key: `${cert.mountPath}/${k.mountedAs}`,
+              isDynamic: false,
+              configGroupId: cert.groupUuid,
+              configKeyId: k.keyUuid,
+              configGroupName: cert.groupName,
+              configKeyName: k.key,
+              isFile: true,
+              isSensitive: false,
+              values: [{ value: `\${${cert.groupName}.${k.key}}`, environmentUuid: envId }],
+            });
+          }
+        }
+
+        const certPayload: CertMapping = {
+          projectId,
+          componentId,
+          envTemplateId: envId,
+          deploymentTrackId,
+          configurations: certConfigs,
+          ...(existingCertMappings?.mappingId ? { mappingId: existingCertMappings.mappingId } : {}),
+        };
+
+        saveCertMappings.mutate(certPayload, {
+          onSuccess: doRedeploy,
+          onError: (err) => setSaveError(err instanceof Error ? err.message : 'Failed to save certificate mounts'),
+        });
+      };
+
+      save.mutate(
+        { projectId, componentId, envId, deploymentTrackId, configurations, commitHash },
+        {
+          onSuccess: saveCerts,
+          onError: (err) => setSaveError(err instanceof Error ? err.message : 'Failed to save configuration'),
+        },
+      );
+    }
+  };
+
+  const handlePrev = () => {
+    if (step > 1) setStep((s) => s - 1);
+    else handleClose();
+  };
+
+  const renderConfigurations = () => {
     if (isLoading) {
       return (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -760,26 +1174,52 @@ function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envI
     );
   };
 
+  const renderCertificateMount = () => <CertificateMountStep projectId={projectId} componentId={componentId} envId={envId} deploymentTrackId={deploymentTrackId} open={open} linkedCerts={linkedCerts} onChange={setLinkedCerts} />;
+
   const hasSchema = !isLoading && !isError && data !== null && !!data?.jsonSchema && fields.length > 0;
   const hasRequiredMissing = requiredFields.some((f) => !values[f.key]);
+  const isApplying = save.isPending || saveCertMappings.isPending || redeploy.isPending;
+  const prevLabel = step === 1 ? 'Cancel' : 'Back';
+  const nextLabel = step === 2 ? (isApplying ? 'Applying…' : 'Apply') : 'Next';
+  const nextDisabled = step === 1 ? hasRequiredMissing || isLoading : isApplying;
 
   return (
     <Drawer anchor="right" open={open} onClose={handleClose} variant="temporary" sx={drawerSx}>
+      {/* Header */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
         <Typography variant="h5">Configurations</Typography>
-        <IconButton size="small" aria-label="close" onClick={handleClose}>
-          <X size={16} />
-        </IconButton>
+        <Stack direction="row" alignItems="center" gap={1}>
+          {hasSchema &&
+            step === 1 &&
+            (importedFileName ? (
+              <Chip label={importedFileName} onDelete={handleClearToml} size="small" variant="outlined" sx={{ maxWidth: 180 }} />
+            ) : (
+              <Button variant="outlined" size="small" startIcon={<Upload size={14} />} onClick={() => fileInputRef.current?.click()}>
+                Import config.toml
+              </Button>
+            ))}
+          <IconButton size="small" aria-label="close" onClick={handleClose}>
+            <X size={16} />
+          </IconButton>
+        </Stack>
       </Stack>
-      <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>{renderContent()}</Box>
+
+      {/* Step indicator */}
+      <StepIndicator step={step} steps={AUTOMATION_STEPS} />
+
+      {/* Content */}
+      <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>{step === 1 ? renderConfigurations() : renderCertificateMount()}</Box>
+
+      {/* Footer */}
       {hasSchema && (
         <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave} disabled={save.isPending || hasRequiredMissing} startIcon={save.isPending ? <CircularProgress color="inherit" size={16} /> : undefined}>
-            {save.isPending ? 'Saving…' : 'Update'}
+          <Button onClick={handlePrev}>{prevLabel}</Button>
+          <Button variant="contained" onClick={handleNext} disabled={nextDisabled} startIcon={isApplying ? <CircularProgress color="inherit" size={16} /> : undefined}>
+            {nextLabel}
           </Button>
         </Stack>
       )}
+      <input ref={fileInputRef} type="file" accept=".toml" style={{ display: 'none' }} onChange={handleTomlImport} />
     </Drawer>
   );
 }
@@ -820,7 +1260,22 @@ export interface ConfigureDrawerProps {
 
 export default function ConfigureDrawer(props: ConfigureDrawerProps) {
   if (props.isAutomation) {
-    return <AutomationConfigureDrawer open={props.open} onClose={props.onClose} projectId={props.projectId} componentId={props.componentId} envId={props.envTemplateId ?? props.envId} deploymentTrackId={props.versionId} commitHash={props.commitHash} />;
+    return (
+      <AutomationConfigureDrawer
+        open={props.open}
+        onClose={props.onClose}
+        projectId={props.projectId}
+        componentId={props.componentId}
+        envId={props.envTemplateId ?? props.envId}
+        deploymentTrackId={props.versionId}
+        commitHash={props.commitHash}
+        orgHandler={props.orgHandler}
+        releaseId={props.releaseId}
+        displayType={props.displayType}
+        releaseMgtReleaseId={props.releaseMgtReleaseId}
+        releaseMgtDeploymentId={props.releaseMgtDeploymentId}
+      />
+    );
   }
   return <GenericServiceConfigureDrawer {...props} />;
 }
@@ -1049,7 +1504,7 @@ function GenericServiceConfigureDrawer({
         </Stack>
 
         {/* Step indicator */}
-        <StepIndicator step={step} />
+        <StepIndicator step={step} steps={STEPS} />
 
         {/* Scrollable content */}
         <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>{stepContent}</Box>
