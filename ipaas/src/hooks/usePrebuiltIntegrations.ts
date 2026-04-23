@@ -36,6 +36,9 @@ export function usePrebuiltIntegrations() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const rawData = await response.json() as { prebuiltIntegrations: PrebuiltIntegration[] };
+      if (!Array.isArray(rawData?.prebuiltIntegrations)) {
+        throw new Error('Invalid response format: missing prebuiltIntegrations array');
+      }
       return { prebuiltIntegrations: rawData.prebuiltIntegrations };
     },
     retry: 3,

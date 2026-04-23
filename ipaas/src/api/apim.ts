@@ -127,7 +127,11 @@ export async function generateTestKey(apimId: string, keyType: 'Development' | '
 // ── Proxy Deployer ─────────────────────────────────────────────────────────────
 
 export function getProxyDeployerBaseUrl(): string {
-  const base = (window.API_CONFIG?.choreoOrgApiUrl ?? '').replace(/\/orgs\/.*$/, '');
+  const raw = window.API_CONFIG?.choreoOrgApiUrl ?? '';
+  const base = raw.replace(/\/orgs\/.*$/, '');
+  if (!base || base.startsWith('/')) {
+    throw new Error('Proxy deployer base URL cannot be derived: choreoOrgApiUrl is not configured or invalid');
+  }
   return `${base}/proxy/deployer/v1`;
 }
 

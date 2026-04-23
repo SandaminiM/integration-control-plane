@@ -68,7 +68,7 @@ export default function BuildAreaImageDrawer({
         )}
 
         <Stack gap={1.5}>
-          {images.map((image, index) => (
+          {!isLoading && images.map((image, index) => (
             <BuildImageCard
               key={image.imageId}
               image={image}

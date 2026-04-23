@@ -80,11 +80,11 @@ export function EndpointCard({ ep, onEdit, onSettings, defaultExpanded = false, 
   const [open, setOpen] = useState(defaultExpanded);
   const visRows = VISIBILITY_OPTS.map((v) => {
     const url = v.key === 'Public' ? ep.publicUrl || ep.defaultPublicUrl || ep.invokeUrl || '' : v.key === 'Organization' ? ep.organizationUrl || ep.defaultOrganizationUrl || '' : ep.projectUrl || '';
-    const active = !ep.networkVisibilities?.length || ep.networkVisibilities.includes(v.key);
+    const active = ep.networkVisibilities?.length ? ep.networkVisibilities.includes(v.key) : ep.visibility === v.key;
     return { ...v, url, active };
   }).filter((r) => r.url && r.active);
 
-  const fallbackUrl = visRows.length === 0 ? ep.invokeUrl || '' : '';
+  const fallbackUrl = visRows.length === 0 && ep.visibility === 'Public' ? ep.invokeUrl || '' : '';
 
   return (
     <Box sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>

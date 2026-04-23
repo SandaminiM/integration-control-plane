@@ -33,6 +33,7 @@ interface EndpointsDrawerProps {
   componentId?: string;
   versionId?: string;
   releaseId?: string;
+  buildId?: string;
   environmentId?: string;
 }
 
@@ -58,6 +59,7 @@ export default function EndpointsDrawer({
   componentId,
   versionId,
   releaseId,
+  buildId,
   environmentId,
 }: EndpointsDrawerProps) {
   const [manageDrawerOpen, setManageDrawerOpen] = useState(false);
@@ -116,6 +118,7 @@ export default function EndpointsDrawer({
         componentId={componentId}
         versionId={versionId}
         releaseId={releaseId}
+        buildId={buildId}
         environmentId={environmentId}
       />
     </>

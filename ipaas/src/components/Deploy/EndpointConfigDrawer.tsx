@@ -85,6 +85,11 @@ function EndpointPanel({ ep, onSaved }: { ep: GqlEnvEndpoint; onSaved: () => voi
     fetchApimApi(ep.apimId)
       .then((data) => {
         if (cancelled) return;
+        if (data === null) {
+          setFetchError('Failed to load endpoint configuration. Please try again.');
+          setIsFetchingInitial(false);
+          return;
+        }
         setApimApiInfo(data);
         setState(buildEndpointSecurityState(data));
         setIsFetchingInitial(false);

@@ -246,6 +246,7 @@ interface ManageDrawerProps {
   componentId?: string;
   versionId?: string;
   releaseId?: string;
+  buildId?: string;
   environmentId?: string;
   apimRevisionId?: string | null;
   // Optional — when provided, enables network visibility editing
@@ -261,6 +262,7 @@ export default function ManageDrawer({
   componentId,
   versionId,
   releaseId,
+  buildId,
   environmentId,
   apimRevisionId,
   endpointId,
@@ -284,7 +286,7 @@ export default function ManageDrawer({
   const [opSearch, setOpSearch] = useState('');
   const [expandedOps, setExpandedOps] = useState<Set<string>>(new Set());
 
-  const canRedeploy = !!(componentId && versionId && releaseId && environmentId);
+  const canRedeploy = !!(componentId && versionId && buildId && releaseId && environmentId);
   const canEditVisibility = !!(endpointId && componentId && versionId && releaseId);
 
   useEffect(() => {
@@ -361,11 +363,10 @@ export default function ManageDrawer({
         const apiLevelThrottle = state.rateLimitLevel === 'API_LEVEL'
           ? { requestCount: Number(state.apiLevelPolicy.requestCount) || -1, unit: state.apiLevelPolicy.timeUnit }
           : null;
-        const accessMode = state.networkVisibilities.includes('Public') ? 'External'
-          : state.networkVisibilities.includes('Organization') ? 'Internal' : 'External';
+        const accessMode = state.networkVisibilities.length === 1 && state.networkVisibilities[0] === 'Public' ? 'External' : 'Internal';
         await deploySettingsV2(componentId!, versionId!, {
           environmentId: environmentId!,
-          buildId: releaseId!,
+          buildId: buildId!,
           comment: '',
           apiSettings: {
             [settingsKey]: {

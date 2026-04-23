@@ -682,9 +682,9 @@ export function useUpdateAutoDeployEnabled() {
         description: input.description ?? '',
         enableAutoDeploy: input.enableAutoDeploy,
       }).then((d) => d.updateDeploymentTrack),
-    onSuccess: (_data, input) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['component'] });
-      qc.invalidateQueries({ queryKey: ['componentDeployment', undefined, input.componentId] });
+      qc.invalidateQueries({ queryKey: ['componentDeployment'] });
     },
   });
 }

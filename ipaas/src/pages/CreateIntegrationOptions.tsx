@@ -47,8 +47,8 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
   const { userId } = useAuth();
   const { projectId } = useProjectId(scope.project);
   const orgUuid = getOrgUuidFromToken() ?? '';
-  const { data: samplesData } = useSamples();
-  const { data: prebuiltData } = usePrebuiltIntegrations();
+  const { data: samplesData, isLoading: samplesLoading, isError: samplesError } = useSamples();
+  const { data: prebuiltData, isLoading: prebuiltLoading, isError: prebuiltError } = usePrebuiltIntegrations();
 
   const featuredSamples = samplesData?.featuredSamples ?? [];
   const featuredPrebuilt = (prebuiltData?.prebuiltIntegrations ?? []).slice(0, 3);
@@ -307,11 +307,21 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                     flexDirection: 'column',
                     ...(selectedTab !== 0 ? { visibility: 'hidden', pointerEvents: 'none', zIndex: 0 } : {}),
                   }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    {featuredPrebuilt.map((integration) => (
-                      <PrebuiltCard key={integration.displayName} integration={integration} onClick={() => navigate(prebuiltIntegrationsUrl(scope.org, scope.project))} />
-                    ))}
-                  </Box>
+                  {prebuiltLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : prebuiltError ? (
+                    <Typography variant="body2" color="text.secondary">
+                      Failed to load prebuilt integrations.
+                    </Typography>
+                  ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                      {featuredPrebuilt.map((integration) => (
+                        <PrebuiltCard key={integration.displayName} integration={integration} onClick={() => navigate(prebuiltIntegrationsUrl(scope.org, scope.project))} />
+                      ))}
+                    </Box>
+                  )}
                   <Box sx={{ mt: 'auto', pt: 2 }}>
                     <Button variant="text" color="primary" endIcon={<ArrowRight size={14} />} onClick={() => navigate(prebuiltIntegrationsUrl(scope.org, scope.project))} sx={{ textTransform: 'none', pl: 0 }}>
                       Explore more prebuilt integrations
@@ -326,11 +336,21 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                     flexDirection: 'column',
                     ...(selectedTab !== 1 ? { visibility: 'hidden', pointerEvents: 'none', zIndex: 0 } : {}),
                   }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    {featuredSamples.map((sample) => (
-                      <SampleRowCard key={sample.displayName} sample={sample} onDeploy={() => handleQuickDeploy(sample)} isDeploying={deployingSample === sample.displayName} />
-                    ))}
-                  </Box>
+                  {samplesLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : samplesError ? (
+                    <Typography variant="body2" color="text.secondary">
+                      Failed to load samples.
+                    </Typography>
+                  ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                      {featuredSamples.map((sample) => (
+                        <SampleRowCard key={sample.displayName} sample={sample} onDeploy={() => handleQuickDeploy(sample)} isDeploying={deployingSample === sample.displayName} />
+                      ))}
+                    </Box>
+                  )}
                   <Box sx={{ mt: 'auto', pt: 2 }}>
                     <Button variant="text" color="primary" endIcon={<ArrowRight size={14} />} onClick={() => navigate(browseSamplesUrl(scope.org, scope.project))} sx={{ textTransform: 'none', pl: 0 }}>
                       Explore more samples

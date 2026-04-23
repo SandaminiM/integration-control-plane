@@ -76,9 +76,11 @@ export default function TagInput({ values, onChange, placeholder, suggestions }:
             }}>
             <span>{v}</span>
             <Box
-              component="span"
+              component="button"
+              type="button"
+              aria-label={`Remove ${v}`}
               onClick={() => onChange(values.filter((x) => x !== v))}
-              sx={{ cursor: 'pointer', ml: 0.25, opacity: 0.6, '&:hover': { opacity: 1 }, lineHeight: 1 }}>
+              sx={{ cursor: 'pointer', ml: 0.25, opacity: 0.6, '&:hover': { opacity: 1 }, lineHeight: 1, border: 'none', background: 'none', padding: 0, font: 'inherit' }}>
               ×
             </Box>
           </Box>

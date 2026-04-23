@@ -991,7 +991,7 @@ export function useReleaseMgtDeployments(
   environmentId: string,
 ) {
   return useQuery({
-    queryKey: ['releaseMgtDeployments', componentId, versionId, environmentId],
+    queryKey: ['releaseMgtDeployments', orgUuid, projectId, componentId, versionId, environmentId],
     queryFn: () => {
       const query = `query {
         componentReleaseMgtDeployments(input: {

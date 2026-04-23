@@ -77,7 +77,7 @@ export default function BuildArea({
   const isBuildInProgress = !!inProgressBuild;
   const buildingCommit = inProgressBuild ? (commits.find((c) => c.sha === inProgressBuild.sha) ?? null) : null;
 
-  const { data: images = [], isLoading: imagesLoading, isFetching: imagesFetching } = useDeploymentTrackImages(
+  const { data: images = [], isLoading: imagesLoading } = useDeploymentTrackImages(
     componentId, versionId, isBuildInProgress ? 10_000 : undefined,
   );
   const { data: firstEnvDeployment } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, firstEnvId);
@@ -105,18 +105,16 @@ export default function BuildArea({
   useEffect(() => {
     if (prevIsBuildInProgressRef.current && !isBuildInProgress) {
       setIsPostBuildFetching(true);
-      void qc.refetchQueries({ queryKey: ['deploymentTrackImages', componentId, versionId] });
+      qc.refetchQueries({ queryKey: ['deploymentTrackImages', componentId, versionId] })
+        .then(() => {
+          setIsPostBuildFetching(false);
+        })
+        .catch(() => {
+          setIsPostBuildFetching(false);
+        });
     }
     prevIsBuildInProgressRef.current = isBuildInProgress;
   }, [isBuildInProgress, componentId, versionId, qc]);
-
-  // Once the post-build refetch settles, update the selected image and clear the skeleton
-  useEffect(() => {
-    if (isPostBuildFetching && !imagesFetching) {
-      setIsPostBuildFetching(false);
-      if (images.length > 0) setSelectedImage(images[0]);
-    }
-  }, [imagesFetching]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep selectedImage in sync with the latest image on normal loads
   useEffect(() => {
@@ -274,7 +272,7 @@ export default function BuildArea({
                 size="small"
                 checked={autoDeployEnabled}
                 onChange={(e) => handleAutoDeployToggle(e.target.checked)}
-                disabled={updateAutoDeploy.isPending || images.length === 0}
+                disabled={updateAutoDeploy.isPending}
               />
             }
             label={

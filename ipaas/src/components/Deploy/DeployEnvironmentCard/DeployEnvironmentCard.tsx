@@ -419,6 +419,7 @@ export default function DeployEnvironmentCard({
           componentId={componentId}
           versionId={versionId}
           releaseId={releaseId}
+          buildId={deployedBuildId ?? undefined}
           environmentId={env.id}
         />
       )}

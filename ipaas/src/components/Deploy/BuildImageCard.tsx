@@ -72,7 +72,7 @@ export default function BuildImageCard({
         borderColor: isBuilding ? 'warning.main' : isSelected ? 'primary.main' : 'divider',
         borderRadius: 1,
         p: 1.5,
-        bgcolor: isSelectable ? (isSelected ? 'action.selected' : 'transparent') : 'undefined',
+        bgcolor: isSelectable ? (isSelected ? 'action.selected' : 'transparent') : undefined,
         cursor: isSelectable ? 'pointer' : 'default',
         ...(isSelectable && { '&:hover': { bgcolor: isSelected ? 'action.selected' : 'action.hover' } }),
       }}>

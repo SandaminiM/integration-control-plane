@@ -41,6 +41,9 @@ export function useSamples() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const rawData = await response.json() as { samples: Sample[] };
+      if (!Array.isArray(rawData?.samples)) {
+        throw new Error('Invalid response format: missing samples array');
+      }
       const samples = rawData.samples.filter((s) => ALLOWED_SAMPLE_TYPES.has(s.componentType));
       return {
         samples,
