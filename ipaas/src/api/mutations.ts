@@ -489,7 +489,7 @@ export interface DeployDeploymentTrackInput {
   id: string;
   imageId: string;
   environmentId: string;
-  deploymentPipelineId: string;
+  deploymentPipelineId?: string;
   cronTimezone?: string;
   cron?: string;
   jobTimeoutSeconds?: number;
@@ -767,7 +767,13 @@ export function useSaveSchemaConfig() {
       }
       return res.json().catch(() => ({}));
     },
-    onSuccess: (_, vars) => {
+    onSuccess: (data, vars) => {
+      if (data && data.configurations) {
+        qc.setQueryData(
+          ['schemaConfig', vars.projectId, vars.componentId, vars.envId, vars.deploymentTrackId, vars.commitHash],
+          data,
+        );
+      }
       qc.invalidateQueries({ queryKey: ['schemaConfig', vars.projectId, vars.componentId, vars.envId, vars.deploymentTrackId] });
     },
   });

@@ -1044,10 +1044,14 @@ export interface SchemaConfigValue {
 
 export interface SchemaConfigItem {
   key: string;
+  keyId?: string;
   values: SchemaConfigValue[];
   valueType?: string;
   isRequired?: boolean;
   isSensitive?: boolean;
+  configGroupId?: string;
+  configKeyId?: string;
+  isDynamic?: boolean;
 }
 
 export interface SchemaConfigData {
@@ -1082,6 +1086,21 @@ export function useCertificateGroups(projectId: string, componentId: string, ena
       if (!res.ok) return [];
       const data: CertGroup[] = await res.json();
       return data.filter((g) => g.groupName.startsWith('certificates-'));
+    },
+    enabled: enabled && !!projectId && !!componentId,
+    retry: false,
+  });
+}
+
+export function useConfigGroups(projectId: string, componentId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['configGroups', projectId, componentId],
+    queryFn: async (): Promise<CertGroup[]> => {
+      const base = new URL(window.API_CONFIG.graphqlUrl).origin;
+      const params = new URLSearchParams({ projectId, componentId, nested_search: 'true' });
+      const res = await authenticatedFetch(`${base}/config-svc/v1.0/configs/groups?${params}`);
+      if (!res.ok) return [];
+      return res.json();
     },
     enabled: enabled && !!projectId && !!componentId,
     retry: false,
