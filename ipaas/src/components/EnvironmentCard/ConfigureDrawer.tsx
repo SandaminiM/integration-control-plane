@@ -16,9 +16,9 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Checkbox, Chip, CircularProgress, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, Drawer, IconButton, MenuItem, Select as MuiSelect, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { Building2, Check, ChevronDown, ChevronUp, Copy, Folder, Globe, Link, Pencil, Settings, Trash2, Upload, X } from '@wso2/oxygen-ui-icons-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Box, Button, Checkbox, Chip, CircularProgress, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, Drawer, IconButton, MenuItem, Select as MuiSelect, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { ChevronDown, ChevronUp, Link, Trash2, Upload, X } from '@wso2/oxygen-ui-icons-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useEnvEndpoints,
@@ -34,8 +34,9 @@ import {
   type CertMapping,
   type CertMappingConfig,
 } from '../../api/queries';
-import { usePostConfigMgt, useRedeployDeployment, useUpdateEndpoint, useSaveSchemaConfig, usePostCertificateMappings, useDeployDeploymentTrack, type ConfigMgtSaveItem } from '../../api/mutations';
+import { usePostConfigMgt, useGenerateComponentEndpoints, useUpdateEndpoint, useSaveSchemaConfig, usePostCertificateMappings, useDeployDeploymentTrack, type ConfigMgtSaveItem } from '../../api/mutations';
 import ManageDrawer from './ManageDrawer';
+import { VISIBILITY_OPTS } from './EndpointCard';
 import { ConfigForm, parseConfigToml, filterTomlValuesBySchema, type BaseType, type LinkingInfo, type JSONSchema } from '../SchemaConfigForm';
 
 // ── Schema parsing ────────────────────────────────────────────────────────────
@@ -237,187 +238,6 @@ function StepIndicator({ step, steps }: { step: number; steps: string[] }) {
         );
       })}
     </Stack>
-  );
-}
-
-// ── Endpoint components ───────────────────────────────────────────────────────
-
-const VISIBILITY_OPTS = [
-  {
-    key: 'Public',
-    label: 'Public',
-    Icon: Globe,
-    description: 'Allows any client to access the endpoint, regardless of location or organization.',
-  },
-  {
-    key: 'Organization',
-    label: 'Organization',
-    Icon: Building2,
-    description: 'Allows any integration within the same organization to access the endpoint.',
-  },
-  {
-    key: 'Project',
-    label: 'Project',
-    Icon: Folder,
-    description: 'Allows any integration within the same project to access the endpoint.',
-  },
-] as const;
-
-function getStatusColor(state?: string | null) {
-  if (!state) return 'text.disabled';
-  const s = state.toUpperCase();
-  if (s === 'ACTIVE') return 'success.main';
-  if (s === 'ERROR') return 'error.main';
-  if (s === 'IN_PROGRESS' || s === 'PENDING' || s === 'PROGRESSING') return 'warning.main';
-  return 'text.disabled';
-}
-
-function CopyBtn({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  const handle = useCallback(() => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  }, [text]);
-  return (
-    <Tooltip title={copied ? 'Copied!' : 'Copy'}>
-      <IconButton size="small" onClick={handle} sx={{ p: 0.25, flexShrink: 0 }}>
-        {copied ? <Check size={13} /> : <Copy size={13} />}
-      </IconButton>
-    </Tooltip>
-  );
-}
-
-interface EndpointCardProps {
-  ep: GqlEnvEndpoint;
-  onEdit: (ep: GqlEnvEndpoint) => void;
-  onSettings: (ep: GqlEnvEndpoint) => void;
-  defaultExpanded?: boolean;
-}
-
-function EndpointCard({ ep, onEdit, onSettings, defaultExpanded = false }: EndpointCardProps) {
-  const [open, setOpen] = useState(defaultExpanded);
-  const visRows = VISIBILITY_OPTS.map((v) => {
-    const url = v.key === 'Public' ? ep.publicUrl || ep.defaultPublicUrl || ep.invokeUrl || '' : v.key === 'Organization' ? ep.organizationUrl || ep.defaultOrganizationUrl || '' : ep.projectUrl || '';
-    const active = !ep.networkVisibilities?.length || ep.networkVisibilities.includes(v.key);
-    return { ...v, url, active };
-  }).filter((r) => r.url && r.active);
-
-  const fallbackUrl = visRows.length === 0 ? ep.invokeUrl || '' : '';
-
-  return (
-    <Box sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-      {/* Header */}
-      <Stack direction="row" alignItems="center" gap={1} sx={{ px: 1.5, py: 1, borderBottom: open ? '1px solid' : 'none', borderColor: 'divider' }}>
-        {/* Status dot */}
-        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: getStatusColor(ep.state), flexShrink: 0 }} onClick={() => setOpen((p) => !p)} />
-        {/* Name */}
-        <Typography variant="body2" sx={{ fontWeight: 500, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => setOpen((p) => !p)}>
-          {ep.displayName}
-        </Typography>
-        {/* Edit */}
-        <Tooltip title="Edit endpoint">
-          <IconButton
-            size="small"
-            sx={{ p: 0.5, flexShrink: 0 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(ep);
-            }}>
-            <Pencil size={14} />
-          </IconButton>
-        </Tooltip>
-        {/* Settings */}
-        <Tooltip title="API settings">
-          <IconButton
-            size="small"
-            sx={{ p: 0.5, flexShrink: 0 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSettings(ep);
-            }}>
-            <Settings size={14} />
-          </IconButton>
-        </Tooltip>
-        {/* Chevron */}
-        <IconButton size="small" sx={{ p: 0.25, flexShrink: 0 }} onClick={() => setOpen((p) => !p)}>
-          {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </IconButton>
-      </Stack>
-
-      {/* Expanded content */}
-      <Collapse in={open}>
-        <Box sx={{ px: 1.5, py: 1.25 }}>
-          {/* Details box */}
-          <Box sx={{ mb: 1.25, border: '1px solid', borderColor: 'divider', borderRadius: 1, px: 1.5, py: 1 }}>
-            {[
-              { label: 'Port', value: ep.port != null ? String(ep.port) : null },
-              { label: 'Status', value: ep.state ?? null },
-              { label: 'Type', value: ep.type ?? null },
-              { label: 'Context', value: ep.apiContext ?? null },
-              { label: 'Schema', value: ep.apiDefinitionPath ?? null },
-            ].map(({ label, value }) =>
-              value ? (
-                <Stack key={label} direction="row" alignItems="center" sx={{ py: 0.3 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 600, width: 72, flexShrink: 0 }}>
-                    {label}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontFamily: label === 'Schema' ? 'monospace' : undefined }}>
-                    {value}
-                  </Typography>
-                </Stack>
-              ) : null,
-            )}
-            {/* Network Visibilities row */}
-            {ep.networkVisibilities && ep.networkVisibilities.length > 0 && (
-              <Stack direction="row" alignItems="center" sx={{ py: 0.3 }}>
-                <Typography variant="caption" sx={{ fontWeight: 600, width: 72, flexShrink: 0 }}>
-                  Visibility
-                </Typography>
-                <Stack direction="row" gap={0.5} flexWrap="wrap">
-                  {ep.networkVisibilities.map((v) => (
-                    <Chip key={v} label={v} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
-                  ))}
-                </Stack>
-              </Stack>
-            )}
-          </Box>
-
-          {/* URLs box */}
-          {(visRows.length > 0 || fallbackUrl) && (
-            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-              {visRows.map((r, i) => (
-                <Box key={r.key} sx={{ px: 1.5, py: 0.75, borderBottom: i < visRows.length - 1 || !!fallbackUrl ? '1px solid' : 'none', borderColor: 'divider' }}>
-                  <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.25 }}>
-                    {r.label} URL
-                  </Typography>
-                  <Stack direction="row" alignItems="center" gap={0.5} sx={{ minWidth: 0 }}>
-                    <Typography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
-                      {r.url}
-                    </Typography>
-                    <CopyBtn text={r.url} />
-                  </Stack>
-                </Box>
-              ))}
-              {fallbackUrl && (
-                <Box sx={{ px: 1.5, py: 0.75 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.25 }}>
-                    Public URL
-                  </Typography>
-                  <Stack direction="row" alignItems="center" gap={0.5} sx={{ minWidth: 0 }}>
-                    <Typography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
-                      {fallbackUrl}
-                    </Typography>
-                    <CopyBtn text={fallbackUrl} />
-                  </Stack>
-                </Box>
-              )}
-            </Box>
-          )}
-        </Box>
-      </Collapse>
-    </Box>
   );
 }
 
@@ -763,6 +583,8 @@ function CertificateMountStep({ projectId, componentId, envId: _envId, deploymen
 interface AutomationConfigureDrawerProps {
   open: boolean;
   onClose: () => void;
+  /** Called only when the user successfully saves via the Update button. */
+  onSaved?: () => void;
   projectId: string;
   componentId: string;
   envId: string;
@@ -1156,6 +978,7 @@ const drawerSx = {
 export interface ConfigureDrawerProps {
   open: boolean;
   onClose: () => void;
+  onSaved?: () => void;
   orgHandler: string;
   projectId: string;
   componentId: string;
@@ -1200,6 +1023,7 @@ export default function ConfigureDrawer(props: ConfigureDrawerProps) {
 function GenericServiceConfigureDrawer({
   open,
   onClose,
+  onSaved,
   orgHandler,
   projectId,
   componentId,
@@ -1209,9 +1033,9 @@ function GenericServiceConfigureDrawer({
   projectHandler: _projectHandler,
   commitHash,
   releaseId,
-  displayType,
-  releaseMgtReleaseId,
-  releaseMgtDeploymentId,
+  displayType: _displayType,
+  releaseMgtReleaseId: _releaseMgtReleaseId,
+  releaseMgtDeploymentId: _releaseMgtDeploymentId,
 }: ConfigureDrawerProps) {
   const [step, setStep] = useState(1);
   const [values, setValues] = useState<Record<string, string>>({});
@@ -1229,7 +1053,7 @@ function GenericServiceConfigureDrawer({
   const { data: endpoints = [] } = useEnvEndpoints(open ? componentId : '', open ? versionId : '', open && releaseId ? releaseId : '');
   const queryClient = useQueryClient();
   const save = usePostConfigMgt();
-  const redeploy = useRedeployDeployment();
+  const generateEp = useGenerateComponentEndpoints();
 
   const fields = useMemo(() => parseSchema(data?.jsonSchema, data?.configurationMount), [data]);
 
@@ -1287,10 +1111,6 @@ function GenericServiceConfigureDrawer({
       setSaveError('Cannot save: commit information is not available.');
       return;
     }
-    if (releaseId && !displayType) {
-      setSaveError('Cannot save: component type is not available.');
-      return;
-    }
     const configs: ConfigMgtSaveItem[] = fields
       .filter((f) => values[f.key] !== undefined && values[f.key] !== '')
       .map((f) => {
@@ -1310,20 +1130,10 @@ function GenericServiceConfigureDrawer({
       { orgHandler, projectId, componentId, envId, versionId, moduleName: componentName, commitHash, configs },
       {
         onSuccess: () => {
-          if (releaseId) {
-            redeploy.mutate(
-              { orgHandler, componentId, releaseId, type: displayType!, releaseMgtReleaseId, releaseMgtDeploymentId },
-              {
-                onSettled: () => {
-                  queryClient.invalidateQueries({ queryKey: ['envEndpoints'] });
-                  queryClient.invalidateQueries({ queryKey: ['componentDeployment'] });
-                  onClose();
-                },
-              },
-            );
-          } else {
-            onClose();
-          }
+          queryClient.invalidateQueries({ queryKey: ['envEndpoints'] });
+          queryClient.invalidateQueries({ queryKey: ['componentDeployment'] });
+          onClose();
+          onSaved?.();
         },
         onError: (err) => setSaveError(err instanceof Error ? err.message : 'Failed to save configuration'),
       },
@@ -1331,13 +1141,30 @@ function GenericServiceConfigureDrawer({
   };
 
   const handleNext = () => {
-    if (step < 2) setStep((s) => s + 1);
-    else handleApply();
+    if (step < 2) {
+      setSaveError(null);
+      if (!releaseId || !commitHash) {
+        // No active release yet — just advance to show endpoints
+        setStep(2);
+        return;
+      }
+      generateEp.mutate(
+        { componentId, versionId, releaseId, commitHash, dryRun: false },
+        {
+          onSuccess: () => setStep(2),
+          onError: (err) => setSaveError(err instanceof Error ? err.message : 'Failed to deploy endpoints'),
+        },
+      );
+    } else {
+      handleApply();
+    }
   };
 
   const handlePrev = () => {
-    if (step > 1) setStep((s) => s - 1);
-    else handleClose();
+    if (step > 1) {
+      setSaveError(null);
+      setStep((s) => s - 1);
+    } else handleClose();
   };
 
   const handleSettings = (ep: GqlEnvEndpoint) => {
@@ -1370,11 +1197,6 @@ function GenericServiceConfigureDrawer({
     return (
       <Box>
         <DefaultableConfigurablesAccordion groups={groups} values={values} onChange={handleChange} />
-        {saveError && (
-          <Alert severity="error" sx={{ mt: 1 }}>
-            {saveError}
-          </Alert>
-        )}
       </Box>
     );
   };
@@ -1403,9 +1225,9 @@ function GenericServiceConfigureDrawer({
 
   const stepContent = step === 1 ? renderConfigurations() : renderEndpoints();
   const prevLabel = step === 1 ? 'Cancel' : 'Back';
-  const isApplying = save.isPending || redeploy.isPending;
-  const nextLabel = step === 2 ? (isApplying ? 'Updating…' : 'Update') : 'Next';
-  const nextDisabled = (step === 1 && isLoading) || (step === 2 && isApplying);
+  const isApplying = save.isPending;
+  const nextLabel = step === 2 ? (isApplying ? 'Applying…' : 'Apply') : generateEp.isPending ? 'Loading…' : 'Next';
+  const nextDisabled = (step === 1 && (isLoading || generateEp.isPending)) || (step === 2 && isApplying);
   // Hide footer buttons when in ManageEndpoint (it has its own buttons)
   const showFooter = !(step === 2 && managingEp !== null);
 
@@ -1426,11 +1248,18 @@ function GenericServiceConfigureDrawer({
         {/* Scrollable content */}
         <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>{stepContent}</Box>
 
+        {/* Save error */}
+        {saveError && (
+          <Alert severity="error" sx={{ mx: 2, mb: 1 }}>
+            {saveError}
+          </Alert>
+        )}
+
         {/* Footer */}
         {showFooter && (
           <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
             <Button onClick={handlePrev}>{prevLabel}</Button>
-            <Button variant="contained" onClick={handleNext} disabled={nextDisabled} startIcon={step === 2 && isApplying ? <CircularProgress color="inherit" size={16} /> : undefined}>
+            <Button variant="contained" onClick={handleNext} disabled={nextDisabled} startIcon={(step === 2 && isApplying) || (step === 1 && generateEp.isPending) ? <CircularProgress color="inherit" size={16} /> : undefined}>
               {nextLabel}
             </Button>
           </Stack>

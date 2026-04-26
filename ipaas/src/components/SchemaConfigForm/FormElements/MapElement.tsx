@@ -335,9 +335,9 @@ export const MapElement: React.FC<MapElementProps> = ({
     }
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     resetLocalValueMap(valueMap, validationMap);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schema, valueMap, validationMap]);
   useEffect(() => {
     setIsDisableAddBtn(Array.from(uniqueKeySet).some((key) => key.includes('<new-key>')));

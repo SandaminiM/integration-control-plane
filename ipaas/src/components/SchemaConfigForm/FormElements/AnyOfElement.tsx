@@ -56,12 +56,18 @@ interface TypeOption {
 
 const getTypeLabel = (type: string | undefined, schema?: JSONSchema): string => {
   switch (type) {
-    case 'string': return 'String';
-    case 'number': return 'Number';
-    case 'boolean': return 'Boolean';
-    case 'object': return schema?.title || schema?.name || 'Object';
-    case 'array': return schema?.title || schema?.name || 'Array';
-    default: return type || 'Not Supported';
+    case 'string':
+      return 'String';
+    case 'number':
+      return 'Number';
+    case 'boolean':
+      return 'Boolean';
+    case 'object':
+      return schema?.title || schema?.name || 'Object';
+    case 'array':
+      return schema?.title || schema?.name || 'Array';
+    default:
+      return type || 'Not Supported';
   }
 };
 
@@ -131,7 +137,9 @@ export function AnyOfElement({
   return (
     <Box sx={{ mt: 1 }}>
       <Stack direction="row" alignItems="center" gap={0.75} sx={{ mb: 1 }}>
-        <Typography variant="body2" color="text.secondary">{title}</Typography>
+        <Typography variant="body2" color="text.secondary">
+          {title}
+        </Typography>
         <Chip label="oneOf" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
       </Stack>
 
@@ -142,13 +150,19 @@ export function AnyOfElement({
         value={selectedType?.type || ''}
         onChange={(e) => handleTypeChange(e.target.value as string)}
         renderValue={(value) => {
-          if (!value) return <Typography variant="body2" color="text.disabled">Select type</Typography>;
+          if (!value)
+            return (
+              <Typography variant="body2" color="text.disabled">
+                Select type
+              </Typography>
+            );
           return typeOptions.find((o) => o.type === value)?.label || value;
         }}
-        sx={{ mb: 1 }}
-      >
+        sx={{ mb: 1 }}>
         {typeOptions.map((opt) => (
-          <MenuItem key={opt.type} value={opt.type}>{opt.label}</MenuItem>
+          <MenuItem key={opt.type} value={opt.type}>
+            {opt.label}
+          </MenuItem>
         ))}
       </Select>
 

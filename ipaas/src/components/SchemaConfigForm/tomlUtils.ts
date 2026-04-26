@@ -59,9 +59,13 @@ const parseTomlValue = (rawValue: string): unknown => {
     let stringChar = '';
     for (let i = 0; i < arrayContent.length; i++) {
       const char = arrayContent[i];
-      if (!inString && (char === '"' || char === "'")) { inString = true; stringChar = char; }
-      else if (inString && char === stringChar) { inString = false; stringChar = ''; }
-      else if (!inString) {
+      if (!inString && (char === '"' || char === "'")) {
+        inString = true;
+        stringChar = char;
+      } else if (inString && char === stringChar) {
+        inString = false;
+        stringChar = '';
+      } else if (!inString) {
         if (char === '[' || char === '{') depth++;
         else if (char === ']' || char === '}') depth--;
         else if (char === ',' && depth === 0) {
@@ -217,7 +221,12 @@ export const parseConfigToml = (tomlContent: string): TomlParseResult => {
 
 export const isValidTomlFile = (fileName: string, content: string): boolean => {
   if (!fileName.toLowerCase().endsWith('.toml')) return false;
-  try { parseToml(content); return true; } catch { return false; }
+  try {
+    parseToml(content);
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 export const getAllSchemaKeys = (schema: JSONSchema): string[] => {
@@ -291,14 +300,7 @@ const matchesWithStripping = (tomlKey: string, schemaKey: string): boolean => {
   const checkKeyMatch = (keyToCheck: string, targetSchema: string): boolean => {
     const schemaWithWildcard = targetSchema.replace(/\[\*\]/g, '\\[\\d+\\]');
     const regexPattern = new RegExp(`^${schemaWithWildcard}$`);
-    return (
-      targetSchema === keyToCheck ||
-      keyToCheck.startsWith(`${targetSchema}.`) ||
-      keyToCheck.startsWith(`${targetSchema}[`) ||
-      tomlBaseKey === targetSchema ||
-      tomlBaseKey.startsWith(`${targetSchema}.`) ||
-      regexPattern.test(keyToCheck)
-    );
+    return targetSchema === keyToCheck || keyToCheck.startsWith(`${targetSchema}.`) || keyToCheck.startsWith(`${targetSchema}[`) || tomlBaseKey === targetSchema || tomlBaseKey.startsWith(`${targetSchema}.`) || regexPattern.test(keyToCheck);
   };
   const schemaKeyParts = schemaKey.split('.');
   if (schemaKeyParts.length > 2 && checkKeyMatch(tomlKey, schemaKeyParts.slice(2).join('.'))) return true;

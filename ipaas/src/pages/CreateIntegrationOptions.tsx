@@ -33,19 +33,25 @@ import GitIcon from '../assets/icons/GitIcon';
 import AzureIcon from '../assets/icons/AzureIcon';
 import { displayTypeFromSample } from '../constants/integrations';
 import { GITHUB_AUTH } from '../constants/import';
-import { FEATURED_SAMPLES, FEATURED_PREBUILT } from '../constants/samples';
 import { CARD_HOVER_SX, PROVIDER_ICON_SX } from '../constants/styles';
 import { resourceUrl, narrow, type ProjectScope } from '../nav';
 import { importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, importComingSoonUrl, buildGitHubOAuthUrl } from '../paths';
 import type { Sample } from '../types/samples';
 import { toHandler } from '../utils/string';
 import { useProjectId } from '../hooks/useProjectId';
+import { useSamples } from '../hooks/useSamples';
+import { usePrebuiltIntegrations } from '../hooks/usePrebuiltIntegrations';
 
 export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Element {
   const navigate = useNavigate();
   const { userId } = useAuth();
   const { projectId } = useProjectId(scope.project);
   const orgUuid = getOrgUuidFromToken() ?? '';
+  const { data: samplesData, isLoading: samplesLoading, isError: samplesError } = useSamples();
+  const { data: prebuiltData, isLoading: prebuiltLoading, isError: prebuiltError } = usePrebuiltIntegrations();
+
+  const featuredSamples = samplesData?.featuredSamples ?? [];
+  const featuredPrebuilt = (prebuiltData?.prebuiltIntegrations ?? []).slice(0, 3);
 
   const { data: sampleImages } = useChoreoSampleImages(orgUuid, projectId);
 
@@ -129,7 +135,7 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
         projectId,
         displayType: displayTypeFromSample(sample.componentType, sample.buildPack),
         srcGitRepoUrl: sample.repositoryUrl,
-        repositorySubPath: `${sample.subDirectory}${sample.componentPath}`,
+        repositorySubPath: `${sample.subDirectory ?? ''}${sample.componentPath}`,
         repositoryBranch: sample.branch ?? 'main',
         isPublicRepo: true,
         enableAutoDeploy: true,
@@ -301,11 +307,21 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                     flexDirection: 'column',
                     ...(selectedTab !== 0 ? { visibility: 'hidden', pointerEvents: 'none', zIndex: 0 } : {}),
                   }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    {FEATURED_PREBUILT.map((integration) => (
-                      <PrebuiltCard key={integration.displayName} integration={integration} onClick={() => navigate(prebuiltIntegrationsUrl(scope.org, scope.project))} />
-                    ))}
-                  </Box>
+                  {prebuiltLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : prebuiltError ? (
+                    <Typography variant="body2" color="text.secondary">
+                      Failed to load prebuilt integrations.
+                    </Typography>
+                  ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                      {featuredPrebuilt.map((integration) => (
+                        <PrebuiltCard key={integration.displayName} integration={integration} onClick={() => navigate(prebuiltIntegrationsUrl(scope.org, scope.project))} />
+                      ))}
+                    </Box>
+                  )}
                   <Box sx={{ mt: 'auto', pt: 2 }}>
                     <Button variant="text" color="primary" endIcon={<ArrowRight size={14} />} onClick={() => navigate(prebuiltIntegrationsUrl(scope.org, scope.project))} sx={{ textTransform: 'none', pl: 0 }}>
                       Explore more prebuilt integrations
@@ -320,11 +336,21 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                     flexDirection: 'column',
                     ...(selectedTab !== 1 ? { visibility: 'hidden', pointerEvents: 'none', zIndex: 0 } : {}),
                   }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    {FEATURED_SAMPLES.map((sample) => (
-                      <SampleRowCard key={sample.displayName} sample={sample} onDeploy={() => handleQuickDeploy(sample)} isDeploying={deployingSample === sample.displayName} />
-                    ))}
-                  </Box>
+                  {samplesLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : samplesError ? (
+                    <Typography variant="body2" color="text.secondary">
+                      Failed to load samples.
+                    </Typography>
+                  ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                      {featuredSamples.map((sample) => (
+                        <SampleRowCard key={sample.displayName} sample={sample} onDeploy={() => handleQuickDeploy(sample)} isDeploying={deployingSample === sample.displayName} />
+                      ))}
+                    </Box>
+                  )}
                   <Box sx={{ mt: 'auto', pt: 2 }}>
                     <Button variant="text" color="primary" endIcon={<ArrowRight size={14} />} onClick={() => navigate(browseSamplesUrl(scope.org, scope.project))} sx={{ textTransform: 'none', pl: 0 }}>
                       Explore more samples

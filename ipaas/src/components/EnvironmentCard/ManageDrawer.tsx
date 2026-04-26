@@ -22,7 +22,8 @@ import { useEffect, useReducer, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApimApi } from '../../api/queries';
 import { useThrottlingPolicies } from '../../api/marketplace';
-import { updateApimApi, type ApimApiOperation, type CorsConfiguration } from '../../api/apim';
+import { updateApimApi, deploySettingsV2, type ApimApiOperation, type CorsConfiguration } from '../../api/apim';
+import { useUpdateEndpoint } from '../../api/mutations';
 
 // ── Drawer style (same as ConfigureDrawer) ─────────────────────────────────────
 
@@ -49,6 +50,9 @@ interface RateLimitPolicy {
   timeUnit: TimeUnit;
 }
 
+const VISIBILITY_OPTIONS = ['Public', 'Organization', 'Project'] as const;
+type VisibilityOption = (typeof VISIBILITY_OPTIONS)[number];
+
 interface ManageState {
   corsEnabled: boolean;
   allowAllOrigins: boolean;
@@ -60,6 +64,7 @@ interface ManageState {
   apiLevelPolicy: RateLimitPolicy;
   resourceLevelPolicies: Record<string, RateLimitPolicy>;
   timeout: string;
+  networkVisibilities: VisibilityOption[];
 }
 
 const DEFAULT_HEADERS = ['authorization', 'Access-Control-Allow-Origin', 'Content-Type', 'SOAPAction', 'apikey', 'testKey'];
@@ -71,7 +76,7 @@ function opKey(op: ApimApiOperation) {
   return `${op.verb.toUpperCase()}-${op.target}`;
 }
 
-function buildInitialState(apimApiInfo: ReturnType<typeof useApimApi>['data']): ManageState {
+function buildInitialState(apimApiInfo: ReturnType<typeof useApimApi>['data'], initialNetworkVisibilities?: string[]): ManageState {
   const cors = apimApiInfo?.corsConfiguration;
   const origins = cors?.accessControlAllowOrigins ?? [];
   const endpointConfig = apimApiInfo?.endpointConfig as Record<string, unknown> | undefined;
@@ -82,17 +87,17 @@ function buildInitialState(apimApiInfo: ReturnType<typeof useApimApi>['data']): 
   const apiThrottlingPolicy = apimApiInfo?.apiThrottlingPolicy;
   const operations = apimApiInfo?.operations ?? [];
 
-  // Determine rate limit level from operations
   const hasResourceLevel = operations.some((op) => op.throttlingPolicy);
   const rateLimitLevel: RateLimitLevel = hasResourceLevel ? 'RESOURCE_LEVEL' : apiThrottlingPolicy ? 'API_LEVEL' : 'UNLIMITED';
 
-  // Build resource level map from operations
   const resourceLevelPolicies: Record<string, RateLimitPolicy> = {};
   for (const op of operations) {
     if (op.throttlingPolicy) {
       resourceLevelPolicies[opKey(op)] = { requestCount: op.throttlingPolicy, timeUnit: 'MINUTE' };
     }
   }
+
+  const networkVisibilities = (initialNetworkVisibilities ?? []).filter((v): v is VisibilityOption => VISIBILITY_OPTIONS.includes(v as VisibilityOption));
 
   return {
     corsEnabled: cors?.corsConfigurationEnabled ?? false,
@@ -105,6 +110,7 @@ function buildInitialState(apimApiInfo: ReturnType<typeof useApimApi>['data']): 
     apiLevelPolicy: { requestCount: apiThrottlingPolicy ?? '-1', timeUnit: 'MINUTE' },
     resourceLevelPolicies,
     timeout,
+    networkVisibilities,
   };
 }
 
@@ -231,17 +237,29 @@ interface ManageDrawerProps {
   open: boolean;
   onClose: () => void;
   apimId: string | null | undefined;
+  // Optional — when provided, enables deploy-settings-v2 redeploy after save
+  componentId?: string;
+  versionId?: string;
+  releaseId?: string;
+  buildId?: string;
+  environmentId?: string;
+  apimRevisionId?: string | null;
+  // Optional — when provided, enables network visibility editing
+  endpointId?: string;
+  endpointDisplayName?: string;
+  networkVisibilities?: string[] | null;
 }
 
-export default function ManageDrawer({ open, onClose, apimId }: ManageDrawerProps) {
+export default function ManageDrawer({ open, onClose, apimId, componentId, versionId, releaseId, buildId, environmentId, apimRevisionId, endpointId, endpointDisplayName, networkVisibilities: initialNetworkVisibilities }: ManageDrawerProps) {
   const queryClient = useQueryClient();
   const { data: apimApiInfo, isLoading } = useApimApi(open ? apimId : null);
   useThrottlingPolicies(); // prefetch
+  const updateEndpoint = useUpdateEndpoint();
 
   const [state, dispatch] = useReducer(
     (prev: ManageState, update: Partial<ManageState>) => ({ ...prev, ...update }),
     null,
-    () => buildInitialState(apimApiInfo),
+    () => buildInitialState(apimApiInfo, initialNetworkVisibilities ?? undefined),
   );
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -250,15 +268,18 @@ export default function ManageDrawer({ open, onClose, apimId }: ManageDrawerProp
   const [opSearch, setOpSearch] = useState('');
   const [expandedOps, setExpandedOps] = useState<Set<string>>(new Set());
 
+  const canRedeploy = !!(componentId && versionId && buildId && releaseId && environmentId);
+  const canEditVisibility = !!(endpointId && componentId && versionId && releaseId);
+
   useEffect(() => {
     if (open) {
-      dispatch(buildInitialState(apimApiInfo));
+      dispatch(buildInitialState(apimApiInfo, initialNetworkVisibilities ?? undefined));
       setSaveError(null);
       setSaveSuccess(false);
       setOpSearch('');
       setExpandedOps(new Set());
     }
-  }, [open, apimApiInfo]);
+  }, [open, apimApiInfo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleClose = () => {
     (document.activeElement as HTMLElement)?.blur();
@@ -298,7 +319,6 @@ export default function ManageDrawer({ open, onClose, apimId }: ManageDrawerProp
       production_endpoints: { ...existingProd, config: { ...existingConfig, actionDuration: state.timeout } },
     };
 
-    // Build updated operations with throttling policies
     const updatedOperations: ApimApiOperation[] = (apimApiInfo.operations ?? []).map((op) => {
       const key = opKey(op);
       if (state.rateLimitLevel === 'RESOURCE_LEVEL' && state.resourceLevelPolicies[key]) {
@@ -316,8 +336,51 @@ export default function ManageDrawer({ open, onClose, apimId }: ManageDrawerProp
     };
 
     try {
-      await updateApimApi(apimId, updated);
+      const savedApi = await updateApimApi(apimId, updated);
       queryClient.invalidateQueries({ queryKey: ['apimApi', apimId] });
+
+      // Phase 1: trigger redeploy via proxy deployer when context is available
+      if (canRedeploy) {
+        const settingsKey = (savedApi.revisionedApiId as string | null | undefined) || savedApi.name;
+        const apiLevelThrottle = state.rateLimitLevel === 'API_LEVEL' ? { requestCount: Number(state.apiLevelPolicy.requestCount) || -1, unit: state.apiLevelPolicy.timeUnit } : null;
+        const accessMode = state.networkVisibilities.length === 1 && state.networkVisibilities[0] === 'Public' ? 'External' : 'Internal';
+        await deploySettingsV2(componentId!, versionId!, {
+          environmentId: environmentId!,
+          buildId: buildId!,
+          comment: '',
+          apiSettings: {
+            [settingsKey]: {
+              accessMode,
+              settings: {
+                corsConfiguration: { ...corsConfiguration, corsOverrideEnabled: true },
+                throttlingLimit: apiLevelThrottle,
+                operations: updatedOperations.map((op) => ({
+                  verb: op.verb.toUpperCase(),
+                  target: op.target,
+                  throttlingLimit: { requestCount: Number(op.throttlingPolicy) || -1, unit: 'MINUTE' },
+                })),
+                resiliency: Number(state.timeout) || undefined,
+              },
+              revisionId: apimRevisionId ?? undefined,
+              isAsyncAPI: false,
+              multiGatewayDeployment: state.networkVisibilities.includes('Public') && state.networkVisibilities.includes('Organization'),
+            },
+          },
+        });
+      }
+
+      // Phase 2: update endpoint visibility when endpoint context is available
+      if (canEditVisibility) {
+        await updateEndpoint.mutateAsync({
+          componentId: componentId!,
+          versionId: versionId!,
+          releaseId: releaseId!,
+          endpointId: endpointId!,
+          displayName: endpointDisplayName ?? '',
+          networkVisibilities: state.networkVisibilities,
+        });
+      }
+
       setSaveSuccess(true);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Failed to save settings. Please try again.');
@@ -482,6 +545,30 @@ export default function ManageDrawer({ open, onClose, apimId }: ManageDrawerProp
                 {timeoutError && <FormHelperText error>{timeoutError}</FormHelperText>}
               </ConfigRow>
             </Section>
+
+            {/* Network Visibility — only shown when endpoint context is available */}
+            {canEditVisibility && (
+              <Section title="Network Visibility">
+                <Stack direction="row" gap={2} flexWrap="wrap">
+                  {VISIBILITY_OPTIONS.map((opt) => (
+                    <FormControlLabel
+                      key={opt}
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={state.networkVisibilities.includes(opt)}
+                          onChange={(e) => {
+                            const next = e.target.checked ? [...state.networkVisibilities, opt] : state.networkVisibilities.filter((v) => v !== opt);
+                            dispatch({ networkVisibilities: next });
+                          }}
+                        />
+                      }
+                      label={<Typography variant="body2">{opt}</Typography>}
+                    />
+                  ))}
+                </Stack>
+              </Section>
+            )}
           </>
         )}
       </Box>

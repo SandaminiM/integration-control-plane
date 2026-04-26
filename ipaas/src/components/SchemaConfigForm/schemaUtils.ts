@@ -99,12 +99,7 @@ export const extractUniqueMapKeySet = (valueMap: Map<string, BaseType>, jsonPath
   return uniqueKeySet;
 };
 
-export const getSchemasAtLevel = (
-  schema: JSONSchema,
-  targetLevel: number,
-  currentLevel = 1,
-  currentPath = '',
-): SchemaAtLevel[] => {
+export const getSchemasAtLevel = (schema: JSONSchema, targetLevel: number, currentLevel = 1, currentPath = ''): SchemaAtLevel[] => {
   const schemas: SchemaAtLevel[] = [];
   if (currentLevel === targetLevel) {
     schemas.push({ schema, path: currentPath });
@@ -170,11 +165,9 @@ export const extractMapKey = (key: string, jsonPath: string): string => {
   return key;
 };
 
-export const isNumberType = (type: string | undefined): boolean =>
-  type === 'number' || type === 'integer' || type === 'float';
+export const isNumberType = (type: string | undefined): boolean => type === 'number' || type === 'integer' || type === 'float';
 
-export const isBaseType = (type: string | undefined): boolean =>
-  type === 'string' || isNumberType(type) || type === 'boolean' || type === 'secret';
+export const isBaseType = (type: string | undefined): boolean => type === 'string' || isNumberType(type) || type === 'boolean' || type === 'secret';
 
 export const typeDisplayName = (type: string | undefined): string => {
   if (type === 'string' || type === 'boolean' || type === 'secret') return type;

@@ -83,148 +83,146 @@ export function PopOverComponent({
   isRequiredAtRequiredLevel,
 }: PopOverComponentProps) {
   return (
-    <Popover
-      open={open}
-      anchorEl={anchorEl}
-      onClose={onClose}
-      anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-      transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-    >
+    <Popover open={open} anchorEl={anchorEl} onClose={onClose} anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }} transformOrigin={{ horizontal: 'right', vertical: 'top' }}>
       <Paper sx={{ p: 2, minWidth: 320, maxWidth: 420 }}>
-        <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600 }}>Add Values</Typography>
-        {Array.from(uniqueKeySet).sort().map((key) => {
-          if (schema && (isBaseType(schema.type) || schema.enum || schema.properties?.[key]?.enum)) {
-            return (
-              <Box key={key} sx={{ display: 'flex', alignItems: 'flex-start', mb: 1, gap: 1 }}>
-                <Box sx={{ flexGrow: 1 }}>
-                  <BaseElement
-                    title={title || key}
-                    type={schema.enum || schema.properties?.[key]?.enum ? 'string' : schema.type || ''}
-                    valueMap={valueMap}
-                    handleValueChange={handleValueChange}
-                    jsonPath={key}
-                    validationMap={validationMap}
-                    handleValidationChange={handleValidationChange}
-                    isRequired
-                    isSkipLabel
-                    isRequiredAtRequiredLevel={isRequiredAtRequiredLevel}
-                    schema={schema.enum || isBaseType(schema.type) ? schema : schema.properties?.[key]}
-                    allowLinking={allowLinking}
-                    configGroups={configGroups}
-                    linkingMap={linkingMap}
-                    setLinkingMap={setLinkingMap}
-                    sensitiveMap={sensitiveMap}
-                    setSensitiveMap={setSensitiveMap}
-                  />
+        <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600 }}>
+          Add Values
+        </Typography>
+        {Array.from(uniqueKeySet)
+          .sort()
+          .map((key) => {
+            if (schema && (isBaseType(schema.type) || schema.enum || schema.properties?.[key]?.enum)) {
+              return (
+                <Box key={key} sx={{ display: 'flex', alignItems: 'flex-start', mb: 1, gap: 1 }}>
+                  <Box sx={{ flexGrow: 1 }}>
+                    <BaseElement
+                      title={title || key}
+                      type={schema.enum || schema.properties?.[key]?.enum ? 'string' : schema.type || ''}
+                      valueMap={valueMap}
+                      handleValueChange={handleValueChange}
+                      jsonPath={key}
+                      validationMap={validationMap}
+                      handleValidationChange={handleValidationChange}
+                      isRequired
+                      isSkipLabel
+                      isRequiredAtRequiredLevel={isRequiredAtRequiredLevel}
+                      schema={schema.enum || isBaseType(schema.type) ? schema : schema.properties?.[key]}
+                      allowLinking={allowLinking}
+                      configGroups={configGroups}
+                      linkingMap={linkingMap}
+                      setLinkingMap={setLinkingMap}
+                      sensitiveMap={sensitiveMap}
+                      setSensitiveMap={setSensitiveMap}
+                    />
+                  </Box>
+                  <Box sx={{ pt: 4.5 }}>
+                    <IconButton size="small" color="error" onClick={() => onDeleteArrayElement(key)} aria-label="delete element">
+                      <Trash2 size={14} />
+                    </IconButton>
+                  </Box>
                 </Box>
-                <Box sx={{ pt: 4.5 }}>
-                  <IconButton size="small" color="error" onClick={() => onDeleteArrayElement(key)} aria-label="delete element">
-                    <Trash2 size={14} />
-                  </IconButton>
-                </Box>
-              </Box>
-            );
-          }
+              );
+            }
 
-          if (schema && schema.type === 'object' && schema.properties?.[key]?.additionalProperties) {
-            return (
-              <MapElement
-                key={key}
-                title={title}
-                jsonPath={generateMapJsonPath(jsonPath)}
-                valueMap={valueMap}
-                handleValueChange={handleValueChange}
-                handleValidationChange={handleValidationChange}
-                validationMap={validationMap}
-                isRequired
-                schema={schema.properties![key]}
-                isRequiredAtRequiredLevel={isRequiredAtRequiredLevel}
-                sensitiveMap={sensitiveMap}
-                setSensitiveMap={setSensitiveMap}
-              />
-            );
-          }
+            if (schema && schema.type === 'object' && schema.properties?.[key]?.additionalProperties) {
+              return (
+                <MapElement
+                  key={key}
+                  title={title}
+                  jsonPath={generateMapJsonPath(jsonPath)}
+                  valueMap={valueMap}
+                  handleValueChange={handleValueChange}
+                  handleValidationChange={handleValidationChange}
+                  validationMap={validationMap}
+                  isRequired
+                  schema={schema.properties![key]}
+                  isRequiredAtRequiredLevel={isRequiredAtRequiredLevel}
+                  sensitiveMap={sensitiveMap}
+                  setSensitiveMap={setSensitiveMap}
+                />
+              );
+            }
 
-          if (schema && schema.type === 'object') {
-            return (
-              <ObjectElementContainer
-                key={key}
-                title={title || key}
-                type={schema.type}
-                schema={schema || { type: 'object', properties: {} }}
-                valueMap={valueMap}
-                handleValueChange={handleValueChange}
-                jsonPath={key}
-                validationMap={validationMap}
-                handleValidationChange={handleValidationChange}
-                hasDeleteBtn
-                onDelete={onDeleteArrayElement}
-                isRequiredAtRequiredLevel={isRequiredAtRequiredLevel}
-                sensitiveMap={sensitiveMap}
-                setSensitiveMap={setSensitiveMap}
-              />
-            );
-          }
+            if (schema && schema.type === 'object') {
+              return (
+                <ObjectElementContainer
+                  key={key}
+                  title={title || key}
+                  type={schema.type}
+                  schema={schema || { type: 'object', properties: {} }}
+                  valueMap={valueMap}
+                  handleValueChange={handleValueChange}
+                  jsonPath={key}
+                  validationMap={validationMap}
+                  handleValidationChange={handleValidationChange}
+                  hasDeleteBtn
+                  onDelete={onDeleteArrayElement}
+                  isRequiredAtRequiredLevel={isRequiredAtRequiredLevel}
+                  sensitiveMap={sensitiveMap}
+                  setSensitiveMap={setSensitiveMap}
+                />
+              );
+            }
 
-          if (schema && schema.anyOf) {
-            return (
-              <Box key={key} sx={{ display: 'flex', alignItems: 'flex-start', mb: 1, gap: 1 }}>
-                <Box sx={{ flexGrow: 1 }}>
-                  <AnyOfElement
-                    title={title || key}
-                    jsonPath={key}
-                    schema={schema}
-                    valueMap={valueMap}
-                    handleValueChange={handleValueChange}
-                    validationMap={validationMap}
-                    handleValidationChange={handleValidationChange}
-                    isRequiredAtRequiredLevel={isRequiredAtRequiredLevel}
-                    allowLinking={allowLinking}
-                    configGroups={configGroups}
-                    linkingMap={linkingMap}
-                    setLinkingMap={setLinkingMap}
-                    sensitiveMap={sensitiveMap}
-                    setSensitiveMap={setSensitiveMap}
-                  />
+            if (schema && schema.anyOf) {
+              return (
+                <Box key={key} sx={{ display: 'flex', alignItems: 'flex-start', mb: 1, gap: 1 }}>
+                  <Box sx={{ flexGrow: 1 }}>
+                    <AnyOfElement
+                      title={title || key}
+                      jsonPath={key}
+                      schema={schema}
+                      valueMap={valueMap}
+                      handleValueChange={handleValueChange}
+                      validationMap={validationMap}
+                      handleValidationChange={handleValidationChange}
+                      isRequiredAtRequiredLevel={isRequiredAtRequiredLevel}
+                      allowLinking={allowLinking}
+                      configGroups={configGroups}
+                      linkingMap={linkingMap}
+                      setLinkingMap={setLinkingMap}
+                      sensitiveMap={sensitiveMap}
+                      setSensitiveMap={setSensitiveMap}
+                    />
+                  </Box>
+                  <Box sx={{ pt: 1 }}>
+                    <IconButton size="small" color="error" onClick={() => onDeleteArrayElement(key)} aria-label="delete anyOf element">
+                      <Trash2 size={14} />
+                    </IconButton>
+                  </Box>
                 </Box>
-                <Box sx={{ pt: 1 }}>
-                  <IconButton size="small" color="error" onClick={() => onDeleteArrayElement(key)} aria-label="delete anyOf element">
-                    <Trash2 size={14} />
-                  </IconButton>
-                </Box>
-              </Box>
-            );
-          }
+              );
+            }
 
-          if (schema && schema.type === 'array') {
-            return (
-              <Box key={key} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                <Box sx={{ flexGrow: 1 }}>
-                  <ArrayElement
-                    title=""
-                    type={schema.type}
-                    schema={schema.items}
-                    jsonPath={generateArrayJsonPath(key)}
-                    valueMap={valueMap}
-                    handleValueChange={handleValueChange}
-                    validationMap={validationMap}
-                    handleValidationChange={handleValidationChange}
-                    isRequiredAtRequiredLevel={isRequiredAtRequiredLevel}
-                    sensitiveMap={sensitiveMap}
-                    setSensitiveMap={setSensitiveMap}
-                  />
+            if (schema && schema.type === 'array') {
+              return (
+                <Box key={key} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                  <Box sx={{ flexGrow: 1 }}>
+                    <ArrayElement
+                      title=""
+                      type={schema.type}
+                      schema={schema.items}
+                      jsonPath={generateArrayJsonPath(key)}
+                      valueMap={valueMap}
+                      handleValueChange={handleValueChange}
+                      validationMap={validationMap}
+                      handleValidationChange={handleValidationChange}
+                      isRequiredAtRequiredLevel={isRequiredAtRequiredLevel}
+                      sensitiveMap={sensitiveMap}
+                      setSensitiveMap={setSensitiveMap}
+                    />
+                  </Box>
+                  <Box sx={{ pt: 1 }}>
+                    <IconButton size="small" color="error" onClick={() => onDeleteArrayElement(key)} aria-label="delete array element">
+                      <Trash2 size={14} />
+                    </IconButton>
+                  </Box>
                 </Box>
-                <Box sx={{ pt: 1 }}>
-                  <IconButton size="small" color="error" onClick={() => onDeleteArrayElement(key)} aria-label="delete array element">
-                    <Trash2 size={14} />
-                  </IconButton>
-                </Box>
-              </Box>
-            );
-          }
+              );
+            }
 
-          return null;
-        })}
+            return null;
+          })}
 
         <Box key={`${jsonPath}-ADD`}>
           <Button variant="text" size="small" startIcon={<Plus size={13} />} onClick={addArrayElement} sx={{ textTransform: 'none' }}>
@@ -233,8 +231,12 @@ export function PopOverComponent({
         </Box>
 
         <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ mt: 1.5 }}>
-          <Button size="small" onClick={onClose}>Cancel</Button>
-          <Button size="small" variant="contained" disabled={isDisableSaveBtn} onClick={onValueAdd}>Save</Button>
+          <Button size="small" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button size="small" variant="contained" disabled={isDisableSaveBtn} onClick={onValueAdd}>
+            Save
+          </Button>
         </Stack>
       </Paper>
     </Popover>

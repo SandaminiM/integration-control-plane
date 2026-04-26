@@ -79,17 +79,20 @@ export function ObjectElementContainer({
         alignItems="center"
         justifyContent="space-between"
         onClick={() => setOpen((p) => !p)}
-        sx={{ px: 1.5, py: 0.75, cursor: 'pointer', userSelect: 'none', bgcolor: 'action.hover', borderBottom: open ? '1px solid' : 'none', borderColor: 'divider' }}
-      >
-        <Typography variant="body2" sx={{ fontWeight: 500 }}>{title}</Typography>
+        sx={{ px: 1.5, py: 0.75, cursor: 'pointer', userSelect: 'none', bgcolor: 'action.hover', borderBottom: open ? '1px solid' : 'none', borderColor: 'divider' }}>
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          {title}
+        </Typography>
         <Stack direction="row" alignItems="center" gap={0.5}>
           {hasDeleteBtn && (
             <IconButton
               size="small"
               color="error"
-              onClick={(e) => { e.stopPropagation(); onDelete?.(jsonPath); }}
-              aria-label="delete array element"
-            >
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete?.(jsonPath);
+              }}
+              aria-label="delete array element">
               <Trash2 size={14} />
             </IconButton>
           )}

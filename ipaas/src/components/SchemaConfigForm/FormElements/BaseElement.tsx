@@ -165,8 +165,13 @@ export function BaseElement({
   const handleSecretChange = (value: string) => {
     setIsEdited(true);
     setSecretValue(value);
-    if (isRequired && !value) { setIsValidSecret(false); setSecretError('This field is required'); }
-    else { setIsValidSecret(true); setSecretError(''); }
+    if (isRequired && !value) {
+      setIsValidSecret(false);
+      setSecretError('This field is required');
+    } else {
+      setIsValidSecret(true);
+      setSecretError('');
+    }
   };
 
   const handleSecretSave = () => {
@@ -217,45 +222,42 @@ export function BaseElement({
           {linked ? <Link2Off size={14} /> : <Link2 size={14} />}
         </IconButton>
       </Tooltip>
-      <Popover
-        open={Boolean(linkAnchorEl)}
-        anchorEl={linkAnchorEl}
-        onClose={() => setLinkAnchorEl(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
+      <Popover open={Boolean(linkAnchorEl)} anchorEl={linkAnchorEl} onClose={() => setLinkAnchorEl(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
         <Box sx={{ p: 2, minWidth: 280 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600 }}>Link Configuration Group</Typography>
+          <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600 }}>
+            Link Configuration Group
+          </Typography>
           <TextField
             select
             fullWidth
             size="small"
             label="Config Group"
             value={selectedGroupId}
-            onChange={(e) => { setSelectedGroupId(e.target.value); setSelectedKeyId(''); }}
-            sx={{ mb: 1.5 }}
-          >
+            onChange={(e) => {
+              setSelectedGroupId(e.target.value);
+              setSelectedKeyId('');
+            }}
+            sx={{ mb: 1.5 }}>
             {(configGroups || []).map((g) => (
-              <MenuItem key={g.groupUuid} value={g.groupUuid}>{g.groupDisplayName || g.groupName}</MenuItem>
+              <MenuItem key={g.groupUuid} value={g.groupUuid}>
+                {g.groupDisplayName || g.groupName}
+              </MenuItem>
             ))}
           </TextField>
-          <TextField
-            select
-            fullWidth
-            size="small"
-            label="Config Key"
-            value={selectedKeyId}
-            onChange={(e) => setSelectedKeyId(e.target.value)}
-            disabled={!selectedGroupId}
-            sx={{ mb: 1.5 }}
-          >
+          <TextField select fullWidth size="small" label="Config Key" value={selectedKeyId} onChange={(e) => setSelectedKeyId(e.target.value)} disabled={!selectedGroupId} sx={{ mb: 1.5 }}>
             {(selectedGroup?.configurations || []).map((c) => (
-              <MenuItem key={c.keyUuid} value={c.keyUuid}>{c.key}</MenuItem>
+              <MenuItem key={c.keyUuid} value={c.keyUuid}>
+                {c.key}
+              </MenuItem>
             ))}
           </TextField>
           <Stack direction="row" justifyContent="flex-end" gap={1}>
-            <Button size="small" onClick={() => setLinkAnchorEl(null)}>Cancel</Button>
-            <Button size="small" variant="contained" disabled={!selectedGroupId || !selectedKeyId} onClick={handleLinkSave}>Link</Button>
+            <Button size="small" onClick={() => setLinkAnchorEl(null)}>
+              Cancel
+            </Button>
+            <Button size="small" variant="contained" disabled={!selectedGroupId || !selectedKeyId} onClick={handleLinkSave}>
+              Link
+            </Button>
           </Stack>
         </Box>
       </Popover>
@@ -267,23 +269,30 @@ export function BaseElement({
       <Box sx={{ mt: 1.5 }}>
         {!isSkipLabel && (
           <Stack direction="row" alignItems="center" gap={0.75} sx={{ mb: 0.5 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>{title}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+              {title}
+            </Typography>
             <Chip label={typeDisplayName(type)} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
             {!isRequired && isRequiredAtRequiredLevel && <Chip label="optional" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />}
           </Stack>
         )}
         <TextField
-          select fullWidth size="small"
+          select
+          fullWidth
+          size="small"
           value={String(valueMap.get(jsonPath) ?? '')}
           onChange={(e) => handleChange(e.target.value)}
           disabled={!!linked}
           error={isEdited && !linked && validationMap.get(jsonPath) === false}
           helperText={isEdited && !linked && validationMap.get(jsonPath) === false ? error : undefined}
-          InputProps={{ endAdornment: linkAdornment ? <InputAdornment position="end">{linkAdornment}</InputAdornment> : undefined }}
-        >
-          <MenuItem value=""><em>Select an option</em></MenuItem>
+          InputProps={{ endAdornment: linkAdornment ? <InputAdornment position="end">{linkAdornment}</InputAdornment> : undefined }}>
+          <MenuItem value="">
+            <em>Select an option</em>
+          </MenuItem>
           {(schema.enum as (string | number)[]).map((item) => (
-            <MenuItem key={String(item)} value={String(item)}>{String(item)}</MenuItem>
+            <MenuItem key={String(item)} value={String(item)}>
+              {String(item)}
+            </MenuItem>
           ))}
         </TextField>
       </Box>
@@ -294,13 +303,20 @@ export function BaseElement({
     return (
       <Box sx={{ mt: 1.5 }}>
         <Stack direction="row" alignItems="center" gap={1}>
-          {!isSkipLabel && <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>{title}</Typography>}
+          {!isSkipLabel && (
+            <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+              {title}
+            </Typography>
+          )}
           <Chip label="boolean" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
           <Switch
             size="small"
             checked={valueMap.get(jsonPath) === 'true' || valueMap.get(jsonPath) === true || false}
             disabled={!!linked}
-            onChange={(e) => { handleValueChange(jsonPath, e.target.checked); handleValidationChange(jsonPath, true); }}
+            onChange={(e) => {
+              handleValueChange(jsonPath, e.target.checked);
+              handleValidationChange(jsonPath, true);
+            }}
           />
           {linkAdornment}
         </Stack>
@@ -311,20 +327,18 @@ export function BaseElement({
   if (type === 'secret') {
     return (
       <>
-        <Popover
-          open={Boolean(secretAnchorEl)}
-          anchorEl={secretAnchorEl}
-          onClose={() => setSecretAnchorEl(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-        >
+        <Popover open={Boolean(secretAnchorEl)} anchorEl={secretAnchorEl} onClose={() => setSecretAnchorEl(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }} transformOrigin={{ vertical: 'top', horizontal: 'left' }}>
           <Box sx={{ p: 2, minWidth: 320 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>Update Secret Content</Typography>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              Update Secret Content
+            </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
               Updating the value removes the previous value permanently and cannot be restored.
             </Typography>
             <TextField
-              fullWidth size="small" label={!isSkipLabel ? title : ''}
+              fullWidth
+              size="small"
+              label={!isSkipLabel ? title : ''}
               type={showContent ? 'text' : 'password'}
               value={secretValue}
               onChange={(e) => handleSecretChange(e.target.value)}
@@ -342,8 +356,12 @@ export function BaseElement({
               }}
             />
             <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ mt: 1.5 }}>
-              <Button size="small" onClick={() => setSecretAnchorEl(null)}>Cancel</Button>
-              <Button size="small" variant="contained" disabled={!secretValue} onClick={handleSecretSave}>Save</Button>
+              <Button size="small" onClick={() => setSecretAnchorEl(null)}>
+                Cancel
+              </Button>
+              <Button size="small" variant="contained" disabled={!secretValue} onClick={handleSecretSave}>
+                Save
+              </Button>
             </Stack>
           </Box>
         </Popover>
@@ -352,21 +370,21 @@ export function BaseElement({
           {valueMap.has(jsonPath) && !showSensitiveInput ? (
             <>
               <Stack direction="row" alignItems="center" gap={0.75} sx={{ mb: 0.5 }}>
-                {!isSkipLabel && <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>{title}</Typography>}
+                {!isSkipLabel && (
+                  <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                    {title}
+                  </Typography>
+                )}
                 <Chip label="secret" size="small" variant="outlined" color="info" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
               </Stack>
-              <Button
-                size="small" variant="text"
-                startIcon={<Pencil size={13} />}
-                onClick={(e) => setSecretAnchorEl(e.currentTarget as HTMLButtonElement)}
-                sx={{ textTransform: 'none' }}
-              >
+              <Button size="small" variant="text" startIcon={<Pencil size={13} />} onClick={(e) => setSecretAnchorEl(e.currentTarget as HTMLButtonElement)} sx={{ textTransform: 'none' }}>
                 Update Secret Content
               </Button>
             </>
           ) : (
             <TextField
-              fullWidth size="small"
+              fullWidth
+              size="small"
               label={!isSkipLabel ? title : undefined}
               type={showContent ? 'text' : 'password'}
               value={String(valueMap.get(jsonPath) ?? '')}
@@ -397,7 +415,11 @@ export function BaseElement({
     return (
       <Box sx={{ mt: 1.5 }}>
         <Stack direction="row" alignItems="center" gap={0.75} sx={{ mb: 0.5 }}>
-          {!isSkipLabel && <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>{title}</Typography>}
+          {!isSkipLabel && (
+            <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+              {title}
+            </Typography>
+          )}
           <Chip label="secret" size="small" variant="outlined" color="info" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
           <Tooltip title="Mark as non-sensitive (stored in database)">
             <IconButton size="small" onClick={toggleSensitive} sx={{ p: 0.25 }}>
@@ -416,13 +438,16 @@ export function BaseElement({
     <Box sx={{ mt: 1.5 }}>
       {!isSkipLabel && (
         <Stack direction="row" alignItems="center" gap={0.75} sx={{ mb: 0.5 }}>
-          <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>{title}</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+            {title}
+          </Typography>
           <Chip label={isSensitive ? 'secret' : typeDisplayName(type)} size="small" variant="outlined" color={isSensitive ? 'info' : 'default'} sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
           {!isRequired && isRequiredAtRequiredLevel && <Chip label="optional" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />}
         </Stack>
       )}
       <TextField
-        fullWidth size="small"
+        fullWidth
+        size="small"
         type={isSensitive && !showContent ? 'password' : 'text'}
         value={String(valueMap.get(jsonPath) ?? '')}
         onChange={(e) => handleChange(e.target.value)}

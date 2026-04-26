@@ -20,6 +20,6 @@ import type { JSX } from 'react';
 import ComingSoon from './ComingSoon';
 import type { ProjectScope } from '../nav';
 
-export default function ProjectBuild(_scope: ProjectScope): JSX.Element {
-  return <ComingSoon title="Build Not Available at Project Level" description="Navigate to a component to view and manage builds." />;
+export default function ProjectDeploy(_scope: ProjectScope): JSX.Element {
+  return <ComingSoon title="Deploy Not Available at Project Level" description="Navigate to a component to view and manage deployments." />;
 }

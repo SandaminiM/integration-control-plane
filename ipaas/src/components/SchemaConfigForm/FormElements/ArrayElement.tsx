@@ -19,15 +19,7 @@
 import React, { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { Box, Button, Chip, Stack, Typography } from '@wso2/oxygen-ui';
 import { Edit2, Plus } from '@wso2/oxygen-ui-icons-react';
-import {
-  type BaseType,
-  type JSONSchema,
-  type LinkingInfo,
-  extractAllKeySet,
-  extractUniqueKeySet,
-  setArrayType,
-  typeDisplayName,
-} from '../schemaUtils';
+import { type BaseType, type JSONSchema, type LinkingInfo, extractAllKeySet, extractUniqueKeySet, setArrayType, typeDisplayName } from '../schemaUtils';
 import PopOverComponent from './PopOverComponent';
 
 interface ConfigGroup {
@@ -93,7 +85,11 @@ export function ArrayElement({
     const deletedMaxIndex = Math.max(...deletedIndexArray, -1);
     if (deletedMaxIndex > maxIndex) maxIndex = deletedMaxIndex;
     const newJsonPath = `${jsonPath.replace('[*]', '')}[${maxIndex + 1}]`;
-    setUniqueKeySet((prev) => { const next = new Set(prev); next.add(newJsonPath); return next; });
+    setUniqueKeySet((prev) => {
+      const next = new Set(prev);
+      next.add(newJsonPath);
+      return next;
+    });
   };
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -125,7 +121,11 @@ export function ArrayElement({
       if (uniqueKeys.size === 0) {
         if (!isAddNewArrayElement) {
           const initialPath = `${jsonPath.replace('[*]', '')}[0]`;
-          setUniqueKeySet((prev) => { const next = new Set(prev); next.add(initialPath); return next; });
+          setUniqueKeySet((prev) => {
+            const next = new Set(prev);
+            next.add(initialPath);
+            return next;
+          });
           setIsAddNewArrayElement(true);
         }
       } else {
@@ -150,7 +150,11 @@ export function ArrayElement({
     if (configValidationMap) {
       setLocalValidationMap(configValidationMap);
     } else {
-      setLocalValidationMap((prev) => { const newMap = new Map(prev); newMap.set(key, isValid); return newMap; });
+      setLocalValidationMap((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(key, isValid);
+        return newMap;
+      });
     }
   };
 
@@ -164,7 +168,11 @@ export function ArrayElement({
     if (configMap) {
       setLocalValueMap(configMap);
     } else {
-      setLocalValueMap((prev) => { const newMap = new Map(prev); newMap.set(key, value ?? ''); return newMap; });
+      setLocalValueMap((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(key, value ?? '');
+        return newMap;
+      });
     }
   };
 
@@ -201,8 +209,12 @@ export function ArrayElement({
     const mergedValueMap = new Map(valueMap);
     const mergedValidationMap = new Map(validationMap);
 
-    valueMap.forEach((_, key) => { if (key.startsWith(jsonPathPrefix)) mergedValueMap.delete(key); });
-    validationMap.forEach((_, key) => { if (key.startsWith(jsonPathPrefix)) mergedValidationMap.delete(key); });
+    valueMap.forEach((_, key) => {
+      if (key.startsWith(jsonPathPrefix)) mergedValueMap.delete(key);
+    });
+    validationMap.forEach((_, key) => {
+      if (key.startsWith(jsonPathPrefix)) mergedValidationMap.delete(key);
+    });
 
     newGlobalValueMap.forEach((val, key) => mergedValueMap.set(key, val));
     newGlobalValidationMap.forEach((isValid, key) => mergedValidationMap.set(key, isValid));
@@ -221,7 +233,9 @@ export function ArrayElement({
       newSet.delete(deletedJsonPath);
       let isDisable = false;
       newSet.forEach((uniqueKey) => {
-        localValueMap.forEach((value, k) => { if (k.startsWith(uniqueKey) && !value) isDisable = true; });
+        localValueMap.forEach((value, k) => {
+          if (k.startsWith(uniqueKey) && !value) isDisable = true;
+        });
       });
       setIsDisableSaveBtn(isDisable);
       return newSet;
@@ -229,23 +243,22 @@ export function ArrayElement({
     setDeletedIndexArray((prev) => [...prev, deletedIndex]);
   };
 
-  useEffect(() => { resetLocalValueMap(valueMap, validationMap); }, [valueMap, validationMap, resetLocalValueMap]);
-  useEffect(() => { setChipType(setArrayType(typeDisplayName(schemaTypeDep))); }, [schemaTypeDep]);
+  useEffect(() => {
+    resetLocalValueMap(valueMap, validationMap);
+  }, [valueMap, validationMap, resetLocalValueMap]);
+  useEffect(() => {
+    setChipType(setArrayType(typeDisplayName(schemaTypeDep)));
+  }, [schemaTypeDep]);
 
   return (
     <Box sx={{ mt: 1 }}>
       <Stack direction="row" alignItems="center" gap={0.75}>
-        <Typography variant="body2" color="text.secondary">{title}</Typography>
+        <Typography variant="body2" color="text.secondary">
+          {title}
+        </Typography>
         <Chip label={chipType} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
         <Box sx={{ flexGrow: 1 }} />
-        <Button
-          variant="text"
-          size="small"
-          disabled={disableAddButton}
-          startIcon={uniqueKeySet.size === 0 || isAddNewArrayElement ? <Plus size={13} /> : <Edit2 size={13} />}
-          onClick={handleClick}
-          sx={{ textTransform: 'none' }}
-        >
+        <Button variant="text" size="small" disabled={disableAddButton} startIcon={uniqueKeySet.size === 0 || isAddNewArrayElement ? <Plus size={13} /> : <Edit2 size={13} />} onClick={handleClick} sx={{ textTransform: 'none' }}>
           {uniqueKeySet.size === 0 || isAddNewArrayElement ? 'Add' : 'Edit'}
         </Button>
       </Stack>

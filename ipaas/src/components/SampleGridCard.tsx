@@ -22,8 +22,17 @@ import type { JSX } from 'react';
 import type { Sample } from '../types/samples';
 import { formatBuildPack, formatComponentType } from '../constants/integrations';
 
+const MAX_WORDS = 20;
+
+function truncateWords(text: string): { display: string; isTruncated: boolean } {
+  const words = text.split(' ');
+  if (words.length <= MAX_WORDS) return { display: text, isTruncated: false };
+  return { display: words.slice(0, MAX_WORDS).join(' ') + '…', isTruncated: true };
+}
+
 export default function SampleGridCard({ sample, onDeploy, isDeploying }: { sample: Sample; onDeploy: () => void; isDeploying: boolean }): JSX.Element {
-  const sourceUrl = `${sample.repositoryUrl}tree/${sample.branch ?? 'main'}${sample.subDirectory}${sample.componentPath}`;
+  const sourceUrl = `${sample.repositoryUrl}tree/${sample.branch ?? 'main'}${sample.subDirectory ?? ''}${sample.componentPath}`;
+  const { display: descriptionDisplay, isTruncated: isDescriptionTruncated } = truncateWords(sample.description);
 
   return (
     <Card
@@ -77,9 +86,11 @@ export default function SampleGridCard({ sample, onDeploy, isDeploying }: { samp
             ({formatBuildPack(sample.buildPack)})
           </Typography>
         </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.5 }}>
-          {sample.description}
-        </Typography>
+        <Tooltip title={isDescriptionTruncated ? sample.description : ''} placement="top" arrow>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.5 }}>
+            {descriptionDisplay}
+          </Typography>
+        </Tooltip>
       </Box>
 
       {/* Tags */}
