@@ -87,7 +87,7 @@ function EndpointPanel({ ep, onSaved }: { ep: GqlEnvEndpoint; onSaved: () => voi
     return () => {
       cancelled = true;
     };
-  }, [ep.apimId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ep.apimId]);
 
   const availableScopes: string[] = [...extractScopesFromSwagger(swaggerDoc), ...(apimApiInfo?.scopes ?? []).map((s) => s.scope.name)].filter((v, i, arr) => arr.indexOf(v) === i);
 

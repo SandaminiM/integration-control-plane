@@ -79,7 +79,8 @@ export function ArrayElement({
 
   const onAddArrayElement = () => {
     let maxIndex = Array.from(uniqueKeySet).reduce((max, key) => {
-      const index = parseInt(key[key.length - 2], 10);
+      const match = /\[(\d+)\]$/.exec(key);
+      const index = match ? parseInt(match[1], 10) : -1;
       return index > max ? index : max;
     }, -1);
     const deletedMaxIndex = Math.max(...deletedIndexArray, -1);

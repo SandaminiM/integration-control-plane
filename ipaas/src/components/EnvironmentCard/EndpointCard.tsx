@@ -21,6 +21,7 @@ import { Building2, Check, ChevronDown, ChevronUp, Copy, Folder, Globe, Pencil, 
 import { useCallback, useState } from 'react';
 import type { GqlEnvEndpoint } from '../../api/queries';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const VISIBILITY_OPTS = [
   {
     key: 'Public',
@@ -42,6 +43,7 @@ export const VISIBILITY_OPTS = [
   },
 ] as const;
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function getStatusColor(state?: string | null) {
   if (!state) return 'text.disabled';
   const s = state.toUpperCase();

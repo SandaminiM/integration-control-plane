@@ -23,11 +23,11 @@ export type TomlValue = BaseType | TomlValue[] | { [key: string]: TomlValue };
 const parseTomlValue = (rawValue: string): unknown => {
   const value = rawValue.trim();
 
+  if ((value.startsWith('"""') && value.endsWith('"""')) || (value.startsWith("'''") && value.endsWith("'''"))) {
+    return value.slice(3, -3);
+  }
   if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
     return value.slice(1, -1);
-  }
-  if (value.startsWith('"""') || value.startsWith("'''")) {
-    return value.slice(3, -3);
   }
   if (value === 'true' || value === 'false') return value === 'true';
   if (/^[+-]?\d+$/.test(value)) return parseInt(value, 10);

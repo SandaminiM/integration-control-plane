@@ -342,7 +342,8 @@ export default function ManageDrawer({ open, onClose, apimId, componentId, versi
       // Phase 1: trigger redeploy via proxy deployer when context is available
       if (canRedeploy) {
         const settingsKey = (savedApi.revisionedApiId as string | null | undefined) || savedApi.name;
-        const apiLevelThrottle = state.rateLimitLevel === 'API_LEVEL' ? { requestCount: Number(state.apiLevelPolicy.requestCount) || -1, unit: state.apiLevelPolicy.timeUnit } : null;
+        const apiLevelRc = Number(state.apiLevelPolicy.requestCount);
+        const apiLevelThrottle = state.rateLimitLevel === 'API_LEVEL' ? { requestCount: isNaN(apiLevelRc) ? -1 : apiLevelRc, unit: state.apiLevelPolicy.timeUnit } : null;
         const accessMode = state.networkVisibilities.length === 1 && state.networkVisibilities[0] === 'Public' ? 'External' : 'Internal';
         await deploySettingsV2(componentId!, versionId!, {
           environmentId: environmentId!,
@@ -357,7 +358,7 @@ export default function ManageDrawer({ open, onClose, apimId, componentId, versi
                 operations: updatedOperations.map((op) => ({
                   verb: op.verb.toUpperCase(),
                   target: op.target,
-                  throttlingLimit: { requestCount: Number(op.throttlingPolicy) || -1, unit: 'MINUTE' },
+                  throttlingLimit: { requestCount: ((_rc) => (isNaN(_rc) ? -1 : _rc))(Number(op.throttlingPolicy)), unit: 'MINUTE' },
                 })),
                 resiliency: Number(state.timeout) || undefined,
               },

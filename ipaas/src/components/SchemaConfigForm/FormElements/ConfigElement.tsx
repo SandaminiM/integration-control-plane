@@ -118,6 +118,7 @@ export function ConfigElement({
   if (isBaseType(type) || schema.properties?.[propertyKey]?.enum) {
     return (
       <BaseElement
+        key={jsonPath}
         title={title}
         type={type}
         jsonPath={jsonPath}

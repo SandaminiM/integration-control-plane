@@ -456,7 +456,7 @@ function LinkedCertCard({ cert, onUnlink, onMountPathChange }: LinkedCertCardPro
             helperText={mountPathError || 'Directory where certificate files will be mounted'}
             onChange={(e) => {
               setMountPath(e.target.value);
-              if (!e.target.value || e.target.value.startsWith('/')) onMountPathChange(e.target.value);
+              onMountPathChange(e.target.value);
             }}
             sx={{ mb: 1 }}
           />
@@ -746,14 +746,20 @@ function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envI
     reader.onload = (ev) => {
       const content = (ev.target?.result as string) ?? '';
       const result = parseConfigToml(content);
-      if (parsedSchema && result.success && result.data) {
-        const filtered = filterTomlValuesBySchema(result.data, parsedSchema);
-        setValueMap((prev) => {
-          const next = new Map(prev);
-          filtered.forEach((v, k) => next.set(k, v));
-          return next;
-        });
+      if (!result.success || !result.data) {
+        setSaveError('Failed to parse config.toml — ensure the file is valid TOML.');
+        return;
       }
+      if (!parsedSchema) {
+        setSaveError('Schema is not yet loaded. Please wait and try again.');
+        return;
+      }
+      const filtered = filterTomlValuesBySchema(result.data, parsedSchema);
+      setValueMap((prev) => {
+        const next = new Map(prev);
+        filtered.forEach((v, k) => next.set(k, v));
+        return next;
+      });
       setImportedFileName(file.name);
     };
     reader.readAsText(file);
@@ -832,7 +838,10 @@ function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envI
 
         const afterSave = () => {
           if (buildId) {
-            deployTrack.mutateAsync({ componentId, id: deploymentTrackId, imageId: buildId, environmentId: actualEnvId, cronTimezone: '' }).finally(onClose);
+            deployTrack
+              .mutateAsync({ componentId, id: deploymentTrackId, imageId: buildId, environmentId: actualEnvId, cronTimezone: '' })
+              .then(() => onClose())
+              .catch((err: unknown) => setSaveError(err instanceof Error ? err.message : 'Failed to update deployment track'));
           } else {
             onClose();
           }
@@ -914,10 +923,11 @@ function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envI
 
   const hasSchema = !isLoading && !isError && data !== null && !!data?.jsonSchema && !!parsedSchema;
   const hasValidationErrors = Array.from(validationMap.values()).some((v) => !v);
+  const hasCertPathErrors = linkedCerts.some((c) => c.mountPath && !c.mountPath.startsWith('/'));
   const isApplying = save.isPending || saveCertMappings.isPending || deployTrack.isPending;
   const prevLabel = step === 1 ? 'Cancel' : 'Back';
   const nextLabel = step === 2 ? (isApplying ? 'Updating…' : 'Update') : 'Next';
-  const nextDisabled = step === 1 ? hasValidationErrors || isLoading : isApplying;
+  const nextDisabled = step === 1 ? hasValidationErrors || isLoading : isApplying || hasCertPathErrors;
 
   return (
     <Drawer anchor="right" open={open} onClose={handleClose} variant="temporary" sx={drawerSx}>
