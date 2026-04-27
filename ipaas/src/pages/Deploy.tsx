@@ -74,10 +74,7 @@ export default function Deploy(scope: ComponentScope): JSX.Element {
   if (flags.isProxy) {
     return (
       <PageContent>
-        <ComingSoon
-          title="Proxy Deploy Coming Soon"
-          description="Deploy management for REST API Proxy components will be available in a future release."
-        />
+        <ComingSoon title="Proxy Deploy Coming Soon" description="Deploy management for REST API Proxy components will be available in a future release." />
       </PageContent>
     );
   }
@@ -85,10 +82,7 @@ export default function Deploy(scope: ComponentScope): JSX.Element {
   if (!flags.isDeployable) {
     return (
       <PageContent>
-        <ComingSoon
-          title="Deploy Not Yet Supported"
-          description={`Deploy management for ${displayLabel} components is coming soon.`}
-        />
+        <ComingSoon title="Deploy Not Yet Supported" description={`Deploy management for ${displayLabel} components is coming soon.`} />
       </PageContent>
     );
   }

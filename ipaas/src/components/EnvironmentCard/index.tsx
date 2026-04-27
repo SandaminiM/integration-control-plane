@@ -21,6 +21,7 @@ import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { useComponentDeployment, useEnvEndpoints, useExecutionConfigs, useSchemaConfig, type GqlEnvironment, type GqlEnvEndpoint } from '../../api/queries';
+import { getRequiredPathsAtLevel } from '../SchemaConfigForm/schemaUtils';
 import { getOrgUuidFromToken } from '../../auth/tokenManager';
 import { useTriggerComponent, useStopDeployment, useRedeployDeployment } from '../../api/mutations';
 import { GENERIC_SERVICE_TYPES } from '../../constants/integrations';
@@ -45,9 +46,10 @@ interface EnvironmentProps {
   deploymentPipelineId: string;
   latestCommit?: { sha: string; message: string } | null;
   apiId?: string;
+  isBuildInProgress?: boolean;
 }
 
-export default function Environment({ env, prevEnv, componentId, projectId, componentType: _componentType, displayType, componentHandler, projectHandler, orgHandler, versionId, deploymentPipelineId, latestCommit, apiId }: EnvironmentProps) {
+export default function Environment({ env, prevEnv, componentId, projectId, componentType: _componentType, displayType, componentHandler, projectHandler, orgHandler, versionId, deploymentPipelineId, latestCommit, apiId, isBuildInProgress }: EnvironmentProps) {
   const isAutomation = (displayType ?? '').toLowerCase() === 'scheduledtask';
   const isGenericService = GENERIC_SERVICE_TYPES.has(displayType ?? '');
   const queryClient = useQueryClient();
@@ -105,27 +107,14 @@ export default function Environment({ env, prevEnv, componentId, projectId, comp
   const scheduleDescription = scheduleConfig?.cronjobFrequency ? `${describeCron(scheduleConfig.cronjobFrequency)}, in time zone ${scheduleConfig.cronjobTimezone || 'UTC'}` : null;
 
   const envTemplateId = env.templateId ?? env.id;
-  const { data: schemaConfig } = useSchemaConfig(isAutomation ? projectId : '', isAutomation ? componentId : '', isAutomation ? envTemplateId : '', isAutomation ? versionId : '', latestCommit?.sha);
+  const deployedCommitSha = envDeployment?.build?.commit?.sha;
+  const { data: schemaConfig } = useSchemaConfig(isAutomation ? projectId : '', isAutomation ? componentId : '', isAutomation ? envTemplateId : '', isAutomation ? versionId : '', isAutomation ? deployedCommitSha : undefined);
 
   const hasMissingConfigs = useMemo(() => {
     if (!schemaConfig?.jsonSchema) return false;
     try {
       const schema = JSON.parse(atob(schemaConfig.jsonSchema));
-      // Recursively collect all required leaf keys using dot notation (mirrors ConfigureDrawer flattenSchema)
-      function collectRequired(props: Record<string, unknown>, req: string[], prefix = ''): string[] {
-        const result: string[] = [];
-        for (const [name, prop] of Object.entries(props)) {
-          const p = prop as Record<string, unknown>;
-          const key = prefix ? `${prefix}.${name}` : name;
-          if (p.type === 'object' && p.properties) {
-            result.push(...collectRequired(p.properties as Record<string, unknown>, (p.required as string[]) ?? [], key));
-          } else if (req.includes(name)) {
-            result.push(key);
-          }
-        }
-        return result;
-      }
-      const allRequired = collectRequired(schema.properties ?? {}, schema.required ?? []);
+      const allRequired = getRequiredPathsAtLevel(schema).filter((p) => !p.includes('[*]') && !p.includes('.*'));
       if (allRequired.length === 0) return false;
       const filledKeys = new Set((schemaConfig.configurations ?? []).filter((c) => c.values?.[0]?.value).map((c) => c.key));
       return allRequired.some((k) => !filledKeys.has(k));
@@ -274,6 +263,7 @@ export default function Environment({ env, prevEnv, componentId, projectId, comp
           onViewLogs={isGenericService ? () => setLogsOpen(true) : undefined}
           onTest={isGenericService ? () => navigate(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/test/console`) : undefined}
           hasMissingConfigs={hasMissingConfigs}
+          isBuildInProgress={isBuildInProgress}
         />
 
         <EnvironmentCardBody
@@ -340,13 +330,14 @@ export default function Environment({ env, prevEnv, componentId, projectId, comp
         versionId={versionId}
         componentName={componentHandler}
         projectHandler={projectHandler}
-        commitHash={latestCommit?.sha}
+        commitHash={deployedCommitSha}
         releaseId={envReleaseId}
         displayType={displayType}
         releaseMgtReleaseId={envDeployment?.releaseMgtDeployment?.releaseMgtReleaseId}
         releaseMgtDeploymentId={envDeployment?.releaseMgtDeployment?.releaseMgtDeploymentId}
         isAutomation={isAutomation}
         envTemplateId={envTemplateId}
+        buildId={envDeployment?.build?.buildId}
       />
 
       {isGenericService && <ServiceLogsDrawer open={logsOpen} onClose={() => setLogsOpen(false)} componentId={componentId} environmentId={env.id} envName={env.name} versionId={versionId} />}

@@ -77,9 +77,7 @@ export default function BuildArea({
   const isBuildInProgress = !!inProgressBuild;
   const buildingCommit = inProgressBuild ? (commits.find((c) => c.sha === inProgressBuild.sha) ?? null) : null;
 
-  const { data: images = [], isLoading: imagesLoading } = useDeploymentTrackImages(
-    componentId, versionId, isBuildInProgress ? 10_000 : undefined,
-  );
+  const { data: images = [], isLoading: imagesLoading } = useDeploymentTrackImages(componentId, versionId, isBuildInProgress ? 10_000 : undefined);
   const { data: firstEnvDeployment } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, firstEnvId);
   const firstEnvReleaseId = firstEnvDeployment?.releaseId ?? '';
 
@@ -183,11 +181,11 @@ export default function BuildArea({
 
   if (flags.isByoi) {
     return (
-      <Card
-        variant="outlined"
-        sx={{ width: 320, flexShrink: 0, position: 'sticky', top: 24, alignSelf: 'flex-start', background: 'transparent' }}>
+      <Card variant="outlined" sx={{ width: 320, flexShrink: 0, position: 'sticky', top: 24, alignSelf: 'flex-start', background: 'transparent' }}>
         <CardContent>
-          <Typography variant="h3" sx={{ mb: 2 }}>Set Up</Typography>
+          <Typography variant="h3" sx={{ mb: 2 }}>
+            Set Up
+          </Typography>
           <ComingSoon title="Image-based Deploy" description="Image-based deploy configuration is coming soon." />
         </CardContent>
       </Card>
@@ -210,7 +208,7 @@ export default function BuildArea({
           <Typography variant="h3" sx={{ mb: 2 }}>
             Set Up
           </Typography>
-          
+
           <Divider sx={{ mb: 2 }} />
 
           {imagesLoading || isPostBuildFetching ? (
@@ -231,9 +229,7 @@ export default function BuildArea({
                   commitMessage: buildingCommit?.message ?? inProgressBuild!.sha.slice(0, 8),
                   builtAt: inProgressBuild!.started_at,
                   runId: String(inProgressBuild!.id),
-                  author: buildingCommit?.author
-                    ? { name: buildingCommit.author.name, email: buildingCommit.author.email, date: buildingCommit.author.date, avatarUrl: buildingCommit.author.avatarUrl }
-                    : { name: '', email: '', date: '', avatarUrl: '' },
+                  author: buildingCommit?.author ? { name: buildingCommit.author.name, email: buildingCommit.author.email, date: buildingCommit.author.date, avatarUrl: buildingCommit.author.avatarUrl } : { name: '', email: '', date: '', avatarUrl: '' },
                 }}
                 isLatest={false}
                 isBuilding
@@ -252,29 +248,19 @@ export default function BuildArea({
                 Trigger a build from the Build page first.
               </Typography>
             </Box>
-          ) : selectedImage && (
-            <Box sx={{ mb: 2 }}>
-              <BuildImageCard
-                image={selectedImage}
-                isLatest={isLatest}
-                variant="detail"
-                onEdit={() => setImageDrawerOpen(true)}
-              />
-            </Box>
+          ) : (
+            selectedImage && (
+              <Box sx={{ mb: 2 }}>
+                <BuildImageCard image={selectedImage} isLatest={isLatest} variant="detail" onEdit={() => setImageDrawerOpen(true)} />
+              </Box>
+            )
           )}
 
           <Divider sx={{ borderStyle: 'dashed', mb: 1.5 }} />
 
           {/* ── Auto Deploy on Build ── */}
           <FormControlLabel
-            control={
-              <Switch
-                size="small"
-                checked={autoDeployEnabled}
-                onChange={(e) => handleAutoDeployToggle(e.target.checked)}
-                disabled={updateAutoDeploy.isPending}
-              />
-            }
+            control={<Switch size="small" checked={autoDeployEnabled} onChange={(e) => handleAutoDeployToggle(e.target.checked)} disabled={updateAutoDeploy.isPending} />}
             label={
               <Stack direction="row" alignItems="center" gap={0.5}>
                 <Typography variant="body2">Auto Deploy on Build</Typography>
@@ -286,12 +272,7 @@ export default function BuildArea({
 
           {/* ── Endpoint Configurations (only for deployed service integrations) ── */}
           {!flags.isAutomation && !!firstEnvReleaseId && (
-            <Button
-              variant="text"
-              size="small"
-              startIcon={<Settings size={14} />}
-              onClick={() => setEndpointConfigOpen(true)}
-              sx={{ mb: 2, width: '100%', justifyContent: 'flex-start' }}>
+            <Button variant="text" size="small" startIcon={<Settings size={14} />} onClick={() => setEndpointConfigOpen(true)} sx={{ mb: 2, width: '100%', justifyContent: 'flex-start' }}>
               Endpoint Configurations
             </Button>
           )}
@@ -300,11 +281,7 @@ export default function BuildArea({
           <Box sx={{ position: 'relative' }}>
             <ButtonGroup variant="contained" size="small" ref={splitButtonRef} disabled={!canDeploy} sx={{ width: '100%' }}>
               <Button
-                startIcon={
-                  isDeploying || isBuildInProgress
-                    ? <CircularProgress color="inherit" size={14} />
-                    : selectedDeployAction === 'deploy' ? <Rocket size={14} /> : <Settings size={14} />
-                }
+                startIcon={isDeploying || isBuildInProgress ? <CircularProgress color="inherit" size={14} /> : selectedDeployAction === 'deploy' ? <Rocket size={14} /> : <Settings size={14} />}
                 onClick={handleMainButtonClick}
                 sx={{ whiteSpace: 'nowrap', flex: 1 }}>
                 {isDeploying ? 'Deploying…' : isBuildInProgress ? 'Building & Deploying' : selectedDeployAction === 'deploy' ? 'Deploy' : 'Configure & Deploy'}
@@ -342,25 +319,10 @@ export default function BuildArea({
       </Card>
 
       {/* Endpoint configuration drawer */}
-      {!flags.isAutomation && !!firstEnvReleaseId && (
-        <EndpointConfigDrawer
-          open={endpointConfigOpen}
-          onClose={() => setEndpointConfigOpen(false)}
-          componentId={componentId}
-          versionId={versionId}
-          firstEnvReleaseId={firstEnvReleaseId}
-        />
-      )}
+      {!flags.isAutomation && !!firstEnvReleaseId && <EndpointConfigDrawer open={endpointConfigOpen} onClose={() => setEndpointConfigOpen(false)} componentId={componentId} versionId={versionId} firstEnvReleaseId={firstEnvReleaseId} />}
 
       {/* Image selection drawer */}
-      <BuildAreaImageDrawer
-        open={imageDrawerOpen}
-        onClose={() => setImageDrawerOpen(false)}
-        images={images}
-        isLoading={imagesLoading}
-        selectedImageId={selectedImage?.imageId ?? null}
-        onSelect={setSelectedImage}
-      />
+      <BuildAreaImageDrawer open={imageDrawerOpen} onClose={() => setImageDrawerOpen(false)} images={images} isLoading={imagesLoading} selectedImageId={selectedImage?.imageId ?? null} onSelect={setSelectedImage} />
 
       {/* Configure env vars (opened via Configure & Deploy) */}
       <ConfigureDrawer
@@ -385,13 +347,17 @@ export default function BuildArea({
       <Dialog open={deployConfirmOpen} onClose={() => setDeployConfirmOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Deploy Now?</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Configuration saved. Would you like to deploy the selected image to the first environment now?
-          </DialogContentText>
+          <DialogContentText>Configuration saved. Would you like to deploy the selected image to the first environment now?</DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeployConfirmOpen(false)}>Cancel</Button>
-          <Button variant="contained" disabled={!canDeploy} onClick={() => { setDeployConfirmOpen(false); handleDeploy(); }}>
+          <Button
+            variant="contained"
+            disabled={!canDeploy}
+            onClick={() => {
+              setDeployConfirmOpen(false);
+              handleDeploy();
+            }}>
             Deploy
           </Button>
         </DialogActions>

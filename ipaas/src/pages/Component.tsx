@@ -17,8 +17,9 @@
  */
 
 import { Box, CircularProgress, Divider, PageContent } from '@wso2/oxygen-ui';
-import { Fragment, useEffect, useMemo, useState, type JSX } from 'react';
-import { useProject, useProjectByHandler, useProjects, useComponentByHandler, useEnvironments, useCommitHistory, useComponentEndpoints, useApimApi, useComponentRepository } from '../api/queries';
+import { Fragment, useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useProject, useProjectByHandler, useProjects, useComponentByHandler, useEnvironments, useCommitHistory, useComponentEndpoints, useApimApi, useDeploymentStatus, useComponentRepository } from '../api/queries';
 import BusinessInfo from '../components/BusinessInfo';
 import NotFound from '../components/NotFound';
 import { ArtifactDetail } from '../components/ArtifactDetail';
@@ -70,6 +71,18 @@ export default function Component(scope: ComponentScope): JSX.Element {
 
   // Load component permissions using the UUID - only when component is loaded
   useLoadComponentPermissions(scope.org, projectId, component?.id || '');
+
+  const queryClient = useQueryClient();
+  const { data: buildDeployments = [] } = useDeploymentStatus(component?.id ?? '', versionId);
+  const isBuildInProgress = buildDeployments[0]?.status === 'in_progress';
+  const prevBuildStatusRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    const current = buildDeployments[0];
+    if (prevBuildStatusRef.current === 'in_progress' && current?.status === 'completed' && current?.conclusion === 'success') {
+      queryClient.invalidateQueries({ queryKey: ['componentDeployment'] });
+    }
+    prevBuildStatusRef.current = current?.status;
+  }, [buildDeployments, queryClient]);
 
   const isLoading = loadingProject || loadingComponent;
   if (isLoading)
@@ -123,6 +136,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
                 deploymentPipelineId={project?.defaultDeploymentPipelineId ?? ''}
                 latestCommit={latestCommit}
                 apiId={component.apiId}
+                isBuildInProgress={isBuildInProgress}
               />
               {index < environments.length - 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>

@@ -38,7 +38,6 @@ export default function BrowseSamples(scope: ProjectScope): JSX.Element {
   const { projectId } = useProjectId(scope.project);
   const { data: samplesData, isLoading: isSamplesLoading, isError: isSamplesError } = useSamples();
 
-  const allSamples = samplesData?.samples ?? [];
   const uniqueTypes = samplesData?.uniqueTypes ?? [];
   const uniqueBuildPacks = samplesData?.uniqueBuildPacks ?? [];
   const uniqueTags = samplesData?.uniqueTags ?? [];
@@ -86,15 +85,16 @@ export default function BrowseSamples(scope: ProjectScope): JSX.Element {
   };
 
   const filtered = useMemo(() => {
+    const samples = samplesData?.samples ?? [];
     const q = search.toLowerCase();
-    return allSamples.filter((s) => {
+    return samples.filter((s) => {
       const matchesType = selectedTypes.size === 0 || selectedTypes.has(normalizeComponentType(s.componentType));
       const matchesBuildPack = selectedBuildPacks.size === 0 || selectedBuildPacks.has(s.buildPack);
       const matchesTags = selectedTags.size === 0 || s.tags.some((t) => selectedTags.has(t));
       const matchesSearch = !q || s.displayName.toLowerCase().includes(q) || s.description.toLowerCase().includes(q) || s.tags.some((t) => t.toLowerCase().includes(q));
       return matchesType && matchesBuildPack && matchesTags && matchesSearch;
     });
-  }, [search, selectedTypes, selectedBuildPacks, selectedTags]);
+  }, [samplesData?.samples, search, selectedTypes, selectedBuildPacks, selectedTags]);
 
   // Reset to page 1 whenever filters change
   useEffect(() => {

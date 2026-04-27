@@ -28,9 +28,7 @@ interface TagInputProps {
 
 export default function TagInput({ values, onChange, placeholder, suggestions }: TagInputProps) {
   const [input, setInput] = useState('');
-  const filteredSuggestions = (suggestions ?? []).filter(
-    (s) => s.toLowerCase().includes(input.toLowerCase()) && !values.includes(s),
-  );
+  const filteredSuggestions = (suggestions ?? []).filter((s) => s.toLowerCase().includes(input.toLowerCase()) && !values.includes(s));
   const showSuggestions = input.length > 0 && filteredSuggestions.length > 0;
 
   const addValue = (val: string) => {
@@ -122,7 +120,10 @@ export default function TagInput({ values, onChange, placeholder, suggestions }:
           {filteredSuggestions.map((s) => (
             <Box
               key={s}
-              onMouseDown={(e) => { e.preventDefault(); addValue(s); }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                addValue(s);
+              }}
               sx={{
                 px: 1.5,
                 py: 0.75,

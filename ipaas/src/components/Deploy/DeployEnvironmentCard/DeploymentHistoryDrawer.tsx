@@ -38,19 +38,8 @@ interface DeploymentHistoryDrawerProps {
   envName: string;
 }
 
-export default function DeploymentHistoryDrawer({
-  open,
-  onClose,
-  orgUuid,
-  projectId,
-  componentId,
-  versionId,
-  environmentId,
-  envName,
-}: DeploymentHistoryDrawerProps): JSX.Element {
-  const { data: deployments = [], isLoading } = useReleaseMgtDeployments(
-    orgUuid, projectId, componentId, versionId, environmentId,
-  );
+export default function DeploymentHistoryDrawer({ open, onClose, orgUuid, projectId, componentId, versionId, environmentId, envName }: DeploymentHistoryDrawerProps): JSX.Element {
+  const { data: deployments = [], isLoading } = useReleaseMgtDeployments(orgUuid, projectId, componentId, versionId, environmentId);
 
   return (
     <Drawer anchor="right" open={open} onClose={onClose} variant="temporary" sx={drawerSx}>
@@ -58,7 +47,9 @@ export default function DeploymentHistoryDrawer({
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2.5, py: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
         <Stack gap={0.25}>
           <Typography variant="h3">Deployment History</Typography>
-          <Typography variant="caption" color="text.secondary">{envName}</Typography>
+          <Typography variant="caption" color="text.secondary">
+            {envName}
+          </Typography>
         </Stack>
         <Tooltip title="Close">
           <IconButton size="small" onClick={onClose}>
@@ -83,82 +74,72 @@ export default function DeploymentHistoryDrawer({
           </Box>
         )}
 
-        {!isLoading && deployments.map((dep, idx) => {
-          const isSuccess = dep.status === 'SUCCESS';
-          const isFailed = dep.status === 'FAILED';
+        {!isLoading &&
+          deployments.map((dep, idx) => {
+            const isSuccess = dep.status === 'SUCCESS';
+            const isFailed = dep.status === 'FAILED';
 
-          // deployed_at is a zero date when the deployment hasn't completed; fall back to created_at
-          const time = !isZeroDate(dep.deployed_at) ? dep.deployed_at : dep.created_at;
+            // deployed_at is a zero date when the deployment hasn't completed; fall back to created_at
+            const time = !isZeroDate(dep.deployed_at) ? dep.deployed_at : dep.created_at;
 
-          return (
-            <Box key={dep.id ?? idx}>
-              <Stack direction="row" gap={1.5} sx={{ px: 2.5, py: 2 }}>
-                {/* Status icon */}
-                <Box sx={{ pt: 0.25, flexShrink: 0 }}>
-                  {isSuccess ? (
-                    <CheckCircle2 size={16} color="#36B475" />
-                  ) : isFailed ? (
-                    <XCircle size={16} color="#FD6B6B" />
-                  ) : (
-                    <Clock size={16} style={{ opacity: 0.5 }} />
-                  )}
-                </Box>
+            return (
+              <Box key={dep.id ?? idx}>
+                <Stack direction="row" gap={1.5} sx={{ px: 2.5, py: 2 }}>
+                  {/* Status icon */}
+                  <Box sx={{ pt: 0.25, flexShrink: 0 }}>{isSuccess ? <CheckCircle2 size={16} color="#36B475" /> : isFailed ? <XCircle size={16} color="#FD6B6B" /> : <Clock size={16} style={{ opacity: 0.5 }} />}</Box>
 
-                <Stack gap={0.5} sx={{ minWidth: 0 }}>
-                  {/* Status + release name */}
-                  <Stack direction="row" alignItems="center" gap={0.75} flexWrap="wrap">
-                    <Typography variant="body2" fontWeight={600}>
-                      {isSuccess ? 'Success' : isFailed ? 'Failed' : 'Pending'}
-                    </Typography>
-                    {dep.release_name && (
-                      <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-                        {dep.release_name}
+                  <Stack gap={0.5} sx={{ minWidth: 0 }}>
+                    {/* Status + release name */}
+                    <Stack direction="row" alignItems="center" gap={0.75} flexWrap="wrap">
+                      <Typography variant="body2" fontWeight={600}>
+                        {isSuccess ? 'Success' : isFailed ? 'Failed' : 'Pending'}
+                      </Typography>
+                      {dep.release_name && (
+                        <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                          {dep.release_name}
+                        </Typography>
+                      )}
+                    </Stack>
+
+                    {/* Time */}
+                    {time && (
+                      <Typography variant="caption" color="text.secondary">
+                        {formatDistanceToNow(time)}
                       </Typography>
                     )}
+
+                    {/* Commit hash */}
+                    {dep.commit_hash && (
+                      <Stack direction="row" alignItems="center" gap={0.5}>
+                        <GitCommitHorizontal size={13} style={{ opacity: 0.6, flexShrink: 0 }} />
+                        <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
+                          {dep.commit_hash.substring(0, 9)}
+                        </Typography>
+                      </Stack>
+                    )}
+
+                    {/* Comment */}
+                    {dep.comment && (
+                      <Typography variant="caption" color="text.secondary" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {dep.comment}
+                      </Typography>
+                    )}
+
+                    {/* Deployed by */}
+                    {dep.deployed_by && (
+                      <Stack direction="row" alignItems="center" gap={0.5}>
+                        <User size={12} style={{ opacity: 0.5, flexShrink: 0 }} />
+                        <Typography variant="caption" color="text.secondary">
+                          {dep.deployed_by}
+                        </Typography>
+                      </Stack>
+                    )}
                   </Stack>
-
-                  {/* Time */}
-                  {time && (
-                    <Typography variant="caption" color="text.secondary">
-                      {formatDistanceToNow(time)}
-                    </Typography>
-                  )}
-
-                  {/* Commit hash */}
-                  {dep.commit_hash && (
-                    <Stack direction="row" alignItems="center" gap={0.5}>
-                      <GitCommitHorizontal size={13} style={{ opacity: 0.6, flexShrink: 0 }} />
-                      <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
-                        {dep.commit_hash.substring(0, 9)}
-                      </Typography>
-                    </Stack>
-                  )}
-
-                  {/* Comment */}
-                  {dep.comment && (
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {dep.comment}
-                    </Typography>
-                  )}
-
-                  {/* Deployed by */}
-                  {dep.deployed_by && (
-                    <Stack direction="row" alignItems="center" gap={0.5}>
-                      <User size={12} style={{ opacity: 0.5, flexShrink: 0 }} />
-                      <Typography variant="caption" color="text.secondary">
-                        {dep.deployed_by}
-                      </Typography>
-                    </Stack>
-                  )}
                 </Stack>
-              </Stack>
-              {idx < deployments.length - 1 && <Divider />}
-            </Box>
-          );
-        })}
+                {idx < deployments.length - 1 && <Divider />}
+              </Box>
+            );
+          })}
       </Box>
     </Drawer>
   );

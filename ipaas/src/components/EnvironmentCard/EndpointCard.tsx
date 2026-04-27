@@ -21,6 +21,7 @@ import { Building2, Check, ChevronDown, ChevronUp, Copy, Folder, Globe, Pencil, 
 import { useCallback, useState } from 'react';
 import type { GqlEnvEndpoint } from '../../api/queries';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const VISIBILITY_OPTS = [
   {
     key: 'Public',
@@ -42,6 +43,7 @@ export const VISIBILITY_OPTS = [
   },
 ] as const;
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function getStatusColor(state?: string | null) {
   if (!state) return 'text.disabled';
   const s = state.toUpperCase();
@@ -99,7 +101,13 @@ export function EndpointCard({ ep, onEdit, onSettings, defaultExpanded = false, 
         {/* Edit — hidden in readOnly mode */}
         {!readOnly && onEdit && (
           <Tooltip title="Edit endpoint">
-            <IconButton size="small" sx={{ p: 0.5, flexShrink: 0 }} onClick={(e) => { e.stopPropagation(); onEdit(ep); }}>
+            <IconButton
+              size="small"
+              sx={{ p: 0.5, flexShrink: 0 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(ep);
+              }}>
               <Pencil size={14} />
             </IconButton>
           </Tooltip>
@@ -107,7 +115,13 @@ export function EndpointCard({ ep, onEdit, onSettings, defaultExpanded = false, 
         {/* Settings — always shown when provided (even in readOnly) */}
         {onSettings && (
           <Tooltip title="API settings">
-            <IconButton size="small" sx={{ p: 0.5, flexShrink: 0 }} onClick={(e) => { e.stopPropagation(); onSettings(ep); }}>
+            <IconButton
+              size="small"
+              sx={{ p: 0.5, flexShrink: 0 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSettings(ep);
+              }}>
               <Settings size={14} />
             </IconButton>
           </Tooltip>
@@ -143,7 +157,9 @@ export function EndpointCard({ ep, onEdit, onSettings, defaultExpanded = false, 
             )}
             {ep.networkVisibilities && ep.networkVisibilities.length > 0 && (
               <Stack direction="row" alignItems="center" sx={{ py: 0.3 }}>
-                <Typography variant="caption" sx={{ fontWeight: 600, width: 72, flexShrink: 0 }}>Visibility</Typography>
+                <Typography variant="caption" sx={{ fontWeight: 600, width: 72, flexShrink: 0 }}>
+                  Visibility
+                </Typography>
                 <Stack direction="row" gap={0.5} flexWrap="wrap">
                   {ep.networkVisibilities.map((v) => (
                     <Chip key={v} label={v} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
@@ -158,7 +174,9 @@ export function EndpointCard({ ep, onEdit, onSettings, defaultExpanded = false, 
             <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
               {visRows.map((r, i) => (
                 <Box key={r.key} sx={{ px: 1.5, py: 0.75, borderBottom: i < visRows.length - 1 || !!fallbackUrl ? '1px solid' : 'none', borderColor: 'divider' }}>
-                  <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.25 }}>{r.label} URL</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.25 }}>
+                    {r.label} URL
+                  </Typography>
                   <Stack direction="row" alignItems="center" gap={0.5} sx={{ minWidth: 0 }}>
                     <Typography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
                       {r.url}
@@ -169,7 +187,9 @@ export function EndpointCard({ ep, onEdit, onSettings, defaultExpanded = false, 
               ))}
               {fallbackUrl && (
                 <Box sx={{ px: 1.5, py: 0.75 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.25 }}>Public URL</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.25 }}>
+                    Public URL
+                  </Typography>
                   <Stack direction="row" alignItems="center" gap={0.5} sx={{ minWidth: 0 }}>
                     <Typography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
                       {fallbackUrl}

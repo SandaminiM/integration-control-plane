@@ -21,10 +21,5 @@ import ComingSoon from './ComingSoon';
 import type { OrgScope } from '../nav';
 
 export default function OrgDeploy(_scope: OrgScope): JSX.Element {
-  return (
-    <ComingSoon
-      title="Deploy Not Available at Organization Level"
-      description="Navigate to a component to view and manage deployments."
-    />
-  );
+  return <ComingSoon title="Deploy Not Available at Organization Level" description="Navigate to a component to view and manage deployments." />;
 }

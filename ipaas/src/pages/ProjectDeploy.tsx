@@ -21,10 +21,5 @@ import ComingSoon from './ComingSoon';
 import type { ProjectScope } from '../nav';
 
 export default function ProjectDeploy(_scope: ProjectScope): JSX.Element {
-  return (
-    <ComingSoon
-      title="Deploy Not Available at Project Level"
-      description="Navigate to a component to view and manage deployments."
-    />
-  );
+  return <ComingSoon title="Deploy Not Available at Project Level" description="Navigate to a component to view and manage deployments." />;
 }

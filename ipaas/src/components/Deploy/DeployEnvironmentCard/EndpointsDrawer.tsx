@@ -50,18 +50,7 @@ const drawerSx = {
   },
 } as const;
 
-export default function EndpointsDrawer({
-  open,
-  onClose,
-  endpoints,
-  isLoading,
-  envName,
-  componentId,
-  versionId,
-  releaseId,
-  buildId,
-  environmentId,
-}: EndpointsDrawerProps) {
+export default function EndpointsDrawer({ open, onClose, endpoints, isLoading, envName, componentId, versionId, releaseId, buildId, environmentId }: EndpointsDrawerProps) {
   const [manageDrawerOpen, setManageDrawerOpen] = useState(false);
   const [selectedEndpoint, setSelectedEndpoint] = useState<GqlEnvEndpoint | null>(null);
 
@@ -81,7 +70,9 @@ export default function EndpointsDrawer({
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
           <Stack gap={0.25}>
             <Typography variant="h5">Endpoints</Typography>
-            <Typography variant="caption" color="text.secondary">{envName}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {envName}
+            </Typography>
           </Stack>
           <IconButton size="small" aria-label="close" onClick={handleClose}>
             <X size={16} />
@@ -100,9 +91,7 @@ export default function EndpointsDrawer({
               </Typography>
             </Box>
           ) : (
-            endpoints.map((ep, idx) => (
-              <EndpointCard key={ep.id} ep={ep} defaultExpanded={idx === 0} readOnly onSettings={handleSettings} />
-            ))
+            endpoints.map((ep, idx) => <EndpointCard key={ep.id} ep={ep} defaultExpanded={idx === 0} readOnly onSettings={handleSettings} />)
           )}
         </Box>
       </Drawer>

@@ -31,21 +31,10 @@ interface BuildAreaImageDrawerProps {
   onSelect: (image: GqlDeploymentTrackImage) => void;
 }
 
-export default function BuildAreaImageDrawer({
-  open,
-  onClose,
-  images,
-  isLoading,
-  selectedImageId,
-  onSelect,
-}: BuildAreaImageDrawerProps): JSX.Element {
+export default function BuildAreaImageDrawer({ open, onClose, images, isLoading, selectedImageId, onSelect }: BuildAreaImageDrawerProps): JSX.Element {
   return (
     <Drawer anchor="right" open={open} onClose={onClose} PaperProps={{ sx: { width: 440 } }}>
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
         <Typography variant="h6">Select Image</Typography>
         <IconButton size="small" onClick={onClose}>
           <X size={18} />
@@ -68,16 +57,20 @@ export default function BuildAreaImageDrawer({
         )}
 
         <Stack gap={1.5}>
-          {!isLoading && images.map((image, index) => (
-            <BuildImageCard
-              key={image.imageId}
-              image={image}
-              isLatest={index === 0}
-              variant="selectable"
-              isSelected={image.imageId === selectedImageId}
-              onSelect={() => { onSelect(image); onClose(); }}
-            />
-          ))}
+          {!isLoading &&
+            images.map((image, index) => (
+              <BuildImageCard
+                key={image.imageId}
+                image={image}
+                isLatest={index === 0}
+                variant="selectable"
+                isSelected={image.imageId === selectedImageId}
+                onSelect={() => {
+                  onSelect(image);
+                  onClose();
+                }}
+              />
+            ))}
         </Stack>
       </Box>
 

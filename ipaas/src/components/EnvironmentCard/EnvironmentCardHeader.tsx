@@ -43,6 +43,7 @@ interface EnvironmentCardHeaderProps {
   onViewLogs?: () => void;
   onTest?: () => void;
   hasMissingConfigs?: boolean;
+  isBuildInProgress?: boolean;
 }
 
 const STATUS_DOT_MAP: Record<string, { label: string; dotColor: string }> = {
@@ -75,7 +76,9 @@ export default function EnvironmentCardHeader({
   onViewLogs,
   onTest,
   hasMissingConfigs,
+  isBuildInProgress,
 }: EnvironmentCardHeaderProps) {
+  const buildDisabled = isBuildInProgress && (!hasDeployment || isAutomation);
   const statusDot = isGenericService && deploymentStatusV2 ? STATUS_DOT_MAP[deploymentStatusV2] : null;
   const canStop = isGenericService && (deploymentStatusV2 === 'ACTIVE' || deploymentStatusV2 === 'ERROR');
   const canStart = isGenericService && deploymentStatusV2 === 'SUSPENDED';
@@ -119,7 +122,7 @@ export default function EnvironmentCardHeader({
         {isGenericService && (
           <>
             {hasDeployment && onTest && !envCritical && (
-              <Button variant="text" size="small" startIcon={<FlaskConical size={14} />} onClick={onTest} sx={{ textTransform: 'none' }}>
+              <Button variant="text" size="small" startIcon={<FlaskConical size={14} />} onClick={onTest} disabled={buildDisabled} sx={{ textTransform: 'none' }}>
                 Test
               </Button>
             )}
@@ -158,8 +161,8 @@ export default function EnvironmentCardHeader({
                 </Typography>
               </Stack>
             )}
-            {scheduleButtonProps && <ScheduleButton {...scheduleButtonProps} disabled={hasMissingConfigs} />}
-            <RunButton envCritical={envCritical} disabled={hasMissingConfigs} pending={deployTrackIsPending} onRun={onRun} onRunWithArgs={onRunWithArgs} />
+            {scheduleButtonProps && <ScheduleButton {...scheduleButtonProps} disabled={hasMissingConfigs || buildDisabled} />}
+            <RunButton envCritical={envCritical} disabled={hasMissingConfigs || buildDisabled} pending={deployTrackIsPending} onRun={onRun} onRunWithArgs={onRunWithArgs} />
           </>
         )}
         <Tooltip title="Refresh">

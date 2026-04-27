@@ -21,18 +21,7 @@ import { Play, RefreshCw, Square } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
 import type { DeployEnvironmentCardHeaderProps } from '../../../types/deploy';
 
-export default function DeployEnvironmentCardHeader({
-  envName,
-  showStop,
-  stopDisabled,
-  isStopPending,
-  onStop,
-  showStart,
-  isRedeployPending,
-  onStart,
-  onRefresh,
-  isRefreshing,
-}: DeployEnvironmentCardHeaderProps): JSX.Element {
+export default function DeployEnvironmentCardHeader({ envName, showStop, stopDisabled, isStopPending, onStop, showStart, isRedeployPending, onStart, onRefresh, isRefreshing }: DeployEnvironmentCardHeaderProps): JSX.Element {
   return (
     <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
       <Stack direction="row" alignItems="center" gap={1} sx={{ flexWrap: 'wrap' }}>
@@ -42,14 +31,7 @@ export default function DeployEnvironmentCardHeader({
       <Stack direction="row" alignItems="center" gap={0.5} sx={{ flexShrink: 0 }}>
         {showStart && (
           <Tooltip title={isRedeployPending ? '' : 'Restart deployment'}>
-            <Button
-              variant="outlined"
-              size="small"
-              color="success"
-              startIcon={<Play size={14} />}
-              disabled={isRedeployPending}
-              onClick={onStart}
-            >
+            <Button variant="outlined" size="small" color="success" startIcon={<Play size={14} />} disabled={isRedeployPending} onClick={onStart}>
               {isRedeployPending ? 'Restarting…' : 'Start'}
             </Button>
           </Tooltip>
@@ -57,14 +39,7 @@ export default function DeployEnvironmentCardHeader({
         {showStop && (
           <Tooltip title={stopDisabled ? 'Action in progress' : 'Stop deployment'}>
             <span>
-              <Button
-                variant="outlined"
-                size="small"
-                color="error"
-                startIcon={<Square size={14} />}
-                disabled={stopDisabled}
-                onClick={onStop}
-              >
+              <Button variant="outlined" size="small" color="error" startIcon={<Square size={14} />} disabled={stopDisabled} onClick={onStop}>
                 {isStopPending ? 'Stopping…' : 'Stop'}
               </Button>
             </span>

@@ -16,25 +16,7 @@
  * under the License.
  */
 
-import {
-  Alert,
-  Box,
-  Button,
-  Checkbox,
-  CircularProgress,
-  Collapse,
-  Divider,
-  Drawer,
-  FormControlLabel,
-  IconButton,
-  InputAdornment,
-  MenuItem,
-  Select,
-  Stack,
-  Switch,
-  TextField,
-  Typography,
-} from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Checkbox, CircularProgress, Collapse, Divider, Drawer, FormControlLabel, IconButton, InputAdornment, MenuItem, Select, Stack, Switch, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, ArrowRight, Search, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -70,7 +52,9 @@ function EndpointPanel({ ep, onSaved }: { ep: GqlEnvEndpoint; onSaved: () => voi
   const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
-    return () => { mountedRef.current = false; };
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -100,13 +84,12 @@ function EndpointPanel({ ep, onSaved }: { ep: GqlEnvEndpoint; onSaved: () => voi
         setIsFetchingInitial(false);
       });
 
-    return () => { cancelled = true; };
-  }, [ep.apimId]); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+    };
+  }, [ep.apimId]);
 
-  const availableScopes: string[] = [
-    ...extractScopesFromSwagger(swaggerDoc),
-    ...(apimApiInfo?.scopes ?? []).map((s) => s.scope.name),
-  ].filter((v, i, arr) => arr.indexOf(v) === i);
+  const availableScopes: string[] = [...extractScopesFromSwagger(swaggerDoc), ...(apimApiInfo?.scopes ?? []).map((s) => s.scope.name)].filter((v, i, arr) => arr.indexOf(v) === i);
 
   const [state, setState] = useState<EndpointSecurityState>(() => buildEndpointSecurityState(null));
   const [saving, setSaving] = useState(false);
@@ -117,9 +100,7 @@ function EndpointPanel({ ep, onSaved }: { ep: GqlEnvEndpoint; onSaved: () => voi
   const oauth2Enabled = state.securityScheme.includes(OAUTH2_SCHEME);
 
   const operations = apimApiInfo?.operations ?? [];
-  const filteredOps = operations.filter((op) =>
-    `${op.verb} ${op.target}`.toLowerCase().includes(state.opSearch.toLowerCase()),
-  );
+  const filteredOps = operations.filter((op) => `${op.verb} ${op.target}`.toLowerCase().includes(state.opSearch.toLowerCase()));
   const totalPages = Math.max(1, Math.ceil(filteredOps.length / OPS_PER_PAGE));
   const pageOps = filteredOps.slice(state.opPage * OPS_PER_PAGE, (state.opPage + 1) * OPS_PER_PAGE);
 
@@ -208,55 +189,41 @@ function EndpointPanel({ ep, onSaved }: { ep: GqlEnvEndpoint; onSaved: () => voi
           </Alert>
         )}
 
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>Security</Typography>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+          Security
+        </Typography>
         <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden', mb: 3 }}>
           <Stack direction="row" sx={{ px: 2, py: 1, bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider' }}>
             <Typography variant="caption" color="text.secondary" sx={{ width: 40 }} />
-            <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>Security Scheme</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ width: 240 }}>Header Name</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
+              Security Scheme
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ width: 240 }}>
+              Header Name
+            </Typography>
           </Stack>
 
           <Stack direction="row" alignItems="center" sx={{ px: 2, py: 1.25, borderBottom: '1px solid', borderColor: 'divider' }}>
             <Box sx={{ width: 40 }}>
-              <Checkbox
-                size="small"
-                checked={apiKeyEnabled}
-                onChange={() => update({ securityScheme: toggleSchemeToken(state.securityScheme, API_KEY_SCHEME) })}
-              />
+              <Checkbox size="small" checked={apiKeyEnabled} onChange={() => update({ securityScheme: toggleSchemeToken(state.securityScheme, API_KEY_SCHEME) })} />
             </Box>
-            <Typography variant="body2" sx={{ flex: 1 }}>API Key</Typography>
+            <Typography variant="body2" sx={{ flex: 1 }}>
+              API Key
+            </Typography>
             <Box sx={{ width: 240 }}>
-              <TextField
-                size="small"
-                fullWidth
-                value={state.apiKeyHeader}
-                onChange={(e) => update({ apiKeyHeader: e.target.value })}
-                disabled={!apiKeyEnabled}
-                placeholder="ApiKey"
-                label="Key header"
-              />
+              <TextField size="small" fullWidth value={state.apiKeyHeader} onChange={(e) => update({ apiKeyHeader: e.target.value })} disabled={!apiKeyEnabled} placeholder="ApiKey" label="Key header" />
             </Box>
           </Stack>
 
           <Stack direction="row" alignItems="center" sx={{ px: 2, py: 1.25 }}>
             <Box sx={{ width: 40 }}>
-              <Checkbox
-                size="small"
-                checked={oauth2Enabled}
-                onChange={() => update({ securityScheme: toggleSchemeToken(state.securityScheme, OAUTH2_SCHEME) })}
-              />
+              <Checkbox size="small" checked={oauth2Enabled} onChange={() => update({ securityScheme: toggleSchemeToken(state.securityScheme, OAUTH2_SCHEME) })} />
             </Box>
-            <Typography variant="body2" sx={{ flex: 1 }}>OAuth2</Typography>
+            <Typography variant="body2" sx={{ flex: 1 }}>
+              OAuth2
+            </Typography>
             <Box sx={{ width: 240 }}>
-              <TextField
-                size="small"
-                fullWidth
-                value={state.authorizationHeader}
-                onChange={(e) => update({ authorizationHeader: e.target.value })}
-                disabled={!oauth2Enabled}
-                placeholder="Authorization"
-                label="Authorization header"
-              />
+              <TextField size="small" fullWidth value={state.authorizationHeader} onChange={(e) => update({ authorizationHeader: e.target.value })} disabled={!oauth2Enabled} placeholder="Authorization" label="Authorization header" />
             </Box>
           </Stack>
         </Box>
@@ -266,13 +233,7 @@ function EndpointPanel({ ep, onSaved }: { ep: GqlEnvEndpoint; onSaved: () => voi
         </Typography>
         <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2, mb: 3 }}>
           <FormControlLabel
-            control={
-              <Switch
-                size="small"
-                checked={state.enableBackendJWT}
-                onChange={(e) => update({ enableBackendJWT: e.target.checked })}
-              />
-            }
+            control={<Switch size="small" checked={state.enableBackendJWT} onChange={(e) => update({ enableBackendJWT: e.target.checked })} />}
             label={<Typography variant="body2">Send end-user attributes as a JWT to the backend</Typography>}
             sx={{ mb: state.enableBackendJWT ? 2 : 0, width: '100%', justifyContent: 'space-between', flexDirection: 'row-reverse', mx: 0 }}
           />
@@ -281,18 +242,16 @@ function EndpointPanel({ ep, onSaved }: { ep: GqlEnvEndpoint; onSaved: () => voi
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75 }}>
                 Audience claims
               </Typography>
-              <TagInput
-                values={state.backendJWTAudiences}
-                onChange={(v) => update({ backendJWTAudiences: v })}
-                placeholder="Type and press Enter to add audience claims"
-              />
+              <TagInput values={state.backendJWTAudiences} onChange={(v) => update({ backendJWTAudiences: v })} placeholder="Type and press Enter to add audience claims" />
             </Box>
           </Collapse>
         </Box>
 
         {operations.length > 0 && (
           <>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>Resources</Typography>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+              Resources
+            </Typography>
             <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden', mb: 3 }}>
               <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                 <TextField
@@ -312,14 +271,22 @@ function EndpointPanel({ ep, onSaved }: { ep: GqlEnvEndpoint; onSaved: () => voi
               </Box>
 
               <Stack direction="row" sx={{ px: 2, py: 1, bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider' }}>
-                <Typography variant="caption" color="text.secondary" sx={{ width: 72, flexShrink: 0 }}>Method</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>Resource</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ width: 220, flexShrink: 0 }}>Permissions (Scopes)</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ width: 72, flexShrink: 0 }}>
+                  Method
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
+                  Resource
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ width: 220, flexShrink: 0 }}>
+                  Permissions (Scopes)
+                </Typography>
               </Stack>
 
               {filteredOps.length === 0 ? (
                 <Box sx={{ py: 3, textAlign: 'center' }}>
-                  <Typography variant="body2" color="text.secondary">No resources match your search.</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    No resources match your search.
+                  </Typography>
                 </Box>
               ) : (
                 pageOps.map((op) => {
@@ -340,20 +307,11 @@ function EndpointPanel({ ep, onSaved }: { ep: GqlEnvEndpoint; onSaved: () => voi
                         '&:last-child': { borderBottom: 'none' },
                       }}>
                       <Box sx={{ width: 72, flexShrink: 0 }}>
-                        <Box sx={{ bgcolor: colors.badgeBg, color: '#fff', fontWeight: 700, fontSize: '11px', px: 1, py: 0.5, borderRadius: 0.5, textAlign: 'center' }}>
-                          {op.verb.toUpperCase()}
-                        </Box>
+                        <Box sx={{ bgcolor: colors.badgeBg, color: '#fff', fontWeight: 700, fontSize: '11px', px: 1, py: 0.5, borderRadius: 0.5, textAlign: 'center' }}>{op.verb.toUpperCase()}</Box>
                       </Box>
-                      <Typography sx={{ flex: 1, fontSize: '13px', fontFamily: 'monospace', wordBreak: 'break-all', color: 'text.primary' }}>
-                        {op.target}
-                      </Typography>
+                      <Typography sx={{ flex: 1, fontSize: '13px', fontFamily: 'monospace', wordBreak: 'break-all', color: 'text.primary' }}>{op.target}</Typography>
                       <Box sx={{ width: 220, flexShrink: 0 }}>
-                        <TagInput
-                          values={currentScopes}
-                          onChange={(v) => update({ operationScopes: { ...state.operationScopes, [key]: v } })}
-                          placeholder="Add scopes…"
-                          suggestions={availableScopes}
-                        />
+                        <TagInput values={currentScopes} onChange={(v) => update({ operationScopes: { ...state.operationScopes, [key]: v } })} placeholder="Add scopes…" suggestions={availableScopes} />
                       </Box>
                     </Stack>
                   );
@@ -361,11 +319,7 @@ function EndpointPanel({ ep, onSaved }: { ep: GqlEnvEndpoint; onSaved: () => voi
               )}
 
               {totalPages > 1 && (
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{ px: 2, py: 1, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'action.hover' }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'action.hover' }}>
                   <Typography variant="caption" color="text.secondary">
                     {state.opPage * OPS_PER_PAGE + 1}–{Math.min((state.opPage + 1) * OPS_PER_PAGE, filteredOps.length)} of {filteredOps.length} resources
                   </Typography>
@@ -386,11 +340,7 @@ function EndpointPanel({ ep, onSaved }: { ep: GqlEnvEndpoint; onSaved: () => voi
 
       <Divider />
       <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 2, py: 1.5, flexShrink: 0 }}>
-        <Button
-          variant="contained"
-          onClick={handleApply}
-          disabled={saving || isFetchingInitial || !ep.apimId}
-          startIcon={saving ? <CircularProgress color="inherit" size={16} /> : undefined}>
+        <Button variant="contained" onClick={handleApply} disabled={saving || isFetchingInitial || !ep.apimId} startIcon={saving ? <CircularProgress color="inherit" size={16} /> : undefined}>
           {saving ? 'Applying…' : 'Apply'}
         </Button>
       </Stack>
@@ -406,18 +356,8 @@ interface EndpointConfigDrawerProps {
   firstEnvReleaseId: string;
 }
 
-export default function EndpointConfigDrawer({
-  open,
-  onClose,
-  componentId,
-  versionId,
-  firstEnvReleaseId,
-}: EndpointConfigDrawerProps) {
-  const { data: endpoints = [], isLoading: endpointsLoading } = useEnvEndpoints(
-    componentId,
-    versionId,
-    firstEnvReleaseId,
-  );
+export default function EndpointConfigDrawer({ open, onClose, componentId, versionId, firstEnvReleaseId }: EndpointConfigDrawerProps) {
+  const { data: endpoints = [], isLoading: endpointsLoading } = useEnvEndpoints(componentId, versionId, firstEnvReleaseId);
 
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [openKey, setOpenKey] = useState(0);
@@ -440,23 +380,19 @@ export default function EndpointConfigDrawer({
 
   return (
     <Drawer anchor="right" open={open} onClose={handleClose} variant="temporary" sx={drawerSx}>
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
         <Stack gap={0.25}>
           <Typography variant="h5">Endpoint Configurations</Typography>
           {endpointsLoading ? (
-            <Typography variant="caption" color="text.secondary">Loading endpoints…</Typography>
+            <Typography variant="caption" color="text.secondary">
+              Loading endpoints…
+            </Typography>
           ) : endpoints.length > 1 ? (
-            <Select
-              size="small"
-              value={selectedIdx}
-              onChange={(e) => setSelectedIdx(Number(e.target.value))}
-              sx={{ minWidth: 240, mt: 0.5 }}>
+            <Select size="small" value={selectedIdx} onChange={(e) => setSelectedIdx(Number(e.target.value))} sx={{ minWidth: 240, mt: 0.5 }}>
               {endpoints.map((ep, idx) => (
-                <MenuItem key={ep.id} value={idx}>{ep.displayName}</MenuItem>
+                <MenuItem key={ep.id} value={idx}>
+                  {ep.displayName}
+                </MenuItem>
               ))}
             </Select>
           ) : (

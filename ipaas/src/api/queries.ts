@@ -764,7 +764,7 @@ export const DeploymentStatus = {
   NotDeployed: 'NotDeployed',
 } as const;
 
-export type DeploymentStatus = typeof DeploymentStatus[keyof typeof DeploymentStatus];
+export type DeploymentStatus = (typeof DeploymentStatus)[keyof typeof DeploymentStatus];
 
 export interface GqlReleaseMgtDeploymentRef {
   releaseMgtReleaseId: string;
@@ -983,13 +983,7 @@ export interface GqlReleaseMgtDeployment {
 
 const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
-export function useReleaseMgtDeployments(
-  orgUuid: string,
-  projectId: string,
-  componentId: string,
-  versionId: string,
-  environmentId: string,
-) {
+export function useReleaseMgtDeployments(orgUuid: string, projectId: string, componentId: string, versionId: string, environmentId: string) {
   return useQuery({
     queryKey: ['releaseMgtDeployments', orgUuid, projectId, componentId, versionId, environmentId],
     queryFn: () => {
@@ -1137,16 +1131,104 @@ export interface SchemaConfigValue {
 
 export interface SchemaConfigItem {
   key: string;
+  keyId?: string;
   values: SchemaConfigValue[];
   valueType?: string;
   isRequired?: boolean;
   isSensitive?: boolean;
+  configGroupId?: string;
+  configKeyId?: string;
+  isDynamic?: boolean;
 }
 
 export interface SchemaConfigData {
   jsonSchema?: string; // base64-encoded JSON schema
   mappingId?: string;
   configurations: SchemaConfigItem[];
+}
+
+// ── Certificate groups & mappings ──
+
+export interface CertGroupKey {
+  keyUuid: string;
+  key: string;
+  isSensitive: boolean;
+  isFile: boolean;
+}
+
+export interface CertGroup {
+  groupUuid: string;
+  groupName: string;
+  groupDisplayName?: string;
+  configurations: CertGroupKey[];
+}
+
+export function useCertificateGroups(projectId: string, componentId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['certGroups', projectId, componentId],
+    queryFn: async (): Promise<CertGroup[]> => {
+      const base = new URL(window.API_CONFIG.graphqlUrl).origin;
+      const params = new URLSearchParams({ projectId, componentId, nested_search: 'true' });
+      const res = await authenticatedFetch(`${base}/config-svc/v1.0/configs/groups?${params}`);
+      if (!res.ok) return [];
+      const data: CertGroup[] = await res.json();
+      return data.filter((g) => g.groupName.startsWith('certificates-'));
+    },
+    enabled: enabled && !!projectId && !!componentId,
+    retry: false,
+  });
+}
+
+export function useConfigGroups(projectId: string, componentId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['configGroups', projectId, componentId],
+    queryFn: async (): Promise<CertGroup[]> => {
+      const base = new URL(window.API_CONFIG.graphqlUrl).origin;
+      const params = new URLSearchParams({ projectId, componentId, nested_search: 'true' });
+      const res = await authenticatedFetch(`${base}/config-svc/v1.0/configs/groups?${params}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: enabled && !!projectId && !!componentId,
+    retry: false,
+  });
+}
+
+export interface CertMappingConfig {
+  key: string;
+  isDynamic: boolean;
+  configGroupId?: string;
+  configKeyId?: string;
+  configGroupName?: string;
+  configKeyName?: string;
+  isFile?: boolean;
+  isSensitive?: boolean;
+  keyId?: string;
+  values?: { value: string; environmentUuid: string }[];
+}
+
+export interface CertMapping {
+  projectId: string;
+  componentId: string;
+  envTemplateId: string;
+  deploymentTrackId: string;
+  configurations: CertMappingConfig[];
+  mappingId?: string;
+}
+
+export function useCertificateMappings(projectId: string, componentId: string, envId: string, deploymentTrackId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['certMappings', projectId, componentId, envId, deploymentTrackId],
+    queryFn: async (): Promise<CertMapping | null> => {
+      const base = new URL(window.API_CONFIG.graphqlUrl).origin;
+      const params = new URLSearchParams({ projectId, componentId, envTemplateId: envId, deploymentTrackId });
+      const res = await authenticatedFetch(`${base}/config-mapping-svc/v1.0/configs/mappings?${params}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: enabled && !!projectId && !!componentId && !!envId && !!deploymentTrackId,
+    retry: false,
+  });
 }
 
 export function useSchemaConfig(projectId: string, componentId: string, envId: string, deploymentTrackId: string, commitHash?: string) {

@@ -19,8 +19,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { PrebuiltIntegration } from '../types/samples';
 
-const DEFAULT_PREBUILT_INTEGRATIONS_URL =
-  'https://raw.githubusercontent.com/wso2/integration-samples/main/.metadata/prebuilt-integrations.json';
+const DEFAULT_PREBUILT_INTEGRATIONS_URL = 'https://raw.githubusercontent.com/wso2/integration-samples/main/.metadata/prebuilt-integrations.json';
 
 export interface PrebuiltIntegrationsData {
   prebuiltIntegrations: PrebuiltIntegration[];
@@ -35,7 +34,7 @@ export function usePrebuiltIntegrations() {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const rawData = await response.json() as { prebuiltIntegrations: PrebuiltIntegration[] };
+      const rawData = (await response.json()) as { prebuiltIntegrations: PrebuiltIntegration[] };
       if (!Array.isArray(rawData?.prebuiltIntegrations)) {
         throw new Error('Invalid response format: missing prebuiltIntegrations array');
       }

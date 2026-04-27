@@ -34,16 +34,7 @@ interface BuildImageCardProps {
   isBuilding?: boolean;
 }
 
-export default function BuildImageCard({
-  image,
-  isLatest,
-  variant = 'detail',
-  isSelected = false,
-  onSelect,
-  onEdit,
-  hideEdit = false,
-  isBuilding = false,
-}: BuildImageCardProps): JSX.Element {
+export default function BuildImageCard({ image, isLatest, variant = 'detail', isSelected = false, onSelect, onEdit, hideEdit = false, isBuilding = false }: BuildImageCardProps): JSX.Element {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = (e: React.MouseEvent) => {
@@ -66,7 +57,16 @@ export default function BuildImageCard({
       onClick={isSelectable ? onSelect : undefined}
       role={isSelectable ? 'button' : undefined}
       tabIndex={isSelectable ? 0 : undefined}
-      onKeyDown={isSelectable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect?.(); } } : undefined}
+      onKeyDown={
+        isSelectable
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelect?.();
+              }
+            }
+          : undefined
+      }
       sx={{
         border: '1px solid',
         borderColor: isBuilding ? 'warning.main' : isSelected ? 'primary.main' : 'divider',
@@ -76,13 +76,9 @@ export default function BuildImageCard({
         cursor: isSelectable ? 'pointer' : 'default',
         ...(isSelectable && { '&:hover': { bgcolor: isSelected ? 'action.selected' : 'action.hover' } }),
       }}>
-
       {/* ── Build ID row — Edit button (header-right) + selectable check ── */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.25 }}>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
           Build ID
         </Typography>
 
@@ -94,9 +90,7 @@ export default function BuildImageCard({
               </IconButton>
             </Tooltip>
           )}
-          {isSelectable && isSelected && (
-            <Check size={16} style={{ color: 'var(--oxygen-palette-primary-main)', flexShrink: 0 }} />
-          )}
+          {isSelectable && isSelected && <Check size={16} style={{ color: 'var(--oxygen-palette-primary-main)', flexShrink: 0 }} />}
         </Stack>
       </Stack>
 
@@ -113,13 +107,7 @@ export default function BuildImageCard({
           </Tooltip>
         )}
         {isBuilding ? (
-          <Chip
-            label="Building"
-            size="small"
-            color="warning"
-            icon={<CircularProgress size={10} color="inherit" />}
-            sx={{ height: 18, fontSize: '0.65rem' }}
-          />
+          <Chip label="Building" size="small" color="warning" icon={<CircularProgress size={10} color="inherit" />} sx={{ height: 18, fontSize: '0.65rem' }} />
         ) : isLatest ? (
           <Chip label="Latest" size="small" color="success" sx={{ height: 18, fontSize: '0.65rem' }} />
         ) : null}
@@ -133,10 +121,7 @@ export default function BuildImageCard({
       <Divider sx={{ mb: 1.5 }} />
 
       {/* ── Commit Details ── */}
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.75 }}>
+      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.75 }}>
         Commit Details
       </Typography>
 
@@ -163,10 +148,7 @@ export default function BuildImageCard({
 
       {image.author?.name && (
         <Stack direction="row" alignItems="center" gap={0.5}>
-          <Avatar
-            src={image.author.avatarUrl}
-            alt={image.author.name}
-            sx={{ width: 16, height: 16, fontSize: 10 }}>
+          <Avatar src={image.author.avatarUrl} alt={image.author.name} sx={{ width: 16, height: 16, fontSize: 10 }}>
             {image.author.name[0]?.toUpperCase()}
           </Avatar>
           <Typography variant="caption" color="text.secondary">

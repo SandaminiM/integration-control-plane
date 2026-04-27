@@ -16,14 +16,28 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Checkbox, Chip, CircularProgress, Collapse, Drawer, IconButton, Stack, TextField, Typography } from '@wso2/oxygen-ui';
-import { ChevronDown, ChevronUp, Plus, X } from '@wso2/oxygen-ui-icons-react';
+import { Alert, Box, Button, Checkbox, Chip, CircularProgress, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, Drawer, IconButton, MenuItem, Select as MuiSelect, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { ChevronDown, ChevronUp, Link, Trash2, Upload, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEnvEndpoints, useGetConfigMgt, useSchemaConfig, type ConfigMgtItem, type GqlEnvEndpoint, type SchemaConfigItem } from '../../api/queries';
-import { usePostConfigMgt, useGenerateComponentEndpoints, useUpdateEndpoint, useSaveSchemaConfig, type ConfigMgtSaveItem } from '../../api/mutations';
+import {
+  useEnvEndpoints,
+  useGetConfigMgt,
+  useSchemaConfig,
+  useCertificateGroups,
+  useCertificateMappings,
+  useConfigGroups,
+  type ConfigMgtItem,
+  type GqlEnvEndpoint,
+  type SchemaConfigItem,
+  type CertGroup,
+  type CertMapping,
+  type CertMappingConfig,
+} from '../../api/queries';
+import { usePostConfigMgt, useGenerateComponentEndpoints, useUpdateEndpoint, useSaveSchemaConfig, usePostCertificateMappings, useDeployDeploymentTrack, type ConfigMgtSaveItem } from '../../api/mutations';
 import ManageDrawer from './ManageDrawer';
-import { EndpointCard, VISIBILITY_OPTS } from './EndpointCard';
+import { VISIBILITY_OPTS } from './EndpointCard';
+import { ConfigForm, parseConfigToml, filterTomlValuesBySchema, type BaseType, type LinkingInfo, type JSONSchema } from '../SchemaConfigForm';
 
 // ── Schema parsing ────────────────────────────────────────────────────────────
 
@@ -181,11 +195,12 @@ function DefaultableConfigurablesAccordion({ groups, values, onChange }: Default
 // ── Step indicator ────────────────────────────────────────────────────────────
 
 const STEPS = ['Configurations', 'Endpoints'];
+const AUTOMATION_STEPS = ['Configurations', 'Certificate Mount'];
 
-function StepIndicator({ step }: { step: number }) {
+function StepIndicator({ step, steps }: { step: number; steps: string[] }) {
   return (
     <Stack direction="row" alignItems="center" sx={{ px: 2, py: 1.25, borderBottom: '1px solid', borderColor: 'divider' }}>
-      {STEPS.map((label, idx) => {
+      {steps.map((label, idx) => {
         const num = idx + 1;
         const isActive = num === step;
         const isDone = num < step;
@@ -218,7 +233,7 @@ function StepIndicator({ step }: { step: number }) {
                 {label}
               </Typography>
             </Stack>
-            {idx < STEPS.length - 1 && <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider', mx: 0.75 }} />}
+            {idx < steps.length - 1 && <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider', mx: 0.75 }} />}
           </Stack>
         );
       })}
@@ -337,144 +352,230 @@ function ManageEndpoint({ ep, componentId, versionId, releaseId, onBack }: Manag
 
 // ── Automation configure drawer ───────────────────────────────────────────────
 
-interface AutoFlatField {
-  key: string;
-  leafKey: string;
-  parentPath: string;
-  type: string;
-  description?: string;
-  required: boolean;
-  isSensitive: boolean;
+// ── Certificate Mount step components ──────────────────────────────────────────
+
+interface LinkedCert {
+  groupUuid: string;
+  groupName: string;
+  groupDisplayName?: string;
+  mountPath: string;
+  keys: { keyUuid: string; key: string; mountedAs: string }[];
 }
 
-function autoFlattenSchema(properties: Record<string, Record<string, unknown>>, required: string[], dotPrefix = '', slashPrefix = ''): AutoFlatField[] {
-  const fields: AutoFlatField[] = [];
-  for (const [name, prop] of Object.entries(properties)) {
-    const dotKey = dotPrefix ? `${dotPrefix}.${name}` : name;
-    const slashPath = slashPrefix ? `${slashPrefix}/${name}` : name;
-    if (prop.type === 'object' && prop.properties) {
-      const childRequired = Array.isArray(prop.required) ? (prop.required as string[]) : [];
-      fields.push(...autoFlattenSchema(prop.properties as Record<string, Record<string, unknown>>, childRequired, dotKey, slashPath));
-    } else {
-      fields.push({
-        key: dotKey,
-        leafKey: name,
-        parentPath: slashPrefix,
-        type: typeof prop.type === 'string' && prop.type === 'array' ? 'object[]' : typeof prop.type === 'string' ? prop.type : 'string',
-        description: typeof prop.description === 'string' ? prop.description : undefined,
-        required: required.includes(name),
-        isSensitive: typeof prop['x-sensitive'] === 'boolean' ? (prop['x-sensitive'] as boolean) : false,
-      });
-    }
-  }
-  return fields;
+interface CertLinkFormProps {
+  availableCerts: CertGroup[];
+  onLink: (cert: CertGroup, mountPath: string) => void;
+  onCancel: () => void;
 }
 
-function autoParseFields(base64: string | undefined): AutoFlatField[] {
-  if (!base64) return [];
-  try {
-    const schema = JSON.parse(atob(base64));
-    return autoFlattenSchema(schema.properties ?? {}, schema.required ?? []);
-  } catch {
-    return [];
-  }
-}
+function CertLinkForm({ availableCerts, onLink, onCancel }: CertLinkFormProps) {
+  const [selectedGroupUuid, setSelectedGroupUuid] = useState('');
+  const [mountPath, setMountPath] = useState('');
+  const mountPathError = mountPath && !mountPath.startsWith('/') ? 'Mount path must start with /' : '';
+  const selected = availableCerts.find((c) => c.groupUuid === selectedGroupUuid) ?? null;
+  const canLink = !!selected && !!mountPath && !mountPathError;
 
-function autoGroupFields(fields: AutoFlatField[]): { groupPath: string; fields: AutoFlatField[] }[] {
-  const map = new Map<string, AutoFlatField[]>();
-  for (const f of fields) {
-    const g = f.parentPath || f.leafKey;
-    if (!map.has(g)) map.set(g, []);
-    map.get(g)!.push(f);
-  }
-  return Array.from(map.entries()).map(([groupPath, groupFields]) => ({ groupPath, fields: groupFields }));
-}
-
-interface AutoFieldRowProps {
-  field: AutoFlatField;
-  value: string;
-  onChange: (v: string) => void;
-}
-
-function AutoFieldRow({ field, value, onChange }: AutoFieldRowProps) {
   return (
-    <Box sx={{ mb: 1.5 }}>
-      <Stack direction="row" alignItems="center" gap={0.75} sx={{ mb: 0.5 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-          {field.leafKey}
-        </Typography>
-        <Chip label={field.type} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
-      </Stack>
-      {field.description && (
-        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mb: 0.25 }}>
-          {field.description}
-        </Typography>
-      )}
-      {field.type === 'object[]' ? (
-        <Button variant="outlined" size="small" startIcon={<Plus size={12} />} sx={{ mt: 0.25 }}>
-          Add
+    <Box sx={{ border: '1px solid', borderColor: 'primary.main', borderRadius: 1, p: 1.5, mb: 1.5 }}>
+      <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+        Link Certificate
+      </Typography>
+      <TextField
+        size="small"
+        fullWidth
+        label="Mount Path"
+        placeholder="/certs"
+        value={mountPath}
+        onChange={(e) => setMountPath(e.target.value)}
+        error={!!mountPathError}
+        helperText={mountPathError || 'Directory where certificate files will be mounted'}
+        sx={{ mb: 1.5 }}
+      />
+      <MuiSelect size="small" fullWidth displayEmpty value={selectedGroupUuid} onChange={(e) => setSelectedGroupUuid(e.target.value as string)} sx={{ mb: 1.5 }}>
+        <MenuItem value="" disabled>
+          Select a Certificate
+        </MenuItem>
+        {availableCerts.map((c) => (
+          <MenuItem key={c.groupUuid} value={c.groupUuid}>
+            {c.groupDisplayName || c.groupName}
+          </MenuItem>
+        ))}
+      </MuiSelect>
+      <Stack direction="row" gap={1} justifyContent="flex-end">
+        <Button size="small" onClick={onCancel}>
+          Cancel
         </Button>
-      ) : (
-        <TextField size="small" fullWidth type={field.isSensitive ? 'password' : 'text'} placeholder="Enter a value" value={value} onChange={(e) => onChange(e.target.value)} />
-      )}
+        <Button size="small" variant="contained" disabled={!canLink} onClick={() => selected && onLink(selected, mountPath)}>
+          Link
+        </Button>
+      </Stack>
     </Box>
   );
 }
 
-interface AutoFieldGroupProps {
-  groupPath: string;
-  fields: AutoFlatField[];
-  values: Record<string, string>;
-  onChange: (key: string, value: string) => void;
+interface LinkedCertCardProps {
+  cert: LinkedCert;
+  onUnlink: () => void;
+  onMountPathChange: (path: string) => void;
 }
 
-function AutoFieldGroup({ groupPath, fields, values, onChange }: AutoFieldGroupProps) {
+function LinkedCertCard({ cert, onUnlink, onMountPathChange }: LinkedCertCardProps) {
   const [open, setOpen] = useState(true);
+  const [mountPath, setMountPath] = useState(cert.mountPath);
+  const mountPathError = mountPath && !mountPath.startsWith('/') ? 'Mount path must start with /' : '';
+
   return (
-    <Box sx={{ mx: 1.5, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" onClick={() => setOpen((p) => !p)} sx={{ px: 1.5, py: 0.75, cursor: 'pointer', userSelect: 'none', borderBottom: open ? '1px solid' : 'none', borderColor: 'divider' }}>
-        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 500 }}>
-          {groupPath}
+    <Box sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+      <Stack direction="row" alignItems="center" gap={1} sx={{ px: 1.5, py: 1, cursor: 'pointer', borderBottom: open ? '1px solid' : 'none', borderColor: 'divider' }} onClick={() => setOpen((p) => !p)}>
+        <Typography variant="body2" sx={{ fontWeight: 600, flex: 1 }}>
+          {cert.groupDisplayName || cert.groupName}
         </Typography>
+        <Chip label="Certificate" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
+        <Button
+          size="small"
+          variant="text"
+          color="error"
+          startIcon={<Trash2 size={13} />}
+          onClick={(e) => {
+            e.stopPropagation();
+            onUnlink();
+          }}
+          sx={{ minWidth: 0, px: 0.5 }}>
+          Unlink
+        </Button>
         {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </Stack>
       <Collapse in={open}>
-        <Box sx={{ px: 1.5, pb: 1.5, pt: 1 }}>
-          {fields.map((field) => (
-            <AutoFieldRow key={field.key} field={field} value={values[field.key] ?? ''} onChange={(v) => onChange(field.key, v)} />
-          ))}
+        <Box sx={{ px: 1.5, pt: 1, pb: 1.5 }}>
+          <TextField
+            size="small"
+            fullWidth
+            label="Mount Path"
+            value={mountPath}
+            error={!!mountPathError}
+            helperText={mountPathError || 'Directory where certificate files will be mounted'}
+            onChange={(e) => {
+              setMountPath(e.target.value);
+              onMountPathChange(e.target.value);
+            }}
+            sx={{ mb: 1 }}
+          />
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 0.5, overflow: 'hidden' }}>
+            <Stack direction="row" sx={{ px: 1, py: 0.5, bgcolor: 'action.hover' }}>
+              <Typography variant="caption" sx={{ fontWeight: 600, flex: 1 }}>
+                FILE NAME
+              </Typography>
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                CERTIFICATE KEY NAME
+              </Typography>
+            </Stack>
+            {cert.keys.map((k) => (
+              <Stack key={k.keyUuid} direction="row" alignItems="center" sx={{ px: 1, py: 0.5, borderTop: '1px solid', borderColor: 'divider' }}>
+                <Typography variant="caption" sx={{ fontFamily: 'monospace', flex: 1 }}>
+                  {k.mountedAs}
+                </Typography>
+                <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+                  {k.key}
+                </Typography>
+              </Stack>
+            ))}
+          </Box>
         </Box>
       </Collapse>
     </Box>
   );
 }
 
-interface AutoSectionProps {
-  title: string;
-  groups: { groupPath: string; fields: AutoFlatField[] }[];
-  values: Record<string, string>;
-  onChange: (key: string, value: string) => void;
-  defaultOpen?: boolean;
+interface CertificateMountStepProps {
+  projectId: string;
+  componentId: string;
+  envId: string;
+  deploymentTrackId: string;
+  open: boolean;
+  linkedCerts: LinkedCert[];
+  onChange: (certs: LinkedCert[]) => void;
 }
 
-function AutoSection({ title, groups, values, onChange, defaultOpen = true }: AutoSectionProps) {
-  const [open, setOpen] = useState(defaultOpen);
-  if (groups.length === 0) return null;
+function CertificateMountStep({ projectId, componentId, envId: _envId, deploymentTrackId: _deploymentTrackId, open, linkedCerts, onChange }: CertificateMountStepProps) {
+  const { data: certGroups = [], isLoading } = useCertificateGroups(projectId, componentId, open);
+  const [isLinking, setIsLinking] = useState(false);
+  const [unlinkTarget, setUnlinkTarget] = useState<string | null>(null);
+
+  const linkedUuids = new Set(linkedCerts.map((c) => c.groupUuid));
+  const linkable = certGroups.filter((g) => !linkedUuids.has(g.groupUuid));
+
+  const handleLink = (cert: CertGroup, mountPath: string) => {
+    const newCert: LinkedCert = {
+      groupUuid: cert.groupUuid,
+      groupName: cert.groupName,
+      groupDisplayName: cert.groupDisplayName,
+      mountPath,
+      keys: cert.configurations
+        .filter((k) => k.isFile)
+        .map((k) => ({
+          keyUuid: k.keyUuid,
+          key: k.key,
+          mountedAs:
+            k.key
+              .split('/')
+              .pop()
+              ?.toLowerCase()
+              .replace(/[^a-z0-9._-]/g, '_') || k.key,
+        })),
+    };
+    onChange([...linkedCerts, newCert]);
+    setIsLinking(false);
+  };
+
+  const handleUnlink = (groupUuid: string) => {
+    onChange(linkedCerts.filter((c) => c.groupUuid !== groupUuid));
+    setUnlinkTarget(null);
+  };
+
+  const handleMountPathChange = (groupUuid: string, path: string) => {
+    onChange(linkedCerts.map((c) => (c.groupUuid === groupUuid ? { ...c, mountPath: path } : c)));
+  };
+
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+        <CircularProgress size={24} />
+      </Box>
+    );
+  }
+
   return (
-    <Box sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" onClick={() => setOpen((p) => !p)} sx={{ px: 2, py: 1.25, cursor: 'pointer', userSelect: 'none' }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-          {title}
-        </Typography>
-        {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-      </Stack>
-      <Collapse in={open}>
-        <Box sx={{ pt: 1 }}>
-          {groups.map(({ groupPath, fields }) => (
-            <AutoFieldGroup key={groupPath} groupPath={groupPath} fields={fields} values={values} onChange={onChange} />
-          ))}
+    <Box>
+      <Box sx={{ mb: 1.5 }}>
+        <Button variant="outlined" size="small" startIcon={<Link size={14} />} onClick={() => setIsLinking(true)} disabled={isLinking || linkable.length === 0}>
+          Link a Certificate
+        </Button>
+      </Box>
+
+      {isLinking && <CertLinkForm availableCerts={linkable} onLink={handleLink} onCancel={() => setIsLinking(false)} />}
+
+      {linkedCerts.length === 0 && !isLinking ? (
+        <Box sx={{ py: 3, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            No certificates linked. Click &apos;Link a Certificate&apos; to mount certificates to your component.
+          </Typography>
         </Box>
-      </Collapse>
+      ) : (
+        linkedCerts.map((cert) => <LinkedCertCard key={cert.groupUuid} cert={cert} onUnlink={() => setUnlinkTarget(cert.groupUuid)} onMountPathChange={(path) => handleMountPathChange(cert.groupUuid, path)} />)
+      )}
+
+      <Dialog open={!!unlinkTarget} onClose={() => setUnlinkTarget(null)}>
+        <DialogTitle>Unlink Certificate</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">Are you sure you want to unlink this certificate? This action cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUnlinkTarget(null)}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={() => unlinkTarget && handleUnlink(unlinkTarget)}>
+            Unlink
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
@@ -487,63 +588,290 @@ interface AutomationConfigureDrawerProps {
   projectId: string;
   componentId: string;
   envId: string;
+  actualEnvId: string;
   deploymentTrackId: string;
   commitHash?: string;
+  orgHandler: string;
+  releaseId?: string;
+  displayType?: string;
+  releaseMgtReleaseId?: string;
+  releaseMgtDeploymentId?: string;
+  buildId?: string;
 }
 
-function AutomationConfigureDrawer({ open, onClose, onSaved, projectId, componentId, envId, deploymentTrackId, commitHash }: AutomationConfigureDrawerProps) {
+function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envId, actualEnvId, deploymentTrackId, commitHash, orgHandler: _orgHandler, buildId }: AutomationConfigureDrawerProps) {
   const handleClose = () => {
     (document.activeElement as HTMLElement)?.blur();
     onClose();
   };
 
   const { data, isLoading, isError } = useSchemaConfig(projectId, componentId, envId, deploymentTrackId, commitHash);
+  const { data: existingCertMappings } = useCertificateMappings(projectId, componentId, envId, deploymentTrackId, open);
+  const { data: configGroups } = useConfigGroups(projectId, componentId, open);
   const save = useSaveSchemaConfig();
-  const [values, setValues] = useState<Record<string, string>>({});
+  const saveCertMappings = usePostCertificateMappings();
+  const deployTrack = useDeployDeploymentTrack();
+  const [step, setStep] = useState(1);
+  const [valueMap, setValueMap] = useState<Map<string, BaseType>>(new Map());
+  const [validationMap, setValidationMap] = useState<Map<string, boolean>>(new Map());
+  const [sensitiveMap, setSensitiveMap] = useState<Map<string, boolean>>(new Map());
+  const [linkingMap, setLinkingMap] = useState<Map<string, LinkingInfo>>(new Map());
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [importedFileName, setImportedFileName] = useState<string | null>(null);
+  const [linkedCerts, setLinkedCerts] = useState<LinkedCert[]>([]);
+  const certSeededRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fields = useMemo(() => {
-    const base = autoParseFields(data?.jsonSchema);
-    const reqKeys = new Set((data?.configurations ?? []).filter((c) => c.isRequired).map((c) => c.key));
-    if (!reqKeys.size) return base;
-    return base.map((f) => ({ ...f, required: f.required || reqKeys.has(f.key) }));
-  }, [data]);
+  const parsedSchema = useMemo<JSONSchema | null>(() => {
+    if (!data?.jsonSchema) return null;
+    try {
+      return JSON.parse(atob(data.jsonSchema)) as JSONSchema;
+    } catch {
+      return null;
+    }
+  }, [data?.jsonSchema]);
 
-  const requiredFields = useMemo(() => fields.filter((f) => f.required), [fields]);
-  const optionalFields = useMemo(() => fields.filter((f) => !f.required), [fields]);
-  const requiredGroups = useMemo(() => autoGroupFields(requiredFields), [requiredFields]);
-  const optionalGroups = useMemo(() => autoGroupFields(optionalFields), [optionalFields]);
-
+  // Seed values only on open; avoid clobbering edits on background refetches.
+  const seededRef = useRef(false);
   useEffect(() => {
-    if (open) {
-      setSaveError(null);
-      const initial: Record<string, string> = {};
-      if (data?.configurations) {
-        for (const cfg of data.configurations) {
-          initial[cfg.key] = cfg.values?.[0]?.value ?? '';
+    if (!open) return;
+    setStep(1);
+    setSaveError(null);
+    setImportedFileName(null);
+    certSeededRef.current = false;
+    setLinkedCerts([]);
+    if (data !== undefined) {
+      const initValues = new Map<string, BaseType>();
+      const initSensitive = new Map<string, boolean>();
+      const initLinking = new Map<string, LinkingInfo>();
+      for (const cfg of data?.configurations ?? []) {
+        const val = cfg.values?.[0]?.value;
+        if (val !== undefined && val !== '') initValues.set(cfg.key, val);
+        if (cfg.isSensitive) initSensitive.set(cfg.key, true);
+        if (cfg.configGroupId || cfg.configKeyId || cfg.isDynamic) {
+          initLinking.set(cfg.key, { configGroupId: cfg.configGroupId, configKeyId: cfg.configKeyId, isDynamic: cfg.isDynamic });
         }
       }
-      setValues(initial);
+      setValueMap(initValues);
+      setValidationMap(new Map());
+      setSensitiveMap(initSensitive);
+      setLinkingMap(initLinking);
+      seededRef.current = true;
+    } else {
+      seededRef.current = false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || seededRef.current || data === undefined) return;
+    const initValues = new Map<string, BaseType>();
+    const initSensitive = new Map<string, boolean>();
+    const initLinking = new Map<string, LinkingInfo>();
+    for (const cfg of data?.configurations ?? []) {
+      const val = cfg.values?.[0]?.value;
+      if (val !== undefined && val !== '') initValues.set(cfg.key, val);
+      if (cfg.isSensitive) initSensitive.set(cfg.key, true);
+      if (cfg.configGroupId || cfg.configKeyId || cfg.isDynamic) {
+        initLinking.set(cfg.key, { configGroupId: cfg.configGroupId, configKeyId: cfg.configKeyId, isDynamic: cfg.isDynamic });
+      }
+    }
+    setValueMap(initValues);
+    setValidationMap(new Map());
+    setSensitiveMap(initSensitive);
+    setLinkingMap(initLinking);
+    seededRef.current = true;
   }, [open, data]);
 
-  const handleChange = (key: string, value: string) => {
-    setValues((prev) => ({ ...prev, [key]: value }));
+  // Seed cert mappings from existing data
+  useEffect(() => {
+    if (!open || certSeededRef.current || !existingCertMappings) return;
+    // Group existing cert mappings by configGroupId
+    const byGroup: Record<string, CertMappingConfig[]> = {};
+    for (const cfg of existingCertMappings.configurations ?? []) {
+      if (!cfg.configGroupId || !cfg.isFile) continue;
+      if (!byGroup[cfg.configGroupId]) byGroup[cfg.configGroupId] = [];
+      byGroup[cfg.configGroupId].push(cfg);
+    }
+    const certs: LinkedCert[] = Object.entries(byGroup).map(([groupId, cfgs]) => {
+      const first = cfgs[0];
+      // mountDirectory is derived from the full key (e.g., /certs/ca.crt → /certs)
+      const fullKey = first.key;
+      const lastSlash = fullKey.lastIndexOf('/');
+      const mountPath = lastSlash >= 0 ? fullKey.substring(0, lastSlash) || '/' : '/certs';
+      return {
+        groupUuid: groupId,
+        groupName: first.configGroupName || groupId,
+        mountPath,
+        keys: cfgs.map((c) => ({
+          keyUuid: c.configKeyId || '',
+          key: c.configKeyName || c.key,
+          mountedAs: lastSlash >= 0 ? c.key.substring(lastSlash + 1) : c.key,
+        })),
+      };
+    });
+    if (certs.length > 0) {
+      setLinkedCerts(certs);
+    }
+    certSeededRef.current = true;
+  }, [open, existingCertMappings]);
+
+  const handleValueChange = (key: string, value: BaseType, newMap?: Map<string, BaseType>) => {
+    if (newMap) {
+      setValueMap(newMap);
+    } else {
+      setValueMap((prev) => {
+        const next = new Map(prev);
+        next.set(key, value);
+        return next;
+      });
+    }
   };
 
-  const handleSave = () => {
-    setSaveError(null);
-    const configurations: SchemaConfigItem[] = fields.filter((f) => f.type !== 'object[]' && values[f.key] !== undefined && values[f.key] !== '').map((f) => ({ key: f.key, values: [{ environmentUuid: envId, value: values[f.key] }] }));
-    save.mutate(
-      { projectId, componentId, envId, deploymentTrackId, configurations, commitHash },
-      {
-        onSuccess: () => { onClose(); onSaved?.(); },
-        onError: (err) => setSaveError(err instanceof Error ? err.message : 'Failed to save configuration'),
-      },
-    );
+  const handleValidationChange = (key: string, isValid: boolean, newMap?: Map<string, boolean>) => {
+    if (newMap) {
+      setValidationMap(newMap);
+    } else {
+      setValidationMap((prev) => {
+        const next = new Map(prev);
+        next.set(key, isValid);
+        return next;
+      });
+    }
   };
 
-  const renderContent = () => {
+  const handleTomlImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const content = (ev.target?.result as string) ?? '';
+      const result = parseConfigToml(content);
+      if (!result.success || !result.data) {
+        setSaveError('Failed to parse config.toml — ensure the file is valid TOML.');
+        return;
+      }
+      if (!parsedSchema) {
+        setSaveError('Schema is not yet loaded. Please wait and try again.');
+        return;
+      }
+      const filtered = filterTomlValuesBySchema(result.data, parsedSchema);
+      setValueMap((prev) => {
+        const next = new Map(prev);
+        filtered.forEach((v, k) => next.set(k, v));
+        return next;
+      });
+      setImportedFileName(file.name);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleClearToml = () => {
+    setImportedFileName(null);
+    const initValues = new Map<string, BaseType>();
+    const initSensitive = new Map<string, boolean>();
+    const initLinking = new Map<string, LinkingInfo>();
+    for (const cfg of data?.configurations ?? []) {
+      const val = cfg.values?.[0]?.value;
+      if (val !== undefined && val !== '') initValues.set(cfg.key, val);
+      if (cfg.isSensitive) initSensitive.set(cfg.key, true);
+      if (cfg.configGroupId || cfg.configKeyId || cfg.isDynamic) {
+        initLinking.set(cfg.key, { configGroupId: cfg.configGroupId, configKeyId: cfg.configKeyId, isDynamic: cfg.isDynamic });
+      }
+    }
+    setValueMap(initValues);
+    setSensitiveMap(initSensitive);
+    setLinkingMap(initLinking);
+  };
+
+  const handleNext = () => {
+    if (step < 2) {
+      setStep((s) => s + 1);
+    } else {
+      setSaveError(null);
+      const configurations: SchemaConfigItem[] = [];
+      valueMap.forEach((value, key) => {
+        if (value !== '' && value !== undefined && value !== null) {
+          const linking = linkingMap.get(key);
+          const isSensitive = sensitiveMap.get(key) || false;
+          const existing = data?.configurations?.find((c) => c.key === key);
+          configurations.push({
+            key,
+            keyId: existing?.keyId,
+            values: [{ environmentUuid: envId, value: String(value) }],
+            ...(isSensitive ? { isSensitive } : {}),
+            isRequired: existing?.isRequired,
+            configGroupId: linking?.configGroupId,
+            configKeyId: linking?.configKeyId,
+            isDynamic: linking?.isDynamic,
+          });
+        }
+      });
+
+      const saveCerts = () => {
+        // Build cert mapping configurations
+        const certConfigs: CertMappingConfig[] = [];
+        for (const cert of linkedCerts) {
+          for (const k of cert.keys) {
+            certConfigs.push({
+              key: `${cert.mountPath}/${k.mountedAs}`,
+              isDynamic: false,
+              configGroupId: cert.groupUuid,
+              configKeyId: k.keyUuid,
+              configGroupName: cert.groupName,
+              configKeyName: k.key,
+              isFile: true,
+              isSensitive: false,
+              values: [{ value: `\${${cert.groupName}.${k.key}}`, environmentUuid: envId }],
+            });
+          }
+        }
+
+        const certPayload: CertMapping = {
+          projectId,
+          componentId,
+          envTemplateId: envId,
+          deploymentTrackId,
+          configurations: certConfigs,
+          ...(existingCertMappings?.mappingId ? { mappingId: existingCertMappings.mappingId } : {}),
+        };
+
+        const afterSave = () => {
+          if (buildId) {
+            deployTrack
+              .mutateAsync({ componentId, id: deploymentTrackId, imageId: buildId, environmentId: actualEnvId, cronTimezone: '' })
+              .then(() => onClose())
+              .catch((err: unknown) => setSaveError(err instanceof Error ? err.message : 'Failed to update deployment track'));
+          } else {
+            onClose();
+          }
+        };
+
+        if (certConfigs.length === 0 && !existingCertMappings?.mappingId) {
+          afterSave();
+          return;
+        }
+
+        saveCertMappings
+          .mutateAsync(certPayload)
+          .then(afterSave)
+          .catch((err: unknown) => setSaveError(err instanceof Error ? err.message : 'Failed to save certificate mounts'));
+      };
+
+      save
+        .mutateAsync({ projectId, componentId, envId, deploymentTrackId, configurations, commitHash })
+        .then(saveCerts)
+        .catch((err: unknown) => setSaveError(err instanceof Error ? err.message : 'Failed to save configuration'));
+    }
+  };
+
+  const handlePrev = () => {
+    if (step > 1) setStep((s) => s - 1);
+    else handleClose();
+  };
+
+  const renderConfigurations = () => {
     if (isLoading) {
       return (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -560,7 +888,7 @@ function AutomationConfigureDrawer({ open, onClose, onSaved, projectId, componen
         </Box>
       );
     }
-    if (!data?.jsonSchema || fields.length === 0) {
+    if (!data?.jsonSchema || !parsedSchema) {
       return (
         <Box sx={{ py: 4, px: 2, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">
@@ -571,8 +899,18 @@ function AutomationConfigureDrawer({ open, onClose, onSaved, projectId, componen
     }
     return (
       <>
-        <AutoSection title="Required" groups={requiredGroups} values={values} onChange={handleChange} />
-        <AutoSection title="Optional" groups={optionalGroups} values={values} onChange={handleChange} defaultOpen={false} />
+        <ConfigForm
+          schema={parsedSchema}
+          valueMap={valueMap}
+          validationMap={validationMap}
+          linkingMap={linkingMap}
+          setLinkingMap={setLinkingMap}
+          sensitiveMap={sensitiveMap}
+          setSensitiveMap={setSensitiveMap}
+          configGroups={configGroups}
+          handleValueChange={handleValueChange}
+          handleValidationChange={handleValidationChange}
+        />
         {saveError && (
           <Alert severity="error" sx={{ mt: 1 }}>
             {saveError}
@@ -582,26 +920,53 @@ function AutomationConfigureDrawer({ open, onClose, onSaved, projectId, componen
     );
   };
 
-  const hasSchema = !isLoading && !isError && data !== null && !!data?.jsonSchema && fields.length > 0;
-  const hasRequiredMissing = requiredFields.some((f) => !values[f.key]);
+  const renderCertificateMount = () => <CertificateMountStep projectId={projectId} componentId={componentId} envId={envId} deploymentTrackId={deploymentTrackId} open={open} linkedCerts={linkedCerts} onChange={setLinkedCerts} />;
+
+  const hasSchema = !isLoading && !isError && data !== null && !!data?.jsonSchema && !!parsedSchema;
+  const hasValidationErrors = Array.from(validationMap.values()).some((v) => !v);
+  const hasCertPathErrors = linkedCerts.some((c) => c.mountPath && !c.mountPath.startsWith('/'));
+  const isApplying = save.isPending || saveCertMappings.isPending || deployTrack.isPending;
+  const prevLabel = step === 1 ? 'Cancel' : 'Back';
+  const nextLabel = step === 2 ? (isApplying ? 'Updating…' : 'Update') : 'Next';
+  const nextDisabled = step === 1 ? hasValidationErrors || isLoading : isApplying || hasCertPathErrors;
 
   return (
     <Drawer anchor="right" open={open} onClose={handleClose} variant="temporary" sx={drawerSx}>
+      {/* Header */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
         <Typography variant="h5">Configurations</Typography>
-        <IconButton size="small" aria-label="close" onClick={handleClose}>
-          <X size={16} />
-        </IconButton>
+        <Stack direction="row" alignItems="center" gap={1}>
+          {hasSchema &&
+            step === 1 &&
+            (importedFileName ? (
+              <Chip label={importedFileName} onDelete={handleClearToml} size="small" variant="outlined" sx={{ maxWidth: 180 }} />
+            ) : (
+              <Button variant="outlined" size="small" startIcon={<Upload size={14} />} onClick={() => fileInputRef.current?.click()}>
+                Import config.toml
+              </Button>
+            ))}
+          <IconButton size="small" aria-label="close" onClick={handleClose}>
+            <X size={16} />
+          </IconButton>
+        </Stack>
       </Stack>
-      <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>{renderContent()}</Box>
+
+      {/* Step indicator */}
+      <StepIndicator step={step} steps={AUTOMATION_STEPS} />
+
+      {/* Content */}
+      <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>{step === 1 ? renderConfigurations() : renderCertificateMount()}</Box>
+
+      {/* Footer */}
       {hasSchema && (
         <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave} disabled={save.isPending || hasRequiredMissing} startIcon={save.isPending ? <CircularProgress color="inherit" size={16} /> : undefined}>
-            {save.isPending ? 'Saving…' : 'Update'}
+          <Button onClick={handlePrev}>{prevLabel}</Button>
+          <Button variant="contained" onClick={handleNext} disabled={nextDisabled} startIcon={isApplying ? <CircularProgress color="inherit" size={16} /> : undefined}>
+            {nextLabel}
           </Button>
         </Stack>
       )}
+      <input ref={fileInputRef} type="file" accept=".toml" style={{ display: 'none' }} onChange={handleTomlImport} />
     </Drawer>
   );
 }
@@ -639,11 +1004,29 @@ export interface ConfigureDrawerProps {
   releaseMgtDeploymentId?: string;
   isAutomation?: boolean;
   envTemplateId?: string;
+  buildId?: string;
 }
 
 export default function ConfigureDrawer(props: ConfigureDrawerProps) {
   if (props.isAutomation) {
-    return <AutomationConfigureDrawer open={props.open} onClose={props.onClose} projectId={props.projectId} componentId={props.componentId} envId={props.envTemplateId ?? props.envId} deploymentTrackId={props.versionId} commitHash={props.commitHash} />;
+    return (
+      <AutomationConfigureDrawer
+        open={props.open}
+        onClose={props.onClose}
+        projectId={props.projectId}
+        componentId={props.componentId}
+        envId={props.envTemplateId ?? props.envId}
+        actualEnvId={props.envId}
+        deploymentTrackId={props.versionId}
+        commitHash={props.commitHash}
+        orgHandler={props.orgHandler}
+        releaseId={props.releaseId}
+        displayType={props.displayType}
+        releaseMgtReleaseId={props.releaseMgtReleaseId}
+        releaseMgtDeploymentId={props.releaseMgtDeploymentId}
+        buildId={props.buildId}
+      />
+    );
   }
   return <GenericServiceConfigureDrawer {...props} />;
 }
@@ -789,8 +1172,10 @@ function GenericServiceConfigureDrawer({
   };
 
   const handlePrev = () => {
-    if (step > 1) { setSaveError(null); setStep((s) => s - 1); }
-    else handleClose();
+    if (step > 1) {
+      setSaveError(null);
+      setStep((s) => s - 1);
+    } else handleClose();
   };
 
   const handleSettings = (ep: GqlEnvEndpoint) => {
@@ -869,7 +1254,7 @@ function GenericServiceConfigureDrawer({
         </Stack>
 
         {/* Step indicator */}
-        <StepIndicator step={step} />
+        <StepIndicator step={step} steps={STEPS} />
 
         {/* Scrollable content */}
         <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>{stepContent}</Box>

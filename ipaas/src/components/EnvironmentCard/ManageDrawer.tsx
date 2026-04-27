@@ -51,7 +51,7 @@ interface RateLimitPolicy {
 }
 
 const VISIBILITY_OPTIONS = ['Public', 'Organization', 'Project'] as const;
-type VisibilityOption = typeof VISIBILITY_OPTIONS[number];
+type VisibilityOption = (typeof VISIBILITY_OPTIONS)[number];
 
 interface ManageState {
   corsEnabled: boolean;
@@ -76,10 +76,7 @@ function opKey(op: ApimApiOperation) {
   return `${op.verb.toUpperCase()}-${op.target}`;
 }
 
-function buildInitialState(
-  apimApiInfo: ReturnType<typeof useApimApi>['data'],
-  initialNetworkVisibilities?: string[],
-): ManageState {
+function buildInitialState(apimApiInfo: ReturnType<typeof useApimApi>['data'], initialNetworkVisibilities?: string[]): ManageState {
   const cors = apimApiInfo?.corsConfiguration;
   const origins = cors?.accessControlAllowOrigins ?? [];
   const endpointConfig = apimApiInfo?.endpointConfig as Record<string, unknown> | undefined;
@@ -100,9 +97,7 @@ function buildInitialState(
     }
   }
 
-  const networkVisibilities = (initialNetworkVisibilities ?? []).filter(
-    (v): v is VisibilityOption => VISIBILITY_OPTIONS.includes(v as VisibilityOption),
-  );
+  const networkVisibilities = (initialNetworkVisibilities ?? []).filter((v): v is VisibilityOption => VISIBILITY_OPTIONS.includes(v as VisibilityOption));
 
   return {
     corsEnabled: cors?.corsConfigurationEnabled ?? false,
@@ -255,20 +250,7 @@ interface ManageDrawerProps {
   networkVisibilities?: string[] | null;
 }
 
-export default function ManageDrawer({
-  open,
-  onClose,
-  apimId,
-  componentId,
-  versionId,
-  releaseId,
-  buildId,
-  environmentId,
-  apimRevisionId,
-  endpointId,
-  endpointDisplayName,
-  networkVisibilities: initialNetworkVisibilities,
-}: ManageDrawerProps) {
+export default function ManageDrawer({ open, onClose, apimId, componentId, versionId, releaseId, buildId, environmentId, apimRevisionId, endpointId, endpointDisplayName, networkVisibilities: initialNetworkVisibilities }: ManageDrawerProps) {
   const queryClient = useQueryClient();
   const { data: apimApiInfo, isLoading } = useApimApi(open ? apimId : null);
   useThrottlingPolicies(); // prefetch
@@ -360,9 +342,8 @@ export default function ManageDrawer({
       // Phase 1: trigger redeploy via proxy deployer when context is available
       if (canRedeploy) {
         const settingsKey = (savedApi.revisionedApiId as string | null | undefined) || savedApi.name;
-        const apiLevelThrottle = state.rateLimitLevel === 'API_LEVEL'
-          ? { requestCount: Number(state.apiLevelPolicy.requestCount) || -1, unit: state.apiLevelPolicy.timeUnit }
-          : null;
+        const apiLevelRc = Number(state.apiLevelPolicy.requestCount);
+        const apiLevelThrottle = state.rateLimitLevel === 'API_LEVEL' ? { requestCount: isNaN(apiLevelRc) ? -1 : apiLevelRc, unit: state.apiLevelPolicy.timeUnit } : null;
         const accessMode = state.networkVisibilities.length === 1 && state.networkVisibilities[0] === 'Public' ? 'External' : 'Internal';
         await deploySettingsV2(componentId!, versionId!, {
           environmentId: environmentId!,
@@ -377,14 +358,13 @@ export default function ManageDrawer({
                 operations: updatedOperations.map((op) => ({
                   verb: op.verb.toUpperCase(),
                   target: op.target,
-                  throttlingLimit: { requestCount: Number(op.throttlingPolicy) || -1, unit: 'MINUTE' },
+                  throttlingLimit: { requestCount: ((_rc) => (isNaN(_rc) ? -1 : _rc))(Number(op.throttlingPolicy)), unit: 'MINUTE' },
                 })),
                 resiliency: Number(state.timeout) || undefined,
               },
               revisionId: apimRevisionId ?? undefined,
               isAsyncAPI: false,
-              multiGatewayDeployment:
-                state.networkVisibilities.includes('Public') && state.networkVisibilities.includes('Organization'),
+              multiGatewayDeployment: state.networkVisibilities.includes('Public') && state.networkVisibilities.includes('Organization'),
             },
           },
         });
@@ -579,9 +559,7 @@ export default function ManageDrawer({
                           size="small"
                           checked={state.networkVisibilities.includes(opt)}
                           onChange={(e) => {
-                            const next = e.target.checked
-                              ? [...state.networkVisibilities, opt]
-                              : state.networkVisibilities.filter((v) => v !== opt);
+                            const next = e.target.checked ? [...state.networkVisibilities, opt] : state.networkVisibilities.filter((v) => v !== opt);
                             dispatch({ networkVisibilities: next });
                           }}
                         />

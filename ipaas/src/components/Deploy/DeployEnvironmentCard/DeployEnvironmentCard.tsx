@@ -21,16 +21,7 @@ import { ArrowRight } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  DeploymentStatus,
-  useComponentDeployment,
-  useDeploymentStatus,
-  useDeploymentTrackImages,
-  useEnvEndpoints,
-  useExecutionConfigs,
-  useGetConfigMgt,
-  useSchemaConfig,
-} from '../../../api/queries';
+import { DeploymentStatus, useComponentDeployment, useDeploymentStatus, useDeploymentTrackImages, useEnvEndpoints, useExecutionConfigs, useGetConfigMgt, useSchemaConfig } from '../../../api/queries';
 import { useRedeployDeployment, useStopDeployment } from '../../../api/mutations';
 import { nextCronRunMs, formatTimeUntil, describeCron } from '../../../utils/cronUtils';
 import ConfigureDrawer from '../../EnvironmentCard/ConfigureDrawer';
@@ -42,21 +33,7 @@ import DeploymentHistoryDrawer from './DeploymentHistoryDrawer';
 import EndpointsDrawer from './EndpointsDrawer';
 import type { DeployEnvironmentCardProps } from '../../../types/deploy';
 
-export default function DeployEnvironmentCard({
-  orgHandler,
-  orgUuid,
-  projectId,
-  componentId,
-  versionId,
-  deploymentPipelineId,
-  flags,
-  env,
-  componentName,
-  projectHandler,
-  nextEnvId,
-  onPromoteStarted,
-  onPromoteSettled,
-}: DeployEnvironmentCardProps): JSX.Element {
+export default function DeployEnvironmentCard({ orgHandler, orgUuid, projectId, componentId, versionId, deploymentPipelineId, flags, env, componentName, projectHandler, nextEnvId, onPromoteStarted, onPromoteSettled }: DeployEnvironmentCardProps): JSX.Element {
   const qc = useQueryClient();
   const [configureOpen, setConfigureOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -71,16 +48,17 @@ export default function DeployEnvironmentCard({
   // After a stop/redeploy mutation, poll briefly in case the backend is slow to update its status
   const postMutationPollingUntil = useRef<number>(0);
 
-  const { data: rawDeployment, isLoading, isFetching } = useComponentDeployment(
-    orgHandler, orgUuid, componentId, versionId, env.id,
-    {
-      refetchInterval: (query) => {
-        if (query.state.data?.deploymentStatusV2 === 'IN_PROGRESS') return 5000;
-        if (Date.now() < postMutationPollingUntil.current) return 2000;
-        return false;
-      },
+  const {
+    data: rawDeployment,
+    isLoading,
+    isFetching,
+  } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, env.id, {
+    refetchInterval: (query) => {
+      if (query.state.data?.deploymentStatusV2 === 'IN_PROGRESS') return 5000;
+      if (Date.now() < postMutationPollingUntil.current) return 2000;
+      return false;
     },
-  );
+  });
   const deployment = rawDeployment
     ? (() => {
         const raw = rawDeployment.deploymentStatusV2;
@@ -115,18 +93,16 @@ export default function DeployEnvironmentCard({
   const releaseId = deployment?.releaseId ?? '';
   const status = deployment?.deploymentStatusV2;
 
-  const { data: executionConfigs } = useExecutionConfigs(
-    flags.isAutomation ? componentId : '',
-    flags.isAutomation ? releaseId : '',
-  );
-  const scheduleDescription = executionConfigs?.cronjobFrequency
-    ? `${describeCron(executionConfigs.cronjobFrequency)}, ${executionConfigs.cronjobTimezone || 'UTC'}`
-    : null;
+  const { data: executionConfigs } = useExecutionConfigs(flags.isAutomation ? componentId : '', flags.isAutomation ? releaseId : '');
+  const scheduleDescription = executionConfigs?.cronjobFrequency ? `${describeCron(executionConfigs.cronjobFrequency)}, ${executionConfigs.cronjobTimezone || 'UTC'}` : null;
 
   const [nextRunLabel, setNextRunLabel] = useState<string | null>(null);
   const cronFreq = executionConfigs?.cronjobFrequency ?? null;
   const updateNextRun = useCallback(() => {
-    if (!cronFreq) { setNextRunLabel(null); return; }
+    if (!cronFreq) {
+      setNextRunLabel(null);
+      return;
+    }
     const ms = nextCronRunMs(cronFreq);
     if (ms !== null) setNextRunLabel(`Next run in ${formatTimeUntil(ms)}`);
     else setNextRunLabel(null);
@@ -139,11 +115,7 @@ export default function DeployEnvironmentCard({
 
   const { data: trackImages = [] } = useDeploymentTrackImages(componentId, versionId);
   const { data: deploymentStatus = [] } = useDeploymentStatus(componentId, versionId);
-  const { data: endpoints = [], isLoading: endpointsLoading } = useEnvEndpoints(
-    !flags.isAutomation ? componentId : '',
-    !flags.isAutomation ? versionId : '',
-    !flags.isAutomation && releaseId ? releaseId : '',
-  );
+  const { data: endpoints = [], isLoading: endpointsLoading } = useEnvEndpoints(!flags.isAutomation ? componentId : '', !flags.isAutomation ? versionId : '', !flags.isAutomation && releaseId ? releaseId : '');
 
   const deployedRunId = deployment?.build?.runId ?? null;
   const deployedBuildId = deployment?.build?.buildId ?? null;
@@ -165,10 +137,7 @@ export default function DeployEnvironmentCard({
           runId: deployedRunId,
           commitHash: deployment.build.commit.sha,
           commitMessage: deployment.build.commit.message,
-          builtAt: (matchedTrackImage?.runId === deployedRunId ? matchedTrackImage.builtAt : null)
-            ?? deploymentStatus.find((s) => s.id.toString() === deployedRunId)?.completed_at
-            ?? deployment.build.deployedAt
-            ?? '',
+          builtAt: (matchedTrackImage?.runId === deployedRunId ? matchedTrackImage.builtAt : null) ?? deploymentStatus.find((s) => s.id.toString() === deployedRunId)?.completed_at ?? deployment.build.deployedAt ?? '',
           author: deployment.build.commit.author,
           createdAt: matchedTrackImage?.createdAt ?? '',
           updatedAt: matchedTrackImage?.updatedAt ?? '',
@@ -191,21 +160,15 @@ export default function DeployEnvironmentCard({
     if (prevComponentIdRef.current !== componentId) {
       prevComponentIdRef.current = componentId;
       setRefetchingImages(true);
-      void qc.refetchQueries({ queryKey: ['deploymentTrackImages', componentId, versionId] })
-        .then(() => setRefetchingImages(false));
+      void qc.refetchQueries({ queryKey: ['deploymentTrackImages', componentId, versionId] }).then(() => setRefetchingImages(false));
     }
   }, [componentId, versionId, qc]);
 
   useEffect(() => {
     const currentId = deployedRunId ?? deployedBuildId;
-    if (
-      prevDeployRunIdRef.current !== null &&
-      prevDeployRunIdRef.current !== currentId &&
-      currentId !== null
-    ) {
+    if (prevDeployRunIdRef.current !== null && prevDeployRunIdRef.current !== currentId && currentId !== null) {
       setRefetchingImages(true);
-      void qc.refetchQueries({ queryKey: ['deploymentTrackImages', componentId, versionId] })
-        .then(() => setRefetchingImages(false));
+      void qc.refetchQueries({ queryKey: ['deploymentTrackImages', componentId, versionId] }).then(() => setRefetchingImages(false));
     }
     prevDeployRunIdRef.current = currentId;
   }, [deployedRunId, deployedBuildId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -213,14 +176,8 @@ export default function DeployEnvironmentCard({
   // Configurables count — sourced from the GQL componentDeployment response.
   const envTemplateId = env.templateId ?? env.id;
   // Pre-warm cache so ConfigureDrawer opens instantly (result consumed there via shared query key).
-  useGetConfigMgt(
-    orgHandler, projectId, componentId,
-    flags.isAutomation ? envTemplateId : env.id,
-    versionId, componentName, configCommitHash, !!configCommitHash && !flags.isAutomation,
-  );
-  useSchemaConfig(
-    projectId, componentId, envTemplateId, versionId, configCommitHash,
-  );
+  useGetConfigMgt(orgHandler, projectId, componentId, flags.isAutomation ? envTemplateId : env.id, versionId, componentName, configCommitHash, !!configCommitHash && !flags.isAutomation);
+  useSchemaConfig(projectId, componentId, envTemplateId, versionId, configCommitHash);
   const configurablesCount = rawDeployment?.configCount ?? 0;
 
   const stopDeployment = useStopDeployment();
@@ -251,7 +208,9 @@ export default function DeployEnvironmentCard({
             void qc.invalidateQueries({ queryKey: ['executionConfigs', componentId, releaseId] });
           }
         },
-        onSettled: () => { waitingForRefetch.current = true; },
+        onSettled: () => {
+          waitingForRefetch.current = true;
+        },
         onError: () => setActionInFlight(null),
       },
     );
@@ -275,7 +234,9 @@ export default function DeployEnvironmentCard({
             void qc.invalidateQueries({ queryKey: ['executionConfigs', componentId, releaseId] });
           }
         },
-        onSettled: () => { waitingForRefetch.current = true; },
+        onSettled: () => {
+          waitingForRefetch.current = true;
+        },
         onError: () => setActionInFlight(null),
       },
     );
@@ -386,28 +347,10 @@ export default function DeployEnvironmentCard({
       />
 
       {flags.isAutomation && hasRelease && scheduleOpen && (
-        <ScheduleDialog
-          open={scheduleOpen}
-          onClose={() => setScheduleOpen(false)}
-          envId={env.id}
-          envName={env.name}
-          componentId={componentId}
-          orgHandler={orgHandler}
-          versionId={versionId}
-          deploymentPipelineId={deploymentPipelineId}
-        />
+        <ScheduleDialog open={scheduleOpen} onClose={() => setScheduleOpen(false)} envId={env.id} envName={env.name} componentId={componentId} orgHandler={orgHandler} versionId={versionId} deploymentPipelineId={deploymentPipelineId} />
       )}
 
-      <DeploymentHistoryDrawer
-        open={historyOpen}
-        onClose={() => setHistoryOpen(false)}
-        orgUuid={orgUuid}
-        projectId={projectId}
-        componentId={componentId}
-        versionId={versionId}
-        environmentId={env.id}
-        envName={env.name}
-      />
+      <DeploymentHistoryDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} orgUuid={orgUuid} projectId={projectId} componentId={componentId} versionId={versionId} environmentId={env.id} envName={env.name} />
 
       {!flags.isAutomation && (
         <EndpointsDrawer

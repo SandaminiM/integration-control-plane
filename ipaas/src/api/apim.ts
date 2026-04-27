@@ -139,25 +139,24 @@ export interface DeploySettingsV2Payload {
   environmentId: string;
   buildId: string;
   comment?: string;
-  apiSettings: Record<string, {
-    accessMode: string;
-    settings: {
-      corsConfiguration?: CorsConfiguration & { corsOverrideEnabled?: boolean };
-      throttlingLimit: { requestCount: number; unit: string } | null;
-      operations?: { verb: string; target: string; throttlingLimit: { requestCount: number; unit: string } }[];
-      resiliency?: number;
-    };
-    revisionId?: string;
-    isAsyncAPI?: boolean;
-    multiGatewayDeployment?: boolean;
-  }>;
+  apiSettings: Record<
+    string,
+    {
+      accessMode: string;
+      settings: {
+        corsConfiguration?: CorsConfiguration & { corsOverrideEnabled?: boolean };
+        throttlingLimit: { requestCount: number; unit: string } | null;
+        operations?: { verb: string; target: string; throttlingLimit: { requestCount: number; unit: string } }[];
+        resiliency?: number;
+      };
+      revisionId?: string;
+      isAsyncAPI?: boolean;
+      multiGatewayDeployment?: boolean;
+    }
+  >;
 }
 
-export async function deploySettingsV2(
-  componentId: string,
-  versionId: string,
-  payload: DeploySettingsV2Payload,
-): Promise<void> {
+export async function deploySettingsV2(componentId: string, versionId: string, payload: DeploySettingsV2Payload): Promise<void> {
   const base = getProxyDeployerBaseUrl();
   const url = `${base}/components/${encodeURIComponent(componentId)}/versions/${encodeURIComponent(versionId)}/deploy-settings-v2`;
   let res: Response;

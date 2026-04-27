@@ -18,22 +18,22 @@
 
 export interface ComponentTypeFlags {
   // Proxy — handled separately; full proxy deploy UI is not yet implemented
-  isProxy: boolean;          // proxy, gitProxy
+  isProxy: boolean; // proxy, gitProxy
 
   // Group A — Service / Integration as API (commit-based build)
-  isService: boolean;        // ballerinaService, miApiService
-  isRestApi: boolean;        // restAPI, miRestApi
+  isService: boolean; // ballerinaService, miApiService
+  isRestApi: boolean; // restAPI, miRestApi
 
   // Group B — BYOI (image-based, no build step)
-  isByoi: boolean;           // byoiService
+  isByoi: boolean; // byoiService
 
   // Group C — Automation / Scheduled task
-  isAutomation: boolean;     // scheduledTask, miCronjob
+  isAutomation: boolean; // scheduledTask, miCronjob
 
   // Composite helpers
-  isCommitBased: boolean;    // any type that goes through the build pipeline (A + C)
-  isImageBased: boolean;     // same as isByoi, kept for symmetry
-  isDeployable: boolean;     // any type with a full deploy UI (A + B + C, excludes proxy)
+  isCommitBased: boolean; // any type that goes through the build pipeline (A + C)
+  isImageBased: boolean; // same as isByoi, kept for symmetry
+  isDeployable: boolean; // any type with a full deploy UI (A + B + C, excludes proxy)
 }
 
 /**

@@ -111,8 +111,7 @@ export default function DeployEnvironmentCardBody({
           p: 1.5,
           borderRadius: 1,
           bgcolor: statusBg,
-        }}
-      >
+        }}>
         <Typography variant="body2" fontWeight={600}>
           {flags.isAutomation ? 'Scheduled status' : 'Deployment status'}
         </Typography>
@@ -128,13 +127,7 @@ export default function DeployEnvironmentCardBody({
             <Typography variant="body2" fontWeight={600}>
               {buildSectionLabel}
             </Typography>
-            <Button
-              variant="text"
-              size="small"
-              startIcon={<Clock size={13} />}
-              sx={{ color: 'text.secondary', fontSize: '0.75rem', p: 0.5 }}
-              onClick={onHistoryClick}
-            >
+            <Button variant="text" size="small" startIcon={<Clock size={13} />} sx={{ color: 'text.secondary', fontSize: '0.75rem', p: 0.5 }} onClick={onHistoryClick}>
               History
             </Button>
           </Stack>
@@ -151,7 +144,9 @@ export default function DeployEnvironmentCardBody({
             <BuildImageCard image={deployedImage} isLatest={false} variant="detail" hideEdit />
           ) : deployment.build?.buildId ? (
             <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
-              <Typography variant="caption" color="text.secondary">Build ID</Typography>
+              <Typography variant="caption" color="text.secondary">
+                Build ID
+              </Typography>
               <Typography variant="body2" sx={{ fontFamily: 'monospace', mt: 0.25 }}>
                 {deployment.build.buildId}
               </Typography>
@@ -165,9 +160,7 @@ export default function DeployEnvironmentCardBody({
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Stack direction="row" alignItems="center" gap={0.75}>
             <Typography variant="body2">Endpoints</Typography>
-            {endpointCount !== undefined && endpointCount >= 0 && (
-              <Chip size="small" label={endpointCount} sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
-            )}
+            {endpointCount !== undefined && endpointCount >= 0 && <Chip size="small" label={endpointCount} sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />}
           </Stack>
           <Tooltip title="View endpoints">
             <IconButton size="small" onClick={onEndpointsClick}>
@@ -181,9 +174,7 @@ export default function DeployEnvironmentCardBody({
       <Stack direction="row" alignItems="center" justifyContent="space-between">
         <Stack direction="row" alignItems="center" gap={0.75}>
           <Typography variant="body2">Configurables</Typography>
-          {configurablesCount !== undefined && configurablesCount >= 0 && (
-            <Chip size="small" label={configurablesCount} sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
-          )}
+          {configurablesCount !== undefined && configurablesCount >= 0 && <Chip size="small" label={configurablesCount} sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />}
         </Stack>
         <Tooltip title="Configure environment variables">
           <IconButton size="small" onClick={onConfigClick}>
@@ -223,13 +214,7 @@ export default function DeployEnvironmentCardBody({
       {scaleToZeroEnabled !== undefined && (
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Typography variant="body2">Scale to Zero</Typography>
-          <Chip
-            size="small"
-            label={scaleToZeroEnabled ? 'Enabled' : 'Disabled'}
-            color={scaleToZeroEnabled ? 'success' : 'default'}
-            variant="outlined"
-            sx={{ height: 20, fontSize: '0.7rem' }}
-          />
+          <Chip size="small" label={scaleToZeroEnabled ? 'Enabled' : 'Disabled'} color={scaleToZeroEnabled ? 'success' : 'default'} variant="outlined" sx={{ height: 20, fontSize: '0.7rem' }} />
         </Stack>
       )}
 

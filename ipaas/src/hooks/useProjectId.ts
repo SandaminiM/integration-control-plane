@@ -34,6 +34,6 @@ export function useProjectId(projectIdentifier: string) {
     // Only report loading if the project hasn't been resolved from any source yet.
     // This prevents the UI from blocking on a retrying useProjectByHandler failure when
     // the project is already available from the cached useProjects() list (AppLayout populates it).
-    isLoading: !project && (isProjectUuid ? loadingById : (loadingByHandler || loadingProjects)),
+    isLoading: !project && (isProjectUuid ? loadingById : loadingByHandler || loadingProjects),
   };
 }
