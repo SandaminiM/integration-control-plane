@@ -272,6 +272,7 @@ export function BaseElement({
             <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
               {title}
             </Typography>
+            {isRequired && <Typography component="span" variant="body2" sx={{ color: 'error.main', lineHeight: 1, fontFamily: 'monospace' }}>*</Typography>}
             <Chip label={typeDisplayName(type)} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
             {!isRequired && isRequiredAtRequiredLevel && <Chip label="optional" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />}
           </Stack>
@@ -308,6 +309,7 @@ export function BaseElement({
               {title}
             </Typography>
           )}
+          {!isSkipLabel && isRequired && <Typography component="span" variant="body2" sx={{ color: 'error.main', lineHeight: 1, fontFamily: 'monospace' }}>*</Typography>}
           <Chip label="boolean" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
           <Switch
             size="small"
@@ -375,6 +377,7 @@ export function BaseElement({
                     {title}
                   </Typography>
                 )}
+                {!isSkipLabel && isRequired && <Typography component="span" variant="body2" sx={{ color: 'error.main', lineHeight: 1, fontFamily: 'monospace' }}>*</Typography>}
                 <Chip label="secret" size="small" variant="outlined" color="info" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
               </Stack>
               <Button size="small" variant="text" startIcon={<Pencil size={13} />} onClick={(e) => setSecretAnchorEl(e.currentTarget as HTMLButtonElement)} sx={{ textTransform: 'none' }}>
@@ -420,6 +423,7 @@ export function BaseElement({
               {title}
             </Typography>
           )}
+          {!isSkipLabel && isRequired && <Typography component="span" variant="body2" sx={{ color: 'error.main', lineHeight: 1, fontFamily: 'monospace' }}>*</Typography>}
           <Chip label="secret" size="small" variant="outlined" color="info" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
           <Tooltip title="Mark as non-sensitive (stored in database)">
             <IconButton size="small" onClick={toggleSensitive} sx={{ p: 0.25 }}>
@@ -441,6 +445,7 @@ export function BaseElement({
           <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
             {title}
           </Typography>
+          {isRequired && <Typography component="span" variant="body2" sx={{ color: 'error.main', lineHeight: 1, fontFamily: 'monospace' }}>*</Typography>}
           <Chip label={isSensitive ? 'secret' : typeDisplayName(type)} size="small" variant="outlined" color={isSensitive ? 'info' : 'default'} sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
           {!isRequired && isRequiredAtRequiredLevel && <Chip label="optional" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />}
         </Stack>

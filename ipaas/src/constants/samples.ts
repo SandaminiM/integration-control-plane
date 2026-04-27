@@ -16,5 +16,6 @@
  * under the License.
  */
 
-// BrowseSamples page constants
 export const PAGE_SIZE = 9;
+
+export const DEFAULT_PREBUILT_INTEGRATIONS_URL = 'https://raw.githubusercontent.com/wso2/integration-samples/main/.metadata/prebuilt-integrations.json';

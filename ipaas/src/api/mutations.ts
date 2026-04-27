@@ -174,6 +174,7 @@ export interface CreateComponentInput {
   repositorySubPath?: string;
   isPublicRepo?: boolean;
   enableAutoDeploy?: boolean;
+  isPrebuilt?: boolean;
 }
 
 /** Escape a string for embedding in a GraphQL inline query. */
@@ -218,7 +219,7 @@ function buildCreateComponentQuery(input: CreateComponentInput): string {
         originCloud: "devant",
         isUnitTestEnabled: true,
         pullLatestSubmodules: true,
-        isPrebuilt: false
+        isPrebuilt: ${input.isPrebuilt ?? false}
       }){
         id, name, displayName, handler, orgId, projectId, createdAt, updatedAt
       }}`;
@@ -250,7 +251,8 @@ function buildCreateMiComponentQuery(input: CreateComponentInput): string {
         enableAutoDeploy: ${input.enableAutoDeploy ?? true},
         enableAutoBuild: true,
         componentSubType: "",
-        originCloud: "devant"
+        originCloud: "devant",
+        isPrebuilt: ${input.isPrebuilt ?? false}
       }){
         id, organizationId, projectId, handle
       }}`;
@@ -1042,5 +1044,25 @@ export function useGenerateComponentEndpoints() {
     onSuccess: (_data, input) => {
       qc.invalidateQueries({ queryKey: ['envEndpoints', input.componentId] });
     },
+  });
+}
+
+// ── Deploy prebuilt integration (fires prebuilt image deploy) ──
+
+const DEPLOY_PREBUILT_INTEGRATION = `
+  mutation deployPrebuiltIntegration($input: DeployPrebuiltImageInput!) {
+    deployPrebuiltIntegration(input: $input)
+  }`;
+
+export interface DeployPrebuiltImageInput {
+  componentId: string;
+  imageUrl: string;
+  appBranch: string;
+}
+
+export function useDeployPrebuiltImage() {
+  return useMutation({
+    mutationFn: (input: DeployPrebuiltImageInput) =>
+      gql<{ deployPrebuiltIntegration: string }>(DEPLOY_PREBUILT_INTEGRATION, { input }).then((d) => d.deployPrebuiltIntegration),
   });
 }

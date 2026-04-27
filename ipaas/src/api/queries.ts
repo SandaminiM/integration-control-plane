@@ -55,6 +55,7 @@ export interface GqlComponent {
   labels?: string | string[];
   apiId?: string;
   serviceAccessMode?: string | null;
+  isPrebuilt?: boolean;
 }
 
 const PROJECT_FIELDS = 'id, orgId, name, handler, description, version, createdDate, updatedAt, region, type, defaultDeploymentPipelineId';
@@ -221,7 +222,7 @@ const COMPONENT_BY_HANDLER_QUERY = `
     component(projectId: $projectId, componentHandler: $componentHandler) {
       projectId, id, name, handler, displayName, displayType,
       description, status, componentSubType, serviceAccessMode,
-      version, createdAt, lastBuildDate, orgHandler, labels, apiId,
+      version, createdAt, lastBuildDate, orgHandler, labels, apiId, isPrebuilt,
       deploymentTracks { id, autoDeployEnabled, branch, apiVersion, latest }
       apiVersions { id, apiVersion, branch, latest, accessibility }
     }
@@ -1242,7 +1243,7 @@ export function useSchemaConfig(projectId: string, componentId: string, envId: s
       if (!res.ok) return null;
       return res.json();
     },
-    enabled: !!projectId && !!componentId && !!envId && !!deploymentTrackId && !!commitHash,
+    enabled: !!projectId && !!componentId && !!envId && !!deploymentTrackId,
     retry: false,
   });
 }

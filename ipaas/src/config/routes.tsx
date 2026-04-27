@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { type RouteProps, Navigate } from 'react-router';
+import { type RouteProps, Navigate, Outlet } from 'react-router';
 import { cookiePolicyUrl, loginUrl, orgRoleDetailUrl, privacyPolicyUrl, projectRoleDetailUrl, componentRoleDetailUrl, projectGroupDetailUrl, componentGroupDetailUrl, alertsSegment, buildsSegment, deploySegment } from '../paths';
 import OrgHomeRedirect from '../components/OrgHomeRedirect';
 import CreateUser from '../pages/CreateUser';
@@ -38,6 +38,9 @@ import CreateProject from '../pages/CreateProject';
 import CreateIntegrationOptions from '../pages/CreateIntegrationOptions';
 import ImportIntegration from '../pages/ImportIntegration';
 import BrowseSamples from '../pages/BrowseSamples';
+import BrowsePrebuiltIntegrations from '../pages/BrowsePrebuiltIntegrations';
+import PrebuiltIntegrationSetup from '../pages/PrebuiltIntegrationSetup';
+import PrebuiltIntegrationDeploy from '../pages/PrebuiltIntegrationDeploy';
 import GitHubOAuthCallback from '../pages/GitHubOAuthCallback';
 import Project from '../pages/Project';
 import Component from '../pages/Component';
@@ -59,6 +62,7 @@ import ComingSoon from '../pages/ComingSoon';
 import Alerts from '../pages/Alerts';
 import { ScopeResolver, generateMatrixRoutes, withScope, type Matrix } from '../nav';
 import { createElement } from 'react';
+import { PrebuiltIntegrationConfigProvider } from '../contexts/PrebuiltIntegrationConfigContext';
 import Build from '../pages/Build';
 import OrgBuild from '../pages/OrgBuild';
 import ProjectBuild from '../pages/ProjectBuild';
@@ -169,9 +173,13 @@ const routes: AppRoute[] = [
               { path: projectGroupDetailUrl(':orgHandler', ':projectHandler', ':groupId'), element: <ProjectGroupDetail /> },
               { path: componentGroupDetailUrl(':orgHandler', ':projectHandler', ':componentHandler', ':groupId'), element: <ComponentGroupDetail /> },
               { path: '/profile', element: <Profile /> },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/prebuilt-integrations', element: createElement(withScope(BrowsePrebuiltIntegrations, ['projects'])) },
               {
-                path: 'organizations/:orgHandler/projects/:projectHandler/prebuilt-integrations',
-                element: <ComingSoon title="Coming Soon" description="Prebuilt integrations are currently under development. You'll be able to browse and deploy prebuilt integrations directly from here." />,
+                element: <PrebuiltIntegrationConfigProvider><Outlet /></PrebuiltIntegrationConfigProvider>,
+                children: [
+                  { path: 'organizations/:orgHandler/projects/:projectHandler/prebuilt-integrations/:slug', element: createElement(withScope(PrebuiltIntegrationSetup, ['projects'])) },
+                  { path: 'organizations/:orgHandler/projects/:projectHandler/prebuilt-integrations/:slug/deploy', element: createElement(withScope(PrebuiltIntegrationDeploy, ['projects'])) },
+                ],
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/new/import-coming-soon',
