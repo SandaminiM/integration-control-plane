@@ -639,6 +639,7 @@ function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envI
     setSaveError(null);
     setImportedFileName(null);
     certSeededRef.current = false;
+    setLinkedCerts([]);
     if (data !== undefined) {
       const initValues = new Map<string, BaseType>();
       const initSensitive = new Map<string, boolean>();
@@ -697,7 +698,7 @@ function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envI
       // mountDirectory is derived from the full key (e.g., /certs/ca.crt → /certs)
       const fullKey = first.key;
       const lastSlash = fullKey.lastIndexOf('/');
-      const mountPath = lastSlash > 0 ? fullKey.substring(0, lastSlash) : '/certs';
+      const mountPath = lastSlash >= 0 ? fullKey.substring(0, lastSlash) || '/' : '/certs';
       return {
         groupUuid: groupId,
         groupName: first.configGroupName || groupId,
@@ -705,7 +706,7 @@ function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envI
         keys: cfgs.map((c) => ({
           keyUuid: c.configKeyId || '',
           key: c.configKeyName || c.key,
-          mountedAs: lastSlash > 0 ? c.key.substring(lastSlash + 1) : c.key,
+          mountedAs: lastSlash >= 0 ? c.key.substring(lastSlash + 1) : c.key,
         })),
       };
     });

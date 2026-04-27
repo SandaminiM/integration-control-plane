@@ -41,10 +41,59 @@ const parseTomlValue = (rawValue: string): unknown => {
     const tableContent = value.slice(1, -1).trim();
     if (tableContent === '') return {};
     const result: Record<string, unknown> = {};
-    const pairs = tableContent.split(',');
+    const pairs: string[] = [];
+    let current = '';
+    let depth = 0;
+    let inString = false;
+    let stringChar = '';
+    for (let i = 0; i < tableContent.length; i++) {
+      const char = tableContent[i];
+      if (!inString && (char === '"' || char === "'")) {
+        inString = true;
+        stringChar = char;
+      } else if (inString && char === stringChar) {
+        inString = false;
+        stringChar = '';
+      } else if (!inString) {
+        if (char === '[' || char === '{') depth++;
+        else if (char === ']' || char === '}') depth--;
+        else if (char === ',' && depth === 0) {
+          if (current.trim()) pairs.push(current.trim());
+          current = '';
+          continue;
+        }
+      }
+      current += char;
+    }
+    if (current.trim()) pairs.push(current.trim());
     pairs.forEach((pair) => {
-      const [key, ...valueParts] = pair.split('=');
-      if (key && valueParts.length > 0) result[key.trim()] = parseTomlValue(valueParts.join('=').trim());
+      // Split on the first top-level '='
+      let eqIndex = -1;
+      let pDepth = 0;
+      let pInString = false;
+      let pStringChar = '';
+      for (let i = 0; i < pair.length; i++) {
+        const ch = pair[i];
+        if (!pInString && (ch === '"' || ch === "'")) {
+          pInString = true;
+          pStringChar = ch;
+        } else if (pInString && ch === pStringChar) {
+          pInString = false;
+          pStringChar = '';
+        } else if (!pInString) {
+          if (ch === '[' || ch === '{') pDepth++;
+          else if (ch === ']' || ch === '}') pDepth--;
+          else if (ch === '=' && pDepth === 0) {
+            eqIndex = i;
+            break;
+          }
+        }
+      }
+      if (eqIndex > 0) {
+        const key = pair.substring(0, eqIndex).trim();
+        const val = pair.substring(eqIndex + 1).trim();
+        if (key) result[key] = parseTomlValue(val);
+      }
     });
     return result;
   }
@@ -90,8 +139,11 @@ const parseToml = (content: string): Record<string, unknown> => {
   let currentArrayTable = '';
   const arrayTables: Record<string, Record<string, unknown>[]> = {};
   let lineNumber = 0;
+  let i = 0;
 
-  for (const line of lines) {
+  while (i < lines.length) {
+    const line = lines[i];
+    i++;
     lineNumber++;
     const trimmedLine = line.trim();
     if (!trimmedLine || trimmedLine.startsWith('#')) continue;
@@ -116,7 +168,21 @@ const parseToml = (content: string): Record<string, unknown> => {
       const keyValueMatch = trimmedLine.match(/^([^=]+)=(.+)$/);
       if (keyValueMatch) {
         const key = keyValueMatch[1].trim();
-        const parsedValue = parseTomlValue(keyValueMatch[2].trim());
+        let rawValue = keyValueMatch[2].trim();
+
+        // Accumulate subsequent lines for multiline triple-quoted strings
+        const tripleQuote = rawValue.startsWith('"""') ? '"""' : rawValue.startsWith("'''") ? "'''" : null;
+        if (tripleQuote && !rawValue.slice(3).includes(tripleQuote)) {
+          while (i < lines.length) {
+            const nextLine = lines[i];
+            i++;
+            lineNumber++;
+            rawValue += '\n' + nextLine;
+            if (nextLine.includes(tripleQuote)) break;
+          }
+        }
+
+        const parsedValue = parseTomlValue(rawValue);
         if (currentArrayTable) {
           const arr = arrayTables[currentArrayTable];
           arr[arr.length - 1][key] = parsedValue;
@@ -236,17 +302,23 @@ export const getAllSchemaKeys = (schema: JSONSchema): string[] => {
     Object.keys(currentSchema.properties).forEach((key) => {
       const fullPath = basePath ? `${basePath}.${key}` : key;
       const property = currentSchema.properties![key];
-      if (property.type === 'object' && property.properties) {
-        collectKeys(property, fullPath);
+      if (property.type === 'object') {
+        if (property.properties) {
+          collectKeys(property, fullPath);
+        }
+        if (property.additionalProperties) {
+          keys.push(fullPath);
+          if (typeof property.additionalProperties === 'object' && (property.additionalProperties as JSONSchema).properties) {
+            collectKeys(property.additionalProperties as JSONSchema, `${fullPath}.*`);
+          }
+        }
+        if (!property.properties && !property.additionalProperties) {
+          keys.push(fullPath);
+        }
       } else if (property.type === 'array') {
         keys.push(fullPath);
         if (property.items && typeof property.items === 'object' && property.items.properties) {
           collectKeys(property.items as JSONSchema, `${fullPath}[*]`);
-        }
-      } else if (property.type === 'object' && property.additionalProperties) {
-        keys.push(fullPath);
-        if (typeof property.additionalProperties === 'object' && (property.additionalProperties as JSONSchema).properties) {
-          collectKeys(property.additionalProperties as JSONSchema, `${fullPath}.*`);
         }
       } else {
         keys.push(fullPath);
