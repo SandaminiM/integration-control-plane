@@ -62,6 +62,7 @@ export default function PrebuiltConfigForm({ configSchema, onChange, onRequiredC
   const requiredPaths = useMemo(() => (schema?.properties ? getRequiredPathsAtLevel(schema) : []), [schema]);
 
   useEffect(() => {
+    const sanitize = (raw: string): string => raw.trim().replace(/\0/g, '');
     const items: SchemaConfigItem[] = [];
     valueMap.forEach((value, key) => {
       if (value !== '' && value !== undefined && value !== null) {
@@ -69,7 +70,7 @@ export default function PrebuiltConfigForm({ configSchema, onChange, onRequiredC
         const linking = linkingMap.get(key);
         items.push({
           key,
-          values: [{ value: String(value) }],
+          values: [{ value: sanitize(String(value)) }],
           ...(isSensitive ? { isSensitive } : {}),
           ...(linking?.configGroupId ? { configGroupId: linking.configGroupId } : {}),
           ...(linking?.configKeyId ? { configKeyId: linking.configKeyId } : {}),

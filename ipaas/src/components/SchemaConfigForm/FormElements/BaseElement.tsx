@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useMemo, useState, type Dispatch, type MouseEvent, type SetStateAction } from 'react';
 import { Box, Button, Chip, IconButton, InputAdornment, MenuItem, Popover, Stack, Switch, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Eye, EyeOff, Link2, Link2Off, Lock, Pencil, Unlock } from '@wso2/oxygen-ui-icons-react';
 import { type BaseType, type JSONSchema, type LinkingInfo, isNumberType, typeDisplayName } from '../schemaUtils';
@@ -186,7 +186,7 @@ export function BaseElement({
     setShowSensitiveInput(true);
   };
 
-  const handleLinkOpen = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleLinkOpen = (e: MouseEvent<HTMLButtonElement>) => {
     setSelectedGroupId(linkedInfo?.configGroupId || '');
     setSelectedKeyId(linkedInfo?.configKeyId || '');
     setLinkAnchorEl(e.currentTarget);
@@ -286,6 +286,7 @@ export function BaseElement({
           disabled={!!linked}
           error={isEdited && !linked && validationMap.get(jsonPath) === false}
           helperText={isEdited && !linked && validationMap.get(jsonPath) === false ? error : undefined}
+          inputProps={{ 'aria-required': Boolean(isRequired) }}
           InputProps={{ endAdornment: linkAdornment ? <InputAdornment position="end">{linkAdornment}</InputAdornment> : undefined }}>
           <MenuItem value="">
             <em>Select an option</em>
@@ -315,6 +316,7 @@ export function BaseElement({
             size="small"
             checked={valueMap.get(jsonPath) === 'true' || valueMap.get(jsonPath) === true || false}
             disabled={!!linked}
+            inputProps={{ 'aria-required': Boolean(isRequired) }}
             onChange={(e) => {
               handleValueChange(jsonPath, e.target.checked);
               handleValidationChange(jsonPath, true);
@@ -347,6 +349,7 @@ export function BaseElement({
               error={!isValidSecret && isEdited}
               helperText={secretError}
               placeholder="Enter a value"
+              inputProps={{ 'aria-required': Boolean(isRequired) }}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -395,6 +398,7 @@ export function BaseElement({
               placeholder="Enter a value"
               error={isEdited && !linked && validationMap.get(jsonPath) === false}
               helperText={isEdited && !linked && validationMap.get(jsonPath) === false ? error : undefined}
+              inputProps={{ 'aria-required': Boolean(isRequired) }}
               InputProps={{
                 readOnly: !!linked,
                 endAdornment: (
@@ -459,6 +463,7 @@ export function BaseElement({
         placeholder="Enter a value"
         error={isEdited && !linked && validationMap.get(jsonPath) === false}
         helperText={isEdited && !linked && validationMap.get(jsonPath) === false ? error : undefined}
+        inputProps={{ 'aria-required': Boolean(isRequired) }}
         InputProps={{
           readOnly: !!linked,
           endAdornment: (

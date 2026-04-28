@@ -32,7 +32,7 @@ export default function AppIconsRow({ applications, bidirectional = false, avata
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, bgcolor, p: 1.25, borderRadius: 1, flexShrink: 0 }}>
       {applications.map((app, i) => (
-        <Fragment key={app}>
+        <Fragment key={`${app}-${i}`}>
           {i > 0 && (
             <Box sx={{ color: 'text.disabled', display: 'flex', alignItems: 'center' }}>
               <DirectionArrow bidirectional={bidirectional} />

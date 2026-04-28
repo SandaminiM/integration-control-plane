@@ -90,11 +90,11 @@ export function prebuiltIntegrationsUrl(orgHandler: string, projectHandler: stri
 }
 
 export function prebuiltIntegrationSetupUrl(orgHandler: string, projectHandler: string, slug: string): string {
-  return `/organizations/${orgHandler}/projects/${projectHandler}/prebuilt-integrations/${slug}`;
+  return `/organizations/${orgHandler}/projects/${projectHandler}/prebuilt-integrations/${encodeURIComponent(slug)}`;
 }
 
 export function prebuiltIntegrationDeployUrl(orgHandler: string, projectHandler: string, slug: string): string {
-  return `/organizations/${orgHandler}/projects/${projectHandler}/prebuilt-integrations/${slug}/deploy`;
+  return `/organizations/${orgHandler}/projects/${projectHandler}/prebuilt-integrations/${encodeURIComponent(slug)}/deploy`;
 }
 
 export function importComingSoonUrl(orgHandler: string, projectHandler: string): string {

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { useRef, type JSX } from 'react';
+import { useRef, type ChangeEvent, type JSX } from 'react';
 import { Button, Chip } from '@wso2/oxygen-ui';
 import { Upload } from '@wso2/oxygen-ui-icons-react';
 import { parseConfigToml, filterTomlValuesBySchema, type BaseType, type JSONSchema } from './SchemaConfigForm';
@@ -32,7 +32,7 @@ interface ImportConfigTomlButtonProps {
 export default function ImportConfigTomlButton({ schema, fileName, onImport, onClear, onError }: ImportConfigTomlButtonProps): JSX.Element {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();

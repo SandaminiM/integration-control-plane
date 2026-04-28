@@ -18,7 +18,7 @@
 
 import { Box, IconButton, Tooltip, useTheme } from '@wso2/oxygen-ui';
 import { RefreshCw } from '@wso2/oxygen-ui-icons-react';
-import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import { useEffect, useMemo, useRef, useState, type JSX, type MouseEvent, type WheelEvent } from 'react';
 import {
   buildClassDefs,
   ensureMermaidInit,
@@ -118,14 +118,14 @@ export default function IntegrationFlowChart({ diagram }: IntegrationFlowChartPr
     svgRef.current.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = (e: MouseEvent) => {
     if (!svgRef.current) return;
     isPanning.current = true;
     startPoint.current = { x: e.clientX, y: e.clientY };
     svgRef.current.style.cursor = 'grabbing';
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseMove = (e: MouseEvent) => {
     if (!isPanning.current || !svgRef.current) return;
     currentTransform.current.x += e.clientX - startPoint.current.x;
     currentTransform.current.y += e.clientY - startPoint.current.y;
@@ -138,7 +138,7 @@ export default function IntegrationFlowChart({ diagram }: IntegrationFlowChartPr
     if (svgRef.current) svgRef.current.style.cursor = 'grab';
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
+  const handleWheel = (e: WheelEvent) => {
     if (!svgRef.current) return;
     e.preventDefault();
     const delta = e.deltaY > 0 ? 0.9 : 1.1;

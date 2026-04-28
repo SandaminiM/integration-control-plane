@@ -57,4 +57,5 @@ export interface DeployPrebuiltIntegrationState {
   isDeploying: boolean;
   isSuccess: boolean;
   componentHandler: string | null;
+  configSaveError: boolean;
 }

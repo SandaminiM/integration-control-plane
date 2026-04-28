@@ -17,7 +17,7 @@
  */
 
 import { Alert, Box, Button, CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
-import { useEffect, useRef, type JSX } from 'react';
+import { useEffect, useRef, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
 import { useDeployPrebuiltIntegration } from '../hooks/useDeployPrebuiltIntegration';
 import { usePrebuiltIntegrationConfig } from '../contexts/PrebuiltIntegrationConfigContext';
@@ -30,8 +30,9 @@ export default function PrebuiltIntegrationDeploy(scope: ProjectScope): JSX.Elem
   const { integration, configValues, clearAll } = usePrebuiltIntegrationConfig();
 
   const { projectId } = useProjectId(scope.project);
-  const { deploy, reset, progress, stepLabel, error, isDeploying, isSuccess, componentHandler } = useDeployPrebuiltIntegration();
+  const { deploy, reset, progress, stepLabel, error, isDeploying, isSuccess, componentHandler, configSaveError } = useDeployPrebuiltIntegration();
   const hasDeployedRef = useRef(false);
+  const [configAlertDismissed, setConfigAlertDismissed] = useState(false);
 
   useEffect(() => {
     if (!integration || !projectId) return;
@@ -48,13 +49,13 @@ export default function PrebuiltIntegrationDeploy(scope: ProjectScope): JSX.Elem
   }, [projectId]);
 
   useEffect(() => {
-    if (isSuccess && componentHandler) {
+    if (isSuccess && componentHandler && (!configSaveError || configAlertDismissed)) {
       clearAll();
       const overviewUrl = resourceUrl(narrow(scope, componentHandler), 'overview');
       navigate(overviewUrl, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSuccess, componentHandler]);
+  }, [isSuccess, componentHandler, configAlertDismissed]);
 
   if (!integration) {
     return (
@@ -120,6 +121,15 @@ export default function PrebuiltIntegrationDeploy(scope: ProjectScope): JSX.Elem
       <Typography color="text.secondary" variant="body2">
         {stepLabel || 'Preparing deployment…'}
       </Typography>
+
+      {configSaveError && !configAlertDismissed && (
+        <Alert
+          severity="warning"
+          onClose={() => setConfigAlertDismissed(true)}
+          sx={{ mt: 3, maxWidth: 480, width: '100%', textAlign: 'left' }}>
+          Failed to save configurations. Please configure the integration once the deployment finishes.
+        </Alert>
+      )}
     </PageContent>
   );
 }

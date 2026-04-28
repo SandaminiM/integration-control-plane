@@ -39,6 +39,7 @@ const IDLE_STATE: DeployPrebuiltIntegrationState = {
   isDeploying: false,
   isSuccess: false,
   componentHandler: null,
+  configSaveError: false,
 };
 
 export function useDeployPrebuiltIntegration() {
@@ -57,7 +58,7 @@ export function useDeployPrebuiltIntegration() {
 
   const deploy = useCallback(async (input: DeployPrebuiltIntegrationInput) => {
     const { integration, orgHandler, projectId, configValues } = input;
-    setState({ progress: 0, stepLabel: 'Checking name availability…', error: null, isDeploying: true, isSuccess: false, componentHandler: null });
+    setState({ progress: 0, stepLabel: 'Checking name availability…', error: null, isDeploying: true, isSuccess: false, componentHandler: null, configSaveError: false });
 
     let createdComponentId: string | null = null;
 
@@ -100,7 +101,7 @@ export function useDeployPrebuiltIntegration() {
           const sha = await fetchLatestCommitSha(detail.id, integration.branch ?? 'main');
           await savePrebuiltConfig(projectId, detail.id, env.templateId, deploymentTrackId, configValues, sha);
         } catch {
-          // Config save failure is non-fatal — deployment continues
+          setState((s) => ({ ...s, configSaveError: true }));
         }
       }
 
@@ -111,10 +112,15 @@ export function useDeployPrebuiltIntegration() {
         appBranch: integration.branch ?? 'main',
       });
 
-      setState({ progress: 100, stepLabel: 'Deployed!', error: null, isDeploying: false, isSuccess: true, componentHandler: component.handler });
-    } catch {
+      setState((s) => ({ ...s, progress: 100, stepLabel: 'Deployed!', error: null, isDeploying: false, isSuccess: true, componentHandler: component.handler }));
+    } catch (err) {
       if (createdComponentId) {
-        deleteComponentRef.current.mutate({ orgHandler, componentId: createdComponentId, projectId });
+        try {
+          await deleteComponentRef.current.mutateAsync({ orgHandler, componentId: createdComponentId, projectId });
+        } catch (rollbackErr) {
+          // eslint-disable-next-line no-console
+          console.error('Failed to rollback component creation', { createdComponentId, orgHandler, projectId }, rollbackErr);
+        }
       }
       setState((s) => ({ ...s, error: 'Something went wrong while deploying the integration. Please try again.', isDeploying: false }));
     }

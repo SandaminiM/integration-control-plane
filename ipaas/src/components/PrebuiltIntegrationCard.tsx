@@ -51,7 +51,12 @@ export default function PrebuiltIntegrationCard({ integration, selected, onClick
       onClick={onClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && onClick()}
+      onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+            if (e.key === ' ' || e.key === 'Spacebar') e.preventDefault();
+            onClick();
+          }
+        }}
       sx={{
         display: 'flex',
         alignItems: 'center',

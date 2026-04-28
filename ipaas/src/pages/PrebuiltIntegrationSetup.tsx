@@ -18,7 +18,7 @@
 
 import { Alert, Box, Button, PageContent, Skeleton, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, ArrowRight } from '@wso2/oxygen-ui-icons-react';
-import { useState, type JSX } from 'react';
+import { useState, useMemo, type JSX } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router';
 import AppIconsRow from '../components/AppIconsRow';
 import ImportConfigTomlButton from '../components/ImportConfigTomlButton';
@@ -26,7 +26,8 @@ import Markdown from '../components/Markdown';
 import PrebuiltConfigForm from '../components/PrebuiltConfigForm';
 import type { BaseType } from '../components/SchemaConfigForm';
 import { formatComponentType } from '../constants/integrations';
-import { usePrebuiltInstructions, usePrebuiltConfigSchema } from '../hooks/usePrebuiltIntegrations';
+import { usePrebuiltIntegrations, usePrebuiltInstructions, usePrebuiltConfigSchema } from '../hooks/usePrebuiltIntegrations';
+import { derivePrebuiltSlug } from '../utils/prebuilt';
 import { usePrebuiltIntegrationConfig } from '../contexts/PrebuiltIntegrationConfigContext';
 import type { ProjectScope } from '../nav';
 import { prebuiltIntegrationsUrl, prebuiltIntegrationDeployUrl } from '../paths';
@@ -70,7 +71,14 @@ export default function PrebuiltIntegrationSetup(scope: ProjectScope): JSX.Eleme
   const location = useLocation();
   const { slug } = useParams<{ slug: string }>();
   const locationState = (location.state ?? {}) as LocationState;
-  const integration = locationState.integration ?? null;
+  const fromState = locationState.integration ?? null;
+
+  const { data: prebuiltData, isLoading: isPrebuiltLoading } = usePrebuiltIntegrations();
+  const integration = useMemo((): PrebuiltIntegration | null => {
+    if (fromState) return fromState;
+    if (!slug || !prebuiltData?.prebuiltIntegrations) return null;
+    return prebuiltData.prebuiltIntegrations.find((item) => derivePrebuiltSlug(item) === slug) ?? null;
+  }, [fromState, slug, prebuiltData]);
 
   const [configValues, setConfigValues] = useState<SchemaConfigItem[]>([]);
   const [requiredComplete, setRequiredComplete] = useState(false);
@@ -105,6 +113,15 @@ export default function PrebuiltIntegrationSetup(scope: ProjectScope): JSX.Eleme
   };
 
   if (!integration) {
+    if (!fromState && isPrebuiltLoading) {
+      return (
+        <PageContent sx={{ pt: 5 }}>
+          <Skeleton variant="rounded" width={220} height={36} sx={{ mb: 3 }} />
+          <Skeleton variant="rounded" height={72} sx={{ mb: 4 }} />
+          <Skeleton variant="rounded" height={360} />
+        </PageContent>
+      );
+    }
     return (
       <PageContent sx={{ pt: 5 }}>
         <Button startIcon={<ArrowLeft size={16} />} onClick={handleBack} sx={{ mb: 3, pl: 0 }}>

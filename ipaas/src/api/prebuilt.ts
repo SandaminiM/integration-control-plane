@@ -37,7 +37,7 @@ interface Environment {
 }
 
 export async function checkNameAvailability(projectId: string, candidate: string): Promise<string> {
-  const safe = candidate.replace(/"/g, '');
+  const safe = candidate.replace(/["\\\n\r]/g, '');
   const data = await gql<{ componentNameAvailability: NameAvailability }>(
     `query { componentNameAvailability(projectId: "${projectId}", componentNameCandidate: "${safe}") { componentNameUnique alternateComponentName } }`,
   );
@@ -78,7 +78,12 @@ export async function savePrebuiltConfig(
   configurations: SchemaConfigItem[],
   commitHash: string,
 ): Promise<void> {
-  const base = new URL(window.API_CONFIG.graphqlUrl).origin;
+  let base: string;
+  try {
+    base = new URL(window.API_CONFIG.graphqlUrl).origin;
+  } catch {
+    throw new Error('API configuration is missing or invalid: graphqlUrl is not a valid URL');
+  }
   const url = `${base}/configuration-schema/v1.0/projects/${projectId}/components/${componentId}/env-template/${envId}/deployment-track/${deploymentTrackId}/configurations`;
   const configurationsWithEnv = configurations.map((item) => ({
     ...item,
