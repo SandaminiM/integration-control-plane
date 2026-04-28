@@ -59,7 +59,11 @@ export default function PrebuiltConfigForm({ configSchema, onChange, onRequiredC
     });
   }, [seededValues]);
 
-  const requiredPaths = useMemo(() => (schema?.properties ? getRequiredPathsAtLevel(schema) : []), [schema]);
+  // Exclude array paths (contain "[") and map paths (end with ".*")
+  const scalarRequiredPaths = useMemo(() => {
+    const all = schema?.properties ? getRequiredPathsAtLevel(schema) : [];
+    return all.filter((p) => !p.includes('[') && !p.endsWith('.*'));
+  }, [schema]);
 
   useEffect(() => {
     const sanitize = (raw: string): string => raw.trim().replace(/\0/g, '');
@@ -80,10 +84,17 @@ export default function PrebuiltConfigForm({ configSchema, onChange, onRequiredC
     });
     onChangeRef.current(items);
 
-    const allRequiredValid = requiredPaths.every((p) => validationMap.get(p) === true);
-    const hasInvalidFields = Array.from(validationMap.values()).some((v) => v === false);
-    onRequiredCompleteRef.current?.(allRequiredValid && !hasInvalidFields);
-  }, [valueMap, validationMap, sensitiveMap, linkingMap, requiredPaths]);
+    // Check scalar required fields using valueMap directly.
+    const allScalarRequiredFilled = scalarRequiredPaths.every((p) => {
+      const val = valueMap.get(p);
+      return val !== undefined && val !== null && String(val).trim() !== '';
+    });
+    // Still block on explicit validation failures (e.g. bad number format) for scalar fields.
+    const hasInvalidScalarFields = Array.from(validationMap.entries())
+      .filter(([k]) => k !== '' && !k.includes('[') && !k.endsWith('.*'))
+      .some(([, v]) => v === false);
+    onRequiredCompleteRef.current?.(allScalarRequiredFilled && !hasInvalidScalarFields);
+  }, [valueMap, validationMap, sensitiveMap, linkingMap, scalarRequiredPaths]);
 
   const handleValueChange = (key: string, value: BaseType, newMap?: Map<string, BaseType>) => {
     if (newMap) {
