@@ -17,12 +17,12 @@
  */
 
 import { useState } from 'react';
-import { type JSX } from 'react';
+import type { JSX } from 'react';
 import { Alert, Box, Button, CircularProgress, ColorSchemeImage, Divider, Grid, Link, Stack, Typography } from '@wso2/oxygen-ui';
-import { Building2, GitHub, Google, Mail } from '@wso2/oxygen-ui-icons-react';
+import { GitHub, Google, Mail } from '@wso2/oxygen-ui-icons-react';
 import { Link as NavLink } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
-import { privacyPolicyUrl, signupUrl } from '../paths';
+import { loginUrl, privacyPolicyUrl } from '../paths';
 
 function MicrosoftIcon() {
   return (
@@ -38,10 +38,10 @@ function MicrosoftIcon() {
 function friendlyError(err: unknown): string {
   const message = (err instanceof Error ? err.message : String(err)).toLowerCase();
   if (message.includes('failed to fetch') || err instanceof TypeError) return 'Unable to connect to the server. Please check your connection and try again.';
-  return 'Sign-in failed. Please try again.';
+  return 'Sign-up failed. Please try again.';
 }
 
-export default function Login(): JSX.Element {
+export default function Signup(): JSX.Element {
   const base = import.meta.env.BASE_URL;
   const { loginWithOIDC } = useAuth();
 
@@ -49,7 +49,19 @@ export default function Login(): JSX.Element {
   const [provider, setProvider] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSignIn = async (fidp: string) => {
+  const handleEmailSignup = () => {
+    const origin = window.location.origin;
+    const postRegisterCallback = encodeURIComponent(`${origin}/login?method=basic&returnToUrl=%2F`);
+    const params = new URLSearchParams({
+      'initiated-platform': 'devant',
+      'template-name': 'DevantLiteUserEmailConfirmation',
+      'tenant-url-prefix': origin,
+      'post-register-callback': postRegisterCallback,
+    });
+    window.location.href = `${window.API_CONFIG.asgardeoSignupUrl}?${params}`;
+  };
+
+  const handleSignup = async (fidp: string) => {
     setError(null);
     setLoading(true);
     setProvider(fidp);
@@ -65,7 +77,7 @@ export default function Login(): JSX.Element {
   return (
     <Box sx={{ height: '100vh', display: 'flex' }}>
       <Grid container sx={{ flex: 1 }}>
-        {/* Left marketing panel */}
+        {/* Left panel */}
         <Grid
           size={{ xs: 12, md: 8 }}
           sx={{
@@ -118,11 +130,11 @@ export default function Login(): JSX.Element {
               mt: 2,
               width: '100%',
             }}>
-            <img src={`${base}assets/images/WIP-login.svg`} alt="Login illustration" style={{ maxWidth: '90%', maxHeight: '280px', objectFit: 'contain' }} />
+            <img src={`${base}assets/images/WIP-login.svg`} alt="Sign up illustration" style={{ maxWidth: '90%', maxHeight: '280px', objectFit: 'contain' }} />
           </Box>
         </Grid>
 
-        {/* Right sign-in panel */}
+        {/* Right panel — sign-up form */}
         <Grid
           size={{ xs: 12, md: 4 }}
           sx={{
@@ -144,12 +156,12 @@ export default function Login(): JSX.Element {
           {/* Main form area */}
           <Box sx={{ width: '100%', maxWidth: 360, mx: 'auto', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <Typography variant="h1" sx={{ mb: 0.5 }}>
-              Sign In
+              Sign Up
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Don&apos;t have an account?{' '}
-              <Link component={NavLink} to={signupUrl()} underline="hover" color="primary">
-                Sign up!
+              Already have an account?{' '}
+              <Link component={NavLink} to={loginUrl()} underline="hover" color="primary">
+                Sign In
               </Link>
             </Typography>
 
@@ -165,7 +177,7 @@ export default function Login(): JSX.Element {
                 variant="contained"
                 color="secondary"
                 startIcon={loading && provider === 'google' ? <CircularProgress size={20} color="inherit" /> : <Google />}
-                onClick={() => handleSignIn('google')}
+                onClick={() => handleSignup('google')}
                 disabled={loading}
                 sx={{ borderRadius: '28px', py: 1.25 }}>
                 {loading && provider === 'google' ? 'Redirecting...' : 'Continue with Google'}
@@ -176,7 +188,7 @@ export default function Login(): JSX.Element {
                 variant="contained"
                 color="secondary"
                 startIcon={loading && provider === 'github' ? <CircularProgress size={20} color="inherit" /> : <GitHub />}
-                onClick={() => handleSignIn('github')}
+                onClick={() => handleSignup('github')}
                 disabled={loading}
                 sx={{ borderRadius: '28px', py: 1.25 }}>
                 {loading && provider === 'github' ? 'Redirecting...' : 'Continue with GitHub'}
@@ -187,34 +199,23 @@ export default function Login(): JSX.Element {
                 variant="contained"
                 color="secondary"
                 startIcon={loading && provider === 'microsoft' ? <CircularProgress size={20} color="inherit" /> : <MicrosoftIcon />}
-                onClick={() => handleSignIn('microsoft')}
+                onClick={() => handleSignup('microsoft')}
                 disabled={loading}
                 sx={{ borderRadius: '28px', py: 1.25 }}>
                 {loading && provider === 'microsoft' ? 'Redirecting...' : 'Continue with Microsoft'}
               </Button>
 
-              <Button
-                fullWidth
-                variant="contained"
-                color="secondary"
-                startIcon={loading && provider === 'EnterpriseIDP' ? <CircularProgress size={20} color="inherit" /> : <Building2 size={20} />}
-                onClick={() => handleSignIn('EnterpriseIDP')}
-                disabled={loading}
-                sx={{ borderRadius: '28px', py: 1.25 }}>
-                {loading && provider === 'EnterpriseIDP' ? 'Redirecting...' : 'Sign in with Enterprise ID'}
-              </Button>
-
-              <Divider sx={{ my: 0.5 }}>or</Divider>
+              <Divider sx={{ my: 0.5 }}>OR</Divider>
 
               <Button
                 fullWidth
                 variant="contained"
                 color="secondary"
                 startIcon={loading && provider === 'LOCAL' ? <CircularProgress size={20} color="inherit" /> : <Mail size={20} />}
-                onClick={() => handleSignIn('LOCAL')}
+                onClick={handleEmailSignup}
                 disabled={loading}
                 sx={{ borderRadius: '28px', py: 1.25 }}>
-                {loading && provider === 'LOCAL' ? 'Redirecting...' : 'Sign in with Email'}
+                Sign up with Email
               </Button>
             </Stack>
 
@@ -227,11 +228,11 @@ export default function Login(): JSX.Element {
                 </Link>
               </Typography>
               <Stack direction="row" justifyContent="center" alignItems="center" spacing={0.5}>
-                <Link component={NavLink} to={privacyPolicyUrl()} underline="hover" color="primary" sx={{ fontSize: '0.75rem' }}>
+                <Link component={NavLink} to={privacyPolicyUrl()} underline="hover" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
                   Privacy Policy
                 </Link>
                 <Typography sx={{ color: 'text.disabled', fontSize: '0.75rem' }}>|</Typography>
-                <Link href="https://wso2.com/devant/terms-of-use" target="_blank" rel="noopener noreferrer" underline="hover" color="primary" sx={{ fontSize: '0.75rem' }}>
+                <Link href="https://wso2.com/devant/terms-of-use" target="_blank" rel="noopener noreferrer" underline="hover" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
                   Terms of Use
                 </Link>
               </Stack>

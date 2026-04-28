@@ -25,6 +25,7 @@ import {
   saveTokens,
   clearTokens,
   getAccessToken,
+  getRefreshToken,
   revokeToken,
   setOnAuthFailure,
   generateAndSaveOIDCState,
@@ -60,7 +61,8 @@ interface AuthContextValue {
   clearRequirePasswordChange: () => void;
   login: (username: string, password: string) => Promise<void>;
   loginWithOIDC: (fidp?: string) => Promise<void>;
-  handleOIDCCallback: (code: string, state: string | null) => Promise<void>;
+  handleOIDCCallback: (code: string, state: string | null) => Promise<{ isNewUser: boolean }>;
+  completeOrgRegistration: (orgHandle: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -150,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     window.location.href = `${asgardeoAuthorizeEndpoint}?${params}`;
   }, []);
 
-  const handleOIDCCallback = useCallback(async (code: string, _state: string | null) => {
+  const handleOIDCCallback = useCallback(async (code: string, _state: string | null): Promise<{ isNewUser: boolean }> => {
     const { asgardeoClientId, asgardeoTokenEndpoint, asgardeoSignInRedirectUrl, stsTokenEndpoint, stsClientId, stsScope, choreoOrgApiUrl } = window.API_CONFIG;
 
     const codeVerifier = getAndClearCodeVerifier();
@@ -179,90 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     let finalToken = asgardeoToken;
     let finalExpiresIn = tokenData.expires_in ?? 3600;
 
-    let orgHandle: string | undefined;
-    if (stsTokenEndpoint && stsClientId) {
-      const stsBaseParams = {
-        grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-        client_id: stsClientId,
-        subject_token: asgardeoToken,
-        subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-        requested_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-        ...(stsScope ? { scope: stsScope } : {}),
-      };
-
-      // Step 2: Initial STS exchange without orgHandle — gets a base token to call the Choreo orgs API.
-      // The orgs API rejects the raw Asgardeo token (401), so we need at least a base STS token first.
-      let baseStsToken: string | undefined;
-      try {
-        const baseStsRes = await fetch(stsTokenEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams(stsBaseParams).toString(),
-        });
-        if (baseStsRes.ok) {
-          const baseStsData: { access_token: string } = await baseStsRes.json();
-          baseStsToken = baseStsData.access_token;
-        } else {
-          throw new Error(`Initial STS exchange failed (${baseStsRes.status}): ${await baseStsRes.text()}`);
-        }
-      } catch (err) {
-        throw new Error(`STS token exchange error: ${err instanceof Error ? err.message : String(err)}`);
-      }
-
-      // Step 3: Fetch user's org handle using the base STS token
-      try {
-        const orgsRes = await fetch(`${choreoOrgApiUrl}/orgs`, {
-          headers: { Authorization: `Bearer ${baseStsToken}` },
-        });
-        if (orgsRes.ok) {
-          const orgsData = await orgsRes.json();
-          const orgs: Array<{ handle?: string; orgHandle?: string; org_handle?: string; id?: number; orgId?: number }> = orgsData.list ?? orgsData.organizations ?? (Array.isArray(orgsData) ? orgsData : []);
-          for (const org of orgs) {
-            const h = org.handle ?? org.orgHandle ?? org.org_handle;
-            if (h) {
-              orgHandle = h;
-              localStorage.setItem('icp_org_handle', h);
-              const numericId = org.id ?? org.orgId;
-              if (numericId) {
-                const parsedId = typeof numericId === 'string' ? parseInt(numericId, 10) : numericId;
-                window.API_CONFIG.asgardeoOrgNumericId = parsedId;
-                localStorage.setItem('icp_org_numeric_id', String(parsedId));
-              }
-              break;
-            }
-          }
-        } else {
-          throw new Error(`Orgs API returned ${orgsRes.status}: ${await orgsRes.text()}`);
-        }
-      } catch (err) {
-        throw new Error(`Failed to fetch org handle: ${err instanceof Error ? err.message : String(err)}`);
-      }
-
-      if (!orgHandle) {
-        throw new Error('No organization found for this account. Please contact your administrator.');
-      }
-
-      // Step 4: Final STS exchange WITH orgHandle — gets the org-scoped token for all Choreo API access.
-      // Always use the original Asgardeo token as the subject (same pattern as devant's useOrgTokenExchange).
-      try {
-        const orgStsRes = await fetch(stsTokenEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({ ...stsBaseParams, orgHandle }).toString(),
-        });
-        if (orgStsRes.ok) {
-          const orgStsData: { access_token: string; expires_in?: number } = await orgStsRes.json();
-          finalToken = orgStsData.access_token;
-          finalExpiresIn = orgStsData.expires_in ?? 3600;
-        } else {
-          throw new Error(`Org-scoped STS exchange failed (${orgStsRes.status}): ${await orgStsRes.text()}`);
-        }
-      } catch (err) {
-        throw new Error(`Org-scoped STS exchange error: ${err instanceof Error ? err.message : String(err)}`);
-      }
-    }
-
-    // Step 4: Decode ID token for user info
+    // Decode ID token early — needed for both new-user and existing-user paths
     let userId = crypto.randomUUID();
     let username = '';
     let displayName = '';
@@ -279,12 +198,253 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       }
     }
 
+    // Asgardeo's super-tenant — not a real ICP org, always skip.
+    const ASGARDEO_SUPER_TENANT = 'carbon.super';
+
+    // Step 2: Call validate/user (accepts raw Asgardeo token) to get the org handle.
+    // This is the primary org-discovery method. Falls back to STS-based lookup if unavailable.
+    const userMgtBaseUrl = choreoOrgApiUrl?.replace('/orgs/1.0.0', '/user-mgt/1.0.0');
+    let orgHandle: string | undefined;
+    let validateUserSucceeded = false;
+
+    if (userMgtBaseUrl) {
+      try {
+        const validateRes = await fetch(`${userMgtBaseUrl}/validate/user?origin_cloud=devant`, {
+          headers: { Authorization: `Bearer ${asgardeoToken}` },
+        });
+        if (validateRes.ok) {
+          validateUserSucceeded = true;
+          const validateData: { organizations?: Array<{ id?: string; handle?: string }>; isNewUserSignup?: boolean } = await validateRes.json();
+          const org = (validateData.organizations ?? []).find((o) => o.handle && o.handle !== ASGARDEO_SUPER_TENANT);
+          if (org?.handle) {
+            orgHandle = org.handle;
+            localStorage.setItem('icp_org_handle', orgHandle);
+            if (org.id) {
+              const numId = parseInt(org.id, 10);
+              if (!isNaN(numId)) {
+                window.API_CONFIG.asgardeoOrgNumericId = numId;
+                localStorage.setItem('icp_org_numeric_id', String(numId));
+              }
+            }
+          }
+          // For new signups, clear onboarding state so ToS / persona / region dialogs always show
+          if (validateData.isNewUserSignup) {
+            localStorage.removeItem('icp_tos_accepted');
+            localStorage.removeItem('icp_persona');
+            localStorage.removeItem('icp_region');
+          }
+          // org === undefined means new user (empty organizations list)
+        }
+      } catch {
+        // validate/user unavailable; fall through to STS-based org lookup
+      }
+    }
+
+    // New user confirmed: validate/user succeeded but returned no organizations yet.
+    if (validateUserSucceeded && !orgHandle) {
+      // Best-effort: try to get a base STS token for the registration page.
+      let registrationToken = asgardeoToken;
+      if (stsTokenEndpoint && stsClientId) {
+        try {
+          const baseStsRes = await fetch(stsTokenEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+              client_id: stsClientId,
+              subject_token: asgardeoToken,
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              requested_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              ...(stsScope ? { scope: stsScope } : {}),
+            }).toString(),
+          });
+          if (baseStsRes.ok) {
+            registrationToken = ((await baseStsRes.json()) as { access_token: string }).access_token;
+          }
+        } catch {
+          /* use asgardeo token */
+        }
+      }
+      saveTokens({ token: registrationToken, expiresIn: 3600, refreshToken: tokenData.refresh_token ?? '', refreshTokenExpiresIn: 86400 });
+      saveOidcAuthMetadata(undefined);
+      const newUser: UserInfo = { userId, username, displayName, pictureUrl, isOidcUser: true, requirePasswordChange: false };
+      localStorage.setItem(USER_KEY, JSON.stringify(newUser));
+      setUserInfo(newUser);
+      setIsAuthenticated(true);
+      return { isNewUser: true };
+    }
+
+    if (stsTokenEndpoint && stsClientId) {
+      const stsBaseParams = {
+        grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+        client_id: stsClientId,
+        subject_token: asgardeoToken,
+        subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+        requested_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+        ...(stsScope ? { scope: stsScope } : {}),
+      };
+
+      if (!orgHandle) {
+        // validate/user was unavailable — fall back to STS-based org discovery.
+
+        // Helper: fetch org handle from the orgs API with any bearer token.
+        const fetchOrgHandle = async (bearerToken: string): Promise<{ handle: string; numericId?: number } | 'empty' | null> => {
+          if (!choreoOrgApiUrl) return null;
+          try {
+            const orgsRes = await fetch(`${choreoOrgApiUrl}/orgs`, {
+              headers: { Authorization: `Bearer ${bearerToken}` },
+            });
+            if (!orgsRes.ok) return null;
+            const orgsData = await orgsRes.json();
+            const orgs: Array<{ handle?: string; orgHandle?: string; org_handle?: string; id?: number; orgId?: number }> = orgsData.list ?? orgsData.organizations ?? (Array.isArray(orgsData) ? orgsData : []);
+            for (const org of orgs) {
+              const h = org.handle ?? org.orgHandle ?? org.org_handle;
+              if (h && h !== ASGARDEO_SUPER_TENANT) {
+                const numericId = org.id ?? org.orgId;
+                return { handle: h, numericId: typeof numericId === 'string' ? parseInt(numericId, 10) : numericId };
+              }
+            }
+            return 'empty';
+          } catch {
+            return null;
+          }
+        };
+
+        // Base STS exchange (no orgHandle) to get a token accepted by the orgs API.
+        let baseStsToken: string | null = null;
+        try {
+          const baseStsRes = await fetch(stsTokenEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams(stsBaseParams).toString(),
+          });
+          if (baseStsRes.ok) {
+            baseStsToken = ((await baseStsRes.json()) as { access_token: string }).access_token;
+          } else if (baseStsRes.status >= 500) {
+            console.warn(`[auth] STS unavailable (${baseStsRes.status}), skipping org-scoped token exchange`);
+          } else {
+            throw new Error(`Initial STS exchange failed (${baseStsRes.status}): ${await baseStsRes.text()}`);
+          }
+        } catch (err) {
+          if (err instanceof Error && err.message.startsWith('Initial STS exchange failed')) throw err;
+          console.warn('[auth] STS exchange network error, skipping:', err);
+        }
+
+        if (baseStsToken) {
+          const orgResult = await fetchOrgHandle(baseStsToken);
+          if (orgResult === null && choreoOrgApiUrl) {
+            throw new Error('Failed to fetch org handle: orgs API returned an unexpected response');
+          }
+          if (orgResult && orgResult !== 'empty') {
+            orgHandle = orgResult.handle;
+            localStorage.setItem('icp_org_handle', orgHandle);
+            if (orgResult.numericId) {
+              window.API_CONFIG.asgardeoOrgNumericId = orgResult.numericId;
+              localStorage.setItem('icp_org_numeric_id', String(orgResult.numericId));
+            }
+          }
+          if (!orgHandle) {
+            // New user (empty org list)
+            saveTokens({ token: baseStsToken, expiresIn: 3600, refreshToken: tokenData.refresh_token ?? '', refreshTokenExpiresIn: 86400 });
+            saveOidcAuthMetadata(undefined);
+            const newUser: UserInfo = { userId, username, displayName, pictureUrl, isOidcUser: true, requirePasswordChange: false };
+            localStorage.setItem(USER_KEY, JSON.stringify(newUser));
+            setUserInfo(newUser);
+            setIsAuthenticated(true);
+            return { isNewUser: true };
+          }
+        } else {
+          // STS unavailable — try orgs API with Asgardeo token directly (best-effort).
+          const orgResult = await fetchOrgHandle(asgardeoToken);
+          if (orgResult && orgResult !== 'empty') {
+            orgHandle = orgResult.handle;
+            localStorage.setItem('icp_org_handle', orgHandle);
+            if (orgResult.numericId) {
+              window.API_CONFIG.asgardeoOrgNumericId = orgResult.numericId;
+              localStorage.setItem('icp_org_numeric_id', String(orgResult.numericId));
+            }
+          } else if (orgResult === 'empty') {
+            saveTokens({ token: asgardeoToken, expiresIn: finalExpiresIn, refreshToken: tokenData.refresh_token ?? '', refreshTokenExpiresIn: 86400 });
+            saveOidcAuthMetadata(undefined);
+            const newUser: UserInfo = { userId, username, displayName, pictureUrl, isOidcUser: true, requirePasswordChange: false };
+            localStorage.setItem(USER_KEY, JSON.stringify(newUser));
+            setUserInfo(newUser);
+            setIsAuthenticated(true);
+            return { isNewUser: true };
+          }
+          // If still null: fall through with no orgHandle — OIDCCallback falls back to 'default'.
+        }
+      }
+
+      // Org-scoped STS exchange WITH orgHandle — gets full Choreo API access.
+      if (orgHandle) {
+        try {
+          const orgStsRes = await fetch(stsTokenEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ ...stsBaseParams, orgHandle }).toString(),
+          });
+          if (orgStsRes.ok) {
+            const orgStsData: { access_token: string; expires_in?: number } = await orgStsRes.json();
+            finalToken = orgStsData.access_token;
+            finalExpiresIn = orgStsData.expires_in ?? 3600;
+          } else if (orgStsRes.status < 500) {
+            throw new Error(`Org-scoped STS exchange failed (${orgStsRes.status}): ${await orgStsRes.text()}`);
+          } else {
+            console.warn(`[auth] Org-scoped STS unavailable (${orgStsRes.status}), using Asgardeo token`);
+          }
+        } catch (err) {
+          if (err instanceof Error && err.message.startsWith('Org-scoped STS exchange failed')) throw err;
+          console.warn('[auth] Org-scoped STS exchange network error:', err);
+        }
+      }
+    }
+
     saveTokens({ token: finalToken, expiresIn: finalExpiresIn, refreshToken: tokenData.refresh_token ?? '', refreshTokenExpiresIn: 86400 });
     saveOidcAuthMetadata(orgHandle);
     const user: UserInfo = { userId, username, displayName, pictureUrl, isOidcUser: true, requirePasswordChange: false };
     localStorage.setItem(USER_KEY, JSON.stringify(user));
     setUserInfo(user);
     setIsAuthenticated(true);
+    return { isNewUser: false };
+  }, []);
+
+  // After the user creates their first org, exchange for an org-scoped STS token
+  // and persist the org handle so normal authenticated requests work.
+  const completeOrgRegistration = useCallback(async (orgHandle: string) => {
+    const { stsTokenEndpoint, stsClientId, stsScope } = window.API_CONFIG;
+    const asgardeoToken = getAsgardeoToken();
+    if (!asgardeoToken) throw new Error('Session expired. Please sign in again.');
+
+    let finalToken = asgardeoToken;
+    let finalExpiresIn = 3600;
+
+    if (stsTokenEndpoint && stsClientId) {
+      const orgStsRes = await fetch(stsTokenEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+          client_id: stsClientId,
+          subject_token: asgardeoToken,
+          subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          requested_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          ...(stsScope ? { scope: stsScope } : {}),
+          orgHandle,
+        }).toString(),
+      });
+      if (!orgStsRes.ok) {
+        throw new Error(`Org-scoped STS exchange failed (${orgStsRes.status}): ${await orgStsRes.text()}`);
+      }
+      const orgStsData: { access_token: string; expires_in?: number } = await orgStsRes.json();
+      finalToken = orgStsData.access_token;
+      finalExpiresIn = orgStsData.expires_in ?? 3600;
+    }
+
+    const existingRefreshToken = getRefreshToken() ?? '';
+    saveTokens({ token: finalToken, expiresIn: finalExpiresIn, refreshToken: existingRefreshToken, refreshTokenExpiresIn: 86400 });
+    localStorage.setItem('icp_org_handle', orgHandle);
+    saveOidcAuthMetadata(orgHandle);
   }, []);
 
   const clearRequirePasswordChange = useCallback(() => {
@@ -319,9 +479,10 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       login,
       loginWithOIDC,
       handleOIDCCallback,
+      completeOrgRegistration,
       logout,
     }),
-    [isAuthenticated, userInfo, clearRequirePasswordChange, login, loginWithOIDC, handleOIDCCallback, logout],
+    [isAuthenticated, userInfo, clearRequirePasswordChange, login, loginWithOIDC, handleOIDCCallback, completeOrgRegistration, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -7,6 +7,18 @@ export function loginUrl(): string {
   return '/login';
 }
 
+export function signupUrl(): string {
+  return '/signup';
+}
+
+export function registerOrgUrl(): string {
+  return '/account-register';
+}
+
+export function projectsRedirectUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/projects/redirect`;
+}
+
 export function oidcCallbackUrl(): string {
   return '/signin';
 }

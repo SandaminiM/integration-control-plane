@@ -16,27 +16,427 @@
  * under the License.
  */
 
-import { Alert, Avatar, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, IconButton, ListingTable, PageContent, Stack, TablePagination, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { Plus, PlugZap, RefreshCw, Trash2 } from '@wso2/oxygen-ui-icons-react';
+import {
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Divider,
+  Grid,
+  IconButton,
+  Link,
+  ListingTable,
+  PageContent,
+  Stack,
+  TablePagination,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@wso2/oxygen-ui';
+import { ArrowRight, Bitbucket, GitHub, GitLab, Link2, Plus, PlugZap, RefreshCw, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import EmptyListing from '../components/EmptyListing';
 import IntegrationTypesCard from '../components/IntegrationTypesCard';
 import ArchitectureCard from '../components/ArchitectureCard';
 import ContributorsCard from '../components/ContributorsCard';
 import SearchField from '../components/SearchField';
+import IDEMockup from '../components/IDEMockup/IDEMockup';
+import PillTabs from '../components/PillTabs';
+import PrebuiltCard from '../components/PrebuiltCard';
+import SampleRowCard from '../components/SampleRowCard';
+import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
+import GitIcon from '../assets/icons/GitIcon';
+import AzureIcon from '../assets/icons/AzureIcon';
 import { useNavigate } from 'react-router';
 import { useState, type JSX } from 'react';
-import { useProject, useProjectByHandler, useProjects, useComponents, useOrgs, useOrgComponentLimits, useOrgSubscriptions, type GqlComponent } from '../api/queries';
-import { useDeleteComponent } from '../api/mutations';
+import { useProject, useProjectByHandler, useProjects, useComponents, useOrgs, useOrgComponentLimits, useOrgSubscriptions, useChoreoSampleImages, type GqlComponent } from '../api/queries';
+import { useDeleteComponent, useCreateComponent } from '../api/mutations';
 import NotFound from '../components/NotFound';
 import { formatDistanceToNow } from '../utils/time';
-import { resourceUrl, broaden, newComponentUrl, type ProjectScope } from '../nav';
-import { getOrgUuidFromToken } from '../auth/tokenManager';
-import { componentOverviewUrl } from '../paths';
+import { resourceUrl, broaden, narrow, newComponentUrl, type ProjectScope } from '../nav';
+import { getOrgUuidFromToken, generateAndSaveGitHubState, validateAndClearGitHubState } from '../auth/tokenManager';
+import { useAuth } from '../auth/AuthContext';
+import { componentOverviewUrl, importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, importComingSoonUrl, buildGitHubOAuthUrl } from '../paths';
 import { Permissions } from '../constants/permissions';
-import { SUPPORTED_DISPLAY_TYPES, getDisplayLabel } from '../constants/integrations';
+import { SUPPORTED_DISPLAY_TYPES, getDisplayLabel, displayTypeFromSample } from '../constants/integrations';
+import { GITHUB_AUTH } from '../constants/import';
+import { CARD_HOVER_SX, PROVIDER_ICON_SX } from '../constants/styles';
 import Authorized from '../components/Authorized';
 import { useLoadProjectPermissions } from '../hooks/usePermissionLoader';
-import { UUID_RE } from '../utils/string';
+import { UUID_RE, toHandler } from '../utils/string';
+import { useSamples } from '../hooks/useSamples';
+import { usePrebuiltIntegrations } from '../hooks/usePrebuiltIntegrations';
+import type { Sample } from '../types/samples';
+
+function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId: string }) {
+  const navigate = useNavigate();
+  const { userId } = useAuth();
+  const orgUuid = getOrgUuidFromToken() ?? '';
+  const { data: samplesData, isLoading: samplesLoading, isError: samplesError } = useSamples();
+  const { data: prebuiltData, isLoading: prebuiltLoading, isError: prebuiltError } = usePrebuiltIntegrations();
+  const { data: sampleImages } = useChoreoSampleImages(orgUuid, projectId);
+  const createComponent = useCreateComponent();
+
+  const featuredSamples = samplesData?.featuredSamples ?? [];
+  const featuredPrebuilt = (prebuiltData?.prebuiltIntegrations ?? []).slice(0, 3);
+
+  const [isCloudEditorCardHovered, setIsCloudEditorCardHovered] = useState(false);
+  const [selectedTab, setSelectedTab] = useState(0);
+  const [deployingSample, setDeployingSample] = useState<string | null>(null);
+  const [isImportAuthenticating, setIsImportAuthenticating] = useState(false);
+  const [pageError, setPageError] = useState<{ message: string; severity: 'error' | 'warning' } | null>(null);
+
+  const importUrl = importComponentUrl(scope.org, scope.project);
+
+  const handleOpenCloudEditor = async () => {
+    const codeServerSample = (sampleImages ?? []).find((img) => img.name === 'Code Server');
+    if (!codeServerSample) {
+      setPageError({ message: 'Cloud Editor is not available. Please try again later.', severity: 'warning' });
+      return;
+    }
+    const deploymentUrl = new URL('/editor', window.location.origin);
+    deploymentUrl.searchParams.set('userId', userId);
+    deploymentUrl.searchParams.set('orgUuid', orgUuid);
+    deploymentUrl.searchParams.set('orgHandle', scope.org);
+    deploymentUrl.searchParams.set('projectId', projectId);
+    deploymentUrl.searchParams.set('componentId', 'null');
+    deploymentUrl.searchParams.set('codeServerSample', JSON.stringify(codeServerSample));
+    const newTab = window.open(deploymentUrl.toString(), '_blank');
+    if (!newTab) {
+      setPageError({ message: 'Please allow popups for this site and try again.', severity: 'warning' });
+    }
+  };
+
+  const handleImportClick = () => {
+    const { githubAppClientId, githubAppAuthRedirectUrl } = window.API_CONFIG;
+    if (!githubAppClientId) {
+      navigate(importUrl);
+      return;
+    }
+    setIsImportAuthenticating(true);
+    const state = generateAndSaveGitHubState();
+    const url = buildGitHubOAuthUrl(githubAppAuthRedirectUrl ?? '', githubAppClientId, state);
+    const popup = window.open(url, 'github-oauth', GITHUB_AUTH.POPUP_DIMENSIONS);
+    const channel = new BroadcastChannel(GITHUB_AUTH.BROADCAST_CHANNEL);
+    const pollClosed = setInterval(() => {
+      if (popup?.closed) {
+        clearInterval(pollClosed);
+        channel.close();
+        setIsImportAuthenticating(false);
+      }
+    }, GITHUB_AUTH.POPUP_POLL_INTERVAL_MS);
+    channel.onmessage = (event) => {
+      clearInterval(pollClosed);
+      channel.close();
+      const { authCode, state: returnedState } = event.data as { authCode: string | null; state: string | null };
+      if (!returnedState || !validateAndClearGitHubState(returnedState)) {
+        setIsImportAuthenticating(false);
+        setPageError({ message: 'GitHub authorization failed (invalid state). Please try again.', severity: 'error' });
+        return;
+      }
+      if (!authCode) {
+        setIsImportAuthenticating(false);
+        setPageError({ message: 'GitHub authorization failed. Please try again.', severity: 'error' });
+        return;
+      }
+      navigate(importUrl, { state: { authCode } });
+    };
+  };
+
+  const handleQuickDeploy = (sample: Sample) => {
+    if (!projectId) return;
+    setDeployingSample(sample.displayName);
+    createComponent.mutate(
+      {
+        displayName: sample.displayName,
+        name: toHandler(sample.displayName),
+        description: sample.description,
+        orgHandler: scope.org,
+        projectId,
+        displayType: displayTypeFromSample(sample.componentType, sample.buildPack),
+        srcGitRepoUrl: sample.repositoryUrl,
+        repositorySubPath: `${sample.subDirectory ?? ''}${sample.componentPath}`,
+        repositoryBranch: sample.branch ?? 'main',
+        isPublicRepo: true,
+        enableAutoDeploy: true,
+      },
+      {
+        onSuccess: (component) => navigate(resourceUrl(narrow(scope, component.handler), 'overview')),
+        onError: () => setDeployingSample(null),
+      },
+    );
+  };
+
+  if (createComponent.isPending || createComponent.isSuccess || createComponent.isError) {
+    return (
+      <IntegrationCreationLoader
+        label="Integration"
+        subLabel={deployingSample || undefined}
+        isPending={createComponent.isPending}
+        isSuccess={createComponent.isSuccess}
+        error={createComponent.isError ? (createComponent.error?.message ?? 'Something went wrong. Please try again.') : null}
+        onBack={() => {
+          createComponent.reset();
+          setDeployingSample(null);
+        }}
+      />
+    );
+  }
+
+  return (
+    <>
+      {pageError && (
+        <Alert severity={pageError.severity} onClose={() => setPageError(null)} sx={{ mb: 3 }}>
+          {pageError.message}
+        </Alert>
+      )}
+
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 3,
+          alignItems: 'stretch',
+          gridTemplateColumns: '1fr',
+          '@media (min-width: 1280px)': {
+            gridTemplateColumns: '6fr 4fr',
+          },
+        }}>
+        {/* Left column: Cloud Editor + Import */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+          <Card sx={{ ...CARD_HOVER_SX }} onMouseEnter={() => setIsCloudEditorCardHovered(true)} onMouseLeave={() => setIsCloudEditorCardHovered(false)} onClick={handleOpenCloudEditor}>
+            <CardContent sx={{ display: 'flex', flexDirection: 'column', p: 3, '&:last-child': { pb: 3 } }}>
+              <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.5 }}>
+                <Typography variant="h2">Create an Integration</Typography>
+                <Chip label="Beta" size="small" color="primary" variant="outlined" />
+              </Stack>
+              <Typography color="text.secondary" variant="body2" sx={{ mb: 2 }}>
+                Start developing in a complete, browser-based development environment.
+              </Typography>
+              <Box sx={{ height: 260, overflow: 'hidden' }}>
+                <IDEMockup isHovered={isCloudEditorCardHovered} onOpenClick={handleOpenCloudEditor} />
+              </Box>
+            </CardContent>
+          </Card>
+
+          <Card variant="outlined" sx={{ boxShadow: 'none', ...(isImportAuthenticating ? { pointerEvents: 'none', opacity: 0.7 } : {}) }}>
+            <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 3, gap: 3, '&:last-child': { pb: 3 } }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="h2" sx={{ mb: 0.5 }}>
+                  Import an Integration
+                </Typography>
+                <Typography color="text.secondary" variant="body2">
+                  {isImportAuthenticating ? 'Completing GitHub authorization…' : 'Connect your repository and start building instantly'}
+                </Typography>
+              </Box>
+              <Box sx={{ width: '2px', alignSelf: 'stretch', bgcolor: 'divider', flexShrink: 0 }} />
+              <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 3 }}>
+                {isImportAuthenticating ? (
+                  <CircularProgress size={22} />
+                ) : (
+                  <>
+                    <Tooltip title="Import from a Public Repository" placement="top">
+                      <IconButton
+                        aria-label="Import from a Public Repository"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(importUrl, { state: { mode: 'public' } });
+                        }}
+                        sx={PROVIDER_ICON_SX}>
+                        <GitIcon size={25} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Import from GitHub" placement="top">
+                      <IconButton aria-label="Import from GitHub" onClick={handleImportClick} sx={PROVIDER_ICON_SX}>
+                        <GitHub size={24} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Import from GitLab" placement="top">
+                      <IconButton aria-label="Import from GitLab" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
+                        <GitLab size={22} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Import from Bitbucket" placement="top">
+                      <IconButton aria-label="Import from Bitbucket" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
+                        <Bitbucket size={22} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Import from Azure" placement="top">
+                      <IconButton aria-label="Import from Azure" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
+                        <AzureIcon size={22} />
+                      </IconButton>
+                    </Tooltip>
+                  </>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+        </Box>
+
+        {/* Right column: Get Started Quickly */}
+        <Box sx={{ minWidth: 0 }}>
+          <Card variant="outlined" sx={{ height: '100%', boxShadow: 'none', display: 'flex', flexDirection: 'column' }}>
+            <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 3, '&:last-child': { pb: 3 } }}>
+              <Typography variant="h2" sx={{ mb: 0.5 }}>
+                Get Started Quickly
+              </Typography>
+              <Typography color="text.secondary" variant="body2" sx={{ mb: 2 }}>
+                Start with prebuilt integrations or simple samples to get started.
+              </Typography>
+              <Box sx={{ mb: 2 }}>
+                <PillTabs value={selectedTab} onChange={setSelectedTab} tabs={[{ label: 'Prebuilt Integrations' }, { label: 'Samples' }]} />
+              </Box>
+              <Box sx={{ display: 'grid', flex: 1, minWidth: 0, '& > *': { gridArea: '1 / 1', zIndex: 1, minWidth: 0 } }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', ...(selectedTab !== 0 ? { visibility: 'hidden', pointerEvents: 'none', zIndex: 0 } : {}) }}>
+                  {prebuiltLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : prebuiltError ? (
+                    <Typography variant="body2" color="text.secondary">
+                      Failed to load prebuilt integrations.
+                    </Typography>
+                  ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                      {featuredPrebuilt.map((integration) => (
+                        <PrebuiltCard key={integration.displayName} integration={integration} onClick={() => navigate(prebuiltIntegrationsUrl(scope.org, scope.project))} />
+                      ))}
+                    </Box>
+                  )}
+                  <Box sx={{ mt: 'auto', pt: 2 }}>
+                    <Button variant="text" color="primary" endIcon={<ArrowRight size={14} />} onClick={() => navigate(prebuiltIntegrationsUrl(scope.org, scope.project))} sx={{ textTransform: 'none', pl: 0 }}>
+                      Explore more prebuilt integrations
+                    </Button>
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', ...(selectedTab !== 1 ? { visibility: 'hidden', pointerEvents: 'none', zIndex: 0 } : {}) }}>
+                  {samplesLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : samplesError ? (
+                    <Typography variant="body2" color="text.secondary">
+                      Failed to load samples.
+                    </Typography>
+                  ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                      {featuredSamples.map((sample) => (
+                        <SampleRowCard key={sample.displayName} sample={sample} onDeploy={() => handleQuickDeploy(sample)} isDeploying={deployingSample === sample.displayName} />
+                      ))}
+                    </Box>
+                  )}
+                  <Box sx={{ mt: 'auto', pt: 2 }}>
+                    <Button variant="text" color="primary" endIcon={<ArrowRight size={14} />} onClick={() => navigate(browseSamplesUrl(scope.org, scope.project))} sx={{ textTransform: 'none', pl: 0 }}>
+                      Explore more samples
+                    </Button>
+                  </Box>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Box>
+      </Box>
+
+      {/* Footer links */}
+      <Stack direction="row" alignItems="center" gap={2} sx={{ mt: 4 }}>
+        <Link href="https://wso2.com/devant/docs" target="_blank" rel="noopener noreferrer" underline="hover" sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: 'primary.main', fontSize: '0.875rem' }}>
+          Tutorials
+        </Link>
+        <Divider orientation="vertical" flexItem />
+        <Link href="https://discord.gg/wso2" target="_blank" rel="noopener noreferrer" underline="hover" sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: 'primary.main', fontSize: '0.875rem' }}>
+          Get Support on Discord
+        </Link>
+      </Stack>
+    </>
+  );
+}
+
+function LinkRepositoryDialog({ open, onClose }: { scope: ProjectScope; open: boolean; onClose: () => void }) {
+  const PROVIDER_CARD_SX = {
+    cursor: 'pointer',
+    border: '1px solid',
+    borderColor: 'divider',
+    borderRadius: 2,
+    p: 2.5,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 2,
+    transition: 'border-color 0.15s, box-shadow 0.15s',
+    '&:hover': { borderColor: 'primary.main', boxShadow: 1 },
+  };
+
+  const DISABLED_CARD_SX = {
+    ...PROVIDER_CARD_SX,
+    cursor: 'not-allowed',
+    opacity: 0.5,
+    pointerEvents: 'none',
+    '&:hover': {},
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ pb: 1 }}>Link a Repository</DialogTitle>
+      <DialogContent>
+        <Alert severity="warning" sx={{ mb: 2.5 }}>
+          This feature is currently under development.
+        </Alert>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+          Select a Git Provider
+        </Typography>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+          {/* GitHub */}
+          <Box sx={DISABLED_CARD_SX}>
+            <GitHub size={28} />
+            <Typography variant="body2" fontWeight={500}>
+              Authorize with GitHub
+            </Typography>
+          </Box>
+
+          {/* Bitbucket */}
+          <Box sx={DISABLED_CARD_SX}>
+            <Bitbucket size={28} />
+            <Box>
+              <Typography variant="body2" fontWeight={500}>
+                Authorize with Bitbucket
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Select a Credential
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* GitLab */}
+          <Box sx={DISABLED_CARD_SX}>
+            <GitLab size={28} />
+            <Box>
+              <Typography variant="body2" fontWeight={500}>
+                Authorize with GitLab
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Select a Credential
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Public GitHub */}
+          <Box sx={DISABLED_CARD_SX}>
+            <GitHub size={28} />
+            <Typography variant="body2" fontWeight={500}>
+              Use Public GitHub Repository
+            </Typography>
+          </Box>
+        </Box>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function DeleteDialog({ component, scope, projectId, onClose }: { component: GqlComponent; scope: ProjectScope; projectId: string; onClose: () => void }) {
   const [confirmation, setConfirmation] = useState('');
@@ -264,6 +664,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
   const { data: subscriptions } = useOrgSubscriptions(orgUuid);
   const isUpgraded = (subscriptions ?? []).some((s) => s.subscriptionType === 'devant-subscription' && s.subscriptionStatus === 'active');
   const orgDevantComponentCount = isUpgraded ? 0 : (orgLimits?.billableComponentCount ?? 0);
+  const [linkRepoOpen, setLinkRepoOpen] = useState(false);
 
   if (loadingProject) {
     return (
@@ -276,39 +677,50 @@ export default function Project(scope: ProjectScope): JSX.Element {
     return <NotFound message="Project not found" backTo={resourceUrl(broaden(scope)!, 'overview')} backLabel="Back to Projects" />;
   }
 
+  const isEmpty = !loadingComponents && components.length === 0;
+
   return (
     <PageContent>
-      <Stack component="header" direction="row" alignItems="center" gap={2} sx={{ mb: 4 }}>
+      <Stack component="header" direction="row" alignItems="center" gap={2} sx={{ mb: isEmpty ? 3 : 4 }}>
         <Avatar sx={{ width: 56, height: 56, fontSize: 24, bgcolor: 'text.primary', color: 'background.paper' }}>{project?.name?.[0]?.toUpperCase() ?? 'P'}</Avatar>
         <div>
           <Typography variant="h1">{project.name}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
             {project.description}
           </Typography>
+          <Button size="small" variant="text" color="primary" startIcon={<Link2 size={14} />} onClick={() => setLinkRepoOpen(true)} sx={{ mt: 0.5, pl: 0, textTransform: 'none', fontSize: '0.8125rem' }}>
+            Link a Repository
+          </Button>
         </div>
       </Stack>
 
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 8 }}>
-          <IntegrationsTable
-            components={components}
-            isLoading={loadingComponents}
-            isRefreshing={fetchingComponents && !loadingComponents}
-            onRefresh={refetchComponents}
-            scope={scope}
-            projectId={projectId}
-            orgDevantComponentCount={orgDevantComponentCount}
-            onSelect={(handler) => navigate(componentOverviewUrl(scope.org, project?.handler ?? scope.project, handler))}
-          />
+      <LinkRepositoryDialog scope={scope} open={linkRepoOpen} onClose={() => setLinkRepoOpen(false)} />
+
+      {isEmpty ? (
+        <EmptyProjectView scope={scope} projectId={projectId} />
+      ) : (
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, md: 8 }}>
+            <IntegrationsTable
+              components={components}
+              isLoading={loadingComponents}
+              isRefreshing={fetchingComponents && !loadingComponents}
+              onRefresh={refetchComponents}
+              scope={scope}
+              projectId={projectId}
+              orgDevantComponentCount={orgDevantComponentCount}
+              onSelect={(handler) => navigate(componentOverviewUrl(scope.org, project?.handler ?? scope.project, handler))}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Stack gap={3}>
+              <ArchitectureCard projectId={projectId} components={components} isLoading={loadingComponents} isRefreshing={fetchingComponents && !loadingComponents} onRefresh={refetchComponents} />
+              <IntegrationTypesCard components={components} />
+              <ContributorsCard projectId={projectId} />
+            </Stack>
+          </Grid>
         </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Stack gap={3}>
-            <ArchitectureCard projectId={projectId} components={components} isLoading={loadingComponents} isRefreshing={fetchingComponents && !loadingComponents} onRefresh={refetchComponents} />
-            <IntegrationTypesCard components={components} />
-            <ContributorsCard projectId={projectId} />
-          </Stack>
-        </Grid>
-      </Grid>
+      )}
     </PageContent>
   );
 }
