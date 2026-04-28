@@ -85,11 +85,11 @@ export default function Login(): JSX.Element {
               width="auto"
               style={{ alignSelf: 'flex-start' }}
             />
-            <Typography variant="h3" component="h1" sx={{ textAlign: 'left', width: '100%' }}>
+            <Typography variant="h1" sx={{ textAlign: 'left', width: '100%' }}>
               Get Started with WSO2 Integration Platform
             </Typography>
             <Box sx={{ maxWidth: 520, width: '100%' }}>
-              <Typography variant="h6" sx={{ textAlign: 'left', width: '100%', mb: 1 }}>
+              <Typography variant="h2" sx={{ textAlign: 'left', width: '100%', mb: 1 }}>
                 The AI iPaaS for Smarter Integrations
               </Typography>
               <Typography variant="body1" sx={{ color: 'text.secondary', textAlign: 'left', width: '100%', mb: 1 }}>
@@ -143,10 +143,10 @@ export default function Login(): JSX.Element {
 
           {/* Main form area */}
           <Box sx={{ width: '100%', maxWidth: 360, mx: 'auto', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <Typography variant="h1" sx={{ mb: 0.5 }}>
+            <Typography variant="h2" sx={{ mb: 0.5 }}>
               Sign In
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
               Don&apos;t have an account?{' '}
               <Link component={NavLink} to={signupUrl()} underline="hover" color="primary">
                 Sign up!
