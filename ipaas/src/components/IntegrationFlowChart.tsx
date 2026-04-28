@@ -214,7 +214,7 @@ export default function IntegrationFlowChart({ diagram }: IntegrationFlowChartPr
           justifyContent: 'center',
           overflow: 'hidden',
           opacity: isRendered ? 1 : 0,
-          transition: 'opacity 0.2s ease-in-out',
+          transition: 'opacity 0.4s ease-in-out',
         }}
       />
     </Box>
