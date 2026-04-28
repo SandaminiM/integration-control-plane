@@ -68,7 +68,7 @@ function AppSlot({ app, isActiveTarget, onRemove }: AppSlotProps): JSX.Element {
               animation: 'slotPulse 2s ease-in-out infinite',
               '@keyframes slotPulse': {
                 '0%, 100%': { boxShadow: '0 0 0 1px rgba(255, 107, 0, 0.18)' },
-                '50%': { boxShadow: '0 0 0 3px rgba(255, 107, 0, 0.36)' },
+                '50%': { boxShadow: '0 0 0 2.5px rgba(250, 149, 76, 0.36)' },
               },
             }
           : { boxShadow: 'none', transition: 'all 0.15s' }),
@@ -200,8 +200,8 @@ function IntegrationSlot({ integration, isActiveTarget, app1, onRemove }: Integr
           bgcolor: 'transparent',
           animation: 'integrationPulse 2s ease-in-out infinite',
           '@keyframes integrationPulse': {
-            '0%, 100%': { boxShadow: '0 0 0 1px rgba(255, 107, 0, 0.18)' },
-            '50%': { boxShadow: '0 0 0 3px rgba(255, 107, 0, 0.36)' },
+            '0%, 100%': { boxShadow: '0 0 0 1px rgba(250, 149, 76, 0.18)' },
+            '50%': { boxShadow: '0 0 0 2.5px rgba(250, 149, 76, 0.36)' },
           },
         }}>
         <Box sx={{ color: 'primary.main' }}>

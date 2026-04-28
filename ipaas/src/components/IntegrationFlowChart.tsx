@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, IconButton, Tooltip, useTheme } from '@wso2/oxygen-ui';
+import { Box, CircularProgress, IconButton, Tooltip, useTheme } from '@wso2/oxygen-ui';
 import { RefreshCw } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState, type JSX, type MouseEvent, type WheelEvent } from 'react';
 import {
@@ -169,22 +169,40 @@ export default function IntegrationFlowChart({ diagram }: IntegrationFlowChartPr
         height: '100%',
         userSelect: 'none',
       }}>
-      <Tooltip title="Reset view" placement="left">
-        <IconButton
-          onClick={handleReset}
-          size="small"
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            zIndex: 10,
-            bgcolor: 'background.paper',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            '&:hover': { bgcolor: 'action.hover' },
-          }}>
-          <RefreshCw size={14} />
-        </IconButton>
-      </Tooltip>
+      {/* Loading overlay */}
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 5,
+          pointerEvents: 'none',
+          opacity: isRendered ? 0 : 1,
+          transition: 'opacity 0.2s ease-in-out',
+        }}>
+        <CircularProgress size={28} />
+      </Box>
+
+      {isRendered && (
+        <Tooltip title="Reset view" placement="left">
+          <IconButton
+            onClick={handleReset}
+            size="small"
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              zIndex: 10,
+              bgcolor: 'background.paper',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              '&:hover': { bgcolor: 'action.hover' },
+            }}>
+            <RefreshCw size={14} />
+          </IconButton>
+        </Tooltip>
+      )}
 
       <div
         ref={containerRef}

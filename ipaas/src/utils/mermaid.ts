@@ -39,8 +39,6 @@ export function ensureMermaidInit(): void {
     theme: 'base',
     fontSize: 14,
     flowchart: { htmlLabels: true, curve: 'basis', padding: 12 },
-    // Prevents mermaid from rendering error SVGs into document.body on parse failure,
-    // which causes orphaned elements that widen the page and produce layout shifts.
     suppressErrorRendering: true,
   });
   mermaidInitialized = true;
@@ -95,7 +93,32 @@ export function purgeMermaidOrphans(id: string): void {
   });
 }
 
+// Mermaid sandbox
+
+let mermaidSandbox: HTMLDivElement | null = null;
+
+function getMermaidSandbox(): HTMLDivElement {
+  if (mermaidSandbox && document.body.contains(mermaidSandbox)) return mermaidSandbox;
+  const sandbox = document.createElement('div');
+  sandbox.id = 'mermaid-render-sandbox';
+  sandbox.style.cssText = [
+    'position: fixed',
+    'top: -10000px',
+    'left: -10000px',
+    'width: 2000px',
+    'height: 2000px',
+    'visibility: hidden',
+    'pointer-events: none',
+    'overflow: hidden',
+    'z-index: -1',
+    'contain: strict',
+  ].join('; ');
+  document.body.appendChild(sandbox);
+  mermaidSandbox = sandbox;
+  return sandbox;
+}
+
 export async function renderMermaidSvg(id: string, definition: string): Promise<string> {
-  const { svg } = await mermaid.render(id, definition);
+  const { svg } = await mermaid.render(id, definition, getMermaidSandbox());
   return svg;
 }
