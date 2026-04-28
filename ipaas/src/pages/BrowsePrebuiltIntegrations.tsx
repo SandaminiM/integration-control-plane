@@ -61,10 +61,17 @@ function AppSlot({ app, isActiveTarget, onRemove }: AppSlotProps): JSX.Element {
         borderRadius: 1,
         border: '1px solid',
         borderStyle: app ? 'solid' : 'dashed',
-        borderColor: isActiveTarget ? 'primary.main' : app ? 'divider' : 'divider',
-        bgcolor: 'background.paper',
-        boxShadow: isActiveTarget ? '0 0 0 3px rgba(0,113,255,0.12)' : 'none',
-        transition: 'all 0.15s',
+        borderColor: isActiveTarget && !app ? 'primary.main' : app ? 'divider' : 'divider',
+        bgcolor: app ? 'background.paper' : 'transparent',
+        ...(isActiveTarget && !app
+          ? {
+              animation: 'slotPulse 2s ease-in-out infinite',
+              '@keyframes slotPulse': {
+                '0%, 100%': { boxShadow: '0 0 0 1px rgba(255, 107, 0, 0.18)' },
+                '50%': { boxShadow: '0 0 0 3px rgba(255, 107, 0, 0.36)' },
+              },
+            }
+          : { boxShadow: 'none', transition: 'all 0.15s' }),
       }}>
       {app ? (
         <>
@@ -90,6 +97,10 @@ function AppSlot({ app, isActiveTarget, onRemove }: AppSlotProps): JSX.Element {
             </IconButton>
           )}
         </>
+      ) : isActiveTarget ? (
+        <Box sx={{ color: '#FF6B00', opacity: 0.85 }}>
+          <Plus size={24} />
+        </Box>
       ) : null}
     </Box>
   );
@@ -186,13 +197,17 @@ function IntegrationSlot({ integration, isActiveTarget, app1, onRemove }: Integr
           borderRadius: 2,
           border: '1px dashed',
           borderColor: 'primary.main',
-          bgcolor: 'primary.50',
-          boxShadow: '0 0 0 3px rgba(0,113,255,0.12)',
+          bgcolor: 'transparent',
+          animation: 'integrationPulse 2s ease-in-out infinite',
+          '@keyframes integrationPulse': {
+            '0%, 100%': { boxShadow: '0 0 0 1px rgba(255, 107, 0, 0.18)' },
+            '50%': { boxShadow: '0 0 0 3px rgba(255, 107, 0, 0.36)' },
+          },
         }}>
         <Box sx={{ color: 'primary.main' }}>
           <Plus size={22} />
         </Box>
-        <Typography variant="caption" color="primary.main" textAlign="center" sx={{ lineHeight: 1.3, maxWidth: 160 }}>
+        <Typography variant="caption" textAlign="center" sx={{ color: 'primary.main', lineHeight: 1.3, maxWidth: 160 }}>
           Select a prebuilt integration from the list below
         </Typography>
       </Box>
@@ -206,8 +221,8 @@ function IntegrationSlot({ integration, isActiveTarget, app1, onRemove }: Integr
         minHeight: 88,
         borderRadius: 2,
         border: '1px dashed',
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
+        borderColor: 'primary.main',
+        bgcolor: 'transparent',
       }}
     />
   );
