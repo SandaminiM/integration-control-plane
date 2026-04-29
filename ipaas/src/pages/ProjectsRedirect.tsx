@@ -25,16 +25,16 @@ import { Link as NavLink } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { loginUrl, orgHomeUrl, privacyPolicyUrl } from '../paths';
 
-const TOS_KEY = 'icp_tos_accepted';
-
 export default function ProjectsRedirect(): JSX.Element {
   const { orgHandler } = useParams<{ orgHandler: string }>();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, userId } = useAuth();
   const [open, setOpen] = useState(false);
 
+  const tosKey = `icp_tos_accepted:${userId}:${orgHandler}`;
+
   useEffect(() => {
-    if (localStorage.getItem(TOS_KEY) === 'true') {
+    if (localStorage.getItem(tosKey) === 'true') {
       navigate(orgHomeUrl(orgHandler!), { replace: true });
     } else {
       setOpen(true);
@@ -42,14 +42,14 @@ export default function ProjectsRedirect(): JSX.Element {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAccept = () => {
-    localStorage.setItem(TOS_KEY, 'true');
+    localStorage.setItem(tosKey, 'true');
     setOpen(false);
     navigate(orgHomeUrl(orgHandler!), { replace: true });
   };
 
   const handleDecline = () => {
     setOpen(false);
-    logout().then(() => navigate(loginUrl(), { replace: true }));
+    logout().finally(() => navigate(loginUrl(), { replace: true }));
   };
 
   return (

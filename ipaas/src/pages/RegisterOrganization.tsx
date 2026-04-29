@@ -60,6 +60,16 @@ export default function RegisterOrganization(): JSX.Element {
     if (!isAuthenticated) navigate(loginUrl(), { replace: true });
   }, [isAuthenticated, navigate]);
 
+  // Clear any pending debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+    };
+  }, []);
+
   const handleOrgNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setOrgName(value);
@@ -72,7 +82,10 @@ export default function RegisterOrganization(): JSX.Element {
     if (err || !value) return;
 
     // Debounced backend uniqueness check
-    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
     debounceRef.current = setTimeout(async () => {
       setIsValidating(true);
       try {

@@ -372,7 +372,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
             setIsAuthenticated(true);
             return { isNewUser: true };
           }
-          // If still null: fall through with no orgHandle — OIDCCallback falls back to 'default'.
+          // If still null: fall through with no orgHandle — OIDCCallback will redirect to registerOrgUrl().
         }
       }
 

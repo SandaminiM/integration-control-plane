@@ -354,6 +354,13 @@ export default function AppLayout(): JSX.Element {
     return '';
   };
 
+  // Persist last visited project so post-login can navigate back to it
+  useEffect(() => {
+    if (userId && hasProject(scope)) {
+      localStorage.setItem(`icp_last_project:${userId}`, JSON.stringify({ org: scope.org, project: scope.project }));
+    }
+  }, [userId, scope]);
+
   const orgPermsLoadedRef = useRef('');
   useEffect(() => {
     if (!userId || !scope.org || orgPermsLoadedRef.current === scope.org) return;
@@ -545,12 +552,12 @@ export default function AppLayout(): JSX.Element {
               ref={orgCardRef}
               role="button"
               tabIndex={0}
-              sx={{ display: 'inline-flex', alignSelf: 'center', cursor: 'pointer' }}
-              onClick={() => setOrgMenuAnchor(orgCardRef.current)}
+              sx={{ position: 'relative', display: 'inline-flex', alignSelf: 'center', cursor: 'pointer' }}
+              onClick={() => navigate(orgHomeUrl(scope.org))}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  setOrgMenuAnchor(orgCardRef.current);
+                  navigate(orgHomeUrl(scope.org));
                 }
               }}>
               <ComplexSelect
@@ -561,7 +568,23 @@ export default function AppLayout(): JSX.Element {
                 size="small"
                 sx={{ minWidth: 180 }}
                 IconComponent={({ ownerState: _ownerState, ...props }) => (
-                  <span {...props} aria-hidden="true" style={{ position: 'absolute', top: 'auto', bottom: '0', right: '6px', display: 'flex', pointerEvents: 'none' }}>
+                  <span
+                    {...props}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Change organization"
+                    style={{ position: 'absolute', top: 'auto', bottom: '0', right: '6px', display: 'flex', pointerEvents: 'all', cursor: 'pointer' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOrgMenuAnchor(orgCardRef.current);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setOrgMenuAnchor(orgCardRef.current);
+                      }
+                    }}>
                     <ChevronDown size={18} />
                   </span>
                 )}

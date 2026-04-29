@@ -70,20 +70,46 @@ import { SUPPORTED_DISPLAY_TYPES, getDisplayLabel, displayTypeFromSample } from 
 import { GITHUB_AUTH } from '../constants/import';
 import { CARD_HOVER_SX, PROVIDER_ICON_SX } from '../constants/styles';
 import Authorized from '../components/Authorized';
+import { useAccessControl } from '../contexts/AccessControlContext';
 import { useLoadProjectPermissions } from '../hooks/usePermissionLoader';
 import { UUID_RE, toHandler } from '../utils/string';
 import { useSamples } from '../hooks/useSamples';
 import { usePrebuiltIntegrations } from '../hooks/usePrebuiltIntegrations';
 import type { Sample } from '../types/samples';
 
+const FREE_COMPONENT_LIMIT = 5;
+
 function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId: string }) {
   const navigate = useNavigate();
   const { userId } = useAuth();
+  const { hasAnyPermission } = useAccessControl();
   const orgUuid = getOrgUuidFromToken() ?? '';
   const { data: samplesData, isLoading: samplesLoading, isError: samplesError } = useSamples();
   const { data: prebuiltData, isLoading: prebuiltLoading, isError: prebuiltError } = usePrebuiltIntegrations();
   const { data: sampleImages } = useChoreoSampleImages(orgUuid, projectId);
+  const { data: orgLimits } = useOrgComponentLimits(orgUuid);
+  const { data: subscriptions } = useOrgSubscriptions(orgUuid);
   const createComponent = useCreateComponent();
+
+  const isUpgraded = (subscriptions ?? []).some((s) => s.subscriptionType === 'devant-subscription' && s.subscriptionStatus === 'active');
+  const orgDevantComponentCount = isUpgraded ? 0 : (orgLimits?.billableComponentCount ?? 0);
+  const quotaReached = orgDevantComponentCount >= FREE_COMPONENT_LIMIT;
+  const canManage = hasAnyPermission([Permissions.INTEGRATION_MANAGE], projectId);
+
+  const creationBlocked = !canManage || quotaReached;
+  const blockedTooltip = !canManage ? 'You do not have permission to create integrations.' : 'You have exceeded the allocated integration quota. Upgrade your subscription.';
+
+  const checkCreationGuard = (): boolean => {
+    if (!canManage) {
+      setPageError({ message: 'You do not have permission to create integrations.', severity: 'error' });
+      return false;
+    }
+    if (quotaReached) {
+      setPageError({ message: 'You have exceeded the allocated integration quota. Upgrade your subscription.', severity: 'warning' });
+      return false;
+    }
+    return true;
+  };
 
   const featuredSamples = samplesData?.featuredSamples ?? [];
   const featuredPrebuilt = (prebuiltData?.prebuiltIntegrations ?? []).slice(0, 3);
@@ -97,6 +123,7 @@ function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId
   const importUrl = importComponentUrl(scope.org, scope.project);
 
   const handleOpenCloudEditor = async () => {
+    if (!checkCreationGuard()) return;
     const codeServerSample = (sampleImages ?? []).find((img) => img.name === 'Code Server');
     if (!codeServerSample) {
       setPageError({ message: 'Cloud Editor is not available. Please try again later.', severity: 'warning' });
@@ -116,6 +143,7 @@ function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId
   };
 
   const handleImportClick = () => {
+    if (!checkCreationGuard()) return;
     const { githubAppClientId, githubAppAuthRedirectUrl } = window.API_CONFIG;
     if (!githubAppClientId) {
       navigate(importUrl);
@@ -125,9 +153,14 @@ function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId
     const state = generateAndSaveGitHubState();
     const url = buildGitHubOAuthUrl(githubAppAuthRedirectUrl ?? '', githubAppClientId, state);
     const popup = window.open(url, 'github-oauth', GITHUB_AUTH.POPUP_DIMENSIONS);
+    if (!popup) {
+      setIsImportAuthenticating(false);
+      setPageError({ message: 'Please allow popups for this site and try again.', severity: 'warning' });
+      return;
+    }
     const channel = new BroadcastChannel(GITHUB_AUTH.BROADCAST_CHANNEL);
     const pollClosed = setInterval(() => {
-      if (popup?.closed) {
+      if (popup.closed) {
         clearInterval(pollClosed);
         channel.close();
         setIsImportAuthenticating(false);
@@ -152,6 +185,7 @@ function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId
   };
 
   const handleQuickDeploy = (sample: Sample) => {
+    if (!checkCreationGuard()) return;
     if (!projectId) return;
     setDeployingSample(sample.displayName);
     createComponent.mutate(
@@ -211,73 +245,81 @@ function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId
         }}>
         {/* Left column: Cloud Editor + Import */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-          <Card sx={{ ...CARD_HOVER_SX }} onMouseEnter={() => setIsCloudEditorCardHovered(true)} onMouseLeave={() => setIsCloudEditorCardHovered(false)} onClick={handleOpenCloudEditor}>
-            <CardContent sx={{ display: 'flex', flexDirection: 'column', p: 3, '&:last-child': { pb: 3 } }}>
-              <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.5 }}>
-                <Typography variant="h2">Create an Integration</Typography>
-                <Chip label="Beta" size="small" color="primary" variant="outlined" />
-              </Stack>
-              <Typography color="text.secondary" variant="body2" sx={{ mb: 2 }}>
-                Start developing in a complete, browser-based development environment.
-              </Typography>
-              <Box sx={{ height: 260, overflow: 'hidden' }}>
-                <IDEMockup isHovered={isCloudEditorCardHovered} onOpenClick={handleOpenCloudEditor} />
-              </Box>
-            </CardContent>
-          </Card>
+          <Tooltip title={creationBlocked ? blockedTooltip : ''} placement="top">
+            <Box sx={creationBlocked ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}>
+              <Card sx={{ ...CARD_HOVER_SX, ...(creationBlocked ? { pointerEvents: 'none' } : {}) }} onMouseEnter={() => setIsCloudEditorCardHovered(true)} onMouseLeave={() => setIsCloudEditorCardHovered(false)} onClick={handleOpenCloudEditor}>
+                <CardContent sx={{ display: 'flex', flexDirection: 'column', p: 3, '&:last-child': { pb: 3 } }}>
+                  <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.5 }}>
+                    <Typography variant="h2">Create an Integration</Typography>
+                    <Chip label="Beta" size="small" color="primary" variant="outlined" />
+                  </Stack>
+                  <Typography color="text.secondary" variant="body2" sx={{ mb: 2 }}>
+                    Start developing in a complete, browser-based development environment.
+                  </Typography>
+                  <Box sx={{ height: 260, overflow: 'hidden' }}>
+                    <IDEMockup isHovered={isCloudEditorCardHovered} onOpenClick={handleOpenCloudEditor} />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Box>
+          </Tooltip>
 
-          <Card variant="outlined" sx={{ boxShadow: 'none', ...(isImportAuthenticating ? { pointerEvents: 'none', opacity: 0.7 } : {}) }}>
-            <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 3, gap: 3, '&:last-child': { pb: 3 } }}>
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography variant="h2" sx={{ mb: 0.5 }}>
-                  Import an Integration
-                </Typography>
-                <Typography color="text.secondary" variant="body2">
-                  {isImportAuthenticating ? 'Completing GitHub authorization…' : 'Connect your repository and start building instantly'}
-                </Typography>
-              </Box>
-              <Box sx={{ width: '2px', alignSelf: 'stretch', bgcolor: 'divider', flexShrink: 0 }} />
-              <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 3 }}>
-                {isImportAuthenticating ? (
-                  <CircularProgress size={22} />
-                ) : (
-                  <>
-                    <Tooltip title="Import from a Public Repository" placement="top">
-                      <IconButton
-                        aria-label="Import from a Public Repository"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(importUrl, { state: { mode: 'public' } });
-                        }}
-                        sx={PROVIDER_ICON_SX}>
-                        <GitIcon size={25} />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Import from GitHub" placement="top">
-                      <IconButton aria-label="Import from GitHub" onClick={handleImportClick} sx={PROVIDER_ICON_SX}>
-                        <GitHub size={24} />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Import from GitLab" placement="top">
-                      <IconButton aria-label="Import from GitLab" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
-                        <GitLab size={22} />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Import from Bitbucket" placement="top">
-                      <IconButton aria-label="Import from Bitbucket" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
-                        <Bitbucket size={22} />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Import from Azure" placement="top">
-                      <IconButton aria-label="Import from Azure" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
-                        <AzureIcon size={22} />
-                      </IconButton>
-                    </Tooltip>
-                  </>
-                )}
-              </Box>
-            </CardContent>
-          </Card>
+          <Tooltip title={creationBlocked ? blockedTooltip : ''} placement="top">
+            <Box sx={creationBlocked ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}>
+              <Card variant="outlined" sx={{ boxShadow: 'none', ...(isImportAuthenticating ? { pointerEvents: 'none', opacity: 0.7 } : creationBlocked ? { pointerEvents: 'none' } : {}) }}>
+                <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 3, gap: 3, '&:last-child': { pb: 3 } }}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="h2" sx={{ mb: 0.5 }}>
+                      Import an Integration
+                    </Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      {isImportAuthenticating ? 'Completing GitHub authorization…' : 'Connect your repository and start building instantly'}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ width: '2px', alignSelf: 'stretch', bgcolor: 'divider', flexShrink: 0 }} />
+                  <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 3 }}>
+                    {isImportAuthenticating ? (
+                      <CircularProgress size={22} />
+                    ) : (
+                      <>
+                        <Tooltip title="Import from a Public Repository" placement="top">
+                          <IconButton
+                            aria-label="Import from a Public Repository"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(importUrl, { state: { mode: 'public' } });
+                            }}
+                            sx={PROVIDER_ICON_SX}>
+                            <GitIcon size={25} />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Import from GitHub" placement="top">
+                          <IconButton aria-label="Import from GitHub" onClick={handleImportClick} sx={PROVIDER_ICON_SX}>
+                            <GitHub size={24} />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Import from GitLab" placement="top">
+                          <IconButton aria-label="Import from GitLab" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
+                            <GitLab size={22} />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Import from Bitbucket" placement="top">
+                          <IconButton aria-label="Import from Bitbucket" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
+                            <Bitbucket size={22} />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Import from Azure" placement="top">
+                          <IconButton aria-label="Import from Azure" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
+                            <AzureIcon size={22} />
+                          </IconButton>
+                        </Tooltip>
+                      </>
+                    )}
+                  </Box>
+                </CardContent>
+              </Card>
+            </Box>
+          </Tooltip>
         </Box>
 
         {/* Right column: Get Started Quickly */}
@@ -306,7 +348,7 @@ function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId
                   ) : (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                       {featuredPrebuilt.map((integration) => (
-                        <PrebuiltCard key={integration.displayName} integration={integration} onClick={() => navigate(prebuiltIntegrationsUrl(scope.org, scope.project))} />
+                        <PrebuiltCard key={integration.displayName} integration={integration} onClick={() => navigate(prebuiltIntegrationsUrl(scope.org, scope.project))} disabled={creationBlocked} disabledTooltip={blockedTooltip} />
                       ))}
                     </Box>
                   )}
@@ -328,7 +370,7 @@ function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId
                   ) : (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                       {featuredSamples.map((sample) => (
-                        <SampleRowCard key={sample.displayName} sample={sample} onDeploy={() => handleQuickDeploy(sample)} isDeploying={deployingSample === sample.displayName} />
+                        <SampleRowCard key={sample.displayName} sample={sample} onDeploy={() => handleQuickDeploy(sample)} isDeploying={deployingSample === sample.displayName} deployDisabled={creationBlocked} deployDisabledTooltip={blockedTooltip} />
                       ))}
                     </Box>
                   )}
@@ -497,7 +539,6 @@ function IntegrationsTable({
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleting, setDeleting] = useState<GqlComponent | null>(null);
-  const FREE_COMPONENT_LIMIT = 5;
   const quotaReached = orgDevantComponentCount >= FREE_COMPONENT_LIMIT;
   const q = query.trim().toLowerCase();
   const filtered = components

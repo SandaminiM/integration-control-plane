@@ -19,7 +19,7 @@
 import { useState } from 'react';
 import type { JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Alert, Box, Button, Card, CardContent, CircularProgress, FormControl, MenuItem, Select, Stack, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, ButtonBase, Card, CardContent, CircularProgress, FormControl, MenuItem, Select, Stack, Typography } from '@wso2/oxygen-ui';
 import { ArrowRight, Settings, Users } from '@wso2/oxygen-ui-icons-react';
 import { authenticatedFetch, getOrgUuidFromToken } from '../auth/tokenManager';
 import { choreoDevopsApiUrl } from '../config/api';
@@ -81,14 +81,16 @@ export default function OrgHome(): JSX.Element {
   const [persona, setPersona] = useState<string>('developer');
   const [region, setRegion] = useState<string>('US');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   if (step === 'done') {
-    return <Projects />;
+    return <Projects level="organizations" org={orgHandler!} />;
   }
 
   if (step === 'region') {
     const handleGetStarted = async () => {
       setIsSubmitting(true);
+      setSubmitError(null);
       try {
         const orgUuid = getOrgUuidFromToken();
         const orgNumericId = window.API_CONFIG.asgardeoOrgNumericId ?? parseInt(localStorage.getItem('icp_org_numeric_id') ?? '0', 10);
@@ -96,16 +98,19 @@ export default function OrgHome(): JSX.Element {
 
         // Step 1: Init default environments for the org
         if (orgUuid) {
-          await authenticatedFetch(`${choreoDevopsApiUrl()}/api/v1/organizations/${orgUuid}/projects/init`, {
+          const initRes = await authenticatedFetch(`${choreoDevopsApiUrl()}/api/v1/organizations/${orgUuid}/projects/init`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ region }),
           });
+          if (!initRes.ok) {
+            throw new Error(`Failed to initialize organization (${initRes.status})`);
+          }
         }
 
         // Step 2: Create the default project via GraphQL
         if (orgNumericId) {
-          await authenticatedFetch(window.API_CONFIG.graphqlUrl, {
+          const gqlRes = await authenticatedFetch(window.API_CONFIG.graphqlUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -121,13 +126,22 @@ export default function OrgHome(): JSX.Element {
               }`,
             }),
           });
+          if (!gqlRes.ok) {
+            throw new Error(`Failed to create default project (${gqlRes.status})`);
+          }
+          const gqlData: { data?: { createProject?: { id: string; handler: string } }; errors?: unknown[] } = await gqlRes.json();
+          if (gqlData.errors || !gqlData.data?.createProject) {
+            throw new Error('Failed to create default project');
+          }
         }
-      } catch {
-        // Best-effort — navigate regardless
-      } finally {
+
+        // Only mark onboarding complete and navigate on success
         localStorage.setItem(PERSONA_KEY, persona);
         localStorage.setItem(REGION_KEY, region);
         navigate(projectHomeUrl(orgHandler!, DEFAULT_PROJECT_HANDLER), { replace: true });
+      } catch (err) {
+        setSubmitError(err instanceof Error ? err.message : 'Setup failed. Please try again.');
+        setIsSubmitting(false);
       }
     };
 
@@ -143,6 +157,12 @@ export default function OrgHome(): JSX.Element {
         <Alert severity="info" variant="outlined" icon={false} sx={{ mb: 3 }}>
           You can start with the default Cloud Data Plane and later set up your own Private Data Plane by connecting your Kubernetes cluster
         </Alert>
+
+        {submitError && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {submitError}
+          </Alert>
+        )}
 
         <FormControl size="small" sx={{ mb: 3, width: 200, display: 'flex', mx: 'auto' }}>
           <Select value={region} onChange={(e) => setRegion(e.target.value as string)} MenuProps={{ sx: { zIndex: 10000 } }}>
@@ -180,35 +200,42 @@ export default function OrgHome(): JSX.Element {
         Select your persona to get started
       </Typography>
 
-      <Stack spacing={1.5}>
-        {PERSONAS.map(({ id, title, description, Icon }) => (
-          <Card
-            key={id}
-            variant="outlined"
-            onClick={() => setPersona(id)}
-            sx={{
-              cursor: 'pointer',
-              borderColor: persona === id ? 'primary.main' : 'divider',
-              borderWidth: persona === id ? 2 : 1,
-              borderStyle: 'solid',
-              '&:hover': { borderColor: 'primary.main' },
-            }}>
-            <CardContent sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', py: 1.5, px: 2 }}>
-              <Box sx={{ color: 'primary.main', mt: 0.5, flexShrink: 0 }}>
-                <Icon size={28} />
+      <Box role="radiogroup" aria-label="Select your persona">
+        <Stack spacing={1.5}>
+          {PERSONAS.map(({ id, title, description, Icon }) => (
+            <ButtonBase
+              key={id}
+              role="radio"
+              aria-checked={persona === id}
+              tabIndex={0}
+              onClick={() => setPersona(id)}
+              sx={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                border: persona === id ? '2px solid' : '1px solid',
+                borderColor: persona === id ? 'primary.main' : 'divider',
+                borderRadius: 1,
+                '&:hover': { borderColor: 'primary.main' },
+                '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: '2px' },
+              }}>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', py: 1.5, px: 2 }}>
+                <Box sx={{ color: 'primary.main', mt: 0.5, flexShrink: 0 }}>
+                  <Icon size={28} />
+                </Box>
+                <Box>
+                  <Typography variant="body1" fontWeight="bold">
+                    {title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {description}
+                  </Typography>
+                </Box>
               </Box>
-              <Box>
-                <Typography variant="body1" fontWeight="bold">
-                  {title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {description}
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        ))}
-      </Stack>
+            </ButtonBase>
+          ))}
+        </Stack>
+      </Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
         <Button variant="contained" color="primary" onClick={() => setStep('region')} endIcon={<ArrowRight size={16} />}>

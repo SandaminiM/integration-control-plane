@@ -22,7 +22,8 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { Alert, Box, CircularProgress, Typography } from '@wso2/oxygen-ui';
 import { useAuth } from '../auth/AuthContext';
 import { validateAndClearOIDCState, getAndClearRedirectUrl } from '../auth/tokenManager';
-import { loginUrl, orgHomeUrl, projectsRedirectUrl, registerOrgUrl } from '../paths';
+import { gql } from '../api/graphql';
+import { loginUrl, projectHomeUrl, projectsRedirectUrl, registerOrgUrl } from '../paths';
 
 export default function OIDCCallback(): JSX.Element {
   const [searchParams] = useSearchParams();
@@ -77,9 +78,49 @@ export default function OIDCCallback(): JSX.Element {
           // User was trying to access a specific page — go back there
           window.location.href = savedUrl;
         } else {
-          // Redirect to the projects/redirect route which shows the ToS welcome dialog
           const orgHandle = localStorage.getItem('icp_org_handle');
-          navigate(orgHandle ? projectsRedirectUrl(orgHandle) : orgHomeUrl('default'), { replace: true });
+
+          // Try to resume the last visited project if ToS is already accepted for that org
+          let navigatedToLastProject = false;
+          try {
+            const stored = localStorage.getItem('icp_user');
+            const userId: string | undefined = stored ? (JSON.parse(stored) as { userId?: string })?.userId : undefined;
+            const tosKey = orgHandle && userId ? `icp_tos_accepted:${userId}:${orgHandle}` : null;
+            const tosAccepted = tosKey ? localStorage.getItem(tosKey) === 'true' : false;
+
+            if (tosAccepted && userId && orgHandle) {
+              // 1. Try the last-visited project stored by AppLayout
+              const lastProjectRaw = localStorage.getItem(`icp_last_project:${userId}`);
+              if (lastProjectRaw) {
+                const { org, project } = JSON.parse(lastProjectRaw) as { org: string; project: string };
+                if (org === orgHandle && project) {
+                  navigate(projectHomeUrl(orgHandle, project), { replace: true });
+                  navigatedToLastProject = true;
+                }
+              }
+
+              // 2. No stored last project — fetch from API and use the most recently updated one
+              if (!navigatedToLastProject) {
+                const numericId = window.API_CONFIG.asgardeoOrgNumericId ?? parseInt(localStorage.getItem('icp_org_numeric_id') ?? '0', 10);
+                if (numericId > 0) {
+                  const data = await gql<{ projects: Array<{ handler: string; updatedAt: string }> }>(`query GetProjects($orgId: Int!) { projects(orgId: $orgId) { handler updatedAt } }`, { orgId: numericId });
+                  const projects = (data.projects ?? []).filter((p) => p.handler);
+                  if (projects.length > 0) {
+                    const recent = projects.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
+                    navigate(projectHomeUrl(orgHandle, recent.handler), { replace: true });
+                    navigatedToLastProject = true;
+                  }
+                }
+              }
+            }
+          } catch {
+            // ignore — fall through to default
+          }
+
+          if (!navigatedToLastProject) {
+            // Redirect to the projects/redirect route which shows the ToS welcome dialog
+            navigate(orgHandle ? projectsRedirectUrl(orgHandle) : registerOrgUrl(), { replace: true });
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to complete authentication');
