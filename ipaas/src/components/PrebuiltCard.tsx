@@ -16,14 +16,13 @@
  * under the License.
  */
 
-import { Box, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Box, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
 import type { PrebuiltIntegration } from '../types/samples';
-import AppAvatar from './AppAvatar';
+import AppIconsRow from './AppIconsRow';
 
 export default function PrebuiltCard({ integration, onClick }: { integration: PrebuiltIntegration; onClick?: () => void }): JSX.Element {
   return (
-    <Tooltip title="Prebuilt Integration Configuration is coming soon" placement="top" arrow>
       <Box
         onClick={onClick}
         sx={{
@@ -41,38 +40,13 @@ export default function PrebuiltCard({ integration, onClick }: { integration: Pr
           transition: 'border-color 0.15s',
           ...(onClick ? { '&:hover': { borderColor: 'primary.main' } } : {}),
         }}>
-        {/* Application icon flow */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.75,
-            bgcolor: 'action.hover',
-            p: 1,
-            borderRadius: 1,
-            flexShrink: 0,
-          }}>
-          {integration.applications.map((app, index) => (
-            <Box key={app} sx={{ display: 'flex', alignItems: 'center' }}>
-              <AppAvatar name={app} />
-              {index < integration.applications.length - 1 && (
-                <Box sx={{ mx: 0.5, color: 'text.disabled', display: 'flex', alignItems: 'center' }}>
-                  {integration.bidirectional ? (
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path d="M1 5h10L9 3m2 2L9 7M13 9H3l2 2M3 9l2-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  ) : (
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path d="M2 7h10M9 4l3 3-3 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </Box>
-              )}
-            </Box>
-          ))}
-        </Box>
+        <AppIconsRow
+          applications={integration.applications}
+          bidirectional={integration.bidirectional}
+          bgcolor="action.hover"
+          avatarSize={28}
+        />
 
-        {/* Text */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="body2" fontWeight={600}>
             {integration.displayName}
@@ -82,6 +56,5 @@ export default function PrebuiltCard({ integration, onClick }: { integration: Pr
           </Typography>
         </Box>
       </Box>
-    </Tooltip>
   );
 }

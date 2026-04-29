@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useMemo, useState, type Dispatch, type MouseEvent, type SetStateAction } from 'react';
 import { Box, Button, Chip, IconButton, InputAdornment, MenuItem, Popover, Stack, Switch, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Eye, EyeOff, Link2, Link2Off, Lock, Pencil, Unlock } from '@wso2/oxygen-ui-icons-react';
 import { type BaseType, type JSONSchema, type LinkingInfo, isNumberType, typeDisplayName } from '../schemaUtils';
@@ -186,7 +186,7 @@ export function BaseElement({
     setShowSensitiveInput(true);
   };
 
-  const handleLinkOpen = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleLinkOpen = (e: MouseEvent<HTMLButtonElement>) => {
     setSelectedGroupId(linkedInfo?.configGroupId || '');
     setSelectedKeyId(linkedInfo?.configKeyId || '');
     setLinkAnchorEl(e.currentTarget);
@@ -272,6 +272,7 @@ export function BaseElement({
             <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
               {title}
             </Typography>
+            {isRequired && <Typography component="span" variant="body2" sx={{ color: 'error.main', lineHeight: 1, fontFamily: 'monospace' }}>*</Typography>}
             <Chip label={typeDisplayName(type)} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
             {!isRequired && isRequiredAtRequiredLevel && <Chip label="optional" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />}
           </Stack>
@@ -285,6 +286,7 @@ export function BaseElement({
           disabled={!!linked}
           error={isEdited && !linked && validationMap.get(jsonPath) === false}
           helperText={isEdited && !linked && validationMap.get(jsonPath) === false ? error : undefined}
+          inputProps={{ 'aria-required': Boolean(isRequired) }}
           InputProps={{ endAdornment: linkAdornment ? <InputAdornment position="end">{linkAdornment}</InputAdornment> : undefined }}>
           <MenuItem value="">
             <em>Select an option</em>
@@ -308,11 +310,13 @@ export function BaseElement({
               {title}
             </Typography>
           )}
+          {!isSkipLabel && isRequired && <Typography component="span" variant="body2" sx={{ color: 'error.main', lineHeight: 1, fontFamily: 'monospace' }}>*</Typography>}
           <Chip label="boolean" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
           <Switch
             size="small"
             checked={valueMap.get(jsonPath) === 'true' || valueMap.get(jsonPath) === true || false}
             disabled={!!linked}
+            inputProps={{ 'aria-required': Boolean(isRequired) }}
             onChange={(e) => {
               handleValueChange(jsonPath, e.target.checked);
               handleValidationChange(jsonPath, true);
@@ -345,6 +349,7 @@ export function BaseElement({
               error={!isValidSecret && isEdited}
               helperText={secretError}
               placeholder="Enter a value"
+              inputProps={{ 'aria-required': Boolean(isRequired) }}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -375,6 +380,7 @@ export function BaseElement({
                     {title}
                   </Typography>
                 )}
+                {!isSkipLabel && isRequired && <Typography component="span" variant="body2" sx={{ color: 'error.main', lineHeight: 1, fontFamily: 'monospace' }}>*</Typography>}
                 <Chip label="secret" size="small" variant="outlined" color="info" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
               </Stack>
               <Button size="small" variant="text" startIcon={<Pencil size={13} />} onClick={(e) => setSecretAnchorEl(e.currentTarget as HTMLButtonElement)} sx={{ textTransform: 'none' }}>
@@ -392,6 +398,7 @@ export function BaseElement({
               placeholder="Enter a value"
               error={isEdited && !linked && validationMap.get(jsonPath) === false}
               helperText={isEdited && !linked && validationMap.get(jsonPath) === false ? error : undefined}
+              inputProps={{ 'aria-required': Boolean(isRequired) }}
               InputProps={{
                 readOnly: !!linked,
                 endAdornment: (
@@ -420,6 +427,7 @@ export function BaseElement({
               {title}
             </Typography>
           )}
+          {!isSkipLabel && isRequired && <Typography component="span" variant="body2" sx={{ color: 'error.main', lineHeight: 1, fontFamily: 'monospace' }}>*</Typography>}
           <Chip label="secret" size="small" variant="outlined" color="info" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
           <Tooltip title="Mark as non-sensitive (stored in database)">
             <IconButton size="small" onClick={toggleSensitive} sx={{ p: 0.25 }}>
@@ -441,6 +449,7 @@ export function BaseElement({
           <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
             {title}
           </Typography>
+          {isRequired && <Typography component="span" variant="body2" sx={{ color: 'error.main', lineHeight: 1, fontFamily: 'monospace' }}>*</Typography>}
           <Chip label={isSensitive ? 'secret' : typeDisplayName(type)} size="small" variant="outlined" color={isSensitive ? 'info' : 'default'} sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
           {!isRequired && isRequiredAtRequiredLevel && <Chip label="optional" size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />}
         </Stack>
@@ -454,6 +463,7 @@ export function BaseElement({
         placeholder="Enter a value"
         error={isEdited && !linked && validationMap.get(jsonPath) === false}
         helperText={isEdited && !linked && validationMap.get(jsonPath) === false ? error : undefined}
+        inputProps={{ 'aria-required': Boolean(isRequired) }}
         InputProps={{
           readOnly: !!linked,
           endAdornment: (

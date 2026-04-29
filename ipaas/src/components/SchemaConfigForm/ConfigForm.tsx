@@ -40,6 +40,8 @@ export interface ConfigFormProps {
   configGroups?: ConfigGroup[];
   handleValueChange: (jsonPath: string, value: BaseType, configMap?: Map<string, BaseType>) => void;
   handleValidationChange: (jsonPath: string, isValid: boolean, validationMap?: Map<string, boolean>) => void;
+  /** Show the "Allow Linking Configuration Groups" toggle. Defaults to false. */
+  showLinking?: boolean;
 }
 
 function SectionAccordion({ title, defaultExpanded = false, children, contentSx, subAccordion = false }: { title: string; defaultExpanded?: boolean; children: React.ReactNode; contentSx?: object; subAccordion?: boolean }) {
@@ -65,7 +67,7 @@ function SectionAccordion({ title, defaultExpanded = false, children, contentSx,
   );
 }
 
-export function ConfigForm({ schema, valueMap, handleValueChange, validationMap, handleValidationChange, linkingMap, setLinkingMap, sensitiveMap, setSensitiveMap, configGroups }: ConfigFormProps) {
+export function ConfigForm({ schema, valueMap, handleValueChange, validationMap, handleValidationChange, linkingMap, setLinkingMap, sensitiveMap, setSensitiveMap, configGroups, showLinking = false }: ConfigFormProps) {
   const [isRequiredKeysInSchema, setIsRequiredKeysInSchema] = useState(false);
   const [isOptionalKeysInSchema, setIsOptionalKeysInSchema] = useState(false);
   const [schemasAtLevel, setSchemasAtLevel] = useState<SchemaAtLevel[]>([]);
@@ -160,10 +162,12 @@ export function ConfigForm({ schema, valueMap, handleValueChange, validationMap,
 
   return (
     <Box>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
-        <Typography variant="body2">Allow Linking Configuration Groups</Typography>
-        <Switch size="small" checked={allowLinking} onChange={(e) => setAllowLinking((e.target as HTMLInputElement).checked)} />
-      </Stack>
+      {showLinking && (
+        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+          <Typography variant="body2">Allow Linking Configuration Groups</Typography>
+          <Switch size="small" checked={allowLinking} onChange={(e) => setAllowLinking((e.target as HTMLInputElement).checked)} />
+        </Stack>
+      )}
 
       {isRequiredKeysInSchema && (
         <SectionAccordion title="Required" defaultExpanded contentSx={{ px: 2, pt: 1.5, pb: 1 }}>

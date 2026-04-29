@@ -23,7 +23,7 @@ import { useComponentByHandler, useCommitHistory, useEnvironments, useOrgs } fro
 import { useProjectId } from '../hooks/useProjectId';
 import { UUID_RE } from '../utils/string';
 import BuildArea from '../components/Deploy/BuildArea';
-import ComingSoon from '../components/Deploy/ComingSoon';
+import ComingSoon from './ComingSoon';
 import DeployEnvironmentCard from '../components/Deploy/DeployEnvironmentCard/DeployEnvironmentCard';
 import type { ComponentScope } from '../nav';
 import { getComponentTypeFlags } from '../utils/componentType';
@@ -68,23 +68,24 @@ export default function Deploy(scope: ComponentScope): JSX.Element {
     );
   }
 
+  if (component.isPrebuilt) {
+    return (
+      <ComingSoon
+        title="Deploy Not Available for Prebuilt Integrations"
+        description="Prebuilt integrations are deployed automatically during setup — manual deploy management is not available here."
+      />
+    );
+  }
+
   const flags = getComponentTypeFlags(component.displayType ?? '', component.componentSubType);
   const displayLabel = getDisplayLabel(component.displayType ?? '', component.componentSubType ?? null);
 
   if (flags.isProxy) {
-    return (
-      <PageContent>
-        <ComingSoon title="Proxy Deploy Coming Soon" description="Deploy management for REST API Proxy components will be available in a future release." />
-      </PageContent>
-    );
+    return <ComingSoon title="Proxy Deploy Coming Soon" description="Deploy management for REST API Proxy components will be available in a future release." />;
   }
 
   if (!flags.isDeployable) {
-    return (
-      <PageContent>
-        <ComingSoon title="Deploy Not Yet Supported" description={`Deploy management for ${displayLabel} components is coming soon.`} />
-      </PageContent>
-    );
+    return <ComingSoon title="Deploy Not Yet Supported" description={`Deploy management for ${displayLabel} components is coming soon.`} />;
   }
 
   return (

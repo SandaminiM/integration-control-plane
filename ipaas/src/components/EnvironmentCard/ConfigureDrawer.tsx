@@ -17,184 +17,32 @@
  */
 
 import { Alert, Box, Button, Checkbox, Chip, CircularProgress, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, Drawer, IconButton, MenuItem, Select as MuiSelect, Stack, TextField, Typography } from '@wso2/oxygen-ui';
-import { ChevronDown, ChevronUp, Link, Trash2, Upload, X } from '@wso2/oxygen-ui-icons-react';
+import { ChevronDown, ChevronUp, Link, Trash2, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useEnvEndpoints,
-  useGetConfigMgt,
   useSchemaConfig,
   useCertificateGroups,
   useCertificateMappings,
   useConfigGroups,
-  type ConfigMgtItem,
   type GqlEnvEndpoint,
   type SchemaConfigItem,
   type CertGroup,
   type CertMapping,
   type CertMappingConfig,
 } from '../../api/queries';
-import { usePostConfigMgt, useGenerateComponentEndpoints, useUpdateEndpoint, useSaveSchemaConfig, usePostCertificateMappings, useDeployDeploymentTrack, type ConfigMgtSaveItem } from '../../api/mutations';
+import { useGenerateComponentEndpoints, useUpdateEndpoint, useSaveSchemaConfig, usePostCertificateMappings, useDeployDeploymentTrack } from '../../api/mutations';
 import ManageDrawer from './ManageDrawer';
-import { VISIBILITY_OPTS } from './EndpointCard';
-import { ConfigForm, parseConfigToml, filterTomlValuesBySchema, type BaseType, type LinkingInfo, type JSONSchema } from '../SchemaConfigForm';
+import { EndpointCard, VISIBILITY_OPTS } from './EndpointCard';
+import { ConfigForm, type BaseType, type LinkingInfo, type JSONSchema } from '../SchemaConfigForm';
+import ImportConfigTomlButton from '../ImportConfigTomlButton';
 
-// ── Schema parsing ────────────────────────────────────────────────────────────
 
-interface ParsedField {
-  key: string;
-  displayName: string;
-  group: string;
-  type: string;
-  description?: string;
-  required: boolean;
-  isSensitive: boolean;
-}
-
-function parseSchema(base64: string | undefined, configMount: ConfigMgtItem[] | undefined): ParsedField[] {
-  if (!base64) return [];
-  try {
-    const root = JSON.parse(atob(base64));
-    const fields: ParsedField[] = [];
-
-    function flatten(props: Record<string, Record<string, unknown>>, required: string[], keyPrefix: string, group: string, displayPrefix: string) {
-      for (const [name, prop] of Object.entries(props)) {
-        const fullKey = `${keyPrefix}.${name}`;
-        const display = displayPrefix ? `${displayPrefix}.${name}` : name;
-
-        if (prop.type === 'object' && prop.properties) {
-          const nestedRequired = Array.isArray(prop.required) ? (prop.required as string[]) : [];
-          flatten(prop.properties as Record<string, Record<string, unknown>>, nestedRequired, fullKey, group, display);
-        } else {
-          fields.push({
-            key: fullKey,
-            displayName: display,
-            group,
-            type: typeof prop.type === 'string' ? prop.type : 'string',
-            description: typeof prop.description === 'string' ? prop.description : undefined,
-            required: required.includes(name),
-            isSensitive: typeof prop['x-sensitive'] === 'boolean' ? (prop['x-sensitive'] as boolean) : false,
-          });
-        }
-      }
-    }
-
-    for (const [org, orgSchema] of Object.entries((root.properties ?? {}) as Record<string, Record<string, unknown>>)) {
-      for (const [pkg, pkgSchema] of Object.entries((orgSchema.properties ?? {}) as Record<string, Record<string, unknown>>)) {
-        const group = `${org}.${pkg}`;
-        const pkgRequired = Array.isArray((pkgSchema as Record<string, unknown>).required) ? ((pkgSchema as Record<string, unknown>).required as string[]) : [];
-        flatten(((pkgSchema as Record<string, unknown>).properties ?? {}) as Record<string, Record<string, unknown>>, pkgRequired, `${org}.${pkg}`, group, '');
-      }
-    }
-
-    const reqKeys = new Set((configMount ?? []).filter((c) => c.isRequired).map((c) => c.configKeyName));
-    return fields.map((f) => ({ ...f, required: f.required || reqKeys.has(f.key) }));
-  } catch {
-    return [];
-  }
-}
-
-function buildInitialValues(configMount: ConfigMgtItem[] | undefined): Record<string, string> {
-  const vals: Record<string, string> = {};
-  for (const item of configMount ?? []) {
-    vals[item.configKeyName] = item.configurationValue?.value ?? '';
-  }
-  return vals;
-}
-
-// ── Config field components ───────────────────────────────────────────────────
-
-interface FieldRowProps {
-  displayName: string;
-  type: string;
-  description?: string;
-  isSensitive: boolean;
-  value: string;
-  onChange: (v: string) => void;
-}
-
-function FieldRow({ displayName, type, description, isSensitive, value, onChange }: FieldRowProps) {
-  return (
-    <Box sx={{ mb: 1.5 }}>
-      <Stack direction="row" alignItems="center" gap={0.75} sx={{ mb: 0.5 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-          {displayName}
-        </Typography>
-        <Chip label={type} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />
-      </Stack>
-      {description && (
-        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mb: 0.25 }}>
-          {description}
-        </Typography>
-      )}
-      <TextField size="small" fullWidth type={isSensitive ? 'password' : 'text'} placeholder="Enter a value" value={value} onChange={(e) => onChange(e.target.value)} />
-    </Box>
-  );
-}
-
-interface PackageGroupProps {
-  label: string;
-  fields: ParsedField[];
-  values: Record<string, string>;
-  onChange: (key: string, value: string) => void;
-}
-
-function PackageGroup({ label, fields, values, onChange }: PackageGroupProps) {
-  const [open, setOpen] = useState(true);
-  return (
-    <Box sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" onClick={() => setOpen((p) => !p)} sx={{ px: 1.5, py: 0.75, cursor: 'pointer', userSelect: 'none', borderBottom: open ? '1px solid' : 'none', borderColor: 'divider' }}>
-        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 500 }}>
-          {label}
-        </Typography>
-        {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-      </Stack>
-      <Collapse in={open}>
-        <Box sx={{ px: 1.5, pb: 1.5, pt: 1 }}>
-          {fields.map((f) => (
-            <FieldRow key={f.key} displayName={f.displayName} type={f.type} description={f.description} isSensitive={f.isSensitive} value={values[f.key] ?? ''} onChange={(v) => onChange(f.key, v)} />
-          ))}
-        </Box>
-      </Collapse>
-    </Box>
-  );
-}
-
-interface DefaultableConfigurablesAccordionProps {
-  groups: { label: string; fields: ParsedField[] }[];
-  values: Record<string, string>;
-  onChange: (key: string, value: string) => void;
-}
-
-function DefaultableConfigurablesAccordion({ groups, values, onChange }: DefaultableConfigurablesAccordionProps) {
-  const [open, setOpen] = useState(true);
-  return (
-    <Box sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        onClick={() => setOpen((p) => !p)}
-        sx={{ px: 2, py: 1.25, cursor: 'pointer', userSelect: 'none', borderBottom: open ? '1px solid' : 'none', borderColor: 'divider', bgcolor: 'action.hover' }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-          Defaultable Configurables
-        </Typography>
-        {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-      </Stack>
-      <Collapse in={open}>
-        <Box sx={{ p: 1.5 }}>
-          {groups.map((g) => (
-            <PackageGroup key={g.label} label={g.label} fields={g.fields} values={values} onChange={onChange} />
-          ))}
-        </Box>
-      </Collapse>
-    </Box>
-  );
-}
 
 // ── Step indicator ────────────────────────────────────────────────────────────
 
-const STEPS = ['Configurations', 'Endpoints'];
+const SERVICE_STEPS = ['Configurations', 'Certificate Mount', 'Endpoints'];
 const AUTOMATION_STEPS = ['Configurations', 'Certificate Mount'];
 
 function StepIndicator({ step, steps }: { step: number; steps: string[] }) {
@@ -620,7 +468,6 @@ function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envI
   const [importedFileName, setImportedFileName] = useState<string | null>(null);
   const [linkedCerts, setLinkedCerts] = useState<LinkedCert[]>([]);
   const certSeededRef = useRef(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const parsedSchema = useMemo<JSONSchema | null>(() => {
     if (!data?.jsonSchema) return null;
@@ -738,33 +585,6 @@ function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envI
         return next;
       });
     }
-  };
-
-  const handleTomlImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const content = (ev.target?.result as string) ?? '';
-      const result = parseConfigToml(content);
-      if (!result.success || !result.data) {
-        setSaveError('Failed to parse config.toml — ensure the file is valid TOML.');
-        return;
-      }
-      if (!parsedSchema) {
-        setSaveError('Schema is not yet loaded. Please wait and try again.');
-        return;
-      }
-      const filtered = filterTomlValuesBySchema(result.data, parsedSchema);
-      setValueMap((prev) => {
-        const next = new Map(prev);
-        filtered.forEach((v, k) => next.set(k, v));
-        return next;
-      });
-      setImportedFileName(file.name);
-    };
-    reader.readAsText(file);
-    e.target.value = '';
   };
 
   const handleClearToml = () => {
@@ -910,6 +730,7 @@ function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envI
           configGroups={configGroups}
           handleValueChange={handleValueChange}
           handleValidationChange={handleValidationChange}
+          showLinking
         />
         {saveError && (
           <Alert severity="error" sx={{ mt: 1 }}>
@@ -936,15 +757,22 @@ function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envI
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
         <Typography variant="h5">Configurations</Typography>
         <Stack direction="row" alignItems="center" gap={1}>
-          {hasSchema &&
-            step === 1 &&
-            (importedFileName ? (
-              <Chip label={importedFileName} onDelete={handleClearToml} size="small" variant="outlined" sx={{ maxWidth: 180 }} />
-            ) : (
-              <Button variant="outlined" size="small" startIcon={<Upload size={14} />} onClick={() => fileInputRef.current?.click()}>
-                Import config.toml
-              </Button>
-            ))}
+          {hasSchema && step === 1 && (
+            <ImportConfigTomlButton
+              schema={parsedSchema}
+              fileName={importedFileName}
+              onImport={(values, name) => {
+                setValueMap((prev) => {
+                  const next = new Map(prev);
+                  values.forEach((v, k) => next.set(k, v));
+                  return next;
+                });
+                setImportedFileName(name);
+              }}
+              onClear={handleClearToml}
+              onError={(msg) => setSaveError(msg)}
+            />
+          )}
           <IconButton size="small" aria-label="close" onClick={handleClose}>
             <X size={16} />
           </IconButton>
@@ -966,7 +794,6 @@ function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envI
           </Button>
         </Stack>
       )}
-      <input ref={fileInputRef} type="file" accept=".toml" style={{ display: 'none' }} onChange={handleTomlImport} />
     </Drawer>
   );
 }
@@ -975,7 +802,7 @@ function AutomationConfigureDrawer({ open, onClose, projectId, componentId, envI
 
 const drawerSx = {
   '& .MuiDrawer-paper': {
-    width: 440,
+    width: 560,
     position: 'fixed',
     top: 64,
     height: 'calc(100% - 64px)',
@@ -1035,127 +862,254 @@ function GenericServiceConfigureDrawer({
   open,
   onClose,
   onSaved,
-  orgHandler,
+  orgHandler: _orgHandler,
   projectId,
   componentId,
   envId,
   versionId,
-  componentName,
+  componentName: _componentName,
   projectHandler: _projectHandler,
   commitHash,
   releaseId,
   displayType: _displayType,
   releaseMgtReleaseId: _releaseMgtReleaseId,
   releaseMgtDeploymentId: _releaseMgtDeploymentId,
+  envTemplateId,
 }: ConfigureDrawerProps) {
+  const schemaEnvId = envTemplateId ?? envId;
   const [step, setStep] = useState(1);
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [valueMap, setValueMap] = useState<Map<string, BaseType>>(new Map());
+  const [validationMap, setValidationMap] = useState<Map<string, boolean>>(new Map());
+  const [sensitiveMap, setSensitiveMap] = useState<Map<string, boolean>>(new Map());
+  const [linkingMap, setLinkingMap] = useState<Map<string, LinkingInfo>>(new Map());
+  const [linkedCerts, setLinkedCerts] = useState<LinkedCert[]>([]);
+  const [importedFileName, setImportedFileName] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [managingEp, setManagingEp] = useState<GqlEnvEndpoint | null>(null);
   const [manageDrawerOpen, setManageDrawerOpen] = useState(false);
   const [manageApimId, setManageApimId] = useState<string | null>(null);
+  const seededRef = useRef(false);
+  const certSeededRef = useRef(false);
+  const queryClient = useQueryClient();
 
   const handleClose = () => {
     (document.activeElement as HTMLElement)?.blur();
     onClose();
   };
 
-  const { data, isLoading, isError, error } = useGetConfigMgt(orgHandler, projectId, componentId, envId, versionId, componentName, commitHash, open);
+  const { data, isLoading, isError } = useSchemaConfig(projectId, componentId, schemaEnvId, versionId, commitHash);
+  const { data: existingCertMappings } = useCertificateMappings(projectId, componentId, schemaEnvId, versionId, open);
+  const { data: configGroups } = useConfigGroups(projectId, componentId, open);
   const { data: endpoints = [] } = useEnvEndpoints(open ? componentId : '', open ? versionId : '', open && releaseId ? releaseId : '');
-  const queryClient = useQueryClient();
-  const save = usePostConfigMgt();
+  const save = useSaveSchemaConfig();
+  const saveCertMappings = usePostCertificateMappings();
   const generateEp = useGenerateComponentEndpoints();
 
-  const fields = useMemo(() => parseSchema(data?.jsonSchema, data?.configurationMount), [data]);
-
-  const defaultGroup = useMemo(() => {
-    if (!data?.defaultPackage) return '';
-    const [org, pkg] = data.defaultPackage.split('/');
-    return org && pkg ? `${org}.${pkg}` : '';
-  }, [data?.defaultPackage]);
-
-  const groups = useMemo(() => {
-    const byGroup = new Map<string, ParsedField[]>();
-    for (const f of fields) {
-      if (!byGroup.has(f.group)) byGroup.set(f.group, []);
-      byGroup.get(f.group)!.push(f);
+  const parsedSchema = useMemo<JSONSchema | null>(() => {
+    if (!data?.jsonSchema) return null;
+    try {
+      return JSON.parse(atob(data.jsonSchema)) as JSONSchema;
+    } catch {
+      return null;
     }
-    return Array.from(byGroup.entries()).map(([group, groupFields]) => ({
-      label: group === defaultGroup ? componentName : group,
-      fields: groupFields,
-    }));
-  }, [fields, defaultGroup, componentName]);
+  }, [data?.jsonSchema]);
 
-  // Tracks whether we have seeded values for the current open session, so that
-  // subsequent data refetches while the drawer is open don't clobber edits.
-  const seededRef = useRef(false);
-
-  // Reset UI state when the drawer opens; seed immediately if data is already available.
+  // Reset UI state on open; seed immediately if data is already cached.
   useEffect(() => {
     if (!open) return;
     setStep(1);
     setSaveError(null);
+    setImportedFileName(null);
     setManagingEp(null);
+    certSeededRef.current = false;
+    setLinkedCerts([]);
     if (data !== undefined) {
-      setValues(buildInitialValues(data?.configurationMount));
+      const initValues = new Map<string, BaseType>();
+      const initSensitive = new Map<string, boolean>();
+      const initLinking = new Map<string, LinkingInfo>();
+      for (const cfg of data?.configurations ?? []) {
+        const val = cfg.values?.[0]?.value;
+        if (val !== undefined && val !== '') initValues.set(cfg.key, val);
+        if (cfg.isSensitive) initSensitive.set(cfg.key, true);
+        if (cfg.configGroupId || cfg.configKeyId || cfg.isDynamic) {
+          initLinking.set(cfg.key, { configGroupId: cfg.configGroupId, configKeyId: cfg.configKeyId, isDynamic: cfg.isDynamic });
+        }
+      }
+      setValueMap(initValues);
+      setValidationMap(new Map());
+      setSensitiveMap(initSensitive);
+      setLinkingMap(initLinking);
       seededRef.current = true;
     } else {
       seededRef.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]); // intentionally omit data — seeding on open only
+  }, [open]);
 
-  // Seed values when data arrives for the first time after the drawer opened.
+  // Seed when data arrives after drawer opens.
   useEffect(() => {
     if (!open || seededRef.current || data === undefined) return;
-    setValues(buildInitialValues(data?.configurationMount));
+    const initValues = new Map<string, BaseType>();
+    const initSensitive = new Map<string, boolean>();
+    const initLinking = new Map<string, LinkingInfo>();
+    for (const cfg of data?.configurations ?? []) {
+      const val = cfg.values?.[0]?.value;
+      if (val !== undefined && val !== '') initValues.set(cfg.key, val);
+      if (cfg.isSensitive) initSensitive.set(cfg.key, true);
+      if (cfg.configGroupId || cfg.configKeyId || cfg.isDynamic) {
+        initLinking.set(cfg.key, { configGroupId: cfg.configGroupId, configKeyId: cfg.configKeyId, isDynamic: cfg.isDynamic });
+      }
+    }
+    setValueMap(initValues);
+    setValidationMap(new Map());
+    setSensitiveMap(initSensitive);
+    setLinkingMap(initLinking);
     seededRef.current = true;
   }, [open, data]);
 
-  const handleChange = (key: string, value: string) => {
-    setValues((prev) => ({ ...prev, [key]: value }));
+  // Seed cert mappings from existing data.
+  useEffect(() => {
+    if (!open || certSeededRef.current || !existingCertMappings) return;
+    const byGroup: Record<string, CertMappingConfig[]> = {};
+    for (const cfg of existingCertMappings.configurations ?? []) {
+      if (!cfg.configGroupId || !cfg.isFile) continue;
+      if (!byGroup[cfg.configGroupId]) byGroup[cfg.configGroupId] = [];
+      byGroup[cfg.configGroupId].push(cfg);
+    }
+    const certs: LinkedCert[] = Object.entries(byGroup).map(([groupId, cfgs]) => {
+      const first = cfgs[0];
+      const fullKey = first.key;
+      const lastSlash = fullKey.lastIndexOf('/');
+      const mountPath = lastSlash >= 0 ? fullKey.substring(0, lastSlash) || '/' : '/certs';
+      return {
+        groupUuid: groupId,
+        groupName: first.configGroupName || groupId,
+        mountPath,
+        keys: cfgs.map((c) => ({
+          keyUuid: c.configKeyId || '',
+          key: c.configKeyName || c.key,
+          mountedAs: lastSlash >= 0 ? c.key.substring(lastSlash + 1) : c.key,
+        })),
+      };
+    });
+    if (certs.length > 0) setLinkedCerts(certs);
+    certSeededRef.current = true;
+  }, [open, existingCertMappings]);
+
+  const handleValueChange = (key: string, value: BaseType, newMap?: Map<string, BaseType>) => {
+    if (newMap) {
+      setValueMap(newMap);
+    } else {
+      setValueMap((prev) => {
+        const next = new Map(prev);
+        next.set(key, value);
+        return next;
+      });
+    }
+  };
+
+  const handleValidationChange = (key: string, isValid: boolean, newMap?: Map<string, boolean>) => {
+    if (newMap) {
+      setValidationMap(newMap);
+    } else {
+      setValidationMap((prev) => {
+        const next = new Map(prev);
+        next.set(key, isValid);
+        return next;
+      });
+    }
+  };
+
+  const handleClearToml = () => {
+    setImportedFileName(null);
+    const initValues = new Map<string, BaseType>();
+    const initSensitive = new Map<string, boolean>();
+    const initLinking = new Map<string, LinkingInfo>();
+    for (const cfg of data?.configurations ?? []) {
+      const val = cfg.values?.[0]?.value;
+      if (val !== undefined && val !== '') initValues.set(cfg.key, val);
+      if (cfg.isSensitive) initSensitive.set(cfg.key, true);
+      if (cfg.configGroupId || cfg.configKeyId || cfg.isDynamic) {
+        initLinking.set(cfg.key, { configGroupId: cfg.configGroupId, configKeyId: cfg.configKeyId, isDynamic: cfg.isDynamic });
+      }
+    }
+    setValueMap(initValues);
+    setSensitiveMap(initSensitive);
+    setLinkingMap(initLinking);
   };
 
   const handleApply = () => {
     setSaveError(null);
-    if (!commitHash) {
-      setSaveError('Cannot save: commit information is not available.');
-      return;
-    }
-    const configs: ConfigMgtSaveItem[] = fields
-      .filter((f) => values[f.key] !== undefined && values[f.key] !== '')
-      .map((f) => {
-        const mountItem = data?.configurationMount?.find((c) => c.configKeyName === f.key);
-        return {
-          configKeyName: f.key,
-          valueType: f.type,
-          valueOrSource: values[f.key],
-          isRequired: f.required,
-          metadata: { isSecret: mountItem?.metadata?.isSecret ?? f.isSensitive },
-          configPackageName: mountItem?.configPackageName ?? f.group.split('.')[1] ?? '',
-          configPackageOrganization: mountItem?.configPackageOrganization ?? f.group.split('.')[0] ?? '',
-        };
-      });
+    const configurations: SchemaConfigItem[] = [];
+    valueMap.forEach((value, key) => {
+      if (value !== '' && value !== undefined && value !== null) {
+        const linking = linkingMap.get(key);
+        const isSensitive = sensitiveMap.get(key) || false;
+        const existing = data?.configurations?.find((c) => c.key === key);
+        configurations.push({
+          key,
+          keyId: existing?.keyId,
+          values: [{ environmentUuid: schemaEnvId, value: String(value) }],
+          ...(isSensitive ? { isSensitive } : {}),
+          isRequired: existing?.isRequired,
+          configGroupId: linking?.configGroupId,
+          configKeyId: linking?.configKeyId,
+          isDynamic: linking?.isDynamic,
+        });
+      }
+    });
 
-    save.mutate(
-      { orgHandler, projectId, componentId, envId, versionId, moduleName: componentName, commitHash, configs },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['envEndpoints'] });
-          queryClient.invalidateQueries({ queryKey: ['componentDeployment'] });
-          onClose();
-          onSaved?.();
-        },
-        onError: (err) => setSaveError(err instanceof Error ? err.message : 'Failed to save configuration'),
-      },
-    );
+    const doSaveCerts = () => {
+      const certConfigs: CertMappingConfig[] = [];
+      for (const cert of linkedCerts) {
+        for (const k of cert.keys) {
+          certConfigs.push({
+            key: `${cert.mountPath}/${k.mountedAs}`,
+            isDynamic: false,
+            configGroupId: cert.groupUuid,
+            configKeyId: k.keyUuid,
+            configGroupName: cert.groupName,
+            configKeyName: k.key,
+            isFile: true,
+            isSensitive: false,
+            values: [{ value: `\${${cert.groupName}.${k.key}}`, environmentUuid: schemaEnvId }],
+          });
+        }
+      }
+      const certPayload: CertMapping = {
+        projectId,
+        componentId,
+        envTemplateId: schemaEnvId,
+        deploymentTrackId: versionId,
+        configurations: certConfigs,
+        ...(existingCertMappings?.mappingId ? { mappingId: existingCertMappings.mappingId } : {}),
+      };
+      const afterSave = () => {
+        queryClient.invalidateQueries({ queryKey: ['envEndpoints'] });
+        queryClient.invalidateQueries({ queryKey: ['componentDeployment'] });
+        onClose();
+        onSaved?.();
+      };
+      if (certConfigs.length === 0 && !existingCertMappings?.mappingId) {
+        afterSave();
+        return;
+      }
+      saveCertMappings
+        .mutateAsync(certPayload)
+        .then(afterSave)
+        .catch((err: unknown) => setSaveError(err instanceof Error ? err.message : 'Failed to save certificate mounts'));
+    };
+
+    save
+      .mutateAsync({ projectId, componentId, envId: schemaEnvId, deploymentTrackId: versionId, configurations, commitHash })
+      .then(doSaveCerts)
+      .catch((err: unknown) => setSaveError(err instanceof Error ? err.message : 'Failed to save configuration'));
   };
 
   const handleNext = () => {
-    if (step < 2) {
-      setSaveError(null);
+    setSaveError(null);
+    if (step === 1) {
       if (!releaseId || !commitHash) {
-        // No active release yet — just advance to show endpoints
         setStep(2);
         return;
       }
@@ -1163,9 +1117,11 @@ function GenericServiceConfigureDrawer({
         { componentId, versionId, releaseId, commitHash, dryRun: false },
         {
           onSuccess: () => setStep(2),
-          onError: (err) => setSaveError(err instanceof Error ? err.message : 'Failed to deploy endpoints'),
+          onError: (err) => setSaveError(err instanceof Error ? err.message : 'Failed to prepare endpoints'),
         },
       );
+    } else if (step === 2) {
+      setStep(3);
     } else {
       handleApply();
     }
@@ -1175,15 +1131,15 @@ function GenericServiceConfigureDrawer({
     if (step > 1) {
       setSaveError(null);
       setStep((s) => s - 1);
-    } else handleClose();
+    } else {
+      handleClose();
+    }
   };
 
   const handleSettings = (ep: GqlEnvEndpoint) => {
     setManageApimId(ep.apimId ?? null);
     setManageDrawerOpen(true);
   };
-
-  // ── Step content ──────────────────────────────────────────────────────────
 
   const renderConfigurations = () => {
     if (isLoading) {
@@ -1193,12 +1149,18 @@ function GenericServiceConfigureDrawer({
         </Box>
       );
     }
-    if (isError) {
-      return <Alert severity="error">{error instanceof Error ? error.message : 'Failed to load configuration.'}</Alert>;
-    }
-    if (!fields.length) {
+    if (isError || data === null) {
       return (
-        <Box sx={{ py: 4, textAlign: 'center' }}>
+        <Box sx={{ py: 4, px: 2, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            Configuration schema is not available for this component.
+          </Typography>
+        </Box>
+      );
+    }
+    if (!data?.jsonSchema || !parsedSchema) {
+      return (
+        <Box sx={{ py: 4, px: 2, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">
             No configurable values found for this component.
           </Typography>
@@ -1206,11 +1168,40 @@ function GenericServiceConfigureDrawer({
       );
     }
     return (
-      <Box>
-        <DefaultableConfigurablesAccordion groups={groups} values={values} onChange={handleChange} />
-      </Box>
+      <>
+        <ConfigForm
+          schema={parsedSchema}
+          valueMap={valueMap}
+          validationMap={validationMap}
+          linkingMap={linkingMap}
+          setLinkingMap={setLinkingMap}
+          sensitiveMap={sensitiveMap}
+          setSensitiveMap={setSensitiveMap}
+          configGroups={configGroups}
+          handleValueChange={handleValueChange}
+          handleValidationChange={handleValidationChange}
+          showLinking
+        />
+        {saveError && (
+          <Alert severity="error" sx={{ mt: 1 }}>
+            {saveError}
+          </Alert>
+        )}
+      </>
     );
   };
+
+  const renderCertificateMount = () => (
+    <CertificateMountStep
+      projectId={projectId}
+      componentId={componentId}
+      envId={schemaEnvId}
+      deploymentTrackId={versionId}
+      open={open}
+      linkedCerts={linkedCerts}
+      onChange={setLinkedCerts}
+    />
+  );
 
   const renderEndpoints = () => {
     if (managingEp) {
@@ -1234,13 +1225,18 @@ function GenericServiceConfigureDrawer({
     );
   };
 
-  const stepContent = step === 1 ? renderConfigurations() : renderEndpoints();
+  const stepContent = step === 1 ? renderConfigurations() : step === 2 ? renderCertificateMount() : renderEndpoints();
+  const hasSchema = !isLoading && !isError && data !== null && !!data?.jsonSchema && !!parsedSchema;
+  const hasValidationErrors = Array.from(validationMap.values()).some((v) => !v);
+  const hasCertPathErrors = linkedCerts.some((c) => c.mountPath && !c.mountPath.startsWith('/'));
+  const isApplying = save.isPending || saveCertMappings.isPending;
   const prevLabel = step === 1 ? 'Cancel' : 'Back';
-  const isApplying = save.isPending;
-  const nextLabel = step === 2 ? (isApplying ? 'Applying…' : 'Apply') : generateEp.isPending ? 'Loading…' : 'Next';
-  const nextDisabled = (step === 1 && (isLoading || generateEp.isPending)) || (step === 2 && isApplying);
-  // Hide footer buttons when in ManageEndpoint (it has its own buttons)
-  const showFooter = !(step === 2 && managingEp !== null);
+  const nextLabel = step === 3 ? (isApplying ? 'Applying…' : 'Apply') : step === 1 && generateEp.isPending ? 'Loading…' : 'Next';
+  const nextDisabled =
+    (step === 1 && (hasValidationErrors || isLoading || generateEp.isPending)) ||
+    (step === 2 && hasCertPathErrors) ||
+    (step === 3 && isApplying);
+  const showFooter = !(step === 3 && managingEp !== null);
 
   return (
     <>
@@ -1248,19 +1244,37 @@ function GenericServiceConfigureDrawer({
         {/* Header */}
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
           <Typography variant="h5">Configure</Typography>
-          <IconButton size="small" aria-label="close" onClick={handleClose}>
-            <X size={16} />
-          </IconButton>
+          <Stack direction="row" alignItems="center" gap={1}>
+            {hasSchema && step === 1 && (
+              <ImportConfigTomlButton
+                schema={parsedSchema}
+                fileName={importedFileName}
+                onImport={(values, name) => {
+                  setValueMap((prev) => {
+                    const next = new Map(prev);
+                    values.forEach((v, k) => next.set(k, v));
+                    return next;
+                  });
+                  setImportedFileName(name);
+                }}
+                onClear={handleClearToml}
+                onError={(msg) => setSaveError(msg)}
+              />
+            )}
+            <IconButton size="small" aria-label="close" onClick={handleClose}>
+              <X size={16} />
+            </IconButton>
+          </Stack>
         </Stack>
 
         {/* Step indicator */}
-        <StepIndicator step={step} steps={STEPS} />
+        <StepIndicator step={step} steps={SERVICE_STEPS} />
 
         {/* Scrollable content */}
         <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>{stepContent}</Box>
 
-        {/* Save error */}
-        {saveError && (
+        {/* Footer error (steps 2 and 3 only; step 1 error is inline) */}
+        {saveError && step !== 1 && (
           <Alert severity="error" sx={{ mx: 2, mb: 1 }}>
             {saveError}
           </Alert>
@@ -1270,7 +1284,12 @@ function GenericServiceConfigureDrawer({
         {showFooter && (
           <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
             <Button onClick={handlePrev}>{prevLabel}</Button>
-            <Button variant="contained" onClick={handleNext} disabled={nextDisabled} startIcon={(step === 2 && isApplying) || (step === 1 && generateEp.isPending) ? <CircularProgress color="inherit" size={16} /> : undefined}>
+            <Button
+              variant="contained"
+              onClick={handleNext}
+              disabled={nextDisabled}
+              startIcon={(step === 3 && isApplying) || (step === 1 && generateEp.isPending) ? <CircularProgress color="inherit" size={16} /> : undefined}
+            >
               {nextLabel}
             </Button>
           </Stack>

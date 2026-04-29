@@ -18,12 +18,22 @@
 
 import { useQuery } from '@tanstack/react-query';
 import type { PrebuiltIntegration } from '../types/samples';
+import type { JSONSchema } from '../components/SchemaConfigForm';
+import type {
+  PrebuiltIntegrationsData,
+  PrebuiltInstructionsResult,
+  PrebuiltConfigSchemaResult,
+  PrebuiltDiagramResult,
+} from '../types/prebuilt';
+import { DEFAULT_PREBUILT_INTEGRATIONS_URL } from '../constants/samples';
+import { getDotChoreoBaseUrl } from '../utils/prebuilt';
 
-const DEFAULT_PREBUILT_INTEGRATIONS_URL = 'https://raw.githubusercontent.com/wso2/integration-samples/main/.metadata/prebuilt-integrations.json';
-
-export interface PrebuiltIntegrationsData {
-  prebuiltIntegrations: PrebuiltIntegration[];
-}
+export type {
+  PrebuiltIntegrationsData,
+  PrebuiltInstructionsResult,
+  PrebuiltConfigSchemaResult,
+  PrebuiltDiagramResult,
+};
 
 export function usePrebuiltIntegrations() {
   return useQuery<PrebuiltIntegrationsData>({
@@ -31,16 +41,54 @@ export function usePrebuiltIntegrations() {
     queryFn: async ({ signal }) => {
       const url = window.API_CONFIG?.prebuiltIntegrationsUrl ?? DEFAULT_PREBUILT_INTEGRATIONS_URL;
       const response = await fetch(url, { cache: 'no-store', signal });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const rawData = (await response.json()) as { prebuiltIntegrations: PrebuiltIntegration[] };
       if (!Array.isArray(rawData?.prebuiltIntegrations)) {
         throw new Error('Invalid response format: missing prebuiltIntegrations array');
       }
-      return { prebuiltIntegrations: rawData.prebuiltIntegrations };
+      const appSet = new Set<string>();
+      for (const integration of rawData.prebuiltIntegrations) {
+        integration.applications?.forEach((app) => appSet.add(app));
+      }
+      return { prebuiltIntegrations: rawData.prebuiltIntegrations, applications: Array.from(appSet).sort() };
     },
     retry: 3,
     staleTime: 5 * 60 * 1000,
   });
+}
+
+function usePrebuiltAsset<T>(
+  integration: PrebuiltIntegration | null | undefined,
+  queryKey: string,
+  filename: string,
+  parse: (res: Response) => Promise<T>,
+): { data: T | undefined; isLoading: boolean; isError: boolean } {
+  const { data, isLoading, isError } = useQuery<T>({
+    queryKey: [queryKey, integration?.componentPath],
+    queryFn: ({ signal }) => {
+      const baseUrl = getDotChoreoBaseUrl(integration!);
+      return fetch(`${baseUrl}${filename}`, { cache: 'no-store', signal }).then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return parse(res);
+      });
+    },
+    enabled: !!integration,
+    retry: 3,
+  });
+  return { data, isLoading, isError };
+}
+
+export function usePrebuiltInstructions(integration: PrebuiltIntegration | null | undefined): PrebuiltInstructionsResult {
+  const { data, isLoading, isError } = usePrebuiltAsset<string>(integration, 'prebuiltInstructions', 'instructions.md', (r) => r.text());
+  return { instructions: data, isInstructionsLoading: isLoading, isInstructionsError: isError };
+}
+
+export function usePrebuiltConfigSchema(integration: PrebuiltIntegration | null | undefined): PrebuiltConfigSchemaResult {
+  const { data, isLoading, isError } = usePrebuiltAsset<JSONSchema>(integration, 'prebuiltConfigSchema', 'config-schema.json', (r) => r.json() as Promise<JSONSchema>);
+  return { configSchema: data, isConfigSchemaLoading: isLoading, isConfigSchemaError: isError };
+}
+
+export function usePrebuiltDiagram(integration: PrebuiltIntegration | null | undefined): PrebuiltDiagramResult {
+  const { data, isLoading, isError } = usePrebuiltAsset<string>(integration, 'prebuiltDiagram', 'diagram.md', (r) => r.text());
+  return { diagram: data, isDiagramLoading: isLoading, isDiagramError: isError };
 }
