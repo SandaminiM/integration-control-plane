@@ -20,17 +20,18 @@ import { Box, Typography } from '@wso2/oxygen-ui';
 import { useState, type JSX } from 'react';
 import { getAppColor, getAppIconUrl } from '../constants/integrations';
 
-export default function AppAvatar({ name }: { name: string }): JSX.Element {
+export default function AppAvatar({ name, size = 28 }: { name: string; size?: number }): JSX.Element {
   const iconUrl = getAppIconUrl(name);
   const [imgFailed, setImgFailed] = useState(false);
   const bg = getAppColor(name);
+  const fontSize = Math.round(size * 0.4);
 
   if (iconUrl && !imgFailed) {
     return (
       <Box
         sx={{
-          width: 28,
-          height: 28,
+          width: size,
+          height: size,
           borderRadius: 0.75,
           display: 'flex',
           alignItems: 'center',
@@ -38,7 +39,7 @@ export default function AppAvatar({ name }: { name: string }): JSX.Element {
           flexShrink: 0,
           overflow: 'hidden',
         }}>
-        <Box component="img" src={iconUrl} alt={name} onError={() => setImgFailed(true)} sx={{ width: 28, height: 28, objectFit: 'contain' }} />
+        <Box component="img" src={iconUrl} alt={name} onError={() => setImgFailed(true)} sx={{ width: size, height: size, objectFit: 'contain' }} />
       </Box>
     );
   }
@@ -46,8 +47,8 @@ export default function AppAvatar({ name }: { name: string }): JSX.Element {
   return (
     <Box
       sx={{
-        width: 28,
-        height: 28,
+        width: size,
+        height: size,
         borderRadius: 0.75,
         bgcolor: bg,
         display: 'flex',
@@ -55,7 +56,7 @@ export default function AppAvatar({ name }: { name: string }): JSX.Element {
         justifyContent: 'center',
         flexShrink: 0,
       }}>
-      <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#fff', lineHeight: 1 }}>{name.slice(0, 2).toUpperCase()}</Typography>
+      <Typography sx={{ fontSize, fontWeight: 700, color: '#fff', lineHeight: 1 }}>{name.slice(0, 2).toUpperCase()}</Typography>
     </Box>
   );
 }

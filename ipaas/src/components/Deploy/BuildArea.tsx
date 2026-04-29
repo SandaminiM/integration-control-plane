@@ -48,7 +48,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useDeployDeploymentTrack, useUpdateAutoDeployEnabled } from '../../api/mutations';
 import { useComponentDeployment, useDeploymentStatus, useDeploymentTrackImages, type GqlDeploymentTrackImage } from '../../api/queries';
 import ConfigureDrawer from '../EnvironmentCard/ConfigureDrawer';
-import ComingSoon from './ComingSoon';
 import BuildAreaImageDrawer from './BuildAreaImageDrawer';
 import BuildImageCard from './BuildImageCard';
 import EndpointConfigDrawer from './EndpointConfigDrawer';
@@ -186,7 +185,9 @@ export default function BuildArea({
           <Typography variant="h3" sx={{ mb: 2 }}>
             Set Up
           </Typography>
-          <ComingSoon title="Image-based Deploy" description="Image-based deploy configuration is coming soon." />
+          <Typography variant="body2" color="text.secondary">
+            Image-based deploy configuration is coming soon.
+          </Typography>
         </CardContent>
       </Card>
     );

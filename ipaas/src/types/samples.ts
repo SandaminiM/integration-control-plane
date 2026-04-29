@@ -34,4 +34,11 @@ export interface PrebuiltIntegration {
   description: string;
   applications: string[];
   bidirectional: boolean;
+  componentType: string;
+  buildPack: string;
+  repositoryUrl: string;
+  branch?: string;
+  componentPath: string;
+  tags: string[];
+  imageUrl: string;
 }

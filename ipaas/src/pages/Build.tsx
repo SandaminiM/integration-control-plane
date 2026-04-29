@@ -20,6 +20,7 @@ import { CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
 import { useComponentByHandler, useCommitHistory, useDeploymentStatus, useEnvironments, useOrgs, useComponentRepository } from '../api/queries';
 import BuildHistory from '../components/Build/BuildHistory';
+import ComingSoon from './ComingSoon';
 import type { ComponentScope } from '../nav';
 import { UUID_RE } from '../utils/string';
 import { useProjectId } from '../hooks/useProjectId';
@@ -63,6 +64,10 @@ export default function Build(scope: ComponentScope): JSX.Element {
         <Typography color="error">Failed to load component information.</Typography>
       </PageContent>
     );
+  }
+
+  if (component.isPrebuilt) {
+    return <ComingSoon title="Build Not Available for Prebuilt Integrations" description="Prebuilt integrations are deployed directly from a published image — there is no source build step." />;
   }
 
   const envId = environments[0]?.id ?? '';

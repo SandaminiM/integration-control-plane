@@ -114,10 +114,13 @@ export default function Component(scope: ComponentScope): JSX.Element {
           {/* Component header */}
           <ComponentHeader component={component} project={project} repository={repository} latestCommit={latestCommit} orgHandler={scope.org} projectId={projectId} projectHandler={project?.handler ?? scope.project} apimId={apimId} />
 
-          {/* Latest build card */}
-          <BuildCard componentId={component.id} versionId={versionId} orgHandler={scope.org} projectId={projectId} latestCommit={latestCommit} />
-
-          <Divider sx={{ mb: 3 }} />
+          {/* Latest build card — not applicable for prebuilt integrations */}
+          {!component.isPrebuilt && (
+            <>
+              <BuildCard componentId={component.id} versionId={versionId} orgHandler={scope.org} projectId={projectId} latestCommit={latestCommit} />
+              <Divider sx={{ mb: 3 }} />
+            </>
+          )}
 
           {/* Environment cards with Promote between them */}
           {environments.map((env, index) => (

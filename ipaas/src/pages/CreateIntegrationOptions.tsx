@@ -318,7 +318,19 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                   ) : (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                       {featuredPrebuilt.map((integration) => (
-                        <PrebuiltCard key={integration.displayName} integration={integration} onClick={() => navigate(prebuiltIntegrationsUrl(scope.org, scope.project))} />
+                        <PrebuiltCard
+                          key={integration.displayName}
+                          integration={integration}
+                          onClick={() =>
+                            navigate(prebuiltIntegrationsUrl(scope.org, scope.project), {
+                              state: {
+                                selectedApplications: integration.applications,
+                                selectedIntegration: integration,
+                                fromPath: `/organizations/${scope.org}/projects/${scope.project}/components/new`,
+                              },
+                            })
+                          }
+                        />
                       ))}
                     </Box>
                   )}
