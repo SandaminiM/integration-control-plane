@@ -21,8 +21,8 @@ import type { JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Alert, Box, Button, ButtonBase, Card, CardContent, CircularProgress, FormControl, MenuItem, Select, Stack, Typography } from '@wso2/oxygen-ui';
 import { ArrowRight, Settings, Users } from '@wso2/oxygen-ui-icons-react';
-import { authenticatedFetch, getOrgUuidFromToken } from '../auth/tokenManager';
-import { choreoDevopsApiUrl } from '../config/api';
+import { getOrgUuidFromToken } from '../auth/tokenManager';
+import { initOrg, createDefaultProject } from '../api/org';
 import { projectHomeUrl } from '../paths';
 import Projects from './Projects';
 
@@ -98,41 +98,12 @@ export default function OrgHome(): JSX.Element {
 
         // Step 1: Init default environments for the org
         if (orgUuid) {
-          const initRes = await authenticatedFetch(`${choreoDevopsApiUrl()}/api/v1/organizations/${orgUuid}/projects/init`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ region }),
-          });
-          if (!initRes.ok) {
-            throw new Error(`Failed to initialize organization (${initRes.status})`);
-          }
+          await initOrg(orgUuid, region);
         }
 
         // Step 2: Create the default project via GraphQL
         if (orgNumericId) {
-          const gqlRes = await authenticatedFetch(window.API_CONFIG.graphqlUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              query: `mutation {
-                createProject(project: {
-                  name: "Default",
-                  description: "This is a default project created by WSO2 Integration Platform",
-                  projectHandler: "${DEFAULT_PROJECT_HANDLER}",
-                  orgId: ${orgNumericId},
-                  orgHandler: "${handle}",
-                  version: "1.0.0"
-                }) { id handler }
-              }`,
-            }),
-          });
-          if (!gqlRes.ok) {
-            throw new Error(`Failed to create default project (${gqlRes.status})`);
-          }
-          const gqlData: { data?: { createProject?: { id: string; handler: string } }; errors?: unknown[] } = await gqlRes.json();
-          if (gqlData.errors || !gqlData.data?.createProject) {
-            throw new Error('Failed to create default project');
-          }
+          await createDefaultProject(orgNumericId, handle, DEFAULT_PROJECT_HANDLER);
         }
 
         // Only mark onboarding complete and navigate on success

@@ -22,6 +22,7 @@ import type { JSONSchema } from '../components/SchemaConfigForm';
 import type { PrebuiltIntegrationsData, PrebuiltInstructionsResult, PrebuiltConfigSchemaResult, PrebuiltDiagramResult } from '../types/prebuilt';
 import { DEFAULT_PREBUILT_INTEGRATIONS_URL } from '../constants/samples';
 import { getDotChoreoBaseUrl } from '../utils/prebuilt';
+import { fetchPrebuiltIntegrations, normalizePrebuiltIntegrations, fetchPrebuiltAsset } from '../api/samples';
 
 export type { PrebuiltIntegrationsData, PrebuiltInstructionsResult, PrebuiltConfigSchemaResult, PrebuiltDiagramResult };
 
@@ -30,17 +31,8 @@ export function usePrebuiltIntegrations() {
     queryKey: ['prebuiltIntegrations'],
     queryFn: async ({ signal }) => {
       const url = window.API_CONFIG?.prebuiltIntegrationsUrl ?? DEFAULT_PREBUILT_INTEGRATIONS_URL;
-      const response = await fetch(url, { cache: 'no-store', signal });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const rawData = (await response.json()) as { prebuiltIntegrations: PrebuiltIntegration[] };
-      if (!Array.isArray(rawData?.prebuiltIntegrations)) {
-        throw new Error('Invalid response format: missing prebuiltIntegrations array');
-      }
-      const appSet = new Set<string>();
-      for (const integration of rawData.prebuiltIntegrations) {
-        integration.applications?.forEach((app) => appSet.add(app));
-      }
-      return { prebuiltIntegrations: rawData.prebuiltIntegrations, applications: Array.from(appSet).sort() };
+      const raw = await fetchPrebuiltIntegrations(url, signal);
+      return normalizePrebuiltIntegrations(raw);
     },
     retry: 3,
     staleTime: 5 * 60 * 1000,
@@ -52,10 +44,7 @@ function usePrebuiltAsset<T>(integration: PrebuiltIntegration | null | undefined
     queryKey: [queryKey, integration?.componentPath],
     queryFn: ({ signal }) => {
       const baseUrl = getDotChoreoBaseUrl(integration!);
-      return fetch(`${baseUrl}${filename}`, { cache: 'no-store', signal }).then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return parse(res);
-      });
+      return fetchPrebuiltAsset(baseUrl, filename, signal).then(parse);
     },
     enabled: !!integration,
     retry: 3,
