@@ -61,12 +61,12 @@ function OnboardingShell({ children }: { children: React.ReactNode }) {
         right: 0,
         bottom: 0,
         zIndex: 9999,
-        bgcolor: 'grey.100',
+        bgcolor: 'background.default',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
       }}>
-      <Card sx={{ maxWidth: 480, width: '100%', borderRadius: 2, boxShadow: 3 }}>
+      <Card sx={{ maxWidth: 480, width: '100%', borderRadius: 2, boxShadow: 3, bgcolor: 'background.paper' }}>
         <CardContent sx={{ p: 4, '&:last-child': { pb: 4 } }}>{children}</CardContent>
       </Card>
     </Box>
