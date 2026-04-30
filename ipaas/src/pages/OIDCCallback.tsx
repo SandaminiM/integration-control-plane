@@ -22,45 +22,8 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { Alert, Box, CircularProgress, Typography } from '@wso2/oxygen-ui';
 import { useAuth } from '../auth/AuthContext';
 import { validateAndClearOIDCState, getAndClearRedirectUrl } from '../auth/tokenManager';
-import { authenticatedFetch } from '../auth/tokenManager';
-import { loginUrl, orgHomeUrl, projectHomeUrl } from '../paths';
-
-async function resolvePostLoginUrl(): Promise<string> {
-  try {
-    const res = await authenticatedFetch(`${window.API_CONFIG.choreoOrgApiUrl}/orgs`);
-    if (res.ok) {
-      const data = await res.json();
-      const orgs: Array<{ handle?: string; orgHandle?: string; org_handle?: string; id?: number; orgId?: number }> = data.list ?? data.organizations ?? (Array.isArray(data) ? data : []);
-      for (const org of orgs) {
-        const handle = org.handle ?? org.orgHandle ?? org.org_handle;
-        if (!handle) continue;
-        const rawOrgId = org.id ?? org.orgId;
-        const orgId = rawOrgId !== undefined ? (typeof rawOrgId === 'string' ? parseInt(rawOrgId, 10) : rawOrgId) : undefined;
-        if (orgId) {
-          // Try to navigate to first project's home page
-          try {
-            const gqlRes = await authenticatedFetch(window.API_CONFIG.graphqlUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ query: `{ projects(orgId: ${orgId}) { id handler } }` }),
-            });
-            if (gqlRes.ok) {
-              const gqlData = await gqlRes.json();
-              const projects: Array<{ id: string; handler: string }> = gqlData.data?.projects ?? [];
-              if (projects.length > 0) return projectHomeUrl(handle, projects[0].handler);
-            }
-          } catch {
-            /* fall through to org page */
-          }
-        }
-        return orgHomeUrl(handle);
-      }
-    }
-  } catch {
-    /* ignore — fall through to default */
-  }
-  return orgHomeUrl('default');
-}
+import { gql } from '../api/graphql';
+import { loginUrl, projectHomeUrl, projectsRedirectUrl, registerOrgUrl } from '../paths';
 
 export default function OIDCCallback(): JSX.Element {
   const [searchParams] = useSearchParams();
@@ -99,7 +62,13 @@ export default function OIDCCallback(): JSX.Element {
       }
 
       try {
-        await handleOIDCCallback(code, state);
+        const { isNewUser } = await handleOIDCCallback(code, state);
+
+        if (isNewUser) {
+          // First-time user — no org yet; send to org registration
+          navigate(registerOrgUrl(), { replace: true });
+          return;
+        }
 
         // Determine where to navigate post-login
         const savedUrl = getAndClearRedirectUrl();
@@ -109,9 +78,49 @@ export default function OIDCCallback(): JSX.Element {
           // User was trying to access a specific page — go back there
           window.location.href = savedUrl;
         } else {
-          // No prior destination — resolve from user's org
-          const target = await resolvePostLoginUrl();
-          navigate(target, { replace: true });
+          const orgHandle = localStorage.getItem('icp_org_handle');
+
+          // Try to resume the last visited project if ToS is already accepted for that org
+          let navigatedToLastProject = false;
+          try {
+            const stored = localStorage.getItem('icp_user');
+            const userId: string | undefined = stored ? (JSON.parse(stored) as { userId?: string })?.userId : undefined;
+            const tosKey = orgHandle && userId ? `icp_tos_accepted:${userId}:${orgHandle}` : null;
+            const tosAccepted = tosKey ? localStorage.getItem(tosKey) === 'true' : false;
+
+            if (tosAccepted && userId && orgHandle) {
+              // 1. Try the last-visited project stored by AppLayout
+              const lastProjectRaw = localStorage.getItem(`icp_last_project:${userId}`);
+              if (lastProjectRaw) {
+                const { org, project } = JSON.parse(lastProjectRaw) as { org: string; project: string };
+                if (org === orgHandle && project) {
+                  navigate(projectHomeUrl(orgHandle, project), { replace: true });
+                  navigatedToLastProject = true;
+                }
+              }
+
+              // 2. No stored last project — fetch from API and use the most recently updated one
+              if (!navigatedToLastProject) {
+                const numericId = window.API_CONFIG.asgardeoOrgNumericId ?? parseInt(localStorage.getItem('icp_org_numeric_id') ?? '0', 10);
+                if (numericId > 0) {
+                  const data = await gql<{ projects: Array<{ handler: string; updatedAt: string }> }>(`query GetProjects($orgId: Int!) { projects(orgId: $orgId) { handler updatedAt } }`, { orgId: numericId });
+                  const projects = (data.projects ?? []).filter((p) => p.handler);
+                  if (projects.length > 0) {
+                    const recent = projects.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
+                    navigate(projectHomeUrl(orgHandle, recent.handler), { replace: true });
+                    navigatedToLastProject = true;
+                  }
+                }
+              }
+            }
+          } catch {
+            // ignore — fall through to default
+          }
+
+          if (!navigatedToLastProject) {
+            // Redirect to the projects/redirect route which shows the ToS welcome dialog
+            navigate(orgHandle ? projectsRedirectUrl(orgHandle) : registerOrgUrl(), { replace: true });
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to complete authentication');

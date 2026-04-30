@@ -20,25 +20,12 @@ import { Alert, Box, Button, Checkbox, Chip, CircularProgress, Collapse, Dialog,
 import { ChevronDown, ChevronUp, Link, Trash2, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  useEnvEndpoints,
-  useSchemaConfig,
-  useCertificateGroups,
-  useCertificateMappings,
-  useConfigGroups,
-  type GqlEnvEndpoint,
-  type SchemaConfigItem,
-  type CertGroup,
-  type CertMapping,
-  type CertMappingConfig,
-} from '../../api/queries';
+import { useEnvEndpoints, useSchemaConfig, useCertificateGroups, useCertificateMappings, useConfigGroups, type GqlEnvEndpoint, type SchemaConfigItem, type CertGroup, type CertMapping, type CertMappingConfig } from '../../api/queries';
 import { useGenerateComponentEndpoints, useUpdateEndpoint, useSaveSchemaConfig, usePostCertificateMappings, useDeployDeploymentTrack } from '../../api/mutations';
 import ManageDrawer from './ManageDrawer';
 import { EndpointCard, VISIBILITY_OPTS } from './EndpointCard';
 import { ConfigForm, type BaseType, type LinkingInfo, type JSONSchema } from '../SchemaConfigForm';
 import ImportConfigTomlButton from '../ImportConfigTomlButton';
-
-
 
 // ── Step indicator ────────────────────────────────────────────────────────────
 
@@ -1191,17 +1178,7 @@ function GenericServiceConfigureDrawer({
     );
   };
 
-  const renderCertificateMount = () => (
-    <CertificateMountStep
-      projectId={projectId}
-      componentId={componentId}
-      envId={schemaEnvId}
-      deploymentTrackId={versionId}
-      open={open}
-      linkedCerts={linkedCerts}
-      onChange={setLinkedCerts}
-    />
-  );
+  const renderCertificateMount = () => <CertificateMountStep projectId={projectId} componentId={componentId} envId={schemaEnvId} deploymentTrackId={versionId} open={open} linkedCerts={linkedCerts} onChange={setLinkedCerts} />;
 
   const renderEndpoints = () => {
     if (managingEp) {
@@ -1232,10 +1209,7 @@ function GenericServiceConfigureDrawer({
   const isApplying = save.isPending || saveCertMappings.isPending;
   const prevLabel = step === 1 ? 'Cancel' : 'Back';
   const nextLabel = step === 3 ? (isApplying ? 'Applying…' : 'Apply') : step === 1 && generateEp.isPending ? 'Loading…' : 'Next';
-  const nextDisabled =
-    (step === 1 && (hasValidationErrors || isLoading || generateEp.isPending)) ||
-    (step === 2 && hasCertPathErrors) ||
-    (step === 3 && isApplying);
+  const nextDisabled = (step === 1 && (hasValidationErrors || isLoading || generateEp.isPending)) || (step === 2 && hasCertPathErrors) || (step === 3 && isApplying);
   const showFooter = !(step === 3 && managingEp !== null);
 
   return (
@@ -1284,12 +1258,7 @@ function GenericServiceConfigureDrawer({
         {showFooter && (
           <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
             <Button onClick={handlePrev}>{prevLabel}</Button>
-            <Button
-              variant="contained"
-              onClick={handleNext}
-              disabled={nextDisabled}
-              startIcon={(step === 3 && isApplying) || (step === 1 && generateEp.isPending) ? <CircularProgress color="inherit" size={16} /> : undefined}
-            >
+            <Button variant="contained" onClick={handleNext} disabled={nextDisabled} startIcon={(step === 3 && isApplying) || (step === 1 && generateEp.isPending) ? <CircularProgress color="inherit" size={16} /> : undefined}>
               {nextLabel}
             </Button>
           </Stack>

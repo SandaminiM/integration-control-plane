@@ -22,7 +22,21 @@ import type { JSX } from 'react';
 import type { Sample } from '../types/samples';
 import { formatComponentType } from '../constants/integrations';
 
-export default function SampleRowCard({ sample, onDeploy, isDeploying, onClick }: { sample: Sample; onDeploy: () => void; isDeploying: boolean; onClick?: () => void }): JSX.Element {
+export default function SampleRowCard({
+  sample,
+  onDeploy,
+  isDeploying,
+  deployDisabled,
+  deployDisabledTooltip,
+  onClick,
+}: {
+  sample: Sample;
+  onDeploy: () => void;
+  isDeploying: boolean;
+  deployDisabled?: boolean;
+  deployDisabledTooltip?: string;
+  onClick?: () => void;
+}): JSX.Element {
   const sourceUrl = `${sample.repositoryUrl}tree/${sample.branch ?? 'main'}${sample.subDirectory ?? ''}${sample.componentPath}`;
 
   return (
@@ -41,6 +55,7 @@ export default function SampleRowCard({ sample, onDeploy, isDeploying, onClick }
         gap: 1.5,
         transition: 'border-color 0.15s',
         cursor: onClick ? 'pointer' : 'default',
+        opacity: deployDisabled ? 0.5 : 1,
         '&:hover': { borderColor: 'primary.main' },
       }}>
       {/* Thumbnail */}
@@ -96,7 +111,7 @@ export default function SampleRowCard({ sample, onDeploy, isDeploying, onClick }
             <ExternalLink size={14} />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Deploy this sample" placement="top">
+        <Tooltip title={deployDisabled ? (deployDisabledTooltip ?? '') : 'Deploy this sample'} placement="top">
           <span>
             <Button
               size="small"
@@ -106,7 +121,7 @@ export default function SampleRowCard({ sample, onDeploy, isDeploying, onClick }
                 e.stopPropagation();
                 onDeploy();
               }}
-              disabled={isDeploying}
+              disabled={isDeploying || deployDisabled}
               sx={{ height: 30, fontSize: 12, px: 2 }}>
               {isDeploying ? <CircularProgress size={12} color="inherit" /> : 'Deploy'}
             </Button>

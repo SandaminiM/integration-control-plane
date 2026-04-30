@@ -16,15 +16,16 @@
  * under the License.
  */
 
-import { Box, Typography } from '@wso2/oxygen-ui';
+import { Box, Tooltip, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
 import type { PrebuiltIntegration } from '../types/samples';
 import AppIconsRow from './AppIconsRow';
 
-export default function PrebuiltCard({ integration, onClick }: { integration: PrebuiltIntegration; onClick?: () => void }): JSX.Element {
+export default function PrebuiltCard({ integration, onClick, disabled, disabledTooltip }: { integration: PrebuiltIntegration; onClick?: () => void; disabled?: boolean; disabledTooltip?: string }): JSX.Element {
   return (
+    <Tooltip title={disabled ? (disabledTooltip ?? '') : 'Prebuilt Integration Configuration is coming soon'} placement="top" arrow>
       <Box
-        onClick={onClick}
+        onClick={disabled ? undefined : onClick}
         sx={{
           display: 'flex',
           alignItems: 'center',
@@ -34,18 +35,14 @@ export default function PrebuiltCard({ integration, onClick }: { integration: Pr
           borderColor: 'divider',
           borderRadius: 1.5,
           bgcolor: 'background.paper',
-          cursor: onClick ? 'pointer' : 'default',
+          cursor: disabled ? 'not-allowed' : onClick ? 'pointer' : 'default',
           userSelect: 'none',
           gap: 1.5,
           transition: 'border-color 0.15s',
-          ...(onClick ? { '&:hover': { borderColor: 'primary.main' } } : {}),
+          opacity: disabled ? 0.5 : 1,
+          ...(!disabled && onClick ? { '&:hover': { borderColor: 'primary.main' } } : {}),
         }}>
-        <AppIconsRow
-          applications={integration.applications}
-          bidirectional={integration.bidirectional}
-          bgcolor="action.hover"
-          avatarSize={28}
-        />
+        <AppIconsRow applications={integration.applications} bidirectional={integration.bidirectional} bgcolor="action.hover" avatarSize={28} />
 
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="body2" fontWeight={600}>
@@ -56,5 +53,6 @@ export default function PrebuiltCard({ integration, onClick }: { integration: Pr
           </Typography>
         </Box>
       </Box>
+    </Tooltip>
   );
 }

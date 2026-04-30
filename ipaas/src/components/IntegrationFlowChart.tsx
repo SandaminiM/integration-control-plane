@@ -19,15 +19,7 @@
 import { Box, CircularProgress, IconButton, Tooltip, useTheme } from '@wso2/oxygen-ui';
 import { RefreshCw } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState, type JSX, type MouseEvent, type WheelEvent } from 'react';
-import {
-  buildClassDefs,
-  ensureMermaidInit,
-  extractDefinition,
-  nextDiagramId,
-  purgeMermaidOrphans,
-  renderMermaidSvg,
-  toMermaidSafeColor,
-} from '../utils/mermaid';
+import { buildClassDefs, ensureMermaidInit, extractDefinition, nextDiagramId, purgeMermaidOrphans, renderMermaidSvg, toMermaidSafeColor } from '../utils/mermaid';
 
 interface IntegrationFlowChartProps {
   diagram: string;
@@ -45,11 +37,14 @@ export default function IntegrationFlowChart({ diagram }: IntegrationFlowChartPr
   const startPoint = useRef({ x: 0, y: 0 });
   const currentTransform = useRef({ x: 0, y: 0, scale: 1 });
 
-  const colors = useMemo(() => ({
-    primary: toMermaidSafeColor(theme.palette.primary.main, '#1976d2'),
-    primaryLight: toMermaidSafeColor(theme.palette.primary.light, '#42a5f5'),
-    grey: toMermaidSafeColor(theme.palette.grey?.[400], '#bdbdbd'),
-  }), [theme]);
+  const colors = useMemo(
+    () => ({
+      primary: toMermaidSafeColor(theme.palette.primary.main, '#1976d2'),
+      primaryLight: toMermaidSafeColor(theme.palette.primary.light, '#42a5f5'),
+      grey: toMermaidSafeColor(theme.palette.grey?.[400], '#bdbdbd'),
+    }),
+    [theme],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -97,7 +92,6 @@ export default function IntegrationFlowChart({ diagram }: IntegrationFlowChartPr
       } catch (err) {
         purgeMermaidOrphans(id);
         if (!cancelled) {
-          // eslint-disable-next-line no-console
           console.error('IntegrationFlowChart: mermaid render failed', err);
           setRenderFailed(true);
         }

@@ -17,8 +17,10 @@
  */
 
 import { type RouteProps, Navigate, Outlet } from 'react-router';
-import { cookiePolicyUrl, loginUrl, orgRoleDetailUrl, privacyPolicyUrl, projectRoleDetailUrl, componentRoleDetailUrl, projectGroupDetailUrl, componentGroupDetailUrl, alertsSegment, buildsSegment, deploySegment } from '../paths';
+import { cookiePolicyUrl, loginUrl, orgRoleDetailUrl, privacyPolicyUrl, projectRoleDetailUrl, componentRoleDetailUrl, projectGroupDetailUrl, componentGroupDetailUrl, alertsSegment, buildsSegment, deploySegment, signupUrl, registerOrgUrl } from '../paths';
 import OrgHomeRedirect from '../components/OrgHomeRedirect';
+import Signup from '../pages/Signup';
+import RegisterOrganization from '../pages/RegisterOrganization';
 import CreateUser from '../pages/CreateUser';
 import EditUser from '../pages/EditUser';
 import CreateRole from '../pages/CreateRole';
@@ -71,6 +73,8 @@ import ProjectDeploy from '../pages/ProjectDeploy';
 import CloudEditorDeployment from '../pages/CloudEditorDeployment';
 import TestConsole from '../pages/TestConsole';
 import Deploy from '../pages/Deploy';
+import ProjectsRedirect from '../pages/ProjectsRedirect';
+import OrgHome from '../pages/OrgHome';
 
 export interface AppRoute extends Omit<RouteProps, 'children'> {
   children?: AppRoute[];
@@ -92,7 +96,10 @@ const routes: AppRoute[] = [
   { path: '/', element: <Navigate to="/login" replace /> },
   {
     element: <PublicLayout />,
-    children: [{ path: loginUrl(), element: <Login /> }],
+    children: [
+      { path: loginUrl(), element: <Login /> },
+      { path: signupUrl(), element: <Signup /> },
+    ],
   },
   {
     element: <PolicyLayout />,
@@ -106,6 +113,7 @@ const routes: AppRoute[] = [
   {
     element: <ProtectedRoute />,
     children: [
+      { path: registerOrgUrl(), element: <RegisterOrganization /> },
       { path: '/change-password', element: <ForceChangePassword /> },
       { path: '/editor', element: <CloudEditorDeployment /> },
       {
@@ -153,7 +161,8 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/cd-pipelines', element: <ComingSoon title="Coming Soon" description="CD Pipelines management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/devops/environments', element: createElement(withScope(Environments, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/settings/project-overview', element: <ComingSoon title="Coming Soon" description="Project settings are currently under development." /> },
-              { path: 'organizations/:orgHandler/home', element: createElement(withScope(Projects, ['organizations'])) },
+              { path: 'organizations/:orgHandler/projects/redirect', element: <ProjectsRedirect /> },
+              { path: 'organizations/:orgHandler/home', element: createElement(withScope(OrgHome, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/home', element: createElement(withScope(Project, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/overview', element: createElement(withScope(Component, ['components'])) },
               { path: 'organizations/:orgHandler/projects/new', element: createElement(withScope(CreateProject, ['organizations'])) },
@@ -175,7 +184,11 @@ const routes: AppRoute[] = [
               { path: '/profile', element: <Profile /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/prebuilt-integrations', element: createElement(withScope(BrowsePrebuiltIntegrations, ['projects'])) },
               {
-                element: <PrebuiltIntegrationConfigProvider><Outlet /></PrebuiltIntegrationConfigProvider>,
+                element: (
+                  <PrebuiltIntegrationConfigProvider>
+                    <Outlet />
+                  </PrebuiltIntegrationConfigProvider>
+                ),
                 children: [
                   { path: 'organizations/:orgHandler/projects/:projectHandler/prebuilt-integrations/:slug', element: createElement(withScope(PrebuiltIntegrationSetup, ['projects'])) },
                   { path: 'organizations/:orgHandler/projects/:projectHandler/prebuilt-integrations/:slug/deploy', element: createElement(withScope(PrebuiltIntegrationDeploy, ['projects'])) },

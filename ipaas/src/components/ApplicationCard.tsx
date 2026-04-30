@@ -36,11 +36,11 @@ export default function ApplicationCard({ name, selected, onClick, avatarSize = 
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
-            if (e.key === ' ' || e.key === 'Spacebar') e.preventDefault();
-            onClick();
-          }
-        }}
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+          if (e.key === ' ' || e.key === 'Spacebar') e.preventDefault();
+          onClick();
+        }
+      }}
       sx={{
         display: 'flex',
         flexDirection: 'column',

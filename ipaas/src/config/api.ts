@@ -38,6 +38,7 @@ interface RuntimeConfig {
   SUBSCRIPTIONS_API_URL?: string;
   SAMPLES_URL?: string;
   PREBUILT_INTEGRATIONS_URL?: string;
+  ASGARDEO_SIGNUP_URL?: string;
 }
 
 export interface ApiConfig {
@@ -62,6 +63,7 @@ export interface ApiConfig {
   subscriptionsApiUrl: string;
   samplesUrl?: string;
   prebuiltIntegrationsUrl?: string;
+  asgardeoSignupUrl: string;
 }
 
 // Extend window interface
@@ -91,6 +93,7 @@ const DEFAULT_CONFIG: ApiConfig = {
   githubAppClientId: '',
   githubAppAuthRedirectUrl: `${window.location.origin}/ghapp`,
   subscriptionsApiUrl: import.meta.env.DEV ? '/subscriptions-proxy' : 'https://subscriptions.dv.wso2.com',
+  asgardeoSignupUrl: 'https://dev.asgardeo.io/signup',
 };
 
 /**
@@ -132,6 +135,7 @@ export async function loadConfig(): Promise<void> {
       subscriptionsApiUrl: config.SUBSCRIPTIONS_API_URL || DEFAULT_CONFIG.subscriptionsApiUrl,
       samplesUrl: config.SAMPLES_URL || undefined,
       prebuiltIntegrationsUrl: config.PREBUILT_INTEGRATIONS_URL || undefined,
+      asgardeoSignupUrl: config.ASGARDEO_SIGNUP_URL || DEFAULT_CONFIG.asgardeoSignupUrl,
     };
 
     console.info('✓ Runtime configuration loaded from config.json');

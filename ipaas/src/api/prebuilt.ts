@@ -38,46 +38,31 @@ interface Environment {
 
 export async function checkNameAvailability(projectId: string, candidate: string): Promise<string> {
   const safe = candidate.replace(/["\\\n\r]/g, '');
-  const data = await gql<{ componentNameAvailability: NameAvailability }>(
-    `query { componentNameAvailability(projectId: "${projectId}", componentNameCandidate: "${safe}") { componentNameUnique alternateComponentName } }`,
-  );
+  const data = await gql<{ componentNameAvailability: NameAvailability }>(`query { componentNameAvailability(projectId: "${projectId}", componentNameCandidate: "${safe}") { componentNameUnique alternateComponentName } }`);
   return data.componentNameAvailability.componentNameUnique ? candidate : data.componentNameAvailability.alternateComponentName;
 }
 
 export async function fetchComponentDetail(projectId: string, handler: string): Promise<ComponentDetail> {
-  const data = await gql<{ component: ComponentDetail }>(
-    `query { component(projectId: "${projectId}", componentHandler: "${handler}") { id handler deploymentTracks { id } } }`,
-  );
+  const data = await gql<{ component: ComponentDetail }>(`query { component(projectId: "${projectId}", componentHandler: "${handler}") { id handler deploymentTracks { id } } }`);
   return data.component;
 }
 
 export async function fetchFirstEnvironment(orgUuid: string, projectId: string): Promise<Environment> {
-  const data = await gql<{ environments: Environment[] }>(
-    `query { environments(orgUuid: "${orgUuid}", type: "external", projectId: "${projectId}") { id templateId } }`,
-  );
+  const data = await gql<{ environments: Environment[] }>(`query { environments(orgUuid: "${orgUuid}", type: "external", projectId: "${projectId}") { id templateId } }`);
   const envs = data.environments ?? [];
   if (envs.length === 0) throw new Error('No environments found for this project');
   return envs[0];
 }
 
 export async function fetchLatestCommitSha(componentId: string, branch: string): Promise<string> {
-  const data = await gql<{ commitHistory: { sha: string; isLatest: boolean }[] }>(
-    `query { commitHistory(componentId: "${componentId}", branch: "${branch}") { sha isLatest } }`,
-  );
+  const data = await gql<{ commitHistory: { sha: string; isLatest: boolean }[] }>(`query { commitHistory(componentId: "${componentId}", branch: "${branch}") { sha isLatest } }`);
   const commits = data.commitHistory ?? [];
   const latest = commits.find((c) => c.isLatest) ?? commits[0];
   if (!latest) throw new Error('No commits found');
   return latest.sha;
 }
 
-export async function savePrebuiltConfig(
-  projectId: string,
-  componentId: string,
-  envId: string,
-  deploymentTrackId: string,
-  configurations: SchemaConfigItem[],
-  commitHash: string,
-): Promise<void> {
+export async function savePrebuiltConfig(projectId: string, componentId: string, envId: string, deploymentTrackId: string, configurations: SchemaConfigItem[], commitHash: string): Promise<void> {
   let base: string;
   try {
     base = new URL(window.API_CONFIG.graphqlUrl).origin;

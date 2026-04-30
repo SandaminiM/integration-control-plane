@@ -19,10 +19,26 @@
 import mermaid from 'mermaid';
 
 const MERMAID_TYPE_KEYWORDS = [
-  'flowchart', 'graph', 'sequencediagram', 'classDiagram', 'statediagram',
-  'erdiagram', 'journey', 'gantt', 'pie', 'quadrantchart', 'requirementdiagram',
-  'gitgraph', 'mindmap', 'timeline', 'sankey-beta', 'xychart-beta', 'block-beta',
-  'packet-beta', 'kanban', 'architecture-beta',
+  'flowchart',
+  'graph',
+  'sequencediagram',
+  'classDiagram',
+  'statediagram',
+  'erdiagram',
+  'journey',
+  'gantt',
+  'pie',
+  'quadrantchart',
+  'requirementdiagram',
+  'gitgraph',
+  'mindmap',
+  'timeline',
+  'sankey-beta',
+  'xychart-beta',
+  'block-beta',
+  'packet-beta',
+  'kanban',
+  'architecture-beta',
 ];
 
 let diagramCounter = 0;
@@ -101,18 +117,7 @@ function getMermaidSandbox(): HTMLDivElement {
   if (mermaidSandbox && document.body.contains(mermaidSandbox)) return mermaidSandbox;
   const sandbox = document.createElement('div');
   sandbox.id = 'mermaid-render-sandbox';
-  sandbox.style.cssText = [
-    'position: fixed',
-    'top: -10000px',
-    'left: -10000px',
-    'width: 2000px',
-    'height: 2000px',
-    'visibility: hidden',
-    'pointer-events: none',
-    'overflow: hidden',
-    'z-index: -1',
-    'contain: strict',
-  ].join('; ');
+  sandbox.style.cssText = ['position: fixed', 'top: -10000px', 'left: -10000px', 'width: 2000px', 'height: 2000px', 'visibility: hidden', 'pointer-events: none', 'overflow: hidden', 'z-index: -1', 'contain: strict'].join('; ');
   document.body.appendChild(sandbox);
   mermaidSandbox = sandbox;
   return sandbox;

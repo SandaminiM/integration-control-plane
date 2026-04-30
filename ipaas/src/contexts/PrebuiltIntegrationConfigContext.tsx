@@ -45,10 +45,7 @@ export function PrebuiltIntegrationConfigProvider({ children }: { children: Reac
     setConfigValues([]);
   }, []);
 
-  const value = useMemo(
-    () => ({ integration, configValues, setIntegration, setConfigValues, clearAll }),
-    [integration, configValues, clearAll],
-  );
+  const value = useMemo(() => ({ integration, configValues, setIntegration, setConfigValues, clearAll }), [integration, configValues, clearAll]);
 
   return <PrebuiltIntegrationConfigContext.Provider value={value}>{children}</PrebuiltIntegrationConfigContext.Provider>;
 }

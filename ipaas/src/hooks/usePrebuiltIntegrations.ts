@@ -19,21 +19,11 @@
 import { useQuery } from '@tanstack/react-query';
 import type { PrebuiltIntegration } from '../types/samples';
 import type { JSONSchema } from '../components/SchemaConfigForm';
-import type {
-  PrebuiltIntegrationsData,
-  PrebuiltInstructionsResult,
-  PrebuiltConfigSchemaResult,
-  PrebuiltDiagramResult,
-} from '../types/prebuilt';
+import type { PrebuiltIntegrationsData, PrebuiltInstructionsResult, PrebuiltConfigSchemaResult, PrebuiltDiagramResult } from '../types/prebuilt';
 import { DEFAULT_PREBUILT_INTEGRATIONS_URL } from '../constants/samples';
 import { getDotChoreoBaseUrl } from '../utils/prebuilt';
 
-export type {
-  PrebuiltIntegrationsData,
-  PrebuiltInstructionsResult,
-  PrebuiltConfigSchemaResult,
-  PrebuiltDiagramResult,
-};
+export type { PrebuiltIntegrationsData, PrebuiltInstructionsResult, PrebuiltConfigSchemaResult, PrebuiltDiagramResult };
 
 export function usePrebuiltIntegrations() {
   return useQuery<PrebuiltIntegrationsData>({
@@ -57,12 +47,7 @@ export function usePrebuiltIntegrations() {
   });
 }
 
-function usePrebuiltAsset<T>(
-  integration: PrebuiltIntegration | null | undefined,
-  queryKey: string,
-  filename: string,
-  parse: (res: Response) => Promise<T>,
-): { data: T | undefined; isLoading: boolean; isError: boolean } {
+function usePrebuiltAsset<T>(integration: PrebuiltIntegration | null | undefined, queryKey: string, filename: string, parse: (res: Response) => Promise<T>): { data: T | undefined; isLoading: boolean; isError: boolean } {
   const { data, isLoading, isError } = useQuery<T>({
     queryKey: [queryKey, integration?.componentPath],
     queryFn: ({ signal }) => {

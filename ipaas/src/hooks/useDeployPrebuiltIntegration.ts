@@ -21,13 +21,7 @@ import { useCreateComponent, useDeployPrebuiltImage, useDeleteComponent } from '
 import { getOrgUuidFromToken } from '../auth/tokenManager';
 import { displayTypeFromSample } from '../constants/integrations';
 import { derivePrebuiltSlug } from '../utils/prebuilt';
-import {
-  checkNameAvailability,
-  fetchComponentDetail,
-  fetchFirstEnvironment,
-  fetchLatestCommitSha,
-  savePrebuiltConfig,
-} from '../api/prebuilt';
+import { checkNameAvailability, fetchComponentDetail, fetchFirstEnvironment, fetchLatestCommitSha, savePrebuiltConfig } from '../api/prebuilt';
 import type { DeployPrebuiltIntegrationInput, DeployPrebuiltIntegrationState } from '../types/prebuilt';
 
 export type { DeployPrebuiltIntegrationInput, DeployPrebuiltIntegrationState };
@@ -113,12 +107,11 @@ export function useDeployPrebuiltIntegration() {
       });
 
       setState((s) => ({ ...s, progress: 100, stepLabel: 'Deployed!', error: null, isDeploying: false, isSuccess: true, componentHandler: component.handler }));
-    } catch (err) {
+    } catch {
       if (createdComponentId) {
         try {
           await deleteComponentRef.current.mutateAsync({ orgHandler, componentId: createdComponentId, projectId });
         } catch (rollbackErr) {
-          // eslint-disable-next-line no-console
           console.error('Failed to rollback component creation', { createdComponentId, orgHandler, projectId }, rollbackErr);
         }
       }

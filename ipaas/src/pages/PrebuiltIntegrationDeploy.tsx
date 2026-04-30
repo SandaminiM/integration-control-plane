@@ -97,19 +97,18 @@ export default function PrebuiltIntegrationDeploy(scope: ProjectScope): JSX.Elem
       </Typography>
 
       <Box sx={{ position: 'relative', display: 'inline-flex', my: 3 }}>
-        <CircularProgress
-          variant={isDeploying ? 'determinate' : 'indeterminate'}
-          value={progress}
-          size={80}
-          thickness={4}
-          sx={{ color: 'primary.main' }}
-        />
+        <CircularProgress variant={isDeploying ? 'determinate' : 'indeterminate'} value={progress} size={80} thickness={4} sx={{ color: 'primary.main' }} />
         {isDeploying && (
           <Box
             sx={{
-              top: 0, left: 0, bottom: 0, right: 0,
+              top: 0,
+              left: 0,
+              bottom: 0,
+              right: 0,
               position: 'absolute',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}>
             <Typography variant="caption" component="div" color="text.secondary">
               {progress}%
@@ -123,10 +122,7 @@ export default function PrebuiltIntegrationDeploy(scope: ProjectScope): JSX.Elem
       </Typography>
 
       {configSaveError && !configAlertDismissed && (
-        <Alert
-          severity="warning"
-          onClose={() => setConfigAlertDismissed(true)}
-          sx={{ mt: 3, maxWidth: 480, width: '100%', textAlign: 'left' }}>
+        <Alert severity="warning" onClose={() => setConfigAlertDismissed(true)} sx={{ mt: 3, maxWidth: 480, width: '100%', textAlign: 'left' }}>
           Failed to save configurations. Please configure the integration once the deployment finishes.
         </Alert>
       )}

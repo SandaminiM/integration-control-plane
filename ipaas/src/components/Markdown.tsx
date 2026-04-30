@@ -35,7 +35,6 @@ const rehypePlugins = [rehypeRaw, [rehypeSanitize, sanitizeSchema]] as Parameter
 
 // <details>/<summary> rendered as styled native collapsibles matching Devant's accordion look
 const markdownComponents: Components = {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   details: ({ node: _node, ...props }) => (
     <Box
       component="details"
@@ -51,7 +50,6 @@ const markdownComponents: Components = {
       {...(props as object)}
     />
   ),
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   summary: ({ node: _node, ...props }) => (
     <Box
       component="summary"
@@ -69,14 +67,8 @@ const markdownComponents: Components = {
       {...(props as object)}
     />
   ),
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  a: ({ node: _node, ...props }) => (
-    <a target="_blank" rel="noopener noreferrer" {...props} />
-  ),
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  img: ({ node: _node, ...props }) => (
-    <Box component="img" sx={{ maxWidth: '100%', height: 'auto', display: 'block' }} {...(props as object)} />
-  ),
+  a: ({ node: _node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />,
+  img: ({ node: _node, ...props }) => <Box component="img" sx={{ maxWidth: '100%', height: 'auto', display: 'block' }} {...(props as object)} />,
 };
 
 const containerSx = {

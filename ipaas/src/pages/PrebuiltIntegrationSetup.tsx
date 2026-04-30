@@ -38,7 +38,6 @@ interface LocationState {
   integration?: PrebuiltIntegration;
 }
 
-
 function InstructionsSkeleton(): JSX.Element {
   return (
     <Box>
@@ -146,12 +145,7 @@ export default function PrebuiltIntegrationSetup(scope: ProjectScope): JSX.Eleme
           gap: 2.5,
           mb: 6,
         }}>
-        <AppIconsRow
-          applications={integration.applications}
-          bidirectional={integration.bidirectional}
-          avatarSize={44}
-          bgcolor="action.hover"
-        />
+        <AppIconsRow applications={integration.applications} bidirectional={integration.bidirectional} avatarSize={44} bgcolor="action.hover" />
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="h1" sx={{ mb: 0.5, lineHeight: 1.25 }}>
             {integration.displayName}
@@ -174,7 +168,6 @@ export default function PrebuiltIntegrationSetup(scope: ProjectScope): JSX.Eleme
           alignItems: 'start',
           '@media (min-width: 960px)': { gridTemplateColumns: '1fr 1fr' },
         }}>
-
         {/* Left: Setup Instructions — sticky once heading hits top of viewport */}
         <Box sx={{ position: 'sticky', top: 80, alignSelf: 'flex-start' }}>
           <Typography variant="h2" sx={{ mb: 2 }}>
@@ -220,12 +213,7 @@ export default function PrebuiltIntegrationSetup(scope: ProjectScope): JSX.Eleme
           {isConfigSchemaLoading ? (
             <ConfigSkeleton />
           ) : hasSchema ? (
-            <PrebuiltConfigForm
-              configSchema={configSchema}
-              onChange={setConfigValues}
-              onRequiredComplete={setRequiredComplete}
-              seededValues={tomlValues ?? undefined}
-            />
+            <PrebuiltConfigForm configSchema={configSchema} onChange={setConfigValues} onRequiredComplete={setRequiredComplete} seededValues={tomlValues ?? undefined} />
           ) : (
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               This integration has no configurable fields.
@@ -233,11 +221,7 @@ export default function PrebuiltIntegrationSetup(scope: ProjectScope): JSX.Eleme
           )}
 
           <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
-            <Tooltip
-              title="Please fill the required fields to deploy the integration"
-              disableHoverListener={deployEnabled}
-              placement="top"
-              arrow>
+            <Tooltip title="Please fill the required fields to deploy the integration" disableHoverListener={deployEnabled} placement="top" arrow>
               <span>
                 <Button variant="contained" endIcon={<ArrowRight size={16} />} onClick={handleDeploy} disabled={!deployEnabled}>
                   Deploy Integration

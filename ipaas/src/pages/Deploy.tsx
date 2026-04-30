@@ -69,12 +69,7 @@ export default function Deploy(scope: ComponentScope): JSX.Element {
   }
 
   if (component.isPrebuilt) {
-    return (
-      <ComingSoon
-        title="Deploy Not Available for Prebuilt Integrations"
-        description="Prebuilt integrations are deployed automatically during setup — manual deploy management is not available here."
-      />
-    );
+    return <ComingSoon title="Deploy Not Available for Prebuilt Integrations" description="Prebuilt integrations are deployed automatically during setup — manual deploy management is not available here." />;
   }
 
   const flags = getComponentTypeFlags(component.displayType ?? '', component.componentSubType);

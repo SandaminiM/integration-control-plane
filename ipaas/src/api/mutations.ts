@@ -1062,7 +1062,6 @@ export interface DeployPrebuiltImageInput {
 
 export function useDeployPrebuiltImage() {
   return useMutation({
-    mutationFn: (input: DeployPrebuiltImageInput) =>
-      gql<{ deployPrebuiltIntegration: string }>(DEPLOY_PREBUILT_INTEGRATION, { input }).then((d) => d.deployPrebuiltIntegration),
+    mutationFn: (input: DeployPrebuiltImageInput) => gql<{ deployPrebuiltIntegration: string }>(DEPLOY_PREBUILT_INTEGRATION, { input }).then((d) => d.deployPrebuiltIntegration),
   });
 }

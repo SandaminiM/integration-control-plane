@@ -245,13 +245,7 @@ function SelectionBar({ app1, app2, integration, wizardStep, onRemoveApp1, onRem
   return (
     <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
       <AppSlot app={app1} isActiveTarget={false} onRemove={app1 ? onRemoveApp1 : undefined} />
-      <IntegrationSlot
-        integration={integration}
-        isActiveTarget={integrationIsActiveTarget}
-        app1={app1}
-        app2={app2}
-        onRemove={integration ? onRemoveIntegration : undefined}
-      />
+      <IntegrationSlot integration={integration} isActiveTarget={integrationIsActiveTarget} app1={app1} app2={app2} onRemove={integration ? onRemoveIntegration : undefined} />
       <AppSlot app={app2} isActiveTarget={app2IsActiveTarget} onRemove={app2 ? onRemoveApp2 : undefined} />
     </Stack>
   );
@@ -309,8 +303,8 @@ export default function BrowsePrebuiltIntegrations(scope: ProjectScope): JSX.Ele
   const locationState = (location.state ?? {}) as LocationState;
 
   const { data, isLoading, isError } = usePrebuiltIntegrations();
-  const allApplications = data?.applications ?? [];
-  const allIntegrations = data?.prebuiltIntegrations ?? [];
+  const allApplications = useMemo(() => data?.applications ?? [], [data]);
+  const allIntegrations = useMemo(() => data?.prebuiltIntegrations ?? [], [data]);
 
   const [firstApp, setFirstApp] = useState<string | null>(null);
   const [secondApp, setSecondApp] = useState<string | null>(null);
@@ -334,7 +328,9 @@ export default function BrowsePrebuiltIntegrations(scope: ProjectScope): JSX.Ele
     const compatible = new Set<string>();
     allIntegrations.forEach((integ) => {
       if (integ.applications.includes(firstApp)) {
-        integ.applications.forEach((a) => { if (a !== firstApp) compatible.add(a); });
+        integ.applications.forEach((a) => {
+          if (a !== firstApp) compatible.add(a);
+        });
       }
     });
     return Array.from(compatible).sort();
@@ -342,9 +338,7 @@ export default function BrowsePrebuiltIntegrations(scope: ProjectScope): JSX.Ele
 
   const filteredIntegrations = useMemo(() => {
     if (!firstApp || !secondApp) return [];
-    const byApps = allIntegrations.filter(
-      (i) => i.applications.includes(firstApp) && i.applications.includes(secondApp),
-    );
+    const byApps = allIntegrations.filter((i) => i.applications.includes(firstApp) && i.applications.includes(secondApp));
     if (!integrationSearch) return byApps;
     return byApps.filter((i) => i.displayName.toLowerCase().includes(integrationSearch.toLowerCase()));
   }, [firstApp, secondApp, allIntegrations, integrationSearch]);
@@ -372,19 +366,28 @@ export default function BrowsePrebuiltIntegrations(scope: ProjectScope): JSX.Ele
   };
 
   const goBack = () => {
-    if (wizardStep === 3) { setSelectedIntegration(null); return; }
-    if (wizardStep === 2) { setSecondApp(null); setSelectedIntegration(null); return; }
-    if (wizardStep === 1) { setFirstApp(null); setSecondApp(null); setSelectedIntegration(null); return; }
+    if (wizardStep === 3) {
+      setSelectedIntegration(null);
+      return;
+    }
+    if (wizardStep === 2) {
+      setSecondApp(null);
+      setSelectedIntegration(null);
+      return;
+    }
+    if (wizardStep === 1) {
+      setFirstApp(null);
+      setSecondApp(null);
+      setSelectedIntegration(null);
+      return;
+    }
     navigate(locationState.fromPath ?? newComponentUrl(scope.org, scope.project));
   };
 
   const backLabel = wizardStep === 0 ? 'Back to Create Integration' : 'Go back';
 
   const subtitle =
-    wizardStep === 0 ? 'Let\'s start by choosing an application to integrate' :
-    wizardStep === 1 ? `Choose an application to integrate ${firstApp} with` :
-    wizardStep === 2 ? `Get started with pre-built integrations for ${firstApp} and ${secondApp}` :
-    null;
+    wizardStep === 0 ? "Let's start by choosing an application to integrate" : wizardStep === 1 ? `Choose an application to integrate ${firstApp} with` : wizardStep === 2 ? `Get started with pre-built integrations for ${firstApp} and ${secondApp}` : null;
 
   if (isLoading) {
     return (
@@ -406,7 +409,7 @@ export default function BrowsePrebuiltIntegrations(scope: ProjectScope): JSX.Ele
   }
 
   return (
-    <PageContent sx={{ display: 'flex', flex: 1, overflow: 'hidden', height: '100%', pt: 5, pb: 3}}>
+    <PageContent sx={{ display: 'flex', flex: 1, overflow: 'hidden', height: '100%', pt: 5, pb: 3 }}>
       <Box
         sx={{
           width: 280,
@@ -415,10 +418,7 @@ export default function BrowsePrebuiltIntegrations(scope: ProjectScope): JSX.Ele
           flexDirection: 'column',
           pr: 2,
         }}>
-        <Button
-          startIcon={<ArrowLeft size={16} />}
-          onClick={goBack}
-          sx={{ mb: 4, alignSelf: 'flex-start', pl: 0 }}>
+        <Button startIcon={<ArrowLeft size={16} />} onClick={goBack} sx={{ mb: 4, alignSelf: 'flex-start', pl: 0 }}>
           {backLabel}
         </Button>
 
@@ -455,7 +455,6 @@ export default function BrowsePrebuiltIntegrations(scope: ProjectScope): JSX.Ele
           display: 'flex',
           flexDirection: 'column',
         }}>
-
         {wizardStep === 0 && (
           <Box sx={{ mb: 3, mt: 5 }}>
             <Typography variant="h2" sx={{ mb: 0.5 }}>
@@ -475,8 +474,15 @@ export default function BrowsePrebuiltIntegrations(scope: ProjectScope): JSX.Ele
                 app2={secondApp}
                 integration={selectedIntegration}
                 wizardStep={wizardStep}
-                onRemoveApp1={() => { setFirstApp(secondApp); setSecondApp(null); setSelectedIntegration(null); }}
-                onRemoveApp2={() => { setSecondApp(null); setSelectedIntegration(null); }}
+                onRemoveApp1={() => {
+                  setFirstApp(secondApp);
+                  setSecondApp(null);
+                  setSelectedIntegration(null);
+                }}
+                onRemoveApp2={() => {
+                  setSecondApp(null);
+                  setSelectedIntegration(null);
+                }}
                 onRemoveIntegration={() => setSelectedIntegration(null)}
               />
             </Box>
@@ -490,13 +496,7 @@ export default function BrowsePrebuiltIntegrations(scope: ProjectScope): JSX.Ele
 
         {wizardStep <= 1 && (
           <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-            <SearchField
-              value={appSearch}
-              onChange={setAppSearch}
-              placeholder="Search"
-              fullWidth
-              sx={{ mb: 3 }}
-            />
+            <SearchField value={appSearch} onChange={setAppSearch} placeholder="Search" fullWidth sx={{ mb: 3 }} />
             {displayedApps.length === 0 ? (
               <Typography variant="body2" color="text.secondary">
                 No applications found{appSearch ? ` for "${appSearch}"` : ''}.
@@ -509,13 +509,7 @@ export default function BrowsePrebuiltIntegrations(scope: ProjectScope): JSX.Ele
                   gap: 2,
                 }}>
                 {displayedApps.map((app) => (
-                  <ApplicationCard
-                    key={app}
-                    name={app}
-                    avatarSize={56}
-                    selected={app === firstApp || app === secondApp}
-                    onClick={() => handleAppClick(app)}
-                  />
+                  <ApplicationCard key={app} name={app} avatarSize={56} selected={app === firstApp || app === secondApp} onClick={() => handleAppClick(app)} />
                 ))}
               </Box>
             )}
@@ -524,15 +518,7 @@ export default function BrowsePrebuiltIntegrations(scope: ProjectScope): JSX.Ele
 
         {wizardStep === 2 && (
           <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-            {filteredIntegrations.length > 4 && (
-              <SearchField
-                value={integrationSearch}
-                onChange={setIntegrationSearch}
-                placeholder="Search integrations"
-                fullWidth
-                sx={{ mb: 2 }}
-              />
-            )}
+            {filteredIntegrations.length > 4 && <SearchField value={integrationSearch} onChange={setIntegrationSearch} placeholder="Search integrations" fullWidth sx={{ mb: 2 }} />}
             {filteredIntegrations.length === 0 ? (
               <Typography variant="body2" color="text.secondary">
                 No integrations found for {firstApp} and {secondApp}.
@@ -540,21 +526,14 @@ export default function BrowsePrebuiltIntegrations(scope: ProjectScope): JSX.Ele
             ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 {filteredIntegrations.map((integration) => (
-                  <PrebuiltIntegrationCard
-                    key={integration.componentPath}
-                    integration={integration}
-                    selected={false}
-                    onClick={() => setSelectedIntegration(integration)}
-                  />
+                  <PrebuiltIntegrationCard key={integration.componentPath} integration={integration} selected={false} onClick={() => setSelectedIntegration(integration)} />
                 ))}
               </Box>
             )}
           </Box>
         )}
 
-        {wizardStep === 3 && selectedIntegration && (
-          <DiagramPanel integration={selectedIntegration} onSetup={handleSetup} />
-        )}
+        {wizardStep === 3 && selectedIntegration && <DiagramPanel integration={selectedIntegration} onSetup={handleSetup} />}
       </Box>
     </PageContent>
   );
