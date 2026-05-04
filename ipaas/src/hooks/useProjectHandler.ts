@@ -1,0 +1,83 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { useState, useEffect, useRef } from 'react';
+import { useProjectHandlerAvailability, type ProjectHandlerAvailability } from '../api/queries';
+import { HANDLER_DEBOUNCE_MS, PROJECT_HANDLER_MAX_LENGTH } from '../constants/project';
+import { toProjectHandler } from '../utils/string';
+
+export interface UseProjectHandlerReturn {
+  handler: string;
+  handlerEdited: boolean;
+  isCheckingAvailability: boolean;
+  availability: ProjectHandlerAvailability | undefined;
+  startEditing: () => void;
+  stopEditing: () => void;
+  onHandlerChange: (value: string) => void;
+}
+
+export function useProjectHandler(displayName: string): UseProjectHandlerReturn {
+  const [handlerEdited, setHandlerEdited] = useState(false);
+  const [manualHandler, setManualHandler] = useState('');
+  const [debouncedCandidate, setDebouncedCandidate] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const autoHandler = toProjectHandler(displayName, PROJECT_HANDLER_MAX_LENGTH);
+  const effectiveHandler = handlerEdited ? manualHandler : autoHandler;
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!effectiveHandler || effectiveHandler.length < 2) {
+      setDebouncedCandidate('');
+      return;
+    }
+    debounceRef.current = setTimeout(() => setDebouncedCandidate(effectiveHandler), HANDLER_DEBOUNCE_MS);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [effectiveHandler]);
+
+  const { data: availability, isFetching: isCheckingAvailability } = useProjectHandlerAvailability(
+    debouncedCandidate,
+    debouncedCandidate.length >= 2,
+  );
+
+  const startEditing = () => {
+    setHandlerEdited(true);
+    setManualHandler(effectiveHandler);
+  };
+
+  const stopEditing = () => {
+    setHandlerEdited(false);
+    setManualHandler('');
+  };
+
+  const onHandlerChange = (value: string) => {
+    setManualHandler(value);
+  };
+
+  return {
+    handler: effectiveHandler,
+    handlerEdited,
+    isCheckingAvailability,
+    availability,
+    startEditing,
+    stopEditing,
+    onHandlerChange,
+  };
+}

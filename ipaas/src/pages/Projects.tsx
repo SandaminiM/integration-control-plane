@@ -17,14 +17,14 @@
  */
 
 import { Avatar, Box, Button, Card, CardContent, CircularProgress, Grid, IconButton, PageContent, PageTitle, Stack, TablePagination, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
-import { Clock, Folder, LayoutGrid, List, Plus, RefreshCw, Settings } from '@wso2/oxygen-ui-icons-react';
+import { Clock, Folder, FolderInput, LayoutGrid, List, Plus, RefreshCw, Settings } from '@wso2/oxygen-ui-icons-react';
 import SearchField from '../components/SearchField';
 import { useNavigate } from 'react-router';
 import { useState, type JSX } from 'react';
 import { useProjectsByOrg, type GqlProject } from '../api/queries';
 import EmptyListing from '../components/EmptyListing';
 import { formatDistanceToNow } from '../utils/time';
-import { newProjectUrl, type OrgScope } from '../nav';
+import { newProjectUrl, importProjectUrl, type OrgScope } from '../nav';
 import { projectHomeUrl } from '../paths';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { Permissions } from '../constants/permissions';
@@ -107,11 +107,14 @@ export default function Projects(scope: OrgScope): JSX.Element {
         </PageTitle.Actions>
       </PageTitle>
 
-      <Stack direction="row" gap={2} alignItems="center" sx={{ mb: 3 }}>
+      <Stack direction="row" gap={1} alignItems="center" sx={{ mb: 3 }}>
         <SearchField value={query} onChange={setQuery} placeholder="Search projects" fullWidth />
         <Authorized permissions={Permissions.PROJECT_MANAGE}>
           <Button variant="contained" startIcon={<Plus size={20} />} onClick={() => navigate(newProjectUrl(scope))} sx={{ whiteSpace: 'nowrap' }}>
             Create
+          </Button>
+          <Button variant="outlined" startIcon={<FolderInput size={16} />} onClick={() => navigate(importProjectUrl(scope))} sx={{ whiteSpace: 'nowrap', pl: 3 }}>
+            Import
           </Button>
         </Authorized>
       </Stack>

@@ -17,21 +17,21 @@
  */
 
 import type { ReactNode } from 'react';
+import type { GitProvider, WorkspaceIntegrationType } from './project';
 
-export type IntegrationType = 'service' | 'automation';
-
-export type SourceMode = 'github' | 'public';
+export type { GitProvider as SourceMode } from './project';
+export type { WorkspaceIntegrationType as IntegrationType } from './project';
 
 export type AuthStatus = 'idle' | 'authenticating' | 'done' | 'failed';
 
 export interface LocationState {
   authCode?: string;
   authenticated?: boolean;
-  mode?: SourceMode;
+  mode?: GitProvider;
 }
 
 export interface IntegrationTypeOption {
-  id: IntegrationType;
+  id: WorkspaceIntegrationType;
   title: string;
   description: string;
   docLink: string;

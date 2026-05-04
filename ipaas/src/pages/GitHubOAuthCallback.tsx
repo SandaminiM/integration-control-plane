@@ -18,7 +18,7 @@
 
 import { Box, CircularProgress, Typography } from '@wso2/oxygen-ui';
 import { useEffect, type JSX } from 'react';
-import { GITHUB_AUTH } from '../constants/import';
+import { GITHUB_AUTH } from '../constants/github';
 
 export default function GitHubOAuthCallback(): JSX.Element {
   useEffect(() => {

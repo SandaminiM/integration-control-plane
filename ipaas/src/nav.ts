@@ -140,6 +140,10 @@ export function newProjectUrl(scope: { org: string }): string {
   return `/organizations/${scope.org}/projects/new`;
 }
 
+export function importProjectUrl(scope: { org: string }): string {
+  return `/organizations/${scope.org}/projects/import`;
+}
+
 export function newEnvironmentUrl(scope: { org: string }): string {
   return `/organizations/${scope.org}/environments/new`;
 }

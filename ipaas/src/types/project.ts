@@ -16,9 +16,22 @@
  * under the License.
  */
 
-import { GITHUB_URL_RE } from '../constants/github';
+export type GitProvider = 'github' | 'public';
 
-export function parseGitHubUrl(url: string): { org: string; repo: string } | null {
-  const m = url.trim().match(GITHUB_URL_RE);
-  return m ? { org: m[1], repo: m[2] } : null;
+export type WorkspaceIntegrationType = 'service' | 'automation';
+
+export interface ProjectGitSource {
+  provider: GitProvider;
+  org: string;
+  repo: string;
+  branch: string;
+  subPath: string;
+  isPublicRepo: boolean;
+}
+
+export interface WorkspaceModule {
+  path: string;
+  name: string;
+  displayName: string;
+  integrationType: WorkspaceIntegrationType;
 }

@@ -61,6 +61,64 @@ export function useCreateProject() {
   });
 }
 
+export interface CreateMonoRepoProjectInput extends CreateProjectInput {
+  repository: string;
+  gitOrganization: string;
+  branch: string;
+  directoryPath: string;
+  gitProvider: string;
+  isPublicRepo: boolean;
+}
+
+const CREATE_MONO_REPO_PROJECT = `
+  mutation CreateMonoRepoProject(
+    $name: String!, $description: String!, $projectHandler: String!,
+    $orgHandler: String!, $orgId: Int!,
+    $repository: String!, $gitOrganization: String!, $branch: String!,
+    $directoryPath: String!, $gitProvider: String!, $isPublicRepo: Boolean!
+  ) {
+    createProject(project: {
+      name: $name,
+      description: $description,
+      projectHandler: $projectHandler,
+      orgId: $orgId,
+      orgHandler: $orgHandler,
+      version: "1.0.0",
+      repository: $repository,
+      secretRef: "",
+      branch: $branch,
+      gitProvider: $gitProvider,
+      gitOrganization: $gitOrganization,
+      directoryPath: $directoryPath,
+      isPublicRepo: $isPublicRepo
+    }) {
+      id, orgId, name, version, createdDate, handler, region,
+      description, defaultDeploymentPipelineId, deploymentPipelineIds,
+      type, updatedAt
+    }
+  }`;
+
+export function useCreateMonoRepoProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateMonoRepoProjectInput) =>
+      gql<{ createProject: GqlProject }>(CREATE_MONO_REPO_PROJECT, {
+        name: input.name,
+        description: input.description,
+        projectHandler: input.handler,
+        orgHandler: input.orgHandler,
+        orgId: window.API_CONFIG.asgardeoOrgNumericId,
+        repository: input.repository,
+        gitOrganization: input.gitOrganization,
+        branch: input.branch,
+        directoryPath: input.directoryPath,
+        gitProvider: input.gitProvider,
+        isPublicRepo: input.isPublicRepo,
+      }).then((d) => d.createProject),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
+  });
+}
+
 // ── Environment CRUD ──
 
 export interface EnvironmentInput {

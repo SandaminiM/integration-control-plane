@@ -36,3 +36,13 @@ export function toHandler(name: string): string {
 export function formatRepoNameToDisplayName(repoName: string): string {
   return repoName.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+export function toProjectHandler(name: string, maxLength: number): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-zA-Z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .substring(0, maxLength)
+    .replace(/^-+|-+$/g, '');
+}

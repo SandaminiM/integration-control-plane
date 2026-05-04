@@ -20,18 +20,19 @@ import { Alert, Box, Button, Card, CardContent, CircularProgress, Grid, IconButt
 import { ArrowLeft, GitBranch, Building2, RefreshCw, GitHub } from '@wso2/oxygen-ui-icons-react';
 import { useState, useEffect, useRef, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { useCreateComponent, useObtainGithubToken, type DisplayType } from '../api/mutations';
+import { useCreateComponent, type DisplayType } from '../api/mutations';
 import { useGitHubUserRepos, useRepoBranches, useRepoContents, useRepoMetadata, useComponentNameAvailability, type DetectedMode } from '../api/queries';
 import DirectoryPickerField from '../components/DirectoryPicker';
 import IntegrationTypeSelector from '../components/IntegrationCreate/IntegrationTypeSelector';
 import TechnologySelector from '../components/IntegrationCreate/TechnologySelector';
 import TechDetectionIcon from '../components/IntegrationCreate/TechDetectionIcon';
 import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
-import type { IntegrationType, SourceMode, AuthStatus, LocationState } from '../types/import';
-import { SAMPLE_REPO_URL, GITHUB_AUTH, FORM_CONFIG } from '../constants/import';
+import type { IntegrationType, SourceMode, LocationState } from '../types/import';
+import { SAMPLE_REPO_URL } from '../constants/github';
+import { URL_DEBOUNCE_MS } from '../constants/project';
 import { resourceUrl, narrow, type ProjectScope } from '../nav';
-import { buildGitHubOAuthUrl, newComponentUrl } from '../paths';
-import { generateAndSaveGitHubState, validateAndClearGitHubState } from '../auth/tokenManager';
+import { newComponentUrl } from '../paths';
+import { useGitHubAuth } from '../hooks/useGitHubAuth';
 import { toHandler, formatRepoNameToDisplayName } from '../utils/string';
 import { parseGitHubUrl } from '../utils/github';
 import { detectTechnology } from '../utils/technologyDetection';
@@ -50,7 +51,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   const [sourceMode] = useState<SourceMode>(locationState?.mode ?? 'github');
   const isPublicRepo = sourceMode === 'public';
 
-  const [authStatus, setAuthStatus] = useState<AuthStatus>(preAuthenticated ? 'done' : pendingAuthCode ? 'authenticating' : 'idle');
+  const { authStatus, startGitHubAuth, exchangeAuthCode } = useGitHubAuth(preAuthenticated ? 'done' : pendingAuthCode ? 'authenticating' : 'idle');
   const [selectedOrg, setSelectedOrg] = useState('');
   const [selectedRepo, setSelectedRepo] = useState('');
 
@@ -70,7 +71,6 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   const activeOrg = isPublicRepo ? parsedOrg : selectedOrg;
   const activeRepo = isPublicRepo ? parsedRepo : selectedRepo;
 
-  const obtainToken = useObtainGithubToken();
   const createComponent = useCreateComponent();
 
   const displayNameAutoRef = useRef(false);
@@ -81,10 +81,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
     if (isPublicRepo || !pendingAuthCode || authCodeExchangedRef.current) return;
     authCodeExchangedRef.current = true;
     navigate(location.pathname, { replace: true, state: null });
-    obtainToken
-      .mutateAsync(pendingAuthCode)
-      .then((result) => setAuthStatus(result.success ? 'done' : 'failed'))
-      .catch(() => setAuthStatus('failed'));
+    exchangeAuthCode(pendingAuthCode);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const reposEnabled = !isPublicRepo && (authStatus === 'done' || preAuthenticated);
@@ -189,7 +186,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
         setParsedOrg(parsed.org);
         setParsedRepo(parsed.repo);
       }
-    }, FORM_CONFIG.URL_DEBOUNCE_MS);
+    }, URL_DEBOUNCE_MS);
     return () => clearTimeout(id);
     // parsedOrg/parsedRepo intentionally omitted — compared only on change
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -223,43 +220,6 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subPath]);
-
-  // GitHub OAuth
-  const handleGitHubAuth = () => {
-    const { githubAppClientId, githubAppAuthRedirectUrl } = window.API_CONFIG;
-    if (!githubAppClientId) return;
-    setAuthStatus('authenticating');
-    const state = generateAndSaveGitHubState();
-    const url = buildGitHubOAuthUrl(githubAppAuthRedirectUrl ?? '', githubAppClientId, state);
-    const popup = window.open(url, 'github-oauth', GITHUB_AUTH.POPUP_DIMENSIONS);
-    const channel = new BroadcastChannel(GITHUB_AUTH.BROADCAST_CHANNEL);
-    channel.onmessage = async (event) => {
-      channel.close();
-      const { authCode, state: returnedState } = event.data as { authCode: string | null; state: string | null };
-      if (!returnedState || !validateAndClearGitHubState(returnedState)) {
-        setAuthStatus('failed');
-        return;
-      }
-      if (!authCode) {
-        setAuthStatus('failed');
-        return;
-      }
-      try {
-        const result = await obtainToken.mutateAsync(authCode);
-        setAuthStatus(result.success ? 'done' : 'failed');
-        if (result.success) refetchRepos();
-      } catch {
-        setAuthStatus('failed');
-      }
-    };
-    const pollClosed = setInterval(() => {
-      if (popup?.closed) {
-        clearInterval(pollClosed);
-        channel.close();
-        if (authStatus === 'authenticating') setAuthStatus('idle');
-      }
-    }, GITHUB_AUTH.POPUP_POLL_INTERVAL_MS);
-  };
 
   const orgOptions = userRepos?.map((o) => o.orgName) ?? [];
   const reposForOrg = userRepos?.find((o) => o.orgName === selectedOrg)?.repositories.map((r) => r.name) ?? [];
@@ -325,7 +285,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
                   <Typography variant="body2">Connected to GitHub</Typography>
                 </Stack>
                 <Tooltip title="Reconnect" placement="top">
-                  <IconButton size="small" onClick={handleGitHubAuth} sx={{ color: 'text.secondary' }}>
+                  <IconButton size="small" aria-label="Reconnect GitHub" onClick={() => startGitHubAuth(refetchRepos)} sx={{ color: 'text.secondary' }}>
                     <RefreshCw size={14} />
                   </IconButton>
                 </Tooltip>
@@ -358,7 +318,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
                   <GitHub size={16} />
                 </Box>
               }
-              onClick={handleGitHubAuth}
+              onClick={() => startGitHubAuth(refetchRepos)}
               size="small">
               Authorize with GitHub
             </Button>
@@ -497,9 +457,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
           <Stack direction="row" alignItems="flex-start" gap={0.5}>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <DirectoryPickerField
-                org={activeOrg}
                 repo={activeRepo}
-                branch={selectedBranch}
                 value={subPath}
                 onChange={(path) => {
                   setSubPath(path);

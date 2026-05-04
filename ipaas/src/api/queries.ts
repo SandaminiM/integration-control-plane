@@ -1580,6 +1580,34 @@ export function useOrgSubscriptions(orgUuid: string) {
   });
 }
 
+const PROJECT_HANDLER_AVAILABILITY_QUERY = `
+  query ProjectHandlerAvailability($orgId: Int!, $projectHandlerCandidate: String!) {
+    projectHandlerAvailability(orgId: $orgId, projectHandlerCandidate: $projectHandlerCandidate) {
+      handlerUnique
+      alternateHandlerCandidate
+    }
+  }`;
+
+export interface ProjectHandlerAvailability {
+  handlerUnique: boolean;
+  alternateHandlerCandidate?: string;
+}
+
+export function useProjectHandlerAvailability(candidate: string, enabled: boolean) {
+  const id = orgId();
+  return useQuery({
+    queryKey: ['projectHandlerAvailability', id, candidate],
+    queryFn: () =>
+      gql<{ projectHandlerAvailability: ProjectHandlerAvailability }>(PROJECT_HANDLER_AVAILABILITY_QUERY, {
+        orgId: id,
+        projectHandlerCandidate: candidate,
+      }).then((d) => d.projectHandlerAvailability),
+    enabled: enabled && id > 0 && !!candidate && candidate.length >= 2,
+    staleTime: 0,
+    retry: false,
+  });
+}
+
 export interface ComponentNameAvailability {
   componentNameUnique: boolean;
   alternateComponentName: string;

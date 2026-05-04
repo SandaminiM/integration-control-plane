@@ -32,7 +32,7 @@ import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
 import GitIcon from '../assets/icons/GitIcon';
 import AzureIcon from '../assets/icons/AzureIcon';
 import { displayTypeFromSample } from '../constants/integrations';
-import { GITHUB_AUTH } from '../constants/import';
+import { GITHUB_AUTH } from '../constants/github';
 import { CARD_HOVER_SX, PROVIDER_ICON_SX } from '../constants/styles';
 import { resourceUrl, narrow, type ProjectScope } from '../nav';
 import { importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, importComingSoonUrl, buildGitHubOAuthUrl } from '../paths';
