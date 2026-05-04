@@ -85,7 +85,7 @@ export default function GitProviderCards({ onGitHubSelect, onPublicSelect }: Git
             </Box>
             <Typography variant="body2" fontWeight={500}>Use Public Git Repository</Typography>
           </Stack>
-          <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>Use a public GitHub repository URL</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>Use a public Git repository URL</Typography>
         </CardActionArea>
       </Card>
     </Stack>

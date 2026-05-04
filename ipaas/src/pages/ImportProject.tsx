@@ -115,12 +115,15 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
     refetch: refetchContents,
   } = useRepoContents(activeOrg, activeRepo, selectedBranch, isPublicRepo);
 
+  // Auto-select default branch; preserve an already-valid selection on refetch
   useEffect(() => {
-    if (branches && branches.length > 0) {
+    if (!branches || branches.length === 0) return;
+    const stillExists = branches.some((b) => b.name === selectedBranch);
+    if (!selectedBranch || !stillExists) {
       const def = branches.find((b) => b.isDefault);
       setSelectedBranch(def?.name ?? branches[0].name);
     }
-  }, [branches]);
+  }, [branches]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (isPublicRepo) return;
@@ -213,8 +216,11 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
   const handleImport = async () => {
     setIsImporting(true);
     setSubmitError(null);
+
+    // Step 1: create the project. Any failure here is surfaced immediately.
+    let project: GqlProject;
     try {
-      const project: GqlProject = await createMonoRepoProject.mutateAsync({
+      project = await createMonoRepoProject.mutateAsync({
         name: displayName.trim(),
         handler: effectiveHandler,
         description: description.trim(),
@@ -226,9 +232,18 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
         gitProvider: isPublicRepo ? 'public' : 'github',
         isPublicRepo,
       });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.';
+      setSubmitError(normalizeProjectError(message));
+      setIsImporting(false);
+      return;
+    }
 
+    // Step 2: create workspace module components. The project already exists, so individual
+    // component failures don't block navigation — the user can manage them from the project page.
+    if (workspaceModules.length > 0) {
       const srcGitRepoUrl = `https://github.com/${activeOrg}/${activeRepo}`;
-      await Promise.all(
+      await Promise.allSettled(
         workspaceModules.map((module) =>
           createComponent.mutateAsync({
             displayName: module.displayName || module.name,
@@ -244,14 +259,9 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
           }),
         ),
       );
-
-      navigate(resourceUrl(narrow(scope, project.handler), 'overview'));
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.';
-      setSubmitError(normalizeProjectError(message));
-    } finally {
-      setIsImporting(false);
     }
+
+    navigate(resourceUrl(narrow(scope, project.handler), 'overview'));
   };
 
   const renderHandlerHelperText = () => {
@@ -508,7 +518,7 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
         <Box sx={{ mb: 1 }}>
           {gitProvider === 'github' && renderGitHubAuthArea()}
           {renderRepoPickers()}
-          {pathReady && !isContentsLoading && !isWorkspace && (
+          {pathReady && !isContentsLoading && !isContentsError && !isWorkspace && (
             <Alert severity="info" sx={{ mb: 3 }}>
               No Ballerina workspace detected in the selected directory. Select a directory that contains a Ballerina
               workspace (a root <code>Ballerina.toml</code> with subdirectories that each have their own{' '}

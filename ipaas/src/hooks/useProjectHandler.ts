@@ -38,7 +38,8 @@ export function useProjectHandler(displayName: string): UseProjectHandlerReturn 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const autoHandler = toProjectHandler(displayName, PROJECT_HANDLER_MAX_LENGTH);
-  const effectiveHandler = handlerEdited ? manualHandler : autoHandler;
+  // Use manualHandler when set (confirmed or in-progress override), otherwise fall back to auto.
+  const effectiveHandler = manualHandler || autoHandler;
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -64,7 +65,7 @@ export function useProjectHandler(displayName: string): UseProjectHandlerReturn 
 
   const stopEditing = () => {
     setHandlerEdited(false);
-    setManualHandler('');
+    // Keep manualHandler — it is now the confirmed override.
   };
 
   const onHandlerChange = (value: string) => {

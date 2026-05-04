@@ -118,13 +118,15 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
     refetch: refetchContents,
   } = useRepoContents(activeOrg, activeRepo, selectedBranch, isPublicRepo);
 
-  // Auto-select default branch
+  // Auto-select default branch; preserve an already-valid selection on refetch
   useEffect(() => {
-    if (branches && branches.length > 0) {
+    if (!branches || branches.length === 0) return;
+    const stillExists = branches.some((b) => b.name === selectedBranch);
+    if (!selectedBranch || !stillExists) {
       const def = branches.find((b) => b.isDefault);
       setSelectedBranch(def?.name ?? branches[0].name);
     }
-  }, [branches]);
+  }, [branches]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset downstream state when GitHub repo changes
   useEffect(() => {
@@ -221,6 +223,15 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
     setGitProvider(provider);
   };
 
+  const handleGitSectionToggle = () => {
+    if (gitSectionOpen) {
+      // User is dismissing the optional section — clear any provider and repo state.
+      setGitProvider(null);
+      resetGitState();
+    }
+    setGitSectionOpen((prev) => !prev);
+  };
+
   const nameError = displayName ? validateProjectName(displayName) : null;
   const handlerError = effectiveHandler ? validateProjectHandler(effectiveHandler) : null;
   const handlerTaken = availability && !availability.handlerUnique ? 'This name is already taken.' : null;
@@ -241,9 +252,10 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
   const handleSubmit = async () => {
     setIsCreating(true);
     setSubmitError(null);
-    try {
-      let project: GqlProject;
 
+    // Step 1: create the project. Any failure here is surfaced immediately.
+    let project: GqlProject;
+    try {
       if (attachGit && activeOrg && activeRepo && selectedBranch) {
         project = await createMonoRepoProject.mutateAsync({
           name: displayName.trim(),
@@ -265,35 +277,36 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
           orgHandler: scope.org,
         });
       }
-
-      // Create workspace module components
-      if (isWorkspace && workspaceModules.length > 0) {
-        const srcGitRepoUrl = `https://github.com/${activeOrg}/${activeRepo}`;
-        await Promise.all(
-          workspaceModules.map((module) =>
-            createComponent.mutateAsync({
-              displayName: module.displayName || module.name,
-              name: toHandler(module.displayName || module.name),
-              description: '',
-              orgHandler: scope.org,
-              projectId: project.id,
-              displayType: module.integrationType === 'automation' ? 'scheduledTask' : 'ballerinaService',
-              srcGitRepoUrl,
-              repositoryBranch: selectedBranch,
-              repositorySubPath: module.path,
-              isPublicRepo,
-            }),
-          ),
-        );
-      }
-
-      window.location.href = resourceUrl(narrow(scope, project.handler), 'overview');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.';
       setSubmitError(normalizeProjectError(message));
-    } finally {
       setIsCreating(false);
+      return;
     }
+
+    // Step 2: create workspace module components. The project already exists, so individual
+    // component failures don't block navigation — the user can manage them from the project page.
+    if (isWorkspace && workspaceModules.length > 0) {
+      const srcGitRepoUrl = `https://github.com/${activeOrg}/${activeRepo}`;
+      await Promise.allSettled(
+        workspaceModules.map((module) =>
+          createComponent.mutateAsync({
+            displayName: module.displayName || module.name,
+            name: toHandler(module.displayName || module.name),
+            description: '',
+            orgHandler: scope.org,
+            projectId: project.id,
+            displayType: module.integrationType === 'automation' ? 'scheduledTask' : 'ballerinaService',
+            srcGitRepoUrl,
+            repositoryBranch: selectedBranch,
+            repositorySubPath: module.path,
+            isPublicRepo,
+          }),
+        ),
+      );
+    }
+
+    window.location.href = resourceUrl(narrow(scope, project.handler), 'overview');
   };
 
   const renderHandlerHelperText = () => {
@@ -599,7 +612,11 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
         direction="row"
         alignItems="center"
         gap={1.5}
-        onClick={() => setGitSectionOpen((prev) => !prev)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={gitSectionOpen}
+        onClick={handleGitSectionToggle}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleGitSectionToggle(); } }}
         sx={{ cursor: 'pointer', mb: gitSectionOpen ? 2 : 6, userSelect: 'none' }}>
         <Typography variant="h5" component="h2">
           Connect Your Repository (Optional)
