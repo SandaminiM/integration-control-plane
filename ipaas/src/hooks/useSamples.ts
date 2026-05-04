@@ -17,32 +17,19 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import type { Sample } from '../types/samples';
+import { fetchSamples, type SamplesData } from '../api/samples';
 import { ALLOWED_SAMPLE_TYPES, normalizeComponentType } from '../constants/integrations';
 
-const DEFAULT_SAMPLES_URL = 'https://raw.githubusercontent.com/wso2/integration-samples/main/.metadata/samples.json';
+export type { SamplesData };
 
-export interface SamplesData {
-  samples: Sample[];
-  featuredSamples: Sample[];
-  uniqueTypes: string[];
-  uniqueBuildPacks: string[];
-  uniqueTags: string[];
-}
+const DEFAULT_SAMPLES_URL = 'https://raw.githubusercontent.com/wso2/integration-samples/main/.metadata/samples.json';
 
 export function useSamples() {
   return useQuery<SamplesData>({
     queryKey: ['samples'],
     queryFn: async ({ signal }) => {
       const url = window.API_CONFIG?.samplesUrl ?? DEFAULT_SAMPLES_URL;
-      const response = await fetch(url, { cache: 'no-store', signal });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const rawData = (await response.json()) as { samples: Sample[] };
-      if (!Array.isArray(rawData?.samples)) {
-        throw new Error('Invalid response format: missing samples array');
-      }
+      const rawData = await fetchSamples(url, signal);
       const samples = rawData.samples.filter((s) => ALLOWED_SAMPLE_TYPES.has(s.componentType));
       return {
         samples,

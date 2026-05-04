@@ -23,7 +23,7 @@ import { Alert, Box, Button, Checkbox, CircularProgress, ColorSchemeImage, Divid
 import { Building2, CheckCircle, XCircle } from '@wso2/oxygen-ui-icons-react';
 import { Link as NavLink } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
-import { authenticatedFetch } from '../auth/tokenManager';
+import { validateOrgName, registerUser, type RegisterUserResponse } from '../api/org';
 import { loginUrl, orgHomeUrl, privacyPolicyUrl } from '../paths';
 
 const ORG_NAME_RE = /^[A-Za-z][A-Za-z0-9\-_ ]+$/;
@@ -34,11 +34,6 @@ function validateOrgNameLocally(name: string): string | null {
   if (!/^[A-Za-z]/.test(name)) return 'Name must begin with a letter.';
   if (!ORG_NAME_RE.test(name)) return 'Name may only contain letters, numbers, hyphens, underscores, and spaces.';
   return null;
-}
-
-interface RegisterUserResponse {
-  organizations?: Array<{ handle?: string; orgHandle?: string; name?: string; id?: number; orgId?: number }>;
-  idpId?: string;
 }
 
 export default function RegisterOrganization(): JSX.Element {
@@ -89,16 +84,7 @@ export default function RegisterOrganization(): JSX.Element {
     debounceRef.current = setTimeout(async () => {
       setIsValidating(true);
       try {
-        const url = new URL(`${window.API_CONFIG.choreoOrgApiUrl}/validate/orgname`);
-        url.searchParams.set('orgName', value);
-        const res = await authenticatedFetch(url.toString());
-        if (res.ok) {
-          const data: { isValid?: boolean; valid?: boolean } = await res.json();
-          setIsNameAvailable(data.isValid ?? data.valid ?? true);
-        } else {
-          // Validation endpoint may not exist — treat as available
-          setIsNameAvailable(true);
-        }
+        setIsNameAvailable(await validateOrgName(value));
       } catch {
         setIsNameAvailable(true);
       } finally {
@@ -117,22 +103,7 @@ export default function RegisterOrganization(): JSX.Element {
     setCreateError(null);
     setIsCreating(true);
     try {
-      const res = await authenticatedFetch(`${window.API_CONFIG.choreoOrgApiUrl}/register-user`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          organization: { name: orgName },
-          termsAccepted,
-          serviceName: SERVICE_NAME,
-        }),
-      });
-
-      if (!res.ok) {
-        const body = await res.text();
-        throw new Error(`Organization creation failed (${res.status}): ${body}`);
-      }
-
-      const data: RegisterUserResponse = await res.json();
+      const data: RegisterUserResponse = await registerUser(orgName, termsAccepted, SERVICE_NAME);
       const orgs = data.organizations ?? [];
       const created = orgs[0];
 
