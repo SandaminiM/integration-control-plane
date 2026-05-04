@@ -16,13 +16,14 @@
  * under the License.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Alert, Box, Button, ButtonBase, Card, CardContent, CircularProgress, FormControl, MenuItem, Select, Stack, Typography } from '@wso2/oxygen-ui';
 import { ArrowRight, Settings, Users } from '@wso2/oxygen-ui-icons-react';
-import { authenticatedFetch, getOrgUuidFromToken } from '../auth/tokenManager';
-import { choreoDevopsApiUrl } from '../config/api';
+import { getOrgUuidFromToken } from '../auth/tokenManager';
+import { initOrg, createDefaultProject } from '../api/org';
+import { gql } from '../api/graphql';
 import { projectHomeUrl } from '../paths';
 import Projects from './Projects';
 
@@ -77,11 +78,42 @@ export default function OrgHome(): JSX.Element {
   const { orgHandler } = useParams<{ orgHandler: string }>();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState<'persona' | 'region' | 'done'>(() => (localStorage.getItem(PERSONA_KEY) ? 'done' : 'persona'));
+  const [step, setStep] = useState<'checking' | 'persona' | 'region' | 'done'>(() => (localStorage.getItem(PERSONA_KEY) ? 'done' : 'checking'));
   const [persona, setPersona] = useState<string>('developer');
   const [region, setRegion] = useState<string>('US');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Derived on every render so the effect below re-fires once AppLayout's async
+  // ID-recovery sets window.API_CONFIG.asgardeoOrgNumericId and triggers a re-render.
+  const orgNumericId = window.API_CONFIG.asgardeoOrgNumericId || parseInt(localStorage.getItem('icp_org_numeric_id') || '0', 10);
+
+  // For users without icp_persona set, check if they already have projects (existing user).
+  // If yes, skip onboarding and go directly to the projects list.
+  // The effect waits (returns early) until orgNumericId is non-zero so it does not
+  // prematurely fall through to the persona step before the ID has been recovered.
+  useEffect(() => {
+    if (step !== 'checking') return;
+    if (!orgNumericId) return; // wait for AppLayout's ID-recovery to complete
+    gql<{ projects: Array<{ handler: string }> }>('query GetProjects($orgId: Int!) { projects(orgId: $orgId) { handler } }', { orgId: orgNumericId })
+      .then((data) => {
+        if ((data.projects ?? []).some((p) => p.handler)) {
+          localStorage.setItem(PERSONA_KEY, 'developer');
+          setStep('done');
+        } else {
+          setStep('persona');
+        }
+      })
+      .catch(() => setStep('persona'));
+  }, [step, orgNumericId]);
+
+  if (step === 'checking') {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   if (step === 'done') {
     return <Projects level="organizations" org={orgHandler!} />;
@@ -98,41 +130,12 @@ export default function OrgHome(): JSX.Element {
 
         // Step 1: Init default environments for the org
         if (orgUuid) {
-          const initRes = await authenticatedFetch(`${choreoDevopsApiUrl()}/api/v1/organizations/${orgUuid}/projects/init`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ region }),
-          });
-          if (!initRes.ok) {
-            throw new Error(`Failed to initialize organization (${initRes.status})`);
-          }
+          await initOrg(orgUuid, region);
         }
 
         // Step 2: Create the default project via GraphQL
         if (orgNumericId) {
-          const gqlRes = await authenticatedFetch(window.API_CONFIG.graphqlUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              query: `mutation {
-                createProject(project: {
-                  name: "Default",
-                  description: "This is a default project created by WSO2 Integration Platform",
-                  projectHandler: "${DEFAULT_PROJECT_HANDLER}",
-                  orgId: ${orgNumericId},
-                  orgHandler: "${handle}",
-                  version: "1.0.0"
-                }) { id handler }
-              }`,
-            }),
-          });
-          if (!gqlRes.ok) {
-            throw new Error(`Failed to create default project (${gqlRes.status})`);
-          }
-          const gqlData: { data?: { createProject?: { id: string; handler: string } }; errors?: unknown[] } = await gqlRes.json();
-          if (gqlData.errors || !gqlData.data?.createProject) {
-            throw new Error('Failed to create default project');
-          }
+          await createDefaultProject(orgNumericId, handle, DEFAULT_PROJECT_HANDLER);
         }
 
         // Only mark onboarding complete and navigate on success

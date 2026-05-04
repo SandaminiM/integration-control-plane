@@ -108,7 +108,8 @@ import FeaturePreviewModal from '../components/FeaturePreview/FeaturePreviewModa
 import { useProject, useProjectByHandler, useProjects, useComponents, useOrgs } from '../api/queries';
 import { SUPPORTED_DISPLAY_TYPES, GENERIC_SERVICE_TYPES } from '../constants/integrations';
 import { fetchOrgPermissions } from '../api/auth';
-import { authenticatedFetch, switchOrgToken } from '../auth/tokenManager';
+import { switchOrgToken } from '../auth/tokenManager';
+import { fetchOrgList } from '../api/org';
 import { mockNotifications } from '../mock-data/mockNotifications';
 import { useScope, useResource, resourceUrl, broaden, narrow, newProjectUrl, newComponentUrl, hasProject, hasComponent, type Resource } from '../nav';
 import { componentOverviewUrl, cookiePolicyUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, projectHomeUrl } from '../paths';
@@ -377,30 +378,21 @@ export default function AppLayout(): JSX.Element {
 
   // Recover org numeric ID if it was not saved during OIDC callback (e.g. old sessions)
   const [, setOrgIdVersion] = useState(0);
-  const orgIdFetchedRef = useRef(false);
+  const orgIdFetchedRef = useRef(''); // tracks the org handle for which we last fetched
   useEffect(() => {
-    if (!isOidcUser || !userId || window.API_CONFIG.asgardeoOrgNumericId || orgIdFetchedRef.current) return;
-    orgIdFetchedRef.current = true;
-    authenticatedFetch(`${window.API_CONFIG.choreoOrgApiUrl}/orgs`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!data) return;
-        const orgs: Array<{ handle?: string; orgHandle?: string; org_handle?: string; id?: string | number; orgId?: string | number }> = data.list ?? data.organizations ?? (Array.isArray(data) ? data : []);
-        for (const org of orgs) {
-          const numericId = org.id ?? org.orgId;
-          if (numericId) {
-            const parsedId = typeof numericId === 'string' ? parseInt(numericId, 10) : numericId;
-            if (!isNaN(parsedId) && parsedId > 0) {
-              window.API_CONFIG.asgardeoOrgNumericId = parsedId;
-              localStorage.setItem('icp_org_numeric_id', String(parsedId));
-              setOrgIdVersion((v) => v + 1); // trigger re-render so queries re-evaluate orgId()
-            }
-            break;
-          }
+    if (!isOidcUser || !userId || !scope.org || orgIdFetchedRef.current === scope.org) return;
+    orgIdFetchedRef.current = scope.org;
+    fetchOrgList()
+      .then((orgs) => {
+        const match = orgs.find((o) => o.handle === scope.org);
+        if (match && match.numericId > 0) {
+          window.API_CONFIG.asgardeoOrgNumericId = match.numericId;
+          localStorage.setItem('icp_org_numeric_id', String(match.numericId));
+          setOrgIdVersion((v) => v + 1); // trigger re-render so queries re-evaluate orgId()
         }
       })
       .catch(() => {});
-  }, [isOidcUser, userId]);
+  }, [isOidcUser, userId, scope.org]);
 
   // Find component UUID for permission checks
   const currentComponent = hasComponent(scope) ? components.find((c) => c.handler === scope.component) : undefined;

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Query } from '@tanstack/react-query';
 import { gql } from './graphql';
 import { authenticatedFetch, getOrgUuidFromToken, refreshAccessToken } from '../auth/tokenManager';
@@ -1042,6 +1042,7 @@ export function useTaskExecutions(releaseId: string) {
     enabled: !!baseUrl && !!releaseId,
     retry: false,
     staleTime: 0,
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -163,7 +163,7 @@ export default function AutomationExecutions({
   const safePage = Math.min(page, maxPage);
   const paged = allExecutions.slice(safePage * rowsPerPage, safePage * rowsPerPage + rowsPerPage);
 
-  if (isLoading) {
+  if (isLoading && allExecutions.length === 0) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
         <CircularProgress size={24} color="primary" />

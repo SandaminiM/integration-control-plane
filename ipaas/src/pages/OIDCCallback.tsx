@@ -80,20 +80,20 @@ export default function OIDCCallback(): JSX.Element {
         } else {
           const orgHandle = localStorage.getItem('icp_org_handle');
 
-          // Try to resume the last visited project if ToS is already accepted for that org
+          // Try to navigate to the last visited project (for existing users)
           let navigatedToLastProject = false;
           try {
             const stored = localStorage.getItem('icp_user');
             const userId: string | undefined = stored ? (JSON.parse(stored) as { userId?: string })?.userId : undefined;
-            const tosKey = orgHandle && userId ? `icp_tos_accepted:${userId}:${orgHandle}` : null;
-            const tosAccepted = tosKey ? localStorage.getItem(tosKey) === 'true' : false;
 
-            if (tosAccepted && userId && orgHandle) {
+            if (userId && orgHandle) {
               // 1. Try the last-visited project stored by AppLayout
               const lastProjectRaw = localStorage.getItem(`icp_last_project:${userId}`);
               if (lastProjectRaw) {
                 const { org, project } = JSON.parse(lastProjectRaw) as { org: string; project: string };
                 if (org === orgHandle && project) {
+                  // Mark ToS accepted — this user has already been through onboarding
+                  localStorage.setItem(`icp_tos_accepted:${userId}:${orgHandle}`, 'true');
                   navigate(projectHomeUrl(orgHandle, project), { replace: true });
                   navigatedToLastProject = true;
                 }
@@ -107,6 +107,8 @@ export default function OIDCCallback(): JSX.Element {
                   const projects = (data.projects ?? []).filter((p) => p.handler);
                   if (projects.length > 0) {
                     const recent = projects.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
+                    // Mark ToS accepted — this user already has projects, they've been through onboarding
+                    localStorage.setItem(`icp_tos_accepted:${userId}:${orgHandle}`, 'true');
                     navigate(projectHomeUrl(orgHandle, recent.handler), { replace: true });
                     navigatedToLastProject = true;
                   }
