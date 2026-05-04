@@ -16,13 +16,14 @@
  * under the License.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Alert, Box, Button, ButtonBase, Card, CardContent, CircularProgress, FormControl, MenuItem, Select, Stack, Typography } from '@wso2/oxygen-ui';
 import { ArrowRight, Settings, Users } from '@wso2/oxygen-ui-icons-react';
 import { getOrgUuidFromToken } from '../auth/tokenManager';
 import { initOrg, createDefaultProject } from '../api/org';
+import { gql } from '../api/graphql';
 import { projectHomeUrl } from '../paths';
 import Projects from './Projects';
 
@@ -77,11 +78,40 @@ export default function OrgHome(): JSX.Element {
   const { orgHandler } = useParams<{ orgHandler: string }>();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState<'persona' | 'region' | 'done'>(() => (localStorage.getItem(PERSONA_KEY) ? 'done' : 'persona'));
+  const [step, setStep] = useState<'checking' | 'persona' | 'region' | 'done'>(() => (localStorage.getItem(PERSONA_KEY) ? 'done' : 'checking'));
   const [persona, setPersona] = useState<string>('developer');
   const [region, setRegion] = useState<string>('US');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // For users without icp_persona set, check if they already have projects (existing user).
+  // If yes, skip onboarding and go directly to the projects list.
+  useEffect(() => {
+    if (step !== 'checking') return;
+    const numericId = window.API_CONFIG.asgardeoOrgNumericId ?? parseInt(localStorage.getItem('icp_org_numeric_id') ?? '0', 10);
+    if (!numericId) {
+      setStep('persona');
+      return;
+    }
+    gql<{ projects: Array<{ handler: string }> }>('query GetProjects($orgId: Int!) { projects(orgId: $orgId) { handler } }', { orgId: numericId })
+      .then((data) => {
+        if ((data.projects ?? []).some((p) => p.handler)) {
+          localStorage.setItem(PERSONA_KEY, 'developer');
+          setStep('done');
+        } else {
+          setStep('persona');
+        }
+      })
+      .catch(() => setStep('persona'));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (step === 'checking') {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   if (step === 'done') {
     return <Projects level="organizations" org={orgHandler!} />;
