@@ -378,21 +378,21 @@ export default function AppLayout(): JSX.Element {
 
   // Recover org numeric ID if it was not saved during OIDC callback (e.g. old sessions)
   const [, setOrgIdVersion] = useState(0);
-  const orgIdFetchedRef = useRef(false);
+  const orgIdFetchedRef = useRef(''); // tracks the org handle for which we last fetched
   useEffect(() => {
-    if (!isOidcUser || !userId || window.API_CONFIG.asgardeoOrgNumericId || orgIdFetchedRef.current) return;
-    orgIdFetchedRef.current = true;
+    if (!isOidcUser || !userId || !scope.org || orgIdFetchedRef.current === scope.org) return;
+    orgIdFetchedRef.current = scope.org;
     fetchOrgList()
       .then((orgs) => {
-        const first = orgs[0];
-        if (first && first.numericId > 0) {
-          window.API_CONFIG.asgardeoOrgNumericId = first.numericId;
-          localStorage.setItem('icp_org_numeric_id', String(first.numericId));
+        const match = orgs.find((o) => o.handle === scope.org);
+        if (match && match.numericId > 0) {
+          window.API_CONFIG.asgardeoOrgNumericId = match.numericId;
+          localStorage.setItem('icp_org_numeric_id', String(match.numericId));
           setOrgIdVersion((v) => v + 1); // trigger re-render so queries re-evaluate orgId()
         }
       })
       .catch(() => {});
-  }, [isOidcUser, userId]);
+  }, [isOidcUser, userId, scope.org]);
 
   // Find component UUID for permission checks
   const currentComponent = hasComponent(scope) ? components.find((c) => c.handler === scope.component) : undefined;

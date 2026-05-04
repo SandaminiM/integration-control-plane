@@ -84,16 +84,18 @@ export default function OrgHome(): JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Derived on every render so the effect below re-fires once AppLayout's async
+  // ID-recovery sets window.API_CONFIG.asgardeoOrgNumericId and triggers a re-render.
+  const orgNumericId = window.API_CONFIG.asgardeoOrgNumericId || parseInt(localStorage.getItem('icp_org_numeric_id') || '0', 10);
+
   // For users without icp_persona set, check if they already have projects (existing user).
   // If yes, skip onboarding and go directly to the projects list.
+  // The effect waits (returns early) until orgNumericId is non-zero so it does not
+  // prematurely fall through to the persona step before the ID has been recovered.
   useEffect(() => {
     if (step !== 'checking') return;
-    const numericId = window.API_CONFIG.asgardeoOrgNumericId ?? parseInt(localStorage.getItem('icp_org_numeric_id') ?? '0', 10);
-    if (!numericId) {
-      setStep('persona');
-      return;
-    }
-    gql<{ projects: Array<{ handler: string }> }>('query GetProjects($orgId: Int!) { projects(orgId: $orgId) { handler } }', { orgId: numericId })
+    if (!orgNumericId) return; // wait for AppLayout's ID-recovery to complete
+    gql<{ projects: Array<{ handler: string }> }>('query GetProjects($orgId: Int!) { projects(orgId: $orgId) { handler } }', { orgId: orgNumericId })
       .then((data) => {
         if ((data.projects ?? []).some((p) => p.handler)) {
           localStorage.setItem(PERSONA_KEY, 'developer');
@@ -103,7 +105,7 @@ export default function OrgHome(): JSX.Element {
         }
       })
       .catch(() => setStep('persona'));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [step, orgNumericId]);
 
   if (step === 'checking') {
     return (

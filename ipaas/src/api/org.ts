@@ -48,7 +48,10 @@ export async function validateOrgName(orgName: string): Promise<boolean> {
   const url = new URL(`${window.API_CONFIG.choreoOrgApiUrl}/validate/orgname`);
   url.searchParams.set('orgName', orgName);
   const res = await authenticatedFetch(url.toString());
-  if (!res.ok) return true; // endpoint may not exist — treat as available
+  if (!res.ok) {
+    if (res.status === 404) return true; // endpoint not implemented — treat as available
+    throw new Error(`Org name validation failed (${res.status})`);
+  }
   const data: { isValid?: boolean; valid?: boolean } = await res.json();
   return data.isValid ?? data.valid ?? true;
 }
