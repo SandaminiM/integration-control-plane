@@ -20,9 +20,7 @@ import { Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, D
 import { Trash2 } from '@wso2/oxygen-ui-icons-react';
 import SearchField from '../components/SearchField';
 import { useState, type JSX } from 'react';
-import { useQueries } from '@tanstack/react-query';
-import { gql } from '../api/graphql';
-import { useProjectByHandler, useEnvironments, useComponentByHandler, RUNTIMES_QUERY, PROJECT_RUNTIMES_QUERY, type GqlRuntime } from '../api/queries';
+import { useProjectByHandler, useEnvironments, useComponentByHandler, useRuntimesByEnvironments, type GqlRuntime } from '../api/queries';
 import { useDeleteRuntime } from '../api/mutations';
 import { hasComponent, type ProjectScope, type ComponentScope } from '../nav';
 
@@ -39,7 +37,8 @@ export default function Runtime(scope: ProjectScope | ComponentScope): JSX.Eleme
   const { data: project } = useProjectByHandler(scope.project);
   const projectId = project?.id ?? '';
   const { data: component } = useComponentByHandler(projectId, hasComponent(scope) ? scope.component : undefined);
-  const componentId = component?.id;
+  // null = project-scoped (intentionally no component); undefined = still loading
+  const componentId = hasComponent(scope) ? component?.id : null;
   const { data: environments = [] } = useEnvironments(scope.org, projectId);
 
   const [query, setQuery] = useState('');
@@ -48,12 +47,7 @@ export default function Runtime(scope: ProjectScope | ComponentScope): JSX.Eleme
   const [deleting, setDeleting] = useState<(GqlRuntime & { envId: string }) | null>(null);
   const deleteMutation = useDeleteRuntime();
 
-  const runtimeQueries = useQueries({
-    queries: environments.map((env) => ({
-      queryKey: componentId ? ['runtimes', env.id, projectId, componentId] : ['runtimes', env.id, projectId],
-      queryFn: () => gql<{ runtimes: GqlRuntime[] }>(componentId ? RUNTIMES_QUERY : PROJECT_RUNTIMES_QUERY, componentId ? { environmentId: env.id, projectId, componentId } : { environmentId: env.id, projectId }).then((d) => d.runtimes),
-    })),
-  });
+  const runtimeQueries = useRuntimesByEnvironments(environments, projectId, componentId);
 
   const isLoading = runtimeQueries.some((q) => q.isLoading);
   const allRuntimes = runtimeQueries.flatMap((q, i) => {
