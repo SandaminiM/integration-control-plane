@@ -58,6 +58,7 @@ export default function Signup(): JSX.Element {
       'template-name': 'DevantLiteUserEmailConfirmation',
       'tenant-url-prefix': origin,
       'post-register-callback': postRegisterCallback,
+      portalVal: origin,
     });
     window.location.href = `${window.API_CONFIG.asgardeoSignupUrl}?${params}`;
   };
