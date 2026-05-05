@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Query } from '@tanstack/react-query';
 import { gql } from './graphql';
 import { authenticatedFetch, getOrgUuidFromToken, refreshAccessToken } from '../auth/tokenManager';
@@ -94,6 +94,11 @@ export function useProjects() {
     queryFn: () => gql<{ projects: GqlProject[] }>(PROJECTS_QUERY, { orgId: id }).then((d) => d.projects),
     enabled: id > 0,
   });
+}
+
+/** Plain async fetch — use in imperative flows (e.g. OIDC callback, onboarding check). */
+export async function fetchProjectsByOrgId(orgNumericId: number): Promise<GqlProject[]> {
+  return gql<{ projects: GqlProject[] }>(PROJECTS_QUERY, { orgId: orgNumericId }).then((d) => d.projects ?? []);
 }
 
 interface OrgEntry {
@@ -418,7 +423,16 @@ export function useProjectRuntimes(envId: string, projectId: string) {
   });
 }
 
-export { RUNTIMES_QUERY, PROJECT_RUNTIMES_QUERY };
+/** Fans out runtime queries across all environments for a project or component. */
+export function useRuntimesByEnvironments(environments: GqlEnvironment[], projectId: string, componentId: string | undefined) {
+  return useQueries({
+    queries: environments.map((env) =>
+      componentId
+        ? { queryKey: ['runtimes', env.id, projectId, componentId], queryFn: () => gql<{ runtimes: GqlRuntime[] }>(RUNTIMES_QUERY, { environmentId: env.id, projectId, componentId }).then((d) => d.runtimes) }
+        : { queryKey: ['projectRuntimes', env.id, projectId], queryFn: () => gql<{ runtimes: GqlRuntime[] }>(PROJECT_RUNTIMES_QUERY, { environmentId: env.id, projectId }).then((d) => d.runtimes) },
+    ),
+  });
+}
 
 export interface GqlArtifactType {
   artifactType: string;
