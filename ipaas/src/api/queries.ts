@@ -423,13 +423,17 @@ export function useProjectRuntimes(envId: string, projectId: string) {
   });
 }
 
-/** Fans out runtime queries across all environments for a project or component. */
-export function useRuntimesByEnvironments(environments: GqlEnvironment[], projectId: string, componentId: string | undefined) {
+/**
+ * Fans out runtime queries across all environments for a project or component.
+ * componentId: string = component-scoped; null = project-scoped (resolved, no component);
+ * undefined = still loading (all queries disabled until resolved).
+ */
+export function useRuntimesByEnvironments(environments: GqlEnvironment[], projectId: string, componentId: string | null | undefined) {
   return useQueries({
     queries: environments.map((env) =>
       componentId
-        ? { queryKey: ['runtimes', env.id, projectId, componentId], queryFn: () => gql<{ runtimes: GqlRuntime[] }>(RUNTIMES_QUERY, { environmentId: env.id, projectId, componentId }).then((d) => d.runtimes) }
-        : { queryKey: ['projectRuntimes', env.id, projectId], queryFn: () => gql<{ runtimes: GqlRuntime[] }>(PROJECT_RUNTIMES_QUERY, { environmentId: env.id, projectId }).then((d) => d.runtimes) },
+        ? { queryKey: ['runtimes', env.id, projectId, componentId], queryFn: () => gql<{ runtimes: GqlRuntime[] }>(RUNTIMES_QUERY, { environmentId: env.id, projectId, componentId }).then((d) => d.runtimes), enabled: Boolean(componentId) }
+        : { queryKey: ['projectRuntimes', env.id, projectId], queryFn: () => gql<{ runtimes: GqlRuntime[] }>(PROJECT_RUNTIMES_QUERY, { environmentId: env.id, projectId }).then((d) => d.runtimes), enabled: componentId === null },
     ),
   });
 }

@@ -37,7 +37,8 @@ export default function Runtime(scope: ProjectScope | ComponentScope): JSX.Eleme
   const { data: project } = useProjectByHandler(scope.project);
   const projectId = project?.id ?? '';
   const { data: component } = useComponentByHandler(projectId, hasComponent(scope) ? scope.component : undefined);
-  const componentId = component?.id;
+  // null = project-scoped (intentionally no component); undefined = still loading
+  const componentId = hasComponent(scope) ? component?.id : null;
   const { data: environments = [] } = useEnvironments(scope.org, projectId);
 
   const [query, setQuery] = useState('');
