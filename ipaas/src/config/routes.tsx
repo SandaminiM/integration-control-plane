@@ -75,6 +75,7 @@ import TestConsole from '../pages/TestConsole';
 import Deploy from '../pages/Deploy';
 import ProjectsRedirect from '../pages/ProjectsRedirect';
 import OrgHome from '../pages/OrgHome';
+import Lifecycle from '../pages/Lifecycle';
 
 export interface AppRoute extends Omit<RouteProps, 'children'> {
   children?: AppRoute[];
@@ -212,7 +213,7 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/lifecycle',
-                element: <ComingSoon title="Coming Soon" description="Lifecycle management is currently under development. You'll be able to manage your API lifecycle directly from here." />,
+                element: createElement(withScope(Lifecycle, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/documents',

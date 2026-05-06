@@ -22,6 +22,7 @@ import { authenticatedFetch, refreshAccessToken } from '../auth/tokenManager';
 import type { GqlArtifact, GqlComponent, GqlEnvironment, GqlProject, GqlEnvEndpoint, SchemaConfigItem, CertMapping } from './queries';
 import { toBackendArtifactType } from './artifactToggleMutations';
 import type { DeployComponentInput, UpdateBuildpackConfigsInput } from '../types/build';
+import { changeLifecycleState } from './apim';
 
 export interface CreateProjectInput {
   name: string;
@@ -1063,5 +1064,16 @@ export interface DeployPrebuiltImageInput {
 export function useDeployPrebuiltImage() {
   return useMutation({
     mutationFn: (input: DeployPrebuiltImageInput) => gql<{ deployPrebuiltIntegration: string }>(DEPLOY_PREBUILT_INTEGRATION, { input }).then((d) => d.deployPrebuiltIntegration),
+  });
+}
+
+export function useChangeLifecycleState(apimId: string | null | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ action }: { action: string }) => changeLifecycleState(apimId!, action),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['lifecycleState', apimId] });
+      qc.invalidateQueries({ queryKey: ['lifecycleHistory', apimId] });
+    },
   });
 }

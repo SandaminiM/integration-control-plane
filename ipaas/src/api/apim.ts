@@ -175,6 +175,75 @@ export async function deploySettingsV2(componentId: string, versionId: string, p
   }
 }
 
+// ── Lifecycle ─────────────────────────────────────────────────────────────────
+
+export interface LifecycleStateTransition {
+  event: string;
+  targetState: string;
+}
+
+export interface LifecycleState {
+  state: string;
+  checkItems: { name: string; value: boolean }[];
+  availableTransitions: LifecycleStateTransition[];
+}
+
+export interface LifecycleHistoryItem {
+  previousState: string | null;
+  postState: string;
+  user: string;
+  updatedTime: string;
+}
+
+export interface LifecycleHistory {
+  count: number;
+  list: LifecycleHistoryItem[];
+}
+
+export async function fetchLifecycleState(apimId: string): Promise<LifecycleState | null> {
+  const base = getApimBaseUrl();
+  if (!base) return null;
+  const orgUuid = getOrgUuidFromToken() ?? '';
+  try {
+    const res = await authenticatedFetch(
+      `${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/lifecycle-state?organizationId=${encodeURIComponent(orgUuid)}`,
+    );
+    if (!res.ok) return null;
+    return res.json() as Promise<LifecycleState>;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchLifecycleHistory(apimId: string): Promise<LifecycleHistory | null> {
+  const base = getApimBaseUrl();
+  if (!base) return null;
+  const orgUuid = getOrgUuidFromToken() ?? '';
+  try {
+    const res = await authenticatedFetch(
+      `${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/lifecycle-history?organizationId=${encodeURIComponent(orgUuid)}`,
+    );
+    if (!res.ok) return null;
+    return res.json() as Promise<LifecycleHistory>;
+  } catch {
+    return null;
+  }
+}
+
+export async function changeLifecycleState(apimId: string, action: string): Promise<LifecycleState> {
+  const base = getApimBaseUrl();
+  if (!base) throw new Error('APIM base URL could not be derived from configuration');
+  const orgUuid = getOrgUuidFromToken() ?? '';
+  const params = new URLSearchParams({ organizationId: orgUuid, apiId: apimId, action });
+  const res = await authenticatedFetch(`${base}/api/am/publisher/v2/apis/change-lifecycle?${params}`, { method: 'POST' });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Lifecycle change failed: ${res.status} ${res.statusText}${text ? ` — ${text}` : ''}`);
+  }
+  const data = (await res.json()) as { lifecycleState: LifecycleState };
+  return data.lifecycleState;
+}
+
 // ── APIM Swagger ───────────────────────────────────────────────────────────────
 
 export async function fetchApimSwagger(apimRevisionId: string): Promise<unknown> {
