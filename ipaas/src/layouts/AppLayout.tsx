@@ -882,8 +882,14 @@ export default function AppLayout(): JSX.Element {
                             setComponentMenuAnchor(null);
                             setComponentSearch('');
                             const newScope = narrow({ level: 'projects', org: scope.org, project: scope.project }, c.handler);
-                            const resolvedTarget = canAccessResource(newScope, resource ?? 'overview', projectId, c.id);
-                            navigate(resolvedTarget === 'overview' ? componentOverviewUrl(scope.org, scope.project, c.handler) : resourceUrl(newScope, resolvedTarget));
+                            if (activeNavId === 'lifecycle') {
+                              navigate(GENERIC_SERVICE_TYPES.has(c.displayType)
+                                ? `/organizations/${scope.org}/projects/${scope.project}/components/${c.handler}/manage/lifecycle`
+                                : componentOverviewUrl(scope.org, scope.project, c.handler));
+                            } else {
+                              const resolvedTarget = canAccessResource(newScope, resource ?? 'overview', projectId, c.id);
+                              navigate(resolvedTarget === 'overview' ? componentOverviewUrl(scope.org, scope.project, c.handler) : resourceUrl(newScope, resolvedTarget));
+                            }
                           }}>
                           {c.displayName}
                         </MenuItem>

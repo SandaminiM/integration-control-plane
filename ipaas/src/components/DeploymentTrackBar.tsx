@@ -29,12 +29,21 @@ interface DeploymentTrackBarProps {
   orgHandler: string;
   projectHandler: string;
   componentHandler: string;
+  /** When true, renders the selected track as just the API version string (e.g. "v1.0") */
+  versionView?: boolean;
   extra?: ReactNode;
 }
 
 const TOOLTIP_TEXT = 'Deployment tracks control the release path of your component versions through different environments.';
 
-function TrackLabel({ track }: { track: GqlDeploymentTrack }) {
+function TrackLabel({ track, versionView }: { track: GqlDeploymentTrack; versionView?: boolean }) {
+  if (versionView) {
+    return (
+      <Typography variant="body2" sx={{ fontSize: '0.8125rem' }}>
+        {track.apiVersion ?? track.id}
+      </Typography>
+    );
+  }
   return (
     <Stack direction="row" alignItems="center" gap={0.75}>
       {track.branch && <GitBranch size={13} />}
@@ -46,7 +55,7 @@ function TrackLabel({ track }: { track: GqlDeploymentTrack }) {
   );
 }
 
-export default function DeploymentTrackBar({ tracks, selectedId, onChange, orgHandler, projectHandler, componentHandler, extra }: DeploymentTrackBarProps) {
+export default function DeploymentTrackBar({ tracks, selectedId, onChange, orgHandler, projectHandler, componentHandler, versionView, extra }: DeploymentTrackBarProps) {
   const navigate = useNavigate();
   const basePath = `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/settings/deployment-tracks`;
 
@@ -83,7 +92,7 @@ export default function DeploymentTrackBar({ tracks, selectedId, onChange, orgHa
         renderValue={(value) => {
           const track = tracks.find((t) => t.id === value);
           if (!track) return null;
-          return <TrackLabel track={track} />;
+          return <TrackLabel track={track} versionView={versionView} />;
         }}
         inputProps={{ 'aria-label': 'Deployment Track' }}
         sx={{
@@ -117,7 +126,7 @@ export default function DeploymentTrackBar({ tracks, selectedId, onChange, orgHa
         <Divider sx={{ my: 0.5 }} />
         {tracks.map((track) => (
           <MenuItem key={track.id} value={track.id}>
-            <TrackLabel track={track} />
+            <TrackLabel track={track} versionView={versionView} />
           </MenuItem>
         ))}
       </Select>

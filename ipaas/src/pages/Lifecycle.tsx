@@ -38,7 +38,8 @@ import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useComponentByHandler, useComponentEndpoints, useLifecycleState, useLifecycleHistory } from '../api/queries';
 import { useChangeLifecycleState } from '../api/mutations';
 import { useProjectId } from '../hooks/useProjectId';
-import type { LifecycleStateTransition } from '../api/apim';
+import { getDevPortalBaseUrl, type LifecycleStateTransition } from '../api/apim';
+import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import type { ComponentScope } from '../nav';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -419,7 +420,14 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
     setSelectedApimId(endpoints.find((e) => e.apimId)?.apimId ?? null);
   }, [endpoints]);
 
-  const endpointsWithApim = endpoints.filter((e) => e.apimId);
+  const endpointsWithApim = useMemo(() => {
+    const seen = new Set<string>();
+    return endpoints.filter((e) => {
+      if (!e.apimId || seen.has(e.apimId)) return false;
+      seen.add(e.apimId);
+      return true;
+    });
+  }, [endpoints]);
 
   const { data: lifecycleState, isLoading: loadingState } = useLifecycleState(selectedApimId);
   const { data: lifecycleHistory } = useLifecycleHistory(selectedApimId);
@@ -430,6 +438,9 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
   const [errorMsg, setErrorMsg] = useState('');
 
   const isLoading = loadingComponent || loadingEndpoints || loadingState;
+
+  const devPortalBaseUrl = getDevPortalBaseUrl();
+  const isDevPortalEnabled = lifecycleState?.state === 'Published' || lifecycleState?.state === 'Prototyped';
 
   const visibleTransitions = useMemo(
     () => (lifecycleState?.availableTransitions ?? []).filter((t) => !HIDDEN_ACTIONS.has(t.event)),
@@ -468,104 +479,124 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
   }
 
   return (
-    <PageContent>
-      <Box sx={{ p: 3 }}>
-        {/* Deployment track selector */}
-        {tracks.length > 1 && (
-          <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 130 }}>Deployment track</Typography>
-            <Select size="small" value={selectedTrackId} onChange={(e) => setSelectedTrackId(e.target.value as string)} sx={{ minWidth: 200 }}>
-              {tracks.map((t) => (
-                <MenuItem key={t.id} value={t.id}>{t.apiVersion ?? t.id}{t.latest ? ' (latest)' : ''}</MenuItem>
-              ))}
-            </Select>
-          </Stack>
-        )}
-
-        {/* Endpoint selector */}
-        {endpointsWithApim.length > 1 && (
-          <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 130 }}>Endpoint</Typography>
-            <Select size="small" value={selectedApimId ?? ''} onChange={(e) => setSelectedApimId(e.target.value as string)} sx={{ minWidth: 200 }}>
-              {endpointsWithApim.map((ep) => (
-                <MenuItem key={ep.apimId!} value={ep.apimId!}>{ep.displayName}</MenuItem>
-              ))}
-            </Select>
-          </Stack>
-        )}
-
-        {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>
-        ) : !lifecycleState ? (
-          <Alert severity="warning">Unable to load lifecycle state. Please try again later.</Alert>
-        ) : (
+    <Box sx={{ position: 'relative', overflow: 'hidden', flex: 1 }}>
+      <DeploymentTrackBar
+        tracks={tracks}
+        selectedId={selectedTrackId}
+        onChange={setSelectedTrackId}
+        orgHandler={scope.org}
+        projectHandler={scope.project}
+        componentHandler={scope.component}
+        versionView
+        extra={
           <>
-            {/* Note */}
-            <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                <strong>Note:</strong> Lifecycle changes are applied on the API. They are not bound to an environment or to a build.
-              </Typography>
-            </Box>
-
-            {/* Action buttons */}
-            <Stack direction="row" alignItems="center" spacing={2} flexWrap="wrap" sx={{ mb: 3 }}>
-              {isChanging && <CircularProgress size={18} />}
-              {visibleTransitions.map((t) => (
-                <Button
-                  key={t.event}
-                  variant="outlined"
-                  size="small"
-                  disabled={isChanging}
-                  onClick={() => handleActionClick(t.event)}
-                >
-                  {ACTION_LABEL[t.event] ?? t.event}
-                </Button>
-              ))}
-            </Stack>
-
-            {/* Error */}
-            {errorMsg && (
-              <Alert severity="error" onClose={() => setErrorMsg('')} sx={{ mb: 2 }}>{errorMsg}</Alert>
+            {/* Endpoint selector */}
+            {endpointsWithApim.length > 0 && (
+              <Select
+                size="small"
+                value={selectedApimId ?? ''}
+                onChange={(e) => setSelectedApimId(e.target.value as string)}
+                disabled={endpointsWithApim.length <= 1}
+                sx={{ minWidth: 140, fontSize: '0.8125rem', '& .MuiOutlinedInput-notchedOutline': { borderRadius: 5 }, '& .MuiSelect-select': { py: 0.5, px: 1.5 } }}
+              >
+                {endpointsWithApim.map((ep) => (
+                  <MenuItem key={ep.apimId!} value={ep.apimId!}>{ep.displayName}</MenuItem>
+                ))}
+              </Select>
             )}
 
-            {/* State diagram */}
-            <Box sx={{ overflowX: 'auto' }}>
-              <LCStateDiagram currentState={lifecycleState.state} availableTransitions={lifecycleState.availableTransitions} />
-            </Box>
-
-            {/* History */}
-            {lifecycleHistory && lifecycleHistory.list.length > 0 && (
-              <Box sx={{ mt: 4 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Lifecycle History</Typography>
-                <Stack spacing={1}>
-                  {[...lifecycleHistory.list].reverse().map((item, idx) => (
-                    <Stack key={idx} direction="row" spacing={2} alignItems="center">
-                      <Typography variant="body2" color="text.secondary" sx={{ minWidth: 200 }}>
-                        {new Date(item.updatedTime).toLocaleString()}
-                      </Typography>
-                      <Typography variant="body2">
-                        {item.previousState ? `${STATE_LABEL[item.previousState] ?? item.previousState} → ` : 'API created → '}
-                        <strong>{STATE_LABEL[item.postState] ?? item.postState}</strong>
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">by {item.user}</Typography>
-                    </Stack>
-                  ))}
-                </Stack>
+            {/* Go to Devportal button — right aligned */}
+            {devPortalBaseUrl && (
+              <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                  variant="text"
+                  size="small"
+                  disabled={!isDevPortalEnabled}
+                  onClick={() => window.open(`${devPortalBaseUrl}/${scope.org}`, '_blank')}
+                >
+                  ↗ Go to Devportal
+                </Button>
               </Box>
             )}
           </>
-        )}
-      </Box>
+        }
+      />
 
-      {/* Confirmation dialog */}
-      {pendingAction && (
-        <ConfirmDialog
-          action={pendingAction}
-          onConfirm={() => void executeAction(pendingAction)}
-          onCancel={() => setPendingAction(null)}
-          isPending={isChanging}
-        />
-      )}
-    </PageContent>
+      <PageContent>
+        <Box sx={{ p: 3 }}>
+          {isLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>
+          ) : !lifecycleState ? (
+            <Alert severity="warning">Unable to load lifecycle state. Please try again later.</Alert>
+          ) : (
+            <>
+              {/* Note */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Note:</strong>{' '}Lifecycle changes are applied on the API. They're not bound to an environment or to a build.
+                </Typography>
+              </Box>
+
+              {/* Action buttons */}
+              <Stack direction="row" alignItems="center" spacing={2} flexWrap="wrap" sx={{ mb: 3 }}>
+                {isChanging && <CircularProgress size={18} />}
+                {visibleTransitions.map((t) => (
+                  <Button
+                    key={t.event}
+                    variant="outlined"
+                    size="small"
+                    disabled={isChanging}
+                    onClick={() => handleActionClick(t.event)}
+                  >
+                    {ACTION_LABEL[t.event] ?? t.event}
+                  </Button>
+                ))}
+              </Stack>
+
+              {/* Error */}
+              {errorMsg && (
+                <Alert severity="error" onClose={() => setErrorMsg('')} sx={{ mb: 2 }}>{errorMsg}</Alert>
+              )}
+
+              {/* State diagram */}
+              <Box sx={{ overflowX: 'auto' }}>
+                <LCStateDiagram currentState={lifecycleState.state} availableTransitions={lifecycleState.availableTransitions} />
+              </Box>
+
+              {/* History */}
+              {lifecycleHistory && lifecycleHistory.list.length > 0 && (
+                <Box sx={{ mt: 4 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Lifecycle History</Typography>
+                  <Stack spacing={1}>
+                    {[...lifecycleHistory.list].reverse().map((item, idx) => (
+                      <Stack key={idx} direction="row" spacing={2} alignItems="center">
+                        <Typography variant="body2" color="text.secondary" sx={{ minWidth: 200 }}>
+                          {new Date(item.updatedTime).toLocaleString()}
+                        </Typography>
+                        <Typography variant="body2">
+                          {item.previousState ? `${STATE_LABEL[item.previousState] ?? item.previousState} → ` : 'API created → '}
+                          <strong>{STATE_LABEL[item.postState] ?? item.postState}</strong>
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">by {item.user}</Typography>
+                      </Stack>
+                    ))}
+                  </Stack>
+                </Box>
+              )}
+            </>
+          )}
+        </Box>
+
+        {/* Confirmation dialog */}
+        {pendingAction && (
+          <ConfirmDialog
+            action={pendingAction}
+            onConfirm={() => void executeAction(pendingAction)}
+            onCancel={() => setPendingAction(null)}
+            isPending={isChanging}
+          />
+        )}
+      </PageContent>
+    </Box>
   );
 }
