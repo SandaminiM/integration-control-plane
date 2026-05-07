@@ -28,12 +28,16 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Drawer,
+  IconButton,
   MenuItem,
   PageContent,
   Select,
   Stack,
+  Tooltip,
   Typography,
 } from '@wso2/oxygen-ui';
+import { Clock, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useComponentByHandler, useComponentEndpoints, useLifecycleState, useLifecycleHistory } from '../api/queries';
 import { useChangeLifecycleState } from '../api/mutations';
@@ -85,6 +89,23 @@ const CONFIRM_TEXT: Record<string, string> = {
 };
 
 const isDestructiveAction = (action: string) => action === 'Deprecate' || action === 'Retire';
+
+// ── Relative time ──────────────────────────────────────────────────────────────
+
+function getAge(from: number, to: number): string {
+  const diff = to - from;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  const months = Math.floor(days / 30.44);
+  const years = Math.floor(days / 365.25);
+  if (years >= 1) return `${years} year${years > 1 ? 's' : ''}`;
+  if (months >= 1) return `${months} month${months > 1 ? 's' : ''}`;
+  if (days >= 1) return `${days} day${days > 1 ? 's' : ''}`;
+  if (hours >= 1) return `${hours} hour${hours > 1 ? 's' : ''}`;
+  if (minutes >= 1) return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+  return 'just now';
+}
 
 // ── Confirmation dialog ────────────────────────────────────────────────────────
 
@@ -436,6 +457,7 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
 
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const isLoading = loadingComponent || loadingEndpoints || loadingState;
 
@@ -558,31 +580,34 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
                 <Alert severity="error" onClose={() => setErrorMsg('')} sx={{ mb: 2 }}>{errorMsg}</Alert>
               )}
 
-              {/* State diagram */}
-              <Box sx={{ overflowX: 'auto' }}>
-                <LCStateDiagram currentState={lifecycleState.state} availableTransitions={lifecycleState.availableTransitions} />
-              </Box>
-
-              {/* History */}
-              {lifecycleHistory && lifecycleHistory.list.length > 0 && (
-                <Box sx={{ mt: 4 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Lifecycle History</Typography>
-                  <Stack spacing={1}>
-                    {[...lifecycleHistory.list].reverse().map((item, idx) => (
-                      <Stack key={idx} direction="row" spacing={2} alignItems="center">
-                        <Typography variant="body2" color="text.secondary" sx={{ minWidth: 200 }}>
-                          {new Date(item.updatedTime).toLocaleString()}
-                        </Typography>
-                        <Typography variant="body2">
-                          {item.previousState ? `${STATE_LABEL[item.previousState] ?? item.previousState} → ` : 'API created → '}
-                          <strong>{STATE_LABEL[item.postState] ?? item.postState}</strong>
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">by {item.user}</Typography>
-                      </Stack>
-                    ))}
-                  </Stack>
+              {/* State diagram + floating history button */}
+              <Box sx={{ position: 'relative' }}>
+                <Box sx={{ overflowX: 'auto' }}>
+                  <LCStateDiagram currentState={lifecycleState.state} availableTransitions={lifecycleState.availableTransitions} />
                 </Box>
-              )}
+
+                {/* Floating history button */}
+                {!historyOpen && lifecycleHistory && lifecycleHistory.list.length > 0 && (
+                  <Tooltip title="Lifecycle History" placement="left">
+                    <IconButton
+                      onClick={() => setHistoryOpen(true)}
+                      size="small"
+                      sx={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        bgcolor: 'background.paper',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        boxShadow: 1,
+                        '&:hover': { bgcolor: 'action.hover' },
+                      }}
+                    >
+                      <Clock size={16} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
             </>
           )}
         </Box>
@@ -596,6 +621,54 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
             isPending={isChanging}
           />
         )}
+
+        {/* History drawer */}
+        <Drawer
+          anchor="right"
+          open={historyOpen}
+          onClose={() => setHistoryOpen(false)}
+          variant="temporary"
+          sx={{ '& .MuiDrawer-paper': { width: 560, position: 'fixed', top: 64, height: 'calc(100% - 64px)', borderLeft: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: 'column' } }}
+        >
+          {/* Drawer header */}
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
+            <Typography variant="h5">History</Typography>
+            <IconButton size="small" onClick={() => setHistoryOpen(false)}><X size={16} /></IconButton>
+          </Stack>
+
+          {/* Timeline */}
+          <Box sx={{ overflow: 'auto', flex: 1, px: 2, py: 2 }}>
+            {lifecycleHistory && [...lifecycleHistory.list].reverse().map((item, idx, arr) => {
+              const isLast = idx === arr.length - 1;
+              const action = isLast
+                ? 'API was CREATED.'
+                : `Lifecycle state has changed from ${item.previousState} to ${item.postState}`;
+              const age = item.updatedTime ? getAge(new Date(item.updatedTime).getTime(), Date.now()) : '';
+              return (
+                <Box key={idx} sx={{ display: 'flex', minHeight: isLast ? 'auto' : 80 }}>
+                  {/* Left: relative time, right-aligned in narrow column */}
+                  <Box sx={{ width: 72, textAlign: 'right', pr: 1.5, pt: 0.25, flexShrink: 0 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', wordBreak: 'break-word', lineHeight: 1.4 }}>
+                      {age}
+                    </Typography>
+                  </Box>
+                  {/* Middle: dot + vertical connector */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, mr: 1.5 }}>
+                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'grey.400', flexShrink: 0, mt: 0.25 }} />
+                    {!isLast && <Box sx={{ width: 2, flexGrow: 1, bgcolor: 'grey.300', mt: 0.5 }} />}
+                  </Box>
+                  {/* Right: action + user */}
+                  <Box sx={{ pb: 3, minWidth: 0 }}>
+                    <Typography variant="body2">{action}</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', wordBreak: 'break-all', mt: 0.25 }}>
+                      {item.user}
+                    </Typography>
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        </Drawer>
       </PageContent>
     </Box>
   );
