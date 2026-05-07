@@ -1,0 +1,47 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { IconButton, Stack } from '@wso2/oxygen-ui';
+import { ThumbsDown, ThumbsUp } from '@wso2/oxygen-ui-icons-react';
+import type { JSX } from 'react';
+
+export type FeedbackValue = 'none' | 'like' | 'dislike';
+
+export interface FeedbackButtonsProps {
+  feedback: FeedbackValue;
+  onFeedback: (v: 'like' | 'dislike') => void;
+  visible: boolean;
+}
+
+export default function FeedbackButtons({ feedback, onFeedback, visible }: FeedbackButtonsProps): JSX.Element | null {
+  if (!visible) return null;
+  return (
+    <Stack direction="row" gap={0.5} sx={{ position: 'absolute', bottom: 10, left: 15 }}>
+      {feedback !== 'dislike' && (
+        <IconButton size="small" onClick={() => feedback === 'none' && onFeedback('like')} aria-label="Like">
+          <ThumbsUp size={14} color="var(--oxygen-palette-primary-main)" />
+        </IconButton>
+      )}
+      {feedback !== 'like' && (
+        <IconButton size="small" onClick={() => feedback === 'none' && onFeedback('dislike')} aria-label="Dislike">
+          <ThumbsDown size={14} color={feedback === 'dislike' ? 'var(--oxygen-palette-error-main)' : 'var(--oxygen-palette-primary-main)'} />
+        </IconButton>
+      )}
+    </Stack>
+  );
+}

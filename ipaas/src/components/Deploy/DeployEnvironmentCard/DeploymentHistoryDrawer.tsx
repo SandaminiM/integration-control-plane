@@ -22,7 +22,7 @@ import type { JSX } from 'react';
 import { useReleaseMgtDeployments } from '../../../api/queries';
 import { formatDistanceToNow } from '../../../utils/time';
 
-const drawerSx = { '& .MuiDrawer-paper': { width: 480, p: 0 } };
+const drawerSx = { '& .MuiDrawer-paper': { width: 480, p: 0, top: { xs: '56px', sm: '64px' }, height: 'auto', bottom: 0 } };
 
 // "0001-01-01T00:00:00Z" is the zero-value date the backend returns when not yet deployed
 const isZeroDate = (d: string) => !d || d.startsWith('0001-01-01');

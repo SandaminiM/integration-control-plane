@@ -106,11 +106,12 @@ export default function Component(scope: ComponentScope): JSX.Element {
           }
         `}
       </style>
-      <Box sx={{ position: 'relative', overflow: 'hidden', flex: 1 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
         {/* Deployment track bar */}
         {tracks.length > 0 && <DeploymentTrackBar tracks={tracks} selectedId={versionId} onChange={setSelectedTrackId} orgHandler={scope.org} projectHandler={project?.handler ?? ''} componentHandler={component.handler} />}
 
-        <PageContent>
+        {/* <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}> */}
+        <PageContent fullWidth sx={{ overflowX: 'auto' }}>
           {/* Component header */}
           <ComponentHeader component={component} project={project} repository={repository} latestCommit={latestCommit} orgHandler={scope.org} projectId={projectId} projectHandler={project?.handler ?? scope.project} apimId={apimId} />
 
@@ -161,8 +162,9 @@ export default function Component(scope: ComponentScope): JSX.Element {
             />
           )}
         </PageContent>
-        <ArtifactDetail selected={selectedArtifact} onClose={() => setSelectedArtifact(null)} />
       </Box>
+      <ArtifactDetail selected={selectedArtifact} onClose={() => setSelectedArtifact(null)} />
+      {/* </Box> */}
     </>
   );
 }

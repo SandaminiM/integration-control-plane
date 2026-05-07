@@ -71,7 +71,7 @@ export default function BuildRightDrawer({ open, onClose, drawerType, selectedBu
   };
 
   return (
-    <Drawer anchor="right" open={open} onClose={onClose} variant="temporary" sx={{ '& .MuiDrawer-paper': { width: { xs: '100%', sm: logsOpen ? 720 : 480 } } }}>
+    <Drawer anchor="right" open={open} onClose={onClose} variant="temporary" sx={{ '& .MuiDrawer-paper': { width: { xs: '100%', sm: logsOpen ? 720 : 480 }, top: { xs: '56px', sm: '64px' }, height: 'auto', bottom: 0 } }}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
           {title}

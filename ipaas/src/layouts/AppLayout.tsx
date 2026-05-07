@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import { useContext } from 'react';
 import {
   AppShell,
   Badge,
@@ -115,6 +116,9 @@ import { useScope, useResource, resourceUrl, broaden, narrow, newProjectUrl, new
 import { componentOverviewUrl, cookiePolicyUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, projectHomeUrl } from '../paths';
 import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
+import { CopilotContext, CopilotProvider } from '../contexts/CopilotContext';
+import CopilotDrawer from '../components/AiCopilot/CopilotDrawer';
+import ChoreoAIIcon from '../assets/icons/ai/ChoreoAIIcon';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions';
 import { UUID_RE } from '../utils/string';
 
@@ -183,7 +187,8 @@ const COMPONENT_PARENT_MAP: Record<string, string> = {
   'component-settings': 'admin',
 };
 
-export default function AppLayout(): JSX.Element {
+function AppLayoutInner(): JSX.Element {
+  const { setShowCopilot } = useContext(CopilotContext);
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const scope = useScope();
@@ -976,6 +981,21 @@ export default function AppLayout(): JSX.Element {
                 </Badge>
               </IconButton>
             </Tooltip>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<ChoreoAIIcon width={16} height={16} />}
+              onClick={() => setShowCopilot(true)}
+              sx={{
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                pl: 1.5,
+                py: 0.5,
+                mx: 1,
+                '&:hover': { bgcolor: 'action.hover' },
+              }}>
+              Copilot
+            </Button>
             <Divider orientation="vertical" flexItem sx={{ mx: 1, display: { xs: 'none', sm: 'block' } }} />
             <UserMenu>
               <UserMenu.Trigger name={displayName || username || 'User'} avatar={pictureUrl} />
@@ -1562,7 +1582,23 @@ export default function AppLayout(): JSX.Element {
       </AppShell.Sidebar>
 
       <AppShell.Main>
-        <Outlet />
+        {/* position:absolute;inset:0 anchors this box to the Box35 wrapper inside
+            <main>, which gets position:relative via the CSS rule in index.css.
+            This hard-caps the flex wrapper to the exact pixel bounds of the
+            available content area, preventing any page content from overflowing
+            the viewport regardless of how wide the page content is. */}
+        <Box sx={{ position: 'absolute', inset: 0, display: 'flex', overflow: 'hidden' }}>
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              overflowY: 'auto',
+              overflowX: 'auto',
+            }}>
+            <Outlet />
+          </Box>
+          <CopilotDrawer />
+        </Box>
       </AppShell.Main>
 
       <AppShell.Footer>
@@ -1660,5 +1696,13 @@ export default function AppLayout(): JSX.Element {
         </Dialog>
       </AppShell.NotificationPanel>
     </AppShell>
+  );
+}
+
+export default function AppLayout(): JSX.Element {
+  return (
+    <CopilotProvider>
+      <AppLayoutInner />
+    </CopilotProvider>
   );
 }

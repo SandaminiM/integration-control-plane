@@ -166,7 +166,7 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
   }
 
   return (
-    <PageContent sx={{ pt: 5 }}>
+    <PageContent sx={{ pt: 5, 'container-type': 'inline-size' }}>
       <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(resourceUrl(scope, 'overview'))} sx={{ mb: 3 }}>
         Back to Project Home
       </Button>
@@ -183,7 +183,7 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
           gap: 3,
           alignItems: 'stretch',
           gridTemplateColumns: '1fr',
-          '@media (min-width: 1280px)': {
+          '@container (min-width: 900px)': {
             gridTemplateColumns: '6fr 4fr',
           },
         }}>

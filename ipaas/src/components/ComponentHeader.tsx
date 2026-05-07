@@ -227,7 +227,7 @@ export default function ComponentHeader({ component, project, repository, latest
 
   return (
     <>
-      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={{ mb: 3 }} gap={2}>
+      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" flexWrap={'nowrap'} sx={{ mb: 3 }} gap={2}>
         {/* LEFT COLUMN */}
         <Stack gap={1} sx={{ flex: 1, minWidth: 0 }}>
           <Stack direction="row" alignItems="center" gap={2}>
@@ -488,8 +488,8 @@ export default function ComponentHeader({ component, project, repository, latest
           </Stack>
         </Stack>
 
-        {/* RIGHT COLUMN */}
-        <Stack gap={1.5} alignItems="flex-end" sx={{ flexShrink: 0 }}>
+        {/* RIGHT COLUMN — wraps to a new row when copilot is open */}
+        <Stack direction="column" gap={1.5} alignItems="flex-end" flexWrap="wrap" sx={{ mt: 1, flexShrink: 0, width: 'auto' }}>
           {/* Open in Cloud / VS Code */}
           <Box sx={{ position: 'relative' }}>
             {devantOrigin ? (
@@ -538,7 +538,7 @@ export default function ComponentHeader({ component, project, repository, latest
 
           {/* API management action buttons — Configure Security, Lifecycle Status, Dev Portal, Generate MCP */}
           {showApiActions && (
-            <Stack gap={1} alignItems="flex-end">
+            <Stack gap={1} alignItems={'flex-end'}>
               {/* Configure Security row */}
               <Stack direction="row" alignItems="center" gap={1}>
                 <Button
