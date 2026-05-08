@@ -657,12 +657,9 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
               p: 0,
               minWidth: 0,
               mt: 0.5,
-              color: '#3131c4',
-              textDecoration: 'underline',
               '&:hover': {
                 backgroundColor: 'transparent',
                 textDecoration: 'underline',
-                color: 'primary.main',
               },
             }}
             onClick={() => setShowWorkspaceConfig(true)}>
