@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, Typography } from '@wso2/oxygen-ui';
+import { ButtonBase, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
 import type { QueryData } from '../../types/copilot';
 
@@ -30,24 +30,25 @@ export default function CopilotSampleQueryCard({ queryData, onExecuteClick, disa
   const { query, description } = queryData;
 
   return (
-    <Box
-      onClick={() => !disabled && onExecuteClick(query)}
+    <ButtonBase
+      onClick={() => onExecuteClick(query)}
+      disabled={disabled}
       sx={{
         border: '1px solid',
         borderColor: 'primary.main',
         borderRadius: 1,
         p: 1.5,
         alignItems: 'flex-start',
-        cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.5 : 1,
         width: 'fit-content',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
+        textAlign: 'left',
         transition: 'border-color 0.15s, background-color 0.15s',
-        '&:hover': {
-          borderColor: disabled ? 'divider' : 'primary.main',
-          backgroundColor: disabled ? 'transparent' : 'action.hover',
+        '&:hover:not(.Mui-disabled)': {
+          borderColor: 'primary.main',
+          backgroundColor: 'action.hover',
         },
       }}>
       <Typography variant="body2" fontWeight={500} gutterBottom>
@@ -58,6 +59,6 @@ export default function CopilotSampleQueryCard({ queryData, onExecuteClick, disa
           {description}
         </Typography>
       )}
-    </Box>
+    </ButtonBase>
   );
 }

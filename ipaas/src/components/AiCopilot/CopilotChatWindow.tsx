@@ -66,37 +66,35 @@ export default function CopilotChatWindow(): JSX.Element {
 
   // Sync streaming answer chunks into messages
   useEffect(() => {
-    if (!abortControllerRef.current.signal.aborted && messages.length > 0 && answer.length > 0) {
-      const last = messages[messages.length - 1];
-      if (!last.fromUser && last.type === MessageType.REGULAR) {
-        setMessages((prev) => {
+    if (!abortControllerRef.current.signal.aborted && answer.length > 0) {
+      setMessages((prev) => {
+        if (prev.length === 0) return prev;
+        const last = prev[prev.length - 1];
+        if (!last.fromUser && last.type === MessageType.REGULAR) {
           const next = [...prev];
           next[next.length - 1] = { ...next[next.length - 1], content: { data: answer.join('') } };
           return next;
-        });
-      } else {
+        }
         if (!autoScrollEnabled) setAutoScrollEnabled(true);
-        const messageId = generateUUID();
-        setMessages((prev) => [...prev, { id: messageId, content: { data: answer.join('') }, fromUser: false, type: MessageType.REGULAR }]);
-      }
+        return [...prev, { id: generateUUID(), content: { data: answer.join('') }, fromUser: false, type: MessageType.REGULAR }];
+      });
     }
   }, [answer]);
 
   // Sync API chat execution results into messages
   useEffect(() => {
     if (!abortControllerRef.current.signal.aborted && apiChatExecutionResult) {
-      const last = messages[messages.length - 1];
-      if (last && !last.fromUser && last.type === MessageType.APICHAT) {
-        setMessages((prev) => {
+      const capturedResult = apiChatExecutionResult;
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last && !last.fromUser && last.type === MessageType.APICHAT) {
           const next = structuredClone(prev);
-          next[next.length - 1].content.data = [...(next[next.length - 1].content.data as ApiChatExecutionResult[]), apiChatExecutionResult];
+          next[next.length - 1].content.data = [...(next[next.length - 1].content.data as ApiChatExecutionResult[]), capturedResult];
           return next;
-        });
-      } else {
+        }
         if (!autoScrollEnabled) setAutoScrollEnabled(true);
-        const messageId = generateUUID();
-        setMessages((prev) => [...prev, { id: messageId, content: { data: [apiChatExecutionResult] }, fromUser: false, type: MessageType.APICHAT }]);
-      }
+        return [...prev, { id: generateUUID(), content: { data: [capturedResult] }, fromUser: false, type: MessageType.APICHAT }];
+      });
     }
   }, [apiChatExecutionResult]);
 
@@ -200,10 +198,12 @@ export default function CopilotChatWindow(): JSX.Element {
                   <IconButton
                     size="small"
                     onClick={() => {
-                      navigator.clipboard.writeText(trackingId).then(() => {
-                        setTrackingIdCopied(true);
-                        setTimeout(() => setTrackingIdCopied(false), 2000);
-                      });
+                      navigator.clipboard.writeText(trackingId)
+                        .then(() => {
+                          setTrackingIdCopied(true);
+                          setTimeout(() => setTrackingIdCopied(false), 2000);
+                        })
+                        .catch(() => {});
                     }}
                     sx={{ p: 0.25, flexShrink: 0 }}
                     aria-label="Copy tracking ID">

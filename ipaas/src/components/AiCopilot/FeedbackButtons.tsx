@@ -32,14 +32,24 @@ export default function FeedbackButtons({ feedback, onFeedback, visible }: Feedb
   if (!visible) return null;
   return (
     <Stack direction="row" gap={0.5} sx={{ position: 'absolute', bottom: 10, left: 15 }}>
-      {feedback !== 'dislike' && (
-        <IconButton size="small" onClick={() => feedback === 'none' && onFeedback('like')} aria-label="Like">
+      {feedback === 'none' && (
+        <>
+          <IconButton size="small" onClick={() => onFeedback('like')} aria-label="Like">
+            <ThumbsUp size={14} color="var(--oxygen-palette-primary-main)" />
+          </IconButton>
+          <IconButton size="small" onClick={() => onFeedback('dislike')} aria-label="Dislike">
+            <ThumbsDown size={14} color="var(--oxygen-palette-primary-main)" />
+          </IconButton>
+        </>
+      )}
+      {feedback === 'like' && (
+        <IconButton size="small" disabled aria-label="Like">
           <ThumbsUp size={14} color="var(--oxygen-palette-primary-main)" />
         </IconButton>
       )}
-      {feedback !== 'like' && (
-        <IconButton size="small" onClick={() => feedback === 'none' && onFeedback('dislike')} aria-label="Dislike">
-          <ThumbsDown size={14} color={feedback === 'dislike' ? 'var(--oxygen-palette-error-main)' : 'var(--oxygen-palette-primary-main)'} />
+      {feedback === 'dislike' && (
+        <IconButton size="small" disabled aria-label="Dislike">
+          <ThumbsDown size={14} color="var(--oxygen-palette-error-main)" />
         </IconButton>
       )}
     </Stack>

@@ -37,9 +37,10 @@ export default function CopilotChatInput({ sendMessage, isAiCopilotLoading, isSt
 
   const handleSend = () => {
     if (isSendDisabled) return;
+    const trimmed = inputValue.trim();
     const messageId = generateUUID();
-    setMessages([...messages, { id: messageId, content: { data: inputValue }, fromUser: true, type: MessageType.REGULAR }]);
-    sendMessage(inputValue, messageId);
+    setMessages([...messages, { id: messageId, content: { data: trimmed }, fromUser: true, type: MessageType.REGULAR }]);
+    sendMessage(trimmed, messageId);
     setInputValue('');
   };
 

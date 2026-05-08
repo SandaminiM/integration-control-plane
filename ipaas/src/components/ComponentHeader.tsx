@@ -227,7 +227,7 @@ export default function ComponentHeader({ component, project, repository, latest
 
   return (
     <>
-      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" flexWrap={'nowrap'} sx={{ mb: 3 }} gap={2}>
+      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" flexWrap="wrap" sx={{ mb: 3 }} gap={2}>
         {/* LEFT COLUMN */}
         <Stack gap={1} sx={{ flex: 1, minWidth: 0 }}>
           <Stack direction="row" alignItems="center" gap={2}>

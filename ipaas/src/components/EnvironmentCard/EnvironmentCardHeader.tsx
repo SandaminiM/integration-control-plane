@@ -85,7 +85,7 @@ export default function EnvironmentCardHeader({
   const isInProgress = isGenericService && deploymentStatusV2 === 'IN_PROGRESS';
 
   return (
-    <Stack direction="row" alignItems="center" justifyContent="space-between" flex={'wrap'}>
+    <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap">
       {/* Left: env name + status chip + commit info + configure */}
       <Stack direction="row" alignItems="center" gap={1.5} sx={{ minWidth: 0 }}>
         <Typography variant="h5" component="h2" sx={{ fontWeight: 600, textTransform: 'capitalize', flexShrink: 0 }}>

@@ -19,7 +19,7 @@
 import { Autocomplete, Box, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { useContext } from 'react';
 import type { JSX } from 'react';
-import ChoreoAIWelcomeIcon from '../../assets/icons/ai/ChoreoAIWelcomeIcon';
+import AIWelcomeIcon from '../../assets/icons/ai/AIWelcomeIcon';
 import { CopilotContext } from '../../contexts/CopilotContext';
 import type { CopilotRegion } from '../../types/copilot';
 
@@ -39,7 +39,7 @@ export default function CopilotWelcomeBanner(): JSX.Element {
   return (
     <Stack alignItems="center" gap={1} sx={{ flexGrow: 1, justifyContent: 'center', mb: 2 }}>
       <Box sx={{ fontSize: 120, display: 'flex', alignItems: 'center' }}>
-        <ChoreoAIWelcomeIcon width={100} height={100} />
+        <AIWelcomeIcon width={100} height={100} />
       </Box>
       <Typography variant="h5" fontWeight={600}>
         Hi, Welcome to Copilot!
@@ -54,7 +54,7 @@ export default function CopilotWelcomeBanner(): JSX.Element {
             onChange={handleRegionChange}
             options={availableRegions}
             getOptionLabel={(option) => (option.copilot_accessible && !option.disconnected ? option.name : '')}
-            getOptionDisabled={(option) => !option.copilot_accessible}
+            getOptionDisabled={(option) => !option.copilot_accessible || option.disconnected}
             renderOption={(props, option) => {
               const isDisabled = !option.copilot_accessible || option.disconnected;
               const tooltipTitle = option.disconnected ? 'Region is disconnected' : 'Copilot is disabled for this region.';

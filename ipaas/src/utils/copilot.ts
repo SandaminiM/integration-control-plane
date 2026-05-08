@@ -20,15 +20,27 @@ import { COPILOT_SESSION_KEY } from '../constants/copilot';
 import { generateUUID } from './string';
 
 export function getCopilotSessionId(): string | null {
-  return sessionStorage.getItem(COPILOT_SESSION_KEY);
+  try {
+    return sessionStorage.getItem(COPILOT_SESSION_KEY);
+  } catch {
+    return null;
+  }
 }
 
 export function setCopilotSessionId(id: string): void {
-  sessionStorage.setItem(COPILOT_SESSION_KEY, id);
+  try {
+    sessionStorage.setItem(COPILOT_SESSION_KEY, id);
+  } catch {
+    // no-op if sessionStorage is unavailable
+  }
 }
 
 export function removeCopilotSessionId(): void {
-  sessionStorage.removeItem(COPILOT_SESSION_KEY);
+  try {
+    sessionStorage.removeItem(COPILOT_SESSION_KEY);
+  } catch {
+    // no-op if sessionStorage is unavailable
+  }
 }
 
 export function getOrCreateCopilotSessionId(): string {

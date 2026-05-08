@@ -47,7 +47,7 @@ export default function CopilotMessage({ message, showFeedback, hasError, isCurr
 
   useEffect(() => {
     if (feedback !== 'none') sendFeedback();
-  }, [feedback]);
+  }, [feedback, sendFeedback]);
 
   const navigationData = useMemo((): NavigationResponse | null => {
     if (message.fromUser || !message.content.data) return null;

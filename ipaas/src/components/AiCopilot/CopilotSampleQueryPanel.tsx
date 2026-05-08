@@ -46,12 +46,12 @@ interface CopilotSampleQueryPanelProps {
 }
 
 export default function CopilotSampleQueryPanel({ isAiCopilotLoading, isStreaming, sendMessage }: CopilotSampleQueryPanelProps): JSX.Element {
-  const { messages, setMessages, selectedRegion } = useContext(CopilotContext);
+  const { setMessages, selectedRegion } = useContext(CopilotContext);
   const isDisabled = isAiCopilotLoading || isStreaming || !selectedRegion;
 
   const handleSend = (query: string) => {
     const messageId = generateUUID();
-    setMessages([...messages, { id: messageId, content: { data: query }, fromUser: true, type: MessageType.REGULAR }]);
+    setMessages((prev) => [...prev, { id: messageId, content: { data: query }, fromUser: true, type: MessageType.REGULAR }]);
     sendMessage(query, messageId);
   };
 

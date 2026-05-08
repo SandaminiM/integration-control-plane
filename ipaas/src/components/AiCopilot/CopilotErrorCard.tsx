@@ -29,10 +29,14 @@ interface CopilotErrorCardProps {
 export default function CopilotErrorCard({ errorMsg, trackingId }: CopilotErrorCardProps): JSX.Element {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (trackingId) {
-      navigator.clipboard.writeText(trackingId);
-      setCopied(true);
+      try {
+        await navigator.clipboard.writeText(trackingId);
+        setCopied(true);
+      } catch {
+        // clipboard write failed (permission denied or non-secure context)
+      }
     }
   };
 

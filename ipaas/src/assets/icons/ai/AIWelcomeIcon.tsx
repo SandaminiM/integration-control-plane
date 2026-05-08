@@ -18,7 +18,7 @@
 
 import type { SVGProps } from 'react';
 
-export default function ChoreoAIWelcomeIcon(props: SVGProps<SVGSVGElement>) {
+export default function AIWelcomeIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg width="101" height="100" viewBox="0 0 101 100" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
       <rect opacity="0.6" x="59.6067" width="57.8318" height="83.5895" rx="28.9159" transform="rotate(45 59.6067 0)" fill="#FEF0EA" />

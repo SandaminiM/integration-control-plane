@@ -33,6 +33,7 @@ function useCopilot() {
   const [trackingId, setTrackingId] = useState('');
   const apiChatResultsCounterRef = useRef(0);
   const abortControllerRef = useRef(new AbortController());
+  const messageBufferRef = useRef('');
 
   const { copilotUrl, setMessageSendingError } = useContext(CopilotContext);
   const scope = useScope();
@@ -83,14 +84,21 @@ function useCopilot() {
         // eslint-disable-next-line no-await-in-loop
         const { done, value } = await reader.read();
         if (done) {
+          messageBufferRef.current = '';
           setIsLoading(false);
           setIsStreaming(false);
           break;
         }
-        const chunk = decoder.decode(value, { stream: true });
+        const rawChunk = decoder.decode(value, { stream: true });
+        // Prepend any incomplete line from previous chunk, then split
+        const fullText = messageBufferRef.current + rawChunk;
+        const lines = fullText.split('\n');
+        // Keep the last (possibly incomplete) line in the buffer for next iteration
+        messageBufferRef.current = lines[lines.length - 1];
+        const completeLines = lines.slice(0, -1);
         try {
-          const chunkParts = chunk.split('\n').map((line) => line.trim());
-          const tempAnswer = chunkParts.reduce((acc, part) => {
+          const tempAnswer = completeLines.reduce((acc, line) => {
+            const part = line.trim();
             if (part && part.startsWith('data: ')) {
               const json = JSON.parse(part.slice(5)) as Record<string, unknown>;
               if (json.assistant === 'TestAssistant') {
@@ -119,7 +127,9 @@ function useCopilot() {
       if (!(e instanceof DOMException && e.name === 'AbortError')) {
         setMessageSendingError(COPILOT_CONNECTION_ERROR);
       }
+      return false;
     } finally {
+      messageBufferRef.current = '';
       setIsLoading(false);
       setIsStreaming(false);
     }

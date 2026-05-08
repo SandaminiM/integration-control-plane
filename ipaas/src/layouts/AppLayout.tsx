@@ -118,7 +118,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { CopilotContext, CopilotProvider } from '../contexts/CopilotContext';
 import CopilotDrawer from '../components/AiCopilot/CopilotDrawer';
-import ChoreoAIIcon from '../assets/icons/ai/ChoreoAIIcon';
+import AIIcon from '../assets/icons/ai/AIIcon';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions';
 import { UUID_RE } from '../utils/string';
 
@@ -984,7 +984,7 @@ function AppLayoutInner(): JSX.Element {
             <Button
               variant="outlined"
               size="small"
-              startIcon={<ChoreoAIIcon width={16} height={16} />}
+              startIcon={<AIIcon width={16} height={16} />}
               onClick={() => setShowCopilot(true)}
               sx={{
                 borderColor: 'primary.main',

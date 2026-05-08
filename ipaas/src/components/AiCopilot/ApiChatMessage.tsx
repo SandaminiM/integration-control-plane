@@ -25,8 +25,8 @@ import { prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import type { ApiChatExecutionResult } from '../../types/copilot';
 
 interface ParsedResult {
-  resource: { method: string; inputs: { requestBody?: unknown } };
-  output: { code: number; path: string; headers: Record<string, unknown>; body: unknown };
+  resource?: { method?: string; inputs?: { requestBody?: unknown } };
+  output?: { code?: number; path?: string; headers?: Record<string, unknown>; body?: unknown };
 }
 
 interface ApiChatMessageProps {
@@ -61,10 +61,13 @@ export default function ApiChatMessage({ executionResults }: ApiChatMessageProps
         } catch {
           return null;
         }
-        const isSuccess = parsed.output.code >= 200 && parsed.output.code < 300;
+        const safeOutput = parsed?.output ?? { code: 0, path: '', headers: {}, body: null };
+        const safeResource = parsed?.resource ?? { method: '', inputs: {} };
+        const safeInputs = safeResource.inputs ?? {};
+        const isSuccess = safeOutput.code >= 200 && safeOutput.code < 300;
         const isExpanded = expandedMap.get(result.id) ?? false;
         const showJson = showJsonMap.get(result.id) ?? false;
-        const jsonPayload = showJson ? { input: parsed.resource.inputs.requestBody ? { requestBody: parsed.resource.inputs.requestBody } : undefined, output: parsed.output } : parsed.output.body;
+        const jsonPayload = showJson ? { input: safeInputs.requestBody ? { requestBody: safeInputs.requestBody } : undefined, output: safeOutput } : safeOutput.body;
 
         return (
           <Accordion key={result.id} expanded={isExpanded} onChange={(_, v) => toggleExpanded(result.id, v)} disableGutters sx={{ boxShadow: 'none', '&:before': { display: 'none' } }}>
@@ -72,7 +75,7 @@ export default function ApiChatMessage({ executionResults }: ApiChatMessageProps
               <Stack direction="row" alignItems="center" gap={1}>
                 {isSuccess ? <CheckCircle2 size={16} color="var(--oxygen-palette-success-main)" /> : <AlertCircle size={16} color="var(--oxygen-palette-error-main)" />}
                 <Typography variant="body2">
-                  Executed {parsed.resource.method} {parsed.output.path}
+                  Executed {safeResource.method} {safeOutput.path}
                 </Typography>
               </Stack>
             </AccordionSummary>

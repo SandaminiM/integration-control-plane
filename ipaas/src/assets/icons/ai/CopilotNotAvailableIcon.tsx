@@ -16,12 +16,14 @@
  * under the License.
  */
 
+import { useId } from 'react';
 import type { SVGProps } from 'react';
 
 export default function CopilotNotAvailableIcon(props: SVGProps<SVGSVGElement>) {
+  const id = useId();
   return (
     <svg width="220" height="220" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
-      <g clipPath="url(#copilotNAClip)">
+      <g clipPath={`url(#${id}-clip)`}>
         <path
           d="M75.5127 29.1294C116.281 24.4501 153.584 46.3515 172.745 67.6521C191.906 88.9528 200.507 101.235 207.068 124.572C214.523 151.093 201.771 170.108 183.696 180.327C165.309 190.724 132.03 184.588 100.971 172.238C70.7082 160.205 55.9834 169.706 27.9215 151.638C5.33229 137.094 1.81166 119.886 3.48191 92.6636C4.86949 70.0487 23.5787 35.0904 75.5127 29.1294Z"
           fill="white"
@@ -55,7 +57,7 @@ export default function CopilotNotAvailableIcon(props: SVGProps<SVGSVGElement>) 
         <circle cx="97" cy="69" r="3" fill="#fa7b3f" />
       </g>
       <defs>
-        <clipPath id="copilotNAClip">
+        <clipPath id={`${id}-clip`}>
           <rect width="220" height="220" fill="white" />
         </clipPath>
       </defs>

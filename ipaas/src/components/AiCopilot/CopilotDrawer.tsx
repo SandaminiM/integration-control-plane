@@ -16,11 +16,11 @@
  * under the License.
  */
 
-import { Box, Divider, IconButton, ListItemIcon, ListItemText, MenuItem, MenuList, Paper, Popper, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Box, Divider, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { BookOpen, Maximize2, Minimize2, MoreVertical, Plus, X } from '@wso2/oxygen-ui-icons-react';
-import { useContext, useRef, useState } from 'react';
+import { useContext, useState } from 'react';
 import type { JSX } from 'react';
-import ChoreoAIOutlineIcon from '../../assets/icons/ai/ChoreoAIOutlineIcon';
+import AIOutlineIcon from '../../assets/icons/ai/AIOutlineIcon';
 import { CopilotContext } from '../../contexts/CopilotContext';
 import CopilotChatWindow from './CopilotChatWindow';
 
@@ -29,10 +29,10 @@ const EXPANDED_WIDTH = '100%';
 
 export default function CopilotDrawer(): JSX.Element {
   const { showCopilot, setShowCopilot, isCopilotExpanded, setIsCopilotExpanded, clearChat } = useContext(CopilotContext);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuAnchorRef = useRef<HTMLButtonElement>(null);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLButtonElement | null>(null);
 
   const panelWidth = isCopilotExpanded ? EXPANDED_WIDTH : NORMAL_WIDTH;
+  const menuOpen = Boolean(menuAnchorEl);
 
   const handleClose = () => {
     setShowCopilot(false);
@@ -40,12 +40,12 @@ export default function CopilotDrawer(): JSX.Element {
   };
 
   const handleNewChat = () => {
-    setMenuOpen(false);
+    setMenuAnchorEl(null);
     clearChat();
   };
 
   const handleLearnMore = () => {
-    setMenuOpen(false);
+    setMenuAnchorEl(null);
     window.open('https://wso2.com/choreo/docs/ai-features/choreo-copilot/', '_blank', 'noopener,noreferrer');
   };
 
@@ -62,7 +62,8 @@ export default function CopilotDrawer(): JSX.Element {
         borderColor: 'divider',
         display: 'flex',
         flexDirection: 'column',
-      }}>
+      }}
+    >
       {/* Inner box: fixed width so content doesn't reflow during the width transition */}
       <Box
         sx={{
@@ -74,11 +75,12 @@ export default function CopilotDrawer(): JSX.Element {
           bgcolor: 'background.acrylic',
           backdropFilter: isCopilotExpanded ? 'none' : 'blur(8px)',
           transition: 'background-color 225ms cubic-bezier(0, 0, 0.2, 1)',
-        }}>
+        }}
+      >
         {/* Header */}
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1, flexShrink: 0 }}>
           <Stack direction="row" alignItems="center" gap={1}>
-            <ChoreoAIOutlineIcon />
+            <AIOutlineIcon />
             <Box>
               <Typography variant="body1" fontWeight={500}>
                 Copilot
@@ -89,14 +91,27 @@ export default function CopilotDrawer(): JSX.Element {
           <Stack direction="row" alignItems="center" gap={0.25}>
             {/* Three-dots menu */}
             <Tooltip title="More options">
-              <IconButton ref={menuAnchorRef} size="small" onClick={() => setMenuOpen((p) => !p)} aria-label="More options" sx={{ color: 'primary.main' }}>
+              <IconButton
+                size="small"
+                onClick={(e) => setMenuAnchorEl(e.currentTarget)}
+                aria-label="More options"
+                aria-controls={menuOpen ? 'copilot-more-menu' : undefined}
+                aria-haspopup="true"
+                aria-expanded={menuOpen}
+                sx={{ color: 'primary.main' }}
+              >
                 <MoreVertical size={16} />
               </IconButton>
             </Tooltip>
 
             {/* Expand / collapse — hidden on mobile */}
             <Tooltip title={isCopilotExpanded ? 'Collapse' : 'Expand'}>
-              <IconButton size="small" onClick={() => setIsCopilotExpanded((p) => !p)} aria-label={isCopilotExpanded ? 'Collapse copilot' : 'Expand copilot'} sx={{ color: 'primary.main', display: { xs: 'none', sm: 'inline-flex' } }}>
+              <IconButton
+                size="small"
+                onClick={() => setIsCopilotExpanded((p) => !p)}
+                aria-label={isCopilotExpanded ? 'Collapse copilot' : 'Expand copilot'}
+                sx={{ color: 'primary.main', display: { xs: 'none', sm: 'inline-flex' } }}
+              >
                 {isCopilotExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
               </IconButton>
             </Tooltip>
@@ -110,28 +125,29 @@ export default function CopilotDrawer(): JSX.Element {
           </Stack>
         </Stack>
 
-        {/* More-actions popover */}
-        <Popper open={menuOpen} anchorEl={menuAnchorRef.current} placement="bottom-end" style={{ zIndex: 1400 }} modifiers={[{ name: 'offset', options: { offset: [0, 4] } }]}>
-          <Paper elevation={3} sx={{ minWidth: 180 }}>
-            <MenuList dense disablePadding sx={{ py: 0.5 }}>
-              <MenuItem onClick={handleNewChat} sx={{ px: 2, py: 1 }}>
-                <ListItemIcon sx={{ minWidth: 32 }}>
-                  <Plus size={14} />
-                </ListItemIcon>
-                <ListItemText primaryTypographyProps={{ variant: 'body2' }}>New Chat</ListItemText>
-              </MenuItem>
-              <MenuItem onClick={handleLearnMore} sx={{ px: 2, py: 1 }}>
-                <ListItemIcon sx={{ minWidth: 32 }}>
-                  <BookOpen size={14} />
-                </ListItemIcon>
-                <ListItemText primaryTypographyProps={{ variant: 'body2' }}>Learn More</ListItemText>
-              </MenuItem>
-            </MenuList>
-          </Paper>
-        </Popper>
-
-        {/* Click-away overlay to close menu */}
-        {menuOpen && <Box sx={{ position: 'fixed', inset: 0, zIndex: 1399 }} onClick={() => setMenuOpen(false)} />}
+        {/* More-actions menu — MUI Menu handles keyboard nav, Escape, and focus management */}
+        <Menu
+          id="copilot-more-menu"
+          anchorEl={menuAnchorEl}
+          open={menuOpen}
+          onClose={() => setMenuAnchorEl(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          slotProps={{ paper: { elevation: 3, sx: { minWidth: 180 } } }}
+        >
+          <MenuItem onClick={handleNewChat} dense sx={{ px: 2, py: 1 }}>
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              <Plus size={14} />
+            </ListItemIcon>
+            <ListItemText primaryTypographyProps={{ variant: 'body2' }}>New Chat</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={handleLearnMore} dense sx={{ px: 2, py: 1 }}>
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              <BookOpen size={14} />
+            </ListItemIcon>
+            <ListItemText primaryTypographyProps={{ variant: 'body2' }}>Learn More</ListItemText>
+          </MenuItem>
+        </Menu>
 
         <Divider />
         <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
