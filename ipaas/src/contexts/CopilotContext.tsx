@@ -107,7 +107,6 @@ export function CopilotProvider({ children }: CopilotProviderProps) {
     setMessages([]);
     setMessageSendingError('');
     setChatInputValue('');
-    setSelectedRegion(null);
     removeCopilotSessionId();
   }, []);
 
