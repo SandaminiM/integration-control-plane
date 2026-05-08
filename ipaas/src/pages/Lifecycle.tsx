@@ -30,19 +30,20 @@ import {
   DialogTitle,
   Drawer,
   IconButton,
+  InputAdornment,
   MenuItem,
   PageContent,
   Select,
   Stack,
-  Tooltip,
+  TextField,
   Typography,
 } from '@wso2/oxygen-ui';
-import { Clock, X } from '@wso2/oxygen-ui-icons-react';
+import { Clock, Pencil, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useComponentByHandler, useComponentEndpoints, useLifecycleState, useLifecycleHistory } from '../api/queries';
 import { useChangeLifecycleState } from '../api/mutations';
 import { useProjectId } from '../hooks/useProjectId';
-import { getDevPortalBaseUrl, type LifecycleStateTransition } from '../api/apim';
+import { getDevPortalBaseUrl, fetchApimApi, updateApimApi, type ApimApiInfo, type LifecycleStateTransition } from '../api/apim';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import type { ComponentScope } from '../nav';
 
@@ -70,6 +71,7 @@ const STATE_LABEL: Record<string, string> = {
 };
 
 const CONFIRM_ACTIONS = new Set(['Publish', 'Re-Publish', 'Deprecate', 'Retire']);
+const PUBLISH_ACTIONS = new Set(['Publish', 'Re-Publish']);
 const HIDDEN_ACTIONS = new Set(['Block']);
 
 const EVENT_TARGET: Record<string, ApiState> = {
@@ -81,9 +83,18 @@ const EVENT_TARGET: Record<string, ApiState> = {
   'Retire': 'Retired',
 };
 
+const SUCCESS_TEXT: Record<string, string> = {
+  'Publish': 'API published successfully.',
+  'Re-Publish': 'API re-published successfully.',
+  'Deploy as a Prototype': 'API pre-released successfully.',
+  'Demote to Created': 'API demoted to Created.',
+  'Deprecate': 'API deprecated successfully.',
+  'Retire': 'API retired successfully.',
+};
+
 const CONFIRM_TEXT: Record<string, string> = {
-  Publish: 'Publish your API to the Developer Portal, making it available for consumers to discover and subscribe.',
-  'Re-Publish': 'Re-publish your API to the Developer Portal.',
+  Publish: 'Publish your API to the Developer Portal with the specified display name, or edit the name here before publishing.',
+  'Re-Publish': 'Re-publish your API to the Developer Portal with the specified display name, or edit the name here before re-publishing.',
   Deprecate: 'Are you sure you want to deprecate the API? Existing subscribers can still access it but new subscriptions will be blocked. This action cannot be undone.',
   Retire: 'Are you sure you want to retire the API? All existing subscriptions will be revoked and consumers will lose access. This action cannot be undone.',
 };
@@ -111,13 +122,18 @@ function getAge(from: number, to: number): string {
 
 interface ConfirmDialogProps {
   action: string;
+  displayName?: string;
+  onDisplayNameChange?: (v: string) => void;
   onConfirm: () => void;
   onCancel: () => void;
   isPending: boolean;
 }
 
-function ConfirmDialog({ action, onConfirm, onCancel, isPending }: ConfirmDialogProps): JSX.Element {
+function ConfirmDialog({ action, displayName, onDisplayNameChange, onConfirm, onCancel, isPending }: ConfirmDialogProps): JSX.Element {
   const label = ACTION_LABEL[action] ?? action;
+  const isPublish = PUBLISH_ACTIONS.has(action);
+  const [isEditing, setIsEditing] = useState(false);
+  const confirmDisabled = isPending || (isPublish && !displayName?.trim());
   return (
     <Dialog open onClose={onCancel} maxWidth="xs" fullWidth>
       <DialogTitle>{label} API</DialogTitle>
@@ -125,6 +141,32 @@ function ConfirmDialog({ action, onConfirm, onCancel, isPending }: ConfirmDialog
         <DialogContentText>
           {CONFIRM_TEXT[action] ?? `Are you sure you want to ${label.toLowerCase()} this API?`}
         </DialogContentText>
+        {isPublish && onDisplayNameChange !== undefined && (
+          <TextField
+            label="Display Name"
+            value={displayName ?? ''}
+            onChange={(e) => onDisplayNameChange(e.target.value)}
+            fullWidth
+            size="small"
+            sx={{
+              mt: 3,
+              ...(!isEditing && {
+                '& .MuiOutlinedInput-root': { backgroundColor: 'action.hover' },
+                '& .MuiOutlinedInput-input': { color: 'text.disabled', WebkitTextFillColor: 'unset' },
+              }),
+            }}
+            InputProps={{
+              readOnly: !isEditing,
+              endAdornment: !isEditing && (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setIsEditing(true)} edge="end">
+                    <Pencil size={14} />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+        )}
       </DialogContent>
       <DialogActions>
         <Button variant="text" onClick={onCancel} disabled={isPending}>Cancel</Button>
@@ -132,10 +174,10 @@ function ConfirmDialog({ action, onConfirm, onCancel, isPending }: ConfirmDialog
           variant={isDestructiveAction(action) ? 'outlined' : 'contained'}
           color={isDestructiveAction(action) ? 'error' : 'primary'}
           onClick={onConfirm}
-          disabled={isPending}
+          disabled={confirmDisabled}
           startIcon={isPending ? <CircularProgress size={14} /> : undefined}
         >
-          {isPending ? `${label}ing…` : label}
+          {isPending ? `${label}ing…` : 'Confirm'}
         </Button>
       </DialogActions>
     </Dialog>
@@ -455,7 +497,15 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
 
   const { mutateAsync: changeState, isPending: isChanging } = useChangeLifecycleState(selectedApimId);
 
+  const [apimApiInfo, setApimApiInfo] = useState<ApimApiInfo | null>(null);
+  useEffect(() => {
+    if (!selectedApimId) { setApimApiInfo(null); return; }
+    fetchApimApi(selectedApimId).then(setApimApiInfo);
+  }, [selectedApimId]);
+
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [publishDisplayName, setPublishDisplayName] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -470,8 +520,12 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
   );
 
   const handleActionClick = (action: string) => {
+    setSuccessMsg('');
     setErrorMsg('');
     if (CONFIRM_ACTIONS.has(action)) {
+      if (PUBLISH_ACTIONS.has(action)) {
+        setPublishDisplayName(apimApiInfo?.displayName ?? '');
+      }
       setPendingAction(action);
     } else {
       void executeAction(action);
@@ -479,12 +533,18 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
   };
 
   const executeAction = async (action: string) => {
+    setPendingAction(null);
     try {
+      if (PUBLISH_ACTIONS.has(action) && apimApiInfo && selectedApimId) {
+        const trimmed = publishDisplayName.trim();
+        if (trimmed && trimmed !== apimApiInfo.displayName) {
+          await updateApimApi(selectedApimId, { ...apimApiInfo, displayName: trimmed });
+        }
+      }
       await changeState({ action });
-      setPendingAction(null);
+      setSuccessMsg(SUCCESS_TEXT[action] ?? 'Lifecycle state updated successfully.');
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Lifecycle state change failed');
-      setPendingAction(null);
     }
   };
 
@@ -546,6 +606,7 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
 
       <PageContent>
         <Box sx={{ p: 3 }}>
+          <Typography variant="h1" sx={{ mb: 3 }}>Lifecycle</Typography>
           {isLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>
           ) : !lifecycleState ? (
@@ -559,55 +620,43 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
                 </Typography>
               </Box>
 
-              {/* Action buttons */}
-              <Stack direction="row" alignItems="center" spacing={2} flexWrap="wrap" sx={{ mb: 3 }}>
-                {isChanging && <CircularProgress size={18} />}
-                {visibleTransitions.map((t) => (
-                  <Button
-                    key={t.event}
-                    variant="outlined"
-                    size="small"
-                    disabled={isChanging}
-                    onClick={() => handleActionClick(t.event)}
-                  >
-                    {ACTION_LABEL[t.event] ?? t.event}
-                  </Button>
-                ))}
-              </Stack>
+              {isChanging ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>
+              ) : (
+                <>
+                  {/* Action buttons */}
+                  <Stack direction="row" alignItems="center" spacing={2} flexWrap="wrap" sx={{ mb: 3 }}>
+                    {visibleTransitions.map((t) => (
+                      <Button
+                        key={t.event}
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleActionClick(t.event)}
+                      >
+                        {ACTION_LABEL[t.event] ?? t.event}
+                      </Button>
+                    ))}
+                    {lifecycleHistory && lifecycleHistory.list.length > 0 && (
+                      <Button variant="text" size="small" startIcon={<Clock size={14} />} onClick={() => setHistoryOpen(true)}>
+                        History
+                      </Button>
+                    )}
+                  </Stack>
 
-              {/* Error */}
-              {errorMsg && (
-                <Alert severity="error" onClose={() => setErrorMsg('')} sx={{ mb: 2 }}>{errorMsg}</Alert>
+                  {/* Success / Error */}
+                  {successMsg && (
+                    <Alert severity="success" onClose={() => setSuccessMsg('')} sx={{ mb: 2 }}>{successMsg}</Alert>
+                  )}
+                  {errorMsg && (
+                    <Alert severity="error" onClose={() => setErrorMsg('')} sx={{ mb: 2 }}>{errorMsg}</Alert>
+                  )}
+
+                  {/* State diagram */}
+                  <Box sx={{ overflowX: 'auto' }}>
+                    <LCStateDiagram currentState={lifecycleState.state} availableTransitions={lifecycleState.availableTransitions} />
+                  </Box>
+                </>
               )}
-
-              {/* State diagram + floating history button */}
-              <Box sx={{ position: 'relative' }}>
-                <Box sx={{ overflowX: 'auto' }}>
-                  <LCStateDiagram currentState={lifecycleState.state} availableTransitions={lifecycleState.availableTransitions} />
-                </Box>
-
-                {/* Floating history button */}
-                {!historyOpen && lifecycleHistory && lifecycleHistory.list.length > 0 && (
-                  <Tooltip title="Lifecycle History" placement="left">
-                    <IconButton
-                      onClick={() => setHistoryOpen(true)}
-                      size="small"
-                      sx={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        bgcolor: 'background.paper',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        boxShadow: 1,
-                        '&:hover': { bgcolor: 'action.hover' },
-                      }}
-                    >
-                      <Clock size={16} />
-                    </IconButton>
-                  </Tooltip>
-                )}
-              </Box>
             </>
           )}
         </Box>
@@ -616,6 +665,8 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
         {pendingAction && (
           <ConfirmDialog
             action={pendingAction}
+            displayName={PUBLISH_ACTIONS.has(pendingAction) ? publishDisplayName : undefined}
+            onDisplayNameChange={PUBLISH_ACTIONS.has(pendingAction) ? setPublishDisplayName : undefined}
             onConfirm={() => void executeAction(pendingAction)}
             onCancel={() => setPendingAction(null)}
             isPending={isChanging}
