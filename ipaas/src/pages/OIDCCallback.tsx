@@ -22,7 +22,7 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { Alert, Box, CircularProgress, Typography } from '@wso2/oxygen-ui';
 import { useAuth } from '../auth/AuthContext';
 import { validateAndClearOIDCState, getAndClearRedirectUrl } from '../auth/tokenManager';
-import { gql } from '../api/graphql';
+import { fetchProjectsByOrgId } from '../api/queries';
 import { loginUrl, projectHomeUrl, projectsRedirectUrl, registerOrgUrl } from '../paths';
 
 export default function OIDCCallback(): JSX.Element {
@@ -103,8 +103,7 @@ export default function OIDCCallback(): JSX.Element {
               if (!navigatedToLastProject) {
                 const numericId = window.API_CONFIG.asgardeoOrgNumericId ?? parseInt(localStorage.getItem('icp_org_numeric_id') ?? '0', 10);
                 if (numericId > 0) {
-                  const data = await gql<{ projects: Array<{ handler: string; updatedAt: string }> }>(`query GetProjects($orgId: Int!) { projects(orgId: $orgId) { handler updatedAt } }`, { orgId: numericId });
-                  const projects = (data.projects ?? []).filter((p) => p.handler);
+                  const projects = (await fetchProjectsByOrgId(numericId)).filter((p) => p.handler);
                   if (projects.length > 0) {
                     const recent = projects.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
                     // Mark ToS accepted — this user already has projects, they've been through onboarding

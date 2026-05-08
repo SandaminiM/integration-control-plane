@@ -23,7 +23,7 @@ import { Alert, Box, Button, ButtonBase, Card, CardContent, CircularProgress, Fo
 import { ArrowRight, Settings, Users } from '@wso2/oxygen-ui-icons-react';
 import { getOrgUuidFromToken } from '../auth/tokenManager';
 import { initOrg, createDefaultProject } from '../api/org';
-import { gql } from '../api/graphql';
+import { fetchProjectsByOrgId } from '../api/queries';
 import { projectHomeUrl } from '../paths';
 import Projects from './Projects';
 
@@ -95,9 +95,9 @@ export default function OrgHome(): JSX.Element {
   useEffect(() => {
     if (step !== 'checking') return;
     if (!orgNumericId) return; // wait for AppLayout's ID-recovery to complete
-    gql<{ projects: Array<{ handler: string }> }>('query GetProjects($orgId: Int!) { projects(orgId: $orgId) { handler } }', { orgId: orgNumericId })
-      .then((data) => {
-        if ((data.projects ?? []).some((p) => p.handler)) {
+    fetchProjectsByOrgId(orgNumericId)
+      .then((projects) => {
+        if (projects.some((p) => p.handler)) {
           localStorage.setItem(PERSONA_KEY, 'developer');
           setStep('done');
         } else {
