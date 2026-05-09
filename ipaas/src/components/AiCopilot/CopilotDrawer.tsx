@@ -62,8 +62,7 @@ export default function CopilotDrawer(): JSX.Element {
         borderColor: 'divider',
         display: 'flex',
         flexDirection: 'column',
-      }}
-    >
+      }}>
       {/* Inner box: fixed width so content doesn't reflow during the width transition */}
       <Box
         sx={{
@@ -75,8 +74,7 @@ export default function CopilotDrawer(): JSX.Element {
           bgcolor: 'background.acrylic',
           backdropFilter: isCopilotExpanded ? 'none' : 'blur(8px)',
           transition: 'background-color 225ms cubic-bezier(0, 0, 0.2, 1)',
-        }}
-      >
+        }}>
         {/* Header */}
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1, flexShrink: 0 }}>
           <Stack direction="row" alignItems="center" gap={1}>
@@ -91,27 +89,14 @@ export default function CopilotDrawer(): JSX.Element {
           <Stack direction="row" alignItems="center" gap={0.25}>
             {/* Three-dots menu */}
             <Tooltip title="More options">
-              <IconButton
-                size="small"
-                onClick={(e) => setMenuAnchorEl(e.currentTarget)}
-                aria-label="More options"
-                aria-controls={menuOpen ? 'copilot-more-menu' : undefined}
-                aria-haspopup="true"
-                aria-expanded={menuOpen}
-                sx={{ color: 'primary.main' }}
-              >
+              <IconButton size="small" onClick={(e) => setMenuAnchorEl(e.currentTarget)} aria-label="More options" aria-controls={menuOpen ? 'copilot-more-menu' : undefined} aria-haspopup="true" aria-expanded={menuOpen} sx={{ color: 'primary.main' }}>
                 <MoreVertical size={16} />
               </IconButton>
             </Tooltip>
 
             {/* Expand / collapse — hidden on mobile */}
             <Tooltip title={isCopilotExpanded ? 'Collapse' : 'Expand'}>
-              <IconButton
-                size="small"
-                onClick={() => setIsCopilotExpanded((p) => !p)}
-                aria-label={isCopilotExpanded ? 'Collapse copilot' : 'Expand copilot'}
-                sx={{ color: 'primary.main', display: { xs: 'none', sm: 'inline-flex' } }}
-              >
+              <IconButton size="small" onClick={() => setIsCopilotExpanded((p) => !p)} aria-label={isCopilotExpanded ? 'Collapse copilot' : 'Expand copilot'} sx={{ color: 'primary.main', display: { xs: 'none', sm: 'inline-flex' } }}>
                 {isCopilotExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
               </IconButton>
             </Tooltip>
@@ -133,8 +118,7 @@ export default function CopilotDrawer(): JSX.Element {
           onClose={() => setMenuAnchorEl(null)}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-          slotProps={{ paper: { elevation: 3, sx: { minWidth: 180 } } }}
-        >
+          slotProps={{ paper: { elevation: 3, sx: { minWidth: 180 } } }}>
           <MenuItem onClick={handleNewChat} dense sx={{ px: 2, py: 1 }}>
             <ListItemIcon sx={{ minWidth: 32 }}>
               <Plus size={14} />

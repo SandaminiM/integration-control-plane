@@ -198,7 +198,8 @@ export default function CopilotChatWindow(): JSX.Element {
                   <IconButton
                     size="small"
                     onClick={() => {
-                      navigator.clipboard.writeText(trackingId)
+                      navigator.clipboard
+                        .writeText(trackingId)
                         .then(() => {
                           setTrackingIdCopied(true);
                           setTimeout(() => setTrackingIdCopied(false), 2000);

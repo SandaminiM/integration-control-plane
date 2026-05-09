@@ -488,8 +488,8 @@ export default function ComponentHeader({ component, project, repository, latest
           </Stack>
         </Stack>
 
-        {/* RIGHT COLUMN — wraps to a new row when copilot is open */}
-        <Stack direction="column" gap={1.5} alignItems="flex-end" flexWrap="wrap" sx={{ mt: 1, flexShrink: 0, width: 'auto' }}>
+        {/* RIGHT COLUMN */}
+        <Stack direction="column" gap={1.5} alignItems="flex-end" sx={{ mt: 1, flexShrink: 0, width: 'auto' }}>
           {/* Open in Cloud / VS Code */}
           <Box sx={{ position: 'relative' }}>
             {devantOrigin ? (
