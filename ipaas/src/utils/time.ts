@@ -17,6 +17,7 @@
  */
 
 export function getAge(from: number, to: number): string {
+  if (to < from) return '';
   const diff = to - from;
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
