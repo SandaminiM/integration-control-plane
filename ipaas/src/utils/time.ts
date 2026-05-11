@@ -16,6 +16,21 @@
  * under the License.
  */
 
+export function getAge(from: number, to: number): string {
+  const diff = to - from;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  const months = Math.floor(days / 30.44);
+  const years = Math.floor(days / 365.25);
+  if (years >= 1) return `${years} year${years > 1 ? 's' : ''}`;
+  if (months >= 1) return `${months} month${months > 1 ? 's' : ''}`;
+  if (days >= 1) return `${days} day${days > 1 ? 's' : ''}`;
+  if (hours >= 1) return `${hours} hour${hours > 1 ? 's' : ''}`;
+  if (minutes >= 1) return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+  return 'just now';
+}
+
 export function formatDistanceToNow(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60000);
