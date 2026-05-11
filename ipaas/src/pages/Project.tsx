@@ -31,7 +31,6 @@ import {
   DialogContentText,
   DialogTitle,
   Divider,
-  Grid,
   IconButton,
   Link,
   ListingTable,
@@ -239,7 +238,7 @@ function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId
           gap: 3,
           alignItems: 'stretch',
           gridTemplateColumns: '1fr',
-          '@media (min-width: 1280px)': {
+          '@container (min-width: 900px)': {
             gridTemplateColumns: '6fr 4fr',
           },
         }}>
@@ -721,7 +720,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
   const isEmpty = !loadingComponents && components.length === 0;
 
   return (
-    <PageContent>
+    <PageContent sx={{ 'container-type': 'inline-size' }}>
       <Stack component="header" direction="row" alignItems="center" gap={2} sx={{ mb: isEmpty ? 3 : 4 }}>
         <Avatar sx={{ width: 56, height: 56, fontSize: 24, bgcolor: 'text.primary', color: 'background.paper' }}>{project?.name?.[0]?.toUpperCase() ?? 'P'}</Avatar>
         <div>
@@ -740,8 +739,16 @@ export default function Project(scope: ProjectScope): JSX.Element {
       {isEmpty ? (
         <EmptyProjectView scope={scope} projectId={projectId} />
       ) : (
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 8 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 3,
+            gridTemplateColumns: '1fr',
+            '@container (min-width: 900px)': {
+              gridTemplateColumns: '2fr 1fr',
+            },
+          }}>
+          <Box>
             <IntegrationsTable
               components={components}
               isLoading={loadingComponents}
@@ -752,15 +759,15 @@ export default function Project(scope: ProjectScope): JSX.Element {
               orgDevantComponentCount={orgDevantComponentCount}
               onSelect={(handler) => navigate(componentOverviewUrl(scope.org, project?.handler ?? scope.project, handler))}
             />
-          </Grid>
-          <Grid size={{ xs: 12, md: 4 }}>
+          </Box>
+          <Box>
             <Stack gap={3}>
               <ArchitectureCard projectId={projectId} components={components} isLoading={loadingComponents} isRefreshing={fetchingComponents && !loadingComponents} onRefresh={refetchComponents} />
               <IntegrationTypesCard components={components} />
               <ContributorsCard projectId={projectId} />
             </Stack>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       )}
     </PageContent>
   );

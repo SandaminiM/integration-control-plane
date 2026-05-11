@@ -21,6 +21,7 @@ import { type JSX } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
+import remarkGfm from 'remark-gfm';
 
 // Allow className on <code> so syntax-highlighting classes (e.g. language-js) survive sanitization
 const sanitizeSchema = {
@@ -32,6 +33,7 @@ const sanitizeSchema = {
 };
 
 const rehypePlugins = [rehypeRaw, [rehypeSanitize, sanitizeSchema]] as Parameters<typeof ReactMarkdown>[0]['rehypePlugins'];
+const remarkPlugins = [remarkGfm] as Parameters<typeof ReactMarkdown>[0]['remarkPlugins'];
 
 // <details>/<summary> rendered as styled native collapsibles matching Devant's accordion look
 const markdownComponents: Components = {
@@ -81,9 +83,11 @@ const containerSx = {
   '& pre': { bgcolor: 'action.hover', p: 2, borderRadius: 1, overflow: 'auto', mb: 2 },
   '& pre code': { bgcolor: 'transparent', px: 0 },
   '& a': { color: 'primary.main' },
-  '& table': { borderCollapse: 'collapse', width: '100%', mb: 2 },
-  '& th, & td': { border: '1px solid', borderColor: 'divider', px: 1.5, py: 1, textAlign: 'left' },
-  '& th': { bgcolor: 'action.hover', fontWeight: 600 },
+  '& table': { borderCollapse: 'collapse', width: '100%', mb: 2, display: 'block', overflowX: 'auto' },
+  '& th, & td': { border: '1px solid', borderColor: 'divider', px: 1.5, py: 0.75, textAlign: 'left', whiteSpace: 'nowrap' },
+  '& th': { bgcolor: 'action.selected', fontWeight: 600, fontSize: '0.8rem' },
+  '& td': { fontSize: '0.82rem' },
+  '& tbody tr:nth-of-type(even)': { bgcolor: 'action.hover' },
   '& details > *:not(summary)': { px: 2.5 },
   '& details > ul, & details > ol': { pl: 5 },
 } as const;
@@ -95,7 +99,7 @@ interface MarkdownProps {
 export default function Markdown({ children }: MarkdownProps): JSX.Element {
   return (
     <Box sx={containerSx}>
-      <ReactMarkdown rehypePlugins={rehypePlugins} components={markdownComponents}>
+      <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins} components={markdownComponents}>
         {children}
       </ReactMarkdown>
     </Box>

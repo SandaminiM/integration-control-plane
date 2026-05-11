@@ -46,3 +46,5 @@ export function toProjectHandler(name: string, maxLength: number): string {
     .substring(0, maxLength)
     .replace(/^-+|-+$/g, '');
 }
+
+export const generateUUID = (): string => crypto.randomUUID();

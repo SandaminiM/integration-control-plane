@@ -85,7 +85,7 @@ export default function EnvironmentCardHeader({
   const isInProgress = isGenericService && deploymentStatusV2 === 'IN_PROGRESS';
 
   return (
-    <Stack direction="row" alignItems="center" justifyContent="space-between">
+    <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap">
       {/* Left: env name + status chip + commit info + configure */}
       <Stack direction="row" alignItems="center" gap={1.5} sx={{ minWidth: 0 }}>
         <Typography variant="h5" component="h2" sx={{ fontWeight: 600, textTransform: 'capitalize', flexShrink: 0 }}>
@@ -111,7 +111,7 @@ export default function EnvironmentCardHeader({
           </Stack>
         )}
         {hasDeployment && onConfigure && (isAutomation || isGenericService) && (
-          <Button variant="outlined" size="small" color={hasMissingConfigs ? 'error' : 'primary'} startIcon={<SlidersHorizontal size={14} />} onClick={onConfigure}>
+          <Button variant="outlined" size="small" color={hasMissingConfigs ? 'error' : 'primary'} startIcon={<SlidersHorizontal size={14} />} onClick={onConfigure} sx={{ mr: 1 }}>
             {hasMissingConfigs ? 'Configure to Continue' : 'Configure'}
           </Button>
         )}

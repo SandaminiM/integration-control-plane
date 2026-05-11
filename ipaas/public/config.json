@@ -13,6 +13,9 @@
   "ASGARDEO_ORG_NUMERIC_ID": "",
   "SYSTEM_APIS_BASE_URL": "https://783c6c4d-8b9b-4190-b70a-e717ab1ee739-systemapis.e1-us-east-azure.preview-dv.choreoapis.dev",
   "SYS_API_PREFIX": "783c6c4d-8b9b-4190-b70a-e717ab1ee739-systemapis",
+  "AI_COPILOT_URL_SUFFIX": "/systemapis/aicopilot/v1.0/copilot",
+  "AI_COPILOT_DATACOLLECTOR_BASE_URL": "https://apis.preview-dv.choreo.dev/copilotfeedbackcollector/v1.0",
+  "AI_COPILOT_BLOG_URL": "https://wso2.com/library/blogs/introducing-choreo-copilot/",
   "GITHUB_APP_CLIENT_ID": "Iv1.f6cf2cd585148ee7",
   "GITHUB_APP_AUTH_REDIRECTION_URL": ""
 }

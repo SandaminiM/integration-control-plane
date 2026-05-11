@@ -39,6 +39,8 @@ interface RuntimeConfig {
   SAMPLES_URL?: string;
   PREBUILT_INTEGRATIONS_URL?: string;
   ASGARDEO_SIGNUP_URL?: string;
+  AI_COPILOT_URL_SUFFIX?: string;
+  AI_COPILOT_DATACOLLECTOR_BASE_URL?: string;
 }
 
 export interface ApiConfig {
@@ -64,6 +66,8 @@ export interface ApiConfig {
   samplesUrl?: string;
   prebuiltIntegrationsUrl?: string;
   asgardeoSignupUrl: string;
+  aiCopilotUrlSuffix: string;
+  aiCopilotDatacollectorBaseUrl: string;
 }
 
 // Extend window interface
@@ -94,6 +98,8 @@ const DEFAULT_CONFIG: ApiConfig = {
   githubAppAuthRedirectUrl: `${window.location.origin}/ghapp`,
   subscriptionsApiUrl: import.meta.env.DEV ? '/subscriptions-proxy' : 'https://subscriptions.dv.wso2.com',
   asgardeoSignupUrl: 'https://dev.asgardeo.io/signup',
+  aiCopilotUrlSuffix: '',
+  aiCopilotDatacollectorBaseUrl: '',
 };
 
 /**
@@ -136,6 +142,8 @@ export async function loadConfig(): Promise<void> {
       samplesUrl: config.SAMPLES_URL || undefined,
       prebuiltIntegrationsUrl: config.PREBUILT_INTEGRATIONS_URL || undefined,
       asgardeoSignupUrl: config.ASGARDEO_SIGNUP_URL || DEFAULT_CONFIG.asgardeoSignupUrl,
+      aiCopilotUrlSuffix: config.AI_COPILOT_URL_SUFFIX || DEFAULT_CONFIG.aiCopilotUrlSuffix,
+      aiCopilotDatacollectorBaseUrl: config.AI_COPILOT_DATACOLLECTOR_BASE_URL || DEFAULT_CONFIG.aiCopilotDatacollectorBaseUrl,
     };
 
     console.info('✓ Runtime configuration loaded from config.json');
@@ -176,3 +184,10 @@ export const choreologgingComponentGatewayLogsApiUrl = (): string => {
   const base = window.API_CONFIG.systemApisBaseUrl ?? '';
   return `${base}/systemapis/choreologgingapi/0.2.0/logs/component/gateway?live=true`;
 };
+
+export const copilotApiUrl = (externalVhost: string): string => {
+  const { sysApiPrefix, aiCopilotUrlSuffix } = window.API_CONFIG;
+  return `https://${sysApiPrefix}.${externalVhost}${aiCopilotUrlSuffix}`;
+};
+
+export const copilotDatacollectorBaseUrl = (): string => window.API_CONFIG.aiCopilotDatacollectorBaseUrl;
