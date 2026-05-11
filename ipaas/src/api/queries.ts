@@ -21,7 +21,7 @@ import type { Query } from '@tanstack/react-query';
 import { gql } from './graphql';
 import { authenticatedFetch, getOrgUuidFromToken, refreshAccessToken } from '../auth/tokenManager';
 import { choreoDevopsApiUrl, componentMgtApiUrl, subscriptionsApiUrl } from '../config/api';
-import { fetchApimApi, fetchApimSwagger, type ApimApiInfo } from './apim';
+import { fetchApimApi, fetchApimSwagger, fetchLifecycleState, fetchLifecycleHistory, type ApimApiInfo, type LifecycleState, type LifecycleHistory } from './apim';
 import { UUID_RE } from '../utils/string';
 
 export interface GqlProject {
@@ -272,6 +272,26 @@ export function useApimApi(apimId: string | undefined | null) {
     queryFn: () => fetchApimApi(apimId!),
     enabled: !!apimId,
     staleTime: 30_000,
+    retry: false,
+  });
+}
+
+export function useLifecycleState(apimId: string | undefined | null) {
+  return useQuery<LifecycleState | null>({
+    queryKey: ['lifecycleState', apimId],
+    queryFn: () => fetchLifecycleState(apimId!),
+    enabled: !!apimId,
+    staleTime: 0,
+    retry: false,
+  });
+}
+
+export function useLifecycleHistory(apimId: string | undefined | null) {
+  return useQuery<LifecycleHistory | null>({
+    queryKey: ['lifecycleHistory', apimId],
+    queryFn: () => fetchLifecycleHistory(apimId!),
+    enabled: !!apimId,
+    staleTime: 0,
     retry: false,
   });
 }

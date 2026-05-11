@@ -17,9 +17,8 @@
  */
 
 import { Autocomplete, Box, Button, CircularProgress, Divider, IconButton, InputAdornment, MenuItem, OutlinedInput, PageContent, Select, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { ArrowLeft, Check, Copy, Eye, EyeOff, Key } from '@wso2/oxygen-ui-icons-react';
+import { Check, Copy, Eye, EyeOff, Key } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
 import { fetchApimSwagger, generateTestKey } from '../api/apim';
@@ -29,7 +28,6 @@ import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import NotFound from '../components/NotFound';
 import { useProjectId } from '../hooks/useProjectId';
 import { broaden, resourceUrl, type ComponentScope } from '../nav';
-import { componentOverviewUrl } from '../paths';
 
 const ENV_STATUS_DOT: Record<string, string> = {
   ACTIVE: 'success.main',
@@ -83,7 +81,6 @@ const HideTopPlugin = () => ({
 });
 
 export default function TestConsole(scope: ComponentScope): JSX.Element {
-  const navigate = useNavigate();
   const orgUuid = getOrgUuidFromToken() ?? '';
 
   const { projectId, project } = useProjectId(scope.project);
@@ -244,10 +241,6 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
       {tracks.length > 0 && <DeploymentTrackBar tracks={tracks} selectedId={selectedTrackId} onChange={setSelectedTrackId} orgHandler={scope.org} projectHandler={project?.handler ?? scope.project} componentHandler={component.handler} extra={envSelector} />}
 
       <PageContent>
-        <Button variant="text" size="small" startIcon={<ArrowLeft size={16} />} onClick={() => navigate(componentOverviewUrl(scope.org, project?.handler ?? scope.project, component.handler))} sx={{ mb: 3, textTransform: 'none' }}>
-          Back to Overview
-        </Button>
-
         <Typography variant="h1" sx={{ mb: 3 }}>
           Test Console
         </Typography>
