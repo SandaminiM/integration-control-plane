@@ -883,9 +883,7 @@ export default function AppLayout(): JSX.Element {
                             setComponentSearch('');
                             const newScope = narrow({ level: 'projects', org: scope.org, project: scope.project }, c.handler);
                             if (activeNavId === 'lifecycle') {
-                              navigate(GENERIC_SERVICE_TYPES.has(c.displayType)
-                                ? `/organizations/${scope.org}/projects/${scope.project}/components/${c.handler}/manage/lifecycle`
-                                : componentOverviewUrl(scope.org, scope.project, c.handler));
+                              navigate(GENERIC_SERVICE_TYPES.has(c.displayType) ? `/organizations/${scope.org}/projects/${scope.project}/components/${c.handler}/manage/lifecycle` : componentOverviewUrl(scope.org, scope.project, c.handler));
                             } else {
                               const resolvedTarget = canAccessResource(newScope, resource ?? 'overview', projectId, c.id);
                               navigate(resolvedTarget === 'overview' ? componentOverviewUrl(scope.org, scope.project, c.handler) : resourceUrl(newScope, resolvedTarget));

@@ -205,9 +205,7 @@ export async function fetchLifecycleState(apimId: string): Promise<LifecycleStat
   if (!base) return null;
   const orgUuid = getOrgUuidFromToken() ?? '';
   try {
-    const res = await authenticatedFetch(
-      `${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/lifecycle-state?organizationId=${encodeURIComponent(orgUuid)}`,
-    );
+    const res = await authenticatedFetch(`${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/lifecycle-state?organizationId=${encodeURIComponent(orgUuid)}`);
     if (!res.ok) return null;
     return res.json() as Promise<LifecycleState>;
   } catch {
@@ -220,9 +218,7 @@ export async function fetchLifecycleHistory(apimId: string): Promise<LifecycleHi
   if (!base) return null;
   const orgUuid = getOrgUuidFromToken() ?? '';
   try {
-    const res = await authenticatedFetch(
-      `${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/lifecycle-history?organizationId=${encodeURIComponent(orgUuid)}`,
-    );
+    const res = await authenticatedFetch(`${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/lifecycle-history?organizationId=${encodeURIComponent(orgUuid)}`);
     if (!res.ok) return null;
     return res.json() as Promise<LifecycleHistory>;
   } catch {

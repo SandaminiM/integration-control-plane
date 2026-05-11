@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, Button, ButtonGroup, CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
+import { Box, CircularProgress, PageContent, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
 import { type JSX, useState } from 'react';
 import { useCloudDataPlanes, useComponentByHandler, useEnvironments, useOrgs } from '../api/queries';
 import AlertsConfigurePage from '../components/Alerts/AlertsConfigurePage';
@@ -84,14 +84,17 @@ export default function Alerts(scope: ComponentScope): JSX.Element {
     <PageContent>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Typography variant="h1">Alerts</Typography>
-        <ButtonGroup variant="outlined" size="small">
-          <Button variant={activeTab === 0 ? 'outlined' : 'contained'} color={activeTab === 0 ? undefined : 'secondary'} onClick={() => setActiveTab(0)}>
-            Configure Alerts
-          </Button>
-          <Button variant={activeTab === 1 ? 'outlined' : 'contained'} color={activeTab === 1 ? undefined : 'secondary'} onClick={() => setActiveTab(1)}>
-            Alerts History
-          </Button>
-        </ButtonGroup>
+        <ToggleButtonGroup
+          value={activeTab}
+          exclusive
+          size="small"
+          color="primary"
+          onChange={(_, v) => {
+            if (v !== null) setActiveTab(v);
+          }}>
+          <ToggleButton value={0}>Configure Alerts</ToggleButton>
+          <ToggleButton value={1}>Alerts History</ToggleButton>
+        </ToggleButtonGroup>
       </Box>
 
       {activeTab === 0 && (
