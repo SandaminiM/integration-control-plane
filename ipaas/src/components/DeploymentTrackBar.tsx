@@ -40,7 +40,7 @@ function TrackLabel({ track, versionView }: { track: GqlDeploymentTrack; version
   if (versionView) {
     return (
       <Typography variant="body2" sx={{ fontSize: '0.8125rem' }}>
-        {track.apiVersion ?? track.id}
+        {track.apiVersion ? `v${track.apiVersion}` : track.id}
       </Typography>
     );
   }

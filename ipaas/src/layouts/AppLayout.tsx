@@ -87,7 +87,7 @@ import {
   Network,
   Plus,
   Puzzle,
-  RefreshCw,
+  Recycle,
   Rocket,
   ScanEye,
   Scale,
@@ -1243,7 +1243,7 @@ export default function AppLayout(): JSX.Element {
                         {isGenericService && (
                           <Sidebar.Item id="lifecycle">
                             <Sidebar.ItemIcon>
-                              <RefreshCw size={20} />
+                              <Recycle size={20} />
                             </Sidebar.ItemIcon>
                             <Sidebar.ItemLabel>Lifecycle</Sidebar.ItemLabel>
                           </Sidebar.Item>

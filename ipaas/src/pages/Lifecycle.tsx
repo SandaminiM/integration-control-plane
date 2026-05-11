@@ -32,6 +32,11 @@ type ApiState = 'Created' | 'Published' | 'Prototyped' | 'Deprecated' | 'Retired
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
+const ACTION_PENDING_LABEL: Record<string, string> = {
+  Deprecate: 'Deprecating…',
+  Retire: 'Retiring…',
+};
+
 const ACTION_LABEL: Record<string, string> = {
   Publish: 'Publish',
   'Re-Publish': 'Re-Publish',
@@ -142,7 +147,7 @@ function ConfirmDialog({ action, displayName, onDisplayNameChange, onConfirm, on
           Cancel
         </Button>
         <Button variant={isDestructiveAction(action) ? 'outlined' : 'contained'} color={isDestructiveAction(action) ? 'error' : 'primary'} onClick={onConfirm} disabled={confirmDisabled} startIcon={isPending ? <CircularProgress size={14} /> : undefined}>
-          {isPending ? `${label}ing…` : 'Confirm'}
+          {isPending ? (ACTION_PENDING_LABEL[action] ?? `${label}ing…`) : 'Confirm'}
         </Button>
       </DialogActions>
     </Dialog>
@@ -514,7 +519,7 @@ function LCStateDiagram({ currentState, availableTransitions }: LCStateDiagramPr
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function Lifecycle(scope: ComponentScope): JSX.Element {
-  const { projectId } = useProjectId(scope.project);
+  const { projectId, isLoading: loadingProject } = useProjectId(scope.project);
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
 
   const tracks = useMemo(() => component?.deploymentTracks ?? [], [component?.deploymentTracks]);
@@ -531,7 +536,10 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
 
   const [selectedApimId, setSelectedApimId] = useState<string | null>(null);
   useEffect(() => {
-    setSelectedApimId(endpoints.find((e) => e.apimId)?.apimId ?? null);
+    setSelectedApimId((prev) => {
+      if (prev && endpoints.some((e) => e.apimId === prev)) return prev;
+      return endpoints.find((e) => e.apimId)?.apimId ?? null;
+    });
   }, [endpoints]);
 
   const endpointsWithApim = useMemo(() => {
@@ -554,7 +562,13 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
       setApimApiInfo(null);
       return;
     }
-    fetchApimApi(selectedApimId).then(setApimApiInfo);
+    let cancelled = false;
+    fetchApimApi(selectedApimId).then((result) => {
+      if (!cancelled) setApimApiInfo(result);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [selectedApimId]);
 
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -563,7 +577,7 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
   const [errorMsg, setErrorMsg] = useState('');
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  const isLoading = loadingComponent || loadingEndpoints || loadingState;
+  const isLoading = loadingProject || loadingComponent || (tracks.length > 0 && !selectedTrackId) || loadingEndpoints || (endpointsWithApim.length > 0 && !selectedApimId) || loadingState;
 
   const devPortalBaseUrl = getDevPortalBaseUrl();
   const isDevPortalEnabled = lifecycleState?.state === 'Published' || lifecycleState?.state === 'Prototyped';
@@ -598,16 +612,6 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
       setErrorMsg(err instanceof Error ? err.message : 'Lifecycle state change failed');
     }
   };
-
-  if (!loadingComponent && !loadingEndpoints && endpointsWithApim.length === 0) {
-    return (
-      <PageContent>
-        <Box sx={{ p: 4 }}>
-          <Alert severity="info">No managed API endpoints found for this integration. Deploy an endpoint to manage its lifecycle.</Alert>
-        </Box>
-      </PageContent>
-    );
-  }
 
   return (
     <Box sx={{ position: 'relative', overflow: 'hidden', flex: 1 }}>
@@ -657,6 +661,8 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
           </Box>
+        ) : endpointsWithApim.length === 0 ? (
+          <Alert severity="info">No managed API endpoints found for this integration. Deploy an endpoint to manage its lifecycle.</Alert>
         ) : !lifecycleState ? (
           <Alert severity="warning">Unable to load lifecycle state. Please try again later.</Alert>
         ) : (
