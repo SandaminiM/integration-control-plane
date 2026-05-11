@@ -23,9 +23,7 @@ import type { RepoTreeNode } from '../../api/queries';
 import DirectoryPickerDialog from './DirectoryPickerDialog';
 
 interface DirectoryPickerFieldProps {
-  org: string;
   repo: string;
-  branch: string;
   value: string;
   onChange: (path: string) => void;
   statusIcon?: React.ReactNode;
@@ -37,7 +35,7 @@ interface DirectoryPickerFieldProps {
   disabled?: boolean;
 }
 
-export default function DirectoryPickerField({ org: _org, repo, branch: _branch, value, onChange, statusIcon, isValidating = false, isError = false, contents, isFetching, onRefetch, disabled = false }: DirectoryPickerFieldProps): JSX.Element {
+export default function DirectoryPickerField({ repo, value, onChange, statusIcon, isValidating = false, isError = false, contents, isFetching, onRefetch, disabled = false }: DirectoryPickerFieldProps): JSX.Element {
   const [open, setOpen] = useState(false);
 
   const helperText = isValidating ? 'Validating…' : isError || 'Path (/ for root)';
@@ -68,18 +66,17 @@ export default function DirectoryPickerField({ org: _org, repo, branch: _branch,
                   <CircularProgress size={14} />
                 ) : (
                   <Tooltip title="Edit path" placement="top">
-                    <span>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!disabled) setOpen(true);
-                        }}
-                        disabled={disabled}
-                        sx={{ color: 'primary.main' }}>
-                        <Edit size={14} />
-                      </IconButton>
-                    </span>
+                    <IconButton
+                      size="small"
+                      aria-label="Edit path"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!disabled) setOpen(true);
+                      }}
+                      disabled={disabled}
+                      sx={{ color: 'primary.main' }}>
+                      <Edit size={14} />
+                    </IconButton>
                   </Tooltip>
                 )}
               </InputAdornment>

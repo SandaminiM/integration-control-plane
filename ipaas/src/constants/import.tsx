@@ -21,21 +21,6 @@ import { Box } from '@wso2/oxygen-ui';
 import type { ReactNode } from 'react';
 import type { IntegrationTypeOption } from '../types/import';
 
-export const SAMPLE_REPO_URL = 'https://github.com/wso2/integration-samples';
-
-export const GITHUB_URL_RE = /^https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\s*$/i;
-
-export const GITHUB_AUTH = {
-  POPUP_DIMENSIONS: 'width=800,height=600',
-  POPUP_POLL_INTERVAL_MS: 500,
-  BROADCAST_CHANNEL: 'EXTERNALOAUTH',
-} as const;
-
-export const FORM_CONFIG = {
-  URL_DEBOUNCE_MS: 600,
-  SUCCESS_REDIRECT_DELAY_MS: 1500,
-} as const;
-
 export const INTEGRATION_TYPES: IntegrationTypeOption[] = [
   {
     id: 'service',

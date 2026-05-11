@@ -16,9 +16,12 @@
  * under the License.
  */
 
-import { GITHUB_URL_RE } from '../constants/github';
+export const GITHUB_URL_RE = /^https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\s*$/i;
 
-export function parseGitHubUrl(url: string): { org: string; repo: string } | null {
-  const m = url.trim().match(GITHUB_URL_RE);
-  return m ? { org: m[1], repo: m[2] } : null;
-}
+export const GITHUB_AUTH = {
+  POPUP_DIMENSIONS: 'width=800,height=600',
+  POPUP_POLL_INTERVAL_MS: 500,
+  BROADCAST_CHANNEL: 'EXTERNALOAUTH',
+} as const;
+
+export const SAMPLE_REPO_URL = 'https://github.com/wso2/integration-samples';

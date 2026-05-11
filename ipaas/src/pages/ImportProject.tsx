@@ -31,12 +31,12 @@ import {
   Tooltip,
   Typography,
 } from '@wso2/oxygen-ui';
-import { ArrowLeft, Building2, Check, ChevronDown, ChevronUp, Edit, GitHub, GitBranch } from '@wso2/oxygen-ui-icons-react';
+import { ArrowLeft, Building2, Check, CheckCircle2, Edit, GitHub, GitBranch } from '@wso2/oxygen-ui-icons-react';
 import GitIcon from '../assets/icons/GitIcon';
 import GitProviderCards from '../components/ProjectCreate/GitProviderCards';
 import { useState, useEffect, useLayoutEffect, type JSX } from 'react';
+import { useNavigate } from 'react-router';
 import {
-  useCreateProject,
   useCreateMonoRepoProject,
   useCreateComponent,
 } from '../api/mutations';
@@ -54,16 +54,15 @@ import { isBallerinaWorkspace } from '../utils/technologyDetection';
 import { validateProjectName, validateProjectHandler, normalizeProjectError } from '../utils/projectValidation';
 import type { GitProvider, WorkspaceModule } from '../types/project';
 
-export default function CreateProject(scope: OrgScope): JSX.Element {
+export default function ImportProject(scope: OrgScope): JSX.Element {
+  const navigate = useNavigate();
 
   const [displayName, setDisplayName] = useState('');
   const [description, setDescription] = useState('');
 
   const [gitProvider, setGitProvider] = useState<GitProvider | null>(null);
   const isPublicRepo = gitProvider === 'public';
-  const attachGit = gitProvider !== null;
-
-  const [gitSectionOpen, setGitSectionOpen] = useState(false);
+  const providerSelected = gitProvider !== null;
 
   const [selectedOrg, setSelectedOrg] = useState('');
   const [selectedRepo, setSelectedRepo] = useState('');
@@ -78,9 +77,8 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
 
   const [isWorkspace, setIsWorkspace] = useState(false);
   const [workspaceModules, setWorkspaceModules] = useState<WorkspaceModule[]>([]);
-  const [showWorkspaceConfig, setShowWorkspaceConfig] = useState(false);
 
-  const [isCreating, setIsCreating] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const activeOrg = isPublicRepo ? parsedOrg : selectedOrg;
@@ -91,12 +89,6 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
   // colSize: 4 fields (GitHub + branch + subpath) → md:3; otherwise → md:4
   const colSize = !isPublicRepo && showBranchAndSubPath ? 3 : 4;
 
-  const { handler: effectiveHandler, handlerEdited, isCheckingAvailability, availability, startEditing, stopEditing, onHandlerChange } = useProjectHandler(displayName);
-  const { authStatus, startGitHubAuth } = useGitHubAuth();
-  const createProject = useCreateProject();
-  const createMonoRepoProject = useCreateMonoRepoProject();
-  const createComponent = useCreateComponent();
-
   const { data: orgs = [] } = useOrgs();
   const orgUuid = getOrgUuidFromToken() ?? orgs.find((o) => o.handle === scope.org)?.uuid ?? '';
   const { data: orgLimits } = useOrgComponentLimits(orgUuid);
@@ -104,6 +96,11 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
   const isUpgraded = (subscriptions ?? []).some((s) => s.subscriptionType === 'devant-subscription' && s.subscriptionStatus === 'active');
   const orgBillableCount = isUpgraded ? 0 : (orgLimits?.billableComponentCount ?? 0);
   const quotaRemaining = isUpgraded ? undefined : Math.max(0, FREE_COMPONENT_LIMIT - orgBillableCount);
+
+  const { handler: effectiveHandler, handlerEdited, isCheckingAvailability, availability, startEditing, stopEditing, onHandlerChange } = useProjectHandler(displayName);
+  const { authStatus, startGitHubAuth } = useGitHubAuth();
+  const createMonoRepoProject = useCreateMonoRepoProject();
+  const createComponent = useCreateComponent();
 
   const reposEnabled = !isPublicRepo && authStatus === 'done';
   const { data: userRepos, isLoading: isReposLoading, refetch: refetchRepos } = useGitHubUserRepos(reposEnabled);
@@ -128,24 +125,19 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
     }
   }, [branches]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reset downstream state when GitHub repo changes
   useEffect(() => {
     if (isPublicRepo) return;
     setSelectedBranch('');
     setSubPath('/');
     setIsWorkspace(false);
     setWorkspaceModules([]);
-    setShowWorkspaceConfig(false);
   }, [selectedRepo]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reset workspace when branch changes
   useEffect(() => {
     setIsWorkspace(false);
     setWorkspaceModules([]);
-    setShowWorkspaceConfig(false);
   }, [selectedBranch]);
 
-  // Public repo: debounced URL parsing
   useEffect(() => {
     if (!isPublicRepo) return;
     const id = setTimeout(() => {
@@ -173,11 +165,10 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
       }
     }, URL_DEBOUNCE_MS);
     return () => clearTimeout(id);
-    // parsedOrg/parsedRepo intentionally omitted — compared only on change
+    // parsedOrg/parsedRepo intentionally omitted
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [repoUrl]);
 
-  // Workspace detection from repo contents
   useEffect(() => {
     if (!pathReady || isContentsLoading) {
       setIsWorkspace(false);
@@ -192,10 +183,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
     }
     const workspace = isBallerinaWorkspace(nodes);
     setIsWorkspace(workspace);
-    if (!workspace) {
-      setWorkspaceModules([]);
-      setShowWorkspaceConfig(false);
-    }
+    if (!workspace) setWorkspaceModules([]);
   }, [repoContents, subPath, pathReady, isContentsLoading]);
 
   // Stabilize scrollbar gutter to prevent layout shift when content height changes
@@ -204,40 +192,14 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
     return () => { document.documentElement.style.removeProperty('scrollbar-gutter'); };
   }, []);
 
-  const resetGitState = () => {
-    setSelectedOrg('');
-    setSelectedRepo('');
-    setRepoUrl('');
-    setUrlError('');
-    setParsedOrg('');
-    setParsedRepo('');
-    setSelectedBranch('');
-    setSubPath('/');
-    setIsWorkspace(false);
-    setWorkspaceModules([]);
-    setShowWorkspaceConfig(false);
-  };
-
   const handleProviderSelect = (provider: GitProvider) => {
-    if (gitProvider !== null) resetGitState();
     setGitProvider(provider);
-  };
-
-  const handleGitSectionToggle = () => {
-    if (gitSectionOpen) {
-      // User is dismissing the optional section — clear any provider and repo state.
-      setGitProvider(null);
-      resetGitState();
-    }
-    setGitSectionOpen((prev) => !prev);
   };
 
   const nameError = displayName ? validateProjectName(displayName) : null;
   const handlerError = effectiveHandler ? validateProjectHandler(effectiveHandler) : null;
   const handlerTaken = availability && !availability.handlerUnique ? 'This name is already taken.' : null;
 
-  const gitReady = !attachGit || (showBranchAndSubPath && !!selectedBranch);
-  // Block submit until availability has returned a result (prevents racing the debounce and hitting 409)
   const availabilityReady = !effectiveHandler || effectiveHandler.length < 2 || availability !== undefined;
   const canSubmit =
     !!displayName.trim() &&
@@ -247,46 +209,39 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
     !handlerTaken &&
     !isCheckingAvailability &&
     availabilityReady &&
-    gitReady;
+    pathReady &&
+    isWorkspace &&
+    workspaceModules.length > 0;
 
-  const handleSubmit = async () => {
-    setIsCreating(true);
+  const handleImport = async () => {
+    setIsImporting(true);
     setSubmitError(null);
 
     // Step 1: create the project. Any failure here is surfaced immediately.
     let project: GqlProject;
     try {
-      if (attachGit && activeOrg && activeRepo && selectedBranch) {
-        project = await createMonoRepoProject.mutateAsync({
-          name: displayName.trim(),
-          handler: effectiveHandler,
-          description: description.trim(),
-          orgHandler: scope.org,
-          repository: activeRepo,
-          gitOrganization: activeOrg,
-          branch: selectedBranch,
-          directoryPath: subPath === '/' ? '' : subPath.replace(/^\//, ''),
-          gitProvider: isPublicRepo ? 'public' : 'github',
-          isPublicRepo,
-        });
-      } else {
-        project = await createProject.mutateAsync({
-          name: displayName.trim(),
-          handler: effectiveHandler,
-          description: description.trim(),
-          orgHandler: scope.org,
-        });
-      }
+      project = await createMonoRepoProject.mutateAsync({
+        name: displayName.trim(),
+        handler: effectiveHandler,
+        description: description.trim(),
+        orgHandler: scope.org,
+        repository: activeRepo,
+        gitOrganization: activeOrg,
+        branch: selectedBranch,
+        directoryPath: subPath === '/' ? '' : subPath.replace(/^\//, ''),
+        gitProvider: isPublicRepo ? 'public' : 'github',
+        isPublicRepo,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.';
       setSubmitError(normalizeProjectError(message));
-      setIsCreating(false);
+      setIsImporting(false);
       return;
     }
 
     // Step 2: create workspace module components. The project already exists, so individual
     // component failures don't block navigation — the user can manage them from the project page.
-    if (isWorkspace && workspaceModules.length > 0) {
+    if (workspaceModules.length > 0) {
       const srcGitRepoUrl = `https://github.com/${activeOrg}/${activeRepo}`;
       await Promise.allSettled(
         workspaceModules.map((module) =>
@@ -306,7 +261,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
       );
     }
 
-    window.location.href = resourceUrl(narrow(scope, project.handler), 'overview');
+    navigate(resourceUrl(narrow(scope, project.handler), 'overview'));
   };
 
   const renderHandlerHelperText = () => {
@@ -378,7 +333,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
   const reposForOrg = userRepos?.find((o) => o.orgName === selectedOrg)?.repositories.map((r) => r.name) ?? [];
 
   const renderRepoPickers = () => (
-    <Grid container spacing={3} sx={{ mb: 5 }}>
+    <Grid container spacing={3} sx={{ mb: 3 }}>
       {isPublicRepo ? (
         <Grid size={{ xs: 12, md: colSize }}>
           <TextField
@@ -517,6 +472,16 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
             onRefetch={refetchContents}
             disabled={!selectedBranch}
           />
+          {isWorkspace && pathReady && !isContentsLoading && (
+            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.75, ml: 1.5 }}>
+              <Box sx={{ color: 'success.main', display: 'flex' }}>
+                <CheckCircle2 size={14} />
+              </Box>
+              <Typography variant="caption" color="success.main" fontWeight={500}>
+                Ballerina Workspace Detected
+              </Typography>
+            </Stack>
+          )}
         </Grid>
       )}
     </Grid>
@@ -528,8 +493,11 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
         Back to Home
       </Button>
 
-      <Typography variant="h1" sx={{ mb: 4 }}>
-        Create a Project
+      <Typography variant="h1" sx={{ mb: 1 }}>
+        Import a Project
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+        Choose a repository with your existing Ballerina workspace project.
       </Typography>
 
       {submitError && (
@@ -538,155 +506,121 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
         </Alert>
       )}
 
-      {/* Project details */}
-      <Typography variant="h5" component="h2" sx={{ mb: 2 }}>
-        Project Details
-      </Typography>
-
-      <Grid container spacing={3} sx={{ mb: 5 }}>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <TextField
-            label="Display Name"
-            required
-            placeholder="Enter Project Name"
-            value={displayName}
-            onChange={(e) => {
-              setDisplayName(e.target.value);
-              setSubmitError(null);
-            }}
-            fullWidth
-            error={!!nameError}
-            helperText={nameError ?? 'Name of the project'}
-            slotProps={{ htmlInput: { 'aria-label': 'Display Name' } }}
+      {/* Source Repository — always visible first */}
+      {!providerSelected ? (
+        <Box sx={{ mb: 4 }}>
+          <GitProviderCards
+            onGitHubSelect={() => { handleProviderSelect('github'); startGitHubAuth(refetchRepos); }}
+            onPublicSelect={() => handleProviderSelect('public')}
           />
-        </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <TextField
-            label="Name"
-            value={effectiveHandler}
-            onChange={(e) => onHandlerChange(e.target.value)}
-            fullWidth
-            disabled={!handlerEdited}
-            error={!!handlerError || !!handlerTaken}
-            helperText={renderHandlerHelperText()}
-            slotProps={{
-              htmlInput: { 'aria-label': 'Name' },
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    {isCheckingAvailability ? (
-                      <CircularProgress size={16} />
-                    ) : (
-                      <Tooltip title={handlerEdited ? 'Done' : 'Edit name'} placement="top">
-                        <IconButton
-                          size="small"
-                          aria-label={handlerEdited ? 'Confirm name' : 'Edit name'}
-                          onClick={() => (handlerEdited ? stopEditing() : startEditing())}
-                          sx={handlerEdited ? { color: 'success.main' } : { color: 'primary.main' }}>
-                          {handlerEdited ? <Check size={16} /> : <Edit size={16} />}
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <TextField
-            label="Description (Optional)"
-            placeholder="Enter description here"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            fullWidth
-            multiline
-            minRows={1}
-            slotProps={{ htmlInput: { 'aria-label': 'Description' } }}
-          />
-        </Grid>
-      </Grid>
-
-      {/* Connect Repository — collapsible optional section */}
-      <Stack
-        direction="row"
-        alignItems="center"
-        gap={1.5}
-        role="button"
-        tabIndex={0}
-        aria-expanded={gitSectionOpen}
-        onClick={handleGitSectionToggle}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleGitSectionToggle(); } }}
-        sx={{ cursor: 'pointer', mb: gitSectionOpen ? 2 : 6, userSelect: 'none' }}>
-        <Typography variant="h5" component="h2">
-          Connect Your Repository (Optional)
-        </Typography>
-        <Box sx={{ color: 'primary.main', display: 'flex' }}>
-          {gitSectionOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </Box>
-      </Stack>
-
-      {gitSectionOpen && (
-        <>
-          {!attachGit ? (
-            <Box sx={{ mb: 5 }}>
-              <GitProviderCards
-                onGitHubSelect={() => { handleProviderSelect('github'); startGitHubAuth(refetchRepos); }}
-                onPublicSelect={() => handleProviderSelect('public')}
-              />
-            </Box>
-          ) : (
-            <Box sx={{ mt: 4 }}>
-              {gitProvider === 'github' && renderGitHubAuthArea()}
-              {renderRepoPickers()}
-            </Box>
+      ) : (
+        <Box sx={{ mb: 1 }}>
+          {gitProvider === 'github' && renderGitHubAuthArea()}
+          {renderRepoPickers()}
+          {pathReady && !isContentsLoading && !isContentsError && !isWorkspace && (
+            <Alert severity="info" sx={{ mb: 3 }}>
+              No Ballerina workspace detected in the selected directory. Select a directory that contains a Ballerina
+              workspace (a root <code>Ballerina.toml</code> with subdirectories that each have their own{' '}
+              <code>Ballerina.toml</code>).
+            </Alert>
           )}
-        </>
-      )}
-
-      {/* Workspace detected — prompt user to configure integrations */}
-      {isWorkspace && !showWorkspaceConfig && (
-        <Box sx={{ mb: 5, mt: -1 }}>
-          <Typography variant="body2" color="text.secondary">
-            WSO2 Integrator project detected. Do you want to import its integrations?
-          </Typography>
-          <Button
-            variant="text"
-            size="small"
-            sx={{
-              p: 0,
-              minWidth: 0,
-              mt: 0.5,
-              '&:hover': {
-                backgroundColor: 'transparent',
-                textDecoration: 'underline',
-              },
-            }}
-            onClick={() => setShowWorkspaceConfig(true)}>
-            Import Project Integrations
-          </Button>
         </Box>
       )}
-      {isWorkspace && showWorkspaceConfig && (
+
+      {/* Project Details — shown after workspace detection */}
+      {isWorkspace && (
         <>
-          <WorkspaceModuleTable
-            repoName={activeRepo}
-            repoContents={repoContents}
-            modules={workspaceModules}
-            onChange={setWorkspaceModules}
-            quotaRemaining={quotaRemaining}
-          />
-          <Box sx={{ mb: 2 }} />
+          <Typography variant="h5" component="h2" sx={{ mb: 2 }}>
+            Project Details
+          </Typography>
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                label="Display Name"
+                required
+                placeholder="Enter Project Name"
+                value={displayName}
+                onChange={(e) => {
+                  setDisplayName(e.target.value);
+                  setSubmitError(null);
+                }}
+                fullWidth
+                error={!!nameError}
+                helperText={nameError ?? 'Name of the project'}
+                slotProps={{ htmlInput: { 'aria-label': 'Display Name' } }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                label="Name"
+                value={effectiveHandler}
+                onChange={(e) => onHandlerChange(e.target.value)}
+                fullWidth
+                disabled={!handlerEdited}
+                error={!!handlerError || !!handlerTaken}
+                helperText={renderHandlerHelperText()}
+                slotProps={{
+                  htmlInput: { 'aria-label': 'Name' },
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        {isCheckingAvailability ? (
+                          <CircularProgress size={16} />
+                        ) : (
+                          <Tooltip title={handlerEdited ? 'Done' : 'Edit name'} placement="top">
+                            <IconButton
+                              size="small"
+                              aria-label={handlerEdited ? 'Confirm name' : 'Edit name'}
+                              onClick={() => (handlerEdited ? stopEditing() : startEditing())}
+                              sx={handlerEdited ? { color: 'success.main' } : { color: 'primary.main' }}>
+                              {handlerEdited ? <Check size={16} /> : <Edit size={16} />}
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                label="Description (Optional)"
+                placeholder="Enter description here"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                fullWidth
+                multiline
+                minRows={1}
+                slotProps={{ htmlInput: { 'aria-label': 'Description' } }}
+              />
+            </Grid>
+          </Grid>
         </>
       )}
 
-      <Stack direction="row" gap={2} sx={{ mt: 3 }}>
-        <Button variant="outlined" onClick={() => window.history.back()} disabled={isCreating}>
+      {/* Configure Integrations — shown after workspace detection */}
+      {isWorkspace && (
+        <WorkspaceModuleTable
+          repoName={activeRepo}
+          repoContents={repoContents}
+          modules={workspaceModules}
+          onChange={setWorkspaceModules}
+          quotaRemaining={quotaRemaining}
+          alertWhenEmpty
+        />
+      )}
+
+      <Stack direction="row" gap={2} sx={{ mt: 2 }}>
+        <Button variant="outlined" onClick={() => window.history.back()} disabled={isImporting}>
           Cancel
         </Button>
-        <Button variant="contained" onClick={handleSubmit} disabled={!canSubmit || isCreating} startIcon={isCreating ? <CircularProgress size={16} color="inherit" /> : undefined}>
-          {isCreating ? 'Creating…' : 'Create Project'}
-        </Button>
+        {isWorkspace && (
+          <Button variant="contained" onClick={handleImport} disabled={!canSubmit || isImporting} startIcon={isImporting ? <CircularProgress size={16} color="inherit" /> : undefined}>
+            {isImporting ? 'Importing…' : 'Import'}
+          </Button>
+        )}
       </Stack>
     </PageContent>
   );

@@ -133,7 +133,7 @@ export default function DirectoryPickerDialog({ open, onClose, onSave, repoName,
               </Box>
 
               <Tooltip title="Refresh directory listing">
-                <IconButton size="small" onClick={onRefetch} sx={{ alignSelf: 'flex-start', mt: 0.5 }}>
+                <IconButton size="small" aria-label="Refresh directory listing" onClick={onRefetch} sx={{ alignSelf: 'flex-start', mt: 0.5 }}>
                   <RefreshCw size={14} />
                 </IconButton>
               </Tooltip>

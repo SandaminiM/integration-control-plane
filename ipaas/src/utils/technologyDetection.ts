@@ -16,7 +16,9 @@
  * under the License.
  */
 
-import type { GqlRepoMetadata, DetectedMode } from '../api/queries';
+import type { GqlRepoMetadata, DetectedMode, RepoTreeNode } from '../api/queries';
+import type { WorkspaceModule } from '../types/project';
+import { formatRepoNameToDisplayName } from './string';
 
 export function detectTechnology(metadata: GqlRepoMetadata | undefined): DetectedMode {
   if (!metadata) return null;
@@ -27,4 +29,35 @@ export function detectTechnology(metadata: GqlRepoMetadata | undefined): Detecte
   if (hasPomXmlInPath || hasPomXmlInRoot) return 'mi';
   if (isSubPathEmpty) return 'empty';
   return 'non-empty';
+}
+
+export function isBallerinaWorkspace(nodes: RepoTreeNode[]): boolean {
+  const hasRootToml = nodes.some((n) => n.subPath === 'Ballerina.toml' && n.type === 'blob');
+  if (!hasRootToml) return false;
+  const subdirs = nodes.filter((n) => n.type === 'tree');
+  return subdirs.some((dir) =>
+    dir.children?.some((child) => child.subPath === 'Ballerina.toml' && child.type === 'blob'),
+  );
+}
+
+export function extractWorkspaceModules(nodes: RepoTreeNode[]): WorkspaceModule[] {
+  return nodes
+    .filter(
+      (n) =>
+        n.type === 'tree' &&
+        n.children?.some((child) => child.subPath === 'Ballerina.toml' && child.type === 'blob'),
+    )
+    .map((n) => ({
+      path: n.path,
+      name: n.subPath,
+      displayName: formatRepoNameToDisplayName(n.subPath),
+      integrationType: 'service' as const,
+    }));
+}
+
+export function isBallerinaModule(node: RepoTreeNode): boolean {
+  return (
+    node.type === 'tree' &&
+    (node.children?.some((c) => c.subPath === 'Ballerina.toml' && c.type === 'blob') ?? false)
+  );
 }

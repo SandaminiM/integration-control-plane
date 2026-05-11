@@ -67,7 +67,7 @@ import { useAuth } from '../auth/AuthContext';
 import { componentOverviewUrl, importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, importComingSoonUrl, buildGitHubOAuthUrl } from '../paths';
 import { Permissions } from '../constants/permissions';
 import { SUPPORTED_DISPLAY_TYPES, getDisplayLabel, displayTypeFromSample } from '../constants/integrations';
-import { GITHUB_AUTH } from '../constants/import';
+import { GITHUB_AUTH } from '../constants/github';
 import { CARD_HOVER_SX, PROVIDER_ICON_SX } from '../constants/styles';
 import Authorized from '../components/Authorized';
 import { useAccessControl } from '../contexts/AccessControlContext';

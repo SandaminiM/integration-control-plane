@@ -57,6 +57,10 @@ export function orgHomeUrl(orgHandler: string): string {
   return `/organizations/${orgHandler}/home`;
 }
 
+export function importProjectUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/projects/import`;
+}
+
 export function orgProjectsUrl(orgHandler: string): string {
   return orgUrl(orgHandler);
 }

@@ -37,6 +37,7 @@ import AppLayout from '../layouts/AppLayout';
 import ProtectedRoute from '../auth/ProtectedRoute';
 import Projects from '../pages/Projects';
 import CreateProject from '../pages/CreateProject';
+import ImportProject from '../pages/ImportProject';
 import CreateIntegrationOptions from '../pages/CreateIntegrationOptions';
 import ImportIntegration from '../pages/ImportIntegration';
 import BrowseSamples from '../pages/BrowseSamples';
@@ -166,6 +167,7 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/projects/:projectHandler/home', element: createElement(withScope(Project, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/overview', element: createElement(withScope(Component, ['components'])) },
               { path: 'organizations/:orgHandler/projects/new', element: createElement(withScope(CreateProject, ['organizations'])) },
+              { path: 'organizations/:orgHandler/projects/import', element: createElement(withScope(ImportProject, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new', element: createElement(withScope(CreateIntegrationOptions, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new/import', element: createElement(withScope(ImportIntegration, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new/samples', element: createElement(withScope(BrowseSamples, ['projects'])) },
