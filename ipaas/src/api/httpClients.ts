@@ -84,7 +84,7 @@ export const obsClient = createHttpClient(() => {
 });
 
 // Platform API — component-mgt, config-svc, config-mapping-svc, configuration-schema, config-mgt, proxy/deployer
-export const platformClient = createHttpClient(() => new URL(window.API_CONFIG.choreoOrgApiUrl).origin);
+export const platformClient = createHttpClient(() => window.API_CONFIG.choreoBaseApiUrl);
 
 // Subscriptions service
 export const subscriptionsClient = createHttpClient(subscriptionsApiUrl);

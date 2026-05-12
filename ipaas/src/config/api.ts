@@ -30,7 +30,9 @@ interface RuntimeConfig {
   STS_TOKEN_ENDPOINT?: string;
   STS_CLIENT_ID?: string;
   STS_SCOPE?: string;
-  CHOREO_ORG_API_URL?: string;
+  CHOREO_BASE_API_URL?: string;
+  APIM_BASE_URL?: string;
+  INSIGHTS_BASE_URL?: string;
   ASGARDEO_ORG_NUMERIC_ID?: string;
   SYS_API_PREFIX?: string;
   GITHUB_APP_CLIENT_ID?: string;
@@ -41,7 +43,6 @@ interface RuntimeConfig {
   ASGARDEO_SIGNUP_URL?: string;
   AI_COPILOT_URL_SUFFIX?: string;
   AI_COPILOT_DATACOLLECTOR_BASE_URL?: string;
-  CHOREO_ENV?: string;
 }
 
 export interface ApiConfig {
@@ -57,7 +58,10 @@ export interface ApiConfig {
   stsTokenEndpoint: string;
   stsClientId: string;
   stsScope: string;
+  choreoBaseApiUrl: string;
   choreoOrgApiUrl: string;
+  apimBaseUrl: string;
+  insightsBaseUrl: string;
   asgardeoOrgNumericId?: number;
   systemApisBaseUrl?: string;
   sysApiPrefix: string;
@@ -69,7 +73,6 @@ export interface ApiConfig {
   asgardeoSignupUrl: string;
   aiCopilotUrlSuffix: string;
   aiCopilotDatacollectorBaseUrl: string;
-  choreoEnv: string;
 }
 
 // Extend window interface
@@ -93,7 +96,10 @@ const DEFAULT_CONFIG: ApiConfig = {
   stsTokenEndpoint: '',
   stsClientId: '',
   stsScope: '',
+  choreoBaseApiUrl: 'https://apis.preview-dv.choreo.dev',
   choreoOrgApiUrl: 'https://apis.preview-dv.choreo.dev/orgs/1.0.0',
+  apimBaseUrl: 'https://sts.preview-dv.choreo.dev',
+  insightsBaseUrl: 'https://choreocontrolplane.preview-dv.choreo.dev',
   systemApisBaseUrl: '',
   sysApiPrefix: '783c6c4d-8b9b-4190-b70a-e717ab1ee739-systemapis',
   githubAppClientId: '',
@@ -102,7 +108,6 @@ const DEFAULT_CONFIG: ApiConfig = {
   asgardeoSignupUrl: 'https://dev.asgardeo.io/signup',
   aiCopilotUrlSuffix: '',
   aiCopilotDatacollectorBaseUrl: '',
-  choreoEnv: 'preview-dv',
 };
 
 /**
@@ -131,7 +136,10 @@ export async function loadConfig(): Promise<void> {
       stsTokenEndpoint: config.STS_TOKEN_ENDPOINT || DEFAULT_CONFIG.stsTokenEndpoint,
       stsClientId: config.STS_CLIENT_ID || DEFAULT_CONFIG.stsClientId,
       stsScope: config.STS_SCOPE || '',
-      choreoOrgApiUrl: config.CHOREO_ORG_API_URL || DEFAULT_CONFIG.choreoOrgApiUrl,
+      choreoBaseApiUrl: config.CHOREO_BASE_API_URL || DEFAULT_CONFIG.choreoBaseApiUrl,
+      choreoOrgApiUrl: `${config.CHOREO_BASE_API_URL || DEFAULT_CONFIG.choreoBaseApiUrl}/orgs/1.0.0`,
+      apimBaseUrl: config.APIM_BASE_URL || DEFAULT_CONFIG.apimBaseUrl,
+      insightsBaseUrl: config.INSIGHTS_BASE_URL || DEFAULT_CONFIG.insightsBaseUrl,
       systemApisBaseUrl: config.SYSTEM_APIS_BASE_URL || DEFAULT_CONFIG.systemApisBaseUrl,
       asgardeoOrgNumericId: (() => {
         if (config.ASGARDEO_ORG_NUMERIC_ID) return parseInt(config.ASGARDEO_ORG_NUMERIC_ID, 10);
@@ -147,7 +155,6 @@ export async function loadConfig(): Promise<void> {
       asgardeoSignupUrl: config.ASGARDEO_SIGNUP_URL || DEFAULT_CONFIG.asgardeoSignupUrl,
       aiCopilotUrlSuffix: config.AI_COPILOT_URL_SUFFIX || DEFAULT_CONFIG.aiCopilotUrlSuffix,
       aiCopilotDatacollectorBaseUrl: config.AI_COPILOT_DATACOLLECTOR_BASE_URL || DEFAULT_CONFIG.aiCopilotDatacollectorBaseUrl,
-      choreoEnv: config.CHOREO_ENV || DEFAULT_CONFIG.choreoEnv,
     };
 
     console.info('✓ Runtime configuration loaded from config.json');
@@ -164,11 +171,11 @@ export const revokeTokenApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}
 export const oidcAuthorizeApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/oidc/authorize-url`;
 export const oidcCallbackApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/login/oidc`;
 export const subscriptionsApiUrl = (): string => window.API_CONFIG.subscriptionsApiUrl;
-export const choreoDevopsApiUrl = (): string => window.API_CONFIG.choreoOrgApiUrl.replace('/orgs/1.0.0', '/devops/1.0.0');
-export const componentMgtApiUrl = (): string => window.API_CONFIG.choreoOrgApiUrl.replace('/orgs/1.0.0', '/component-mgt/1.0.0');
-export const apimBaseUrl = (): string => `https://sts.${window.API_CONFIG.choreoEnv}.choreo.dev`;
-export const insightsBaseUrl = (): string => `https://choreocontrolplane.${window.API_CONFIG.choreoEnv}.choreo.dev/insights/1.0.0`;
-export const governanceBaseUrl = (): string => `https://apis.${window.API_CONFIG.choreoEnv}.choreo.dev/governance/v1.0`;
+export const choreoDevopsApiUrl = (): string => `${window.API_CONFIG.choreoBaseApiUrl}/devops/1.0.0`;
+export const componentMgtApiUrl = (): string => `${window.API_CONFIG.choreoBaseApiUrl}/component-mgt/1.0.0`;
+export const apimBaseUrl = (): string => window.API_CONFIG.apimBaseUrl;
+export const insightsBaseUrl = (): string => `${window.API_CONFIG.insightsBaseUrl}/insights/1.0.0`;
+export const governanceBaseUrl = (): string => `${window.API_CONFIG.choreoBaseApiUrl}/governance/v1.0`;
 export const changePasswordApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/change-password`;
 export const forceChangePasswordApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/force-change-password`;
 export const choreoAlertingApiUrl = (gatewayHost: string): string => {
