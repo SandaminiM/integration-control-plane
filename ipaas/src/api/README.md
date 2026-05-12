@@ -3,7 +3,7 @@
 > [!IMPORTANT]
 > This directory contains all backend communication logic. The layer is structured in three tiers:
 
-```
+```text
 authenticatedFetch          (auth/tokenManager.ts)
         ↓
 createHttpClient / gql()    (http.ts / graphql.ts)

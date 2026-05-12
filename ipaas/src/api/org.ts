@@ -67,18 +67,19 @@ export async function initOrg(orgUuid: string, region: string): Promise<void> {
 
 /** Creates the default project for a newly onboarded org. Returns { id, handler }. */
 export async function createDefaultProject(orgNumericId: number, orgHandler: string, projectHandler = 'default'): Promise<{ id: string; handler: string }> {
-  const data = await gql<{ createProject: { id: string; handler: string } }>(`
-    mutation {
+  const data = await gql<{ createProject: { id: string; handler: string } }>(
+    `mutation CreateDefaultProject($projectHandler: String!, $orgId: Int!, $orgHandler: String!) {
       createProject(project: {
         name: "Default",
         description: "This is a default project created by WSO2 Integration Platform",
-        projectHandler: "${projectHandler}",
-        orgId: ${orgNumericId},
-        orgHandler: "${orgHandler}",
+        projectHandler: $projectHandler,
+        orgId: $orgId,
+        orgHandler: $orgHandler,
         version: "1.0.0"
       }) { id handler }
-    }
-  `);
+    }`,
+    { projectHandler, orgId: orgNumericId, orgHandler },
+  );
   if (!data.createProject) throw new Error('Failed to create default project');
   return data.createProject;
 }
