@@ -56,13 +56,6 @@ export interface ApimApiInfo {
   [key: string]: unknown;
 }
 
-// Derive APIM Publisher base URL from the choreoOrgApiUrl config.
-// e.g. https://apis.preview-dv.choreo.dev/... → https://sts.preview-dv.choreo.dev
-export function getApimBaseUrl(): string | null {
-  const match = (window.API_CONFIG?.choreoOrgApiUrl ?? '').match(/\/\/apis\.([^.]+)\.choreo\.dev/);
-  return match ? `https://sts.${match[1]}.choreo.dev` : null;
-}
-
 // Derive Developer Portal base URL from the choreoOrgApiUrl config.
 export function getDevPortalBaseUrl(): string | null {
   const match = (window.API_CONFIG?.choreoOrgApiUrl ?? '').match(/\/\/apis\.([^.]+)\.choreo\.dev/);
@@ -161,42 +154,27 @@ export interface LifecycleHistory {
 }
 
 export async function fetchLifecycleState(apimId: string): Promise<LifecycleState | null> {
-  const base = getApimBaseUrl();
-  if (!base) return null;
   const orgUuid = getOrgUuidFromToken() ?? '';
   try {
-    const res = await authenticatedFetch(`${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/lifecycle-state?organizationId=${encodeURIComponent(orgUuid)}`);
-    if (!res.ok) return null;
-    return res.json() as Promise<LifecycleState>;
+    return await apimClient.get<LifecycleState>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/lifecycle-state?organizationId=${encodeURIComponent(orgUuid)}`);
   } catch {
     return null;
   }
 }
 
 export async function fetchLifecycleHistory(apimId: string): Promise<LifecycleHistory | null> {
-  const base = getApimBaseUrl();
-  if (!base) return null;
   const orgUuid = getOrgUuidFromToken() ?? '';
   try {
-    const res = await authenticatedFetch(`${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/lifecycle-history?organizationId=${encodeURIComponent(orgUuid)}`);
-    if (!res.ok) return null;
-    return res.json() as Promise<LifecycleHistory>;
+    return await apimClient.get<LifecycleHistory>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/lifecycle-history?organizationId=${encodeURIComponent(orgUuid)}`);
   } catch {
     return null;
   }
 }
 
 export async function changeLifecycleState(apimId: string, action: string): Promise<LifecycleState> {
-  const base = getApimBaseUrl();
-  if (!base) throw new Error('APIM base URL could not be derived from configuration');
   const orgUuid = getOrgUuidFromToken() ?? '';
   const params = new URLSearchParams({ organizationId: orgUuid, apiId: apimId, action });
-  const res = await authenticatedFetch(`${base}/api/am/publisher/v2/apis/change-lifecycle?${params}`, { method: 'POST' });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`Lifecycle change failed: ${res.status} ${res.statusText}${text ? ` — ${text}` : ''}`);
-  }
-  const data = (await res.json()) as { lifecycleState: LifecycleState };
+  const data = await apimClient.post<{ lifecycleState: LifecycleState }>(`/api/am/publisher/v2/apis/change-lifecycle?${params}`);
   return data.lifecycleState;
 }
 

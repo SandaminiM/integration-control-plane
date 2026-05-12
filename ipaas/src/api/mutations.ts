@@ -855,7 +855,7 @@ export interface SaveSchemaConfigInput {
 
 export function useSaveSchemaConfig() {
   const qc = useQueryClient();
-  return useMutation({
+  return useMutation<{ configurations: SchemaConfigItem[] }, unknown, SaveSchemaConfigInput>({
     mutationFn: (input: SaveSchemaConfigInput) =>
       platformClient.post(
         `/configuration-schema/v1.0/projects/${input.projectId}/components/${input.componentId}/env-template/${input.envId}/deployment-track/${input.deploymentTrackId}/configurations`,
