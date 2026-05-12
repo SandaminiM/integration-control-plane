@@ -17,7 +17,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { insightsClient } from './http';
+import { insightsClient } from './httpClients';
 
 async function postInsightsQuery<T>(query: string, variables: Record<string, unknown>): Promise<T | null> {
   try {

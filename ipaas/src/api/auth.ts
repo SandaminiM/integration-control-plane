@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { authClient } from './http';
+import { authClient } from './httpClients';
 
 export const authGet = <T>(path: string): Promise<T> => authClient.get<T>(path);
 export const authPost = <T>(path: string, body: unknown): Promise<T> => authClient.post<T>(path, body);

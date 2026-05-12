@@ -6,9 +6,9 @@
 ```text
 authenticatedFetch          (auth/tokenManager.ts)
         ↓
-createHttpClient / gql()    (http.ts / graphql.ts)
+createHttpClient / gql()    (httpClients.ts / graphql.ts)
         ↓
-Named service clients       (http.ts exports)
+Named service clients       (httpClients.ts exports)
         ↓
 Domain files                (alerts.ts, builds.ts, queries.ts, …)
 ```
@@ -26,7 +26,7 @@ Domain files                (alerts.ts, builds.ts, queries.ts, …)
 | File | Protocol | Endpoint |
 |------|----------|----------|
 | `graphql.ts` | GraphQL | `window.API_CONFIG.graphqlUrl` |
-| `http.ts` | REST/JSON | configurable per client |
+| `httpClients.ts` | REST/JSON | configurable per client |
 
 `createHttpClient(getBaseUrl)` is the REST factory. It handles JSON serialisation, `Content-Type` headers, error throwing on non-2xx, and response parsing. The optional third parameter on `post/put/delete` accepts custom headers (e.g. `application/x-www-form-urlencoded`).
 
@@ -34,7 +34,7 @@ Domain files                (alerts.ts, builds.ts, queries.ts, …)
 
 ## Tier 3 — Named service clients
 
-All defined in `http.ts`. Import the relevant client in domain files — never construct base URLs manually.
+All defined in `httpClients.ts`. Import the relevant client in domain files — never construct base URLs manually.
 
 | Client | Backend service | Base URL source |
 |--------|----------------|-----------------|

@@ -17,7 +17,7 @@
  */
 
 import { gql } from './graphql';
-import { devopsClient } from './http';
+import { devopsClient } from './httpClients';
 import type { ContainerRegistry } from '../types/cloudEditor';
 
 const CHOREO_SAMPLES_REGISTRY_HOST = 'choreoanonymouspullable.azurecr.io';

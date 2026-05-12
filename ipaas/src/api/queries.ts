@@ -21,7 +21,7 @@ import type { Query } from '@tanstack/react-query';
 import { gql } from './graphql';
 import { authenticatedFetch, getOrgUuidFromToken, refreshAccessToken } from '../auth/tokenManager';
 import { componentMgtApiUrl } from '../config/api';
-import { devopsClient, orgClient, platformClient, subscriptionsClient, systemClient } from './http';
+import { devopsClient, orgClient, platformClient, subscriptionsClient, systemClient } from './httpClients';
 import { fetchApimApi, fetchApimSwagger, fetchLifecycleState, fetchLifecycleHistory, type ApimApiInfo, type LifecycleState, type LifecycleHistory } from './apim';
 import { UUID_RE } from '../utils/string';
 

@@ -17,7 +17,7 @@
  */
 
 import { gql } from './graphql';
-import { platformClient } from './http';
+import { platformClient } from './httpClients';
 import type { SchemaConfigItem } from './queries';
 
 interface NameAvailability {

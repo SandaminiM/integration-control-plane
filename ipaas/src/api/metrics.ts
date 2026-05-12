@@ -17,7 +17,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { obsClient } from './http';
+import { obsClient } from './httpClients';
 
 export interface MetricsRequest {
   componentId?: string;

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { platformClient, systemClient } from './http';
+import { platformClient, systemClient } from './httpClients';
 
 export interface BuildStep {
   number: number;

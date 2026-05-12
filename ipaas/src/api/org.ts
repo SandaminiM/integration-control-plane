@@ -17,7 +17,7 @@
  */
 
 import { gql } from './graphql';
-import { devopsClient, orgClient } from './http';
+import { devopsClient, orgClient } from './httpClients';
 
 export interface OrgEntry {
   handle: string;

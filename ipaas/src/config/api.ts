@@ -41,6 +41,7 @@ interface RuntimeConfig {
   ASGARDEO_SIGNUP_URL?: string;
   AI_COPILOT_URL_SUFFIX?: string;
   AI_COPILOT_DATACOLLECTOR_BASE_URL?: string;
+  CHOREO_ENV?: string;
 }
 
 export interface ApiConfig {
@@ -68,6 +69,7 @@ export interface ApiConfig {
   asgardeoSignupUrl: string;
   aiCopilotUrlSuffix: string;
   aiCopilotDatacollectorBaseUrl: string;
+  choreoEnv: string;
 }
 
 // Extend window interface
@@ -100,6 +102,7 @@ const DEFAULT_CONFIG: ApiConfig = {
   asgardeoSignupUrl: 'https://dev.asgardeo.io/signup',
   aiCopilotUrlSuffix: '',
   aiCopilotDatacollectorBaseUrl: '',
+  choreoEnv: 'preview-dv',
 };
 
 /**
@@ -144,6 +147,7 @@ export async function loadConfig(): Promise<void> {
       asgardeoSignupUrl: config.ASGARDEO_SIGNUP_URL || DEFAULT_CONFIG.asgardeoSignupUrl,
       aiCopilotUrlSuffix: config.AI_COPILOT_URL_SUFFIX || DEFAULT_CONFIG.aiCopilotUrlSuffix,
       aiCopilotDatacollectorBaseUrl: config.AI_COPILOT_DATACOLLECTOR_BASE_URL || DEFAULT_CONFIG.aiCopilotDatacollectorBaseUrl,
+      choreoEnv: config.CHOREO_ENV || DEFAULT_CONFIG.choreoEnv,
     };
 
     console.info('✓ Runtime configuration loaded from config.json');
@@ -162,6 +166,9 @@ export const oidcCallbackApiUrl = (): string => `${window.API_CONFIG.authBaseUrl
 export const subscriptionsApiUrl = (): string => window.API_CONFIG.subscriptionsApiUrl;
 export const choreoDevopsApiUrl = (): string => window.API_CONFIG.choreoOrgApiUrl.replace('/orgs/1.0.0', '/devops/1.0.0');
 export const componentMgtApiUrl = (): string => window.API_CONFIG.choreoOrgApiUrl.replace('/orgs/1.0.0', '/component-mgt/1.0.0');
+export const apimBaseUrl = (): string => `https://sts.${window.API_CONFIG.choreoEnv}.choreo.dev`;
+export const insightsBaseUrl = (): string => `https://choreocontrolplane.${window.API_CONFIG.choreoEnv}.choreo.dev/insights/1.0.0`;
+export const governanceBaseUrl = (): string => `https://apis.${window.API_CONFIG.choreoEnv}.choreo.dev/governance/v1.0`;
 export const changePasswordApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/change-password`;
 export const forceChangePasswordApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/force-change-password`;
 export const choreoAlertingApiUrl = (gatewayHost: string): string => {

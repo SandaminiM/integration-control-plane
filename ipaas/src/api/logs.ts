@@ -19,7 +19,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 // logsApiUrl is a full URL passed by callers; split into origin + path for createHttpClient.
 // A static named client is deferred until callers are refactored (same pattern as alertingClient).
-import { createHttpClient } from './http';
+import { createHttpClient } from './httpClients';
 
 export interface LogsRequest {
   projectId: string;

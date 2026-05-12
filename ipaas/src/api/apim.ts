@@ -17,7 +17,7 @@
  */
 
 import { getOrgUuidFromToken } from '../auth/tokenManager';
-import { apimClient, platformClient } from './http';
+import { apimClient, platformClient } from './httpClients';
 
 export interface ApimApiOperation {
   id?: string;

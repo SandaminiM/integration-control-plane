@@ -18,7 +18,7 @@
 
 // baseUrl is passed by callers that derive it from choreoAlertingApiUrl(gatewayHost). A static named client
 // is deferred until the component-level refactor removes alertingBaseUrl prop-drilling (see memory).
-import { createHttpClient } from './http';
+import { createHttpClient } from './httpClients';
 import type { AlertComponentType } from '../constants/alerts';
 import type { AlertHistoryResponse, AlertRule, AlertRuleCountUsage } from '../types/alerts';
 

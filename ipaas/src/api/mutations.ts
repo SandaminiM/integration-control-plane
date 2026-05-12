@@ -19,7 +19,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { gql } from './graphql';
 import { authenticatedFetch, refreshAccessToken } from '../auth/tokenManager';
-import { platformClient } from './http';
+import { platformClient } from './httpClients';
 import type { GqlArtifact, GqlComponent, GqlEnvironment, GqlProject, GqlEnvEndpoint, SchemaConfigItem, CertMapping } from './queries';
 import { toBackendArtifactType } from './artifactToggleMutations';
 import type { DeployComponentInput, UpdateBuildpackConfigsInput } from '../types/build';

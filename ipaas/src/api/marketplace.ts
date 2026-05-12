@@ -18,7 +18,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getOrgUuidFromToken } from '../auth/tokenManager';
-import { apimClient, governanceClient } from './http';
+import { apimClient, governanceClient } from './httpClients';
 
 // ---------- Types ----------
 

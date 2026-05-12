@@ -17,7 +17,7 @@
  */
 
 import { authenticatedFetch } from '../auth/tokenManager';
-import { choreoDevopsApiUrl, subscriptionsApiUrl } from '../config/api';
+import { apimBaseUrl, choreoDevopsApiUrl, governanceBaseUrl, insightsBaseUrl, subscriptionsApiUrl } from '../config/api';
 
 export interface HttpClient {
   get: <T>(path: string) => Promise<T>;
@@ -55,7 +55,7 @@ export function createHttpClient(getBaseUrl: () => string): HttpClient {
   };
 }
 
-// Service clients
+// HTTP Clients
 
 // Choreo DevOps API — CI/CD, deployments, container registries, cloud editor
 export const devopsClient = createHttpClient(choreoDevopsApiUrl);
@@ -74,11 +74,7 @@ export const systemClient = createHttpClient(() => {
 });
 
 // APIM Publisher — API lifecycle, throttling, swagger
-export const apimClient = createHttpClient(() => {
-  const match = (window.API_CONFIG?.choreoOrgApiUrl ?? '').match(/\/\/apis\.([^.]+)\.choreo\.dev/);
-  if (!match) throw new Error('APIM base URL cannot be derived: choreoOrgApiUrl is not a recognised Choreo API URL');
-  return `https://sts.${match[1]}.choreo.dev`;
-});
+export const apimClient = createHttpClient(apimBaseUrl);
 
 // Observability — metrics and runtime logs
 export const obsClient = createHttpClient(() => {
@@ -94,18 +90,10 @@ export const platformClient = createHttpClient(() => new URL(window.API_CONFIG.c
 export const subscriptionsClient = createHttpClient(subscriptionsApiUrl);
 
 // Choreo Insights — GraphQL-like query endpoint on a separate host
-export const insightsClient = createHttpClient(() => {
-  const match = (window.API_CONFIG?.choreoOrgApiUrl ?? '').match(/\/\/apis\.([^.]+)\.choreo\.dev/);
-  if (!match) throw new Error('Insights URL cannot be derived: choreoOrgApiUrl is not a recognised Choreo API URL');
-  return `https://choreocontrolplane.${match[1]}.choreo.dev/insights/1.0.0`;
-});
+export const insightsClient = createHttpClient(insightsBaseUrl);
 
 // Governance service
-export const governanceClient = createHttpClient(() => {
-  const match = (window.API_CONFIG?.choreoOrgApiUrl ?? '').match(/\/\/apis\.([^.]+)\.choreo\.dev/);
-  if (!match) throw new Error('Governance URL cannot be derived: choreoOrgApiUrl is not a recognised Choreo API URL');
-  return `https://apis.${match[1]}.choreo.dev/governance/v1.0`;
-});
+export const governanceClient = createHttpClient(governanceBaseUrl);
 
 // AI Copilot data collector — feedback, data collection permissions
 export const copilotDatacollectorClient = createHttpClient(() => {

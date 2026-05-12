@@ -17,7 +17,7 @@
  */
 
 import { authenticatedFetch } from '../auth/tokenManager';
-import { copilotDatacollectorClient } from './http';
+import { copilotDatacollectorClient } from './httpClients';
 import { COPILOT_DEFAULT_PERSPECTIVE } from '../constants/copilot';
 import { getOrCreateCopilotSessionId } from '../utils/copilot';
 
