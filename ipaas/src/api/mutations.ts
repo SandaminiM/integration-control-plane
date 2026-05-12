@@ -19,6 +19,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { gql } from './graphql';
 import { authenticatedFetch, refreshAccessToken } from '../auth/tokenManager';
+import { platformClient } from './http';
 import type { GqlArtifact, GqlComponent, GqlEnvironment, GqlProject, GqlEnvEndpoint, SchemaConfigItem, CertMapping } from './queries';
 import { toBackendArtifactType } from './artifactToggleMutations';
 import type { DeployComponentInput, UpdateBuildpackConfigsInput } from '../types/build';
@@ -855,20 +856,11 @@ export interface SaveSchemaConfigInput {
 export function useSaveSchemaConfig() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: SaveSchemaConfigInput) => {
-      const base = new URL(window.API_CONFIG.graphqlUrl).origin;
-      const url = `${base}/configuration-schema/v1.0/projects/${input.projectId}/components/${input.componentId}/env-template/${input.envId}/deployment-track/${input.deploymentTrackId}/configurations`;
-      const res = await authenticatedFetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ configurations: input.configurations, ...(input.commitHash ? { commitHash: input.commitHash } : {}) }),
-      });
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        throw new Error(text || `HTTP ${res.status}`);
-      }
-      return res.json().catch(() => ({}));
-    },
+    mutationFn: (input: SaveSchemaConfigInput) =>
+      platformClient.post(
+        `/configuration-schema/v1.0/projects/${input.projectId}/components/${input.componentId}/env-template/${input.envId}/deployment-track/${input.deploymentTrackId}/configurations`,
+        { configurations: input.configurations, ...(input.commitHash ? { commitHash: input.commitHash } : {}) },
+      ),
     onSuccess: (data, vars) => {
       if (data && data.configurations) {
         qc.setQueryData(['schemaConfig', vars.projectId, vars.componentId, vars.envId, vars.deploymentTrackId, vars.commitHash], data);
@@ -903,27 +895,18 @@ interface PostConfigMgtInput {
 export function usePostConfigMgt() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: PostConfigMgtInput) => {
-      const base = new URL(window.API_CONFIG.graphqlUrl).origin;
-      const url = `${base}/config-mgt/1.0.0/orgs/${encodeURIComponent(input.orgHandler)}/projects/${encodeURIComponent(input.projectId)}/components/${encodeURIComponent(input.componentId)}/envs/${encodeURIComponent(input.envId)}/${encodeURIComponent(input.versionId)}/configurations`;
-      const res = await authenticatedFetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+    mutationFn: (input: PostConfigMgtInput) =>
+      platformClient.post(
+        `/config-mgt/1.0.0/orgs/${encodeURIComponent(input.orgHandler)}/projects/${encodeURIComponent(input.projectId)}/components/${encodeURIComponent(input.componentId)}/envs/${encodeURIComponent(input.envId)}/${encodeURIComponent(input.versionId)}/configurations`,
+        {
           moduleName: input.moduleName,
           commitHash: input.commitHash,
           applyNow: true,
           operation: 0,
           sourceUuid: '',
           configs: input.configs.map(({ configPackageName: _cpn, configPackageOrganization: _cpo, ...rest }) => rest),
-        }),
-      });
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        throw new Error(text || `HTTP ${res.status}`);
-      }
-      return res.json().catch(() => ({}));
-    },
+        },
+      ),
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['configMgt', vars.orgHandler, vars.projectId, vars.componentId, vars.envId, vars.versionId] });
     },
@@ -967,6 +950,7 @@ export interface TriggerComponentInput {
   args?: { argument_name: string; argument_value: string }[];
 }
 
+// Uses authenticatedFetch directly: 403 requires JSON body parsing to detect scope error before deciding to retry.
 async function runPod(url: string, args: TriggerComponentInput['args']): Promise<Response> {
   return authenticatedFetch(url, {
     method: 'POST',
@@ -979,7 +963,7 @@ export function useTriggerComponent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: TriggerComponentInput) => {
-      const origin = new URL(window.API_CONFIG.graphqlUrl).origin;
+      const origin = new URL(window.API_CONFIG.choreoOrgApiUrl).origin;
       const url = `${origin}/component-mgt/1.0.0/orgs/${input.orgHandler}/projects/${input.projectId}/components/${input.componentId}/releases/${input.releaseId}/run-pod`;
       let res = await runPod(url, input.args);
 
@@ -1039,20 +1023,7 @@ export function useObtainGithubToken() {
 export function usePostCertificateMappings() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: CertMapping) => {
-      const base = new URL(window.API_CONFIG.graphqlUrl).origin;
-      const url = `${base}/config-mapping-svc/v1.0/configs/mappings`;
-      const res = await authenticatedFetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        throw new Error(text || `HTTP ${res.status}`);
-      }
-      return res.json().catch(() => ({}));
-    },
+    mutationFn: (data: CertMapping) => platformClient.post('/config-mapping-svc/v1.0/configs/mappings', data),
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['certMappings', vars.projectId, vars.componentId, vars.envTemplateId, vars.deploymentTrackId] });
     },

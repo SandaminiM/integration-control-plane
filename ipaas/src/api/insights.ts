@@ -17,24 +17,11 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { authenticatedFetch } from '../auth/tokenManager';
-
-function getInsightsQueryUrl(): string | null {
-  const match = (window.API_CONFIG?.choreoOrgApiUrl ?? '').match(/\/\/apis\.([^.]+)\.choreo\.dev/);
-  return match ? `https://choreocontrolplane.${match[1]}.choreo.dev/insights/1.0.0/query-api` : null;
-}
+import { insightsClient } from './http';
 
 async function postInsightsQuery<T>(query: string, variables: Record<string, unknown>): Promise<T | null> {
-  const url = getInsightsQueryUrl();
-  if (!url) return null;
   try {
-    const res = await authenticatedFetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables }),
-    });
-    if (!res.ok) return null;
-    return res.json() as Promise<T>;
+    return await insightsClient.post<T>('/query-api', { query, variables });
   } catch {
     return null;
   }

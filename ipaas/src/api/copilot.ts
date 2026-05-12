@@ -17,10 +17,11 @@
  */
 
 import { authenticatedFetch } from '../auth/tokenManager';
-import { copilotDatacollectorBaseUrl } from '../config/api';
+import { copilotDatacollectorClient } from './http';
 import { COPILOT_DEFAULT_PERSPECTIVE } from '../constants/copilot';
 import { getOrCreateCopilotSessionId } from '../utils/copilot';
 
+// Uses authenticatedFetch directly: caller-provided URL, streaming Response, and custom per-request headers.
 export async function getAiCopilotAnswer(copilotUrl: string, nlQuery: string, abortSignal: AbortSignal, correlationId: string, chatContext: Record<string, unknown> = {}): Promise<Response> {
   const sessionId = getOrCreateCopilotSessionId();
 
@@ -45,33 +46,18 @@ export async function getAiCopilotAnswer(copilotUrl: string, nlQuery: string, ab
 
 export async function provideCopilotFeedback(orgId: string, feedback: boolean, correlationId: string): Promise<void> {
   const sessionId = getOrCreateCopilotSessionId();
-  const url = `${copilotDatacollectorBaseUrl()}/feedback`;
-  const res = await authenticatedFetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      org_id: orgId,
-      session_id: sessionId,
-      correlation_id: correlationId,
-      feedback: feedback ? 1 : 0,
-    }),
+  await copilotDatacollectorClient.post('/feedback', {
+    org_id: orgId,
+    session_id: sessionId,
+    correlation_id: correlationId,
+    feedback: feedback ? 1 : 0,
   });
-  if (!res.ok) throw new Error('Failed to submit copilot feedback');
 }
 
 export async function getCopilotDataCollectionPermission(orgId: string): Promise<{ status: string }> {
-  const url = `${copilotDatacollectorBaseUrl()}/permission?org_id=${encodeURIComponent(orgId)}`;
-  const res = await authenticatedFetch(url);
-  if (!res.ok) throw new Error('Failed to get copilot data collection permission');
-  return res.json() as Promise<{ status: string }>;
+  return copilotDatacollectorClient.get<{ status: string }>(`/permission?org_id=${encodeURIComponent(orgId)}`);
 }
 
 export async function updateCopilotDataCollectionPermission(orgId: string, disabled: boolean): Promise<void> {
-  const url = `${copilotDatacollectorBaseUrl()}/disable`;
-  const res = await authenticatedFetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ org_id: orgId, disabled }),
-  });
-  if (!res.ok) throw new Error('Failed to update copilot data collection permission');
+  await copilotDatacollectorClient.post('/disable', { org_id: orgId, disabled });
 }

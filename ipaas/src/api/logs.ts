@@ -17,7 +17,9 @@
  */
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { authenticatedFetch } from '../auth/tokenManager';
+// logsApiUrl is a full URL passed by callers; split into origin + path for createHttpClient.
+// A static named client is deferred until callers are refactored (same pattern as alertingClient).
+import { createHttpClient } from './http';
 
 export interface LogsRequest {
   projectId: string;
@@ -96,16 +98,11 @@ const COLUMN_MAP: Record<string, keyof LogRow> = {
 };
 
 async function postLogs(url: string, body: unknown): Promise<LogRow[]> {
-  const res = await authenticatedFetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`${res.status}: ${text}`);
-  }
-  const json: { columns: Column[]; rows: (string | null)[][] } = await res.json();
+  const parsed = new URL(url);
+  const json = await createHttpClient(() => parsed.origin).post<{ columns: Column[]; rows: (string | null)[][] }>(
+    `${parsed.pathname}${parsed.search}`,
+    body,
+  );
   const indexMap: Record<number, keyof LogRow> = {};
   (json.columns ?? []).forEach((col, i) => {
     const key = COLUMN_MAP[col.name];

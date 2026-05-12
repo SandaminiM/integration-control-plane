@@ -17,35 +17,22 @@
  */
 
 import { gql } from './graphql';
-import { authenticatedFetch } from '../auth/tokenManager';
-import { choreoDevopsApiUrl } from '../config/api';
+import { devopsClient } from './http';
 import type { ContainerRegistry } from '../types/cloudEditor';
 
 const CHOREO_SAMPLES_REGISTRY_HOST = 'choreoanonymouspullable.azurecr.io';
 
 async function getContainerRegistries(orgUuid: string): Promise<ContainerRegistry[]> {
-  const url = `${choreoDevopsApiUrl()}/api/v1/container-registries?organization_id=${encodeURIComponent(orgUuid)}`;
-  const res = await authenticatedFetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch container registries (${res.status})`);
-  const json = await res.json();
-  return (json?.data ?? []) as ContainerRegistry[];
+  const data = await devopsClient.get<{ data: ContainerRegistry[] }>(`/api/v1/container-registries?organization_id=${encodeURIComponent(orgUuid)}`);
+  return data.data ?? [];
 }
 
 async function createContainerRegistry(orgUuid: string): Promise<ContainerRegistry> {
-  const url = `${choreoDevopsApiUrl()}/api/v1/container-registries?organization_id=${encodeURIComponent(orgUuid)}`;
-  const res = await authenticatedFetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name: 'Choreo Samples Registry',
-      type: 'vendor-specific',
-      provider: 'Azure',
-      credential: { host: CHOREO_SAMPLES_REGISTRY_HOST },
-    }),
-  });
-  if (!res.ok) throw new Error(`Failed to create container registry (${res.status})`);
-  const json = await res.json();
-  return json?.data as ContainerRegistry;
+  const data = await devopsClient.post<{ data: ContainerRegistry }>(
+    `/api/v1/container-registries?organization_id=${encodeURIComponent(orgUuid)}`,
+    { name: 'Choreo Samples Registry', type: 'vendor-specific', provider: 'Azure', credential: { host: CHOREO_SAMPLES_REGISTRY_HOST } },
+  );
+  return data.data;
 }
 
 export async function getOrCreateSampleRegistry(orgUuid: string): Promise<ContainerRegistry> {

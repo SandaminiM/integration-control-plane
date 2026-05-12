@@ -16,39 +16,12 @@
  * under the License.
  */
 
-import { authenticatedFetch } from '../auth/tokenManager';
+import { authClient } from './http';
 
-async function authFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await authenticatedFetch(`${window.API_CONFIG.authBaseUrl}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(body || `Request failed (${res.status})`);
-  }
-  const text = await res.text();
-  return text ? JSON.parse(text) : (undefined as T);
-}
-
-export function authGet<T>(path: string): Promise<T> {
-  return authFetch<T>(path);
-}
-
-export function authPost<T>(path: string, body: unknown): Promise<T> {
-  return authFetch<T>(path, { method: 'POST', body: JSON.stringify(body) });
-}
-
-export function authPut<T>(path: string, body: unknown): Promise<T> {
-  return authFetch<T>(path, { method: 'PUT', body: JSON.stringify(body) });
-}
-
-export function authDelete<T>(path: string): Promise<T> {
-  return authFetch<T>(path, { method: 'DELETE' });
-}
+export const authGet = <T>(path: string): Promise<T> => authClient.get<T>(path);
+export const authPost = <T>(path: string, body: unknown): Promise<T> => authClient.post<T>(path, body);
+export const authPut = <T>(path: string, body: unknown): Promise<T> => authClient.put<T>(path, body);
+export const authDelete = <T>(path: string): Promise<T> => authClient.delete<T>(path);
 
 // ── Permission fetching ──
 
