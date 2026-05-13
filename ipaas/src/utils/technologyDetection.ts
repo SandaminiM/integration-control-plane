@@ -35,18 +35,12 @@ export function isBallerinaWorkspace(nodes: RepoTreeNode[]): boolean {
   const hasRootToml = nodes.some((n) => n.subPath === 'Ballerina.toml' && n.type === 'blob');
   if (!hasRootToml) return false;
   const subdirs = nodes.filter((n) => n.type === 'tree');
-  return subdirs.some((dir) =>
-    dir.children?.some((child) => child.subPath === 'Ballerina.toml' && child.type === 'blob'),
-  );
+  return subdirs.some((dir) => dir.children?.some((child) => child.subPath === 'Ballerina.toml' && child.type === 'blob'));
 }
 
 export function extractWorkspaceModules(nodes: RepoTreeNode[]): WorkspaceModule[] {
   return nodes
-    .filter(
-      (n) =>
-        n.type === 'tree' &&
-        n.children?.some((child) => child.subPath === 'Ballerina.toml' && child.type === 'blob'),
-    )
+    .filter((n) => n.type === 'tree' && n.children?.some((child) => child.subPath === 'Ballerina.toml' && child.type === 'blob'))
     .map((n) => ({
       path: n.path,
       name: n.subPath,
@@ -56,8 +50,5 @@ export function extractWorkspaceModules(nodes: RepoTreeNode[]): WorkspaceModule[
 }
 
 export function isBallerinaModule(node: RepoTreeNode): boolean {
-  return (
-    node.type === 'tree' &&
-    (node.children?.some((c) => c.subPath === 'Ballerina.toml' && c.type === 'blob') ?? false)
-  );
+  return node.type === 'tree' && (node.children?.some((c) => c.subPath === 'Ballerina.toml' && c.type === 'blob') ?? false);
 }

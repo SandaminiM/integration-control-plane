@@ -46,12 +46,9 @@ export function createHttpClient(getBaseUrl: () => string): HttpClient {
 
   return {
     get: <T>(path: string) => request<T>(path),
-    post: <T>(path: string, body?: unknown, headers?: Record<string, string>) =>
-      request<T>(path, { method: 'POST', ...(body !== undefined ? { body: JSON.stringify(body) } : {}), headers }),
-    put: <T>(path: string, body?: unknown, headers?: Record<string, string>) =>
-      request<T>(path, { method: 'PUT', ...(body !== undefined ? { body: JSON.stringify(body) } : {}), headers }),
-    delete: <T>(path: string, body?: unknown, headers?: Record<string, string>) =>
-      request<T>(path, { method: 'DELETE', ...(body !== undefined ? { body: JSON.stringify(body) } : {}), headers }),
+    post: <T>(path: string, body?: unknown, headers?: Record<string, string>) => request<T>(path, { method: 'POST', ...(body !== undefined ? { body: JSON.stringify(body) } : {}), headers }),
+    put: <T>(path: string, body?: unknown, headers?: Record<string, string>) => request<T>(path, { method: 'PUT', ...(body !== undefined ? { body: JSON.stringify(body) } : {}), headers }),
+    delete: <T>(path: string, body?: unknown, headers?: Record<string, string>) => request<T>(path, { method: 'DELETE', ...(body !== undefined ? { body: JSON.stringify(body) } : {}), headers }),
   };
 }
 

@@ -16,21 +16,13 @@
  * under the License.
  */
 
-import {
-  DENIED_HANDLERS,
-  PROJECT_HANDLER_CHARS_REGEX,
-  PROJECT_HANDLER_FULL_REGEX,
-  PROJECT_HANDLER_MAX_LENGTH,
-  PROJECT_NAME_MIN_LENGTH,
-  PROJECT_NAME_REGEX,
-} from '../constants/project';
+import { DENIED_HANDLERS, PROJECT_HANDLER_CHARS_REGEX, PROJECT_HANDLER_FULL_REGEX, PROJECT_HANDLER_MAX_LENGTH, PROJECT_NAME_MIN_LENGTH, PROJECT_NAME_REGEX } from '../constants/project';
 
 export function validateProjectName(name: string): string | null {
   const trimmed = name.trim();
   if (!trimmed) return 'Display name is required.';
   if (trimmed.length < PROJECT_NAME_MIN_LENGTH) return `Minimum ${PROJECT_NAME_MIN_LENGTH} characters required.`;
-  if (!PROJECT_NAME_REGEX.test(trimmed))
-    return 'Must start with a letter and contain only letters, numbers, spaces, hyphens, or underscores.';
+  if (!PROJECT_NAME_REGEX.test(trimmed)) return 'Must start with a letter and contain only letters, numbers, spaces, hyphens, or underscores.';
   return null;
 }
 
@@ -38,8 +30,7 @@ export function validateProjectHandler(handler: string): string | null {
   if (!handler) return 'Name is required.';
   if (handler.length > PROJECT_HANDLER_MAX_LENGTH) return `Maximum ${PROJECT_HANDLER_MAX_LENGTH} characters allowed.`;
   if (!PROJECT_HANDLER_CHARS_REGEX.test(handler)) return 'Only lowercase letters, numbers, and hyphens allowed.';
-  if (handler.length >= 2 && !PROJECT_HANDLER_FULL_REGEX.test(handler))
-    return 'Must start and end with a letter or number.';
+  if (handler.length >= 2 && !PROJECT_HANDLER_FULL_REGEX.test(handler)) return 'Must start and end with a letter or number.';
   if (DENIED_HANDLERS.has(handler)) return 'This name is reserved. Please choose a different one.';
   return null;
 }

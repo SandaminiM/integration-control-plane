@@ -28,10 +28,12 @@ async function getContainerRegistries(orgUuid: string): Promise<ContainerRegistr
 }
 
 async function createContainerRegistry(orgUuid: string): Promise<ContainerRegistry> {
-  const data = await devopsClient.post<{ data: ContainerRegistry }>(
-    `/api/v1/container-registries?organization_id=${encodeURIComponent(orgUuid)}`,
-    { name: 'Choreo Samples Registry', type: 'vendor-specific', provider: 'Azure', credential: { host: CHOREO_SAMPLES_REGISTRY_HOST } },
-  );
+  const data = await devopsClient.post<{ data: ContainerRegistry }>(`/api/v1/container-registries?organization_id=${encodeURIComponent(orgUuid)}`, {
+    name: 'Choreo Samples Registry',
+    type: 'vendor-specific',
+    provider: 'Azure',
+    credential: { host: CHOREO_SAMPLES_REGISTRY_HOST },
+  });
   return data.data;
 }
 

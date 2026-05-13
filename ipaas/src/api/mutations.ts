@@ -857,10 +857,10 @@ export function useSaveSchemaConfig() {
   const qc = useQueryClient();
   return useMutation<{ configurations: SchemaConfigItem[] }, unknown, SaveSchemaConfigInput>({
     mutationFn: (input: SaveSchemaConfigInput) =>
-      platformClient.post(
-        `/configuration-schema/v1.0/projects/${input.projectId}/components/${input.componentId}/env-template/${input.envId}/deployment-track/${input.deploymentTrackId}/configurations`,
-        { configurations: input.configurations, ...(input.commitHash ? { commitHash: input.commitHash } : {}) },
-      ),
+      platformClient.post(`/configuration-schema/v1.0/projects/${input.projectId}/components/${input.componentId}/env-template/${input.envId}/deployment-track/${input.deploymentTrackId}/configurations`, {
+        configurations: input.configurations,
+        ...(input.commitHash ? { commitHash: input.commitHash } : {}),
+      }),
     onSuccess: (data, vars) => {
       if (data && data.configurations) {
         qc.setQueryData(['schemaConfig', vars.projectId, vars.componentId, vars.envId, vars.deploymentTrackId, vars.commitHash], data);

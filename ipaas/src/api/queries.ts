@@ -1292,7 +1292,9 @@ export function useGetConfigMgt(orgHandler: string, projectId: string, component
     queryKey: ['configMgt', orgHandler, projectId, componentId, envId, versionId, commitHash],
     queryFn: (): Promise<ConfigMgtData> => {
       const qs = new URLSearchParams({ component_name: componentName, ...(commitHash ? { commit_hash: commitHash } : {}) });
-      return platformClient.get<ConfigMgtData>(`/config-mgt/1.0.0/orgs/${encodeURIComponent(orgHandler)}/projects/${encodeURIComponent(projectId)}/components/${encodeURIComponent(componentId)}/envs/${encodeURIComponent(envId)}/${encodeURIComponent(versionId)}/configurations?${qs}`);
+      return platformClient.get<ConfigMgtData>(
+        `/config-mgt/1.0.0/orgs/${encodeURIComponent(orgHandler)}/projects/${encodeURIComponent(projectId)}/components/${encodeURIComponent(componentId)}/envs/${encodeURIComponent(envId)}/${encodeURIComponent(versionId)}/configurations?${qs}`,
+      );
     },
     enabled: drawerOpen && !!orgHandler && !!projectId && !!componentId && !!envId && !!versionId && !!componentName && !!commitHash,
     retry: false,

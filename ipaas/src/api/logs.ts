@@ -99,10 +99,7 @@ const COLUMN_MAP: Record<string, keyof LogRow> = {
 
 async function postLogs(url: string, body: unknown): Promise<LogRow[]> {
   const parsed = new URL(url);
-  const json = await createHttpClient(() => parsed.origin).post<{ columns: Column[]; rows: (string | null)[][] }>(
-    `${parsed.pathname}${parsed.search}`,
-    body,
-  );
+  const json = await createHttpClient(() => parsed.origin).post<{ columns: Column[]; rows: (string | null)[][] }>(`${parsed.pathname}${parsed.search}`, body);
   const indexMap: Record<number, keyof LogRow> = {};
   (json.columns ?? []).forEach((col, i) => {
     const key = COLUMN_MAP[col.name];

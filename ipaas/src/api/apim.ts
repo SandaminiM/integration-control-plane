@@ -89,9 +89,7 @@ export async function generateTestKey(apimId: string, keyType: 'Development' | '
   const orgUuid = getOrgUuidFromToken() ?? '';
   try {
     const params = new URLSearchParams({ organizationId: orgUuid, keyType });
-    return await apimClient.post<GeneratedTestKey>(
-      `/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/generate-key?${params}`,
-    );
+    return await apimClient.post<GeneratedTestKey>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/generate-key?${params}`);
   } catch {
     return null;
   }

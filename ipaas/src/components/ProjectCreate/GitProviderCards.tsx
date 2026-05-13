@@ -36,9 +36,13 @@ export default function GitProviderCards({ onGitHubSelect, onPublicSelect }: Git
             <Box sx={{ color: 'common.black', display: 'flex', flexShrink: 0 }}>
               <GitHub size={22} />
             </Box>
-            <Typography variant="body2" fontWeight={500}>Authorize With GitHub</Typography>
+            <Typography variant="body2" fontWeight={500}>
+              Authorize With GitHub
+            </Typography>
           </Stack>
-          <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>Connect a private GitHub repository</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>
+            Connect a private GitHub repository
+          </Typography>
         </CardActionArea>
       </Card>
 
@@ -51,9 +55,13 @@ export default function GitProviderCards({ onGitHubSelect, onPublicSelect }: Git
                 <Box sx={{ display: 'flex', flexShrink: 0 }}>
                   <Bitbucket size={22} />
                 </Box>
-                <Typography variant="body2" fontWeight={500}>Authorize With Bitbucket</Typography>
+                <Typography variant="body2" fontWeight={500}>
+                  Authorize With Bitbucket
+                </Typography>
               </Stack>
-              <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>Connect a Bitbucket repository</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>
+                Connect a Bitbucket repository
+              </Typography>
             </CardActionArea>
           </Card>
         </Box>
@@ -68,9 +76,13 @@ export default function GitProviderCards({ onGitHubSelect, onPublicSelect }: Git
                 <Box sx={{ display: 'flex', flexShrink: 0 }}>
                   <GitLab size={22} />
                 </Box>
-                <Typography variant="body2" fontWeight={500}>Authorize With GitLab</Typography>
+                <Typography variant="body2" fontWeight={500}>
+                  Authorize With GitLab
+                </Typography>
               </Stack>
-              <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>Connect a GitLab repository</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>
+                Connect a GitLab repository
+              </Typography>
             </CardActionArea>
           </Card>
         </Box>
@@ -83,9 +95,13 @@ export default function GitProviderCards({ onGitHubSelect, onPublicSelect }: Git
             <Box sx={{ display: 'flex', flexShrink: 0 }}>
               <GitIcon size={22} />
             </Box>
-            <Typography variant="body2" fontWeight={500}>Use Public Git Repository</Typography>
+            <Typography variant="body2" fontWeight={500}>
+              Use Public Git Repository
+            </Typography>
           </Stack>
-          <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>Use a public Git repository URL</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>
+            Use a public Git repository URL
+          </Typography>
         </CardActionArea>
       </Card>
     </Stack>
