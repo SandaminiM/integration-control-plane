@@ -17,7 +17,7 @@
  */
 
 import { gql } from './graphql';
-import { authenticatedFetch } from '../auth/tokenManager';
+import { platformClient } from './httpClients';
 import type { SchemaConfigItem } from './queries';
 
 interface NameAvailability {
@@ -63,24 +63,9 @@ export async function fetchLatestCommitSha(componentId: string, branch: string):
 }
 
 export async function savePrebuiltConfig(projectId: string, componentId: string, envId: string, deploymentTrackId: string, configurations: SchemaConfigItem[], commitHash: string): Promise<void> {
-  let base: string;
-  try {
-    base = new URL(window.API_CONFIG.graphqlUrl).origin;
-  } catch {
-    throw new Error('API configuration is missing or invalid: graphqlUrl is not a valid URL');
-  }
-  const url = `${base}/configuration-schema/v1.0/projects/${projectId}/components/${componentId}/env-template/${envId}/deployment-track/${deploymentTrackId}/configurations`;
   const configurationsWithEnv = configurations.map((item) => ({
     ...item,
     values: item.values.map((v) => ({ ...v, environmentUuid: envId })),
   }));
-  const res = await authenticatedFetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ configurations: configurationsWithEnv, commitHash }),
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(text || `Config save HTTP ${res.status}`);
-  }
+  await platformClient.post(`/configuration-schema/v1.0/projects/${projectId}/components/${componentId}/env-template/${envId}/deployment-track/${deploymentTrackId}/configurations`, { configurations: configurationsWithEnv, commitHash });
 }

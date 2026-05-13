@@ -20,7 +20,8 @@ import { keepPreviousData, useQueries, useQuery, useQueryClient } from '@tanstac
 import type { Query } from '@tanstack/react-query';
 import { gql } from './graphql';
 import { authenticatedFetch, getOrgUuidFromToken, refreshAccessToken } from '../auth/tokenManager';
-import { choreoDevopsApiUrl, componentMgtApiUrl, subscriptionsApiUrl } from '../config/api';
+import { componentMgtApiUrl } from '../config/api';
+import { devopsClient, orgClient, platformClient, subscriptionsClient, systemClient } from './httpClients';
 import { fetchApimApi, fetchApimSwagger, fetchLifecycleState, fetchLifecycleHistory, type ApimApiInfo, type LifecycleState, type LifecycleHistory } from './apim';
 import { UUID_RE } from '../utils/string';
 
@@ -116,10 +117,8 @@ export function useOrgs() {
   return useQuery({
     queryKey: ['orgs'],
     queryFn: async () => {
-      const res = await authenticatedFetch(`${window.API_CONFIG.choreoOrgApiUrl}/orgs`);
-      if (!res.ok) throw new Error('Failed to fetch orgs');
-      const data = await res.json();
-      const list: OrgEntry[] = Array.isArray(data) ? data : (data.list ?? data.organizations ?? []);
+      const raw = await orgClient.get<Record<string, unknown> | OrgEntry[]>('/orgs');
+      const list: OrgEntry[] = Array.isArray(raw) ? raw : ((raw.list ?? raw.organizations ?? []) as OrgEntry[]);
       return list
         .map((o) => ({
           handle: o.handle ?? o.orgHandle ?? '',
@@ -362,11 +361,7 @@ export interface CloudDataPlane {
 export function useCloudDataPlanes(orgUuid: string) {
   return useQuery({
     queryKey: ['cloud-data-planes', orgUuid],
-    queryFn: async () => {
-      const res = await authenticatedFetch(`${choreoDevopsApiUrl()}/api/v1/clusters/clouddataplanes?org_uuid=${encodeURIComponent(orgUuid)}`);
-      if (!res.ok) throw new Error(`Failed to fetch cloud data planes: ${res.status}`);
-      return res.json() as Promise<CloudDataPlane[]>;
-    },
+    queryFn: () => devopsClient.get<CloudDataPlane[]>(`/api/v1/clusters/clouddataplanes?org_uuid=${encodeURIComponent(orgUuid)}`),
     enabled: !!orgUuid,
     staleTime: 5 * 60 * 1000,
   });
@@ -1071,11 +1066,8 @@ export function useTaskExecutions(releaseId: string) {
   return useQuery({
     queryKey: ['taskExecutions', releaseId, baseUrl],
     queryFn: async (): Promise<TaskExecution[]> => {
-      if (!baseUrl || !releaseId) return [];
-      const url = `${baseUrl}/systemapis/choreoobsapi/0.3.0/tasks/executions?releaseId=${releaseId}&limit=10&verbose=true`;
-      const res = await authenticatedFetch(url);
-      if (!res.ok) return [];
-      return res.json();
+      if (!releaseId) return [];
+      return systemClient.get<TaskExecution[]>(`/systemapis/choreoobsapi/0.3.0/tasks/executions?releaseId=${releaseId}&limit=10&verbose=true`);
     },
     enabled: !!baseUrl && !!releaseId,
     retry: false,
@@ -1122,11 +1114,10 @@ export function useExecutionLogs(componentId: string, deploymentTrackId: string,
   return useQuery({
     queryKey: ['executionLogs', componentId, deploymentTrackId, executionId, environmentId, baseUrl],
     queryFn: async (): Promise<ExecutionLogEntry[]> => {
-      if (!baseUrl || !componentId || !deploymentTrackId || !executionId || !environmentId) return [];
-      const url = `${baseUrl}/systemapis/choreologgingapi/0.2.0/components/${componentId}/deployment-tracks/${deploymentTrackId}/executions/${executionId}/logs?environmentId=${environmentId}&offset=0&limit=10000`;
-      const res = await authenticatedFetch(url);
-      if (!res.ok) return [];
-      const data: { columns: { name: string }[]; rows: string[][] } = await res.json();
+      if (!componentId || !deploymentTrackId || !executionId || !environmentId) return [];
+      const data = await systemClient.get<{ columns: { name: string }[]; rows: string[][] }>(
+        `/systemapis/choreologgingapi/0.2.0/components/${componentId}/deployment-tracks/${deploymentTrackId}/executions/${executionId}/logs?environmentId=${environmentId}&offset=0&limit=10000`,
+      );
       const logIdx = data.columns?.findIndex((c) => c.name === 'LogEntry') ?? -1;
       const timeIdx = data.columns?.findIndex((c) => c.name === 'TimeGenerated') ?? -1;
       return (data.rows ?? []).map((row) => ({
@@ -1145,14 +1136,11 @@ export function useTaskExecutionCount(releaseId: string) {
   return useQuery({
     queryKey: ['taskExecutionCount', releaseId, baseUrl],
     queryFn: async (): Promise<number | null> => {
-      if (!baseUrl || !releaseId) return null;
+      if (!releaseId) return null;
       const to = new Date();
       const from = new Date(to);
       from.setDate(to.getDate() - 30);
-      const url = `${baseUrl}/systemapis/choreoobsapi/0.3.0/tasks/executions/count?releaseId=${releaseId}&from=${from.toISOString()}&to=${to.toISOString()}`;
-      const res = await authenticatedFetch(url);
-      if (!res.ok) return null;
-      const data: { count: number } = await res.json();
+      const data = await systemClient.get<{ count: number }>(`/systemapis/choreoobsapi/0.3.0/tasks/executions/count?releaseId=${releaseId}&from=${from.toISOString()}&to=${to.toISOString()}`);
       return data.count ?? null;
     },
     enabled: !!baseUrl && !!releaseId,
@@ -1207,11 +1195,8 @@ export function useCertificateGroups(projectId: string, componentId: string, ena
   return useQuery({
     queryKey: ['certGroups', projectId, componentId],
     queryFn: async (): Promise<CertGroup[]> => {
-      const base = new URL(window.API_CONFIG.graphqlUrl).origin;
       const params = new URLSearchParams({ projectId, componentId, nested_search: 'true' });
-      const res = await authenticatedFetch(`${base}/config-svc/v1.0/configs/groups?${params}`);
-      if (!res.ok) return [];
-      const data: CertGroup[] = await res.json();
+      const data = await platformClient.get<CertGroup[]>(`/config-svc/v1.0/configs/groups?${params}`);
       return data.filter((g) => g.groupName.startsWith('certificates-'));
     },
     enabled: enabled && !!projectId && !!componentId,
@@ -1223,11 +1208,8 @@ export function useConfigGroups(projectId: string, componentId: string, enabled:
   return useQuery({
     queryKey: ['configGroups', projectId, componentId],
     queryFn: async (): Promise<CertGroup[]> => {
-      const base = new URL(window.API_CONFIG.graphqlUrl).origin;
       const params = new URLSearchParams({ projectId, componentId, nested_search: 'true' });
-      const res = await authenticatedFetch(`${base}/config-svc/v1.0/configs/groups?${params}`);
-      if (!res.ok) return [];
-      return res.json();
+      return platformClient.get<CertGroup[]>(`/config-svc/v1.0/configs/groups?${params}`);
     },
     enabled: enabled && !!projectId && !!componentId,
     retry: false,
@@ -1260,11 +1242,8 @@ export function useCertificateMappings(projectId: string, componentId: string, e
   return useQuery({
     queryKey: ['certMappings', projectId, componentId, envId, deploymentTrackId],
     queryFn: async (): Promise<CertMapping | null> => {
-      const base = new URL(window.API_CONFIG.graphqlUrl).origin;
       const params = new URLSearchParams({ projectId, componentId, envTemplateId: envId, deploymentTrackId });
-      const res = await authenticatedFetch(`${base}/config-mapping-svc/v1.0/configs/mappings?${params}`);
-      if (!res.ok) return null;
-      return res.json();
+      return platformClient.get<CertMapping>(`/config-mapping-svc/v1.0/configs/mappings?${params}`);
     },
     enabled: enabled && !!projectId && !!componentId && !!envId && !!deploymentTrackId,
     retry: false,
@@ -1275,12 +1254,8 @@ export function useSchemaConfig(projectId: string, componentId: string, envId: s
   return useQuery({
     queryKey: ['schemaConfig', projectId, componentId, envId, deploymentTrackId, commitHash],
     queryFn: async (): Promise<SchemaConfigData | null> => {
-      const base = new URL(window.API_CONFIG.graphqlUrl).origin;
       const qs = commitHash ? `?commitHash=${encodeURIComponent(commitHash)}` : '';
-      const url = `${base}/configuration-schema/v1.0/projects/${projectId}/components/${componentId}/env-template/${envId}/deployment-track/${deploymentTrackId}/configurations${qs}`;
-      const res = await authenticatedFetch(url);
-      if (!res.ok) return null;
-      return res.json();
+      return platformClient.get<SchemaConfigData>(`/configuration-schema/v1.0/projects/${projectId}/components/${componentId}/env-template/${envId}/deployment-track/${deploymentTrackId}/configurations${qs}`);
     },
     enabled: !!projectId && !!componentId && !!envId && !!deploymentTrackId,
     retry: false,
@@ -1315,16 +1290,11 @@ export interface ConfigMgtData {
 export function useGetConfigMgt(orgHandler: string, projectId: string, componentId: string, envId: string, versionId: string, componentName: string, commitHash?: string, drawerOpen = false) {
   return useQuery({
     queryKey: ['configMgt', orgHandler, projectId, componentId, envId, versionId, commitHash],
-    queryFn: async (): Promise<ConfigMgtData> => {
-      const base = new URL(window.API_CONFIG.graphqlUrl).origin;
+    queryFn: (): Promise<ConfigMgtData> => {
       const qs = new URLSearchParams({ component_name: componentName, ...(commitHash ? { commit_hash: commitHash } : {}) });
-      const url = `${base}/config-mgt/1.0.0/orgs/${encodeURIComponent(orgHandler)}/projects/${encodeURIComponent(projectId)}/components/${encodeURIComponent(componentId)}/envs/${encodeURIComponent(envId)}/${encodeURIComponent(versionId)}/configurations?${qs}`;
-      const res = await authenticatedFetch(url);
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
-      }
-      return res.json();
+      return platformClient.get<ConfigMgtData>(
+        `/config-mgt/1.0.0/orgs/${encodeURIComponent(orgHandler)}/projects/${encodeURIComponent(projectId)}/components/${encodeURIComponent(componentId)}/envs/${encodeURIComponent(envId)}/${encodeURIComponent(versionId)}/configurations?${qs}`,
+      );
     },
     enabled: drawerOpen && !!orgHandler && !!projectId && !!componentId && !!envId && !!versionId && !!componentName && !!commitHash,
     retry: false,
@@ -1532,6 +1502,7 @@ export function useRepoContents(org: string, repo: string, branch: string, isPub
     queryKey: ['repoContents', org, repo, branch, isPublicRepo],
     queryFn: async (): Promise<RepoTreeNode[]> => {
       const url = `${componentMgtApiUrl()}/repositories/${org}/${repo}/branches/${encodeURIComponent(branch)}/contents?isPublicRepo=${isPublicRepo}`;
+      // Uses authenticatedFetch directly: 403 triggers STS token scope refresh + retry, requiring manual Response inspection.
       let res = await authenticatedFetch(url);
 
       if (res.status === 403) {
@@ -1565,10 +1536,8 @@ export function useChoreoSampleImages(orgUuid: string, projectId: string) {
     queryKey: ['choreoSampleImages', orgUuid, projectId],
     queryFn: async () => {
       const params = new URLSearchParams({ organization_id: orgUuid, project_id: projectId });
-      const res = await authenticatedFetch(`${choreoDevopsApiUrl()}/api/v1/byoi/components/choreo-sample-images?${params}`);
-      if (!res.ok) throw new Error(`Failed to fetch sample images: ${res.status}`);
-      const json = await res.json();
-      return (json?.data?.images ?? []) as ChoreoSampleImage[];
+      const json = await devopsClient.get<{ data?: { images?: ChoreoSampleImage[] } }>(`/api/v1/byoi/components/choreo-sample-images?${params}`);
+      return json?.data?.images ?? [];
     },
     enabled: !!orgUuid && !!projectId,
     staleTime: 10 * 60 * 1000,
@@ -1585,11 +1554,8 @@ export function useOrgComponentLimits(orgUuid: string) {
   return useQuery({
     queryKey: ['orgComponentLimits', orgUuid],
     queryFn: async (): Promise<OrgComponentLimits> => {
-      const url = `${componentMgtApiUrl()}/orgs/${encodeURIComponent(orgUuid)}/component-limits?originCloud=devant`;
-      const res = await authenticatedFetch(url);
-      if (!res.ok) throw new Error(`Failed to fetch component limits: ${res.status}`);
-      const json = await res.json();
-      return json.data as OrgComponentLimits;
+      const json = await platformClient.get<{ data: OrgComponentLimits }>(`/component-mgt/1.0.0/orgs/${encodeURIComponent(orgUuid)}/component-limits?originCloud=devant`);
+      return json.data;
     },
     enabled: !!orgUuid,
     staleTime: 30 * 1000,
@@ -1607,11 +1573,8 @@ export function useOrgSubscriptions(orgUuid: string) {
   return useQuery({
     queryKey: ['orgSubscriptions', orgUuid],
     queryFn: async (): Promise<OrgSubscription[]> => {
-      const url = `${subscriptionsApiUrl()}/api/organizations/${encodeURIComponent(orgUuid)}/subscriptions?cloudType=devant&origin=choreo-console`;
-      const res = await authenticatedFetch(url);
-      if (!res.ok) throw new Error(`Failed to fetch subscriptions: ${res.status}`);
-      const json = await res.json();
-      return (json.list ?? []) as OrgSubscription[];
+      const json = await subscriptionsClient.get<{ list?: OrgSubscription[] }>(`/api/organizations/${encodeURIComponent(orgUuid)}/subscriptions?cloudType=devant&origin=choreo-console`);
+      return json.list ?? [];
     },
     enabled: !!orgUuid,
     staleTime: 5 * 60 * 1000,

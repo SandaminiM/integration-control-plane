@@ -30,7 +30,9 @@ interface RuntimeConfig {
   STS_TOKEN_ENDPOINT?: string;
   STS_CLIENT_ID?: string;
   STS_SCOPE?: string;
-  CHOREO_ORG_API_URL?: string;
+  CHOREO_BASE_API_URL?: string;
+  APIM_BASE_URL?: string;
+  INSIGHTS_BASE_URL?: string;
   ASGARDEO_ORG_NUMERIC_ID?: string;
   SYS_API_PREFIX?: string;
   GITHUB_APP_CLIENT_ID?: string;
@@ -56,7 +58,10 @@ export interface ApiConfig {
   stsTokenEndpoint: string;
   stsClientId: string;
   stsScope: string;
+  choreoBaseApiUrl: string;
   choreoOrgApiUrl: string;
+  apimBaseUrl: string;
+  insightsBaseUrl: string;
   asgardeoOrgNumericId?: number;
   systemApisBaseUrl?: string;
   sysApiPrefix: string;
@@ -91,7 +96,10 @@ const DEFAULT_CONFIG: ApiConfig = {
   stsTokenEndpoint: '',
   stsClientId: '',
   stsScope: '',
+  choreoBaseApiUrl: 'https://apis.preview-dv.choreo.dev',
   choreoOrgApiUrl: 'https://apis.preview-dv.choreo.dev/orgs/1.0.0',
+  apimBaseUrl: 'https://sts.preview-dv.choreo.dev',
+  insightsBaseUrl: 'https://choreocontrolplane.preview-dv.choreo.dev',
   systemApisBaseUrl: '',
   sysApiPrefix: '783c6c4d-8b9b-4190-b70a-e717ab1ee739-systemapis',
   githubAppClientId: '',
@@ -114,12 +122,15 @@ export async function loadConfig(): Promise<void> {
     }
 
     const config: RuntimeConfig = await response.json();
+    const trim = (url: string): string => url.replace(/\/$/, '');
+    const choreoBase = trim(config.CHOREO_BASE_API_URL || DEFAULT_CONFIG.choreoBaseApiUrl);
+    const systemApisBase = trim(config.SYSTEM_APIS_BASE_URL || DEFAULT_CONFIG.systemApisBaseUrl || '');
 
     window.API_CONFIG = {
       graphqlUrl: config.VITE_GRAPHQL_URL || DEFAULT_CONFIG.graphqlUrl,
-      authBaseUrl: config.VITE_AUTH_BASE_URL || DEFAULT_CONFIG.authBaseUrl,
-      observabilityUrl: config.VITE_OBSERVABILITY_URL || DEFAULT_CONFIG.observabilityUrl,
-      alertingUrl: config.VITE_ALERTING_URL || (config.SYSTEM_APIS_BASE_URL ? `${config.SYSTEM_APIS_BASE_URL}/systemapis/choreo-alerting-api/v1.0` : DEFAULT_CONFIG.alertingUrl),
+      authBaseUrl: trim(config.VITE_AUTH_BASE_URL || DEFAULT_CONFIG.authBaseUrl),
+      observabilityUrl: trim(config.VITE_OBSERVABILITY_URL || DEFAULT_CONFIG.observabilityUrl),
+      alertingUrl: config.VITE_ALERTING_URL ? trim(config.VITE_ALERTING_URL) : systemApisBase ? `${systemApisBase}/systemapis/choreo-alerting-api/v1.0` : DEFAULT_CONFIG.alertingUrl,
       asgardeoClientId: config.ASGARDEO_CLIENT_ID || DEFAULT_CONFIG.asgardeoClientId,
       asgardeoAuthorizeEndpoint: config.ASGARDEO_AUTHORIZE_ENDPOINT || DEFAULT_CONFIG.asgardeoAuthorizeEndpoint,
       asgardeoTokenEndpoint: config.ASGARDEO_TOKEN_ENDPOINT || DEFAULT_CONFIG.asgardeoTokenEndpoint,
@@ -128,8 +139,11 @@ export async function loadConfig(): Promise<void> {
       stsTokenEndpoint: config.STS_TOKEN_ENDPOINT || DEFAULT_CONFIG.stsTokenEndpoint,
       stsClientId: config.STS_CLIENT_ID || DEFAULT_CONFIG.stsClientId,
       stsScope: config.STS_SCOPE || '',
-      choreoOrgApiUrl: config.CHOREO_ORG_API_URL || DEFAULT_CONFIG.choreoOrgApiUrl,
-      systemApisBaseUrl: config.SYSTEM_APIS_BASE_URL || DEFAULT_CONFIG.systemApisBaseUrl,
+      choreoBaseApiUrl: choreoBase,
+      choreoOrgApiUrl: `${choreoBase}/orgs/1.0.0`,
+      apimBaseUrl: trim(config.APIM_BASE_URL || DEFAULT_CONFIG.apimBaseUrl),
+      insightsBaseUrl: trim(config.INSIGHTS_BASE_URL || DEFAULT_CONFIG.insightsBaseUrl),
+      systemApisBaseUrl: systemApisBase || DEFAULT_CONFIG.systemApisBaseUrl,
       asgardeoOrgNumericId: (() => {
         if (config.ASGARDEO_ORG_NUMERIC_ID) return parseInt(config.ASGARDEO_ORG_NUMERIC_ID, 10);
         const stored = localStorage.getItem('icp_org_numeric_id');
@@ -143,7 +157,7 @@ export async function loadConfig(): Promise<void> {
       prebuiltIntegrationsUrl: config.PREBUILT_INTEGRATIONS_URL || undefined,
       asgardeoSignupUrl: config.ASGARDEO_SIGNUP_URL || DEFAULT_CONFIG.asgardeoSignupUrl,
       aiCopilotUrlSuffix: config.AI_COPILOT_URL_SUFFIX || DEFAULT_CONFIG.aiCopilotUrlSuffix,
-      aiCopilotDatacollectorBaseUrl: config.AI_COPILOT_DATACOLLECTOR_BASE_URL || DEFAULT_CONFIG.aiCopilotDatacollectorBaseUrl,
+      aiCopilotDatacollectorBaseUrl: trim(config.AI_COPILOT_DATACOLLECTOR_BASE_URL || DEFAULT_CONFIG.aiCopilotDatacollectorBaseUrl),
     };
 
     console.info('✓ Runtime configuration loaded from config.json');
@@ -160,8 +174,11 @@ export const revokeTokenApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}
 export const oidcAuthorizeApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/oidc/authorize-url`;
 export const oidcCallbackApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/login/oidc`;
 export const subscriptionsApiUrl = (): string => window.API_CONFIG.subscriptionsApiUrl;
-export const choreoDevopsApiUrl = (): string => window.API_CONFIG.choreoOrgApiUrl.replace('/orgs/1.0.0', '/devops/1.0.0');
-export const componentMgtApiUrl = (): string => window.API_CONFIG.choreoOrgApiUrl.replace('/orgs/1.0.0', '/component-mgt/1.0.0');
+export const choreoDevopsApiUrl = (): string => `${window.API_CONFIG.choreoBaseApiUrl}/devops/1.0.0`;
+export const componentMgtApiUrl = (): string => `${window.API_CONFIG.choreoBaseApiUrl}/component-mgt/1.0.0`;
+export const apimBaseUrl = (): string => window.API_CONFIG.apimBaseUrl;
+export const insightsBaseUrl = (): string => `${window.API_CONFIG.insightsBaseUrl}/insights/1.0.0`;
+export const governanceBaseUrl = (): string => `${window.API_CONFIG.choreoBaseApiUrl}/governance/v1.0`;
 export const changePasswordApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/change-password`;
 export const forceChangePasswordApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/force-change-password`;
 export const choreoAlertingApiUrl = (gatewayHost: string): string => {

@@ -16,30 +16,12 @@
  * under the License.
  */
 
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Grid,
-  IconButton,
-  InputAdornment,
-  MenuItem,
-  PageContent,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, Grid, IconButton, InputAdornment, MenuItem, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Building2, Check, ChevronDown, ChevronUp, Edit, GitHub, GitBranch } from '@wso2/oxygen-ui-icons-react';
 import GitIcon from '../assets/icons/GitIcon';
 import GitProviderCards from '../components/ProjectCreate/GitProviderCards';
 import { useState, useEffect, useLayoutEffect, type JSX } from 'react';
-import {
-  useCreateProject,
-  useCreateMonoRepoProject,
-  useCreateComponent,
-} from '../api/mutations';
+import { useCreateProject, useCreateMonoRepoProject, useCreateComponent } from '../api/mutations';
 import { useGitHubUserRepos, useOrgs, useOrgComponentLimits, useOrgSubscriptions, useRepoBranches, useRepoContents, type GqlProject } from '../api/queries';
 import { getOrgUuidFromToken } from '../auth/tokenManager';
 import DirectoryPickerField from '../components/DirectoryPicker';
@@ -55,7 +37,6 @@ import { validateProjectName, validateProjectHandler, normalizeProjectError } fr
 import type { GitProvider, WorkspaceModule } from '../types/project';
 
 export default function CreateProject(scope: OrgScope): JSX.Element {
-
   const [displayName, setDisplayName] = useState('');
   const [description, setDescription] = useState('');
 
@@ -111,12 +92,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
   const isCheckingAuth = !isPublicRepo && reposEnabled && isReposLoading;
 
   const { data: branches, isLoading: isBranchesLoading } = useRepoBranches(activeOrg, activeRepo, isPublicRepo);
-  const {
-    data: repoContents = [],
-    isLoading: isContentsLoading,
-    isError: isContentsError,
-    refetch: refetchContents,
-  } = useRepoContents(activeOrg, activeRepo, selectedBranch, isPublicRepo);
+  const { data: repoContents = [], isLoading: isContentsLoading, isError: isContentsError, refetch: refetchContents } = useRepoContents(activeOrg, activeRepo, selectedBranch, isPublicRepo);
 
   // Auto-select default branch; preserve an already-valid selection on refetch
   useEffect(() => {
@@ -201,7 +177,9 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
   // Stabilize scrollbar gutter to prevent layout shift when content height changes
   useLayoutEffect(() => {
     document.documentElement.style.setProperty('scrollbar-gutter', 'stable');
-    return () => { document.documentElement.style.removeProperty('scrollbar-gutter'); };
+    return () => {
+      document.documentElement.style.removeProperty('scrollbar-gutter');
+    };
   }, []);
 
   const resetGitState = () => {
@@ -239,15 +217,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
   const gitReady = !attachGit || (showBranchAndSubPath && !!selectedBranch);
   // Block submit until availability has returned a result (prevents racing the debounce and hitting 409)
   const availabilityReady = !effectiveHandler || effectiveHandler.length < 2 || availability !== undefined;
-  const canSubmit =
-    !!displayName.trim() &&
-    !nameError &&
-    !!effectiveHandler &&
-    !handlerError &&
-    !handlerTaken &&
-    !isCheckingAvailability &&
-    availabilityReady &&
-    gitReady;
+  const canSubmit = !!displayName.trim() && !nameError && !!effectiveHandler && !handlerError && !handlerTaken && !isCheckingAvailability && availabilityReady && gitReady;
 
   const handleSubmit = async () => {
     setIsCreating(true);
@@ -388,13 +358,15 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
             onChange={(e) => setRepoUrl(e.target.value)}
             fullWidth
             error={!!urlError}
-            helperText={urlError || (
-              <>
-                Only public GitHub repositories are supported.
-                <br />
-                e.g. https://github.com/org/repo
-              </>
-            )}
+            helperText={
+              urlError || (
+                <>
+                  Only public GitHub repositories are supported.
+                  <br />
+                  e.g. https://github.com/org/repo
+                </>
+              )
+            }
             slotProps={{
               input: {
                 startAdornment: (
@@ -507,16 +479,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
 
       {showBranchAndSubPath && (
         <Grid size={{ xs: 12, md: colSize }}>
-          <DirectoryPickerField
-            repo={activeRepo}
-            value={subPath}
-            onChange={(path) => setSubPath(path)}
-            isError={isContentsError}
-            contents={repoContents}
-            isFetching={isContentsLoading}
-            onRefetch={refetchContents}
-            disabled={!selectedBranch}
-          />
+          <DirectoryPickerField repo={activeRepo} value={subPath} onChange={(path) => setSubPath(path)} isError={isContentsError} contents={repoContents} isFetching={isContentsLoading} onRefetch={refetchContents} disabled={!selectedBranch} />
         </Grid>
       )}
     </Grid>
@@ -578,11 +541,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
                       <CircularProgress size={16} />
                     ) : (
                       <Tooltip title={handlerEdited ? 'Done' : 'Edit name'} placement="top">
-                        <IconButton
-                          size="small"
-                          aria-label={handlerEdited ? 'Confirm name' : 'Edit name'}
-                          onClick={() => (handlerEdited ? stopEditing() : startEditing())}
-                          sx={handlerEdited ? { color: 'success.main' } : { color: 'primary.main' }}>
+                        <IconButton size="small" aria-label={handlerEdited ? 'Confirm name' : 'Edit name'} onClick={() => (handlerEdited ? stopEditing() : startEditing())} sx={handlerEdited ? { color: 'success.main' } : { color: 'primary.main' }}>
                           {handlerEdited ? <Check size={16} /> : <Edit size={16} />}
                         </IconButton>
                       </Tooltip>
@@ -594,16 +553,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
           />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
-          <TextField
-            label="Description (Optional)"
-            placeholder="Enter description here"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            fullWidth
-            multiline
-            minRows={1}
-            slotProps={{ htmlInput: { 'aria-label': 'Description' } }}
-          />
+          <TextField label="Description (Optional)" placeholder="Enter description here" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline minRows={1} slotProps={{ htmlInput: { 'aria-label': 'Description' } }} />
         </Grid>
       </Grid>
 
@@ -616,14 +566,17 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
         tabIndex={0}
         aria-expanded={gitSectionOpen}
         onClick={handleGitSectionToggle}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleGitSectionToggle(); } }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleGitSectionToggle();
+          }
+        }}
         sx={{ cursor: 'pointer', mb: gitSectionOpen ? 2 : 6, userSelect: 'none' }}>
         <Typography variant="h5" component="h2">
           Connect Your Repository (Optional)
         </Typography>
-        <Box sx={{ color: 'primary.main', display: 'flex' }}>
-          {gitSectionOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-        </Box>
+        <Box sx={{ color: 'primary.main', display: 'flex' }}>{gitSectionOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</Box>
       </Stack>
 
       {gitSectionOpen && (
@@ -631,7 +584,10 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
           {!attachGit ? (
             <Box sx={{ mb: 5 }}>
               <GitProviderCards
-                onGitHubSelect={() => { handleProviderSelect('github'); startGitHubAuth(refetchRepos); }}
+                onGitHubSelect={() => {
+                  handleProviderSelect('github');
+                  startGitHubAuth(refetchRepos);
+                }}
                 onPublicSelect={() => handleProviderSelect('public')}
               />
             </Box>
@@ -669,13 +625,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
       )}
       {isWorkspace && showWorkspaceConfig && (
         <>
-          <WorkspaceModuleTable
-            repoName={activeRepo}
-            repoContents={repoContents}
-            modules={workspaceModules}
-            onChange={setWorkspaceModules}
-            quotaRemaining={quotaRemaining}
-          />
+          <WorkspaceModuleTable repoName={activeRepo} repoContents={repoContents} modules={workspaceModules} onChange={setWorkspaceModules} quotaRemaining={quotaRemaining} />
           <Box sx={{ mb: 2 }} />
         </>
       )}

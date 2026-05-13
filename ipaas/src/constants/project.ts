@@ -28,10 +28,7 @@ export const URL_DEBOUNCE_MS = 600;
 
 export const FREE_COMPONENT_LIMIT = 5;
 
-export const DENIED_HANDLERS = new Set([
-  'new', 'edit', 'delete', 'settings', 'overview', 'components',
-  'analytics', 'home', 'import', 'create',
-]);
+export const DENIED_HANDLERS = new Set(['new', 'edit', 'delete', 'settings', 'overview', 'components', 'analytics', 'home', 'import', 'create']);
 
 export const INTEGRATION_TYPE_LABELS: Record<string, string> = {
   service: 'Integration as API',

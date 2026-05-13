@@ -5,7 +5,7 @@
 
 ---
 
-## Access Control Context
+## 1. Access Control Context
 
 **File:** `AccessControlContext.tsx`
 
@@ -27,7 +27,7 @@ Key query methods:
 
 Scoped `clear*` methods (`clearPermissions`, `clearProjectPermissions`, `clearComponentPermissions`) allow targeted invalidation when the user navigates away from a project or component without wiping unrelated permission state.
 
-### Why Context
+#### Why Context
 
 > [!IMPORTANT]
 > Permission data is needed by many unrelated parts of the UI (nav items, action buttons, page guards) with no natural parent-child relationship between them. Context distributes this shared read-only state efficiently without requiring a global state library. All mutating callbacks are stabilised with `useCallback` and the value object with `useMemo`, so consumers only re-render when the underlying permission sets actually change.
@@ -36,7 +36,7 @@ Scoped `clear*` methods (`clearPermissions`, `clearProjectPermissions`, `clearCo
 
 ---
 
-## Feature Preview Context
+## 2. Feature Preview Context
 
 **File:** `FeaturePreviewContext.tsx`
 
@@ -50,14 +50,14 @@ State held:
 
 `updateFeatures(updated)` does a shallow merge, so callers only need to supply the keys they want to change. The merged result is written back to `localStorage` synchronously before the state update is committed.
 
-### Why Context
+#### Why Context
 
 > [!IMPORTANT]
 > Feature flags are read by scattered, unrelated components — the same reasons as access control apply. Context avoids prop drilling while keeping the flag state reactive. `localStorage` is appropriate here (unlike for sensitive config values) because feature-preview flags are non-sensitive developer preferences that should survive a refresh.
 
 ---
 
-## Prebuilt Integration Config Context
+## 3. Prebuilt Integration Config Context
 
 **File:** `PrebuiltIntegrationConfigContext.tsx`
 
@@ -72,7 +72,7 @@ State held:
 
 `clearAll()` is called once deployment succeeds, so the context is wiped before navigating to the new component's overview page.
 
-### Why Context
+#### Why Context
 
 > [!IMPORTANT]
 > React Context keeps this state **in-memory and scoped to the integration creation flow**, allowing values to survive the `Setup → Deploy` route transition without prop drilling. A `useMemo`-stabilised value object and `useCallback` on `clearAll` prevent unnecessary re-renders.
@@ -87,7 +87,7 @@ Context provides the right balance: data is **transient, isolated, and cleaned u
 
 ---
 
-## Copilot Context
+## 4. Copilot Context
 
 **File:** `CopilotContext.tsx`
 
@@ -113,7 +113,7 @@ Key behaviours:
 - Auto-selects the first available region when data planes load; shows the region selector only when more than one region is available
 - Derives `copilotUrl` reactively from the selected region's `externalVhost` via `copilotApiUrl()`
 
-### Why Context
+#### Why Context
 
 > [!IMPORTANT]
 > The copilot panel is a **cross-cutting drawer** rendered inside `AppLayout` but its state must be readable and writable by components nested several levels deep: the header button toggles `showCopilot`, the chat input updates `chatInputValue`, the streaming hook writes `messageSendingError`, and the notification banner reads `selectedRegion` and `messages`. This fan-out across unrelated subtrees — with no natural common parent below `AppLayout` — makes prop drilling impractical.

@@ -53,10 +53,7 @@ export function useProjectHandler(displayName: string): UseProjectHandlerReturn 
     };
   }, [effectiveHandler]);
 
-  const { data: availability, isFetching: isCheckingAvailability } = useProjectHandlerAvailability(
-    debouncedCandidate,
-    debouncedCandidate.length >= 2,
-  );
+  const { data: availability, isFetching: isCheckingAvailability } = useProjectHandlerAvailability(debouncedCandidate, debouncedCandidate.length >= 2);
 
   const startEditing = () => {
     setHandlerEdited(true);

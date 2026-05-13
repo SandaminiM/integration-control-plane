@@ -17,8 +17,8 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { authenticatedFetch, getOrgUuidFromToken } from '../auth/tokenManager';
-import { getApimBaseUrl } from './apim';
+import { getOrgUuidFromToken } from '../auth/tokenManager';
+import { apimClient, governanceClient } from './httpClients';
 
 // ---------- Types ----------
 
@@ -53,50 +53,34 @@ export interface RuleAdherenceResponse {
   list: RuleAdherenceRuleset[];
 }
 
-// ---------- Helpers ----------
-
-function getGovernanceBaseUrl(): string | null {
-  const match = (window.API_CONFIG?.choreoOrgApiUrl ?? '').match(/\/\/apis\.([^.]+)\.choreo\.dev/);
-  return match ? `https://apis.${match[1]}.choreo.dev/governance/v1.0` : null;
-}
-
 // ---------- Fetch functions ----------
 
 async function fetchThrottlingPolicies(): Promise<ThrottlingPolicy[]> {
-  const base = getApimBaseUrl();
   const orgUuid = getOrgUuidFromToken() ?? '';
-  if (!base || !orgUuid) return [];
+  if (!orgUuid) return [];
   try {
-    const res = await authenticatedFetch(`${base}/api/am/publisher/v2/throttling-policies/subscription?organizationId=${encodeURIComponent(orgUuid)}`);
-    if (!res.ok) return [];
-    const json: { list?: ThrottlingPolicy[] } = await res.json();
-    return json.list ?? [];
+    const data = await apimClient.get<{ list?: ThrottlingPolicy[] }>(`/api/am/publisher/v2/throttling-policies/subscription?organizationId=${encodeURIComponent(orgUuid)}`);
+    return data.list ?? [];
   } catch {
     return [];
   }
 }
 
 async function fetchApiDocuments(apimId: string): Promise<ApiDocument[]> {
-  const base = getApimBaseUrl();
   const orgUuid = getOrgUuidFromToken() ?? '';
-  if (!base || !orgUuid || !apimId) return [];
+  if (!orgUuid || !apimId) return [];
   try {
-    const res = await authenticatedFetch(`${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/documents?organizationId=${encodeURIComponent(orgUuid)}`);
-    if (!res.ok) return [];
-    const json: { list?: ApiDocument[] } = await res.json();
-    return json.list ?? [];
+    const data = await apimClient.get<{ list?: ApiDocument[] }>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/documents?organizationId=${encodeURIComponent(orgUuid)}`);
+    return data.list ?? [];
   } catch {
     return [];
   }
 }
 
 async function fetchRuleAdherence(projectId: string, componentId: string, apimId: string): Promise<RuleAdherenceResponse | null> {
-  const base = getGovernanceBaseUrl();
-  if (!base || !projectId || !componentId || !apimId) return null;
+  if (!projectId || !componentId || !apimId) return null;
   try {
-    const res = await authenticatedFetch(`${base}/projects/${encodeURIComponent(projectId)}/components/${encodeURIComponent(componentId)}/endpoints/${encodeURIComponent(apimId)}/rule-adherence`);
-    if (!res.ok) return null;
-    return res.json() as Promise<RuleAdherenceResponse>;
+    return await governanceClient.get<RuleAdherenceResponse>(`/projects/${encodeURIComponent(projectId)}/components/${encodeURIComponent(componentId)}/endpoints/${encodeURIComponent(apimId)}/rule-adherence`);
   } catch {
     return null;
   }

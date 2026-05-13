@@ -16,30 +16,13 @@
  * under the License.
  */
 
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Grid,
-  IconButton,
-  InputAdornment,
-  MenuItem,
-  PageContent,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, Grid, IconButton, InputAdornment, MenuItem, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Building2, Check, CheckCircle2, Edit, GitHub, GitBranch } from '@wso2/oxygen-ui-icons-react';
 import GitIcon from '../assets/icons/GitIcon';
 import GitProviderCards from '../components/ProjectCreate/GitProviderCards';
 import { useState, useEffect, useLayoutEffect, type JSX } from 'react';
 import { useNavigate } from 'react-router';
-import {
-  useCreateMonoRepoProject,
-  useCreateComponent,
-} from '../api/mutations';
+import { useCreateMonoRepoProject, useCreateComponent } from '../api/mutations';
 import { useGitHubUserRepos, useOrgs, useOrgComponentLimits, useOrgSubscriptions, useRepoBranches, useRepoContents, type GqlProject } from '../api/queries';
 import { getOrgUuidFromToken } from '../auth/tokenManager';
 import DirectoryPickerField from '../components/DirectoryPicker';
@@ -108,12 +91,7 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
   const isCheckingAuth = !isPublicRepo && reposEnabled && isReposLoading;
 
   const { data: branches, isLoading: isBranchesLoading } = useRepoBranches(activeOrg, activeRepo, isPublicRepo);
-  const {
-    data: repoContents = [],
-    isLoading: isContentsLoading,
-    isError: isContentsError,
-    refetch: refetchContents,
-  } = useRepoContents(activeOrg, activeRepo, selectedBranch, isPublicRepo);
+  const { data: repoContents = [], isLoading: isContentsLoading, isError: isContentsError, refetch: refetchContents } = useRepoContents(activeOrg, activeRepo, selectedBranch, isPublicRepo);
 
   // Auto-select default branch; preserve an already-valid selection on refetch
   useEffect(() => {
@@ -189,7 +167,9 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
   // Stabilize scrollbar gutter to prevent layout shift when content height changes
   useLayoutEffect(() => {
     document.documentElement.style.setProperty('scrollbar-gutter', 'stable');
-    return () => { document.documentElement.style.removeProperty('scrollbar-gutter'); };
+    return () => {
+      document.documentElement.style.removeProperty('scrollbar-gutter');
+    };
   }, []);
 
   const handleProviderSelect = (provider: GitProvider) => {
@@ -201,17 +181,7 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
   const handlerTaken = availability && !availability.handlerUnique ? 'This name is already taken.' : null;
 
   const availabilityReady = !effectiveHandler || effectiveHandler.length < 2 || availability !== undefined;
-  const canSubmit =
-    !!displayName.trim() &&
-    !nameError &&
-    !!effectiveHandler &&
-    !handlerError &&
-    !handlerTaken &&
-    !isCheckingAvailability &&
-    availabilityReady &&
-    pathReady &&
-    isWorkspace &&
-    workspaceModules.length > 0;
+  const canSubmit = !!displayName.trim() && !nameError && !!effectiveHandler && !handlerError && !handlerTaken && !isCheckingAvailability && availabilityReady && pathReady && isWorkspace && workspaceModules.length > 0;
 
   const handleImport = async () => {
     setIsImporting(true);
@@ -343,13 +313,15 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
             onChange={(e) => setRepoUrl(e.target.value)}
             fullWidth
             error={!!urlError}
-            helperText={urlError || (
-              <>
-                Only public GitHub repositories are supported.
-                <br />
-                e.g. https://github.com/org/repo
-              </>
-            )}
+            helperText={
+              urlError || (
+                <>
+                  Only public GitHub repositories are supported.
+                  <br />
+                  e.g. https://github.com/org/repo
+                </>
+              )
+            }
             slotProps={{
               input: {
                 startAdornment: (
@@ -462,16 +434,7 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
 
       {showBranchAndSubPath && (
         <Grid size={{ xs: 12, md: colSize }}>
-          <DirectoryPickerField
-            repo={activeRepo}
-            value={subPath}
-            onChange={(path) => setSubPath(path)}
-            isError={isContentsError}
-            contents={repoContents}
-            isFetching={isContentsLoading}
-            onRefetch={refetchContents}
-            disabled={!selectedBranch}
-          />
+          <DirectoryPickerField repo={activeRepo} value={subPath} onChange={(path) => setSubPath(path)} isError={isContentsError} contents={repoContents} isFetching={isContentsLoading} onRefetch={refetchContents} disabled={!selectedBranch} />
           {isWorkspace && pathReady && !isContentsLoading && (
             <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.75, ml: 1.5 }}>
               <Box sx={{ color: 'success.main', display: 'flex' }}>
@@ -510,7 +473,10 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
       {!providerSelected ? (
         <Box sx={{ mb: 4 }}>
           <GitProviderCards
-            onGitHubSelect={() => { handleProviderSelect('github'); startGitHubAuth(refetchRepos); }}
+            onGitHubSelect={() => {
+              handleProviderSelect('github');
+              startGitHubAuth(refetchRepos);
+            }}
             onPublicSelect={() => handleProviderSelect('public')}
           />
         </Box>
@@ -520,9 +486,7 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
           {renderRepoPickers()}
           {pathReady && !isContentsLoading && !isContentsError && !isWorkspace && (
             <Alert severity="info" sx={{ mb: 3 }}>
-              No Ballerina workspace detected in the selected directory. Select a directory that contains a Ballerina
-              workspace (a root <code>Ballerina.toml</code> with subdirectories that each have their own{' '}
-              <code>Ballerina.toml</code>).
+              No Ballerina workspace detected in the selected directory. Select a directory that contains a Ballerina workspace (a root <code>Ballerina.toml</code> with subdirectories that each have their own <code>Ballerina.toml</code>).
             </Alert>
           )}
         </Box>
@@ -569,11 +533,7 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
                           <CircularProgress size={16} />
                         ) : (
                           <Tooltip title={handlerEdited ? 'Done' : 'Edit name'} placement="top">
-                            <IconButton
-                              size="small"
-                              aria-label={handlerEdited ? 'Confirm name' : 'Edit name'}
-                              onClick={() => (handlerEdited ? stopEditing() : startEditing())}
-                              sx={handlerEdited ? { color: 'success.main' } : { color: 'primary.main' }}>
+                            <IconButton size="small" aria-label={handlerEdited ? 'Confirm name' : 'Edit name'} onClick={() => (handlerEdited ? stopEditing() : startEditing())} sx={handlerEdited ? { color: 'success.main' } : { color: 'primary.main' }}>
                               {handlerEdited ? <Check size={16} /> : <Edit size={16} />}
                             </IconButton>
                           </Tooltip>
@@ -585,32 +545,14 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
               />
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                label="Description (Optional)"
-                placeholder="Enter description here"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                fullWidth
-                multiline
-                minRows={1}
-                slotProps={{ htmlInput: { 'aria-label': 'Description' } }}
-              />
+              <TextField label="Description (Optional)" placeholder="Enter description here" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline minRows={1} slotProps={{ htmlInput: { 'aria-label': 'Description' } }} />
             </Grid>
           </Grid>
         </>
       )}
 
       {/* Configure Integrations — shown after workspace detection */}
-      {isWorkspace && (
-        <WorkspaceModuleTable
-          repoName={activeRepo}
-          repoContents={repoContents}
-          modules={workspaceModules}
-          onChange={setWorkspaceModules}
-          quotaRemaining={quotaRemaining}
-          alertWhenEmpty
-        />
-      )}
+      {isWorkspace && <WorkspaceModuleTable repoName={activeRepo} repoContents={repoContents} modules={workspaceModules} onChange={setWorkspaceModules} quotaRemaining={quotaRemaining} alertWhenEmpty />}
 
       <Stack direction="row" gap={2} sx={{ mt: 2 }}>
         <Button variant="outlined" onClick={() => window.history.back()} disabled={isImporting}>

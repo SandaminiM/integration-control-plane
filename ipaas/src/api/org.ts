@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { authenticatedFetch } from '../auth/tokenManager';
-import { choreoDevopsApiUrl } from '../config/api';
+import { gql } from './graphql';
+import { devopsClient, orgClient } from './httpClients';
 
 export interface OrgEntry {
   handle: string;
@@ -29,12 +29,12 @@ export interface RegisterUserResponse {
   idpId?: string;
 }
 
+type RawOrgEntry = { handle?: string; orgHandle?: string; id?: string | number; orgId?: string | number };
+
 /** Fetches the list of orgs the current user belongs to. */
 export async function fetchOrgList(): Promise<OrgEntry[]> {
-  const res = await authenticatedFetch(`${window.API_CONFIG.choreoOrgApiUrl}/orgs`);
-  if (!res.ok) throw new Error('Failed to fetch orgs');
-  const data = await res.json();
-  const list: Array<{ handle?: string; orgHandle?: string; id?: string | number; orgId?: string | number }> = data.list ?? data.organizations ?? (Array.isArray(data) ? data : []);
+  const data = await orgClient.get<{ list?: RawOrgEntry[]; organizations?: RawOrgEntry[] }>('/orgs');
+  const list = data.list ?? data.organizations ?? [];
   return list
     .map((o) => ({
       handle: o.handle ?? o.orgHandle ?? '',
@@ -45,61 +45,41 @@ export async function fetchOrgList(): Promise<OrgEntry[]> {
 
 /** Validates whether an org name is available. Returns true if available. */
 export async function validateOrgName(orgName: string): Promise<boolean> {
-  const url = new URL(`${window.API_CONFIG.choreoOrgApiUrl}/validate/orgname`);
-  url.searchParams.set('orgName', orgName);
-  const res = await authenticatedFetch(url.toString());
-  if (!res.ok) {
-    if (res.status === 404) return true; // endpoint not implemented — treat as available
-    throw new Error(`Org name validation failed (${res.status})`);
+  try {
+    const data = await orgClient.get<{ isValid?: boolean; valid?: boolean }>(`/validate/orgname?orgName=${encodeURIComponent(orgName)}`);
+    return data.isValid ?? data.valid ?? true;
+  } catch (err) {
+    // 404 means the endpoint is not yet deployed on this environment — treat name as available.
+    if (err instanceof Error && err.message.startsWith('HTTP 404')) return true;
+    throw err;
   }
-  const data: { isValid?: boolean; valid?: boolean } = await res.json();
-  return data.isValid ?? data.valid ?? true;
 }
 
 /** Registers a new user + org. Returns the created org entry. */
 export async function registerUser(orgName: string, termsAccepted: boolean, serviceName: string): Promise<RegisterUserResponse> {
-  const res = await authenticatedFetch(`${window.API_CONFIG.choreoOrgApiUrl}/register-user`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ organization: { name: orgName }, termsAccepted, serviceName }),
-  });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Organization creation failed (${res.status}): ${body}`);
-  }
-  return res.json() as Promise<RegisterUserResponse>;
+  return orgClient.post<RegisterUserResponse>('/register-user', { organization: { name: orgName }, termsAccepted, serviceName });
 }
 
 /** Initialises default environments for the org in the given region. */
 export async function initOrg(orgUuid: string, region: string): Promise<void> {
-  const res = await authenticatedFetch(`${choreoDevopsApiUrl()}/api/v1/organizations/${orgUuid}/projects/init`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ region }),
-  });
-  if (!res.ok) throw new Error(`Failed to initialize organization (${res.status})`);
+  await devopsClient.post(`/api/v1/organizations/${orgUuid}/projects/init`, { region });
 }
 
 /** Creates the default project for a newly onboarded org. Returns { id, handler }. */
 export async function createDefaultProject(orgNumericId: number, orgHandler: string, projectHandler = 'default'): Promise<{ id: string; handler: string }> {
-  const res = await authenticatedFetch(window.API_CONFIG.graphqlUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      query: `mutation {
-        createProject(project: {
-          name: "Default",
-          description: "This is a default project created by WSO2 Integration Platform",
-          projectHandler: "${projectHandler}",
-          orgId: ${orgNumericId},
-          orgHandler: "${orgHandler}",
-          version: "1.0.0"
-        }) { id handler }
-      }`,
-    }),
-  });
-  if (!res.ok) throw new Error(`Failed to create default project (${res.status})`);
-  const data: { data?: { createProject?: { id: string; handler: string } }; errors?: unknown[] } = await res.json();
-  if (data.errors || !data.data?.createProject) throw new Error('Failed to create default project');
-  return data.data.createProject;
+  const data = await gql<{ createProject: { id: string; handler: string } }>(
+    `mutation CreateDefaultProject($projectHandler: String!, $orgId: Int!, $orgHandler: String!) {
+      createProject(project: {
+        name: "Default",
+        description: "This is a default project created by WSO2 Integration Platform",
+        projectHandler: $projectHandler,
+        orgId: $orgId,
+        orgHandler: $orgHandler,
+        version: "1.0.0"
+      }) { id handler }
+    }`,
+    { projectHandler, orgId: orgNumericId, orgHandler },
+  );
+  if (!data.createProject) throw new Error('Failed to create default project');
+  return data.createProject;
 }

@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { authenticatedFetch, getOrgUuidFromToken } from '../auth/tokenManager';
+import { getOrgUuidFromToken } from '../auth/tokenManager';
+import { apimClient, platformClient } from './httpClients';
 
 export interface ApimApiOperation {
   id?: string;
@@ -55,13 +56,6 @@ export interface ApimApiInfo {
   [key: string]: unknown;
 }
 
-// Derive APIM Publisher base URL from the choreoOrgApiUrl config.
-// e.g. https://apis.preview-dv.choreo.dev/... → https://sts.preview-dv.choreo.dev
-export function getApimBaseUrl(): string | null {
-  const match = (window.API_CONFIG?.choreoOrgApiUrl ?? '').match(/\/\/apis\.([^.]+)\.choreo\.dev/);
-  return match ? `https://sts.${match[1]}.choreo.dev` : null;
-}
-
 // Derive Developer Portal base URL from the choreoOrgApiUrl config.
 export function getDevPortalBaseUrl(): string | null {
   const match = (window.API_CONFIG?.choreoOrgApiUrl ?? '').match(/\/\/apis\.([^.]+)\.choreo\.dev/);
@@ -69,37 +63,21 @@ export function getDevPortalBaseUrl(): string | null {
 }
 
 export async function fetchApimApi(apimId: string): Promise<ApimApiInfo | null> {
-  const base = getApimBaseUrl();
-  if (!base) return null;
   const orgUuid = getOrgUuidFromToken() ?? '';
   try {
-    const res = await authenticatedFetch(`${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}?organizationId=${encodeURIComponent(orgUuid)}`);
-    if (!res.ok) return null;
-    return res.json() as Promise<ApimApiInfo>;
+    return await apimClient.get<ApimApiInfo>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}?organizationId=${encodeURIComponent(orgUuid)}`);
   } catch {
     return null;
   }
 }
 
 export async function updateApimApi(apimId: string, body: ApimApiInfo): Promise<ApimApiInfo> {
-  const base = getApimBaseUrl();
-  if (!base) throw new Error('APIM base URL could not be derived from configuration');
   const orgUuid = getOrgUuidFromToken() ?? '';
-  let res: Response;
   try {
-    res = await authenticatedFetch(`${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}?organizationId=${encodeURIComponent(orgUuid)}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    return await apimClient.put<ApimApiInfo>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}?organizationId=${encodeURIComponent(orgUuid)}`, body);
   } catch (err) {
-    throw new Error(`APIM update request failed: ${err instanceof Error ? err.message : String(err)}`);
+    throw new Error(`APIM update failed: ${err instanceof Error ? err.message : String(err)}`);
   }
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`APIM update failed: ${res.status} ${res.statusText}${text ? ` — ${text}` : ''}`);
-  }
-  return res.json() as Promise<ApimApiInfo>;
 }
 
 export interface GeneratedTestKey {
@@ -108,31 +86,13 @@ export interface GeneratedTestKey {
 }
 
 export async function generateTestKey(apimId: string, keyType: 'Development' | 'Production'): Promise<GeneratedTestKey | null> {
-  const base = getApimBaseUrl();
-  if (!base) return null;
   const orgUuid = getOrgUuidFromToken() ?? '';
   try {
     const params = new URLSearchParams({ organizationId: orgUuid, keyType });
-    const res = await authenticatedFetch(`${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/generate-key?${params}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    });
-    if (!res.ok) return null;
-    return res.json() as Promise<GeneratedTestKey>;
+    return await apimClient.post<GeneratedTestKey>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/generate-key?${params}`);
   } catch {
     return null;
   }
-}
-
-// ── Proxy Deployer ─────────────────────────────────────────────────────────────
-
-export function getProxyDeployerBaseUrl(): string {
-  const raw = window.API_CONFIG?.choreoOrgApiUrl ?? '';
-  const base = raw.replace(/\/orgs\/.*$/, '');
-  if (!base || base.startsWith('/')) {
-    throw new Error('Proxy deployer base URL cannot be derived: choreoOrgApiUrl is not configured or invalid');
-  }
-  return `${base}/proxy/deployer/v1`;
 }
 
 export interface DeploySettingsV2Payload {
@@ -157,21 +117,10 @@ export interface DeploySettingsV2Payload {
 }
 
 export async function deploySettingsV2(componentId: string, versionId: string, payload: DeploySettingsV2Payload): Promise<void> {
-  const base = getProxyDeployerBaseUrl();
-  const url = `${base}/components/${encodeURIComponent(componentId)}/versions/${encodeURIComponent(versionId)}/deploy-settings-v2`;
-  let res: Response;
   try {
-    res = await authenticatedFetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    await platformClient.post(`/proxy/deployer/v1/components/${encodeURIComponent(componentId)}/versions/${encodeURIComponent(versionId)}/deploy-settings-v2`, payload);
   } catch (err) {
-    throw new Error(`deploy-settings-v2 request failed: ${err instanceof Error ? err.message : String(err)}`);
-  }
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`deploy-settings-v2 failed: ${res.status} ${res.statusText}${text ? ` — ${text}` : ''}`);
+    throw new Error(`deploy-settings-v2 failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
@@ -201,55 +150,36 @@ export interface LifecycleHistory {
 }
 
 export async function fetchLifecycleState(apimId: string): Promise<LifecycleState | null> {
-  const base = getApimBaseUrl();
-  if (!base) return null;
   const orgUuid = getOrgUuidFromToken() ?? '';
   try {
-    const res = await authenticatedFetch(`${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/lifecycle-state?organizationId=${encodeURIComponent(orgUuid)}`);
-    if (!res.ok) return null;
-    return res.json() as Promise<LifecycleState>;
+    return await apimClient.get<LifecycleState>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/lifecycle-state?organizationId=${encodeURIComponent(orgUuid)}`);
   } catch {
     return null;
   }
 }
 
 export async function fetchLifecycleHistory(apimId: string): Promise<LifecycleHistory | null> {
-  const base = getApimBaseUrl();
-  if (!base) return null;
   const orgUuid = getOrgUuidFromToken() ?? '';
   try {
-    const res = await authenticatedFetch(`${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/lifecycle-history?organizationId=${encodeURIComponent(orgUuid)}`);
-    if (!res.ok) return null;
-    return res.json() as Promise<LifecycleHistory>;
+    return await apimClient.get<LifecycleHistory>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/lifecycle-history?organizationId=${encodeURIComponent(orgUuid)}`);
   } catch {
     return null;
   }
 }
 
 export async function changeLifecycleState(apimId: string, action: string): Promise<LifecycleState> {
-  const base = getApimBaseUrl();
-  if (!base) throw new Error('APIM base URL could not be derived from configuration');
   const orgUuid = getOrgUuidFromToken() ?? '';
   const params = new URLSearchParams({ organizationId: orgUuid, apiId: apimId, action });
-  const res = await authenticatedFetch(`${base}/api/am/publisher/v2/apis/change-lifecycle?${params}`, { method: 'POST' });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`Lifecycle change failed: ${res.status} ${res.statusText}${text ? ` — ${text}` : ''}`);
-  }
-  const data = (await res.json()) as { lifecycleState: LifecycleState };
+  const data = await apimClient.post<{ lifecycleState: LifecycleState }>(`/api/am/publisher/v2/apis/change-lifecycle?${params}`);
   return data.lifecycleState;
 }
 
 // ── APIM Swagger ───────────────────────────────────────────────────────────────
 
 export async function fetchApimSwagger(apimRevisionId: string): Promise<unknown> {
-  const base = getApimBaseUrl();
-  if (!base) return null;
   const orgUuid = getOrgUuidFromToken() ?? '';
   try {
-    const res = await authenticatedFetch(`${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimRevisionId)}/swagger?organizationId=${encodeURIComponent(orgUuid)}`);
-    if (!res.ok) return null;
-    return res.json();
+    return await apimClient.get<unknown>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimRevisionId)}/swagger?organizationId=${encodeURIComponent(orgUuid)}`);
   } catch {
     return null;
   }

@@ -16,7 +16,9 @@
  * under the License.
  */
 
-import { authenticatedFetch } from '../auth/tokenManager';
+// baseUrl is passed by callers that derive it from choreoAlertingApiUrl(gatewayHost). A static named client
+// is deferred until the component-level refactor removes alertingBaseUrl prop-drilling (see memory).
+import { createHttpClient } from './httpClients';
 import type { AlertComponentType } from '../constants/alerts';
 import type { AlertHistoryResponse, AlertRule, AlertRuleCountUsage } from '../types/alerts';
 
@@ -26,68 +28,40 @@ function buildQueryString(params: Record<string, string>): string {
 
 export async function getAlertRulesCount(baseUrl: string, componentId: string, environmentId: string, componentType: AlertComponentType): Promise<AlertRuleCountUsage> {
   const qs = buildQueryString({ componentId, environmentId, componentType });
-  const res = await authenticatedFetch(`${baseUrl}/component/alerts/rules/count?${qs}`);
-  if (!res.ok) throw new Error(`Failed to fetch alert rules count: ${res.status}`);
-  return res.json() as Promise<AlertRuleCountUsage>;
+  return createHttpClient(() => baseUrl).get<AlertRuleCountUsage>(`/component/alerts/rules/count?${qs}`);
 }
 
 export async function getAlertRules(baseUrl: string, componentId: string, environmentId: string, componentType: AlertComponentType): Promise<AlertRule[]> {
   const qs = buildQueryString({ componentId, environmentId, componentType });
-  const res = await authenticatedFetch(`${baseUrl}/component/alerts/rules?${qs}`);
-  if (!res.ok) throw new Error(`Failed to fetch alert rules: ${res.status}`);
-  return res.json() as Promise<AlertRule[]>;
+  return createHttpClient(() => baseUrl).get<AlertRule[]>(`/component/alerts/rules?${qs}`);
 }
 
-export async function createAlertRule(baseUrl: string, alertRule: AlertRule): Promise<Response> {
-  const res = await authenticatedFetch(`${baseUrl}/component/alerts/rules`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(alertRule),
-  });
-  if (!res.ok) throw new Error(`Failed to create alert rule: ${res.status}`);
-  return res;
+export async function createAlertRule(baseUrl: string, alertRule: AlertRule): Promise<void> {
+  await createHttpClient(() => baseUrl).post(`/component/alerts/rules`, alertRule);
 }
 
-export async function updateAlertRule(baseUrl: string, alertRule: AlertRule): Promise<Response> {
-  const res = await authenticatedFetch(`${baseUrl}/component/alerts/rules/${alertRule.id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(alertRule),
-  });
-  if (!res.ok) throw new Error(`Failed to update alert rule: ${res.status}`);
-  return res;
+export async function updateAlertRule(baseUrl: string, alertRule: AlertRule): Promise<void> {
+  await createHttpClient(() => baseUrl).put(`/component/alerts/rules/${alertRule.id}`, alertRule);
 }
 
-export async function deleteAlertRule(baseUrl: string, alertRule: AlertRule): Promise<Response> {
-  const res = await authenticatedFetch(`${baseUrl}/component/alerts/rules/${alertRule.id}`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      componentId: alertRule.componentId,
-      versionId: alertRule.versionId,
-      environmentId: alertRule.environmentId,
-    }),
+export async function deleteAlertRule(baseUrl: string, alertRule: AlertRule): Promise<void> {
+  await createHttpClient(() => baseUrl).delete(`/component/alerts/rules/${alertRule.id}`, {
+    componentId: alertRule.componentId,
+    versionId: alertRule.versionId,
+    environmentId: alertRule.environmentId,
   });
-  if (!res.ok) throw new Error(`Failed to delete alert rule: ${res.status}`);
-  return res;
 }
 
 export async function getAlertHistory(baseUrl: string, componentId: string, environmentId: string, startTime: string, endTime: string, limit = 100, versionIdList: string[] = [], alertTypes: string[] = [], searchPhrase = ''): Promise<AlertHistoryResponse> {
-  const res = await authenticatedFetch(`${baseUrl}/component/alerts/history/search`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      componentId,
-      environmentId,
-      versionIdList,
-      alertTypes,
-      searchPhrase,
-      startTime,
-      endTime,
-      limit,
-      sort: 'desc',
-    }),
+  return createHttpClient(() => baseUrl).post<AlertHistoryResponse>(`/component/alerts/history/search`, {
+    componentId,
+    environmentId,
+    versionIdList,
+    alertTypes,
+    searchPhrase,
+    startTime,
+    endTime,
+    limit,
+    sort: 'desc',
   });
-  if (!res.ok) throw new Error(`Failed to fetch alert history: ${res.status}`);
-  return res.json() as Promise<AlertHistoryResponse>;
 }

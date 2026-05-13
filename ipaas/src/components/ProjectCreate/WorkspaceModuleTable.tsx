@@ -16,29 +16,7 @@
  * under the License.
  */
 
-import {
-  Alert,
-  Box,
-  Card,
-  CardContent,
-  Divider,
-  Grid,
-  IconButton,
-  InputAdornment,
-  MenuItem,
-  Paper,
-  Select,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@wso2/oxygen-ui';
+import { Alert, Box, Card, CardContent, Divider, Grid, IconButton, InputAdornment, MenuItem, Paper, Select, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { File, Folder, FolderOpen, Inbox, Plus, Trash2, Search } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, type JSX } from 'react';
 import type { RepoTreeNode } from '../../api/queries';
@@ -119,9 +97,7 @@ export default function WorkspaceModuleTable({ repoName, repoContents, modules, 
     onChange(modules.map((m) => (m.path === path ? { ...m, integrationType: type } : m)));
   };
 
-  const filteredContents = search
-    ? repoContents.filter((n) => n.subPath.toLowerCase().includes(search.toLowerCase()))
-    : repoContents;
+  const filteredContents = search ? repoContents.filter((n) => n.subPath.toLowerCase().includes(search.toLowerCase())) : repoContents;
 
   const renderTreeNode = (node: RepoTreeNode, indent = false) => {
     const isModule = isBallerinaModule(node);
@@ -140,9 +116,7 @@ export default function WorkspaceModuleTable({ repoName, repoContents, modules, 
           '&:hover': { bgcolor: 'action.hover' },
         }}>
         <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
-          <Box sx={{ color: 'text.secondary', display: 'flex', flexShrink: 0 }}>
-            {node.type === 'tree' ? <Folder size={18} /> : <File size={16} />}
-          </Box>
+          <Box sx={{ color: 'text.secondary', display: 'flex', flexShrink: 0 }}>{node.type === 'tree' ? <Folder size={18} /> : <File size={16} />}</Box>
           <Typography variant="body2" noWrap>
             {node.subPath}
           </Typography>
@@ -294,32 +268,17 @@ export default function WorkspaceModuleTable({ repoName, repoContents, modules, 
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: 'text.secondary' }}>
-                          Integration Display Name
-                        </TableCell>
-                        <TableCell sx={{ fontWeight: 600, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: 'text.secondary' }}>
-                          Path
-                        </TableCell>
-                        <TableCell sx={{ fontWeight: 600, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: 'text.secondary' }}>
-                          Component Type
-                        </TableCell>
-                        <TableCell sx={{ fontWeight: 600, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: 'text.secondary' }}>
-                          Action
-                        </TableCell>
+                        <TableCell sx={{ fontWeight: 600, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: 'text.secondary' }}>Integration Display Name</TableCell>
+                        <TableCell sx={{ fontWeight: 600, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: 'text.secondary' }}>Path</TableCell>
+                        <TableCell sx={{ fontWeight: 600, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: 'text.secondary' }}>Component Type</TableCell>
+                        <TableCell sx={{ fontWeight: 600, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase', color: 'text.secondary' }}>Action</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {modules.map((module) => (
                         <TableRow key={module.path}>
                           <TableCell>
-                            <TextField
-                              size="small"
-                              value={module.displayName}
-                              onChange={(e) => updateDisplayName(module.path, e.target.value)}
-                              variant="outlined"
-                              sx={{ minWidth: 140 }}
-                              slotProps={{ htmlInput: { 'aria-label': 'Integration display name' } }}
-                            />
+                            <TextField size="small" value={module.displayName} onChange={(e) => updateDisplayName(module.path, e.target.value)} variant="outlined" sx={{ minWidth: 140 }} slotProps={{ htmlInput: { 'aria-label': 'Integration display name' } }} />
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace', fontSize: 12 }}>
@@ -327,11 +286,7 @@ export default function WorkspaceModuleTable({ repoName, repoContents, modules, 
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            <Select
-                              value={module.integrationType}
-                              onChange={(e) => updateIntegrationType(module.path, e.target.value as WorkspaceIntegrationType)}
-                              size="small"
-                              sx={{ minWidth: 170 }}>
+                            <Select value={module.integrationType} onChange={(e) => updateIntegrationType(module.path, e.target.value as WorkspaceIntegrationType)} size="small" sx={{ minWidth: 170 }}>
                               {(Object.entries(INTEGRATION_TYPE_LABELS) as [WorkspaceIntegrationType, string][]).map(([value, label]) => (
                                 <MenuItem key={value} value={value}>
                                   {label}
