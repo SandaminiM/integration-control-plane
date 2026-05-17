@@ -17,13 +17,12 @@
  */
 
 import { useState } from 'react';
-import { useObtainGithubToken } from '../api/mutations';
+import { useObtainGithubToken } from './useRepository';
 import { GITHUB_AUTH } from '../constants/github';
 import { buildGitHubOAuthUrl } from '../paths';
 import { generateAndSaveGitHubState, validateAndClearGitHubState } from '../auth/tokenManager';
 import type { AuthStatus } from '../types/import';
 
-export type { AuthStatus };
 
 export interface UseGitHubAuthReturn {
   authStatus: AuthStatus;

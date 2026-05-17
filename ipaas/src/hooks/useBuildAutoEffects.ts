@@ -17,7 +17,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { GqlDeploymentStatus } from '../api/queries';
+import type { GqlDeploymentStatus } from '../types/deployment';
 
 interface BuildAutoEffectsConfig {
   builds: GqlDeploymentStatus[];

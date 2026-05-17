@@ -17,7 +17,8 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { useProjectHandlerAvailability, type ProjectHandlerAvailability } from '../api/queries';
+import { useProjectHandlerAvailability } from './useProjects';
+import type { ProjectHandlerAvailability } from '../types/project';
 import { HANDLER_DEBOUNCE_MS, PROJECT_HANDLER_MAX_LENGTH } from '../constants/project';
 import { toProjectHandler } from '../utils/string';
 

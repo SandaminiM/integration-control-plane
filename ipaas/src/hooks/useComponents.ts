@@ -1,0 +1,135 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  fetchComponents,
+  fetchComponentByHandler,
+  fetchComponentEndpoints,
+  fetchComponentEndpointSpec,
+  createComponent,
+  deleteComponent,
+  generateComponentEnvironmentJwtSecret,
+  rotateComponentEnvironmentJwtSecret,
+  updateAutoDeployEnabled,
+  updateComponent,
+  updateEndpoint,
+  generateComponentEndpoints,
+} from '../api/components';
+import type { CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput } from '../types/component';
+
+export function useComponents(orgHandler: string, projectId: string) {
+  return useQuery({
+    queryKey: ['components', orgHandler, projectId],
+    queryFn: () => fetchComponents(orgHandler, projectId),
+    enabled: !!orgHandler && !!projectId,
+  });
+}
+
+export function useComponentByHandler(projectId: string, handler: string | undefined) {
+  return useQuery({
+    queryKey: ['component', projectId, handler],
+    queryFn: () => fetchComponentByHandler(projectId, handler!),
+    enabled: !!projectId && !!handler,
+  });
+}
+
+export function useComponentEndpoints(componentId: string, versionId: string) {
+  return useQuery({
+    queryKey: ['componentEndpoints', componentId, versionId],
+    queryFn: () => fetchComponentEndpoints(componentId, versionId),
+    enabled: !!componentId && !!versionId,
+    staleTime: 60_000,
+  });
+}
+
+export function useCreateComponent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateComponentInput) => createComponent(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['components'] }),
+  });
+}
+
+export function useDeleteComponent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { orgHandler: string; componentId: string; projectId: string }) => deleteComponent(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['components'] }),
+  });
+}
+
+export function useGenerateComponentEnvironmentJwtSecret() {
+  return useMutation({
+    mutationFn: ({ componentId, environmentId }: { componentId: string; environmentId: string }) => generateComponentEnvironmentJwtSecret(componentId, environmentId),
+  });
+}
+
+export function useRotateComponentEnvironmentJwtSecret() {
+  return useMutation({
+    mutationFn: ({ componentId, environmentId }: { componentId: string; environmentId: string }) => rotateComponentEnvironmentJwtSecret(componentId, environmentId),
+  });
+}
+
+export function useUpdateAutoDeployEnabled() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateAutoDeployInput) => updateAutoDeployEnabled(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['component'] });
+      qc.invalidateQueries({ queryKey: ['componentDeployment'] });
+    },
+  });
+}
+
+export function useUpdateComponent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateComponentInput) => updateComponent(input),
+    onSuccess: (_data, input) => {
+      qc.invalidateQueries({ queryKey: ['component', input.projectId, input.handler] });
+      qc.invalidateQueries({ queryKey: ['components'] });
+    },
+  });
+}
+
+export function useUpdateEndpoint() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { componentId: string; versionId: string; releaseId: string; endpointId: string; displayName: string; networkVisibilities: string[] }) => updateEndpoint(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['envEndpoints'] });
+    },
+  });
+}
+
+export function useFetchComponentEndpointSpec() {
+  return useMutation({
+    mutationFn: ({ componentId, versionId, endpointId }: { componentId: string; versionId: string; endpointId: string }) => fetchComponentEndpointSpec(componentId, versionId, endpointId),
+  });
+}
+
+export function useGenerateComponentEndpoints() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: GenerateComponentEndpointsInput) => generateComponentEndpoints(input),
+    onSuccess: (_data, input) => {
+      qc.invalidateQueries({ queryKey: ['envEndpoints', input.componentId] });
+    },
+  });
+}
