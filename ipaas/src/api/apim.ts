@@ -17,50 +17,10 @@
  */
 
 import { getOrgUuidFromToken } from '../auth/tokenManager';
-import { apimClient, platformClient } from './httpClients';
+import { apimClient, choreoClient } from './httpClients';
+import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory } from '../types/apim';
 
-export interface ApimApiOperation {
-  id?: string;
-  target: string;
-  verb: string;
-  authType?: string;
-  throttlingPolicy?: string;
-  scopes?: string[];
-}
-
-export interface CorsConfiguration {
-  corsConfigurationEnabled: boolean;
-  accessControlAllowOrigins: string[];
-  accessControlAllowCredentials: boolean;
-  accessControlAllowHeaders: string[];
-  accessControlAllowMethods: string[];
-}
-
-export interface ApimApiInfo {
-  id: string;
-  name: string;
-  displayName: string;
-  version: string;
-  lifeCycleStatus: string;
-  securityScheme?: string[];
-  authorizationHeader?: string;
-  apiKeyHeader?: string;
-  enableBackendJWT?: boolean;
-  backendJWTConfiguration?: { audiences?: string[] };
-  operations?: ApimApiOperation[];
-  policies?: string[];
-  scopes?: { scope: { name: string } }[];
-  corsConfiguration?: CorsConfiguration;
-  apiThrottlingPolicy?: string | null;
-  endpointConfig?: Record<string, unknown>;
-  [key: string]: unknown;
-}
-
-// Derive Developer Portal base URL from the choreoOrgApiUrl config.
-export function getDevPortalBaseUrl(): string | null {
-  const match = (window.API_CONFIG?.choreoOrgApiUrl ?? '').match(/\/\/apis\.([^.]+)\.choreo\.dev/);
-  return match ? `https://devportal.${match[1]}.choreo.dev` : null;
-}
+// Types moved to src/types/apim — re-exported here so existing imports continue to work
 
 export async function fetchApimApi(apimId: string): Promise<ApimApiInfo | null> {
   const orgUuid = getOrgUuidFromToken() ?? '';
@@ -80,11 +40,6 @@ export async function updateApimApi(apimId: string, body: ApimApiInfo): Promise<
   }
 }
 
-export interface GeneratedTestKey {
-  apikey: string;
-  validityTime: number;
-}
-
 export async function generateTestKey(apimId: string, keyType: 'Development' | 'Production'): Promise<GeneratedTestKey | null> {
   const orgUuid = getOrgUuidFromToken() ?? '';
   try {
@@ -95,59 +50,15 @@ export async function generateTestKey(apimId: string, keyType: 'Development' | '
   }
 }
 
-export interface DeploySettingsV2Payload {
-  environmentId: string;
-  buildId: string;
-  comment?: string;
-  apiSettings: Record<
-    string,
-    {
-      accessMode: string;
-      settings: {
-        corsConfiguration?: CorsConfiguration & { corsOverrideEnabled?: boolean };
-        throttlingLimit: { requestCount: number; unit: string } | null;
-        operations?: { verb: string; target: string; throttlingLimit: { requestCount: number; unit: string } }[];
-        resiliency?: number;
-      };
-      revisionId?: string;
-      isAsyncAPI?: boolean;
-      multiGatewayDeployment?: boolean;
-    }
-  >;
-}
-
 export async function deploySettingsV2(componentId: string, versionId: string, payload: DeploySettingsV2Payload): Promise<void> {
   try {
-    await platformClient.post(`/proxy/deployer/v1/components/${encodeURIComponent(componentId)}/versions/${encodeURIComponent(versionId)}/deploy-settings-v2`, payload);
+    await choreoClient.post(`/proxy/deployer/v1/components/${encodeURIComponent(componentId)}/versions/${encodeURIComponent(versionId)}/deploy-settings-v2`, payload);
   } catch (err) {
     throw new Error(`deploy-settings-v2 failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
-
-export interface LifecycleStateTransition {
-  event: string;
-  targetState: string;
-}
-
-export interface LifecycleState {
-  state: string;
-  checkItems: { name: string; value: boolean }[];
-  availableTransitions: LifecycleStateTransition[];
-}
-
-export interface LifecycleHistoryItem {
-  previousState: string | null;
-  postState: string;
-  user: string;
-  updatedTime: string;
-}
-
-export interface LifecycleHistory {
-  count: number;
-  list: LifecycleHistoryItem[];
-}
 
 export async function fetchLifecycleState(apimId: string): Promise<LifecycleState | null> {
   const orgUuid = getOrgUuidFromToken() ?? '';

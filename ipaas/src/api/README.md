@@ -10,7 +10,7 @@ createHttpClient / gql()    (httpClients.ts / graphql.ts)
         ↓
 Named service clients       (httpClients.ts exports)
         ↓
-Domain files                (alerts.ts, builds.ts, queries.ts, …)
+Domain files                (alerts.ts, builds.ts, components.ts, …)
 ```
 
 ---
@@ -38,29 +38,32 @@ All defined in `httpClients.ts`. Import the relevant client in domain files — 
 
 | Client | Backend service | Base URL source |
 |--------|----------------|-----------------|
-| `devopsClient` | Choreo DevOps API | `choreoDevopsApiUrl()` |
-| `orgClient` | Choreo Org API | `choreoOrgApiUrl` |
-| `authClient` | Auth service | `authBaseUrl` |
-| `systemClient` | System APIs (logs, obs) | `systemApisBaseUrl` |
-| `apimClient` | APIM Publisher | derived from `choreoOrgApiUrl` |
-| `obsClient` | Observability | `observabilityUrl` |
-| `platformClient` | Platform APIs (component-mgt, config-svc, config-mapping-svc, configuration-schema, config-mgt, proxy/deployer) | origin of `choreoOrgApiUrl` |
-| `subscriptionsClient` | Subscriptions service | `subscriptionsApiUrl()` |
-| `insightsClient` | Choreo Insights | derived from `choreoOrgApiUrl` |
-| `governanceClient` | Governance service | derived from `choreoOrgApiUrl` |
+| `authClient` | Auth service — users, roles, groups | `authBaseUrl` |
+| `systemClient` | System APIs — task logs, build logs | `systemApisBaseUrl` |
+| `apimClient` | APIM Publisher | `apimBaseUrl` |
+| `obsClient` | Observability — metrics, runtime logs | `observabilityUrl` |
+| `choreoClient` | Choreo Platform API (all `choreoBaseApiUrl` services) | `choreoBaseApiUrl` |
+| `subscriptionsClient` | Subscriptions service | `subscriptionsApiUrl` |
+| `insightsClient` | Choreo Insights | `insightsBaseUrl` |
 | `copilotDatacollectorClient` | AI Copilot data collector | `aiCopilotDatacollectorBaseUrl` |
+
+## Tier 3 — 403 retry helpers
+
+Also exported from `httpClients.ts`. Use these instead of calling `authenticatedFetch` directly:
+
+| Helper | When to use |
+|--------|-------------|
+| `withStsRetry(fn)` | Token is unscoped (no org UUID in token); STS configured. Refreshes + retries once. |
+| `withScopeRetry(fn)` | APIM scope validation error (code 900910). Refreshes + retries once. |
 
 ---
 
 ## Known deviations
 
-These are the only places where `authenticatedFetch` is used directly in domain files. Each has a one-line comment at the call site explaining why.
+Only one domain file calls `authenticatedFetch` directly. All other 403 retry cases use the helpers above.
 
 | Location | Reason |
 |----------|--------|
-| `queries.ts` — `useRepoContents` | 403 triggers STS token scope refresh + retry; requires manual `Response` inspection |
-| `mutations.ts` — `runPod` | 403 requires JSON body parsing to detect scope error before deciding to retry |
-| `copilot.ts` — `getAiCopilotAnswer` | Caller-provided URL, streaming `Response`, and custom per-request headers |
+| `copilot.ts` — `getAiCopilotAnswer` | Caller-provided URL, streaming `Response`, and custom per-request headers — incompatible with `createHttpClient` |
 
-> [!NOTE]
-> `alerts.ts` and `logs.ts` use `createHttpClient(() => baseUrl)` per call because the base URL is passed as a runtime parameter by callers. A static `alertingClient` is planned for the component-level refactor phase.
+`graphql.ts` and `httpClients.ts` call `authenticatedFetch` internally — expected, as they are the transport layer.

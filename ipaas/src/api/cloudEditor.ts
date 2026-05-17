@@ -17,18 +17,18 @@
  */
 
 import { gql } from './graphql';
-import { devopsClient } from './httpClients';
+import { choreoClient } from './httpClients';
 import type { ContainerRegistry } from '../types/cloudEditor';
 
 const CHOREO_SAMPLES_REGISTRY_HOST = 'choreoanonymouspullable.azurecr.io';
 
 async function getContainerRegistries(orgUuid: string): Promise<ContainerRegistry[]> {
-  const data = await devopsClient.get<{ data: ContainerRegistry[] }>(`/api/v1/container-registries?organization_id=${encodeURIComponent(orgUuid)}`);
+  const data = await choreoClient.get<{ data: ContainerRegistry[] }>(`/devops/1.0.0/api/v1/container-registries?organization_id=${encodeURIComponent(orgUuid)}`);
   return data.data ?? [];
 }
 
 async function createContainerRegistry(orgUuid: string): Promise<ContainerRegistry> {
-  const data = await devopsClient.post<{ data: ContainerRegistry }>(`/api/v1/container-registries?organization_id=${encodeURIComponent(orgUuid)}`, {
+  const data = await choreoClient.post<{ data: ContainerRegistry }>(`/devops/1.0.0/api/v1/container-registries?organization_id=${encodeURIComponent(orgUuid)}`, {
     name: 'Choreo Samples Registry',
     type: 'vendor-specific',
     provider: 'Azure',
