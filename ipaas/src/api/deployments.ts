@@ -135,8 +135,7 @@ export async function fetchEnvEndpoints(componentId: string, versionId: string, 
 }
 
 export async function fetchDeploymentStatus(componentId: string, versionId: string): Promise<GqlDeploymentStatus[]> {
-  return gql<{ deploymentStatusByVersion: GqlDeploymentStatus[] }>(DEPLOYMENT_STATUS_QUERY, { versionId, componentId })
-    .then((d) => d.deploymentStatusByVersion ?? []);
+  return gql<{ deploymentStatusByVersion: GqlDeploymentStatus[] }>(DEPLOYMENT_STATUS_QUERY, { versionId, componentId }).then((d) => d.deploymentStatusByVersion ?? []);
 }
 
 export async function fetchReleaseMgtDeployments(orgUuid: string, projectId: string, componentId: string, versionId: string, environmentId: string): Promise<GqlReleaseMgtDeployment[]> {

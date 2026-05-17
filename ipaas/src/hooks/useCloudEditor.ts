@@ -27,7 +27,6 @@ export function useGetOrCreateSampleRegistry() {
 
 export function useCreateCodeServer() {
   return useMutation({
-    mutationFn: (params: { userId: string; organizationId: string; projectId: string; componentId: string; orgHandle: string; imageUrl: string; registryId: string; sourceCommitHash?: string }) =>
-      callCreateCodeServer(params),
+    mutationFn: (params: { userId: string; organizationId: string; projectId: string; componentId: string; orgHandle: string; imageUrl: string; registryId: string; sourceCommitHash?: string }) => callCreateCodeServer(params),
   });
 }

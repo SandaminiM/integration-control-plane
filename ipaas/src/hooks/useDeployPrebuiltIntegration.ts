@@ -25,7 +25,6 @@ import { derivePrebuiltSlug } from '../utils/prebuilt';
 import { checkNameAvailability, fetchComponentDetail, fetchFirstEnvironment, fetchLatestCommitSha, savePrebuiltConfig } from '../api/prebuilt';
 import type { DeployPrebuiltIntegrationInput, DeployPrebuiltIntegrationState } from '../types/prebuilt';
 
-
 const IDLE_STATE: DeployPrebuiltIntegrationState = {
   progress: 0,
   stepLabel: '',

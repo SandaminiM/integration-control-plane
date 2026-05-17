@@ -21,7 +21,6 @@ import { fetchSamples } from '../api/samples';
 import type { SamplesData } from '../types/samples';
 import { ALLOWED_SAMPLE_TYPES, normalizeComponentType } from '../constants/integrations';
 
-
 const DEFAULT_SAMPLES_URL = 'https://raw.githubusercontent.com/wso2/integration-samples/main/.metadata/samples.json';
 
 export function useSamples() {

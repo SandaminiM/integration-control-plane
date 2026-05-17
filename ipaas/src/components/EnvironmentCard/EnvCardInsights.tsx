@@ -98,13 +98,7 @@ export default function EnvCardInsights({ envName, envId, apimEnvId, projectId, 
   //   - matched env, still fetching → null (show loading)
   //   - no match but envs loaded → zeros (default)
   //   - envs still loading → null
-  const insights: ComponentInsights | null = insightsEnv
-    ? insightsRaw === undefined
-      ? null
-      : (insightsRaw ?? ZERO_METRICS)
-    : insightsEnvs && apiId
-      ? ZERO_METRICS
-      : null;
+  const insights: ComponentInsights | null = insightsEnv ? (insightsRaw === undefined ? null : (insightsRaw ?? ZERO_METRICS)) : insightsEnvs && apiId ? ZERO_METRICS : null;
   const loading = insights === null;
 
   const tiles = [
