@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import type { GqlRepoMetadata, DetectedMode, RepoTreeNode } from '../api/queries';
+import type { GqlRepoMetadata, DetectedMode, RepoTreeNode } from '../types/repository';
 import type { WorkspaceModule } from '../types/project';
 import { formatRepoNameToDisplayName } from './string';
 

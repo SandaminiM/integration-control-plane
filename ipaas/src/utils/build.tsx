@@ -19,8 +19,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Box, Stack, Typography } from '@wso2/oxygen-ui';
 import type { JSX, ReactNode } from 'react';
-import type { BuildRunLogs } from '../api/builds';
-import type { GqlRepository } from '../api/queries';
+import type { BuildRunLogs } from '../types/build';
+import type { GqlRepository } from '../types/repository';
 import { BUILD_STAGES } from '../constants/build';
 
 export function Row({ label, children }: { label: string; children: ReactNode }): JSX.Element {
