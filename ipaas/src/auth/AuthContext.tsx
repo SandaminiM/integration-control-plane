@@ -20,7 +20,8 @@ import { createContext, useContext, useState, useCallback, useMemo, useEffect } 
 import type { JSX, ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { loginApiUrl, loginUrl } from '../paths';
+import { loginApiUrl } from '../config/runtimeConfig';
+import { loginUrl } from '../paths';
 import {
   saveTokens,
   clearTokens,
