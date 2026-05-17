@@ -18,7 +18,11 @@
 
 import { CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
-import { useComponentByHandler, useCommitHistory, useDeploymentStatus, useEnvironments, useOrgs, useComponentRepository } from '../api/queries';
+import { useComponentByHandler } from '../hooks/useComponents';
+import { useCommitHistory, useComponentRepository } from '../hooks/useRepository';
+import { useDeploymentStatus } from '../hooks/useDeployments';
+import { useEnvironments } from '../hooks/useEnvironments';
+import { useOrgs } from '../hooks/useOrg';
 import BuildHistory from '../components/Build/BuildHistory';
 import ComingSoon from './ComingSoon';
 import type { ComponentScope } from '../nav';

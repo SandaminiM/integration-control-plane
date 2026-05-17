@@ -22,7 +22,7 @@ import { Alert, Box, Button, Card, CardContent, CircularProgress, Divider, IconB
 import { Eye, EyeOff } from '@wso2/oxygen-ui-icons-react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
-import { useForceChangePassword } from '../api/authQueries';
+import { useForceChangePassword } from '../hooks/useAuth';
 import { resourceUrl } from '../nav';
 
 export default function ForceChangePassword(): JSX.Element {

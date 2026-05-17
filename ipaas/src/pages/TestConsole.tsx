@@ -21,9 +21,12 @@ import { Check, Copy, Eye, EyeOff, Key } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
-import { fetchApimSwagger, generateTestKey } from '../api/apim';
-import { useComponentByHandler, useComponentDeployment, useEnvEndpoints, useEnvironments, type GqlEnvEndpoint } from '../api/queries';
-import { getOrgUuidFromToken } from '../auth/tokenManager';
+import { useApimSwagger, useGenerateTestKey } from '../hooks/useApim';
+import { useComponentByHandler } from '../hooks/useComponents';
+import { useComponentDeployment, useEnvEndpoints } from '../hooks/useDeployments';
+import { useEnvironments } from '../hooks/useEnvironments';
+import type { GqlEnvEndpoint } from '../types/component';
+import { useOrgUuid } from '../hooks/useOrgUuid';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import NotFound from '../components/NotFound';
 import { useProjectId } from '../hooks/useProjectId';
@@ -81,7 +84,7 @@ const HideTopPlugin = () => ({
 });
 
 export default function TestConsole(scope: ComponentScope): JSX.Element {
-  const orgUuid = getOrgUuidFromToken() ?? '';
+  const orgUuid = useOrgUuid() ?? '';
 
   const { projectId, project } = useProjectId(scope.project);
 
@@ -147,13 +150,15 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
   const [keyCopied, setKeyCopied] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
 
+  const generateKeyMutation = useGenerateTestKey();
+
   const handleGetTestKey = async () => {
     if (!selectedEndpoint?.apimId) return;
     const keyType = selectedEnv?.critical ? 'Production' : 'Development';
     setFetchingKey(true);
     setKeyError(null);
     try {
-      const result = await generateTestKey(selectedEndpoint.apimId, keyType);
+      const result = await generateKeyMutation.mutateAsync({ apimId: selectedEndpoint.apimId, keyType });
       if (result?.apikey) {
         updateSecurityHeader(result.apikey);
       } else {
@@ -167,19 +172,8 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
   };
 
   // Swagger spec for selected endpoint
-  const [swagger, setSwagger] = useState<unknown>(null);
-  const [loadingSwagger, setLoadingSwagger] = useState(false);
-  useEffect(() => {
-    if (!selectedEndpoint?.apimId) {
-      setSwagger(null);
-      return;
-    }
-    setLoadingSwagger(true);
-    fetchApimSwagger(selectedEndpoint.apimId)
-      .then(setSwagger)
-      .catch(() => setSwagger(null))
-      .finally(() => setLoadingSwagger(false));
-  }, [selectedEndpoint?.apimId]);
+  const { data: swaggerRaw, isLoading: loadingSwagger } = useApimSwagger(selectedEndpoint?.apimId ?? null);
+  const swagger = swaggerRaw ?? null;
 
   // Override the swagger spec's server URL with the selected invoke URL so
   // SwaggerUI try-it-out executes against the actual deployment endpoint.

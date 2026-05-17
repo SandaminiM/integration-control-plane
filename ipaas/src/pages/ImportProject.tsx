@@ -22,9 +22,12 @@ import GitIcon from '../assets/icons/GitIcon';
 import GitProviderCards from '../components/ProjectCreate/GitProviderCards';
 import { useState, useEffect, useLayoutEffect, type JSX } from 'react';
 import { useNavigate } from 'react-router';
-import { useCreateMonoRepoProject, useCreateComponent } from '../api/mutations';
-import { useGitHubUserRepos, useOrgs, useOrgComponentLimits, useOrgSubscriptions, useRepoBranches, useRepoContents, type GqlProject } from '../api/queries';
-import { getOrgUuidFromToken } from '../auth/tokenManager';
+import { useCreateMonoRepoProject } from '../hooks/useProjects';
+import { useCreateComponent } from '../hooks/useComponents';
+import { useGitHubUserRepos, useRepoBranches, useRepoContents } from '../hooks/useRepository';
+import { useOrgs, useOrgComponentLimits, useOrgSubscriptions } from '../hooks/useOrg';
+import type { GqlProject } from '../types/project';
+import { useOrgUuid } from '../hooks/useOrgUuid';
 import DirectoryPickerField from '../components/DirectoryPicker';
 import WorkspaceModuleTable from '../components/ProjectCreate/WorkspaceModuleTable';
 import { FREE_COMPONENT_LIMIT, URL_DEBOUNCE_MS } from '../constants/project';
@@ -73,7 +76,7 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
   const colSize = !isPublicRepo && showBranchAndSubPath ? 3 : 4;
 
   const { data: orgs = [] } = useOrgs();
-  const orgUuid = getOrgUuidFromToken() ?? orgs.find((o) => o.handle === scope.org)?.uuid ?? '';
+  const orgUuid = useOrgUuid() ?? orgs.find((o) => o.handle === scope.org)?.uuid ?? '';
   const { data: orgLimits } = useOrgComponentLimits(orgUuid);
   const { data: subscriptions } = useOrgSubscriptions(orgUuid);
   const isUpgraded = (subscriptions ?? []).some((s) => s.subscriptionType === 'devant-subscription' && s.subscriptionStatus === 'active');

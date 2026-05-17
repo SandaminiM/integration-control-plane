@@ -47,9 +47,9 @@ import { ArrowLeft, ChevronDown, ChevronUp, Link2, Lock, Plus, Trash2 } from '@w
 import { useState, useMemo, useCallback, type JSX } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import SearchField from '../components/SearchField';
-import { useRoleDetail, useAllPermissions, useRoleGroups, useUpdateRole, useGroups, useAddRolesToGroup, useRemoveRoleFromGroup } from '../api/authQueries';
-import type { Permission, RoleGroupMapping, Group } from '../api/auth';
-import { useAllEnvironments } from '../api/queries';
+import { useRoleDetail, useAllPermissions, useRoleGroups, useUpdateRole, useGroups, useAddRolesToGroup, useRemoveRoleFromGroup } from '../hooks/useAuth';
+import type { Permission, RoleGroupMapping, Group } from '../types/auth';
+import { useAllEnvironments } from '../hooks/useEnvironments';
 import { orgAccessControlUrl } from '../paths';
 import Authorized from '../components/Authorized';
 import { ALL_ROLE_MODIFY_PERMISSIONS } from '../constants/permissions';

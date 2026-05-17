@@ -28,8 +28,9 @@ import IntegrationFlowChart from '../components/IntegrationFlowChart';
 import SearchField from '../components/SearchField';
 import { usePrebuiltIntegrations, usePrebuiltDiagram } from '../hooks/usePrebuiltIntegrations';
 import type { ProjectScope } from '../nav';
-import { newComponentUrl, prebuiltIntegrationSetupUrl } from '../paths';
-import type { PrebuiltIntegration } from '../types/samples';
+import { prebuiltIntegrationSetupUrl } from '../paths';
+import { newComponentUrl } from '../nav';
+import type { PrebuiltIntegration } from '../types/prebuilt';
 import { derivePrebuiltSlug } from '../utils/prebuilt';
 
 interface LocationState {
@@ -381,7 +382,7 @@ export default function BrowsePrebuiltIntegrations(scope: ProjectScope): JSX.Ele
       setSelectedIntegration(null);
       return;
     }
-    navigate(locationState.fromPath ?? newComponentUrl(scope.org, scope.project));
+    navigate(locationState.fromPath ?? newComponentUrl(scope));
   };
 
   const backLabel = wizardStep === 0 ? 'Back to Create Integration' : 'Go back';

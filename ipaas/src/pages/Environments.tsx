@@ -20,8 +20,9 @@ import { Alert, Avatar, Button, CircularProgress, Dialog, DialogActions, DialogC
 import { Clock, Layers, Pencil, Plus, Trash2, AlertTriangle } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useEffect, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { useAllEnvironments, type GqlEnvironment } from '../api/queries';
-import { useDeleteEnvironment } from '../api/mutations';
+import { useAllEnvironments } from '../hooks/useEnvironments';
+import type { GqlEnvironment } from '../types/environment';
+import { useDeleteEnvironment } from '../hooks/useEnvironments';
 import { editEnvironmentUrl } from '../paths';
 import EmptyListing from '../components/EmptyListing';
 import SearchField from '../components/SearchField';

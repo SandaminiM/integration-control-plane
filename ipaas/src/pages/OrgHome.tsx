@@ -21,9 +21,8 @@ import type { JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Alert, Box, Button, ButtonBase, Card, CardContent, CircularProgress, FormControl, MenuItem, Select, Stack, Typography } from '@wso2/oxygen-ui';
 import { ArrowRight, Settings, Users } from '@wso2/oxygen-ui-icons-react';
-import { getOrgUuidFromToken } from '../auth/tokenManager';
-import { initOrg, createDefaultProject } from '../api/org';
-import { fetchProjectsByOrgId } from '../api/queries';
+import { useOrgUuid } from '../hooks/useOrgUuid';
+import { useCreateDefaultProject, useFetchProjectsByOrgId, useInitOrg } from '../hooks/useOrg';
 import { projectHomeUrl } from '../paths';
 import Projects from './Projects';
 
@@ -84,6 +83,11 @@ export default function OrgHome(): JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const fetchProjects = useFetchProjectsByOrgId();
+  const initOrgMutation = useInitOrg();
+  const createProjectMutation = useCreateDefaultProject();
+  const orgUuidFromToken = useOrgUuid();
+
   // Derived on every render so the effect below re-fires once AppLayout's async
   // ID-recovery sets window.API_CONFIG.asgardeoOrgNumericId and triggers a re-render.
   const orgNumericId = window.API_CONFIG.asgardeoOrgNumericId || parseInt(localStorage.getItem('icp_org_numeric_id') || '0', 10);
@@ -95,7 +99,7 @@ export default function OrgHome(): JSX.Element {
   useEffect(() => {
     if (step !== 'checking') return;
     if (!orgNumericId) return; // wait for AppLayout's ID-recovery to complete
-    fetchProjectsByOrgId(orgNumericId)
+    fetchProjects(orgNumericId)
       .then((projects) => {
         if (projects.some((p) => p.handler)) {
           localStorage.setItem(PERSONA_KEY, 'developer');
@@ -105,7 +109,7 @@ export default function OrgHome(): JSX.Element {
         }
       })
       .catch(() => setStep('persona'));
-  }, [step, orgNumericId]);
+  }, [step, orgNumericId, fetchProjects]);
 
   if (step === 'checking') {
     return (
@@ -124,18 +128,18 @@ export default function OrgHome(): JSX.Element {
       setIsSubmitting(true);
       setSubmitError(null);
       try {
-        const orgUuid = getOrgUuidFromToken();
+        const orgUuid = orgUuidFromToken;
         const orgNumericId = window.API_CONFIG.asgardeoOrgNumericId ?? parseInt(localStorage.getItem('icp_org_numeric_id') ?? '0', 10);
         const handle = orgHandler!;
 
         // Step 1: Init default environments for the org
         if (orgUuid) {
-          await initOrg(orgUuid, region);
+          await initOrgMutation.mutateAsync({ orgUuid, region });
         }
 
         // Step 2: Create the default project via GraphQL
         if (orgNumericId) {
-          await createDefaultProject(orgNumericId, handle, DEFAULT_PROJECT_HANDLER);
+          await createProjectMutation.mutateAsync({ orgNumericId, orgHandler: handle, projectHandler: DEFAULT_PROJECT_HANDLER });
         }
 
         // Only mark onboarding complete and navigate on success

@@ -18,7 +18,9 @@
 
 import { Box, CircularProgress, PageContent, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
 import { type JSX, useState } from 'react';
-import { useCloudDataPlanes, useComponentByHandler, useEnvironments, useOrgs } from '../api/queries';
+import { useCloudDataPlanes, useEnvironments } from '../hooks/useEnvironments';
+import { useComponentByHandler } from '../hooks/useComponents';
+import { useOrgs } from '../hooks/useOrg';
 import AlertsConfigurePage from '../components/Alerts/AlertsConfigurePage';
 import AlertsHistoryPage from '../components/Alerts/AlertsHistoryPage';
 import type { ComponentScope } from '../nav';
