@@ -26,8 +26,8 @@ export interface HttpClient {
 }
 
 interface HttpClientOptions {
-  /** Called when a 403 is received. 
-   * true - retry the original request, 
+  /** Called when a 403 is received.
+   * true - retry the original request,
    * false - fall through to the standard error throw */
   on403?: (res: Response) => Promise<boolean>;
 }
@@ -111,8 +111,9 @@ export const copilotDatacollectorClient = createHttpClient(() => {
 
 // On 403: if STS is configured and the token carries no org UUID (unscoped), refresh once and retry.
 export async function withStsRetry<T>(fn: () => Promise<T>): Promise<T> {
-  try { return await fn(); }
-  catch (err) {
+  try {
+    return await fn();
+  } catch (err) {
     const stsConfigured = !!window.API_CONFIG.stsTokenEndpoint && !!window.API_CONFIG.stsClientId;
     if (err instanceof Error && err.message.startsWith('HTTP 403') && stsConfigured && !getOrgUuidFromToken()) {
       await refreshAccessToken();
@@ -125,15 +126,18 @@ export async function withStsRetry<T>(fn: () => Promise<T>): Promise<T> {
 // On 403: parse the error body (embedded in the thrown message) to detect an APIM scope error
 // (code 900910 / "Scope validation"); if found, refresh the token and retry once.
 export async function withScopeRetry<T>(fn: () => Promise<T>): Promise<T> {
-  try { return await fn(); }
-  catch (err) {
+  try {
+    return await fn();
+  } catch (err) {
     if (err instanceof Error && err.message.startsWith('HTTP 403')) {
       const body = err.message.replace(/^HTTP 403: /, '');
       let isScopeError = false;
       try {
         const parsed = JSON.parse(body) as Record<string, unknown>;
         isScopeError = parsed?.code === '900910' || String(parsed?.error_description ?? '').includes('Scope validation');
-      } catch { /* not JSON */ }
+      } catch {
+        /* not JSON */
+      }
       if (isScopeError) {
         await refreshAccessToken();
         return fn();

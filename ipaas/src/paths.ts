@@ -205,4 +205,3 @@ export function buildGitHubOAuthUrl(redirectUri: string, clientId: string, state
   });
   return `https://github.com/login/oauth/authorize?${params.toString()}`;
 }
-

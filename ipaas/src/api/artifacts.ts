@@ -149,10 +149,10 @@ export async function fetchArtifactTypes(componentId: string, envId: string): Pr
 export async function fetchArtifacts(artifactType: string, envId: string, componentId: string): Promise<GqlArtifact[]> {
   const mapping = ARTIFACT_QUERY_MAP[artifactType];
   if (!mapping) return [];
-  const data = await gql<Record<string, GqlArtifact[]>>(
-    `query ArtifactQuery($environmentId: String!, $componentId: String!) { ${mapping.field}(environmentId: $environmentId, componentId: $componentId) { ${mapping.gqlFields} } }`,
-    { environmentId: envId, componentId },
-  ).catch(() => ({}) as Record<string, GqlArtifact[]>);
+  const data = await gql<Record<string, GqlArtifact[]>>(`query ArtifactQuery($environmentId: String!, $componentId: String!) { ${mapping.field}(environmentId: $environmentId, componentId: $componentId) { ${mapping.gqlFields} } }`, {
+    environmentId: envId,
+    componentId,
+  }).catch(() => ({}) as Record<string, GqlArtifact[]>);
   return data[mapping.field] ?? [];
 }
 

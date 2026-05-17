@@ -23,7 +23,6 @@ import { buildGitHubOAuthUrl } from '../paths';
 import { generateAndSaveGitHubState, validateAndClearGitHubState } from '../auth/tokenManager';
 import type { AuthStatus } from '../types/import';
 
-
 export interface UseGitHubAuthReturn {
   authStatus: AuthStatus;
   /** Opens the GitHub OAuth popup. `onSuccess` is called when the token exchange succeeds. */

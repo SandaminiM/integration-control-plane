@@ -252,9 +252,9 @@ const routes: AppRoute[] = [
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/connections',
                 element: <ComingSoon title="Coming Soon" description="Connections management is currently under development." />,
               },
-              { 
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/runtimes', 
-                element: <ComingSoon title="Coming Soon" description="Runtime management is currently under development." /> 
+              {
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/runtimes',
+                element: <ComingSoon title="Coming Soon" description="Runtime management is currently under development." />,
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/containers',

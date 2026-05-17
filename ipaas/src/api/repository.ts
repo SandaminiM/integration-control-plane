@@ -172,8 +172,6 @@ export async function obtainGithubToken(authorizationCode: string): Promise<{ su
 }
 
 export async function fetchRepoContents(org: string, repo: string, branch: string, isPublicRepo = false): Promise<RepoTreeNode[]> {
-  const json = await withStsRetry(() => choreoClient.get<Record<string, unknown>>(
-    `/component-mgt/1.0.0/repositories/${org}/${repo}/branches/${encodeURIComponent(branch)}/contents?isPublicRepo=${isPublicRepo}`,
-  ));
+  const json = await withStsRetry(() => choreoClient.get<Record<string, unknown>>(`/component-mgt/1.0.0/repositories/${org}/${repo}/branches/${encodeURIComponent(branch)}/contents?isPublicRepo=${isPublicRepo}`));
   return (json?.data ?? json) as RepoTreeNode[];
 }

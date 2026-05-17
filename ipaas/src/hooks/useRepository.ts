@@ -17,17 +17,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  fetchComponentRepository,
-  fetchCommitHistory,
-  fetchGitHubUserRepos,
-  fetchRepoBranches,
-  fetchRepoMetadata,
-  fetchChoreoSampleImages,
-  updateBuildpackConfigs,
-  obtainGithubToken,
-  fetchRepoContents,
-} from '../api/repository';
+import { fetchComponentRepository, fetchCommitHistory, fetchGitHubUserRepos, fetchRepoBranches, fetchRepoMetadata, fetchChoreoSampleImages, updateBuildpackConfigs, obtainGithubToken, fetchRepoContents } from '../api/repository';
 import { fetchComponentNameAvailability } from '../api/components';
 import type { RepoTreeNode } from '../types/repository';
 import type { UpdateBuildpackConfigsInput } from '../types/build';
@@ -125,4 +115,3 @@ export function useObtainGithubToken() {
     mutationFn: (authorizationCode: string) => obtainGithubToken(authorizationCode),
   });
 }
-
