@@ -1,3 +1,5 @@
+// This component is unused and should be removed.
+
 /**
  * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
  *
@@ -20,8 +22,9 @@ import { useState, useMemo, type JSX } from 'react';
 import { Box, Button, Card, CardContent, Chip, IconButton, ListingTable, Menu, MenuItem, Select, FormControl, FormLabel, TablePagination, PageContent, PageTitle, type ListingTableDensity, CircularProgress } from '@wso2/oxygen-ui';
 import { Plus, MoreVertical, Filter, Download, FileText, Key, Shield, RefreshCw, Lock, Inbox } from '@wso2/oxygen-ui-icons-react';
 import { useNavigate, useParams, Link as NavigateLink } from 'react-router';
-import { useComponents } from '../api/queries';
-import { projectUrl, newComponentUrl, componentUrl, editComponentUrl } from '../paths';
+import { useComponents } from '../hooks/useComponents';
+import { projectUrl, componentUrl, editComponentUrl } from '../paths';
+import { newComponentUrl } from '../nav';
 import { getStatusColor } from '../config/statusColors';
 import { capitalize } from '../utils/string';
 
@@ -132,7 +135,7 @@ export default function Components(): JSX.Element {
             <Button variant="outlined" startIcon={<Download size={18} />}>
               Export
             </Button>
-            <Button variant="contained" startIcon={<Plus size={18} />} onClick={() => orgId && id && navigate(newComponentUrl(orgId, id))}>
+            <Button variant="contained" startIcon={<Plus size={18} />} onClick={() => orgId && id && navigate(newComponentUrl({ org: orgId!, project: id! }))}>
               New Component
             </Button>
           </PageTitle.Actions>
@@ -170,7 +173,7 @@ export default function Components(): JSX.Element {
                         description="Try adjusting your filters"
                         action={
                           !filters.query && filters.type === 'all' ? (
-                            <Button variant="contained" startIcon={<Plus size={16} />} onClick={() => orgId && id && navigate(newComponentUrl(orgId, id))}>
+                            <Button variant="contained" startIcon={<Plus size={16} />} onClick={() => orgId && id && navigate(newComponentUrl({ org: orgId!, project: id! }))}>
                               Create Component
                             </Button>
                           ) : undefined

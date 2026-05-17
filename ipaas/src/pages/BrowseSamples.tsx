@@ -20,15 +20,14 @@ import { Box, Button, CircularProgress, InputAdornment, PageContent, Pagination,
 import { ArrowLeft, Search } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useEffect, type JSX } from 'react';
 import { useNavigate } from 'react-router';
-import { useCreateComponent } from '../api/mutations';
+import { useCreateComponent } from '../hooks/useComponents';
 import FilterSection from '../components/FilterSection';
 import SampleGridCard from '../components/SampleGridCard';
 import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
 import { displayTypeFromSample, formatBuildPack, formatComponentType, normalizeComponentType } from '../constants/integrations';
 import { PAGE_SIZE } from '../constants/samples';
 import { useSamples } from '../hooks/useSamples';
-import { resourceUrl, narrow, type ProjectScope } from '../nav';
-import { newComponentUrl } from '../paths';
+import { resourceUrl, narrow, newComponentUrl, type ProjectScope } from '../nav';
 import type { Sample } from '../types/samples';
 import { toHandler } from '../utils/string';
 import { useProjectId } from '../hooks/useProjectId';
@@ -115,7 +114,7 @@ export default function BrowseSamples(scope: ProjectScope): JSX.Element {
   if (isSamplesError) {
     return (
       <PageContent sx={{ pt: 5 }}>
-        <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(newComponentUrl(scope.org, scope.project))} sx={{ mb: 2 }}>
+        <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(newComponentUrl(scope))} sx={{ mb: 2 }}>
           Back
         </Button>
         <Typography color="error">Failed to load samples. Please try again later.</Typography>
@@ -143,7 +142,7 @@ export default function BrowseSamples(scope: ProjectScope): JSX.Element {
 
   return (
     <PageContent sx={{ pt: 5 }}>
-      <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(newComponentUrl(scope.org, scope.project))} sx={{ mb: 2 }}>
+      <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(newComponentUrl(scope))} sx={{ mb: 2 }}>
         Back
       </Button>
 

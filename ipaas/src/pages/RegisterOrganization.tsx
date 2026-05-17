@@ -23,7 +23,8 @@ import { Alert, Box, Button, Checkbox, CircularProgress, ColorSchemeImage, Divid
 import { Building2, CheckCircle, XCircle } from '@wso2/oxygen-ui-icons-react';
 import { Link as NavLink } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
-import { validateOrgName, registerUser, type RegisterUserResponse } from '../api/org';
+import { useRegisterUser, useValidateOrgName } from '../hooks/useOrg';
+import type { RegisterUserResponse } from '../types/org';
 import { loginUrl, orgHomeUrl, privacyPolicyUrl } from '../paths';
 
 const ORG_NAME_RE = /^[A-Za-z][A-Za-z0-9\-_ ]+$/;
@@ -49,6 +50,8 @@ export default function RegisterOrganization(): JSX.Element {
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const validateOrgNameMutation = useValidateOrgName();
+  const registerUserMutation = useRegisterUser();
 
   // Redirect away if not authenticated (shouldn't happen normally)
   useEffect(() => {
@@ -84,7 +87,7 @@ export default function RegisterOrganization(): JSX.Element {
     debounceRef.current = setTimeout(async () => {
       setIsValidating(true);
       try {
-        setIsNameAvailable(await validateOrgName(value));
+        setIsNameAvailable(await validateOrgNameMutation.mutateAsync(value));
       } catch {
         setIsNameAvailable(true);
       } finally {
@@ -103,7 +106,7 @@ export default function RegisterOrganization(): JSX.Element {
     setCreateError(null);
     setIsCreating(true);
     try {
-      const data: RegisterUserResponse = await registerUser(orgName, termsAccepted, SERVICE_NAME);
+      const data: RegisterUserResponse = await registerUserMutation.mutateAsync({ orgName, termsAccepted, serviceName: SERVICE_NAME });
       const orgs = data.organizations ?? [];
       const created = orgs[0];
 

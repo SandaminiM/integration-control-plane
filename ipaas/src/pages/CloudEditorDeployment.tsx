@@ -19,7 +19,7 @@
 import { useEffect, useRef, useState, type JSX } from 'react';
 import { useLocation } from 'react-router';
 import { Alert, Box, Button, CircularProgress, Typography } from '@wso2/oxygen-ui';
-import { getOrCreateSampleRegistry, callCreateCodeServer } from '../api/cloudEditor';
+import { useGetOrCreateSampleRegistry, useCreateCodeServer } from '../hooks/useCloudEditor';
 import { CLOUD_EDITOR_STEPS } from '../constants/cloudEditor';
 import type { DeploymentParams, ChoreoSampleImage, ProgressStep } from '../types/cloudEditor';
 
@@ -28,6 +28,8 @@ export default function CloudEditorDeployment(): JSX.Element {
   const [step, setStep] = useState<ProgressStep>(CLOUD_EDITOR_STEPS.initializing);
   const [error, setError] = useState<string | null>(null);
   const hasRun = useRef(false);
+  const getOrCreateRegistryMutation = useGetOrCreateSampleRegistry();
+  const createCodeServerMutation = useCreateCodeServer();
 
   useEffect(() => {
     if (hasRun.current) return;
@@ -64,11 +66,11 @@ export default function CloudEditorDeployment(): JSX.Element {
 
         // 2. Get or create the Choreo samples container registry
         setStep(CLOUD_EDITOR_STEPS.creatingEditor);
-        const registry = await getOrCreateSampleRegistry(deploymentParams.orgUuid);
+        const registry = await getOrCreateRegistryMutation.mutateAsync(deploymentParams.orgUuid);
 
         // 3. Call createCodeServer — backend provisions the container and returns its URL
         setStep(CLOUD_EDITOR_STEPS.configuring);
-        const rawUrl = await callCreateCodeServer({
+        const rawUrl = await createCodeServerMutation.mutateAsync({
           userId: deploymentParams.userId,
           organizationId: deploymentParams.orgUuid,
           projectId: deploymentParams.projectId,

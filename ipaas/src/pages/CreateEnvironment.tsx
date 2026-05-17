@@ -20,7 +20,7 @@ import { Alert, Button, Checkbox, FormControlLabel, PageContent, Stack, TextFiel
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
-import { useCreateEnvironment } from '../api/mutations';
+import { useCreateEnvironment } from '../hooks/useEnvironments';
 import { resourceUrl, type OrgScope } from '../nav';
 
 function formatErrorMessage(error: unknown): string {

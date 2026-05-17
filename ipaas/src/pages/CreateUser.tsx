@@ -20,7 +20,7 @@ import { Alert, Button, PageContent, Stack, TextField, Typography } from '@wso2/
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { useCreateUser } from '../api/authQueries';
+import { useCreateUser } from '../hooks/useAuth';
 import { orgAccessControlUrl } from '../paths';
 
 export default function CreateUser(): JSX.Element {

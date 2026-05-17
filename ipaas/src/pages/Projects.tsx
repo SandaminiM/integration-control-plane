@@ -21,7 +21,8 @@ import { Clock, Folder, FolderInput, LayoutGrid, List, Plus, RefreshCw, Settings
 import SearchField from '../components/SearchField';
 import { useNavigate } from 'react-router';
 import { useState, type JSX } from 'react';
-import { useProjectsByOrg, type GqlProject } from '../api/queries';
+import { useProjectsByOrg } from '../hooks/useProjects';
+import type { GqlProject } from '../types/project';
 import EmptyListing from '../components/EmptyListing';
 import { formatDistanceToNow } from '../utils/time';
 import { newProjectUrl, importProjectUrl, type OrgScope } from '../nav';

@@ -20,8 +20,8 @@ import { Alert, Box, Button, Checkbox, FormControlLabel, PageContent, Stack, Tex
 import { ArrowLeft, ChevronDown, ChevronUp } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { useCreateRole, useAllPermissions } from '../api/authQueries';
-import type { Permission } from '../api/auth';
+import { useCreateRole, useAllPermissions } from '../hooks/useAuth';
+import type { Permission } from '../types/auth';
 import { orgAccessControlUrl } from '../paths';
 
 function PermissionsEditor({ allPermissions, selectedIds, onChange }: { allPermissions: Record<string, Permission[]>; selectedIds: Set<string>; onChange: (ids: Set<string>) => void }) {

@@ -20,8 +20,9 @@ import { Alert, Button, Checkbox, CircularProgress, FormControlLabel, PageConten
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { useAllEnvironments, type GqlEnvironment } from '../api/queries';
-import { useUpdateEnvironment } from '../api/mutations';
+import { useAllEnvironments } from '../hooks/useEnvironments';
+import type { GqlEnvironment } from '../types/environment';
+import { useUpdateEnvironment } from '../hooks/useEnvironments';
 import { resourceUrl } from '../nav';
 
 function EditEnvironmentForm({ env, orgHandler }: { env: GqlEnvironment; orgHandler: string }): JSX.Element {

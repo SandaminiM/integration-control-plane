@@ -19,9 +19,9 @@
 import { Alert, Box, Button, CircularProgress, MenuItem, PageContent, Select, Stack, Typography } from '@wso2/oxygen-ui';
 import { Clock } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
-import { fetchApimApi, getDevPortalBaseUrl, updateApimApi, type ApimApiInfo } from '../api/apim';
-import { useChangeLifecycleState } from '../api/mutations';
-import { useComponentByHandler, useComponentEndpoints, useLifecycleHistory, useLifecycleState } from '../api/queries';
+import { getDevPortalBaseUrl } from '../config/runtimeConfig';
+import { useApimApi, useChangeLifecycleState, useLifecycleHistory, useLifecycleState, useUpdateApimApi } from '../hooks/useApim';
+import { useComponentByHandler, useComponentEndpoints } from '../hooks/useComponents';
 import ConfirmDialog from '../components/Lifecycle/ConfirmDialog';
 import LCStateDiagram from '../components/Lifecycle/LCStateDiagram';
 import LifecycleHistoryDrawer from '../components/Lifecycle/LifecycleHistoryDrawer';
@@ -67,21 +67,9 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
   const { data: lifecycleHistory } = useLifecycleHistory(selectedApimId);
 
   const { mutateAsync: changeState, isPending: isChanging } = useChangeLifecycleState(selectedApimId);
+  const { mutateAsync: updateApim } = useUpdateApimApi();
 
-  const [apimApiInfo, setApimApiInfo] = useState<ApimApiInfo | null>(null);
-  useEffect(() => {
-    if (!selectedApimId) {
-      setApimApiInfo(null);
-      return;
-    }
-    let cancelled = false;
-    fetchApimApi(selectedApimId).then((result) => {
-      if (!cancelled) setApimApiInfo(result);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedApimId]);
+  const { data: apimApiInfo = null } = useApimApi(selectedApimId);
 
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [publishDisplayName, setPublishDisplayName] = useState('');
@@ -120,7 +108,7 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
       if (PUBLISH_ACTIONS.has(action) && apimApiInfo && selectedApimId) {
         const trimmed = publishDisplayName.trim();
         if (trimmed && trimmed !== apimApiInfo.displayName) {
-          await updateApimApi(selectedApimId, { ...apimApiInfo, displayName: trimmed });
+          await updateApim({ apimId: selectedApimId, body: { ...apimApiInfo, displayName: trimmed } });
         }
       }
       await changeState({ action });
@@ -239,7 +227,7 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
           />
         )}
 
-        <LifecycleHistoryDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} lifecycleHistory={lifecycleHistory} />
+        <LifecycleHistoryDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} lifecycleHistory={lifecycleHistory ?? undefined} />
       </PageContent>
     </Box>
   );

@@ -21,9 +21,12 @@ import { ArrowLeft, Building2, Check, ChevronDown, ChevronUp, Edit, GitHub, GitB
 import GitIcon from '../assets/icons/GitIcon';
 import GitProviderCards from '../components/ProjectCreate/GitProviderCards';
 import { useState, useEffect, useLayoutEffect, type JSX } from 'react';
-import { useCreateProject, useCreateMonoRepoProject, useCreateComponent } from '../api/mutations';
-import { useGitHubUserRepos, useOrgs, useOrgComponentLimits, useOrgSubscriptions, useRepoBranches, useRepoContents, type GqlProject } from '../api/queries';
-import { getOrgUuidFromToken } from '../auth/tokenManager';
+import { useCreateProject, useCreateMonoRepoProject } from '../hooks/useProjects';
+import { useCreateComponent } from '../hooks/useComponents';
+import { useGitHubUserRepos, useRepoBranches, useRepoContents } from '../hooks/useRepository';
+import { useOrgs, useOrgComponentLimits, useOrgSubscriptions } from '../hooks/useOrg';
+import type { GqlProject } from '../types/project';
+import { useOrgUuid } from '../hooks/useOrgUuid';
 import DirectoryPickerField from '../components/DirectoryPicker';
 import WorkspaceModuleTable from '../components/ProjectCreate/WorkspaceModuleTable';
 import { FREE_COMPONENT_LIMIT, URL_DEBOUNCE_MS } from '../constants/project';
@@ -79,7 +82,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
   const createComponent = useCreateComponent();
 
   const { data: orgs = [] } = useOrgs();
-  const orgUuid = getOrgUuidFromToken() ?? orgs.find((o) => o.handle === scope.org)?.uuid ?? '';
+  const orgUuid = useOrgUuid() ?? orgs.find((o) => o.handle === scope.org)?.uuid ?? '';
   const { data: orgLimits } = useOrgComponentLimits(orgUuid);
   const { data: subscriptions } = useOrgSubscriptions(orgUuid);
   const isUpgraded = (subscriptions ?? []).some((s) => s.subscriptionType === 'devant-subscription' && s.subscriptionStatus === 'active');
