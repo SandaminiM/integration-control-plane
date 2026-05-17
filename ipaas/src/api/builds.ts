@@ -16,32 +16,12 @@
  * under the License.
  */
 
-import { platformClient, systemClient } from './httpClients';
-
-export interface BuildStep {
-  number: number;
-  name: string;
-  status: string;
-  conclusion: string | null;
-  started_at?: string | null;
-  completed_at?: string | null;
-}
-
-export interface BuildStage {
-  log: string | null;
-  status: string | null;
-  steps: BuildStep[];
-}
-
-export interface BuildRunLogs {
-  init: BuildStage;
-  build: BuildStage;
-  deploy: BuildStage;
-}
+import { choreoClient, systemClient } from './httpClients';
+import type { BuildRunLogs } from '../types/build';
 
 export async function fetchBuildRunLogs(orgHandler: string, projectId: string, componentId: string, runId: string): Promise<BuildRunLogs | null> {
   try {
-    const data = await platformClient.get<{ data?: BuildRunLogs }>(`/component-mgt/1.0.0/orgs/${orgHandler}/projects/${projectId}/components/${componentId}/runs/${runId}/logs`);
+    const data = await choreoClient.get<{ data?: BuildRunLogs }>(`/component-mgt/1.0.0/orgs/${orgHandler}/projects/${projectId}/components/${componentId}/runs/${runId}/logs`);
     return data?.data ?? null;
   } catch {
     return null;

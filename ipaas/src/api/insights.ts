@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { useQuery } from '@tanstack/react-query';
 import { insightsClient } from './httpClients';
+import type { InsightsEnvironment, ComponentInsights } from '../types/insights';
 
 async function postInsightsQuery<T>(query: string, variables: Record<string, unknown>): Promise<T | null> {
   try {
@@ -25,23 +25,6 @@ async function postInsightsQuery<T>(query: string, variables: Record<string, unk
   } catch {
     return null;
   }
-}
-
-export interface InsightsEnvironment {
-  id: string;
-  externalEnvId: string;
-  internalEnvId: string;
-  sandboxEnvId: string;
-  name: string;
-  region: string;
-  type: string;
-}
-
-export interface ComponentInsights {
-  requestCount: number;
-  errorCount: number;
-  errorRate: number;
-  latency: number;
 }
 
 export async function fetchInsightsEnvironments(orgUuid: string, projectId: string): Promise<InsightsEnvironment[]> {
@@ -54,15 +37,6 @@ export async function fetchInsightsEnvironments(orgUuid: string, projectId: stri
     { org: { orgId: orgUuid }, projectId },
   );
   return result?.data?.listEnvironments ?? [];
-}
-
-export function useInsightsEnvironments(orgUuid: string, projectId: string) {
-  return useQuery({
-    queryKey: ['insightsEnvironments', orgUuid, projectId],
-    queryFn: () => fetchInsightsEnvironments(orgUuid, projectId),
-    enabled: !!orgUuid && !!projectId,
-    staleTime: 5 * 60_000,
-  });
 }
 
 function getEnvironmentIds(env: InsightsEnvironment): string[] {
