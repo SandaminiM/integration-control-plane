@@ -24,7 +24,6 @@ import { DEFAULT_PREBUILT_INTEGRATIONS_URL } from '../constants/samples';
 import { getDotChoreoBaseUrl } from '../utils/prebuilt';
 import { fetchPrebuiltIntegrations, normalizePrebuiltIntegrations, fetchPrebuiltAsset } from '../api/prebuilt';
 
-export type { PrebuiltIntegrationsData, PrebuiltInstructionsResult, PrebuiltConfigSchemaResult, PrebuiltDiagramResult };
 
 export function usePrebuiltIntegrations() {
   return useQuery<PrebuiltIntegrationsData>({

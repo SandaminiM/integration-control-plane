@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { useProject, useProjectByHandler, useProjects } from '../api/queries';
+import { useProject, useProjectByHandler, useProjects } from './useProjects';
 import { UUID_RE } from '../utils/string';
 
 export function useProjectId(projectIdentifier: string) {
