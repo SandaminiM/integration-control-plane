@@ -16,23 +16,25 @@
  * under the License.
  */
 
-export interface Sample {
-  displayName: string;
-  description: string;
-  componentType: string;
-  buildPack: string;
-  repositoryUrl: string;
-  subDirectory: string;
-  componentPath: string;
-  thumbnailPath: string;
-  tags: string[];
-  branch?: string;
+export interface OrgComponentLimits {
+  billableComponentCount: number;
+  componentCount: number;
 }
 
-export interface SamplesData {
-  samples: Sample[];
-  featuredSamples: Sample[];
-  uniqueTypes: string[];
-  uniqueBuildPacks: string[];
-  uniqueTags: string[];
+export interface OrgSubscription {
+  tierId: string;
+  subscriptionId: string;
+  subscriptionType: string;
+  subscriptionStatus: string;
+}
+
+export interface OrgEntry {
+  handle: string;
+  numericId: number;
+  uuid?: string;
+}
+
+export interface RegisterUserResponse {
+  organizations?: Array<{ handle?: string; orgHandle?: string; name?: string; id?: number; orgId?: number }>;
+  idpId?: string;
 }

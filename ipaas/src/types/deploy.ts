@@ -16,7 +16,9 @@
  * under the License.
  */
 
-import type { GqlCommit, GqlComponentDeployment, GqlDeploymentTrackImage, GqlEnvironment, DeploymentStatus } from '../api/queries';
+import type { GqlCommit } from './repository';
+import type { GqlComponentDeployment, GqlDeploymentTrackImage, DeploymentStatus } from './deployment';
+import type { GqlEnvironment } from './environment';
 import type { ComponentTypeFlags } from '../utils/componentType';
 
 export interface BuildAreaProps {

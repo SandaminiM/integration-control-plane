@@ -16,23 +16,33 @@
  * under the License.
  */
 
-export interface Sample {
+export interface ThrottlingPolicy {
+  name: string;
   displayName: string;
   description: string;
-  componentType: string;
-  buildPack: string;
-  repositoryUrl: string;
-  subDirectory: string;
-  componentPath: string;
-  thumbnailPath: string;
-  tags: string[];
-  branch?: string;
+  requestCount: number;
+  unitTime?: number;
+  timeUnit?: string;
 }
 
-export interface SamplesData {
-  samples: Sample[];
-  featuredSamples: Sample[];
-  uniqueTypes: string[];
-  uniqueBuildPacks: string[];
-  uniqueTags: string[];
+export interface ApiDocument {
+  documentId: string;
+  name: string;
+  type: string;
+  summary?: string;
+  sourceType?: string;
+}
+
+export interface RuleAdherenceRuleset {
+  rulesetName: string;
+  provider?: string;
+  status: string;
+  violatedRules: { list: { severity: string }[] };
+  adheredRules?: { list: unknown[] };
+}
+
+export interface RuleAdherenceResponse {
+  summary?: { ruleset: { total: number; adhered: number; violated: number } };
+  count: number;
+  list: RuleAdherenceRuleset[];
 }
