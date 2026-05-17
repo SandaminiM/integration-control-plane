@@ -19,7 +19,7 @@
 import { CircularProgress, IconButton, InputAdornment, TextField, Tooltip } from '@wso2/oxygen-ui';
 import { Folder, Edit } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import type { RepoTreeNode } from '../../api/queries';
+import type { RepoTreeNode } from '../../types/repository';
 import DirectoryPickerDialog from './DirectoryPickerDialog';
 
 interface DirectoryPickerFieldProps {

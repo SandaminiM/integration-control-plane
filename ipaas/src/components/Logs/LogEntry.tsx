@@ -19,7 +19,7 @@
 import { Chip, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronRight, Copy } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import type { LogRow } from '../../api/logs';
+import type { LogRow } from '../../types/logs';
 import { DISPLAY_FIELDS, copyLog, formatValue, levelColor, statusCodeColor } from '../../utils/logs';
 
 export default function LogEntry({ log, expanded, onToggle, envName }: { log: LogRow; expanded: boolean; onToggle: () => void; envName?: string }): JSX.Element {

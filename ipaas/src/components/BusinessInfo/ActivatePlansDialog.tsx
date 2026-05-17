@@ -19,9 +19,9 @@
 import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControlLabel, IconButton, Stack, Switch, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { updateApimApi, type ApimApiInfo } from '../../api/apim';
-import { useThrottlingPolicies } from '../../api/marketplace';
+import { useUpdateApimApi } from '../../hooks/useApim';
+import type { ApimApiInfo } from '../../types/apim';
+import { useThrottlingPolicies } from '../../hooks/useMarketplace';
 
 interface ActivatePlansDialogProps {
   open: boolean;
@@ -31,8 +31,8 @@ interface ActivatePlansDialogProps {
 }
 
 export default function ActivatePlansDialog({ open, onClose, apimId, apimApiInfo }: ActivatePlansDialogProps) {
-  const queryClient = useQueryClient();
   const { data: policies = [], isLoading: loadingPolicies } = useThrottlingPolicies();
+  const updateApimMutation = useUpdateApimApi();
 
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
@@ -72,8 +72,7 @@ export default function ActivatePlansDialog({ open, onClose, apimId, apimApiInfo
     setSaving(true);
     setSaveError(null);
     try {
-      await updateApimApi(apimId, { ...apimApiInfo, policies: selectedPolicies });
-      await queryClient.invalidateQueries({ queryKey: ['apimApi', apimId] });
+      await updateApimMutation.mutateAsync({ apimId, body: { ...apimApiInfo, policies: selectedPolicies } });
       onClose();
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Failed to save subscription plans. Please try again.');

@@ -1,3 +1,5 @@
+// This component is unused and should be removed.
+
 /**
  * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
  *

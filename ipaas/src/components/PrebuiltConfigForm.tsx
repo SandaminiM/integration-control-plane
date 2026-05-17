@@ -19,7 +19,7 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { Typography } from '@wso2/oxygen-ui';
 
-import type { SchemaConfigItem } from '../api/queries';
+import type { SchemaConfigItem } from '../types/configuration';
 import { ConfigForm, getRequiredPathsAtLevel } from './SchemaConfigForm';
 import type { BaseType, JSONSchema, LinkingInfo } from './SchemaConfigForm';
 

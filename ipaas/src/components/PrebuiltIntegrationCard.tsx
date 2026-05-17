@@ -19,7 +19,7 @@
 import { Box, Chip, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
 import { formatComponentType } from '../constants/integrations';
-import type { PrebuiltIntegration } from '../types/samples';
+import type { PrebuiltIntegration } from '../types/prebuilt';
 import AppAvatar from './AppAvatar';
 
 interface PrebuiltIntegrationCardProps {

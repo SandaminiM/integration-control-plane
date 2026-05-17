@@ -18,7 +18,7 @@
 
 import { Globe, Link2, ListOrdered, Clock, FolderArchive, Package, Plug, FileText, Radio, Server, Wifi, Layers, Zap, Database, Cpu, LayoutTemplate, Table, HardDrive } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import type { GqlArtifact } from '../api/queries';
+import type { GqlArtifact } from '../types/artifact';
 
 /** Format artifact type name for display: "RestApi" → "Rest Api" */
 export function formatArtifactTypeName(t: string): string {

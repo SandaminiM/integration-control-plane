@@ -18,7 +18,7 @@
 
 import { Box, Tooltip, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
-import type { PrebuiltIntegration } from '../types/samples';
+import type { PrebuiltIntegration } from '../types/prebuilt';
 import AppIconsRow from './AppIconsRow';
 
 export default function PrebuiltCard({ integration, onClick, disabled, disabledTooltip }: { integration: PrebuiltIntegration; onClick?: () => void; disabled?: boolean; disabledTooltip?: string }): JSX.Element {

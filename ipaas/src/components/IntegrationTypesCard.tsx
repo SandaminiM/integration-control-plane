@@ -18,7 +18,7 @@
 
 import { Card, CardContent, Divider, Stack, Typography } from '@wso2/oxygen-ui';
 import { PlugZap } from '@wso2/oxygen-ui-icons-react';
-import type { GqlComponent } from '../api/queries';
+import type { GqlComponent } from '../types/component';
 import type { JSX } from 'react';
 import { getDisplayLabel } from '../constants/integrations';
 

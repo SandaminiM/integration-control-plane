@@ -19,7 +19,7 @@
 import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, TextField, Tooltip, Typography, TreeView } from '@wso2/oxygen-ui';
 import { Folder, RefreshCw, Search } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useEffect, useState, type JSX } from 'react';
-import type { RepoTreeNode } from '../../api/queries';
+import type { RepoTreeNode } from '../../types/repository';
 import { renderTree, filterDirectories, buildDefaultExpanded } from '../../utils/directoryTree';
 import { external } from '../../paths';
 

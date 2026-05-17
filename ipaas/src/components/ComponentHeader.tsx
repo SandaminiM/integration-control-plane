@@ -20,15 +20,18 @@ import { Avatar, Box, Button, ButtonGroup, Chip, CircularProgress, ClickAwayList
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Tag, Cloud, Github, GitBranch, GitCommitHorizontal, Copy, Check, ChevronDown, Code2, Pencil, Globe, Lock, ShieldCheck, CodeXml, MCP, Recycle } from '@wso2/oxygen-ui-icons-react';
-import { type GqlComponentDetail, type GqlProject, type GqlRepository, type GqlCommit, useApimApi } from '../api/queries';
-import { useUpdateComponent } from '../api/mutations';
+import type { GqlComponentDetail } from '../types/component';
+import type { GqlProject } from '../types/project';
+import type { GqlRepository, GqlCommit } from '../types/repository';
+import { useApimApi } from '../hooks/useApim';
+import { useUpdateComponent } from '../hooks/useComponents';
 import LabelDialog from './LabelDialog';
 import SecurityDrawer from './SecurityDrawer';
 import { formatDistanceToNow } from '../utils/time';
 import { useAuth } from '../auth/AuthContext';
-import { getOrgUuidFromToken } from '../auth/tokenManager';
+import { useOrgUuid } from '../hooks/useOrgUuid';
 import { getDisplayLabel } from '../constants/integrations';
-import { getDevPortalBaseUrl } from '../api/apim';
+import { getDevPortalBaseUrl } from '../config/runtimeConfig';
 
 function buildRepoUrl(repo: GqlRepository): string {
   const { gitProvider, organizationApp, nameApp, branch, appSubPath, bitbucketServerUrl, serverUrl, projectApp } = repo;
@@ -199,11 +202,12 @@ export default function ComponentHeader({ component, project, repository, latest
 
   const repoUrl = repository ? buildRepoUrl(repository) : null;
 
+  const orgUuidFromToken = useOrgUuid() ?? '';
   const handleOpenInCloud = () => {
     if (!devantOrigin) return;
     const params = new URLSearchParams({
       userId,
-      orgUuid: getOrgUuidFromToken() ?? '',
+      orgUuid: orgUuidFromToken,
       orgHandle: orgHandler,
       projectId,
       componentId: component.id,

@@ -21,7 +21,7 @@ import { GitBranch, RefreshCw } from '@wso2/oxygen-ui-icons-react';
 import { CellDiagram, ComponentType, DiagramLayer } from '@wso2/cell-diagram';
 import type { Project, Component, Services } from '@wso2/cell-diagram';
 import { useMemo } from 'react';
-import type { GqlComponent } from '../api/queries';
+import type { GqlComponent } from '../types/component';
 import type { JSX } from 'react';
 
 function getComponentType(displayType: string, componentSubType: string | null): ComponentType | null {

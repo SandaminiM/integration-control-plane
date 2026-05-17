@@ -44,9 +44,10 @@ import {
 } from '@wso2/oxygen-ui';
 import { ChevronRight, Maximize2, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState } from 'react';
-import { useArtifactTypes, useArtifacts, ARTIFACT_QUERY_MAP, type GqlArtifact } from '../api/queries';
-import { useUpdateArtifactStatus, useUpdateListenerState } from '../api/mutations';
-import { useUpdateArtifactTracingStatus, useUpdateArtifactStatisticsStatus } from '../api/artifactToggleMutations';
+import { useArtifactTypes, useArtifacts, ARTIFACT_QUERY_MAP } from '../hooks/useArtifacts';
+import type { GqlArtifact } from '../types/artifact';
+import { useUpdateArtifactStatus, useUpdateListenerState } from '../hooks/useArtifacts';
+import { useUpdateArtifactTracingStatus, useUpdateArtifactStatisticsStatus } from '../hooks/useArtifactToggles';
 import SearchField from './SearchField';
 import { ArtifactSource, ArtifactApiDefinition, ArtifactEndpoints, ArtifactWsdl, ArtifactValue, ArtifactCarbonArtifacts, ArtifactRuntimes, InboundEndpointParameters, AutomationExecutions } from './ArtifactTabs';
 import { ARTIFACT_ICONS, ARTIFACT_TABS, DEFAULT_ARTIFACT_TABS, ENTRY_POINT_TYPE_SET, formatArtifactTypeName, typePlural, type SelectedArtifact, type TabProps } from './artifact-config';

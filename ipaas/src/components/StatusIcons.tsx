@@ -18,7 +18,7 @@
 
 import { Box } from '@wso2/oxygen-ui';
 import { Check, Clock, Loader, X } from '@wso2/oxygen-ui-icons-react';
-import type { BuildStep } from '../api/builds';
+import type { BuildStep } from '../types/build';
 
 interface StatusIconProps {
   size?: number;

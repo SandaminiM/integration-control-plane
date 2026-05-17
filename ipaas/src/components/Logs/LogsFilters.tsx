@@ -19,7 +19,7 @@
 import { Button, Checkbox, FormControlLabel, IconButton, ListItemText, MenuItem, Select, Stack, TextField, Tooltip } from '@wso2/oxygen-ui';
 import { Download, RefreshCw, X } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import type { ComponentLogsRequest, LogRow, LogsRequest } from '../../api/logs';
+import type { ComponentLogsRequest, LogRow, LogsRequest } from '../../types/logs';
 import SearchField from '../SearchField';
 import type { LogsFiltersState } from '../../hooks/useLogsFilters';
 import { LOG_LEVELS, TIME_PRESETS, downloadLogs } from '../../utils/logs';

@@ -20,8 +20,13 @@ import { Alert, Box, Button, Checkbox, Chip, CircularProgress, Collapse, Dialog,
 import { ChevronDown, ChevronUp, Link, Trash2, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEnvEndpoints, useSchemaConfig, useCertificateGroups, useCertificateMappings, useConfigGroups, type GqlEnvEndpoint, type SchemaConfigItem, type CertGroup, type CertMapping, type CertMappingConfig } from '../../api/queries';
-import { useGenerateComponentEndpoints, useUpdateEndpoint, useSaveSchemaConfig, usePostCertificateMappings, useDeployDeploymentTrack } from '../../api/mutations';
+import { useEnvEndpoints } from '../../hooks/useDeployments';
+import { useSchemaConfig, useCertificateGroups, useCertificateMappings, useConfigGroups } from '../../hooks/useConfiguration';
+import type { GqlEnvEndpoint } from '../../types/component';
+import type { SchemaConfigItem, CertGroup, CertMapping, CertMappingConfig } from '../../types/configuration';
+import { useGenerateComponentEndpoints, useUpdateEndpoint } from '../../hooks/useComponents';
+import { useSaveSchemaConfig, usePostCertificateMappings } from '../../hooks/useConfiguration';
+import { useDeployDeploymentTrack } from '../../hooks/useDeployments';
 import ManageDrawer from './ManageDrawer';
 import { EndpointCard, VISIBILITY_OPTS } from './EndpointCard';
 import { ConfigForm, type BaseType, type LinkingInfo, type JSONSchema } from '../SchemaConfigForm';

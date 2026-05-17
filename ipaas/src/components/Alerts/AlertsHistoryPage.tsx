@@ -18,9 +18,9 @@
 
 import { Autocomplete, Box, CircularProgress, MenuItem, Select, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@wso2/oxygen-ui';
 import { type JSX, useMemo, useState } from 'react';
-import type { CloudDataPlane, GqlEnvironment } from '../../api/queries';
-import { choreoAlertingApiUrl } from '../../config/api';
-import { useGetAlertHistory } from '../../hooks/alerts';
+import type { CloudDataPlane, GqlEnvironment } from '../../types/environment';
+import { choreoAlertingApiUrl } from '../../config/runtimeConfig';
+import { useGetAlertHistory } from '../../hooks/useAlerts';
 
 interface AlertsHistoryPageProps {
   componentId: string;

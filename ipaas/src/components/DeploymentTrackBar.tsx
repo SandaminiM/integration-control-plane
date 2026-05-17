@@ -20,7 +20,7 @@ import { Box, Button, Chip, Divider, MenuItem, Select, Stack, Tooltip, Typograph
 import { GitBranch, HelpCircle, Plus } from '@wso2/oxygen-ui-icons-react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import type { GqlDeploymentTrack } from '../api/queries';
+import type { GqlDeploymentTrack } from '../types/component';
 
 interface DeploymentTrackBarProps {
   tracks: GqlDeploymentTrack[];
