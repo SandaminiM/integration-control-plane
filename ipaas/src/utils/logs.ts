@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import type { LogRow } from '../api/logs';
+import type { LogRow } from '../types/logs';
 
 export const LOG_LEVELS = ['INFO', 'WARN', 'ERROR', 'DEBUG'] as const;
 

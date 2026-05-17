@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { DeploymentStatus } from '../api/queries';
-import type { ApimApiInfo } from '../api/apim';
+import { DeploymentStatus } from '../types/deployment';
+import type { ApimApiInfo } from '../types/apim';
 import { API_KEY_SCHEME, OAUTH2_SCHEME } from '../constants/endpointConfig';
 import type { EndpointSecurityState } from '../types/deploy';
 

@@ -17,7 +17,7 @@
  */
 
 import { toHandler } from './string';
-import type { PrebuiltIntegration } from '../types/samples';
+import type { PrebuiltIntegration } from '../types/prebuilt';
 
 const VALID_HANDLER = /^[a-z0-9][a-z0-9-]*[a-z0-9]$/;
 

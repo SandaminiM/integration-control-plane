@@ -19,7 +19,7 @@
 import { Box, TreeView } from '@wso2/oxygen-ui';
 import { Folder } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import type { RepoTreeNode } from '../api/queries';
+import type { RepoTreeNode } from '../types/repository';
 
 const { TreeItem } = TreeView;
 
