@@ -17,8 +17,9 @@
  */
 
 import { createContext, useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type JSX, type SetStateAction } from 'react';
-import { useCloudDataPlanes, useOrgs } from '../api/queries';
-import { copilotApiUrl } from '../config/api';
+import { useCloudDataPlanes } from '../hooks/useEnvironments';
+import { useOrgs } from '../hooks/useOrg';
+import { copilotApiUrl } from '../config/runtimeConfig';
 import { COPILOT_REGION_DISPLAY_NAMES, COPILOT_SESSION_MESSAGES_KEY } from '../constants/copilot';
 import { useScope } from '../nav';
 import type { CopilotRegion, IMessage } from '../types/copilot';

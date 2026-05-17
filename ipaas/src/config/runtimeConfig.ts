@@ -167,20 +167,13 @@ export async function loadConfig(): Promise<void> {
   }
 }
 
-// Simple helper functions for derived URLs
+// URL helpers — only for values that require computation (path concatenation or runtime parameters).
+// Simple field reads (e.g. window.API_CONFIG.apimBaseUrl) are done directly at call sites.
+
 export const loginApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/login`;
 export const refreshTokenApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/refresh-token`;
 export const revokeTokenApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/revoke-token`;
-export const oidcAuthorizeApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/oidc/authorize-url`;
-export const oidcCallbackApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/login/oidc`;
-export const subscriptionsApiUrl = (): string => window.API_CONFIG.subscriptionsApiUrl;
-export const choreoDevopsApiUrl = (): string => `${window.API_CONFIG.choreoBaseApiUrl}/devops/1.0.0`;
-export const componentMgtApiUrl = (): string => `${window.API_CONFIG.choreoBaseApiUrl}/component-mgt/1.0.0`;
-export const apimBaseUrl = (): string => window.API_CONFIG.apimBaseUrl;
-export const insightsBaseUrl = (): string => `${window.API_CONFIG.insightsBaseUrl}/insights/1.0.0`;
-export const governanceBaseUrl = (): string => `${window.API_CONFIG.choreoBaseApiUrl}/governance/v1.0`;
-export const changePasswordApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/change-password`;
-export const forceChangePasswordApiUrl = (): string => `${window.API_CONFIG.authBaseUrl}/force-change-password`;
+
 export const choreoAlertingApiUrl = (gatewayHost: string): string => {
   const { alertingUrl, sysApiPrefix } = window.API_CONFIG;
   if (alertingUrl) return alertingUrl;
@@ -207,4 +200,8 @@ export const copilotApiUrl = (externalVhost: string): string => {
   return `https://${sysApiPrefix}.${externalVhost}${aiCopilotUrlSuffix}`;
 };
 
-export const copilotDatacollectorBaseUrl = (): string => window.API_CONFIG.aiCopilotDatacollectorBaseUrl;
+// Derive Developer Portal base URL from the choreoOrgApiUrl config.
+export const getDevPortalBaseUrl = (): string | null => {
+  const match = (window.API_CONFIG?.choreoOrgApiUrl ?? '').match(/\/\/apis\.([^.]+)\.choreo\.dev/);
+  return match ? `https://devportal.${match[1]}.choreo.dev` : null;
+};

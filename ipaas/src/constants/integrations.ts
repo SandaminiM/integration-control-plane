@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import type { DisplayType } from '../api/mutations';
+import type { DisplayType } from '../types/component';
 
 /**
  * The set of integration display types that are supported by the ipaas.

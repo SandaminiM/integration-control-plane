@@ -17,7 +17,7 @@
  */
 
 import { type RouteProps, Navigate, Outlet } from 'react-router';
-import { cookiePolicyUrl, loginUrl, orgRoleDetailUrl, privacyPolicyUrl, projectRoleDetailUrl, componentRoleDetailUrl, projectGroupDetailUrl, componentGroupDetailUrl, alertsSegment, buildsSegment, deploySegment, signupUrl, registerOrgUrl } from '../paths';
+import { cookiePolicyUrl, loginUrl, orgRoleDetailUrl, privacyPolicyUrl, projectRoleDetailUrl, componentRoleDetailUrl, projectGroupDetailUrl, componentGroupDetailUrl, signupUrl, registerOrgUrl } from '../paths';
 import OrgHomeRedirect from '../components/OrgHomeRedirect';
 import Signup from '../pages/Signup';
 import RegisterOrganization from '../pages/RegisterOrganization';
@@ -49,10 +49,10 @@ import Project from '../pages/Project';
 import Component from '../pages/Component';
 import RuntimeLogsProject from '../pages/RuntimeLogsProject';
 import RuntimeLogsIntegration from '../pages/RuntimeLogsIntegration';
-import Metrics from '../pages/Metrics';
+
 import Environments from '../pages/Environments';
 import CreateEnvironment from '../pages/CreateEnvironment';
-import Runtime from '../pages/Runtime';
+
 import { OrgAccessControl, ProjectAccessControl, ComponentAccessControl } from '../pages/AccessControl';
 import RoleDetail from '../pages/RoleDetail';
 import ProjectRoleDetail from '../pages/ProjectRoleDetail';
@@ -84,12 +84,11 @@ export interface AppRoute extends Omit<RouteProps, 'children'> {
 
 const MATRIX: Matrix = {
   overview: { segment: '', pages: { organizations: Projects, projects: Project, components: Component } },
+  build: { segment: 'build', pages: { organizations: OrgBuild, projects: ProjectBuild, components: Build } },
+  deploy: { segment: 'deploy', pages: { organizations: OrgDeploy, projects: ProjectDeploy, components: Deploy } },
+  alerts: { segment: 'alerts', pages: { components: Alerts } },
   logs: { segment: 'logs', pages: { projects: RuntimeLogsProject, components: RuntimeLogsIntegration } },
-  alerts: { segment: alertsSegment, pages: { components: Alerts } },
-  build: { segment: buildsSegment, pages: { organizations: OrgBuild, projects: ProjectBuild, components: Build } },
-  deploy: { segment: deploySegment, pages: { organizations: OrgDeploy, projects: ProjectDeploy, components: Deploy } },
-  metrics: { segment: 'metrics', pages: { projects: Metrics, components: Metrics } },
-  runtimes: { segment: 'runtimes', pages: { projects: Runtime, components: Runtime } },
+
   environments: { segment: 'environments', pages: { organizations: Environments, projects: Environments } },
   'access-control': { segment: 'settings/access-control/:tab', pages: { organizations: OrgAccessControl, projects: ProjectAccessControl, components: ComponentAccessControl } },
 };
@@ -148,6 +147,7 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/admin/audit-logs', element: <ComingSoon title="Coming Soon" description="Audit Logs are currently under development." /> },
               { path: 'organizations/:orgHandler/admin/approvals', element: <ComingSoon title="Coming Soon" description="Approvals management is currently under development." /> },
               { path: 'organizations/:orgHandler/admin/certificates', element: <ComingSoon title="Coming Soon" description="Certificates management is currently under development." /> },
+              { path: 'organizations/:orgHandler/settings', element: <ComingSoon title="Coming Soon" description="Settings are currently under development." /> },
               ...generateMatrixRoutes(MATRIX),
               { path: 'organizations/:orgHandler/projects/:projectHandler/develop', element: <ComingSoon title="Coming Soon" description="Development tools are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/deploy', element: <ComingSoon title="Coming Soon" description="Deployment management is currently under development." /> },
@@ -155,13 +155,16 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/projects/:projectHandler/insights/usage', element: <ComingSoon title="Coming Soon" description="Usage insights are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/insights/delivery', element: <ComingSoon title="Coming Soon" description="Delivery insights are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/insights/compliance', element: <ComingSoon title="Coming Soon" description="Compliance insights are currently under development." /> },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/runtimes', element: <ComingSoon title="Coming Soon" description="Runtime management is currently under development." /> },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/metrics', element: <ComingSoon title="Coming Soon" description="Metrics are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/observe/runtimelogs', element: createElement(withScope(RuntimeLogsProject, ['projects'])) },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/observe/metrics', element: createElement(withScope(Metrics, ['projects'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/observe/metrics', element: <ComingSoon title="Coming Soon" description="Metrics are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections', element: <ComingSoon title="Coming Soon" description="Connections management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/third-party-services', element: <ComingSoon title="Coming Soon" description="Third Party Services management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/gen-ai-services', element: <ComingSoon title="Coming Soon" description="GenAI Services management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/cd-pipelines', element: <ComingSoon title="Coming Soon" description="CD Pipelines management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/devops/environments', element: createElement(withScope(Environments, ['projects'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/settings', element: <ComingSoon title="Coming Soon" description="Settings are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/settings/project-overview', element: <ComingSoon title="Coming Soon" description="Project settings are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/redirect', element: <ProjectsRedirect /> },
               { path: 'organizations/:orgHandler/home', element: createElement(withScope(OrgHome, ['organizations'])) },
@@ -242,8 +245,16 @@ const routes: AppRoute[] = [
                 element: <ComingSoon title="Coming Soon" description="Compliance insights are currently under development." />,
               },
               {
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/metrics',
+                element: <ComingSoon title="Coming Soon" description="Metrics are currently under development." />,
+              },
+              {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/connections',
                 element: <ComingSoon title="Coming Soon" description="Connections management is currently under development." />,
+              },
+              { 
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/runtimes', 
+                element: <ComingSoon title="Coming Soon" description="Runtime management is currently under development." /> 
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/containers',
@@ -264,6 +275,10 @@ const routes: AppRoute[] = [
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/storage',
                 element: <ComingSoon title="Coming Soon" description="Storage management is currently under development." />,
+              },
+              {
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings',
+                element: <ComingSoon title="Coming Soon" description="Settings are currently under development." />,
               },
             ],
           },
