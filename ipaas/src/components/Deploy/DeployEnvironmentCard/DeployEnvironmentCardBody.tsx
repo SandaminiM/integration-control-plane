@@ -19,7 +19,7 @@
 import { Box, Button, Chip, Divider, IconButton, Skeleton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { CalendarClock, Clock, Eye, Settings } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import { DeploymentStatus } from '../../../api/queries';
+import { DeploymentStatus } from '../../../types/deployment';
 import type { DeployEnvironmentCardBodyProps } from '../../../types/deploy';
 import { formatDistanceToNow } from '../../../utils/time';
 import { getDeploymentStatusColor, getDeploymentStatusLabel } from '../../../utils/deploy';

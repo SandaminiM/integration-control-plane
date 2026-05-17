@@ -19,11 +19,10 @@
 import { Alert, Box, Button, Checkbox, CircularProgress, Collapse, Divider, Drawer, FormControlLabel, FormHelperText, IconButton, InputAdornment, MenuItem, Radio, RadioGroup, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronUp, Search, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useReducer, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useApimApi } from '../../api/queries';
-import { useThrottlingPolicies } from '../../api/marketplace';
-import { updateApimApi, deploySettingsV2, type ApimApiOperation, type CorsConfiguration } from '../../api/apim';
-import { useUpdateEndpoint } from '../../api/mutations';
+import { useApimApi, useUpdateApimApi, useDeploySettingsV2 } from '../../hooks/useApim';
+import { useThrottlingPolicies } from '../../hooks/useMarketplace';
+import type { ApimApiOperation, CorsConfiguration } from '../../types/apim';
+import { useUpdateEndpoint } from '../../hooks/useComponents';
 
 // ── Drawer style (same as ConfigureDrawer) ─────────────────────────────────────
 
@@ -251,10 +250,11 @@ interface ManageDrawerProps {
 }
 
 export default function ManageDrawer({ open, onClose, apimId, componentId, versionId, releaseId, buildId, environmentId, apimRevisionId, endpointId, endpointDisplayName, networkVisibilities: initialNetworkVisibilities }: ManageDrawerProps) {
-  const queryClient = useQueryClient();
   const { data: apimApiInfo, isLoading } = useApimApi(open ? apimId : null);
   useThrottlingPolicies(); // prefetch
   const updateEndpoint = useUpdateEndpoint();
+  const updateApimMutation = useUpdateApimApi();
+  const deploySettingsMutation = useDeploySettingsV2();
 
   const [state, dispatch] = useReducer(
     (prev: ManageState, update: Partial<ManageState>) => ({ ...prev, ...update }),
@@ -336,8 +336,7 @@ export default function ManageDrawer({ open, onClose, apimId, componentId, versi
     };
 
     try {
-      const savedApi = await updateApimApi(apimId, updated);
-      queryClient.invalidateQueries({ queryKey: ['apimApi', apimId] });
+      const savedApi = await updateApimMutation.mutateAsync({ apimId, body: updated });
 
       // Phase 1: trigger redeploy via proxy deployer when context is available
       if (canRedeploy) {
@@ -345,26 +344,30 @@ export default function ManageDrawer({ open, onClose, apimId, componentId, versi
         const apiLevelRc = Number(state.apiLevelPolicy.requestCount);
         const apiLevelThrottle = state.rateLimitLevel === 'API_LEVEL' ? { requestCount: isNaN(apiLevelRc) ? -1 : apiLevelRc, unit: state.apiLevelPolicy.timeUnit } : null;
         const accessMode = state.networkVisibilities.length === 1 && state.networkVisibilities[0] === 'Public' ? 'External' : 'Internal';
-        await deploySettingsV2(componentId!, versionId!, {
-          environmentId: environmentId!,
-          buildId: buildId!,
-          comment: '',
-          apiSettings: {
-            [settingsKey]: {
-              accessMode,
-              settings: {
-                corsConfiguration: { ...corsConfiguration, corsOverrideEnabled: true },
-                throttlingLimit: apiLevelThrottle,
-                operations: updatedOperations.map((op) => ({
-                  verb: op.verb.toUpperCase(),
-                  target: op.target,
-                  throttlingLimit: { requestCount: ((_rc) => (isNaN(_rc) ? -1 : _rc))(Number(op.throttlingPolicy)), unit: 'MINUTE' },
-                })),
-                resiliency: Number(state.timeout) || undefined,
+        await deploySettingsMutation.mutateAsync({
+          componentId: componentId!,
+          versionId: versionId!,
+          payload: {
+            environmentId: environmentId!,
+            buildId: buildId!,
+            comment: '',
+            apiSettings: {
+              [settingsKey]: {
+                accessMode,
+                settings: {
+                  corsConfiguration: { ...corsConfiguration, corsOverrideEnabled: true },
+                  throttlingLimit: apiLevelThrottle,
+                  operations: updatedOperations.map((op) => ({
+                    verb: op.verb.toUpperCase(),
+                    target: op.target,
+                    throttlingLimit: { requestCount: ((_rc) => (isNaN(_rc) ? -1 : _rc))(Number(op.throttlingPolicy)), unit: 'MINUTE' },
+                  })),
+                  resiliency: Number(state.timeout) || undefined,
+                },
+                revisionId: apimRevisionId ?? undefined,
+                isAsyncAPI: false,
+                multiGatewayDeployment: state.networkVisibilities.includes('Public') && state.networkVisibilities.includes('Organization'),
               },
-              revisionId: apimRevisionId ?? undefined,
-              isAsyncAPI: false,
-              multiGatewayDeployment: state.networkVisibilities.includes('Public') && state.networkVisibilities.includes('Organization'),
             },
           },
         });

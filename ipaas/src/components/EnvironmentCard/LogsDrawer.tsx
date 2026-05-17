@@ -20,7 +20,7 @@ import { Box, Button, Checkbox, CircularProgress, Drawer, FormControlLabel, Icon
 import { RefreshCcw, Search, X } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useExecutionLogs } from '../../api/queries';
+import { useExecutionLogs } from '../../hooks/useExecutions';
 
 interface LogsDrawerProps {
   open: boolean;

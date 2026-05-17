@@ -19,9 +19,9 @@
 import { Alert, Autocomplete, Box, Button, CircularProgress, Tab, Tabs, TextField, Typography } from '@wso2/oxygen-ui';
 import { Plus } from '@wso2/oxygen-ui-icons-react';
 import { type JSX, useEffect, useMemo, useState } from 'react';
-import type { CloudDataPlane, GqlEnvironment } from '../../api/queries';
-import { choreoAlertingApiUrl } from '../../config/api';
-import { useDeleteAlertRule, useGetAlertRules, useGetAlertRulesCount, useUpdateAlertRule } from '../../hooks/alerts';
+import type { CloudDataPlane, GqlEnvironment } from '../../types/environment';
+import { choreoAlertingApiUrl } from '../../config/runtimeConfig';
+import { useDeleteAlertRule, useGetAlertRules, useGetAlertRulesCount, useUpdateAlertRule } from '../../hooks/useAlerts';
 import type { AlertRule, AlertTypeOption } from '../../types/alerts';
 import { ALERTS_CREATE_NEW_RULE_BUTTON_TEXT, AlertComponentType, AlertTypeConstants, AlertTypes } from '../../constants/alerts';
 import { getAlertTypeOptionByValue, getAlertTypesTabItems } from '../../utils/alerts';

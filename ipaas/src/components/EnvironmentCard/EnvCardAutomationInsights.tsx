@@ -18,7 +18,7 @@
 
 import { Avatar, Box, CircularProgress, Divider, Stack, Typography } from '@wso2/oxygen-ui';
 import { Activity, AlertTriangle, Clock, TrendingUp } from '@wso2/oxygen-ui-icons-react';
-import { useTaskExecutionCount, useTaskExecutions } from '../../api/queries';
+import { useTaskExecutionCount, useTaskExecutions } from '../../hooks/useExecutions';
 
 interface MetricTileProps {
   icon: React.ReactNode;

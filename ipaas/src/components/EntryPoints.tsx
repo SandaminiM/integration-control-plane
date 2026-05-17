@@ -1,3 +1,5 @@
+// This component is unused and should be removed.
+
 /**
  * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
  *
@@ -47,16 +49,25 @@ import {
   TextField,
   Tooltip,
   Typography,
+  type TabProps,
 } from '@wso2/oxygen-ui';
 import { Settings, Copy, Check, Play, RefreshCw, ShieldAlert, CalendarClock, ChevronDown, ChevronUp, X, Clock } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useComponentDeployment, useExecutionConfigs, type GqlEnvironment } from '../api/queries';
-import { getOrgUuidFromToken } from '../auth/tokenManager';
-import { useDeployDeploymentTrack, useGenerateComponentEnvironmentJwtSecret, useRotateComponentEnvironmentJwtSecret } from '../api/mutations';
+import { useComponentDeployment } from '../hooks/useDeployments';
+import { useExecutionConfigs, useTriggerTask } from '../hooks/useExecutions';
+import type { GqlEnvironment } from '../types/environment';
+import { useOrgUuid } from '../hooks/useOrgUuid';
+import { useDeployDeploymentTrack } from '../hooks/useDeployments';
+import { useGenerateComponentEnvironmentJwtSecret, useRotateComponentEnvironmentJwtSecret } from '../hooks/useComponents';
 import AutomationExecutions from './AutomationExecutions';
 import Authorized from './Authorized';
 import { Permissions } from '../constants/permissions';
+import { useUpdateArtifactTracingStatus, useUpdateArtifactStatisticsStatus } from '../hooks/useArtifactToggles';
+import { useUpdateArtifactStatus, useUpdateListenerState, useArtifacts } from '../hooks/useArtifacts';
+import type { GqlArtifact } from '../types/artifact';
+import { type SelectedArtifact, ENTRY_POINT_CONFIG, ENTRY_POINT_DETAIL_TABS } from './artifact-config';
+import { ArtifactApiDefinition, ServiceResources, ProxyApiReference } from './ArtifactTabs';
 
 function EntryPointDetail({ selected, onOpenDrawerTab }: { selected: SelectedArtifact; onOpenDrawerTab: (tab: string) => void }) {
   const [tracingEnabled, setTracingEnabled] = useState(false);
@@ -700,7 +711,7 @@ function ScheduleDialog({
   const [retryCount, setRetryCount] = useState<string>('');
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const orgUuid = getOrgUuidFromToken() ?? '';
+  const orgUuid = useOrgUuid() ?? '';
   const { data: deployment, isLoading: loadingDeployment } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, envId);
   const releaseId = deployment?.releaseId ?? '';
   const { data: existingConfigs, isLoading: loadingExecConfigs } = useExecutionConfigs(componentId, releaseId);
@@ -937,7 +948,7 @@ export default function Environment({
   const [pendingTriggerTime, setPendingTriggerTime] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const deployTrack = useDeployDeploymentTrack();
-  const envOrgUuid = getOrgUuidFromToken() ?? '';
+  const envOrgUuid = useOrgUuid() ?? '';
   const { data: envDeployment, isLoading: loadingEnvDeployment } = useComponentDeployment(isAutomation ? orgHandler : '', isAutomation ? envOrgUuid : '', isAutomation ? componentId : '', isAutomation ? versionId : '', isAutomation ? env.id : '');
   const envReleaseId = envDeployment?.releaseId ?? '';
   const { data: scheduleConfig } = useExecutionConfigs(isAutomation ? componentId : '', isAutomation ? envReleaseId : '');

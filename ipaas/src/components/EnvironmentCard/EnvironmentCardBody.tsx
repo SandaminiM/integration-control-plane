@@ -23,7 +23,9 @@ import AutomationExecutions from '../AutomationExecutions';
 import EnvCardInsights from './EnvCardInsights';
 import EnvCardAutomationInsights from './EnvCardAutomationInsights';
 import SwaggerOperationsList from './SwaggerOperationsList';
-import { useApiDefinition, fetchComponentEndpointSpec, type GqlEnvEndpoint } from '../../api/queries';
+import { useFetchComponentEndpointSpec } from '../../hooks/useComponents';
+import { useApiDefinition } from '../../hooks/useDeployments';
+import type { GqlEnvEndpoint } from '../../types/component';
 
 // ---------- helpers ----------
 
@@ -120,10 +122,11 @@ function EndpointUrlsPanel({ endpoints, selectedIdx, onSelect, componentId, depl
   // Fallback to invokeUrl if no visibility-specific URL
   const fallbackUrl = urlRows.length === 0 ? ep.invokeUrl || '' : '';
 
+  const fetchSpecMutation = useFetchComponentEndpointSpec();
   const handleDownload = async () => {
     if (!ep.id) return;
     try {
-      const content = await fetchComponentEndpointSpec(componentId, deploymentTrackId, ep.id);
+      const content = await fetchSpecMutation.mutateAsync({ componentId, versionId: deploymentTrackId, endpointId: ep.id });
       if (!content) return;
       const blob = new Blob([content], { type: 'text/yaml' });
       const link = document.createElement('a');

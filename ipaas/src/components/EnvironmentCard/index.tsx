@@ -20,10 +20,15 @@ import { Card, CardContent } from '@wso2/oxygen-ui';
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
-import { useComponentDeployment, useEnvEndpoints, useExecutionConfigs, useSchemaConfig, type GqlEnvironment, type GqlEnvEndpoint } from '../../api/queries';
+import { useComponentDeployment, useEnvEndpoints } from '../../hooks/useDeployments';
+import { useExecutionConfigs } from '../../hooks/useExecutions';
+import { useSchemaConfig } from '../../hooks/useConfiguration';
+import type { GqlEnvironment } from '../../types/environment';
+import type { GqlEnvEndpoint } from '../../types/component';
 import { getRequiredPathsAtLevel } from '../SchemaConfigForm/schemaUtils';
-import { getOrgUuidFromToken } from '../../auth/tokenManager';
-import { useTriggerComponent, useStopDeployment, useRedeployDeployment } from '../../api/mutations';
+import { useOrgUuid } from '../../hooks/useOrgUuid';
+import { useTriggerComponent } from '../../hooks/useExecutions';
+import { useStopDeployment, useRedeployDeployment } from '../../hooks/useDeployments';
 import { GENERIC_SERVICE_TYPES } from '../../constants/integrations';
 import { nextCronRunMs, formatTimeUntil, describeCron } from '../../utils/cronUtils';
 import EnvironmentCardHeader from './EnvironmentCardHeader';
@@ -64,7 +69,7 @@ export default function Environment({ env, prevEnv, componentId, projectId, comp
   const trigger = useTriggerComponent();
   const stopMutation = useStopDeployment();
   const redeployMutation = useRedeployDeployment();
-  const envOrgUuid = getOrgUuidFromToken() ?? '';
+  const envOrgUuid = useOrgUuid() ?? '';
 
   const fetchDeployment = isAutomation || isGenericService;
   // Poll for transitional states or briefly after explicit stop/redeploy actions

@@ -19,7 +19,7 @@
 import { Autocomplete, Box, Button, Grid, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { type JSX, useEffect, useState } from 'react';
-import type { GqlEnvironment } from '../../api/queries';
+import type { GqlEnvironment } from '../../types/environment';
 import type { AlertRule, AlertRuleFormProps, AlertTypeOption } from '../../types/alerts';
 import { ALERTS_CREATE_NEW_RULE_BACK_BUTTON_TEXT, ALERTS_CREATE_NEW_RULE_TITLE, ALERTS_EDIT_RULE_TITLE, AlertTypeConstants } from '../../constants/alerts';
 import { getAlertTypeOptionByValue, getAlertTypeOptions } from '../../utils/alerts';

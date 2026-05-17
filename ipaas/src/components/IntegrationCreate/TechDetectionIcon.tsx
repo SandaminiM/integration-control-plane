@@ -19,7 +19,7 @@
 import { Box, CircularProgress } from '@wso2/oxygen-ui';
 import { AlertCircle, HelpCircle } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import type { DetectedMode } from '../../api/queries';
+import type { DetectedMode } from '../../types/repository';
 
 export default function TechDetectionIcon({ mode, isValidating, isError }: { mode: DetectedMode; isValidating: boolean; isError: boolean }): JSX.Element | null {
   if (isValidating) return <CircularProgress size={16} />;

@@ -19,7 +19,8 @@
 import { Box, Drawer, IconButton, Stack, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState } from 'react';
-import type { GqlCommit, GqlDeploymentStatus, GqlRepository } from '../../api/queries';
+import type { GqlCommit, GqlRepository } from '../../types/repository';
+import type { GqlDeploymentStatus } from '../../types/deployment';
 import { BUILD_DRAWER_TITLES, BuildDrawerType } from '../../constants/build';
 import BuildConfigPanel from './BuildConfigPanel';
 import BuildDetails from './BuildDetails';

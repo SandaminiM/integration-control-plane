@@ -19,7 +19,7 @@
 import { Box, CircularProgress, IconButton, Tooltip } from '@wso2/oxygen-ui';
 import { Check, Copy } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useRef, useState } from 'react';
-import type { BuildRunLogs } from '../api/builds';
+import type { BuildRunLogs } from '../types/build';
 import { buildLogText } from '../utils/build';
 
 export interface BuildLogViewerProps {

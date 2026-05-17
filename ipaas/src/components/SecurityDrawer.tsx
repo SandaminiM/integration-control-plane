@@ -43,9 +43,9 @@ import {
 } from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsLeft, ChevronsRight, Plus, Search, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useComponentEndpoints } from '../api/queries';
-import { fetchApimApi, updateApimApi, type ApimApiInfo } from '../api/apim';
+import { useComponentEndpoints } from '../hooks/useComponents';
+import { useApimApi, useUpdateApimApi } from '../hooks/useApim';
+import type { ApimApiInfo } from '../types/apim';
 
 const OAUTH2 = 'oauth2';
 const API_KEY = 'api_key';
@@ -71,10 +71,9 @@ interface SecurityDrawerProps {
 }
 
 export default function SecurityDrawer({ open, onClose, apimId, componentId, versionId }: SecurityDrawerProps) {
-  const queryClient = useQueryClient();
-  const [api, setApi] = useState<ApimApiInfo | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const { data: api = null, isLoading: loading } = useApimApi(open ? apimId : null);
+  const updateMutation = useUpdateApimApi();
+  const saving = updateMutation.isPending;
   const [error, setError] = useState<string | null>(null);
 
   const [securityScheme, setSecurityScheme] = useState<string[]>(['oauth2']);
@@ -90,40 +89,27 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
   const { data: endpoints = [] } = useComponentEndpoints(componentId ?? '', versionId ?? '');
 
   useEffect(() => {
-    if (!open || !apimId) return;
-    let cancelled = false;
-    setApi(null);
-    setLoading(true);
+    if (!open) return;
     setError(null);
     setOperationSearch('');
     setPage(1);
     setExpandedOps(new Set());
-    setOperationAuthTypes({});
-    fetchApimApi(apimId).then((data) => {
-      if (cancelled) return;
-      if (data) {
-        setApi(data);
-        setSecurityScheme(data.securityScheme ?? ['oauth2']);
-        setAuthHeader(data.authorizationHeader ?? 'Authorization');
-        setApiKeyHeader(data.apiKeyHeader ?? 'api-key');
-        setBackendJwt(data.enableBackendJWT ?? false);
-        const ops = data.operations ?? [];
-        const authTypes: Record<string, string> = {};
-        const allKeys = new Set<string>();
-        ops.forEach((op) => {
-          const key = `${op.verb.toUpperCase()}-${op.target}`;
-          authTypes[key] = op.authType ?? 'Application & Application User';
-          allKeys.add(key);
-        });
-        setOperationAuthTypes(authTypes);
-        setExpandedOps(new Set());
-      }
-      setLoading(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [open, apimId]);
+    if (api) {
+      setSecurityScheme(api.securityScheme ?? ['oauth2']);
+      setAuthHeader(api.authorizationHeader ?? 'Authorization');
+      setApiKeyHeader(api.apiKeyHeader ?? 'api-key');
+      setBackendJwt(api.enableBackendJWT ?? false);
+      const ops = api.operations ?? [];
+      const authTypes: Record<string, string> = {};
+      ops.forEach((op) => {
+        const key = `${op.verb.toUpperCase()}-${op.target}`;
+        authTypes[key] = op.authType ?? 'Application & Application User';
+      });
+      setOperationAuthTypes(authTypes);
+    } else {
+      setOperationAuthTypes({});
+    }
+  }, [open, apimId, api]);
 
   const toggleScheme = (scheme: string) => {
     setSecurityScheme((prev) => (prev.includes(scheme) ? prev.filter((s) => s !== scheme) : [...prev, scheme]));
@@ -131,20 +117,19 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
 
   const handleApply = async () => {
     if (!apimId || !api) return;
-    setSaving(true);
     setError(null);
+    const updatedOperations = (api.operations ?? []).map((op) => {
+      const key = `${op.verb.toUpperCase()}-${op.target}`;
+      return { ...op, authType: operationAuthTypes[key] ?? op.authType };
+    });
     try {
-      const updatedOperations = (api.operations ?? []).map((op) => {
-        const key = `${op.verb.toUpperCase()}-${op.target}`;
-        return { ...op, authType: operationAuthTypes[key] ?? op.authType };
+      await updateMutation.mutateAsync({
+        apimId,
+        body: { ...api, securityScheme, authorizationHeader: authHeader, apiKeyHeader, enableBackendJWT: backendJwt, operations: updatedOperations },
       });
-      await updateApimApi(apimId, { ...api, securityScheme, authorizationHeader: authHeader, apiKeyHeader, enableBackendJWT: backendJwt, operations: updatedOperations });
-      queryClient.invalidateQueries({ queryKey: ['apimApi', apimId] });
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save security configuration. Please try again.');
-    } finally {
-      setSaving(false);
     }
   };
 

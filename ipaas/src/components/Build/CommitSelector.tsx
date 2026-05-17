@@ -19,7 +19,7 @@
 import { Box, Button, CircularProgress, Divider, InputAdornment, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { GitCommit, Search } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState } from 'react';
-import type { GqlCommit } from '../../api/queries';
+import type { GqlCommit } from '../../types/repository';
 
 interface CommitSelectorProps {
   commits: GqlCommit[];

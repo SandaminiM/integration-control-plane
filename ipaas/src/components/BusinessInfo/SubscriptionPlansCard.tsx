@@ -19,8 +19,9 @@
 import { Box, Button, Card, CardContent, CircularProgress, Divider, Stack, Typography } from '@wso2/oxygen-ui';
 import { ListChecks } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
-import { type ApimApiInfo } from '../../api/apim';
-import { useThrottlingPolicies, type ThrottlingPolicy } from '../../api/marketplace';
+import type { ApimApiInfo } from '../../types/apim';
+import type { ThrottlingPolicy } from '../../types/marketplace';
+import { useThrottlingPolicies } from '../../hooks/useMarketplace';
 import ActivatePlansDialog from './ActivatePlansDialog';
 
 const PLAN_COLORS: Record<string, { bg: string; text: string }> = {

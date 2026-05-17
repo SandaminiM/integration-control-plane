@@ -20,8 +20,9 @@ import { Alert, Button, Chip, CircularProgress, IconButton, ListingTable, Snackb
 import { GitCommit, Settings } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { useTriggerBuild } from '../../api/mutations';
-import { type GqlCommit, type GqlDeploymentStatus, type GqlRepository } from '../../api/queries';
+import { useTriggerBuild } from '../../hooks/useDeployments';
+import type { GqlCommit, GqlRepository } from '../../types/repository';
+import type { GqlDeploymentStatus } from '../../types/deployment';
 import { BuildDrawerType } from '../../constants/build';
 import { useBuildAutoEffects } from '../../hooks/useBuildAutoEffects';
 import { formatDistanceToNow } from '../../utils/time';

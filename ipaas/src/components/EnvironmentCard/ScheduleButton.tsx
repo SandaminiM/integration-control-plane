@@ -21,7 +21,7 @@ import { CalendarClock, ChevronDown } from '@wso2/oxygen-ui-icons-react';
 import { useRef, useState } from 'react';
 import Authorized from '../Authorized';
 import { Permissions } from '../../constants/permissions';
-import { useStopDeployment } from '../../api/mutations';
+import { useStopDeployment } from '../../hooks/useDeployments';
 import ScheduleDialog from './ScheduleDialog';
 
 export interface ScheduleButtonProps {
