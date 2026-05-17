@@ -16,6 +16,49 @@
  * under the License.
  */
 
+export interface GqlProject {
+  id: string;
+  orgId: number;
+  name: string;
+  handler: string;
+  description: string;
+  version: string;
+  createdDate: string;
+  updatedAt: string;
+  region: string;
+  type: string;
+  defaultDeploymentPipelineId: string;
+}
+
+export interface ProjectContributor {
+  id: number;
+  displayName: string;
+  email: string;
+  pictureUrl: string | null;
+  totalContributions: number;
+}
+
+export interface ProjectHandlerAvailability {
+  handlerUnique: boolean;
+  alternateHandlerCandidate?: string;
+}
+
+export interface CreateProjectInput {
+  name: string;
+  handler: string;
+  description: string;
+  orgHandler: string;
+}
+
+export interface CreateMonoRepoProjectInput extends CreateProjectInput {
+  repository: string;
+  gitOrganization: string;
+  branch: string;
+  directoryPath: string;
+  gitProvider: string;
+  isPublicRepo: boolean;
+}
+
 export type GitProvider = 'github' | 'public';
 
 export type WorkspaceIntegrationType = 'service' | 'automation';
