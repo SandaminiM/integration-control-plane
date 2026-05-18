@@ -202,6 +202,12 @@ export const copilotApiUrl = (externalVhost: string): string => {
 
 // Derive Developer Portal base URL from the choreoOrgApiUrl config.
 export const getDevPortalBaseUrl = (): string | null => {
-  const match = (window.API_CONFIG?.choreoOrgApiUrl ?? '').match(/\/\/apis\.([^.]+)\.choreo\.dev/);
-  return match ? `https://devportal.${match[1]}.choreo.dev` : null;
+  try {
+    const url = new URL(window.API_CONFIG?.choreoOrgApiUrl ?? '');
+    const labels = url.hostname.split('.');
+    labels[0] = 'devportal';
+    return `${url.protocol}//${labels.join('.')}`;
+  } catch {
+    return null;
+  }
 };

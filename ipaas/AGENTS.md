@@ -10,7 +10,7 @@ WSO2 Integration Control Plane (ICP) iPaaS frontend. A React + TypeScript SPA th
 
 Every feature follows a strict four-layer separation. Violating these boundaries is the most common class of error an AI agent can introduce.
 
-```
+```text
 ┌─────────────────────────────────────────────────┐
 │  pages/   components/                           │  UI only
 │  Import from: hooks/, types/, constants/,       │
@@ -83,7 +83,7 @@ Pages may import the OAuth CSRF helpers directly because they are pure client-si
 
 ## Directory reference
 
-```
+```text
 src/
   api/          Service functions + HTTP clients (see src/api/AGENTS.md)
   hooks/        React Query hooks, one file per domain (see src/hooks/AGENTS.md)

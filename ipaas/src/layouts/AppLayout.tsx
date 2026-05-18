@@ -234,7 +234,7 @@ function AppLayoutInner(): JSX.Element {
       if (rest.startsWith('admin/audit-logs')) return 'org-audit-logs';
       if (rest.startsWith('admin/approvals')) return 'org-approvals';
       if (rest.startsWith('admin/certificates')) return 'org-certificates';
-      if (rest.startsWith('settings/access-control')) return 'org-settings';
+      if (rest.startsWith('settings')) return 'org-settings';
       return 'overview';
     }
     if (!hasComponent(scope)) {
