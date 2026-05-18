@@ -21,7 +21,7 @@ import type { BuildRunLogs } from '../types/build';
 
 export async function fetchBuildRunLogs(orgHandler: string, projectId: string, componentId: string, runId: string): Promise<BuildRunLogs | null> {
   try {
-    const data = await choreoClient.get<{ data?: BuildRunLogs }>(`/component-mgt/1.0.0/orgs/${orgHandler}/projects/${projectId}/components/${componentId}/runs/${runId}/logs`);
+    const data = await choreoClient.get<{ data?: BuildRunLogs }>(`/component-mgt/1.0.0/orgs/${encodeURIComponent(orgHandler)}/projects/${encodeURIComponent(projectId)}/components/${encodeURIComponent(componentId)}/runs/${encodeURIComponent(runId)}/logs`);
     return data?.data ?? null;
   } catch {
     return null;

@@ -17,12 +17,12 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import type { PrebuiltIntegration } from '../types/samples';
-import type { JSONSchema } from '../components/SchemaConfigForm';
+import type { PrebuiltIntegration } from '../types/prebuilt';
+import type { JSONSchema } from '../types/schema';
 import type { PrebuiltIntegrationsData, PrebuiltInstructionsResult, PrebuiltConfigSchemaResult, PrebuiltDiagramResult } from '../types/prebuilt';
 import { DEFAULT_PREBUILT_INTEGRATIONS_URL } from '../constants/samples';
 import { getDotChoreoBaseUrl } from '../utils/prebuilt';
-import { fetchPrebuiltIntegrations, normalizePrebuiltIntegrations, fetchPrebuiltAsset } from '../api/samples';
+import { fetchPrebuiltIntegrations, normalizePrebuiltIntegrations, fetchPrebuiltAsset } from '../api/prebuilt';
 
 export type { PrebuiltIntegrationsData, PrebuiltInstructionsResult, PrebuiltConfigSchemaResult, PrebuiltDiagramResult };
 

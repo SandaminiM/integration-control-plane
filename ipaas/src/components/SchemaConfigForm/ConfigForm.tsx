@@ -19,7 +19,8 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { Box, Collapse, Stack, Switch, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronUp } from '@wso2/oxygen-ui-icons-react';
-import { type BaseType, type JSONSchema, type LinkingInfo, type SchemaAtLevel, getSchemasAtLevel } from './schemaUtils';
+import type { BaseType, JSONSchema } from '../../types/schema';
+import { type LinkingInfo, type SchemaAtLevel, getSchemasAtLevel } from './schemaUtils';
 import { ConfigElement } from './FormElements/ConfigElement';
 
 interface ConfigGroup {

@@ -138,7 +138,6 @@ export async function withScopeRetry<T>(fn: () => Promise<T>): Promise<T> {
         await refreshAccessToken();
         return fn();
       }
-      throw new Error('You do not have permission to trigger this component');
     }
     throw err;
   }

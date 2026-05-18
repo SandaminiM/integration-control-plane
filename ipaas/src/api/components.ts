@@ -277,7 +277,7 @@ export async function updateEndpoint(input: { componentId: string; versionId: st
       id displayName networkVisibilities visibility invokeUrl publicUrl organizationUrl projectUrl
     }
   }`;
-  return gql<{ updateComponentEndpoint: object }>(query, {});
+  return gql<{ updateComponentEndpoint: object }>(query, {}).then((d) => d.updateComponentEndpoint);
 }
 
 export async function generateComponentEndpoints(input: GenerateComponentEndpointsInput): Promise<GqlEnvEndpoint[]> {
@@ -292,7 +292,12 @@ export async function generateComponentEndpoints(input: GenerateComponentEndpoin
 
 export async function fetchComponentNameAvailability(projectId: string, componentNameCandidate: string): Promise<ComponentNameAvailability> {
   return gql<{ componentNameAvailability: ComponentNameAvailability }>(
-    `query { componentNameAvailability(projectId: "${projectId}", componentNameCandidate: "${componentNameCandidate}") { componentNameUnique alternateComponentName } }`,
+    `query CheckNameAvailability($projectId: ID!, $componentNameCandidate: String!) {
+      componentNameAvailability(projectId: $projectId, componentNameCandidate: $componentNameCandidate) {
+        componentNameUnique alternateComponentName
+      }
+    }`,
+    { projectId, componentNameCandidate },
   ).then((d) => d.componentNameAvailability);
 }
 

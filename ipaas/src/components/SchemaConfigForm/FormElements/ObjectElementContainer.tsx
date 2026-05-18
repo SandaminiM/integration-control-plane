@@ -20,7 +20,8 @@ import type { Dispatch, SetStateAction } from 'react';
 import { useState } from 'react';
 import { Box, Collapse, IconButton, Stack, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronUp, Trash2 } from '@wso2/oxygen-ui-icons-react';
-import { type BaseType, type JSONSchema, type LinkingInfo } from '../schemaUtils';
+import type { BaseType, JSONSchema } from '../../../types/schema';
+import { type LinkingInfo } from '../schemaUtils';
 import { ObjectElement } from './ObjectElement';
 
 interface ConfigGroup {

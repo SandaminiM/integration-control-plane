@@ -59,7 +59,7 @@ export async function fetchExecutionConfigs(componentId: string, releaseId: stri
 }
 
 export async function fetchTaskExecutions(releaseId: string): Promise<TaskExecution[]> {
-  return systemClient.get<TaskExecution[]>(`/systemapis/choreoobsapi/0.3.0/tasks/executions?releaseId=${releaseId}&limit=10&verbose=true`);
+  return systemClient.get<TaskExecution[]>(`/systemapis/choreoobsapi/0.3.0/tasks/executions?releaseId=${encodeURIComponent(releaseId)}&limit=10&verbose=true`);
 }
 
 export async function fetchExecutionArguments(runId: string, componentId: string, releaseId: string): Promise<ExecutionArgument[]> {
@@ -84,7 +84,7 @@ export async function fetchTaskExecutionCount(releaseId: string): Promise<number
   const to = new Date();
   const from = new Date(to);
   from.setDate(to.getDate() - 30);
-  const data = await systemClient.get<{ count: number }>(`/systemapis/choreoobsapi/0.3.0/tasks/executions/count?releaseId=${releaseId}&from=${from.toISOString()}&to=${to.toISOString()}`);
+  const data = await systemClient.get<{ count: number }>(`/systemapis/choreoobsapi/0.3.0/tasks/executions/count?releaseId=${encodeURIComponent(releaseId)}&from=${from.toISOString()}&to=${to.toISOString()}`);
   return data.count ?? null;
 }
 

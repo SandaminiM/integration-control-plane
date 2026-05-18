@@ -25,7 +25,7 @@ A component or page that needs data **must not** import from this directory. Use
 
 ## Transport tiers
 
-```
+```text
 auth/tokenManager.ts         authenticatedFetch — token injection, 401 refresh
         ↓
 api/httpClients.ts           createHttpClient factory, named clients, retry helpers

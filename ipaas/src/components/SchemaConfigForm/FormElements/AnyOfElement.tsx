@@ -18,7 +18,8 @@
 
 import { useState, useMemo, type Dispatch, type SetStateAction } from 'react';
 import { Box, Chip, MenuItem, Select, Stack, Typography } from '@wso2/oxygen-ui';
-import { type BaseType, type JSONSchema, type LinkingInfo, generateArrayJsonPath, isBaseType } from '../schemaUtils';
+import type { BaseType, JSONSchema } from '../../../types/schema';
+import { type LinkingInfo, generateArrayJsonPath, isBaseType } from '../schemaUtils';
 import { ArrayElement } from './ArrayElement';
 import { BaseElement } from './BaseElement';
 import { ObjectElementContainer } from './ObjectElementContainer';

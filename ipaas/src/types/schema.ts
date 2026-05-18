@@ -16,9 +16,27 @@
  * under the License.
  */
 
-export { ConfigForm } from './ConfigForm';
-export type { ConfigFormProps } from './ConfigForm';
-export type { BaseType, JSONSchema } from '../../types/schema';
-export type { LinkingInfo, SchemaAtLevel } from './schemaUtils';
-export { getRequiredPathsAtLevel } from './schemaUtils';
-export { parseConfigToml, filterTomlValuesBySchema, getAllSchemaKeys, isValidTomlFile } from './tomlUtils';
+export type BaseType = string | number | boolean;
+
+export interface JSONSchema {
+  $schema?: string;
+  $id?: string;
+  title?: string;
+  name?: string;
+  description?: string;
+  type: 'object' | 'array' | 'string' | 'number' | 'boolean' | 'null' | 'secret';
+  properties?: Record<string, JSONSchema>;
+  required?: string[];
+  requiredLevel?: number;
+  items?: JSONSchema;
+  enum?: string[] | number[];
+  default?: BaseType;
+  format?: string;
+  minLength?: number;
+  maxLength?: number;
+  minimum?: number;
+  maximum?: number;
+  pattern?: string;
+  additionalProperties?: boolean | JSONSchema;
+  anyOf?: JSONSchema[];
+}

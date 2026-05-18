@@ -54,7 +54,7 @@ export function normalizePrebuiltIntegrations(raw: { prebuiltIntegrations: Prebu
 }
 
 export async function fetchPrebuiltAsset(baseUrl: string, filename: string, signal?: AbortSignal): Promise<Response> {
-  const res = await fetch(`${baseUrl}${filename}`, { cache: 'no-store', signal });
+  const res = await fetch(`${baseUrl.replace(/\/?$/, '/')}${filename}`, { cache: 'no-store', signal });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res;
 }

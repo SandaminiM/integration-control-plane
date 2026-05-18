@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import type { JSONSchema } from '../components/SchemaConfigForm';
+import type { JSONSchema } from './schema';
 import type { SchemaConfigItem } from './configuration';
 
 export interface PrebuiltIntegration {
