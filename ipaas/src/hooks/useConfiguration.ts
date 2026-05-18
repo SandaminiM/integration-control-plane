@@ -61,7 +61,7 @@ export function useGetConfigMgt(orgHandler: string, projectId: string, component
   return useQuery({
     queryKey: ['configMgt', orgHandler, projectId, componentId, envId, versionId, commitHash],
     queryFn: () => fetchConfigMgt(orgHandler, projectId, componentId, envId, versionId, componentName, commitHash),
-    enabled: drawerOpen && !!orgHandler && !!projectId && !!componentId && !!envId && !!versionId && !!componentName && !!commitHash,
+    enabled: drawerOpen && !!orgHandler && !!projectId && !!componentId && !!envId && !!versionId && !!componentName,
     retry: false,
   });
 }

@@ -39,7 +39,7 @@ const TERMINAL_CONCLUSIONS = new Set(['success', 'failure', 'cancelled', 'timed_
 
 export function useComponentDeployment(orgHandler: string, orgUuid: string, componentId: string, versionId: string, environmentId: string, options?: { refetchInterval?: number | false | ((query: Query<GqlComponentDeployment | null>) => number | false) }) {
   return useQuery<GqlComponentDeployment | null, Error, GqlComponentDeployment | null>({
-    queryKey: ['componentDeployment', orgHandler, componentId, versionId, environmentId],
+    queryKey: ['componentDeployment', orgHandler, orgUuid, componentId, versionId, environmentId],
     queryFn: () => fetchComponentDeployment(orgHandler, orgUuid, componentId, versionId, environmentId),
     enabled: !!orgHandler && !!orgUuid && !!componentId && !!versionId && !!environmentId,
     retry: false,

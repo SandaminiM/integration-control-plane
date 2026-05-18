@@ -23,7 +23,7 @@ import type { CreateProjectInput, CreateMonoRepoProjectInput } from '../types/pr
 import { useOrgs } from './useOrg';
 
 function orgId(): number {
-  return window.API_CONFIG.asgardeoOrgNumericId ?? 0;
+  return window.API_CONFIG?.asgardeoOrgNumericId ?? 0;
 }
 
 export function useProjects() {
@@ -77,7 +77,7 @@ export function useProjectContributors(projectId: string) {
 export function useProjectComponentLabels(projectId: string) {
   const id = orgId();
   return useQuery({
-    queryKey: ['projectComponentLabels', projectId],
+    queryKey: ['projectComponentLabels', projectId, id],
     queryFn: () => fetchProjectComponentLabels(id, projectId),
     enabled: !!projectId && id > 0,
     staleTime: 5 * 60 * 1000,

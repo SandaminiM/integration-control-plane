@@ -53,7 +53,10 @@ export function useLifecycleHistory(apimId: string | undefined | null) {
 export function useChangeLifecycleState(apimId: string | null | undefined) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ action }: { action: string }) => changeLifecycleState(apimId!, action),
+    mutationFn: ({ action }: { action: string }) => {
+      if (!apimId) return Promise.reject(new Error('apimId is required'));
+      return changeLifecycleState(apimId, action);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['lifecycleState', apimId] });
       qc.invalidateQueries({ queryKey: ['lifecycleHistory', apimId] });

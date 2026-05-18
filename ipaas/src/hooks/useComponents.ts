@@ -112,8 +112,9 @@ export function useUpdateEndpoint() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { componentId: string; versionId: string; releaseId: string; endpointId: string; displayName: string; networkVisibilities: string[] }) => updateEndpoint(input),
-    onSuccess: () => {
+    onSuccess: (_data, input) => {
       qc.invalidateQueries({ queryKey: ['envEndpoints'] });
+      qc.invalidateQueries({ queryKey: ['componentEndpoints', input.componentId, input.versionId] });
     },
   });
 }
@@ -130,6 +131,7 @@ export function useGenerateComponentEndpoints() {
     mutationFn: (input: GenerateComponentEndpointsInput) => generateComponentEndpoints(input),
     onSuccess: (_data, input) => {
       qc.invalidateQueries({ queryKey: ['envEndpoints', input.componentId] });
+      qc.invalidateQueries({ queryKey: ['componentEndpoints', input.componentId, input.versionId] });
     },
   });
 }
