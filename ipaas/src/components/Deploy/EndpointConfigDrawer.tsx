@@ -18,7 +18,7 @@
 
 import { Alert, Box, Button, Checkbox, CircularProgress, Collapse, Divider, Drawer, FormControlLabel, IconButton, InputAdornment, MenuItem, Select, Stack, Switch, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, ArrowRight, Search, X } from '@wso2/oxygen-ui-icons-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useApiDefinition, useEnvEndpoints } from '../../hooks/useDeployments';
 import { useApimApi, useUpdateApimApi } from '../../hooks/useApim';
 import type { GqlEnvEndpoint } from '../../types/component';
