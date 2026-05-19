@@ -110,9 +110,8 @@ import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjec
 import { useComponents } from '../hooks/useComponents';
 import { useOrgs } from '../hooks/useOrg';
 import { SUPPORTED_DISPLAY_TYPES, GENERIC_SERVICE_TYPES } from '../constants/integrations';
-import { fetchOrgPermissions } from '../api/auth';
+import { useOrgPermissions } from '../hooks/useAuth';
 import { switchOrgToken } from '../auth/tokenManager';
-import { fetchOrgList } from '../api/org';
 import { mockNotifications } from '../mock-data/mockNotifications';
 import { useScope, useResource, resourceUrl, broaden, narrow, newProjectUrl, newComponentUrl, hasProject, hasComponent, type Resource } from '../nav';
 import { componentOverviewUrl, cookiePolicyUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, projectHomeUrl } from '../paths';
@@ -369,37 +368,29 @@ function AppLayoutInner(): JSX.Element {
     }
   }, [userId, scope]);
 
-  const orgPermsLoadedRef = useRef('');
+  const { data: orgPermsData, isError: isOrgPermsError } = useOrgPermissions(scope.org, userId, !isOidcUser);
   useEffect(() => {
-    if (!userId || !scope.org || orgPermsLoadedRef.current === scope.org) return;
-    orgPermsLoadedRef.current = scope.org;
     if (isOidcUser) {
       // OIDC users are authorized via Choreo STS — grant all ICP permissions locally
       setOrgPermissions(Object.values(Permissions));
-      return;
+    } else if (orgPermsData) {
+      setOrgPermissions(orgPermsData.permissionNames);
+    } else if (isOrgPermsError) {
+      setOrgPermissions([]);
     }
-    fetchOrgPermissions(scope.org, userId)
-      .then((data) => setOrgPermissions(data.permissionNames))
-      .catch(() => setOrgPermissions([]));
-  }, [scope.org, userId, isOidcUser, setOrgPermissions]);
+  }, [isOidcUser, orgPermsData, isOrgPermsError, setOrgPermissions]);
 
   // Recover org numeric ID if it was not saved during OIDC callback (e.g. old sessions)
   const [, setOrgIdVersion] = useState(0);
-  const orgIdFetchedRef = useRef(''); // tracks the org handle for which we last fetched
   useEffect(() => {
-    if (!isOidcUser || !userId || !scope.org || orgIdFetchedRef.current === scope.org) return;
-    orgIdFetchedRef.current = scope.org;
-    fetchOrgList()
-      .then((orgs) => {
-        const match = orgs.find((o) => o.handle === scope.org);
-        if (match && match.numericId > 0) {
-          window.API_CONFIG.asgardeoOrgNumericId = match.numericId;
-          localStorage.setItem('icp_org_numeric_id', String(match.numericId));
-          setOrgIdVersion((v) => v + 1); // trigger re-render so queries re-evaluate orgId()
-        }
-      })
-      .catch(() => {});
-  }, [isOidcUser, userId, scope.org]);
+    if (!isOidcUser || !userId || !scope.org || !orgsData.length) return;
+    const match = orgsData.find((o) => o.handle === scope.org);
+    if (match && match.numericId > 0 && window.API_CONFIG.asgardeoOrgNumericId !== match.numericId) {
+      window.API_CONFIG.asgardeoOrgNumericId = match.numericId;
+      localStorage.setItem('icp_org_numeric_id', String(match.numericId));
+      setOrgIdVersion((v) => v + 1); // trigger re-render so queries re-evaluate orgId()
+    }
+  }, [isOidcUser, userId, scope.org, orgsData]);
 
   // Find component UUID for permission checks
   const currentComponent = hasComponent(scope) ? components.find((c) => c.handler === scope.component) : undefined;
