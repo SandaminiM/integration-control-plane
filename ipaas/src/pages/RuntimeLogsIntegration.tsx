@@ -19,9 +19,13 @@
 import { CircularProgress, PageContent } from '@wso2/oxygen-ui';
 import { ScrollText } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, type JSX } from 'react';
-import { useOrgs, useProjectsByOrg, useComponentByHandler, useEnvironments, useAllEnvironments } from '../api/queries';
-import { useInfiniteComponentLogs, type ComponentLogsRequest } from '../api/logs';
-import { choreologgingComponentLogsApiUrl, choreologgingComponentGatewayLogsApiUrl } from '../config/api';
+import { useOrgs } from '../hooks/useOrg';
+import { useProjectsByOrg } from '../hooks/useProjects';
+import { useComponentByHandler } from '../hooks/useComponents';
+import { useEnvironments, useAllEnvironments } from '../hooks/useEnvironments';
+import { useInfiniteComponentLogs } from '../hooks/useLogs';
+import type { ComponentLogsRequest } from '../types/logs';
+import { choreologgingComponentLogsApiUrl, choreologgingComponentGatewayLogsApiUrl } from '../config/runtimeConfig';
 import { GENERIC_SERVICE_TYPES } from '../constants/integrations';
 import { AUTO_FETCH_INTERVAL, DEFAULT_DP_REGION, PAGE_SIZE } from '../utils/logs';
 import LogsFilters from '../components/Logs/LogsFilters';

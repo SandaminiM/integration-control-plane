@@ -19,9 +19,10 @@
 import { Autocomplete, Box, Button, Checkbox, CircularProgress, Collapse, Drawer, FormControlLabel, IconButton, MenuItem, Select, Stack, Tab, Tabs, TextField, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronUp, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState } from 'react';
-import { useComponentDeployment, useExecutionConfigs } from '../../api/queries';
-import { getOrgUuidFromToken } from '../../auth/tokenManager';
-import { useDeployDeploymentTrack } from '../../api/mutations';
+import { useComponentDeployment } from '../../hooks/useDeployments';
+import { useExecutionConfigs } from '../../hooks/useExecutions';
+import { useOrgUuid } from '../../hooks/useOrgUuid';
+import { useDeployDeploymentTrack } from '../../hooks/useDeployments';
 import { INTERVAL_UNITS, TIMEZONE_OPTIONS, CRON_FIELD_LABELS, type IntervalUnit, type CronField, intervalToCron, cronToInterval, parseCronParts, buildCronFromParts, describeCron, getTimezoneLabel } from '../../utils/cronUtils';
 
 interface ScheduleDialogProps {
@@ -52,7 +53,7 @@ export default function ScheduleDialog({ open, onClose, onSaveSuccess, onSaveErr
   const [allowConcurrency, setAllowConcurrency] = useState(false);
   const [retryCount, setRetryCount] = useState<string>('');
 
-  const orgUuid = getOrgUuidFromToken() ?? '';
+  const orgUuid = useOrgUuid() ?? '';
   const { data: deployment, isLoading: loadingDeployment } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, envId);
   const releaseId = deployment?.releaseId ?? '';
   const { data: existingConfigs, isLoading: loadingExecConfigs } = useExecutionConfigs(componentId, releaseId);

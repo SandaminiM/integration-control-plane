@@ -19,7 +19,7 @@
 import { Alert, Box, Button, CircularProgress, Drawer, IconButton, Link, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { Plus, Trash2, X } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
-import { useTriggerComponent } from '../../api/mutations';
+import { useTriggerComponent } from '../../hooks/useExecutions';
 
 export interface RunWithArgsDialogProps {
   open: boolean;

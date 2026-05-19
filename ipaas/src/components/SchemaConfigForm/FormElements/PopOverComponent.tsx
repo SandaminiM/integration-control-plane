@@ -19,7 +19,8 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { Box, Button, IconButton, Paper, Popover, Stack, Typography } from '@wso2/oxygen-ui';
 import { Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
-import { type BaseType, type JSONSchema, type LinkingInfo, generateArrayJsonPath, generateMapJsonPath, isBaseType } from '../schemaUtils';
+import type { BaseType, JSONSchema } from '../../../types/schema';
+import { type LinkingInfo, generateArrayJsonPath, generateMapJsonPath, isBaseType } from '../schemaUtils';
 import { AnyOfElement } from './AnyOfElement';
 import { ArrayElement } from './ArrayElement';
 import { BaseElement } from './BaseElement';

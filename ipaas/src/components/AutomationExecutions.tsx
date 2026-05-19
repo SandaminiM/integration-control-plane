@@ -20,7 +20,8 @@ import { Box, Button, CircularProgress, IconButton, ListingTable, TablePaginatio
 import { CheckCircle2, ChevronRight, XCircle } from '@wso2/oxygen-ui-icons-react';
 import { Fragment, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTaskExecutions, type TaskExecution } from '../api/queries';
+import { useTaskExecutions } from '../hooks/useExecutions';
+import type { TaskExecution } from '../types/executions';
 import ExecutionDrawer from './EnvironmentCard/ExecutionDrawer';
 import LogsDrawer from './EnvironmentCard/LogsDrawer';
 

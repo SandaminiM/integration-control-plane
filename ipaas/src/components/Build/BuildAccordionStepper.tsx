@@ -19,7 +19,7 @@
 import { Box, Button, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useEffect, useState } from 'react';
-import type { BuildRunLogs } from '../../api/builds';
+import type { BuildRunLogs } from '../../types/build';
 import { BUILD_STAGES, STEPPER_ICON_COL, STEPPER_ICON_PY, STEPPER_ICON_SIZE, STEPPER_LINE_BOTTOM_EXT, STEPPER_LINE_TOP } from '../../constants/build';
 import { buildLogText, getStepStatus } from '../../utils/build';
 import BuildLogViewer from '../BuildLogViewer';

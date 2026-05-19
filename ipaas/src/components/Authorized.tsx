@@ -19,7 +19,8 @@
 import type { ReactNode, JSX } from 'react';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { useScope, hasProject, hasComponent } from '../nav';
-import { useProject, useProjectByHandler, useProjects, useComponents } from '../api/queries';
+import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjects';
+import { useComponents } from '../hooks/useComponents';
 import { UUID_RE } from '../utils/string';
 
 interface AuthorizedProps {

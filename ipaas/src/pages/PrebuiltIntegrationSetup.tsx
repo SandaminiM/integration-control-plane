@@ -31,8 +31,8 @@ import { derivePrebuiltSlug } from '../utils/prebuilt';
 import { usePrebuiltIntegrationConfig } from '../contexts/PrebuiltIntegrationConfigContext';
 import type { ProjectScope } from '../nav';
 import { prebuiltIntegrationsUrl, prebuiltIntegrationDeployUrl } from '../paths';
-import type { PrebuiltIntegration } from '../types/samples';
-import type { SchemaConfigItem } from '../api/queries';
+import type { PrebuiltIntegration } from '../types/prebuilt';
+import type { SchemaConfigItem } from '../types/configuration';
 
 interface LocationState {
   integration?: PrebuiltIntegration;

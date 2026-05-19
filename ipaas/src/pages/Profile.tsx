@@ -21,7 +21,7 @@ import type { JSX } from 'react';
 import { Alert, Avatar, Box, Button, Card, CardContent, Chip, CircularProgress, Divider, IconButton, InputAdornment, InputLabel, OutlinedInput, Stack, Typography } from '@wso2/oxygen-ui';
 import { Eye, EyeOff } from '@wso2/oxygen-ui-icons-react';
 import { useAuth } from '../auth/AuthContext';
-import { useCurrentUser, useChangePassword } from '../api/authQueries';
+import { useCurrentUser, useChangePassword } from '../hooks/useAuth';
 
 function getInitials(name: string): string {
   return name

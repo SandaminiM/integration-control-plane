@@ -17,7 +17,7 @@
  */
 
 import type { JSX } from 'react';
-import type { LifecycleStateTransition } from '../../api/apim';
+import type { LifecycleStateTransition } from '../../types/apim';
 import { EVENT_TARGET } from '../../constants/lifecycle';
 import type { ApiState, BubbleStyle } from '../../types/lifecycle';
 

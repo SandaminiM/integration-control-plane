@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { type BaseType, type JSONSchema } from './schemaUtils';
+import type { BaseType, JSONSchema } from '../../types/schema';
 
 export type TomlValue = BaseType | TomlValue[] | { [key: string]: TomlValue };
 

@@ -16,8 +16,7 @@
  * under the License.
  */
 
-import { authenticatedFetch } from '../auth/tokenManager';
-import { apimBaseUrl, choreoDevopsApiUrl, governanceBaseUrl, insightsBaseUrl, subscriptionsApiUrl } from '../config/api';
+import { authenticatedFetch, getOrgUuidFromToken, refreshAccessToken } from '../auth/tokenManager';
 
 export interface HttpClient {
   get: <T>(path: string) => Promise<T>;
@@ -26,16 +25,34 @@ export interface HttpClient {
   delete: <T>(path: string, body?: unknown, headers?: Record<string, string>) => Promise<T>;
 }
 
+interface HttpClientOptions {
+  /** Called when a 403 is received.
+   * true - retry the original request,
+   * false - fall through to the standard error throw */
+  on403?: (res: Response) => Promise<boolean>;
+}
+
 // Factory to create HTTP clients for different services
-export function createHttpClient(getBaseUrl: () => string): HttpClient {
+export function createHttpClient(getBaseUrl: () => string, clientOptions?: HttpClientOptions): HttpClient {
   async function request<T>(path: string, options?: RequestInit): Promise<T> {
-    const res = await authenticatedFetch(`${getBaseUrl()}${path}`, {
+    const url = `${getBaseUrl()}${path}`;
+    const init: RequestInit = {
       ...options,
       headers: {
         ...(options?.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
         ...options?.headers,
       },
-    });
+    };
+
+    let res = await authenticatedFetch(url, init);
+
+    if (res.status === 403 && clientOptions?.on403) {
+      const shouldRetry = await clientOptions.on403(res);
+      if (shouldRetry) {
+        res = await authenticatedFetch(url, init);
+      }
+    }
+
     if (!res.ok) {
       const body = await res.text().catch(() => '');
       throw new Error(`HTTP ${res.status}: ${body || res.statusText}`);
@@ -54,12 +71,6 @@ export function createHttpClient(getBaseUrl: () => string): HttpClient {
 
 // HTTP Clients
 
-// Choreo DevOps API — CI/CD, deployments, container registries, cloud editor
-export const devopsClient = createHttpClient(choreoDevopsApiUrl);
-
-// Choreo Org API — org management, registration, validation
-export const orgClient = createHttpClient(() => window.API_CONFIG.choreoOrgApiUrl);
-
 // Auth service — users, roles, groups, permissions
 export const authClient = createHttpClient(() => window.API_CONFIG.authBaseUrl);
 
@@ -71,7 +82,7 @@ export const systemClient = createHttpClient(() => {
 });
 
 // APIM Publisher — API lifecycle, throttling, swagger
-export const apimClient = createHttpClient(apimBaseUrl);
+export const apimClient = createHttpClient(() => window.API_CONFIG.apimBaseUrl);
 
 // Observability — metrics and runtime logs
 export const obsClient = createHttpClient(() => {
@@ -80,17 +91,14 @@ export const obsClient = createHttpClient(() => {
   return base;
 });
 
-// Platform API — component-mgt, config-svc, config-mapping-svc, configuration-schema, config-mgt, proxy/deployer
-export const platformClient = createHttpClient(() => window.API_CONFIG.choreoBaseApiUrl);
+// Choreo Platform API — single client for all choreoBaseApiUrl services
+export const choreoClient = createHttpClient(() => window.API_CONFIG.choreoBaseApiUrl);
 
 // Subscriptions service
-export const subscriptionsClient = createHttpClient(subscriptionsApiUrl);
+export const subscriptionsClient = createHttpClient(() => window.API_CONFIG.subscriptionsApiUrl);
 
 // Choreo Insights — GraphQL-like query endpoint on a separate host
-export const insightsClient = createHttpClient(insightsBaseUrl);
-
-// Governance service
-export const governanceClient = createHttpClient(governanceBaseUrl);
+export const insightsClient = createHttpClient(() => `${window.API_CONFIG.insightsBaseUrl}/insights/1.0.0`);
 
 // AI Copilot data collector — feedback, data collection permissions
 export const copilotDatacollectorClient = createHttpClient(() => {
@@ -98,3 +106,43 @@ export const copilotDatacollectorClient = createHttpClient(() => {
   if (!base) throw new Error('Copilot datacollector URL is not configured');
   return base;
 });
+
+// Retry helpers — exported so api/ files can wrap specific calls without importing tokenManager directly.
+
+// On 403: if STS is configured and the token carries no org UUID (unscoped), refresh once and retry.
+export async function withStsRetry<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    const stsConfigured = !!window.API_CONFIG.stsTokenEndpoint && !!window.API_CONFIG.stsClientId;
+    if (err instanceof Error && err.message.startsWith('HTTP 403') && stsConfigured && !getOrgUuidFromToken()) {
+      await refreshAccessToken();
+      return fn();
+    }
+    throw err;
+  }
+}
+
+// On 403: parse the error body (embedded in the thrown message) to detect an APIM scope error
+// (code 900910 / "Scope validation"); if found, refresh the token and retry once.
+export async function withScopeRetry<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith('HTTP 403')) {
+      const body = err.message.replace(/^HTTP 403: /, '');
+      let isScopeError = false;
+      try {
+        const parsed = JSON.parse(body) as Record<string, unknown>;
+        isScopeError = parsed?.code === '900910' || String(parsed?.error_description ?? '').includes('Scope validation');
+      } catch {
+        /* not JSON */
+      }
+      if (isScopeError) {
+        await refreshAccessToken();
+        return fn();
+      }
+    }
+    throw err;
+  }
+}

@@ -16,60 +16,10 @@
  * under the License.
  */
 
-import { useInfiniteQuery } from '@tanstack/react-query';
 // logsApiUrl is a full URL passed by callers; split into origin + path for createHttpClient.
 // A static named client is deferred until callers are refactored (same pattern as alertingClient).
 import { createHttpClient } from './httpClients';
-
-export interface LogsRequest {
-  projectId: string;
-  componentIdList: string[];
-  environmentId: string;
-  environmentList: string;
-  logLevels: string[];
-  startTime: string;
-  endTime: string;
-  limit: number;
-  sort: 'asc' | 'desc';
-  region: string;
-  searchPhrase: string;
-}
-
-export interface ComponentLogsRequest {
-  componentId: string;
-  environmentId: string;
-  versionIdList: string[];
-  logLevels: string[];
-  startTime: string;
-  endTime: string;
-  limit: number;
-  sort: 'asc' | 'desc';
-  region: string;
-  searchPhrase: string;
-  regexPhrase: string;
-  logType?: string;
-}
-
-export interface LogRow {
-  timestamp: string;
-  level: string;
-  logLine: string;
-  class: string | null;
-  logFilePath: string | null;
-  appName: string | null;
-  module: string | null;
-  serviceType: string | null;
-  app: string | null;
-  deployment: string | null;
-  artifactContainer: string | null;
-  product: string | null;
-  icpRuntimeId: string | null;
-  logContext: unknown;
-  componentVersion: string;
-  componentVersionId: string;
-  gatewayCode: string | null;
-  statusCode: string | null;
-}
+import type { LogsRequest, ComponentLogsRequest, LogRow } from '../types/logs';
 
 interface Column {
   name: string;
@@ -121,38 +71,4 @@ export async function fetchLogs(req: LogsRequest, logsApiUrl: string): Promise<L
 
 export async function fetchComponentLogs(req: ComponentLogsRequest, logsApiUrl: string): Promise<LogRow[]> {
   return postLogs(logsApiUrl, req);
-}
-
-export function useInfiniteLogs(req: LogsRequest | null, refetchInterval: number | false = false, logsApiUrl?: string) {
-  return useInfiniteQuery({
-    queryKey: ['logs', req, logsApiUrl],
-    queryFn: async ({ pageParam }) => {
-      const pageReq = pageParam ? { ...req!, ...(req!.sort === 'desc' ? { endTime: pageParam } : { startTime: pageParam }) } : req!;
-      return fetchLogs(pageReq, logsApiUrl!);
-    },
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => {
-      if (!req || lastPage.length < req.limit) return undefined;
-      return lastPage[lastPage.length - 1]?.timestamp;
-    },
-    enabled: !!req && !!logsApiUrl,
-    refetchInterval,
-  });
-}
-
-export function useInfiniteComponentLogs(req: ComponentLogsRequest | null, refetchInterval: number | false = false, logsApiUrl?: string) {
-  return useInfiniteQuery({
-    queryKey: ['component-logs', req, logsApiUrl],
-    queryFn: async ({ pageParam }) => {
-      const pageReq = pageParam ? { ...req!, ...(req!.sort === 'desc' ? { endTime: pageParam } : { startTime: pageParam }) } : req!;
-      return fetchComponentLogs(pageReq, logsApiUrl!);
-    },
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => {
-      if (!req || lastPage.length < req.limit) return undefined;
-      return lastPage[lastPage.length - 1]?.timestamp;
-    },
-    enabled: !!req && !!logsApiUrl,
-    refetchInterval,
-  });
 }

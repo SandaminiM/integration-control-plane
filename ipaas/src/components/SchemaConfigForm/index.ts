@@ -18,6 +18,7 @@
 
 export { ConfigForm } from './ConfigForm';
 export type { ConfigFormProps } from './ConfigForm';
-export type { BaseType, JSONSchema, LinkingInfo, SchemaAtLevel } from './schemaUtils';
+export type { BaseType, JSONSchema } from '../../types/schema';
+export type { LinkingInfo, SchemaAtLevel } from './schemaUtils';
 export { getRequiredPathsAtLevel } from './schemaUtils';
 export { parseConfigToml, filterTomlValuesBySchema, getAllSchemaKeys, isValidTomlFile } from './tomlUtils';

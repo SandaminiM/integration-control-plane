@@ -20,8 +20,10 @@ import { Box, Button, CircularProgress, Collapse, Divider, IconButton, Stack, St
 import { ChevronDown, ChevronUp, GitCommit, List } from '@wso2/oxygen-ui-icons-react';
 import { InProgressIcon, SuccessIcon, QueuedIcon, FailedIcon } from './StatusIcons';
 import React, { useEffect, useRef, useState } from 'react';
-import { fetchBuildRunLogs, type BuildRunLogs } from '../api/builds';
-import { useDeploymentStatus, type GqlCommit } from '../api/queries';
+import type { BuildRunLogs } from '../types/build';
+import { useDeploymentStatus } from '../hooks/useDeployments';
+import { useBuildRunLogs } from '../hooks/useBuilds';
+import type { GqlCommit } from '../types/repository';
 
 interface BuildCardProps {
   componentId: string;
@@ -126,17 +128,7 @@ export default function BuildCard({ componentId, versionId, orgHandler, projectI
   const lastBuild = deployments[0] ?? null;
 
   const [showLogs, setShowLogs] = useState(false);
-  const [logs, setLogs] = useState<BuildRunLogs | null | undefined>(undefined);
-  const [logsLoading, setLogsLoading] = useState(false);
   const logsRef = useRef<HTMLPreElement>(null);
-  const mountedRef = useRef(true);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
 
   // Collapse when build is successfully completed; expand for failed or in-progress. User can override.
   const isSuccess = !!lastBuild && lastBuild.status === 'completed' && lastBuild.conclusion === 'success';
@@ -153,39 +145,14 @@ export default function BuildCard({ componentId, versionId, orgHandler, projectI
   // Reset log view when build changes
   useEffect(() => {
     setShowLogs(false);
-    setLogs(undefined);
   }, [lastBuild?.id]);
 
   const runId = lastBuild?.buildRef ?? String(lastBuild?.id ?? '');
   const isInProgress = lastBuild?.status === 'in_progress';
 
   // Fetch logs when expanded (for stepper + log view), poll every 5s while in progress
-  useEffect(() => {
-    if (!expanded || !runId || !orgHandler || !projectId || !componentId) return;
-
-    let cancelled = false;
-    if (showLogs && logs === undefined) setLogsLoading(true);
-
-    const load = async () => {
-      const data = await fetchBuildRunLogs(orgHandler, projectId, componentId, runId);
-      if (cancelled || !mountedRef.current) return;
-      setLogs(data);
-      setLogsLoading(false);
-    };
-
-    let interval: ReturnType<typeof setInterval> | undefined;
-
-    load();
-    if (isInProgress) {
-      interval = setInterval(load, 5000);
-    }
-
-    return () => {
-      cancelled = true;
-      if (interval !== undefined) clearInterval(interval);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expanded, runId, orgHandler, projectId, componentId, isInProgress]);
+  const { data: logs, isLoading: queryLoading } = useBuildRunLogs(orgHandler, projectId, componentId, runId, expanded, isInProgress);
+  const logsLoading = showLogs && logs === undefined && queryLoading;
 
   // Scroll logs to bottom on update
   useEffect(() => {

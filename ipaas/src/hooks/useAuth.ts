@@ -17,58 +17,88 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authGet, authPost, authPut, authDelete } from './auth';
-import type { User, Role, RoleDetail, Group, GroupRoleMapping, GroupUser, PermissionsResponse, RoleGroupMapping } from './auth';
+import {
+  fetchCurrentUser,
+  fetchUsers,
+  changePassword,
+  forceChangePassword,
+  resetPassword,
+  revokeUserTokens,
+  unlockAccount,
+  createUser,
+  updateUser,
+  updateUserGroups,
+  deleteUser,
+  fetchRoles,
+  fetchRoleDetail,
+  fetchAllPermissions,
+  createRole,
+  updateRole,
+  deleteRole,
+  fetchRoleGroups,
+  fetchGroups,
+  createGroup,
+  updateGroup,
+  deleteGroup,
+  fetchGroupRoles,
+  fetchGroupUsers,
+  addRolesToGroup,
+  removeRoleFromGroup,
+  addUsersToGroup,
+  removeUserFromGroup,
+} from '../api/auth';
+
+// ── Users ──
 
 export function useCurrentUser(orgHandler: string, userId: string) {
   return useQuery({
     queryKey: ['currentUser', orgHandler, userId],
-    queryFn: () => authGet<User>(`/orgs/${orgHandler}/users/${userId}`),
+    queryFn: () => fetchCurrentUser(orgHandler, userId),
     enabled: !!userId,
   });
 }
 
 export function useChangePassword() {
   return useMutation({
-    mutationFn: (input: { currentPassword: string; newPassword: string }) => authPost<{ message: string }>('/change-password', input),
+    mutationFn: changePassword,
   });
 }
 
 export function useForceChangePassword() {
   return useMutation({
-    mutationFn: (input: { newPassword: string }) => authPost<{ message: string }>('/force-change-password', input),
+    mutationFn: forceChangePassword,
   });
 }
 
 export function useResetPassword(orgHandler: string) {
   return useMutation({
-    mutationFn: (userId: string) => authPost<{ password: string; message: string }>(`/orgs/${orgHandler}/users/${userId}/reset-password`, {}),
+    mutationFn: (userId: string) => resetPassword(orgHandler, userId),
   });
 }
 
 export function useRevokeUserTokens(orgHandler: string) {
   return useMutation({
-    mutationFn: (userId: string) => authPost<{ message: string }>(`/orgs/${orgHandler}/users/${userId}/revoke-tokens`, {}),
+    mutationFn: (userId: string) => revokeUserTokens(orgHandler, userId),
   });
 }
 
 export function useUnlockAccount(orgHandler: string) {
   return useMutation({
-    mutationFn: (userId: string) => authPost<{ message: string }>(`/orgs/${orgHandler}/users/${userId}/unlock-account`, {}),
+    mutationFn: (userId: string) => unlockAccount(orgHandler, userId),
   });
 }
 
 export function useUsers(orgHandler: string) {
   return useQuery({
     queryKey: ['users', orgHandler],
-    queryFn: () => authGet<{ users: User[]; count: number }>(`/orgs/${orgHandler}/users`).then((d) => d.users),
+    queryFn: () => fetchUsers(orgHandler),
   });
 }
 
 export function useCreateUser(orgHandler: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { username: string; displayName: string; password: string }) => authPost(`/orgs/${orgHandler}/users`, input),
+    mutationFn: (input: { username: string; displayName: string; password: string }) => createUser(orgHandler, input),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users', orgHandler] }),
   });
 }
@@ -76,7 +106,7 @@ export function useCreateUser(orgHandler: string) {
 export function useUpdateUser(orgHandler: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { userId: string; displayName: string; groupIds: string[] }) => authPut(`/orgs/${orgHandler}/users/${input.userId}`, { displayName: input.displayName, groupIds: input.groupIds }),
+    mutationFn: (input: { userId: string; displayName: string; groupIds: string[] }) => updateUser(orgHandler, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['users', orgHandler] });
       qc.invalidateQueries({ queryKey: ['groupUsers'] });
@@ -87,7 +117,7 @@ export function useUpdateUser(orgHandler: string) {
 export function useUpdateUserGroups(orgHandler: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { userId: string; groupIds: string[] }) => authPut(`/orgs/${orgHandler}/users/${input.userId}/groups`, { groupIds: input.groupIds }),
+    mutationFn: (input: { userId: string; groupIds: string[] }) => updateUserGroups(orgHandler, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['users', orgHandler] });
       qc.invalidateQueries({ queryKey: ['groupUsers'] });
@@ -98,7 +128,7 @@ export function useUpdateUserGroups(orgHandler: string) {
 export function useDeleteUser(orgHandler: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (userId: string) => authDelete(`/orgs/${orgHandler}/users/${userId}`),
+    mutationFn: (userId: string) => deleteUser(orgHandler, userId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users', orgHandler] }),
   });
 }
@@ -106,26 +136,16 @@ export function useDeleteUser(orgHandler: string) {
 // ── Roles ──
 
 export function useRoles(orgHandler: string, projectId?: string, integrationId?: string) {
-  const queryParams = new URLSearchParams();
-  if (projectId) queryParams.append('projectId', projectId);
-  if (integrationId) queryParams.append('integrationId', integrationId);
-  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-
   return useQuery({
     queryKey: ['roles', orgHandler, projectId, integrationId],
-    queryFn: () => authGet<Role[]>(`/orgs/${orgHandler}/roles${queryString}`),
+    queryFn: () => fetchRoles(orgHandler, projectId, integrationId),
   });
 }
 
 export function useRoleDetail(orgHandler: string, roleId: string, projectId?: string, integrationId?: string) {
-  const queryParams = new URLSearchParams();
-  if (projectId) queryParams.append('projectId', projectId);
-  if (integrationId) queryParams.append('integrationId', integrationId);
-  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-
   return useQuery({
     queryKey: ['roleDetail', orgHandler, roleId, projectId, integrationId],
-    queryFn: () => authGet<RoleDetail>(`/orgs/${orgHandler}/roles/${roleId}${queryString}`),
+    queryFn: () => fetchRoleDetail(orgHandler, roleId, projectId, integrationId),
     enabled: !!roleId,
   });
 }
@@ -133,14 +153,14 @@ export function useRoleDetail(orgHandler: string, roleId: string, projectId?: st
 export function useAllPermissions() {
   return useQuery({
     queryKey: ['permissions'],
-    queryFn: () => authGet<PermissionsResponse>('/permissions'),
+    queryFn: fetchAllPermissions,
   });
 }
 
 export function useCreateRole(orgHandler: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { roleName: string; description: string; permissionIds: string[] }) => authPost(`/orgs/${orgHandler}/roles`, input),
+    mutationFn: (input: { roleName: string; description: string; permissionIds: string[] }) => createRole(orgHandler, input),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['roles', orgHandler] }),
   });
 }
@@ -148,8 +168,7 @@ export function useCreateRole(orgHandler: string) {
 export function useUpdateRole(orgHandler: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { roleId: string; roleName: string; description: string; permissionIds: string[] }) =>
-      authPut(`/orgs/${orgHandler}/roles/${input.roleId}`, { roleName: input.roleName, description: input.description, permissionIds: input.permissionIds }),
+    mutationFn: (input: { roleId: string; roleName: string; description: string; permissionIds: string[] }) => updateRole(orgHandler, input),
     onSuccess: (_, input) => {
       qc.invalidateQueries({ queryKey: ['roles', orgHandler] });
       qc.invalidateQueries({ queryKey: ['roleDetail', orgHandler, input.roleId] });
@@ -160,20 +179,15 @@ export function useUpdateRole(orgHandler: string) {
 export function useDeleteRole(orgHandler: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (roleId: string) => authDelete(`/orgs/${orgHandler}/roles/${roleId}`),
+    mutationFn: (roleId: string) => deleteRole(orgHandler, roleId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['roles', orgHandler] }),
   });
 }
 
 export function useRoleGroups(orgHandler: string, roleId: string, projectId?: string, integrationId?: string) {
-  const queryParams = new URLSearchParams();
-  if (projectId) queryParams.append('projectId', projectId);
-  if (integrationId) queryParams.append('integrationId', integrationId);
-  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-
   return useQuery({
     queryKey: ['roleGroups', orgHandler, roleId, projectId, integrationId],
-    queryFn: () => authGet<{ mappings: RoleGroupMapping[] }>(`/orgs/${orgHandler}/roles/${roleId}/groups${queryString}`).then((d) => d.mappings ?? []),
+    queryFn: () => fetchRoleGroups(orgHandler, roleId, projectId, integrationId),
     enabled: !!roleId,
   });
 }
@@ -181,21 +195,16 @@ export function useRoleGroups(orgHandler: string, roleId: string, projectId?: st
 // ── Groups ──
 
 export function useGroups(orgHandler: string, projectId?: string, integrationId?: string) {
-  const queryParams = new URLSearchParams();
-  if (projectId) queryParams.append('projectId', projectId);
-  if (integrationId) queryParams.append('integrationId', integrationId);
-  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-
   return useQuery({
     queryKey: ['groups', orgHandler, projectId, integrationId],
-    queryFn: () => authGet<Group[]>(`/orgs/${orgHandler}/groups${queryString}`),
+    queryFn: () => fetchGroups(orgHandler, projectId, integrationId),
   });
 }
 
 export function useCreateGroup(orgHandler: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { groupName: string; description: string }) => authPost(`/orgs/${orgHandler}/groups`, input),
+    mutationFn: (input: { groupName: string; description: string }) => createGroup(orgHandler, input),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['groups', orgHandler] }),
   });
 }
@@ -203,7 +212,7 @@ export function useCreateGroup(orgHandler: string) {
 export function useUpdateGroup(orgHandler: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { groupId: string; groupName: string; description: string }) => authPut(`/orgs/${orgHandler}/groups/${input.groupId}`, { groupName: input.groupName, description: input.description }),
+    mutationFn: (input: { groupId: string; groupName: string; description: string }) => updateGroup(orgHandler, input),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['groups', orgHandler] }),
   });
 }
@@ -211,20 +220,15 @@ export function useUpdateGroup(orgHandler: string) {
 export function useDeleteGroup(orgHandler: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (groupId: string) => authDelete(`/orgs/${orgHandler}/groups/${groupId}`),
+    mutationFn: (groupId: string) => deleteGroup(orgHandler, groupId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['groups', orgHandler] }),
   });
 }
 
 export function useGroupRoles(orgHandler: string, groupId: string, projectId?: string, integrationId?: string) {
-  const queryParams = new URLSearchParams();
-  if (projectId) queryParams.append('projectId', projectId);
-  if (integrationId) queryParams.append('integrationId', integrationId);
-  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-
   return useQuery({
     queryKey: ['groupRoles', orgHandler, groupId, projectId, integrationId],
-    queryFn: () => authGet<{ mappings: GroupRoleMapping[] }>(`/orgs/${orgHandler}/groups/${groupId}/roles${queryString}`).then((d) => d.mappings ?? []),
+    queryFn: () => fetchGroupRoles(orgHandler, groupId, projectId, integrationId),
     enabled: !!groupId,
   });
 }
@@ -232,7 +236,7 @@ export function useGroupRoles(orgHandler: string, groupId: string, projectId?: s
 export function useGroupUsers(orgHandler: string, groupId: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['groupUsers', orgHandler, groupId],
-    queryFn: () => authGet<{ users: GroupUser[] }>(`/orgs/${orgHandler}/groups/${groupId}/users`).then((d) => d.users ?? []),
+    queryFn: () => fetchGroupUsers(orgHandler, groupId),
     enabled: !!groupId && (options?.enabled ?? true),
   });
 }
@@ -240,15 +244,7 @@ export function useGroupUsers(orgHandler: string, groupId: string, options?: { e
 export function useAddRolesToGroup(orgHandler: string, projectId?: string, componentId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { groupId: string; roleIds: string[]; envUuid?: string }) => {
-      const body = {
-        roleIds: input.roleIds,
-        envUuid: input.envUuid,
-        ...(projectId ? { projectUuid: projectId } : {}),
-        ...(componentId ? { integrationUuid: componentId } : {}),
-      };
-      return authPost(`/orgs/${orgHandler}/groups/${input.groupId}/roles`, body);
-    },
+    mutationFn: (input: { groupId: string; roleIds: string[]; envUuid?: string }) => addRolesToGroup(orgHandler, input, projectId, componentId),
     onSuccess: (_, input) => {
       qc.invalidateQueries({ queryKey: ['groupRoles', orgHandler, input.groupId] });
       qc.invalidateQueries({ queryKey: ['roleGroups'] });
@@ -259,9 +255,7 @@ export function useAddRolesToGroup(orgHandler: string, projectId?: string, compo
 export function useRemoveRoleFromGroup(orgHandler: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { groupId: string; mappingId: number }) => {
-      return authDelete(`/orgs/${orgHandler}/groups/${input.groupId}/roles/${input.mappingId}`);
-    },
+    mutationFn: (input: { groupId: string; mappingId: number }) => removeRoleFromGroup(orgHandler, input),
     onSuccess: (_, input) => {
       qc.invalidateQueries({ queryKey: ['groupRoles', orgHandler, input.groupId] });
       qc.invalidateQueries({ queryKey: ['roleGroups'] });
@@ -272,7 +266,7 @@ export function useRemoveRoleFromGroup(orgHandler: string) {
 export function useAddUsersToGroup(orgHandler: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { groupId: string; userIds: string[] }) => authPost(`/orgs/${orgHandler}/groups/${input.groupId}/users`, { userIds: input.userIds }),
+    mutationFn: (input: { groupId: string; userIds: string[] }) => addUsersToGroup(orgHandler, input),
     onSuccess: (_, input) => {
       qc.invalidateQueries({ queryKey: ['groupUsers', orgHandler, input.groupId] });
       qc.invalidateQueries({ queryKey: ['users', orgHandler] });
@@ -283,7 +277,7 @@ export function useAddUsersToGroup(orgHandler: string) {
 export function useRemoveUserFromGroup(orgHandler: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { groupId: string; userId: string }) => authDelete(`/orgs/${orgHandler}/groups/${input.groupId}/users/${input.userId}`),
+    mutationFn: (input: { groupId: string; userId: string }) => removeUserFromGroup(orgHandler, input),
     onSuccess: (_, input) => {
       qc.invalidateQueries({ queryKey: ['groupUsers', orgHandler, input.groupId] });
       qc.invalidateQueries({ queryKey: ['users', orgHandler] });

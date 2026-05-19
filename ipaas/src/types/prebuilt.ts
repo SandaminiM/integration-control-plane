@@ -16,9 +16,22 @@
  * under the License.
  */
 
-import type { PrebuiltIntegration } from './samples';
-import type { JSONSchema } from '../components/SchemaConfigForm';
-import type { SchemaConfigItem } from '../api/queries';
+import type { JSONSchema } from './schema';
+import type { SchemaConfigItem } from './configuration';
+
+export interface PrebuiltIntegration {
+  displayName: string;
+  description: string;
+  applications: string[];
+  bidirectional: boolean;
+  componentType: string;
+  buildPack: string;
+  repositoryUrl: string;
+  branch?: string;
+  componentPath: string;
+  tags: string[];
+  imageUrl: string;
+}
 
 export interface PrebuiltIntegrationsData {
   prebuiltIntegrations: PrebuiltIntegration[];

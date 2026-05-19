@@ -18,9 +18,9 @@
 
 import { Alert, Box, Chip, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Check, Copy } from '@wso2/oxygen-ui-icons-react';
-import { useEffect, useRef, useState } from 'react';
-import { fetchBuildLogs, type BuildRunLogs } from '../../api/builds';
-import type { GqlDeploymentStatus } from '../../api/queries';
+import { useState } from 'react';
+import { useBuildLogs } from '../../hooks/useBuilds';
+import type { GqlDeploymentStatus } from '../../types/deployment';
 import { BUILD_STAGES } from '../../constants/build';
 import { formatBuildDate, getStepStatus } from '../../utils/build';
 import BuildAccordionStepper from './BuildAccordionStepper';
@@ -33,52 +33,16 @@ interface BuildDetailsProps {
 }
 
 export default function BuildDetails({ componentId, versionId, build, onLogsToggle }: BuildDetailsProps) {
-  const [logs, setLogs] = useState<BuildRunLogs | null>(null);
-  const [logsLoading, setLogsLoading] = useState(true);
   const [buildIdCopied, setBuildIdCopied] = useState(false);
-  const mountedRef = useRef(true);
+  const workflowName = build.buildRef ?? String(build.id);
+  const isInProgress = build.status === 'in_progress';
+  const { data: logs = null, isLoading: logsLoading } = useBuildLogs(componentId, versionId, workflowName, isInProgress);
 
   const handleCopyBuildId = () => {
     void navigator.clipboard.writeText(String(build.id));
     setBuildIdCopied(true);
     setTimeout(() => setBuildIdCopied(false), 1500);
   };
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  const workflowName = build.buildRef ?? String(build.id);
-  const isInProgress = build.status === 'in_progress';
-
-  useEffect(() => {
-    if (!workflowName || !componentId || !versionId) return;
-
-    let cancelled = false;
-    setLogs(null);
-    setLogsLoading(true);
-
-    const load = async () => {
-      const data = await fetchBuildLogs(componentId, versionId, workflowName);
-      if (cancelled || !mountedRef.current) return;
-      setLogs(data);
-      setLogsLoading(false);
-    };
-
-    let interval: ReturnType<typeof setInterval> | undefined;
-    load();
-    if (isInProgress) {
-      interval = setInterval(load, 5000);
-    }
-
-    return () => {
-      cancelled = true;
-      if (interval !== undefined) clearInterval(interval);
-    };
-  }, [componentId, versionId, workflowName, isInProgress]);
 
   return (
     <Stack gap={2}>

@@ -18,9 +18,9 @@
 
 import { Autocomplete, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { useEffect, useState } from 'react';
-import { type GqlComponentDetail } from '../api/queries';
-import { useProjectComponentLabels } from '../api/queries';
-import { useUpdateComponent } from '../api/mutations';
+import type { GqlComponentDetail } from '../types/component';
+import { useProjectComponentLabels } from '../hooks/useProjects';
+import { useUpdateComponent } from '../hooks/useComponents';
 
 const LABEL_OPTIONS = [
   'Business Intelligence/Analytics',

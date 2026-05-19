@@ -19,7 +19,7 @@
 import { Box, Chip, Collapse, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Building2, Check, ChevronDown, ChevronUp, Copy, Folder, Globe, Pencil, Settings } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useState } from 'react';
-import type { GqlEnvEndpoint } from '../../api/queries';
+import type { GqlEnvEndpoint } from '../../types/component';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const VISIBILITY_OPTS = [

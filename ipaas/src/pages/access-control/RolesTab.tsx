@@ -24,9 +24,9 @@ import SearchField from '../../components/SearchField';
 import { useAccessControl } from '../../contexts/AccessControlContext';
 import { Permissions } from '../../constants/permissions';
 import { orgRoleDetailUrl, projectRoleDetailUrl, componentRoleDetailUrl, newOrgRoleUrl } from '../../paths';
-import { useRoles, useDeleteRole, useRoleGroups, useUsers } from '../../api/authQueries';
-import { useComponentByHandler } from '../../api/queries';
-import type { Role } from '../../api/auth';
+import { useRoles, useDeleteRole, useRoleGroups, useUsers } from '../../hooks/useAuth';
+import { useComponentByHandler } from '../../hooks/useComponents';
+import type { Role } from '../../types/auth';
 import { Loading } from './shared';
 import { useFiltered } from './utils';
 

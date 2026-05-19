@@ -29,16 +29,10 @@ export interface Sample {
   branch?: string;
 }
 
-export interface PrebuiltIntegration {
-  displayName: string;
-  description: string;
-  applications: string[];
-  bidirectional: boolean;
-  componentType: string;
-  buildPack: string;
-  repositoryUrl: string;
-  branch?: string;
-  componentPath: string;
-  tags: string[];
-  imageUrl: string;
+export interface SamplesData {
+  samples: Sample[];
+  featuredSamples: Sample[];
+  uniqueTypes: string[];
+  uniqueBuildPacks: string[];
+  uniqueTags: string[];
 }

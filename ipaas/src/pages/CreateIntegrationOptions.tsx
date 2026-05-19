@@ -20,9 +20,10 @@ import { Alert, Box, Button, Card, CardContent, Chip, CircularProgress, IconButt
 import { ArrowLeft, ArrowRight, GitHub, GitLab, Bitbucket } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
-import { useCreateComponent } from '../api/mutations';
-import { useChoreoSampleImages } from '../api/queries';
-import { getOrgUuidFromToken, generateAndSaveGitHubState, validateAndClearGitHubState } from '../auth/tokenManager';
+import { useCreateComponent } from '../hooks/useComponents';
+import { useChoreoSampleImages } from '../hooks/useRepository';
+import { generateAndSaveGitHubState, validateAndClearGitHubState } from '../auth/tokenManager';
+import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useAuth } from '../auth/AuthContext';
 import IDEMockup from '../components/IDEMockup/IDEMockup';
 import PillTabs from '../components/PillTabs';
@@ -46,7 +47,7 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
   const navigate = useNavigate();
   const { userId } = useAuth();
   const { projectId } = useProjectId(scope.project);
-  const orgUuid = getOrgUuidFromToken() ?? '';
+  const orgUuid = useOrgUuid() ?? '';
   const { data: samplesData, isLoading: samplesLoading, isError: samplesError } = useSamples();
   const { data: prebuiltData, isLoading: prebuiltLoading, isError: prebuiltError } = usePrebuiltIntegrations();
 

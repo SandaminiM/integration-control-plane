@@ -19,7 +19,7 @@
 import { Box, Drawer, IconButton, Stack, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import type { LifecycleHistory } from '../../api/apim';
+import type { LifecycleHistory } from '../../types/apim';
 import { getAge } from '../../utils/time';
 
 interface LifecycleHistoryDrawerProps {

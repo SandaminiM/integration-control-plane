@@ -17,7 +17,8 @@
  */
 
 import type { Dispatch, SetStateAction } from 'react';
-import { type BaseType, type JSONSchema, type LinkingInfo, generateArrayJsonPath, generateMapJsonPath, isBaseType } from '../schemaUtils';
+import type { BaseType, JSONSchema } from '../../../types/schema';
+import { type LinkingInfo, generateArrayJsonPath, generateMapJsonPath, isBaseType } from '../schemaUtils';
 import { AnyOfElement } from './AnyOfElement';
 import { ArrayElement } from './ArrayElement';
 import { BaseElement } from './BaseElement';

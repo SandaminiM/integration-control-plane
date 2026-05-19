@@ -17,7 +17,7 @@
  */
 
 import { useContext, useRef, useState } from 'react';
-import { useComponentByHandler } from '../api/queries';
+import { useComponentByHandler } from './useComponents';
 import { getAiCopilotAnswer } from '../api/copilot';
 import { COPILOT_CONNECTION_ERROR, COPILOT_CONNECTION_URL_ERROR, COPILOT_PROCESSING_ERROR } from '../constants/copilot';
 import { CopilotContext } from '../contexts/CopilotContext';

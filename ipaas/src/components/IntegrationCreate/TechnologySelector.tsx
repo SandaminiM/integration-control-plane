@@ -18,7 +18,7 @@
 
 import { Box, Card, CardContent, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
-import type { DetectedMode } from '../../api/queries';
+import type { DetectedMode } from '../../types/repository';
 import { TECH_OPTIONS } from '../../constants/import';
 
 interface TechnologySelectorProps {

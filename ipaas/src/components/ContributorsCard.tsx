@@ -18,7 +18,7 @@
 
 import { Avatar, Card, CardContent, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Info, Users } from '@wso2/oxygen-ui-icons-react';
-import { useProjectContributors } from '../api/queries';
+import { useProjectContributors } from '../hooks/useProjects';
 import type { JSX } from 'react';
 
 export default function ContributorsCard({ projectId }: { projectId: string }): JSX.Element | null {

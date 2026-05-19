@@ -19,7 +19,7 @@
 import { Box, CircularProgress, Divider, Drawer, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { CheckCircle2, Clock, GitCommitHorizontal, User, X, XCircle } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import { useReleaseMgtDeployments } from '../../../api/queries';
+import { useReleaseMgtDeployments } from '../../../hooks/useDeployments';
 import { formatDistanceToNow } from '../../../utils/time';
 
 const drawerSx = { '& .MuiDrawer-paper': { width: 480, p: 0, top: { xs: '56px', sm: '64px' }, height: 'auto', bottom: 0 } };

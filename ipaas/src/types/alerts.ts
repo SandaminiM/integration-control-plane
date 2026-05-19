@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import type { GqlEnvironment } from '../api/queries';
+import type { GqlEnvironment } from './environment';
 import type { AlertComponentType, AlertTypeConstants, AlertTypes } from '../constants/alerts';
 
 export interface AlertTypeOption {

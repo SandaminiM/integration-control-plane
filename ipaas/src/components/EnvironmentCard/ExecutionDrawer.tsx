@@ -20,8 +20,9 @@ import { Alert, Box, Button, Checkbox, CircularProgress, Divider, Drawer, FormCo
 import { ArrowLeft, CheckCircle2, Copy, Plus, RefreshCcw, Search, Trash2, X, XCircle } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useExecutionArguments, useExecutionLogs, type TaskExecution } from '../../api/queries';
-import { useTriggerComponent } from '../../api/mutations';
+import { useExecutionArguments, useExecutionLogs } from '../../hooks/useExecutions';
+import type { TaskExecution } from '../../types/executions';
+import { useTriggerComponent } from '../../hooks/useExecutions';
 
 interface ExecutionDrawerProps {
   execution: TaskExecution | null;

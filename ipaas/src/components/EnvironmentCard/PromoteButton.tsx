@@ -19,9 +19,9 @@
 import { Button, Tooltip } from '@wso2/oxygen-ui';
 import { ArrowDown } from '@wso2/oxygen-ui-icons-react';
 import type { ReactNode } from 'react';
-import { useComponentDeployment } from '../../api/queries';
-import { usePromote } from '../../api/mutations';
-import { getOrgUuidFromToken } from '../../auth/tokenManager';
+import { useComponentDeployment } from '../../hooks/useDeployments';
+import { usePromote } from '../../hooks/useDeployments';
+import { useOrgUuid } from '../../hooks/useOrgUuid';
 import Authorized from '../Authorized';
 import { Permissions } from '../../constants/permissions';
 
@@ -38,7 +38,7 @@ interface PromoteButtonProps {
 }
 
 export default function PromoteButton({ orgHandler, componentId, versionId, deploymentPipelineId, sourceEnvId, targetEnvId, icon, onPromoteStarted, onPromoteSettled }: PromoteButtonProps) {
-  const orgUuid = getOrgUuidFromToken() ?? '';
+  const orgUuid = useOrgUuid() ?? '';
   const { data: sourceDeployment, isLoading: sourceLoading } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, sourceEnvId);
   const { data: targetDeployment, isLoading: targetLoading } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, targetEnvId);
   const promote = usePromote();

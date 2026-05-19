@@ -17,10 +17,9 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchSamples, type SamplesData } from '../api/samples';
+import { fetchSamples } from '../api/samples';
+import type { SamplesData } from '../types/samples';
 import { ALLOWED_SAMPLE_TYPES, normalizeComponentType } from '../constants/integrations';
-
-export type { SamplesData };
 
 const DEFAULT_SAMPLES_URL = 'https://raw.githubusercontent.com/wso2/integration-samples/main/.metadata/samples.json';
 

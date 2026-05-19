@@ -106,7 +106,9 @@ import {
   X,
 } from '@wso2/oxygen-ui-icons-react';
 import FeaturePreviewModal from '../components/FeaturePreview/FeaturePreviewModal';
-import { useProject, useProjectByHandler, useProjects, useComponents, useOrgs } from '../api/queries';
+import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjects';
+import { useComponents } from '../hooks/useComponents';
+import { useOrgs } from '../hooks/useOrg';
 import { SUPPORTED_DISPLAY_TYPES, GENERIC_SERVICE_TYPES } from '../constants/integrations';
 import { fetchOrgPermissions } from '../api/auth';
 import { switchOrgToken } from '../auth/tokenManager';
@@ -232,7 +234,7 @@ function AppLayoutInner(): JSX.Element {
       if (rest.startsWith('admin/audit-logs')) return 'org-audit-logs';
       if (rest.startsWith('admin/approvals')) return 'org-approvals';
       if (rest.startsWith('admin/certificates')) return 'org-certificates';
-      if (rest.startsWith('settings/access-control')) return 'org-settings';
+      if (rest.startsWith('settings')) return 'org-settings';
       return 'overview';
     }
     if (!hasComponent(scope)) {
@@ -422,10 +424,6 @@ function AppLayoutInner(): JSX.Element {
         return 'build';
       case 'deploy':
         return hasComponent(targetScope) ? 'deploy' : 'overview';
-      case 'metrics':
-        return 'metrics';
-      case 'runtimes':
-        return 'runtimes';
       case 'environments':
         return 'environments';
     }

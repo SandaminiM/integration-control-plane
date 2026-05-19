@@ -19,7 +19,7 @@
 import { Button, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
 import { RefreshCw, ScrollText } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
-import type { LogRow } from '../../api/logs';
+import type { LogRow } from '../../types/logs';
 import LogEntry from './LogEntry';
 
 interface LogsPanelProps {

@@ -19,8 +19,8 @@
 import { CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
 import { type JSX } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { useGroups } from '../api/authQueries';
-import { useProjectByHandler } from '../api/queries';
+import { useGroups } from '../hooks/useAuth';
+import { useProjectByHandler } from '../hooks/useProjects';
 import { projectAccessControlUrl } from '../paths';
 import { GroupDetailView } from './EditGroup';
 

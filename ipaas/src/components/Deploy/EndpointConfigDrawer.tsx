@@ -19,9 +19,10 @@
 import { Alert, Box, Button, Checkbox, CircularProgress, Collapse, Divider, Drawer, FormControlLabel, IconButton, InputAdornment, MenuItem, Select, Stack, Switch, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, ArrowRight, Search, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useRef, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useApiDefinition, useEnvEndpoints, type GqlEnvEndpoint } from '../../api/queries';
-import { fetchApimApi, updateApimApi, type ApimApiInfo, type ApimApiOperation } from '../../api/apim';
+import { useApiDefinition, useEnvEndpoints } from '../../hooks/useDeployments';
+import { useApimApi, useUpdateApimApi } from '../../hooks/useApim';
+import type { GqlEnvEndpoint } from '../../types/component';
+import type { ApimApiInfo, ApimApiOperation } from '../../types/apim';
 import { API_KEY_SCHEME, OAUTH2_SCHEME, OPS_PER_PAGE } from '../../constants/endpointConfig';
 import { buildEndpointSecurityState, extractScopesFromSwagger, toggleSchemeToken } from '../../utils/deploy';
 import { getHttpMethodColors } from '../../utils/httpMethods';
@@ -42,59 +43,29 @@ const drawerSx = {
 } as const;
 
 function EndpointPanel({ ep, onSaved }: { ep: GqlEnvEndpoint; onSaved: () => void }) {
-  const qc = useQueryClient();
   const { data: swaggerDoc } = useApiDefinition(ep.apimRevisionId);
+  const { data, isLoading } = useApimApi(ep.apimId ?? null);
+  const apimApiInfo: ApimApiInfo | null = data ?? null;
+  const isFetchingInitial = !!ep.apimId && isLoading;
+  const fetchError = !!ep.apimId && !isLoading && data === null ? 'Failed to load endpoint configuration. Please try again.' : null;
 
-  const [apimApiInfo, setApimApiInfo] = useState<ApimApiInfo | null>(null);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const [isFetchingInitial, setIsFetchingInitial] = useState(true);
-
-  const mountedRef = useRef(true);
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!ep.apimId) {
-      setIsFetchingInitial(false);
-      return;
-    }
-    let cancelled = false;
-    setIsFetchingInitial(true);
-    setFetchError(null);
-
-    fetchApimApi(ep.apimId)
-      .then((data) => {
-        if (cancelled) return;
-        if (data === null) {
-          setFetchError('Failed to load endpoint configuration. Please try again.');
-          setIsFetchingInitial(false);
-          return;
-        }
-        setApimApiInfo(data);
-        setState(buildEndpointSecurityState(data));
-        setIsFetchingInitial(false);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setFetchError('Failed to load endpoint configuration. Please try again.');
-        setIsFetchingInitial(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [ep.apimId]);
-
-  const availableScopes: string[] = [...extractScopesFromSwagger(swaggerDoc), ...(apimApiInfo?.scopes ?? []).map((s) => s.scope.name)].filter((v, i, arr) => arr.indexOf(v) === i);
+  const updateMutation = useUpdateApimApi();
+  const saving = updateMutation.isPending;
 
   const [state, setState] = useState<EndpointSecurityState>(() => buildEndpointSecurityState(null));
-  const [saving, setSaving] = useState(false);
+  const [stateInitializedFor, setStateInitializedFor] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Initialize form state from fetched data once per apimId
+  useEffect(() => {
+    if (apimApiInfo && stateInitializedFor !== ep.apimId) {
+      setState(buildEndpointSecurityState(apimApiInfo));
+      setStateInitializedFor(ep.apimId ?? null);
+    }
+  }, [apimApiInfo, ep.apimId, stateInitializedFor]);
+
+  const availableScopes: string[] = [...extractScopesFromSwagger(swaggerDoc), ...(apimApiInfo?.scopes ?? []).map((s) => s.scope.name)].filter((v, i, arr) => arr.indexOf(v) === i);
 
   const apiKeyEnabled = state.securityScheme.includes(API_KEY_SCHEME);
   const oauth2Enabled = state.securityScheme.includes(OAUTH2_SCHEME);
@@ -108,7 +79,6 @@ function EndpointPanel({ ep, onSaved }: { ep: GqlEnvEndpoint; onSaved: () => voi
 
   const handleApply = async () => {
     if (!apimApiInfo || !ep.apimId || saving) return;
-    setSaving(true);
     setSaveError(null);
     setSaveSuccess(false);
 
@@ -131,19 +101,11 @@ function EndpointPanel({ ep, onSaved }: { ep: GqlEnvEndpoint; onSaved: () => voi
     };
 
     try {
-      const saved = await updateApimApi(ep.apimId, updated);
-      if (!mountedRef.current) return;
-      setApimApiInfo(saved);
+      await updateMutation.mutateAsync({ apimId: ep.apimId, body: updated });
       setSaveSuccess(true);
-      void qc.invalidateQueries({ queryKey: ['apimApi', ep.apimId] });
-      setTimeout(() => {
-        if (mountedRef.current) onSaved();
-      }, 800);
+      setTimeout(() => onSaved(), 800);
     } catch (err) {
-      if (!mountedRef.current) return;
       setSaveError(err instanceof Error ? err.message : 'Failed to save settings. Please try again.');
-    } finally {
-      if (mountedRef.current) setSaving(false);
     }
   };
 

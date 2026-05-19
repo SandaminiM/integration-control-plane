@@ -17,8 +17,9 @@
  */
 
 import { gql } from './graphql';
-import { platformClient } from './httpClients';
-import type { SchemaConfigItem } from './queries';
+import { choreoClient } from './httpClients';
+import type { SchemaConfigItem } from '../types/configuration';
+import type { PrebuiltIntegration, PrebuiltIntegrationsData } from '../types/prebuilt';
 
 interface NameAvailability {
   componentNameUnique: boolean;
@@ -34,6 +35,28 @@ interface ComponentDetail {
 interface Environment {
   id: string;
   templateId?: string;
+}
+
+export async function fetchPrebuiltIntegrations(url: string, signal?: AbortSignal): Promise<{ prebuiltIntegrations: PrebuiltIntegration[] }> {
+  const response = await fetch(url, { cache: 'no-store', signal });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  const data = (await response.json()) as { prebuiltIntegrations: PrebuiltIntegration[] };
+  if (!Array.isArray(data?.prebuiltIntegrations)) throw new Error('Invalid response format: missing prebuiltIntegrations array');
+  return data;
+}
+
+export function normalizePrebuiltIntegrations(raw: { prebuiltIntegrations: PrebuiltIntegration[] }): PrebuiltIntegrationsData {
+  const appSet = new Set<string>();
+  for (const integration of raw.prebuiltIntegrations) {
+    integration.applications?.forEach((app) => appSet.add(app));
+  }
+  return { prebuiltIntegrations: raw.prebuiltIntegrations, applications: Array.from(appSet).sort() };
+}
+
+export async function fetchPrebuiltAsset(baseUrl: string, filename: string, signal?: AbortSignal): Promise<Response> {
+  const res = await fetch(`${baseUrl.replace(/\/?$/, '/')}${filename}`, { cache: 'no-store', signal });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res;
 }
 
 export async function checkNameAvailability(projectId: string, candidate: string): Promise<string> {
@@ -67,5 +90,5 @@ export async function savePrebuiltConfig(projectId: string, componentId: string,
     ...item,
     values: item.values.map((v) => ({ ...v, environmentUuid: envId })),
   }));
-  await platformClient.post(`/configuration-schema/v1.0/projects/${projectId}/components/${componentId}/env-template/${envId}/deployment-track/${deploymentTrackId}/configurations`, { configurations: configurationsWithEnv, commitHash });
+  await choreoClient.post(`/configuration-schema/v1.0/projects/${projectId}/components/${componentId}/env-template/${envId}/deployment-track/${deploymentTrackId}/configurations`, { configurations: configurationsWithEnv, commitHash });
 }

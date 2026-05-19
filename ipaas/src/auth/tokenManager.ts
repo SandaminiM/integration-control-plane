@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { refreshTokenApiUrl, revokeTokenApiUrl } from '../paths';
+import { refreshTokenApiUrl, revokeTokenApiUrl } from '../config/runtimeConfig';
 
 const ACCESS_TOKEN_KEY = 'icp_auth_token';
 const REFRESH_TOKEN_KEY = 'icp_refresh_token';

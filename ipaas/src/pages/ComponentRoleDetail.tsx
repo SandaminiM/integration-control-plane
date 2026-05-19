@@ -44,11 +44,13 @@ import { ArrowLeft, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useCallback, type JSX } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import SearchField from '../components/SearchField';
-import { useRoleDetail, useRoleGroups, useGroups, useAddRolesToGroup, useRemoveRoleFromGroup } from '../api/authQueries';
+import { useRoleDetail, useRoleGroups, useGroups, useAddRolesToGroup, useRemoveRoleFromGroup } from '../hooks/useAuth';
 import { Permissions, ALL_ROLE_MODIFY_PERMISSIONS } from '../constants/permissions';
 import { useAccessControl } from '../contexts/AccessControlContext';
-import type { RoleGroupMapping, Group } from '../api/auth';
-import { useAllEnvironments, useProjectByHandler, useComponentByHandler } from '../api/queries';
+import type { RoleGroupMapping, Group } from '../types/auth';
+import { useAllEnvironments } from '../hooks/useEnvironments';
+import { useProjectByHandler } from '../hooks/useProjects';
+import { useComponentByHandler } from '../hooks/useComponents';
 import { componentAccessControlUrl } from '../paths';
 
 function Loading() {

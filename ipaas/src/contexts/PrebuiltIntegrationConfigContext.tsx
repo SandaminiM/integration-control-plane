@@ -17,8 +17,8 @@
  */
 
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import type { PrebuiltIntegration } from '../types/samples';
-import type { SchemaConfigItem } from '../api/queries';
+import type { PrebuiltIntegration } from '../types/prebuilt';
+import type { SchemaConfigItem } from '../types/configuration';
 
 interface PrebuiltIntegrationConfigContextValue {
   integration: PrebuiltIntegration | undefined;

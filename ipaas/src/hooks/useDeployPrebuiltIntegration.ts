@@ -17,14 +17,13 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import { useCreateComponent, useDeployPrebuiltImage, useDeleteComponent } from '../api/mutations';
+import { useCreateComponent, useDeleteComponent } from './useComponents';
+import { useDeployPrebuiltImage } from './useDeployments';
 import { getOrgUuidFromToken } from '../auth/tokenManager';
 import { displayTypeFromSample } from '../constants/integrations';
 import { derivePrebuiltSlug } from '../utils/prebuilt';
 import { checkNameAvailability, fetchComponentDetail, fetchFirstEnvironment, fetchLatestCommitSha, savePrebuiltConfig } from '../api/prebuilt';
 import type { DeployPrebuiltIntegrationInput, DeployPrebuiltIntegrationState } from '../types/prebuilt';
-
-export type { DeployPrebuiltIntegrationInput, DeployPrebuiltIntegrationState };
 
 const IDLE_STATE: DeployPrebuiltIntegrationState = {
   progress: 0,

@@ -19,8 +19,8 @@
 import { Box, Button, CircularProgress, Divider, FormControlLabel, Link, Stack, Switch, Typography } from '@wso2/oxygen-ui';
 import { GitBranch } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useRef, useState } from 'react';
-import { useUpdateBuildpackConfigs } from '../../api/mutations';
-import type { GqlRepository } from '../../api/queries';
+import { useUpdateBuildpackConfigs } from '../../hooks/useRepository';
+import type { GqlRepository } from '../../types/repository';
 import type { BuildEnvVar } from '../../types/build';
 import { gitProviderLabel, repoUrl, Row } from '../../utils/build';
 import BuildEnvVarsEditor from './BuildEnvVarsEditor';

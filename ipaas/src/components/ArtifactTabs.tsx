@@ -20,8 +20,9 @@ import { Accordion, AccordionSummary, AccordionDetails, Box, Card, CardContent, 
 import { ChevronDown, ScrollText } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { useArtifactSource, useArtifactParams, useArtifactWsdl, useLocalEntryValue, ARTIFACT_TYPE_TO_SOURCE_TYPE } from '../api/queries';
-import { WSDL_NS, SOAP_NS, SOAP12_NS } from '../paths';
+import { ARTIFACT_TYPE_TO_SOURCE_TYPE } from '../types/artifact';
+import { useArtifactSource, useArtifactParams, useArtifactWsdl, useLocalEntryValue } from '../hooks/useArtifacts';
+import { WSDL_NS, SOAP_NS, SOAP12_NS } from '../constants/wsdl';
 import CodeViewer from './CodeViewer';
 import DataTable, { emptySx } from './DataTable';
 import type { TabProps } from './artifact-config';

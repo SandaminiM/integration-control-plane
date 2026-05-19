@@ -19,7 +19,12 @@
 import { Box, CircularProgress, Divider, PageContent } from '@wso2/oxygen-ui';
 import { Fragment, useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useProject, useProjectByHandler, useProjects, useComponentByHandler, useEnvironments, useCommitHistory, useComponentEndpoints, useApimApi, useDeploymentStatus, useComponentRepository } from '../api/queries';
+import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjects';
+import { useComponentByHandler, useComponentEndpoints } from '../hooks/useComponents';
+import { useEnvironments } from '../hooks/useEnvironments';
+import { useCommitHistory, useComponentRepository } from '../hooks/useRepository';
+import { useApimApi } from '../hooks/useApim';
+import { useDeploymentStatus } from '../hooks/useDeployments';
 import BusinessInfo from '../components/BusinessInfo';
 import NotFound from '../components/NotFound';
 import { ArtifactDetail } from '../components/ArtifactDetail';

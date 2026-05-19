@@ -18,9 +18,11 @@
 
 import { Avatar, Box, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
 import { Activity, AlertTriangle, Clock, TrendingUp } from '@wso2/oxygen-ui-icons-react';
-import { useEffect, useRef, useState } from 'react';
-import { getOrgUuidFromToken } from '../../auth/tokenManager';
-import { fetchComponentInsights, useInsightsEnvironments, type ComponentInsights } from '../../api/insights';
+import { useOrgUuid } from '../../hooks/useOrgUuid';
+import { useComponentInsights, useInsightsEnvironments } from '../../hooks/useInsights';
+import type { ComponentInsights } from '../../types/insights';
+
+const ZERO_METRICS: ComponentInsights = { requestCount: 0, errorCount: 0, errorRate: 0, latency: 0 };
 
 // ---------- MetricTile ----------
 
@@ -82,52 +84,22 @@ interface EnvCardInsightsProps {
 }
 
 export default function EnvCardInsights({ envName, envId, apimEnvId, projectId, apiId }: EnvCardInsightsProps) {
-  const orgUuid = getOrgUuidFromToken() ?? '';
-  const [insights, setInsights] = useState<ComponentInsights | null>(null);
-  const [loading, setLoading] = useState(true);
-  const mounted = useRef(true);
-
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
+  const orgUuid = useOrgUuid() ?? '';
 
   // Shared React Query hook — deduplicated across all env cards for the same project
   const { data: insightsEnvs } = useInsightsEnvironments(orgUuid, projectId);
 
   const insightsEnv = insightsEnvs?.find((e) => (apimEnvId && e.externalEnvId === apimEnvId) || e.externalEnvId === envId || e.name?.toLowerCase() === envName?.toLowerCase()) ?? null;
 
-  // When environments loaded but no match found, default to zeros
-  useEffect(() => {
-    if (!insightsEnvs || !apiId) return;
-    if (!insightsEnv) {
-      setInsights({ requestCount: 0, errorCount: 0, errorRate: 0, latency: 0 });
-      setLoading(false);
-    }
-  }, [insightsEnvs, insightsEnv, apiId]);
+  const { data: insightsRaw } = useComponentInsights(orgUuid, insightsEnv, apiId);
 
-  // Fetch metrics once env is found, then poll every 10s
-  useEffect(() => {
-    if (!insightsEnv || !apiId) return;
-
-    let cancelled = false;
-
-    const fetchData = async () => {
-      const data = await fetchComponentInsights(orgUuid, insightsEnv, apiId);
-      if (cancelled || !mounted.current) return;
-      setInsights(data ?? { requestCount: 0, errorCount: 0, errorRate: 0, latency: 0 });
-      setLoading(false);
-    };
-
-    fetchData();
-    const interval = setInterval(fetchData, 10_000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [insightsEnv, apiId, orgUuid]);
+  // Resolve display state from query results:
+  //   - matched env, fetched → use data (or zeros on error)
+  //   - matched env, still fetching → null (show loading)
+  //   - no match but envs loaded → zeros (default)
+  //   - envs still loading → null
+  const insights: ComponentInsights | null = insightsEnv ? (insightsRaw === undefined ? null : (insightsRaw ?? ZERO_METRICS)) : insightsEnvs && apiId ? ZERO_METRICS : null;
+  const loading = insights === null;
 
   const tiles = [
     { key: 'traffic', label: 'Total Traffic', icon: <TrendingUp size={16} />, value: insights?.requestCount ?? null, unit: undefined },

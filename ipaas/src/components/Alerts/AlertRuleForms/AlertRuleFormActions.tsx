@@ -18,7 +18,7 @@
 
 import { Box, Button, CircularProgress } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
-import { useCreateAlertRule, useUpdateAlertRule } from '../../../hooks/alerts';
+import { useCreateAlertRule, useUpdateAlertRule } from '../../../hooks/useAlerts';
 import type { AlertRule } from '../../../types/alerts';
 
 interface AlertRuleFormActionsProps {

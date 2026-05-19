@@ -19,7 +19,10 @@
 import { Box, CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import { useComponentByHandler, useCommitHistory, useEnvironments, useOrgs } from '../api/queries';
+import { useComponentByHandler } from '../hooks/useComponents';
+import { useCommitHistory } from '../hooks/useRepository';
+import { useEnvironments } from '../hooks/useEnvironments';
+import { useOrgs } from '../hooks/useOrg';
 import { useProjectId } from '../hooks/useProjectId';
 import { UUID_RE } from '../utils/string';
 import BuildArea from '../components/Deploy/BuildArea';

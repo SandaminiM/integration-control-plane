@@ -19,7 +19,7 @@
 import { Box, CircularProgress, Drawer, IconButton, Stack, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
-import type { GqlEnvEndpoint } from '../../../api/queries';
+import type { GqlEnvEndpoint } from '../../../types/component';
 import { EndpointCard } from '../../EnvironmentCard/EndpointCard';
 import ManageDrawer from '../../EnvironmentCard/ManageDrawer';
 

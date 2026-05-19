@@ -19,7 +19,7 @@
 import { Box, Button, CircularProgress, Divider, Drawer, IconButton, Stack, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import type { GqlDeploymentTrackImage } from '../../api/queries';
+import type { GqlDeploymentTrackImage } from '../../types/deployment';
 import BuildImageCard from './BuildImageCard';
 
 interface BuildAreaImageDrawerProps {

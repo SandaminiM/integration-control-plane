@@ -19,7 +19,8 @@
 import React, { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { Box, Button, Chip, Stack, Typography } from '@wso2/oxygen-ui';
 import { Edit2, Plus } from '@wso2/oxygen-ui-icons-react';
-import { type BaseType, type JSONSchema, type LinkingInfo, extractAllKeySet, extractUniqueKeySet, setArrayType, typeDisplayName } from '../schemaUtils';
+import type { BaseType, JSONSchema } from '../../../types/schema';
+import { type LinkingInfo, extractAllKeySet, extractUniqueKeySet, setArrayType, typeDisplayName } from '../schemaUtils';
 import PopOverComponent from './PopOverComponent';
 
 interface ConfigGroup {

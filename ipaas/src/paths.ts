@@ -57,14 +57,6 @@ export function orgHomeUrl(orgHandler: string): string {
   return `/organizations/${orgHandler}/home`;
 }
 
-export function importProjectUrl(orgHandler: string): string {
-  return `/organizations/${orgHandler}/projects/import`;
-}
-
-export function orgProjectsUrl(orgHandler: string): string {
-  return orgUrl(orgHandler);
-}
-
 export function newOrgUrl(): string {
   return '/organizations/new';
 }
@@ -87,10 +79,6 @@ export function componentUrl(orgHandler: string, projectHandler: string, compone
 
 export function componentOverviewUrl(orgHandler: string, projectHandler: string, componentHandler: string): string {
   return `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/overview`;
-}
-
-export function newComponentUrl(orgHandler: string, projectHandler: string): string {
-  return `/organizations/${orgHandler}/projects/${projectHandler}/components/new`;
 }
 
 export function importComponentUrl(orgHandler: string, projectHandler: string): string {
@@ -189,14 +177,6 @@ export function componentBuildUrl(orgHandler: string, projectHandler: string, co
   return `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/build`;
 }
 
-// ---------------------------------------------------------------------------
-// Route segments
-// ---------------------------------------------------------------------------
-
-export const alertsSegment = 'alerts';
-export const buildsSegment = 'build';
-export const deploySegment = 'deploy';
-
 export function componentDeployUrl(orgHandler: string, projectHandler: string, componentHandler: string): string {
   return `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/deploy`;
 }
@@ -225,60 +205,3 @@ export function buildGitHubOAuthUrl(redirectUri: string, clientId: string, state
   });
   return `https://github.com/login/oauth/authorize?${params.toString()}`;
 }
-
-// ---------------------------------------------------------------------------
-// Mock-data path constants
-// ---------------------------------------------------------------------------
-
-export const dashboard = '/dashboard';
-export const analytics = {
-  base: '/analytics',
-  reports: '/analytics/reports',
-  realtime: '/analytics/realtime',
-  trends: '/analytics/trends',
-} as const;
-export const users = { list: '/users', roles: '/users/roles', permissions: '/users/permissions' } as const;
-export const projects = '/projects';
-export const integrations = '/integrations';
-export const security = { base: '/security', apiKeys: '/security/api-keys' } as const;
-export const databases = '/databases';
-export const domains = '/domains';
-export const settings = { base: '/settings', notifications: '/settings/notifications' } as const;
-export const help = '/help';
-export const docs = {
-  tutorials: {
-    createProject: '/docs/tutorials/create-project',
-    inviteTeam: '/docs/tutorials/invite-team',
-    configureSettings: '/docs/tutorials/configure-settings',
-  },
-  references: {
-    concepts: '/docs/references/concepts',
-    configuration: '/docs/references/configuration',
-  },
-} as const;
-export const support = {
-  helpCenter: '/support/help-center',
-  contact: '/support/contact',
-} as const;
-
-// ---------------------------------------------------------------------------
-// API URLs
-// ---------------------------------------------------------------------------
-
-// Re-export from config/api for backward compatibility
-// ---------------------------------------------------------------------------
-
-export { loginApiUrl, refreshTokenApiUrl, revokeTokenApiUrl, oidcAuthorizeApiUrl, oidcCallbackApiUrl, changePasswordApiUrl, forceChangePasswordApiUrl } from './config/api';
-
-// Logs URL helper
-export const observabilityLogsApiUrl = (): string => window.API_CONFIG.observabilityUrl + '/logs?live=true';
-// Metrics URL helper
-export const observabilityMetricsApiUrl = (): string => window.API_CONFIG.observabilityUrl + '/metrics';
-
-// ---------------------------------------------------------------------------
-// WSDL/SOAP namespace constants
-// ---------------------------------------------------------------------------
-
-export const WSDL_NS = 'http://schemas.xmlsoap.org/wsdl/';
-export const SOAP_NS = 'http://schemas.xmlsoap.org/wsdl/soap/';
-export const SOAP12_NS = 'http://schemas.xmlsoap.org/wsdl/soap12/';

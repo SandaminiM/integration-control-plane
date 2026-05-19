@@ -47,3 +47,24 @@ export interface BuildEnvVar {
   key: string;
   value: string;
 }
+
+export interface BuildStep {
+  number: number;
+  name: string;
+  status: string;
+  conclusion: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
+}
+
+export interface BuildStage {
+  log: string | null;
+  status: string | null;
+  steps: BuildStep[];
+}
+
+export interface BuildRunLogs {
+  init: BuildStage;
+  build: BuildStage;
+  deploy: BuildStage;
+}

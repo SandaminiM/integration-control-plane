@@ -19,7 +19,8 @@
 import { useEffect, useMemo, useState, type Dispatch, type MouseEvent, type SetStateAction } from 'react';
 import { Box, Button, Chip, IconButton, InputAdornment, MenuItem, Popover, Stack, Switch, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Eye, EyeOff, Link2, Link2Off, Lock, Pencil, Unlock } from '@wso2/oxygen-ui-icons-react';
-import { type BaseType, type JSONSchema, type LinkingInfo, isNumberType, typeDisplayName } from '../schemaUtils';
+import type { BaseType, JSONSchema } from '../../../types/schema';
+import { type LinkingInfo, isNumberType, typeDisplayName } from '../schemaUtils';
 
 interface ConfigGroup {
   groupUuid: string;
