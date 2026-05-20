@@ -80,6 +80,7 @@ const defaultContext: CopilotContextDefinition = {
   clearChat: () => {},
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const CopilotContext = createContext<CopilotContextDefinition>(defaultContext);
 
 interface CopilotProviderProps {
@@ -157,7 +158,7 @@ export function CopilotProvider({ children }: CopilotProviderProps) {
         setSelectedRegion(availableRegions[0]);
       }
     }
-  }, [availableRegions, isDataPlanesLoading]);
+  }, [availableRegions, isDataPlanesLoading, selectedRegion]);
 
   // Derive copilot URL from selected region
   useEffect(() => {
