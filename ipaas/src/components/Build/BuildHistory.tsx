@@ -130,7 +130,7 @@ export default function BuildHistory({ componentId, versionId, envId, branch, bu
   return (
     <>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-        <Typography variant="h1">Build History</Typography>
+        <Typography variant="h1">Build</Typography>
 
         <Stack direction="row" alignItems="center" gap={1}>
           <Tooltip title={hasInProgress ? 'A build is already in progress' : !latestCommit ? 'No commits available' : ''}>

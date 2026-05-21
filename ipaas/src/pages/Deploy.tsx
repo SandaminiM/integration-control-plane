@@ -88,6 +88,7 @@ export default function Deploy(scope: ComponentScope): JSX.Element {
 
   return (
     <PageContent fullWidth sx={{ overflowX: 'scroll' }}>
+      <Typography variant="h1" sx={{ mb: 4 }}>Deploy</Typography>
       <Box sx={{ display: 'flex', alignItems: 'flex-start', minWidth: 'max-content' }}>
         {/* Left panel — build artifact selection + deploy trigger */}
         <Box sx={{ flexShrink: 0 }}>

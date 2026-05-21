@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Avatar, Box, Button, Card, CardContent, CircularProgress, Grid, IconButton, PageContent, PageTitle, Stack, TablePagination, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
+import { Avatar, Box, Button, Card, CardContent, CircularProgress, Grid, IconButton, ListingTable, PageContent, PageTitle, Stack, TablePagination, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
 import { Clock, Folder, FolderInput, LayoutGrid, List, Plus, RefreshCw, Settings } from '@wso2/oxygen-ui-icons-react';
 import SearchField from '../components/SearchField';
 import { useNavigate } from 'react-router';
@@ -85,6 +85,55 @@ export default function Projects(scope: OrgScope): JSX.Element {
   const safePage = Math.min(page, maxPage);
   const paginated = filtered.slice(safePage * rowsPerPage, safePage * rowsPerPage + rowsPerPage);
 
+  const projectsView =
+    view === 'list' ? (
+      <ListingTable.Container disablePaper>
+        <ListingTable variant="card" density="compact">
+          <ListingTable.Head>
+            <ListingTable.Row>
+              <ListingTable.Cell width={300}>Name</ListingTable.Cell>
+              <ListingTable.Cell>Description</ListingTable.Cell>
+              <ListingTable.Cell>Last Updated</ListingTable.Cell>
+              <ListingTable.Cell width={100}>Actions</ListingTable.Cell>
+            </ListingTable.Row>
+          </ListingTable.Head>
+          <ListingTable.Body>
+            {paginated.map((p) => (
+              <ListingTable.Row key={p.id} variant="card" hover clickable onClick={() => navigate(projectHomeUrl(scope.org, p.handler))}>
+                <ListingTable.Cell>
+                  <Stack direction="row" alignItems="center" gap={1.5}>
+                    <Avatar sx={{ width: 32, height: 32, fontSize: 14, bgcolor: 'action.hover', color: 'text.primary' }}>{p.name[0].toUpperCase()}</Avatar>
+                    <Typography variant="body2" fontWeight={600}>{p.name}</Typography>
+                  </Stack>
+                </ListingTable.Cell>
+                <ListingTable.Cell>
+                  <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 300 }}>
+                    {p.description || ''}
+                  </Typography>
+                </ListingTable.Cell>
+                <ListingTable.Cell>
+                  <Typography variant="body2" color="text.secondary">{formatDistanceToNow(p.updatedAt)}</Typography>
+                </ListingTable.Cell>
+                <ListingTable.Cell>
+                  <IconButton size="small" aria-label={`Settings for ${p.name}`} onClick={(e) => e.stopPropagation()}>
+                    <Settings size={16} />
+                  </IconButton>
+                </ListingTable.Cell>
+              </ListingTable.Row>
+            ))}
+          </ListingTable.Body>
+        </ListingTable>
+      </ListingTable.Container>
+    ) : (
+      <Grid container spacing={2}>
+        {paginated.map((p) => (
+          <Grid key={p.id} size={{ xs: 12, sm: 6, md: 4 }}>
+            <ProjectCard project={p} onClick={() => navigate(projectHomeUrl(scope.org, p.handler))} />
+          </Grid>
+        ))}
+      </Grid>
+    );
+
   return (
     <PageContent>
       <PageTitle>
@@ -131,13 +180,7 @@ export default function Projects(scope: OrgScope): JSX.Element {
         />
       ) : (
         <>
-          <Grid container spacing={2}>
-            {paginated.map((p) => (
-              <Grid key={p.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                <ProjectCard project={p} onClick={() => navigate(projectHomeUrl(scope.org, p.handler))} />
-              </Grid>
-            ))}
-          </Grid>
+          {projectsView}
           {filtered.length > 10 && (
             <TablePagination
               component="div"

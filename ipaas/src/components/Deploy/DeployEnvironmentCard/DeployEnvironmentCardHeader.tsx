@@ -25,7 +25,7 @@ export default function DeployEnvironmentCardHeader({ envName, showStop, stopDis
   return (
     <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
       <Stack direction="row" alignItems="center" gap={1} sx={{ flexWrap: 'wrap' }}>
-        <Typography variant="h3">{envName}</Typography>
+        <Typography variant="h4">{envName}</Typography>
       </Stack>
 
       <Stack direction="row" alignItems="center" gap={0.5} sx={{ flexShrink: 0 }}>

@@ -56,7 +56,7 @@ export default function IntegrationTypeSelector({ selected, onSelect }: Integrat
               '&:hover': { borderColor: isActive ? 'primary.main' : 'primary.light' },
               '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
             }}>
-            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 }, display: 'flex', flexDirection: 'column', height: '100%' }}>
               <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 0.5 }}>
                 <Typography variant="body2" fontWeight={600} sx={{ color: isActive ? 'primary.main' : 'text.primary' }}>
                   {opt.title}
@@ -74,7 +74,7 @@ export default function IntegrationTypeSelector({ selected, onSelect }: Integrat
                   </Box>
                 </Tooltip>
               </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5, lineHeight: 1.4 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5, lineHeight: 1.4, flex: 1 }}>
                 {opt.description}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
