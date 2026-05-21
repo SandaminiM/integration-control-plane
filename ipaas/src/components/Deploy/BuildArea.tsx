@@ -184,7 +184,7 @@ export default function BuildArea({
     return (
       <Card variant="outlined" sx={{ width: 320, flexShrink: 0, position: 'sticky', top: 24, alignSelf: 'flex-start', background: 'transparent' }}>
         <CardContent>
-          <Typography variant="h4" sx={{ mb: 2 }}>
+          <Typography variant="h4" component="h2" sx={{ mb: 2 }}>
             Set Up
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -208,7 +208,7 @@ export default function BuildArea({
           background: 'transparent',
         }}>
         <CardContent>
-          <Typography variant="h4" sx={{ mb: 2 }}>
+          <Typography variant="h4" component="h2" sx={{ mb: 2 }}>
             Set Up
           </Typography>
 
