@@ -145,15 +145,8 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
     setDetectedMode(null);
   }, [selectedBranch]);
 
-  // Auto-select default branch
-  useEffect(() => {
-    if (branches && branches.length > 0) {
-      const def = branches.find((b) => b.isDefault);
-      setSelectedBranch(def?.name ?? branches[0].name);
-    }
-  }, [branches]);
-
-  // GitHub mode: reset downstream when repo changes
+  // GitHub mode: reset downstream when repo changes — declared BEFORE auto-select so that on a
+  // React Query cache hit (both effects fire in the same flush), this one runs first.
   useEffect(() => {
     if (isPublicRepo) return;
     if (selectedRepo && (!displayName || displayNameAutoRef.current)) {
@@ -162,6 +155,16 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
     }
     resetDownstreamState();
   }, [selectedRepo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-select default branch — declared AFTER reset so it wins on a cache hit
+  useEffect(() => {
+    if (!branches || branches.length === 0) return;
+    const stillExists = branches.some((b) => b.name === selectedBranch);
+    if (!selectedBranch || !stillExists) {
+      const def = branches.find((b) => b.isDefault);
+      setSelectedBranch(def?.name ?? branches[0].name);
+    }
+  }, [branches]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Public mode: debounced URL parsing
   useEffect(() => {
@@ -257,7 +260,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
     );
   };
 
-  const backUrl = newComponentUrl(scope.org, scope.project);
+  const backUrl = newComponentUrl(scope);
 
   // Render helpers
 

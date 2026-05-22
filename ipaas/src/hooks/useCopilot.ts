@@ -75,13 +75,11 @@ function useCopilot() {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder('utf-8');
       setIsStreaming(true);
-
-      // eslint-disable-next-line no-constant-condition
+       
+      if (!reader) {
+        throw new Error('Error while fetching answer from Copilot. Reader is undefined.');
+      }
       while (true) {
-        if (!reader) {
-          throw new Error('Error while fetching answer from Copilot. Reader is undefined.');
-        }
-        // eslint-disable-next-line no-await-in-loop
         const { done, value } = await reader.read();
         if (done) {
           messageBufferRef.current = '';
