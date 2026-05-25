@@ -83,7 +83,7 @@ import { IS_DEVANT, IS_CLOUD, IS_ICP } from '../features';
 
 1. **Is this feature shared across all products?** → No gating needed, code stays in `src/components/` / `src/pages/` / `src/api/` as usual.
 2. **Is this a small 1–2 element toggle?** → Use `IS_DEVANT` / `IS_ICP` inline.
-3. **Are many toggles following a consistent pattern?** → Add a key to `productConfig` in `src/product-config.ts`.
+3. **Are many toggles following a consistent pattern?** → Add a named export to `src/features.ts` (e.g. `export const SHOW_FOO = IS_DEVANT || IS_CLOUD`).
 4. **Does a whole component/page render completely differently per product?** → Use the `#product` alias (see below).
 5. **Does a page only exist in one product?** → Gate the route in `src/config/routes.tsx` using `IS_DEVANT` etc.
 
@@ -118,7 +118,7 @@ import EnvironmentCardBody from '#product/EnvironmentCardBody';
 Vite resolves `#product` → `src/product/${product}/`. Only the selected product's file enters the bundle (DCE preserved).
 
 **Shell pattern** — extract shared structure into a shell component:
-```
+```text
 src/components/EnvironmentCard/EnvironmentCardShell.tsx  ← shared shell
 src/product/icp/EnvironmentCardBody.tsx                 ← icp variant (imports shell)
 src/product/devant/EnvironmentCardBody.tsx              ← devant variant (imports shell)
