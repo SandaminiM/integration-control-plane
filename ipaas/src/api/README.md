@@ -67,3 +67,23 @@ Only one domain file calls `authenticatedFetch` directly. All other 403 retry ca
 | `copilot.ts` — `getAiCopilotAnswer` | Caller-provided URL, streaming `Response`, and custom per-request headers — incompatible with `createHttpClient` |
 
 `graphql.ts` and `httpClients.ts` call `authenticatedFetch` internally — expected, as they are the transport layer.
+
+---
+
+## Product implementations
+
+Domain stubs at this level (`components.ts`, `builds.ts`, …) each contain a single line:
+
+```ts
+export * from '#api/components';
+```
+
+`#api` is a Vite alias that resolves to `src/api/${PRODUCT}/` at build time. Three sub-directories contain product-specific code:
+
+| Directory | Product | Purpose |
+|-----------|---------|---------|
+| `devant/` | Choreo v2 | Real GraphQL/REST implementations |
+| `cloud/`  | Choreo v3 | Stubs — throw `[cloud] domain.fn: not implemented` |
+| `icp/`    | ICP local | Stubs — throw `[icp] domain.fn: not implemented` |
+
+TypeScript always type-checks against `devant/` (via `tsconfig.app.json` paths) so the IDE is always happy, regardless of build product. See `AGENTS.md` in this directory for step-by-step instructions on adding a new function.
