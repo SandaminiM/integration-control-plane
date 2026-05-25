@@ -130,22 +130,30 @@ export async function fetchProjectHandlerAvailability(orgId: number, candidate: 
 }
 
 export async function createProject(input: CreateProjectInput): Promise<GqlProject> {
+  const orgId = window.API_CONFIG.asgardeoOrgNumericId;
+  if (orgId === undefined || !Number.isFinite(orgId)) {
+    return Promise.reject(new Error('API_CONFIG.asgardeoOrgNumericId is missing or invalid; cannot create project without a valid organization numeric ID'));
+  }
   return gql<{ createProject: GqlProject }>(CREATE_PROJECT, {
     name: input.name,
     description: input.description,
     projectHandler: input.handler,
     orgHandler: input.orgHandler,
-    orgId: window.API_CONFIG.asgardeoOrgNumericId,
+    orgId,
   }).then((d) => d.createProject);
 }
 
 export async function createMonoRepoProject(input: CreateMonoRepoProjectInput): Promise<GqlProject> {
+  const orgId = window.API_CONFIG.asgardeoOrgNumericId;
+  if (orgId === undefined || !Number.isFinite(orgId)) {
+    return Promise.reject(new Error('API_CONFIG.asgardeoOrgNumericId is missing or invalid; cannot create mono-repo project without a valid organization numeric ID'));
+  }
   return gql<{ createProject: GqlProject }>(CREATE_MONO_REPO_PROJECT, {
     name: input.name,
     description: input.description,
     projectHandler: input.handler,
     orgHandler: input.orgHandler,
-    orgId: window.API_CONFIG.asgardeoOrgNumericId,
+    orgId,
     repository: input.repository,
     gitOrganization: input.gitOrganization,
     branch: input.branch,

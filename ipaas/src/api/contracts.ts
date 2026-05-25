@@ -21,8 +21,8 @@
  *
  * Each interface below defines the function signatures that a product's API
  * implementation must satisfy.  The devant (current), cloud, and icp
- * implementations each live in `src/api/implementations/<product>/` and are
- * selected by the conditional re-export in `src/api/index.ts`.
+ * implementations each live in `src/api/<product>/` and are selected at build
+ * time via the `#api` Vite alias, with per-domain re-exports in `src/api/<domain>.ts`.
  *
  * Rules:
  *  - Every interface member maps 1-to-1 to a function in the corresponding

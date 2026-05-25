@@ -21,13 +21,25 @@ import type { GqlComponent, GqlComponentDetail, GqlEndpoint, GqlEnvEndpoint, Cre
 import type { ComponentNameAvailability } from '../../types/component';
 
 function gqlStr(value: string): string {
-  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+  return `"${value
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t')
+    .replace(/\b/g, '\\b')
+    .replace(/\f/g, '\\f')
+    .replace(/[\x00-\x1f]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`)}"`;
 }
 
 const MI_DISPLAY_TYPES = new Set<DisplayType>(['miApiService', 'miCronjob', 'miJob', 'miWebhook', 'miEventHandler']);
 
 function buildCreateComponentQuery(input: CreateComponentInput): string {
-  const orgId = window.API_CONFIG.asgardeoOrgNumericId ?? 0;
+  const rawOrgId = window.API_CONFIG.asgardeoOrgNumericId;
+  if (rawOrgId === undefined || !Number.isFinite(rawOrgId)) {
+    throw new Error('API_CONFIG.asgardeoOrgNumericId is missing or invalid; cannot create component without a valid organization numeric ID');
+  }
+  const orgId = rawOrgId;
   const subPath = (input.repositorySubPath ?? '/').replace(/^\//, '');
   return `mutation{ createComponent(
       component: {
@@ -67,7 +79,11 @@ function buildCreateComponentQuery(input: CreateComponentInput): string {
 }
 
 function buildCreateMiComponentQuery(input: CreateComponentInput): string {
-  const orgId = window.API_CONFIG.asgardeoOrgNumericId ?? 0;
+  const rawOrgId = window.API_CONFIG.asgardeoOrgNumericId;
+  if (rawOrgId === undefined || !Number.isFinite(rawOrgId)) {
+    throw new Error('API_CONFIG.asgardeoOrgNumericId is missing or invalid; cannot create MI component without a valid organization numeric ID');
+  }
+  const orgId = rawOrgId;
   const subPath = (input.repositorySubPath ?? '/').replace(/^\//, '');
   const srcUrl = (input.srcGitRepoUrl ?? '').replace(/\/$/, '');
   return `mutation{ createIntegrationComponent(
@@ -312,5 +328,9 @@ export async function fetchComponentEndpointSpec(componentId: string, versionId:
   const data = await gql<{ componentEndpointApiDefinition: { content: string } | null }>(COMPONENT_ENDPOINT_API_DEFINITION_QUERY, { componentId, versionId, endpointId });
   const b64 = data.componentEndpointApiDefinition?.content;
   if (!b64) return null;
-  return atob(b64);
+  try {
+    return atob(b64);
+  } catch {
+    return null;
+  }
 }
