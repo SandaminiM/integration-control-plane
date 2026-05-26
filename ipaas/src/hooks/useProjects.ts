@@ -57,7 +57,7 @@ export function useProject(projectId: string) {
 export function useProjectByHandler(handler: string) {
   const { data: projects = [], isLoading } = useProjects();
   const data = handler && !UUID_RE.test(handler) ? (projects.find((p) => p.handler === handler) ?? undefined) : undefined;
-  return { data, isLoading: !data && isLoading && !!handler };
+  return { data, isLoading: !data && isLoading && !!handler && !UUID_RE.test(handler) };
 }
 
 export function useProjectContributors(projectId: string) {
@@ -118,6 +118,6 @@ export function useProjectId(projectIdentifier: string) {
   return {
     projectId: project?.id ?? '',
     project,
-    isLoading: !project && (isProjectUuid ? loadingById : loadingProjects),
+    isLoading: !!projectIdentifier && !project && (isProjectUuid ? loadingById : loadingProjects),
   };
 }
