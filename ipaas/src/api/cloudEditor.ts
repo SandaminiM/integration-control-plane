@@ -55,27 +55,16 @@ export async function getOrCreateSampleRegistry(orgUuid: string): Promise<Contai
 export async function callCreateCodeServer(params: { userId: string; organizationId: string; projectId: string; componentId: string; orgHandle: string; imageUrl: string; registryId: string; sourceCommitHash?: string }): Promise<string> {
   const { userId, organizationId, projectId, componentId, orgHandle, imageUrl, registryId, sourceCommitHash } = params;
   const result = await gql<{ createCodeServer: string }>(
-    `mutation CreateCodeServer(
-      $userId: String!, $organizationId: String!, $projectId: String!,
-      $componentId: String!, $orgHandle: String!, $imageUrl: String!,
-      $registryId: String!, $sourceCommitHash: String
-    ) {
-      createCodeServer(codeServer: {
-        userId: $userId, organizationId: $organizationId, projectId: $projectId,
-        componentId: $componentId, orgHandle: $orgHandle, imageUrl: $imageUrl,
-        registryId: $registryId, sourceCommitHash: $sourceCommitHash
-      })
-    }`,
-    {
-      userId,
-      organizationId,
-      projectId,
-      componentId,
-      orgHandle,
-      imageUrl,
-      registryId,
-      sourceCommitHash: sourceCommitHash ?? null,
-    },
+    `mutation{ createCodeServer(codeServer: {
+      userId: "${userId}",
+      organizationId: "${organizationId}",
+      projectId: "${projectId}",
+      componentId: "${componentId}",
+      orgHandle: "${orgHandle}",
+      imageUrl: "${imageUrl}",
+      registryId: "${registryId}",
+      ${sourceCommitHash ? `sourceCommitHash: "${sourceCommitHash}",` : ''}
+    })}`,
   );
   if (!result.createCodeServer) throw new Error('No editor URL returned from server');
   return result.createCodeServer;

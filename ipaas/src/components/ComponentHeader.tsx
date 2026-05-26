@@ -25,6 +25,7 @@ import type { GqlProject } from '../types/project';
 import type { GqlRepository, GqlCommit } from '../types/repository';
 import { useApimApi } from '../hooks/useApim';
 import { useUpdateComponent } from '../hooks/useComponents';
+import { useChoreoSampleImages } from '../hooks/useRepository';
 import LabelDialog from './LabelDialog';
 import SecurityDrawer from './SecurityDrawer';
 import { formatDistanceToNow } from '../utils/time';
@@ -203,17 +204,21 @@ export default function ComponentHeader({ component, project, repository, latest
   const repoUrl = repository ? buildRepoUrl(repository) : null;
 
   const orgUuidFromToken = useOrgUuid() ?? '';
+  const { data: sampleImages } = useChoreoSampleImages(orgUuidFromToken, projectId);
+  const codeServerSample = (sampleImages ?? []).find((img) => img.name === 'Code Server');
+
   const handleOpenInCloud = () => {
-    if (!devantOrigin) return;
+    if (!codeServerSample) return;
     const params = new URLSearchParams({
       userId,
       orgUuid: orgUuidFromToken,
       orgHandle: orgHandler,
       projectId,
       componentId: component.id,
+      codeServerSample: JSON.stringify(codeServerSample),
       sourceCommitHash: latestCommit?.sha ?? '',
     });
-    window.open(`${devantOrigin}/editor?${params}`, '_blank', 'noopener,noreferrer');
+    window.open(`${window.location.origin}/editor?${params}`, '_blank', 'noopener,noreferrer');
     setSplitOpen(false);
   };
 
@@ -496,48 +501,40 @@ export default function ComponentHeader({ component, project, repository, latest
         <Stack direction="column" gap={1.5} alignItems="flex-end" sx={{ mt: 1, flexShrink: 0, width: 'auto' }}>
           {/* Open in Cloud / VS Code */}
           <Box sx={{ position: 'relative' }}>
-            {devantOrigin ? (
-              <>
-                <ButtonGroup variant="outlined" size="small" ref={splitButtonRef}>
-                  <Button startIcon={<Cloud size={14} />} onClick={handleOpenInCloud} sx={{ whiteSpace: 'nowrap' }}>
-                    Open in Cloud&nbsp;
-                    <Chip label="Beta" size="small" sx={{ height: 16, fontSize: 10, cursor: 'pointer' }} />
-                  </Button>
-                  <Button size="small" sx={{ px: 0.5 }} aria-label="More options" aria-expanded={splitOpen} onClick={() => setSplitOpen((prev) => !prev)}>
-                    <ChevronDown size={14} />
-                  </Button>
-                </ButtonGroup>
-                <Popper open={splitOpen} anchorEl={splitButtonRef.current} placement="bottom-end" transition disablePortal style={{ zIndex: 1300 }}>
-                  {({ TransitionProps }) => (
-                    <Grow {...TransitionProps}>
-                      <Paper elevation={3}>
-                        <ClickAwayListener onClickAway={() => setSplitOpen(false)}>
-                          <MenuList dense sx={{ minWidth: 200 }}>
-                            <MenuItem onClick={handleOpenInCloud} selected>
-                              <Stack direction="row" alignItems="center" gap={1}>
-                                <Cloud size={14} />
-                                <Typography variant="body2">Open in Cloud</Typography>
-                                <Chip label="Beta" size="small" sx={{ height: 16, fontSize: 10 }} />
-                              </Stack>
-                            </MenuItem>
-                            <MenuItem onClick={handleOpenInVSCode}>
-                              <Stack direction="row" alignItems="center" gap={1}>
-                                <Code2 size={14} />
-                                <Typography variant="body2">Open in VS Code</Typography>
-                              </Stack>
-                            </MenuItem>
-                          </MenuList>
-                        </ClickAwayListener>
-                      </Paper>
-                    </Grow>
-                  )}
-                </Popper>
-              </>
-            ) : (
-              <Button variant="outlined" size="small" startIcon={<Code2 size={14} />} onClick={handleOpenInVSCode}>
-                Open in VS Code
+            <ButtonGroup variant="outlined" size="small" ref={splitButtonRef}>
+              <Button startIcon={<Cloud size={14} />} onClick={handleOpenInCloud} disabled={!codeServerSample} sx={{ whiteSpace: 'nowrap' }}>
+                Open in Cloud&nbsp;
+                <Chip label="Beta" size="small" sx={{ height: 16, fontSize: 10, cursor: 'pointer' }} />
               </Button>
-            )}
+              <Button size="small" sx={{ px: 0.5 }} aria-label="More options" aria-expanded={splitOpen} onClick={() => setSplitOpen((prev) => !prev)}>
+                <ChevronDown size={14} />
+              </Button>
+            </ButtonGroup>
+            <Popper open={splitOpen} anchorEl={splitButtonRef.current} placement="bottom-end" transition disablePortal style={{ zIndex: 1300 }}>
+              {({ TransitionProps }) => (
+                <Grow {...TransitionProps}>
+                  <Paper elevation={3}>
+                    <ClickAwayListener onClickAway={() => setSplitOpen(false)}>
+                      <MenuList dense sx={{ minWidth: 200 }}>
+                        <MenuItem onClick={handleOpenInCloud} selected disabled={!codeServerSample}>
+                          <Stack direction="row" alignItems="center" gap={1}>
+                            <Cloud size={14} />
+                            <Typography variant="body2">Open in Cloud</Typography>
+                            <Chip label="Beta" size="small" sx={{ height: 16, fontSize: 10 }} />
+                          </Stack>
+                        </MenuItem>
+                        <MenuItem onClick={handleOpenInVSCode}>
+                          <Stack direction="row" alignItems="center" gap={1}>
+                            <Code2 size={14} />
+                            <Typography variant="body2">Open in VS Code</Typography>
+                          </Stack>
+                        </MenuItem>
+                      </MenuList>
+                    </ClickAwayListener>
+                  </Paper>
+                </Grow>
+              )}
+            </Popper>
           </Box>
 
           {/* API management action buttons — Configure Security, Lifecycle Status, Dev Portal, Generate MCP */}
