@@ -82,9 +82,17 @@ export function useFetchProjectsByOrgId() {
 
 ---
 
+## Product considerations
+
+Hooks are shared across all products — there are no product-specific hook files. The product branching happens at the `src/api/<product>/` layer below, which is transparent to hooks.
+
+If a hook calls an API function that only has a real implementation in one product (e.g. devant), the hook still works for all products at the type level. The product-specific gate should be in the UI that decides whether to call the hook at all (`IS_DEVANT && ...`).
+
+---
+
 ## Adding a new hook
 
 1. Locate or create the domain file matching the `src/api/` file (e.g. `useBuilds.ts` for `builds.ts`).
-2. Import the service function from `src/api/`.
+2. Import the service function from `src/api/<domain>.ts` (the public stub, not from `src/api/devant/`).
 3. Wrap with `useQuery` or `useMutation`; assign a stable `queryKey`.
 4. Export the hook — do not export the raw service function from here.

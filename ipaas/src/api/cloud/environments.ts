@@ -1,0 +1,30 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+// TODO: implement using Choreo v3 REST APIs
+
+import type { GqlEnvironment, CloudDataPlane, EnvironmentInput } from '../../types/environment';
+
+const ni = (name: string): never => { throw new Error(`[cloud] environments.${name}: not implemented`); };
+
+export const fetchEnvironments = (_orgUuid: string, _projectId: string): Promise<GqlEnvironment[]> => ni('fetchEnvironments');
+export const fetchAllEnvironments = (): Promise<GqlEnvironment[]> => ni('fetchAllEnvironments');
+export const fetchCloudDataPlanes = (_orgUuid: string): Promise<CloudDataPlane[]> => ni('fetchCloudDataPlanes');
+export const createEnvironment = (_input: EnvironmentInput): Promise<GqlEnvironment> => ni('createEnvironment');
+export const updateEnvironment = (_input: EnvironmentInput & { environmentId: string }): Promise<GqlEnvironment> => ni('updateEnvironment');
+export const deleteEnvironment = (_environmentId: string): Promise<string> => ni('deleteEnvironment');

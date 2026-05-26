@@ -63,10 +63,44 @@ Only one domain file calls `authenticatedFetch` directly. All other 403 retry ca
 
 ---
 
-## Adding a new service function
+## Product-specific implementations
 
-1. Pick the correct named client from `httpClients.ts` for the target backend.
-2. Write a typed async function — input and return types defined in `src/types/`.
-3. If the endpoint can return 403 due to token scope, wrap with `withStsRetry` or `withScopeRetry`.
-4. Export the function.
-5. Do **not** write a `useQuery`/`useMutation` wrapper here — that goes in `src/hooks/`.
+The API layer is split by product. Domain stub files at the top of this directory (`components.ts`, `builds.ts`, …) are each a single re-export:
+
+```ts
+// src/api/components.ts
+export * from '#api/components';
+```
+
+Vite resolves `#api` to `src/api/${PRODUCT}/` at build time, so only one product's code enters the bundle.
+
+```text
+src/api/
+  components.ts          ← public stub — re-exports from #api/components
+  builds.ts              ← public stub
+  …
+  devant/                ← real GraphQL/REST implementations
+    components.ts
+    builds.ts
+    …
+  cloud/                 ← not-implemented stubs
+    components.ts        ← throws "[cloud] components.fetchComponents: not implemented"
+    …
+  icp/                   ← not-implemented stubs
+    components.ts        ← throws "[icp] components.fetchComponents: not implemented"
+    …
+```
+
+### Adding a new service function
+
+1. Add the function to `src/api/devant/<domain>.ts` using the appropriate named client.
+2. Add a matching stub function to `src/api/cloud/<domain>.ts` and `src/api/icp/<domain>.ts` — same signature, body throws.
+3. The public stub (`src/api/<domain>.ts`) needs no change if the domain file already exists.
+4. If it is a new domain, create the public stub: `export * from '#api/<domain>';`
+5. Write a typed async function — input and return types defined in `src/types/`.
+6. If the endpoint can return 403 due to token scope, wrap with `withStsRetry` or `withScopeRetry`.
+7. Do **not** write a `useQuery`/`useMutation` wrapper here — that goes in `src/hooks/`.
+
+### Checking whether a feature is product-specific
+
+If a backend endpoint only makes sense for one product, only implement it in that product's subfolder. The stub in the other products can throw. The route or UI that calls it must be gated with `IS_DEVANT` / `IS_ICP` / `IS_CLOUD` from `src/features.ts` so the dead code is eliminated at build time.
