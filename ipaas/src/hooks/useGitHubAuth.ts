@@ -52,8 +52,13 @@ export function useGitHubAuth(initialStatus: AuthStatus = 'idle'): UseGitHubAuth
     const url = buildGitHubOAuthUrl(githubAppAuthRedirectUrl ?? '', githubAppClientId, state);
     const popup = window.open(url, 'github-oauth', GITHUB_AUTH.POPUP_DIMENSIONS);
     const channel = new BroadcastChannel(GITHUB_AUTH.BROADCAST_CHANNEL);
-    // eslint-disable-next-line prefer-const
-    let pollClosed: ReturnType<typeof setInterval>;
+    const pollClosed = setInterval(() => {
+      if (popup?.closed) {
+        clearInterval(pollClosed);
+        channel.close();
+        setAuthStatus((prev) => (prev === 'authenticating' ? 'idle' : prev));
+      }
+    }, GITHUB_AUTH.POPUP_POLL_INTERVAL_MS);
     channel.onmessage = async (event) => {
       clearInterval(pollClosed);
       channel.close();
@@ -78,13 +83,6 @@ export function useGitHubAuth(initialStatus: AuthStatus = 'idle'): UseGitHubAuth
         setAuthStatus('failed');
       }
     };
-    pollClosed = setInterval(() => {
-      if (popup?.closed) {
-        clearInterval(pollClosed);
-        channel.close();
-        setAuthStatus((prev) => (prev === 'authenticating' ? 'idle' : prev));
-      }
-    }, GITHUB_AUTH.POPUP_POLL_INTERVAL_MS);
   };
 
   return { authStatus, startGitHubAuth, exchangeAuthCode };
