@@ -52,6 +52,7 @@ export function useGitHubAuth(initialStatus: AuthStatus = 'idle'): UseGitHubAuth
     const url = buildGitHubOAuthUrl(githubAppAuthRedirectUrl ?? '', githubAppClientId, state);
     const popup = window.open(url, 'github-oauth', GITHUB_AUTH.POPUP_DIMENSIONS);
     const channel = new BroadcastChannel(GITHUB_AUTH.BROADCAST_CHANNEL);
+    // eslint-disable-next-line prefer-const
     let pollClosed: ReturnType<typeof setInterval>;
     channel.onmessage = async (event) => {
       clearInterval(pollClosed);
