@@ -18,7 +18,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { UUID_RE } from '../utils/string';
-import { fetchProjects, fetchProject, fetchProjectByHandler, fetchProjectContributors, fetchProjectComponentLabels, fetchProjectHandlerAvailability, createProject, createMonoRepoProject } from '../api/projects';
+import { fetchProjects, fetchProject, fetchProjectContributors, fetchProjectComponentLabels, fetchProjectHandlerAvailability, createProject, createMonoRepoProject } from '../api/projects';
 import type { CreateProjectInput, CreateMonoRepoProjectInput } from '../types/project';
 import { useOrgs } from './useOrg';
 
@@ -55,13 +55,9 @@ export function useProject(projectId: string) {
 }
 
 export function useProjectByHandler(handler: string) {
-  const id = orgId();
-  return useQuery({
-    queryKey: ['project', 'handler', handler, id],
-    queryFn: () => fetchProjectByHandler(id, handler),
-    // Guard: never call if handler is empty or looks like a UUID (should use useProject instead)
-    enabled: !!handler && id > 0 && !UUID_RE.test(handler),
-  });
+  const { data: projects = [], isLoading } = useProjects();
+  const data = handler && !UUID_RE.test(handler) ? (projects.find((p) => p.handler === handler) ?? undefined) : undefined;
+  return { data, isLoading: !data && isLoading && !!handler };
 }
 
 export function useProjectContributors(projectId: string) {
@@ -109,4 +105,19 @@ export function useCreateMonoRepoProject() {
     mutationFn: (input: CreateMonoRepoProjectInput) => createMonoRepoProject(input),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
   });
+}
+
+export function useProjectId(projectIdentifier: string) {
+  const isProjectUuid = UUID_RE.test(projectIdentifier);
+  const { data: projectById, isLoading: loadingById } = useProject(isProjectUuid ? projectIdentifier : '');
+  const { data: allProjects = [], isLoading: loadingProjects } = useProjects();
+
+  const projectFromList = !isProjectUuid ? (allProjects.find((p) => p.handler === projectIdentifier) ?? null) : null;
+  const project = isProjectUuid ? projectById : (projectFromList ?? undefined);
+
+  return {
+    projectId: project?.id ?? '',
+    project,
+    isLoading: !project && (isProjectUuid ? loadingById : loadingProjects),
+  };
 }

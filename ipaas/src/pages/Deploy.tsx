@@ -23,7 +23,7 @@ import { useComponentByHandler } from '../hooks/useComponents';
 import { useCommitHistory } from '../hooks/useRepository';
 import { useEnvironments } from '../hooks/useEnvironments';
 import { useOrgs } from '../hooks/useOrg';
-import { useProjectId } from '../hooks/useProjectId';
+import { useProjectId } from '../hooks/useProjects';
 import { UUID_RE } from '../utils/string';
 import BuildArea from '../components/Deploy/BuildArea';
 import ComingSoon from './ComingSoon';

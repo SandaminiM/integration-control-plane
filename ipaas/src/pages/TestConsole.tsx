@@ -29,7 +29,7 @@ import type { GqlEnvEndpoint } from '../types/component';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import NotFound from '../components/NotFound';
-import { useProjectId } from '../hooks/useProjectId';
+import { useProjectId } from '../hooks/useProjects';
 import { broaden, resourceUrl, type ComponentScope } from '../nav';
 
 const ENV_STATUS_DOT: Record<string, string> = {

@@ -308,12 +308,11 @@ export async function generateComponentEndpoints(input: GenerateComponentEndpoin
 
 export async function fetchComponentNameAvailability(projectId: string, componentNameCandidate: string): Promise<ComponentNameAvailability> {
   return gql<{ componentNameAvailability: ComponentNameAvailability }>(
-    `query CheckNameAvailability($projectId: ID!, $componentNameCandidate: String!) {
-      componentNameAvailability(projectId: $projectId, componentNameCandidate: $componentNameCandidate) {
+    `query {
+      componentNameAvailability(projectId: "${projectId}", componentNameCandidate: "${componentNameCandidate}") {
         componentNameUnique alternateComponentName
       }
     }`,
-    { projectId, componentNameCandidate },
   ).then((d) => d.componentNameAvailability);
 }
 

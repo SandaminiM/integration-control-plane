@@ -23,7 +23,7 @@ import { COPILOT_CONNECTION_ERROR, COPILOT_CONNECTION_URL_ERROR, COPILOT_PROCESS
 import { CopilotContext } from '../contexts/CopilotContext';
 import { hasComponent, hasProject, useScope } from '../nav';
 import type { ApiChatExecutionResult } from '../types/copilot';
-import { useProjectId } from './useProjectId';
+import { useProjectId } from './useProjects';
 
 function useCopilot() {
   const [isLoading, setIsLoading] = useState(false);
