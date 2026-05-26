@@ -3,6 +3,9 @@
 > [!NOTE]
 > This directory contains React Context providers used across the ICP application. Each context is purpose-built for a specific concern and is intentionally kept narrow in scope.
 
+> [!IMPORTANT]
+> **Product gating**: `CopilotContext` and `CopilotProvider` are devant-only. They are conditionally rendered in `AppLayout.tsx` behind `IS_DEVANT` from `src/features.ts`. Do not reference them in shared code paths that run for all products. All other contexts here are shared across products.
+
 ---
 
 ## 1. Access Control Context

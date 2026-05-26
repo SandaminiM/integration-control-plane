@@ -24,6 +24,7 @@ import { useComponentByHandler, useComponentEndpoints } from '../hooks/useCompon
 import { useEnvironments } from '../hooks/useEnvironments';
 import { useCommitHistory, useComponentRepository } from '../hooks/useRepository';
 import { useApimApi } from '../hooks/useApim';
+import { IS_DEVANT } from '../features';
 import { useDeploymentStatus } from '../hooks/useDeployments';
 import BusinessInfo from '../components/BusinessInfo';
 import NotFound from '../components/NotFound';
@@ -70,7 +71,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
   const versionId = selectedTrackId;
 
   const { data: endpoints = [] } = useComponentEndpoints(component?.id ?? '', versionId);
-  const apimId = endpoints.find((e) => e.apimId)?.apimId ?? null;
+  const apimId = IS_DEVANT ? (endpoints.find((e) => e.apimId)?.apimId ?? null) : null;
   const { data: apimApiInfo } = useApimApi(apimId);
   const [selectedArtifact, setSelectedArtifact] = useState<SelectedArtifact | null>(null);
 
@@ -155,8 +156,8 @@ export default function Component(scope: ComponentScope): JSX.Element {
             </Fragment>
           ))}
 
-          {/* Subscription Plans, Documents, and Compliance cards — shown for API-enabled components */}
-          {apimId && (
+          {/* Subscription Plans, Documents, and Compliance cards — devant only (requires APIM) */}
+          {IS_DEVANT && apimId && (
             <BusinessInfo
               projectId={projectId}
               componentId={component.id}
