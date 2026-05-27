@@ -77,7 +77,7 @@ export default function Build(scope: ComponentScope): JSX.Element {
   const envId = environments[0]?.id ?? '';
 
   return (
-    <PageContent fullWidth sx={{ overflowX: 'auto' }}>
+    <PageContent>
       <BuildHistory componentId={componentId} versionId={versionId} envId={envId} branch={branch} builds={builds} buildsLoading={loadingBuilds} commits={commits} commitsLoading={loadingCommits} repository={repository ?? null} />
     </PageContent>
   );
