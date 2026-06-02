@@ -18,13 +18,8 @@
 
 import { choreoClient, withStsRetry } from './httpClients';
 import { gql } from './graphql';
-import type { GqlRepository, GqlCommit, GqlUserRepo, GqlRepoBranch, GqlRepoMetadata, RepoTreeNode } from '../../types/repository';
+import type { GqlRepository, GqlCommit, GqlUserRepo, GqlRepoBranch, GqlRepoMetadata, RepoTreeNode, ChoreoSampleImageEntry } from '../../types/repository';
 import type { UpdateBuildpackConfigsInput } from '../../types/build';
-
-interface ChoreoSampleImageEntry {
-  name: string;
-  [key: string]: unknown;
-}
 
 const COMPONENT_REPOSITORY_QUERY = `
   query GetComponentRepository($projectId: String!, $componentHandler: String!) {

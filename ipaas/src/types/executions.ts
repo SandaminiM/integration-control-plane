@@ -40,6 +40,11 @@ export interface ExecutionLogEntry {
   message: string;
 }
 
+export interface ExecutionArgument {
+  argumentName: string;
+  argumentValue: string;
+}
+
 export interface UpdateJobConfigsInput {
   orgHandler: string;
   componentId: string;

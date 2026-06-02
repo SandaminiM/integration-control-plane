@@ -17,7 +17,7 @@
  */
 
 import { authClient } from './httpClients';
-import type { User, Role, RoleDetail, Group, GroupRoleMapping, GroupUser, PermissionsResponse, RoleGroupMapping } from '../../types/auth';
+import type { User, Role, RoleDetail, Group, GroupRoleMapping, GroupUser, PermissionsResponse, RoleGroupMapping, UserPermissionsResponse } from '../../types/auth';
 
 const authGet = <T>(path: string): Promise<T> => authClient.get<T>(path);
 const authPost = <T>(path: string, body: unknown): Promise<T> => authClient.post<T>(path, body);
@@ -25,13 +25,6 @@ const authPut = <T>(path: string, body: unknown): Promise<T> => authClient.put<T
 const authDelete = <T>(path: string): Promise<T> => authClient.delete<T>(path);
 
 // ── Permission fetching ──
-
-interface UserPermissionsResponse {
-  userId: string;
-  scope: { orgUuid: string; projectUuid?: string; integrationUuid?: string; envUuid?: string };
-  permissions: { permissionId: number; permissionName: string; permissionDomain: string; description: string }[];
-  permissionNames: string[];
-}
 
 export function fetchOrgPermissions(orgHandle: string, userId: string): Promise<UserPermissionsResponse> {
   return authGet<UserPermissionsResponse>(`/orgs/${orgHandle}/users/${userId}/permissions`);

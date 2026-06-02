@@ -75,7 +75,7 @@ Vite's `define` + Rollup DCE ensures the unused branch is not bundled.
 
 ### Before adding a page — check the product
 
-Ask: does this page make sense for all three products (devant / cloud / icp)?
+Ask: does this page make sense for all three products (wip / cloud / icp)?
 
 - **Yes** → add normally, no gating needed.
 - **Only one product** → gate the route in `routes.tsx`.

@@ -28,4 +28,10 @@ If a type is referenced in more than one layer (e.g. defined in `api/` and consu
 
 ## Product considerations
 
-Types are shared across all three products (devant, cloud, icp). Do not create product-specific type files. If a type is only needed by one product's API implementation, it can stay inline in `src/api/<product>/<domain>.ts`, but if it is consumed by a hook or a component, move it here.
+Types are shared across all three products (wip, cloud, icp). Do not create product-specific type files. If a type is only needed by one product's API implementation, it can stay inline in `src/api/<product>/<domain>.ts`, but if it is consumed by a hook, a component, or `src/api/contracts.ts`, move it here.
+
+---
+
+## Types referenced by `contracts.ts`
+
+`src/api/contracts.ts` only imports from this directory. If you add a type that participates in an API function signature, it **must** live here — otherwise the contract cannot reference it consistently across all three products.

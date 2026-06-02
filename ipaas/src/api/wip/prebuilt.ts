@@ -19,23 +19,7 @@
 import { gql } from './graphql';
 import { choreoClient } from './httpClients';
 import type { SchemaConfigItem } from '../../types/configuration';
-import type { PrebuiltIntegration, PrebuiltIntegrationsData } from '../../types/prebuilt';
-
-interface NameAvailability {
-  componentNameUnique: boolean;
-  alternateComponentName: string;
-}
-
-interface ComponentDetail {
-  id: string;
-  handler: string;
-  deploymentTracks: { id: string }[];
-}
-
-interface Environment {
-  id: string;
-  templateId?: string;
-}
+import type { PrebuiltIntegration, PrebuiltIntegrationsData, PrebuiltNameAvailability, PrebuiltComponentRef, PrebuiltEnvironmentRef } from '../../types/prebuilt';
 
 export async function fetchPrebuiltIntegrations(url: string, signal?: AbortSignal): Promise<{ prebuiltIntegrations: PrebuiltIntegration[] }> {
   const response = await fetch(url, { cache: 'no-store', signal });
@@ -61,17 +45,17 @@ export async function fetchPrebuiltAsset(baseUrl: string, filename: string, sign
 
 export async function checkNameAvailability(projectId: string, candidate: string): Promise<string> {
   const safe = candidate.replace(/["\\\n\r]/g, '');
-  const data = await gql<{ componentNameAvailability: NameAvailability }>(`query { componentNameAvailability(projectId: "${projectId}", componentNameCandidate: "${safe}") { componentNameUnique alternateComponentName } }`);
+  const data = await gql<{ componentNameAvailability: PrebuiltNameAvailability }>(`query { componentNameAvailability(projectId: "${projectId}", componentNameCandidate: "${safe}") { componentNameUnique alternateComponentName } }`);
   return data.componentNameAvailability.componentNameUnique ? candidate : data.componentNameAvailability.alternateComponentName;
 }
 
-export async function fetchComponentDetail(projectId: string, handler: string): Promise<ComponentDetail> {
-  const data = await gql<{ component: ComponentDetail }>(`query { component(projectId: "${projectId}", componentHandler: "${handler}") { id handler deploymentTracks { id } } }`);
+export async function fetchComponentDetail(projectId: string, handler: string): Promise<PrebuiltComponentRef> {
+  const data = await gql<{ component: PrebuiltComponentRef }>(`query { component(projectId: "${projectId}", componentHandler: "${handler}") { id handler deploymentTracks { id } } }`);
   return data.component;
 }
 
-export async function fetchFirstEnvironment(orgUuid: string, projectId: string): Promise<Environment> {
-  const data = await gql<{ environments: Environment[] }>(`query { environments(orgUuid: "${orgUuid}", type: "external", projectId: "${projectId}") { id templateId } }`);
+export async function fetchFirstEnvironment(orgUuid: string, projectId: string): Promise<PrebuiltEnvironmentRef> {
+  const data = await gql<{ environments: PrebuiltEnvironmentRef[] }>(`query { environments(orgUuid: "${orgUuid}", type: "external", projectId: "${projectId}") { id templateId } }`);
   const envs = data.environments ?? [];
   if (envs.length === 0) throw new Error('No environments found for this project');
   return envs[0];

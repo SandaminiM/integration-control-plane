@@ -47,14 +47,17 @@ Only one domain file calls `authenticatedFetch` directly. All other 403 retry ca
 1. Add the function to the appropriate `src/api/wip/<domain>.ts` using the relevant named client from `httpClients.ts`.
 2. Add a matching stub to `src/api/cloud/<domain>.ts` and `src/api/icp/<domain>.ts` — same function name, body throws `ni('<functionName>')`.
 3. Write input and return types in `src/types/` — domain files must not define types that belong in the shared types layer.
-4. If the endpoint can return 403 due to token scope, wrap with `withStsRetry` or `withScopeRetry`.
-5. Do **not** write a `useQuery`/`useMutation` wrapper here — that goes in `src/hooks/`.
+4. Update the relevant interface in `src/api/contracts.ts` with the new signature. The `_check.ts` files in each product will fail to compile if any product's signature drifts.
+5. If the endpoint can return 403 due to token scope, wrap with `withStsRetry` or `withScopeRetry`.
+6. Do **not** write a `useQuery`/`useMutation` wrapper here — that goes in `src/hooks/`.
 
 ### If it is a new domain file
 
 1. Create `src/api/wip/<domain>.ts` with the real implementation.
 2. Create `src/api/cloud/<domain>.ts` and `src/api/icp/<domain>.ts` stubs (`ni()` pattern).
-3. Hooks import via `'#api/<domain>'` — no additional wiring needed.
+3. Add a new `<Domain>Api` interface in `src/api/contracts.ts` and wire it into the `AppApi` aggregate.
+4. Add the matching `import * as <domain>` + `const _<domain>: Contracts.<Domain>Api = <domain>` assertion to all three `_check.ts` files.
+5. Hooks import via `'#api/<domain>'` — no additional wiring needed.
 
 ---
 

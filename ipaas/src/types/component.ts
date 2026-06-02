@@ -149,3 +149,10 @@ export interface GenerateComponentEndpointsInput {
   commitHash: string;
   dryRun?: boolean;
 }
+
+export interface DeleteComponentResult {
+  status: string;
+  canDelete: boolean;
+  message: string;
+  encodedData: string;
+}

@@ -17,7 +17,7 @@
  */
 
 import { gql } from './graphql';
-import type { GqlComponent, GqlComponentDetail, GqlEndpoint, GqlEnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, DisplayType } from '../../types/component';
+import type { GqlComponent, GqlComponentDetail, GqlEndpoint, GqlEnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, DisplayType, DeleteComponentResult } from '../../types/component';
 import type { ComponentNameAvailability } from '../../types/component';
 
 function gqlStr(value: string): string {
@@ -114,13 +114,6 @@ function buildCreateMiComponentQuery(input: CreateComponentInput): string {
       }){
         id, organizationId, projectId, handle
       }}`;
-}
-
-interface DeleteComponentResult {
-  status: string;
-  canDelete: boolean;
-  message: string;
-  encodedData: string;
 }
 
 const COMPONENTS_QUERY = `

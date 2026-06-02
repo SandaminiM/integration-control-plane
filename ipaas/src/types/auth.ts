@@ -86,3 +86,10 @@ export interface RoleGroupMapping {
   envUuid: string | null;
   integrationUuid: string | null;
 }
+
+export interface UserPermissionsResponse {
+  userId: string;
+  scope: { orgUuid: string; projectUuid?: string; integrationUuid?: string; envUuid?: string };
+  permissions: { permissionId: number; permissionName: string; permissionDomain: string; description: string }[];
+  permissionNames: string[];
+}

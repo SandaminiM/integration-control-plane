@@ -18,7 +18,7 @@
 
 // TODO: implement using Choreo v3 REST APIs
 
-import type { GqlComponent, GqlComponentDetail, GqlEndpoint, GqlEnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability } from '../../types/component';
+import type { GqlComponent, GqlComponentDetail, GqlEndpoint, GqlEnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability, DeleteComponentResult } from '../../types/component';
 
 const ni = (name: string): never => { throw new Error(`[cloud] components.${name}: not implemented`); };
 
@@ -26,7 +26,7 @@ export const fetchComponents = (_orgHandler: string, _projectId: string): Promis
 export const fetchComponentByHandler = (_projectId: string, _componentHandler: string): Promise<GqlComponentDetail> => ni('fetchComponentByHandler');
 export const fetchComponentEndpoints = (_componentId: string, _versionId: string): Promise<GqlEndpoint[]> => ni('fetchComponentEndpoints');
 export const createComponent = (_input: CreateComponentInput): Promise<GqlComponent> => ni('createComponent');
-export const deleteComponent = (_input: { orgHandler: string; componentId: string; projectId: string }): Promise<{ success: boolean }> => ni('deleteComponent');
+export const deleteComponent = (_input: { orgHandler: string; componentId: string; projectId: string }): Promise<DeleteComponentResult> => ni('deleteComponent');
 export const updateComponent = (_input: UpdateComponentInput): Promise<GqlComponent> => ni('updateComponent');
 export const updateAutoDeployEnabled = (_input: UpdateAutoDeployInput): Promise<{ id: string; autoDeployEnabled: boolean }> => ni('updateAutoDeployEnabled');
 export const generateComponentEndpoints = (_input: GenerateComponentEndpointsInput): Promise<GqlEnvEndpoint[]> => ni('generateComponentEndpoints');

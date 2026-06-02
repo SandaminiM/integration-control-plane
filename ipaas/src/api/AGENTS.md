@@ -45,19 +45,47 @@ TypeScript always type-checks against `wip/` (via `tsconfig.app.json` paths) so 
 
 ---
 
+## API contracts (`contracts.ts` + per-product `_check.ts`)
+
+`src/api/contracts.ts` is the single source of truth for the function signatures each product must implement. It groups signatures into one interface per domain (`ComponentsApi`, `DeploymentsApi`, …) and an aggregate `AppApi`.
+
+Each product directory has a `_check.ts` file that performs a compile-time assertion:
+
+```ts
+import type * as Contracts from '../contracts';
+import * as components from './components';
+
+const _components: Contracts.ComponentsApi = components;
+void _components;
+```
+
+The file is never imported at runtime. It exists so that `tsc` errors the moment any product's exported function signature drifts from the contract.
+
+**When you add or change a contract:**
+
+1. Update the interface in `src/api/contracts.ts`.
+2. Update **all three** product implementations (`wip/`, `cloud/`, `icp/`) so the new/changed signature is satisfied.
+3. If a new domain interface is added, also add a corresponding `import * as <domain> from './<domain>'` + `const _<domain>: Contracts.<DomainApi> = <domain>` line to each `_check.ts`.
+4. Parameter and return types in contracts must come from `src/types/*` — never from a product subdirectory.
+
+---
+
 ## Adding a new service function
 
-1. Add the real implementation to `src/api/wip/<domain>.ts`.
-2. Add a matching stub to `src/api/cloud/<domain>.ts` and `src/api/icp/<domain>.ts` — same function name, body throws `ni('<functionName>')`.
-3. Write input and return types in `src/types/` — not inside the domain files.
-4. In the hook, import via `'#api/<domain>'` — no other wiring needed.
-5. Do **not** write a `useQuery`/`useMutation` wrapper inside `src/api/` — that goes in `src/hooks/`.
+1. Write input and return types in `src/types/<domain>.ts` — never inline in the domain files.
+2. Add the real implementation to `src/api/wip/<domain>.ts`.
+3. Add a matching stub to `src/api/cloud/<domain>.ts` and `src/api/icp/<domain>.ts` — same function name, body throws `ni('<functionName>')`.
+4. Update the relevant interface in `src/api/contracts.ts` to include the new signature. The next `tsc` run will verify all three products satisfy it via their `_check.ts`.
+5. In the hook, import via `'#api/<domain>'` — no other wiring needed.
+6. Do **not** write a `useQuery`/`useMutation` wrapper inside `src/api/` — that goes in `src/hooks/`.
 
 ### If it is a new domain file
 
 1. Create `src/api/wip/<domain>.ts` with the real implementation.
 2. Create `src/api/cloud/<domain>.ts` and `src/api/icp/<domain>.ts` stubs.
-3. Hooks import via `'#api/<domain>'` — the alias picks up the new file automatically.
+3. Add a new domain interface (e.g. `MyDomainApi`) to `src/api/contracts.ts` and a new entry in the aggregate `AppApi`.
+4. In each of `wip/_check.ts`, `cloud/_check.ts`, `icp/_check.ts`, add a matching `import * as myDomain from './myDomain'` plus a `const _myDomain: Contracts.MyDomainApi = myDomain` line.
+5. Hooks import via `'#api/<domain>'` — the alias picks up the new file automatically.
 
 ---
 

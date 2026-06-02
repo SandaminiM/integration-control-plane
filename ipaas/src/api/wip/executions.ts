@@ -18,13 +18,8 @@
 
 import { choreoClient, systemClient, withScopeRetry } from './httpClients';
 import { gql } from './graphql';
-import type { GqlExecutionConfigs, TaskExecution, ExecutionLogEntry, UpdateJobConfigsInput, TriggerComponentInput } from '../../types/executions';
+import type { GqlExecutionConfigs, TaskExecution, ExecutionLogEntry, UpdateJobConfigsInput, TriggerComponentInput, ExecutionArgument } from '../../types/executions';
 import type { TriggerTaskInput } from '../../types/artifact';
-
-interface ExecutionArgument {
-  argumentName: string;
-  argumentValue: string;
-}
 
 const EXECUTION_CONFIGS_QUERY = `
   query GetExecutionConfigs($componentId: String!, $releaseId: String!) {

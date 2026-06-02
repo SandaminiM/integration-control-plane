@@ -20,6 +20,7 @@
 
 import type { GqlComponentDeployment, GqlDeploymentStatus, GqlReleaseMgtDeployment, GqlDeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../../types/deployment';
 import type { GqlEnvEndpoint } from '../../types/component';
+import type { DeployComponentInput } from '../../types/build';
 
 const ni = (name: string): never => { throw new Error(`[cloud] deployments.${name}: not implemented`); };
 
@@ -29,7 +30,7 @@ export const fetchDeploymentStatus = (_componentId: string, _versionId: string):
 export const fetchReleaseMgtDeployments = (_orgUuid: string, _projectId: string, _componentId: string, _versionId: string, _environmentId: string): Promise<GqlReleaseMgtDeployment[]> => ni('fetchReleaseMgtDeployments');
 export const fetchDeploymentTrackImages = (_componentId: string, _versionId: string): Promise<GqlDeploymentTrackImage[]> => ni('fetchDeploymentTrackImages');
 export const deployDeploymentTrack = (_input: DeployDeploymentTrackInput): Promise<string> => ni('deployDeploymentTrack');
-export const triggerBuild = (_input: { orgHandler: string; projectId: string; componentId: string; versionId: string; branch: string; commitId?: string }): Promise<{ message: string; success: boolean }> => ni('triggerBuild');
+export const triggerBuild = (_input: DeployComponentInput): Promise<{ message: string; success: boolean }> => ni('triggerBuild');
 export const promote = (_input: PromoteInput): Promise<string> => ni('promote');
 export const stopDeployment = (_input: StopDeploymentInput): Promise<string> => ni('stopDeployment');
 export const redeployDeployment = (_input: { orgHandler: string; componentId: string; releaseId: string; type: string; releaseMgtReleaseId?: string; releaseMgtDeploymentId?: string }): Promise<string> => ni('redeployDeployment');

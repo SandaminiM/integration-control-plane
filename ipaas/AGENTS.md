@@ -89,22 +89,25 @@ import { IS_WIP, IS_CLOUD, IS_ICP } from '../features';
 
 ### `#api` alias — product-specific API implementations
 
-All API domain stubs (`src/api/components.ts`, `builds.ts`, …) re-export from `#api/<domain>`:
+Vite resolves `#api` → `src/api/${product}/` at build time. Hooks import directly through the alias — there are no domain barrel files in `src/api/` root.
 
 ```ts
-// src/api/components.ts
-export * from '#api/components';
+// src/hooks/useComponents.ts
+import { fetchComponents } from '#api/components';
 ```
 
-Vite resolves `#api` → `src/api/${product}/` at build time. Only the selected product's implementation enters the bundle.
+Only the selected product's implementation enters the bundle.
 
 | Directory | Purpose |
 |-----------|---------|
-| `src/api/devant/` | Real GraphQL/REST implementations |
-| `src/api/cloud/`  | Placeholder stubs (throw `[cloud] x: not implemented`) |
-| `src/api/icp/`    | Placeholder stubs (throw `[icp] x: not implemented`) |
+| `src/api/wip/`   | Real GraphQL/REST implementations (Choreo v2) |
+| `src/api/cloud/` | Placeholder stubs (throw `[cloud] x: not implemented`) |
+| `src/api/icp/`   | Placeholder stubs (throw `[icp] x: not implemented`) |
+| `src/api/contracts.ts` | Single source of truth for function signatures each product must satisfy |
 
-When you add a new API function, add it to **all three** product implementations. Use the same function signature. Real logic goes in `devant/`; stubs just throw.
+Each product folder has a `_check.ts` that performs compile-time assertion against `contracts.ts`. Drift between any product's exports and the contract becomes a TypeScript error during `tsc`/build.
+
+When you add a new API function, add it to **all three** product implementations with the same signature, and update `contracts.ts`. Real logic goes in `wip/`; the cloud and icp stubs throw via `ni()`. See `src/api/AGENTS.md` for the step-by-step procedure.
 
 ### `#product` alias — product-specific UI variants
 
@@ -120,29 +123,30 @@ Vite resolves `#product` → `src/product/${product}/`. Only the selected produc
 **Shell pattern** — extract shared structure into a shell component:
 ```text
 src/components/EnvironmentCard/EnvironmentCardShell.tsx  ← shared shell
-src/product/icp/EnvironmentCardBody.tsx                 ← icp variant (imports shell)
-src/product/devant/EnvironmentCardBody.tsx              ← devant variant (imports shell)
+src/product/icp/EnvironmentCardBody.tsx                  ← icp variant (imports shell)
+src/product/wip/EnvironmentCardBody.tsx                  ← wip variant (imports shell)
 ```
 
 The shell must **not** import product files — that would pull all variants into every bundle.
 
-Cloud and devant share the same UI; only `src/product/icp/` accumulates UI variants.
+Cloud and wip share the same UI; only `src/product/icp/` accumulates UI variants.
 
 See `src/product/README.md` for the full guide.
 
 ### TypeScript paths
 
-`tsconfig.app.json` maps both aliases to the `devant/` folder for type checking regardless of build product. This means the IDE always type-checks against devant implementations — which is intentional since devant is the reference product.
+`tsconfig.app.json` maps both aliases to the `wip/` folder for type checking regardless of build product. This means the IDE always type-checks against wip implementations — which is intentional since wip is the reference product (the only one with real implementations today).
 
 ---
 
 ## Adding a new API endpoint — end to end
 
 1. **`src/types/<domain>.ts`** — add or extend the TypeScript type
-2. **`src/api/devant/<domain>.ts`** — add the real implementation using the appropriate client from `httpClients.ts`
+2. **`src/api/wip/<domain>.ts`** — add the real implementation using the appropriate client from `httpClients.ts`
 3. **`src/api/cloud/<domain>.ts`** and **`src/api/icp/<domain>.ts`** — add a matching stub that throws `[cloud] domain.fn: not implemented`
-4. **`src/hooks/use<Domain>.ts`** — wrap with `useQuery` or `useMutation`; set a stable `queryKey`
-5. **`src/components/` or `src/pages/`** — call the hook; never call the service function directly
+4. **`src/api/contracts.ts`** — add or update the function signature in the relevant domain interface
+5. **`src/hooks/use<Domain>.ts`** — wrap with `useQuery` or `useMutation`; set a stable `queryKey`; import via `'#api/<domain>'`
+6. **`src/components/` or `src/pages/`** — call the hook; never call the service function directly
 
 ---
 
@@ -163,13 +167,14 @@ See `src/product/README.md` for the full guide.
 
 ```text
 src/
-  api/              Public domain stubs — each re-exports from #api/<domain> (see src/api/AGENTS.md)
-    devant/         Real GraphQL/REST implementations
+  api/              Per-product API implementations resolved via #api alias (see src/api/AGENTS.md)
+    contracts.ts    Single source of truth — function signatures every product must implement
+    wip/            Real GraphQL/REST implementations (Choreo v2)
     cloud/          Not-implemented stubs for cloud product
     icp/            Not-implemented stubs for icp product
   product/          Product-specific UI variants resolved via #product alias (see src/product/README.md)
-    devant/         Devant UI variants
-    cloud/          Cloud UI variants (currently empty — cloud shares devant UI)
+    wip/            Wip UI variants
+    cloud/          Cloud UI variants (currently empty — cloud shares wip UI)
     icp/            ICP UI variants
   hooks/            React Query hooks, one file per domain (see src/hooks/AGENTS.md)
   types/            TypeScript types — the layer contract (see src/types/AGENTS.md)
@@ -196,6 +201,6 @@ src/
 - **Do not create a new HTTP client.** Reuse the appropriate named client from `api/httpClients.ts`.
 - **Do not import `useQuery`/`useMutation` directly in pages/components.** Use the domain hook.
 - **Do not read `__PRODUCT__` directly.** Use `IS_WIP`, `IS_CLOUD`, `IS_ICP` from `src/features.ts`.
-- **Do not import from `src/api/devant/` directly.** Import from `src/api/<domain>.ts` (the public stub) or via the `#api` alias inside product implementations only.
+- **Do not import from `src/api/wip/` (or `cloud/`/`icp/`) directly.** Always use the `#api/<domain>` alias so the build picks the correct product.
 - **Do not put a product variant file in `src/components/` or `src/pages/`.** Product-specific whole-component variants go in `src/product/<product>/`.
-- **Do not add new API functions only to `src/api/devant/`.** Add a matching stub to `cloud/` and `icp/` too so the other products still build.
+- **Do not add new API functions only to `src/api/wip/`.** Add a matching stub to `cloud/` and `icp/` too, and update `src/api/contracts.ts` — otherwise `_check.ts` will fail to compile.
