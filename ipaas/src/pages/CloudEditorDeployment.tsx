@@ -112,7 +112,7 @@ export default function CloudEditorDeployment(): JSX.Element {
     };
 
     deploy();
-  }, [location.search]);
+  }, [createCodeServerMutation, getOrCreateRegistryMutation, location.search]);
 
   if (error) {
     return (
