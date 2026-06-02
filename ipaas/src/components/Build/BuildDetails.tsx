@@ -82,12 +82,12 @@ export default function BuildDetails({ componentId, versionId, build, onLogsTogg
             </Stack>
           </Stack>
 
-          {build.started_at && (
+          {build.startedAt && (
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Typography variant="body2" color="text.secondary">
                 Started Time
               </Typography>
-              <Typography variant="body2">{formatBuildDate(build.started_at)}</Typography>
+              <Typography variant="body2">{formatBuildDate(build.startedAt)}</Typography>
             </Stack>
           )}
         </Stack>

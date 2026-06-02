@@ -18,8 +18,9 @@
 
 import { gql } from './graphql';
 import { choreoClient } from './httpClients';
+import { normalizePrebuiltIntegrations } from '../../utils/prebuilt';
 import type { SchemaConfigItem } from '../../types/configuration';
-import type { PrebuiltIntegration, PrebuiltComponentRef, PrebuiltEnvironmentRef } from '../../types/prebuilt';
+import type { PrebuiltIntegration, PrebuiltIntegrationsData, PrebuiltComponentRef, PrebuiltEnvironmentRef } from '../../types/prebuilt';
 
 // Raw wire shape — private to this file.
 interface RawNameAvailability {
@@ -27,12 +28,12 @@ interface RawNameAvailability {
   alternateComponentName: string;
 }
 
-export async function fetchPrebuiltIntegrations(url: string, signal?: AbortSignal): Promise<{ prebuiltIntegrations: PrebuiltIntegration[] }> {
+export async function fetchPrebuiltIntegrations(url: string, signal?: AbortSignal): Promise<PrebuiltIntegrationsData> {
   const response = await fetch(url, { cache: 'no-store', signal });
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   const data = (await response.json()) as { prebuiltIntegrations: PrebuiltIntegration[] };
   if (!Array.isArray(data?.prebuiltIntegrations)) throw new Error('Invalid response format: missing prebuiltIntegrations array');
-  return data;
+  return normalizePrebuiltIntegrations(data);
 }
 
 export async function fetchPrebuiltAsset(baseUrl: string, filename: string, signal?: AbortSignal): Promise<Response> {

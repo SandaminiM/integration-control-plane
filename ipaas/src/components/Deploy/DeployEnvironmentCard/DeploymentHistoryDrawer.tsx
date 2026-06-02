@@ -79,8 +79,8 @@ export default function DeploymentHistoryDrawer({ open, onClose, orgUuid, projec
             const isSuccess = dep.status === 'SUCCESS';
             const isFailed = dep.status === 'FAILED';
 
-            // deployed_at is a zero date when the deployment hasn't completed; fall back to created_at
-            const time = !isZeroDate(dep.deployed_at) ? dep.deployed_at : dep.created_at;
+            // deployedAt is a zero date when the deployment hasn't completed; fall back to createdAt
+            const time = !isZeroDate(dep.deployedAt) ? dep.deployedAt : dep.createdAt;
 
             return (
               <Box key={dep.id ?? idx}>
@@ -94,9 +94,9 @@ export default function DeploymentHistoryDrawer({ open, onClose, orgUuid, projec
                       <Typography variant="body2" fontWeight={600}>
                         {isSuccess ? 'Success' : isFailed ? 'Failed' : 'Pending'}
                       </Typography>
-                      {dep.release_name && (
+                      {dep.releaseName && (
                         <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-                          {dep.release_name}
+                          {dep.releaseName}
                         </Typography>
                       )}
                     </Stack>
@@ -109,11 +109,11 @@ export default function DeploymentHistoryDrawer({ open, onClose, orgUuid, projec
                     )}
 
                     {/* Commit hash */}
-                    {dep.commit_hash && (
+                    {dep.commitHash && (
                       <Stack direction="row" alignItems="center" gap={0.5}>
                         <GitCommitHorizontal size={13} style={{ opacity: 0.6, flexShrink: 0 }} />
                         <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
-                          {dep.commit_hash.substring(0, 9)}
+                          {dep.commitHash.substring(0, 9)}
                         </Typography>
                       </Stack>
                     )}
@@ -126,11 +126,11 @@ export default function DeploymentHistoryDrawer({ open, onClose, orgUuid, projec
                     )}
 
                     {/* Deployed by */}
-                    {dep.deployed_by && (
+                    {dep.deployedBy && (
                       <Stack direction="row" alignItems="center" gap={0.5}>
                         <User size={12} style={{ opacity: 0.5, flexShrink: 0 }} />
                         <Typography variant="caption" color="text.secondary">
-                          {dep.deployed_by}
+                          {dep.deployedBy}
                         </Typography>
                       </Stack>
                     )}

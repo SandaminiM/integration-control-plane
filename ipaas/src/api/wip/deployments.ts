@@ -134,8 +134,91 @@ export async function fetchEnvEndpoints(componentId: string, versionId: string, 
     .catch(() => []);
 }
 
+// ── Raw wire shapes — private to this file. The GraphQL responses come back
+// with snake_case fields; mappers below convert them to the camelCase domain
+// types declared in `src/types/deployment.ts` before the data leaves this file.
+
+interface RawBuildRun {
+  id: number;
+  sha: string;
+  started_at: string;
+  completed_at: string;
+  status: string;
+  conclusion: string;
+  conclusionV2: string;
+  isAutoDeploy: boolean;
+  isTriggeredAtCreation: boolean;
+  name: string;
+  failureReason: number;
+  sourceCommitId: string;
+  buildRef?: string;
+}
+
+interface RawReleaseMgtDeployment {
+  id: string;
+  release_mgt_id: string;
+  environment_id: string;
+  deployment_name: string;
+  attempt: number;
+  config_revision: number;
+  status: string;
+  comment: string;
+  deployed_at: string;
+  deployed_by: string;
+  release_name: string;
+  commit_hash: string;
+  component_configs: {
+    config_mapping_revision: number;
+    schema_based_config_revision: number;
+    api_settings: string;
+  };
+  created_at: string;
+}
+
+function toBuildRun(raw: RawBuildRun): BuildRun {
+  return {
+    id: raw.id,
+    sha: raw.sha,
+    startedAt: raw.started_at,
+    completedAt: raw.completed_at,
+    status: raw.status,
+    conclusion: raw.conclusion,
+    conclusionV2: raw.conclusionV2,
+    isAutoDeploy: raw.isAutoDeploy,
+    isTriggeredAtCreation: raw.isTriggeredAtCreation,
+    name: raw.name,
+    failureReason: raw.failureReason,
+    sourceCommitId: raw.sourceCommitId,
+    buildRef: raw.buildRef,
+  };
+}
+
+function toReleaseMgtDeployment(raw: RawReleaseMgtDeployment): ReleaseMgtDeployment {
+  return {
+    id: raw.id,
+    releaseMgtId: raw.release_mgt_id,
+    environmentId: raw.environment_id,
+    deploymentName: raw.deployment_name,
+    attempt: raw.attempt,
+    configRevision: raw.config_revision,
+    status: raw.status,
+    comment: raw.comment,
+    deployedAt: raw.deployed_at,
+    deployedBy: raw.deployed_by,
+    releaseName: raw.release_name,
+    commitHash: raw.commit_hash,
+    componentConfigs: {
+      configMappingRevision: raw.component_configs.config_mapping_revision,
+      schemaBasedConfigRevision: raw.component_configs.schema_based_config_revision,
+      apiSettings: raw.component_configs.api_settings,
+    },
+    createdAt: raw.created_at,
+  };
+}
+
 export async function fetchDeploymentStatus(componentId: string, versionId: string): Promise<BuildRun[]> {
-  return gql<{ deploymentStatusByVersion: BuildRun[] }>(DEPLOYMENT_STATUS_QUERY, { versionId, componentId }).then((d) => d.deploymentStatusByVersion ?? []);
+  return gql<{ deploymentStatusByVersion: RawBuildRun[] }>(DEPLOYMENT_STATUS_QUERY, { versionId, componentId })
+    .then((d) => (d.deploymentStatusByVersion ?? []).map(toBuildRun));
 }
 
 export async function fetchReleaseMgtDeployments(orgUuid: string, projectId: string, componentId: string, versionId: string, environmentId: string): Promise<ReleaseMgtDeployment[]> {
@@ -158,8 +241,8 @@ export async function fetchReleaseMgtDeployments(orgUuid: string, projectId: str
       }
     }
   }`;
-  return gql<{ componentReleaseMgtDeployments: { deployments: ReleaseMgtDeployment[] } }>(query)
-    .then((d) => d.componentReleaseMgtDeployments?.deployments ?? [])
+  return gql<{ componentReleaseMgtDeployments: { deployments: RawReleaseMgtDeployment[] } }>(query)
+    .then((d) => (d.componentReleaseMgtDeployments?.deployments ?? []).map(toReleaseMgtDeployment))
     .catch(() => [] as ReleaseMgtDeployment[]);
 }
 

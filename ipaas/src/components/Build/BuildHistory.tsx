@@ -243,7 +243,7 @@ export default function BuildHistory({ componentId, versionId, envId, branch, bu
 
                 <ListingTable.Cell>
                   <Typography variant="body2" color="text.secondary">
-                    {build.started_at ? formatDistanceToNow(build.started_at) : '—'}
+                    {build.startedAt ? formatDistanceToNow(build.startedAt) : '—'}
                   </Typography>
                 </ListingTable.Cell>
 

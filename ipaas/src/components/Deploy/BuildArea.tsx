@@ -226,11 +226,11 @@ export default function BuildArea({
               <BuildImageCard
                 image={{
                   imageId: '',
-                  createdAt: inProgressBuild!.started_at,
-                  updatedAt: inProgressBuild!.started_at,
+                  createdAt: inProgressBuild!.startedAt,
+                  updatedAt: inProgressBuild!.startedAt,
                   commitHash: inProgressBuild!.sha,
                   commitMessage: buildingCommit?.message ?? inProgressBuild!.sha.slice(0, 8),
-                  builtAt: inProgressBuild!.started_at,
+                  builtAt: inProgressBuild!.startedAt,
                   runId: String(inProgressBuild!.id),
                   author: buildingCommit?.author ? { name: buildingCommit.author.name, email: buildingCommit.author.email, date: buildingCommit.author.date, avatarUrl: buildingCommit.author.avatarUrl } : { name: '', email: '', date: '', avatarUrl: '' },
                 }}

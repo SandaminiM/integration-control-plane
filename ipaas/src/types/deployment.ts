@@ -56,8 +56,8 @@ export interface ComponentDeployment {
 export interface BuildRun {
   id: number;
   sha: string;
-  started_at: string;
-  completed_at: string;
+  startedAt: string;
+  completedAt: string;
   status: string;
   conclusion: string;
   conclusionV2: string;
@@ -69,25 +69,27 @@ export interface BuildRun {
   buildRef?: string;
 }
 
+export interface ReleaseMgtDeploymentComponentConfigs {
+  configMappingRevision: number;
+  schemaBasedConfigRevision: number;
+  apiSettings: string;
+}
+
 export interface ReleaseMgtDeployment {
   id: string;
-  release_mgt_id: string;
-  environment_id: string;
-  deployment_name: string;
+  releaseMgtId: string;
+  environmentId: string;
+  deploymentName: string;
   attempt: number;
-  config_revision: number;
+  configRevision: number;
   status: string;
   comment: string;
-  deployed_at: string;
-  deployed_by: string;
-  release_name: string;
-  commit_hash: string;
-  component_configs: {
-    config_mapping_revision: number;
-    schema_based_config_revision: number;
-    api_settings: string;
-  };
-  created_at: string;
+  deployedAt: string;
+  deployedBy: string;
+  releaseName: string;
+  commitHash: string;
+  componentConfigs: ReleaseMgtDeploymentComponentConfigs;
+  createdAt: string;
 }
 
 export interface DeploymentTrackImage {

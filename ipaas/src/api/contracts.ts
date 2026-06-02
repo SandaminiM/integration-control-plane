@@ -55,7 +55,7 @@ import type { InsightsEnvironment, ComponentInsights } from '../types/insights';
 import type { LogsRequest, ComponentLogsRequest, LogRow } from '../types/logs';
 import type { ApiDocument, RuleAdherenceResponse, ThrottlingPolicy } from '../types/marketplace';
 import type { OrgEntry, OrgComponentLimits, OrgSubscription, RegisterUserResponse } from '../types/org';
-import type { PrebuiltIntegration, PrebuiltComponentRef, PrebuiltEnvironmentRef } from '../types/prebuilt';
+import type { PrebuiltIntegrationsData, PrebuiltComponentRef, PrebuiltEnvironmentRef } from '../types/prebuilt';
 import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput } from '../types/project';
 import type { Repository, Commit, UserRepo, RepoBranch, RepoMetadata, RepoTreeNode, ChoreoSampleImageEntry } from '../types/repository';
 import type { Sample } from '../types/samples';
@@ -305,7 +305,7 @@ export interface OrgApi {
 // ---------------------------------------------------------------------------
 
 export interface PrebuiltApi {
-  fetchPrebuiltIntegrations(url: string, signal?: AbortSignal): Promise<{ prebuiltIntegrations: PrebuiltIntegration[] }>;
+  fetchPrebuiltIntegrations(url: string, signal?: AbortSignal): Promise<PrebuiltIntegrationsData>;
   fetchPrebuiltAsset(baseUrl: string, filename: string, signal?: AbortSignal): Promise<Response>;
   checkNameAvailability(projectId: string, candidate: string): Promise<string>;
   fetchComponentDetail(projectId: string, handler: string): Promise<PrebuiltComponentRef>;

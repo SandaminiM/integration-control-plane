@@ -104,7 +104,7 @@ const CREATE_MONO_REPO_PROJECT = `
   }`;
 
 export async function fetchProjects(orgId: number): Promise<Project[]> {
-  return gql<{ projects: Project[] }>(PROJECTS_QUERY, { orgId }).then((d) => d.projects);
+  return gql<{ projects: Project[] }>(PROJECTS_QUERY, { orgId }).then((d) => d.projects ?? []);
 }
 
 export async function fetchProject(orgId: number, projectId: string): Promise<Project> {
