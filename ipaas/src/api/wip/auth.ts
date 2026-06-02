@@ -19,8 +19,6 @@
 import { authClient } from './httpClients';
 import type { User, Role, RoleDetail, Group, GroupRoleMapping, GroupUser, PermissionsResponse, RoleGroupMapping } from '../../types/auth';
 
-// Types moved to src/types/auth — re-exported here for backward compatibility
-
 const authGet = <T>(path: string): Promise<T> => authClient.get<T>(path);
 const authPost = <T>(path: string, body: unknown): Promise<T> => authClient.post<T>(path, body);
 const authPut = <T>(path: string, body: unknown): Promise<T> => authClient.put<T>(path, body);

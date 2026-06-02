@@ -17,18 +17,7 @@
  */
 
 import { choreoClient } from './httpClients';
-import type { CertGroup, CertMapping, SchemaConfigData, ConfigMgtData, SchemaConfigItem, SaveSchemaConfigInput, ConfigMgtSaveItem } from '../../types/configuration';
-
-export interface PostConfigMgtInput {
-  orgHandler: string;
-  projectId: string;
-  componentId: string;
-  envId: string;
-  versionId: string;
-  moduleName: string;
-  commitHash: string;
-  configs: ConfigMgtSaveItem[];
-}
+import type { CertGroup, CertMapping, SchemaConfigData, ConfigMgtData, SchemaConfigItem, SaveSchemaConfigInput, PostConfigMgtInput } from '../../types/configuration';
 
 export async function fetchCertificateGroups(projectId: string, componentId: string): Promise<CertGroup[]> {
   const params = new URLSearchParams({ projectId, componentId, nested_search: 'true' });

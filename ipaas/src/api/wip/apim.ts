@@ -20,8 +20,6 @@ import { getOrgUuidFromToken } from '../../auth/tokenManager';
 import { apimClient, choreoClient } from './httpClients';
 import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory } from '../../types/apim';
 
-// Types moved to src/types/apim — re-exported here so existing imports continue to work
-
 export async function fetchApimApi(apimId: string): Promise<ApimApiInfo | null> {
   const orgUuid = getOrgUuidFromToken() ?? '';
   try {

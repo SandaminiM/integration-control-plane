@@ -19,6 +19,8 @@
 // TODO: implement using icp APIs
 const ni = (name: string): never => { throw new Error(`[icp] configuration.${name}: not implemented`); };
 
+export type { PostConfigMgtInput } from '../../types/configuration';
+
 export const fetchCertificateGroups = (..._args: unknown[]): never => ni('fetchCertificateGroups');
 export const fetchConfigGroups = (..._args: unknown[]): never => ni('fetchConfigGroups');
 export const fetchCertificateMappings = (..._args: unknown[]): never => ni('fetchCertificateMappings');
