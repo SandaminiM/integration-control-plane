@@ -39,7 +39,7 @@ import { resourceUrl, narrow, type ProjectScope } from '../nav';
 import { importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, importComingSoonUrl, buildGitHubOAuthUrl } from '../paths';
 import type { Sample } from '../types/samples';
 import { toHandler } from '../utils/string';
-import { useProjectId } from '../hooks/useProjectId';
+import { useProjectId } from '../hooks/useProjects';
 import { useSamples } from '../hooks/useSamples';
 import { usePrebuiltIntegrations } from '../hooks/usePrebuiltIntegrations';
 

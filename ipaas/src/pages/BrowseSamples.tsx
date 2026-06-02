@@ -30,7 +30,7 @@ import { useSamples } from '../hooks/useSamples';
 import { resourceUrl, narrow, newComponentUrl, type ProjectScope } from '../nav';
 import type { Sample } from '../types/samples';
 import { toHandler } from '../utils/string';
-import { useProjectId } from '../hooks/useProjectId';
+import { useProjectId } from '../hooks/useProjects';
 
 export default function BrowseSamples(scope: ProjectScope): JSX.Element {
   const navigate = useNavigate();

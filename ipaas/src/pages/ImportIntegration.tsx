@@ -37,7 +37,7 @@ import { useGitHubAuth } from '../hooks/useGitHubAuth';
 import { toHandler, formatRepoNameToDisplayName } from '../utils/string';
 import { parseGitHubUrl } from '../utils/github';
 import { detectTechnology } from '../utils/technologyDetection';
-import { useProjectId } from '../hooks/useProjectId';
+import { useProjectId } from '../hooks/useProjects';
 
 export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   const navigate = useNavigate();
@@ -145,22 +145,24 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
     setDetectedMode(null);
   }, [selectedBranch]);
 
-  // GitHub mode: reset downstream when repo changes — declared BEFORE auto-select so that on a
-  // React Query cache hit (both effects fire in the same flush), this one runs first.
+  // GitHub mode: reset downstream when repo changes.
   useEffect(() => {
     if (isPublicRepo) return;
-    if (selectedRepo && (!displayName || displayNameAutoRef.current)) {
+    if (selectedRepo) {
       setDisplayName(formatRepoNameToDisplayName(selectedRepo));
       displayNameAutoRef.current = true;
     }
     resetDownstreamState();
+    if (branches && branches.length > 0) {
+      const def = branches.find((b) => b.isDefault);
+      setSelectedBranch(def?.name ?? branches[0].name);
+    }
   }, [selectedRepo]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-select default branch — declared AFTER reset so it wins on a cache hit
+  // Auto-select default branch when branches finish loading (cache miss path)
   useEffect(() => {
     if (!branches || branches.length === 0) return;
-    const stillExists = branches.some((b) => b.name === selectedBranch);
-    if (!selectedBranch || !stillExists) {
+    if (!selectedBranch) {
       const def = branches.find((b) => b.isDefault);
       setSelectedBranch(def?.name ?? branches[0].name);
     }

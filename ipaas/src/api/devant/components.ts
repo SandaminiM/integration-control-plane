@@ -27,8 +27,10 @@ function gqlStr(value: string): string {
     .replace(/\n/g, '\\n')
     .replace(/\r/g, '\\r')
     .replace(/\t/g, '\\t')
-    .replace(/\b/g, '\\b')
+    // eslint-disable-next-line no-control-regex
+    .replace(/\x08/g, '\\b')
     .replace(/\f/g, '\\f')
+    // eslint-disable-next-line no-control-regex
     .replace(/[\x00-\x1f]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`)}"`;
 }
 
@@ -308,12 +310,11 @@ export async function generateComponentEndpoints(input: GenerateComponentEndpoin
 
 export async function fetchComponentNameAvailability(projectId: string, componentNameCandidate: string): Promise<ComponentNameAvailability> {
   return gql<{ componentNameAvailability: ComponentNameAvailability }>(
-    `query CheckNameAvailability($projectId: ID!, $componentNameCandidate: String!) {
-      componentNameAvailability(projectId: $projectId, componentNameCandidate: $componentNameCandidate) {
+    `query {
+      componentNameAvailability(projectId: ${gqlStr(projectId)}, componentNameCandidate: ${gqlStr(componentNameCandidate)}) {
         componentNameUnique alternateComponentName
       }
     }`,
-    { projectId, componentNameCandidate },
   ).then((d) => d.componentNameAvailability);
 }
 

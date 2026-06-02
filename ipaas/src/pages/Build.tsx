@@ -27,7 +27,7 @@ import BuildHistory from '../components/Build/BuildHistory';
 import ComingSoon from './ComingSoon';
 import type { ComponentScope } from '../nav';
 import { UUID_RE } from '../utils/string';
-import { useProjectId } from '../hooks/useProjectId';
+import { useProjectId } from '../hooks/useProjects';
 
 export default function Build(scope: ComponentScope): JSX.Element {
   const isProjectUuid = UUID_RE.test(scope.project);

@@ -26,7 +26,7 @@ import ConfirmDialog from '../components/Lifecycle/ConfirmDialog';
 import LCStateDiagram from '../components/Lifecycle/LCStateDiagram';
 import LifecycleHistoryDrawer from '../components/Lifecycle/LifecycleHistoryDrawer';
 import { ACTION_LABEL, CONFIRM_ACTIONS, HIDDEN_ACTIONS, PUBLISH_ACTIONS, SUCCESS_TEXT } from '../constants/lifecycle';
-import { useProjectId } from '../hooks/useProjectId';
+import { useProjectId } from '../hooks/useProjects';
 import type { ComponentScope } from '../nav';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
 
