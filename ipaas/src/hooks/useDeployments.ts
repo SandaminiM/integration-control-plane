@@ -18,7 +18,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Query } from '@tanstack/react-query';
-import { fetchApimSwagger } from '../api/apim';
+import { fetchApimSwagger } from '#api/apim';
 import {
   fetchComponentDeployment,
   fetchEnvEndpoints,
@@ -31,7 +31,7 @@ import {
   stopDeployment,
   redeployDeployment,
   deployPrebuiltImage,
-} from '../api/deployments';
+} from '#api/deployments';
 import type { GqlComponentDeployment, GqlDeploymentStatus, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../types/deployment';
 import type { DeployComponentInput } from '../types/build';
 

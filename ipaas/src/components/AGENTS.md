@@ -36,10 +36,10 @@ Use `useOrgUuid()` from `src/hooks/useOrgUuid.ts`. Never call `getOrgUuidFromTok
 Use the build-time flags from `src/features.ts`:
 
 ```tsx
-import { IS_DEVANT, IS_ICP } from '../features';
+import { IS_WIP, IS_ICP } from '../features';
 
 // Renders only in the devant bundle; tree-shaken from cloud and icp
-{IS_DEVANT && <CopilotButton />}
+{IS_WIP && <CopilotButton />}
 ```
 
 ### Whole component differs per product — the shell pattern

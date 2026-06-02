@@ -17,7 +17,7 @@
  */
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { fetchLogs, fetchComponentLogs } from '../api/logs';
+import { fetchLogs, fetchComponentLogs } from '#api/logs';
 import type { LogsRequest, ComponentLogsRequest } from '../types/logs';
 
 export function useInfiniteLogs(req: LogsRequest | null, refetchInterval: number | false = false, logsApiUrl?: string) {

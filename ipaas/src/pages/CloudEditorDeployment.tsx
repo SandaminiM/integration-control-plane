@@ -66,20 +66,30 @@ export default function CloudEditorDeployment(): JSX.Element {
 
         // 2. Get or create the Choreo samples container registry
         setStep(CLOUD_EDITOR_STEPS.creatingEditor);
-        const registry = await getOrCreateRegistryMutation.mutateAsync(deploymentParams.orgUuid);
+        let registry;
+        try {
+          registry = await getOrCreateRegistryMutation.mutateAsync(deploymentParams.orgUuid);
+        } catch {
+          throw new Error('Unable to set up the Cloud Editor environment. Please try again or contact support if the problem persists.');
+        }
 
         // 3. Call createCodeServer — backend provisions the container and returns its URL
         setStep(CLOUD_EDITOR_STEPS.configuring);
-        const rawUrl = await createCodeServerMutation.mutateAsync({
-          userId: deploymentParams.userId,
-          organizationId: deploymentParams.orgUuid,
-          projectId: deploymentParams.projectId,
-          componentId: deploymentParams.componentId,
-          orgHandle: deploymentParams.orgHandle,
-          imageUrl: codeServerSample.image_url,
-          registryId: registry.id,
-          sourceCommitHash: deploymentParams.sourceCommitHash || undefined,
-        });
+        let rawUrl: string;
+        try {
+          rawUrl = await createCodeServerMutation.mutateAsync({
+            userId: deploymentParams.userId,
+            organizationId: deploymentParams.orgUuid,
+            projectId: deploymentParams.projectId,
+            componentId: deploymentParams.componentId,
+            orgHandle: deploymentParams.orgHandle,
+            imageUrl: codeServerSample.image_url,
+            registryId: registry.id,
+            sourceCommitHash: deploymentParams.sourceCommitHash || undefined,
+          });
+        } catch {
+          throw new Error('Unable to start the Cloud Editor. Please try again or contact support if the problem persists.');
+        }
 
         // 4. Validate URL is HTTPS and redirect — replace() so the loading page is not in back history
         setStep(CLOUD_EDITOR_STEPS.redirecting);

@@ -47,7 +47,7 @@ import {
   removeRoleFromGroup,
   addUsersToGroup,
   removeUserFromGroup,
-} from '../api/auth';
+} from '#api/auth';
 
 // ── Org permissions ──
 

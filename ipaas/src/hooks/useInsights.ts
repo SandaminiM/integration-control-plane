@@ -17,7 +17,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchComponentInsights, fetchInsightsEnvironments } from '../api/insights';
+import { fetchComponentInsights, fetchInsightsEnvironments } from '#api/insights';
 import type { InsightsEnvironment } from '../types/insights';
 
 export function useInsightsEnvironments(orgUuid: string, projectId: string) {

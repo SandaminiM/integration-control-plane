@@ -119,7 +119,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { CopilotContext, CopilotProvider } from '../contexts/CopilotContext';
 import CopilotDrawer from '../components/AiCopilot/CopilotDrawer';
-import { IS_DEVANT } from '../features';
+import { IS_WIP } from '../features';
 import AIIcon from '../assets/icons/ai/AIIcon';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions';
 import { UUID_RE } from '../utils/string';
@@ -975,7 +975,7 @@ function AppLayoutInner(): JSX.Element {
                 </Badge>
               </IconButton>
             </Tooltip>
-            {IS_DEVANT && (
+            {IS_WIP && (
               <Button
                 variant="outlined"
                 size="small"
@@ -1311,7 +1311,7 @@ function AppLayoutInner(): JSX.Element {
                             </Sidebar.ItemIcon>
                             <Sidebar.ItemLabel>Console</Sidebar.ItemLabel>
                           </Sidebar.Item>
-                          {IS_DEVANT && (
+                          {IS_WIP && (
                             <Sidebar.Item id="api-chat">
                               <Sidebar.ItemIcon>
                                 <MessageSquare size={20} />
@@ -1595,7 +1595,7 @@ function AppLayoutInner(): JSX.Element {
             }}>
             <Outlet />
           </Box>
-          {IS_DEVANT && <CopilotDrawer />}
+          {IS_WIP && <CopilotDrawer />}
         </Box>
       </AppShell.Main>
 

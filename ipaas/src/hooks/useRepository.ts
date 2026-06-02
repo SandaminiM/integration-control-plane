@@ -17,8 +17,8 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchComponentRepository, fetchCommitHistory, fetchGitHubUserRepos, fetchRepoBranches, fetchRepoMetadata, fetchChoreoSampleImages, updateBuildpackConfigs, obtainGithubToken, fetchRepoContents } from '../api/repository';
-import { fetchComponentNameAvailability } from '../api/components';
+import { fetchComponentRepository, fetchCommitHistory, fetchGitHubUserRepos, fetchRepoBranches, fetchRepoMetadata, fetchChoreoSampleImages, updateBuildpackConfigs, obtainGithubToken, fetchRepoContents } from '#api/repository';
+import { fetchComponentNameAvailability } from '#api/components';
 import type { UpdateBuildpackConfigsInput } from '../types/build';
 
 export function useComponentRepository(projectId: string, componentHandler: string) {

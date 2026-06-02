@@ -16,17 +16,12 @@
  * under the License.
  */
 
-import { useMutation } from '@tanstack/react-query';
-import { callCreateCodeServer, getOrCreateSampleRegistry } from '#api/cloudEditor';
+import type { Sample } from '../../types/samples';
 
-export function useGetOrCreateSampleRegistry() {
-  return useMutation({
-    mutationFn: (orgUuid: string) => getOrCreateSampleRegistry(orgUuid),
-  });
-}
-
-export function useCreateCodeServer() {
-  return useMutation({
-    mutationFn: (params: { userId: string; organizationId: string; projectId: string; componentId: string; orgHandle: string; imageUrl: string; registryId: string; sourceCommitHash?: string }) => callCreateCodeServer(params),
-  });
+export async function fetchSamples(url: string, signal?: AbortSignal): Promise<{ samples: Sample[] }> {
+  const response = await fetch(url, { cache: 'no-store', signal });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  const data = (await response.json()) as { samples: Sample[] };
+  if (!Array.isArray(data?.samples)) throw new Error('Invalid response format: missing samples array');
+  return data;
 }

@@ -31,7 +31,7 @@ Vite replaces these at build time. Only the selected product's files enter the b
 
 | Situation | Approach |
 |-----------|----------|
-| 1–2 element toggle (e.g. hide a button) | `IS_ICP` / `IS_DEVANT` inline in the shared component |
+| 1–2 element toggle (e.g. hide a button) | `IS_ICP` / `IS_WIP` inline in the shared component |
 | Many toggles following a consistent pattern | `productConfig` in `src/product-config.ts` |
 | Whole component renders completely differently | `#product/ComponentName` alias |
 | Page only exists in one product | stays in `src/pages/`, route gated in `src/config/routes.tsx` |

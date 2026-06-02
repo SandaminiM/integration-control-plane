@@ -17,7 +17,7 @@
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { TOGGLE_CONFIG, updateArtifactToggleStatus } from '../api/artifactToggleMutations';
+import { TOGGLE_CONFIG, updateArtifactToggleStatus } from '#api/artifactToggleMutations';
 import type { GqlArtifact, ArtifactToggleStatusInput, ArtifactTracingInput, ArtifactStatisticsInput, ArtifactToggleKind } from '../types/artifact';
 
 export function useUpdateArtifactToggleStatus(kind: ArtifactToggleKind) {

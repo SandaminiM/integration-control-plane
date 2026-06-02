@@ -21,7 +21,7 @@ import type { JSX } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router';
 import { useAuth } from './AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
-import { fetchOrgPermissions } from '../api/auth';
+import { fetchOrgPermissions } from '#api/auth';
 import { loginUrl, forceChangePasswordUrl } from '../paths';
 import { saveRedirectUrl } from './tokenManager';
 import { Permissions } from '../constants/permissions';

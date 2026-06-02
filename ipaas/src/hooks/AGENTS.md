@@ -86,7 +86,7 @@ export function useFetchProjectsByOrgId() {
 
 Hooks are shared across all products — there are no product-specific hook files. The product branching happens at the `src/api/<product>/` layer below, which is transparent to hooks.
 
-If a hook calls an API function that only has a real implementation in one product (e.g. devant), the hook still works for all products at the type level. The product-specific gate should be in the UI that decides whether to call the hook at all (`IS_DEVANT && ...`).
+If a hook calls an API function that only has a real implementation in one product (e.g. devant), the hook still works for all products at the type level. The product-specific gate should be in the UI that decides whether to call the hook at all (`IS_WIP && ...`).
 
 ---
 
