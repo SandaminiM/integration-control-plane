@@ -23,8 +23,8 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "paths": {
-      "#api/*": ["./src/api/devant/*"],
-      "#product/*": ["./src/product/devant/*"]
+      "#api/*": ["./src/api/wip/*"],
+      "#product/*": ["./src/product/wip/*"]
     }
   },
   "include": ["src"]

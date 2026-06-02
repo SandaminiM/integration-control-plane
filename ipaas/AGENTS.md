@@ -65,7 +65,7 @@ This codebase builds three distinct products from one source tree:
 
 | `PRODUCT` | Description |
 |-----------|-------------|
-| `devant`  | Choreo v2 / preview-dv (default) |
+| `wip`     | Choreo v2 / preview-dv (default) |
 | `cloud`   | Choreo v3 / cloud |
 | `icp`     | Local / ICP desktop |
 
@@ -74,7 +74,7 @@ This codebase builds three distinct products from one source tree:
 `src/features.ts` exports three boolean constants that Vite replaces at build time. Rollup/esbuild eliminates dead branches — unused product code never reaches the bundle.
 
 ```ts
-import { IS_DEVANT, IS_CLOUD, IS_ICP } from '../features';
+import { IS_WIP, IS_CLOUD, IS_ICP } from '../features';
 ```
 
 `__PRODUCT__` is a Vite `define` global; never read it directly. Use the flags from `features.ts`.
@@ -82,10 +82,10 @@ import { IS_DEVANT, IS_CLOUD, IS_ICP } from '../features';
 ### Before you write product-specific code — ask yourself
 
 1. **Is this feature shared across all products?** → No gating needed, code stays in `src/components/` / `src/pages/` / `src/api/` as usual.
-2. **Is this a small 1–2 element toggle?** → Use `IS_DEVANT` / `IS_ICP` inline.
-3. **Are many toggles following a consistent pattern?** → Add a named export to `src/features.ts` (e.g. `export const SHOW_FOO = IS_DEVANT || IS_CLOUD`).
+2. **Is this a small 1–2 element toggle?** → Use `IS_WIP` / `IS_ICP` inline.
+3. **Are many toggles following a consistent pattern?** → Add a named export to `src/features.ts` (e.g. `export const SHOW_FOO = IS_WIP || IS_CLOUD`).
 4. **Does a whole component/page render completely differently per product?** → Use the `#product` alias (see below).
-5. **Does a page only exist in one product?** → Gate the route in `src/config/routes.tsx` using `IS_DEVANT` etc.
+5. **Does a page only exist in one product?** → Gate the route in `src/config/routes.tsx` using `IS_WIP` etc.
 
 ### `#api` alias — product-specific API implementations
 
@@ -175,7 +175,7 @@ src/
   types/            TypeScript types — the layer contract (see src/types/AGENTS.md)
   components/       Reusable shared UI components (see src/components/AGENTS.md)
   pages/            Route-level page components (see src/pages/AGENTS.md)
-  features.ts       Build-time IS_DEVANT / IS_CLOUD / IS_ICP flags
+  features.ts       Build-time IS_WIP / IS_CLOUD / IS_ICP flags
   auth/             OIDC/token management — only tokenManager.ts is consumed by hooks
   config/           Runtime config helpers (runtimeConfig.ts, statusColors.ts)
   constants/        Static lookup tables, style constants, route constants
@@ -195,7 +195,7 @@ src/
 - **Do not add new types inline in `api/` or `hooks/` files.** Types go in `src/types/`.
 - **Do not create a new HTTP client.** Reuse the appropriate named client from `api/httpClients.ts`.
 - **Do not import `useQuery`/`useMutation` directly in pages/components.** Use the domain hook.
-- **Do not read `__PRODUCT__` directly.** Use `IS_DEVANT`, `IS_CLOUD`, `IS_ICP` from `src/features.ts`.
+- **Do not read `__PRODUCT__` directly.** Use `IS_WIP`, `IS_CLOUD`, `IS_ICP` from `src/features.ts`.
 - **Do not import from `src/api/devant/` directly.** Import from `src/api/<domain>.ts` (the public stub) or via the `#api` alias inside product implementations only.
 - **Do not put a product variant file in `src/components/` or `src/pages/`.** Product-specific whole-component variants go in `src/product/<product>/`.
 - **Do not add new API functions only to `src/api/devant/`.** Add a matching stub to `cloud/` and `icp/` too so the other products still build.

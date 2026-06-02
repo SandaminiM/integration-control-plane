@@ -22,9 +22,9 @@ import react from '@vitejs/plugin-react-swc';
 import { visualizer } from 'rollup-plugin-visualizer';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 
-type Product = 'devant' | 'cloud' | 'icp';
-const ALLOWED_PRODUCTS: Product[] = ['devant', 'cloud', 'icp'];
-const rawProduct = process.env.PRODUCT ?? 'devant';
+type Product = 'wip' | 'cloud' | 'icp';
+const ALLOWED_PRODUCTS: Product[] = ['wip', 'cloud', 'icp'];
+const rawProduct = process.env.PRODUCT ?? 'wip';
 if (!(ALLOWED_PRODUCTS as string[]).includes(rawProduct)) {
   throw new Error(`Invalid PRODUCT="${rawProduct}"; must be one of: ${ALLOWED_PRODUCTS.join(', ')}`);
 }

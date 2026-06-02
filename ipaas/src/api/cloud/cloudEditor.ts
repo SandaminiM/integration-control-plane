@@ -16,15 +16,8 @@
  * under the License.
  */
 
-/**
- * Build-time product flags. Vite replaces __PRODUCT__ with a string literal
- * at build time, so the minifier eliminates dead branches entirely — unused
- * product code never reaches the final bundle.
- *
- * Set at build time via:  PRODUCT=wip|cloud|icp pnpm build
- * Default (dev server):   wip
- */
+// TODO: implement using cloud APIs
+const ni = (name: string): never => { throw new Error(`[cloud] cloudEditor.${name}: not implemented`); };
 
-export const IS_WIP = __PRODUCT__ === 'wip'; // Choreo v2 / preview-dv
-export const IS_CLOUD  = __PRODUCT__ === 'cloud';  // Choreo v3 / cloud
-export const IS_ICP    = __PRODUCT__ === 'icp';    // Local / ICP desktop
+export const getOrCreateSampleRegistry = (..._args: unknown[]): never => ni('getOrCreateSampleRegistry');
+export const callCreateCodeServer = (..._args: unknown[]): never => ni('callCreateCodeServer');

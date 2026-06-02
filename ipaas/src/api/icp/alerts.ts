@@ -16,15 +16,12 @@
  * under the License.
  */
 
-/**
- * Build-time product flags. Vite replaces __PRODUCT__ with a string literal
- * at build time, so the minifier eliminates dead branches entirely — unused
- * product code never reaches the final bundle.
- *
- * Set at build time via:  PRODUCT=wip|cloud|icp pnpm build
- * Default (dev server):   wip
- */
+// TODO: implement using icp APIs
+const ni = (name: string): never => { throw new Error(`[icp] alerts.${name}: not implemented`); };
 
-export const IS_WIP = __PRODUCT__ === 'wip'; // Choreo v2 / preview-dv
-export const IS_CLOUD  = __PRODUCT__ === 'cloud';  // Choreo v3 / cloud
-export const IS_ICP    = __PRODUCT__ === 'icp';    // Local / ICP desktop
+export const getAlertRulesCount = (..._args: unknown[]): never => ni('getAlertRulesCount');
+export const getAlertRules = (..._args: unknown[]): never => ni('getAlertRules');
+export const createAlertRule = (..._args: unknown[]): never => ni('createAlertRule');
+export const updateAlertRule = (..._args: unknown[]): never => ni('updateAlertRule');
+export const deleteAlertRule = (..._args: unknown[]): never => ni('deleteAlertRule');
+export const getAlertHistory = (..._args: unknown[]): never => ni('getAlertHistory');
