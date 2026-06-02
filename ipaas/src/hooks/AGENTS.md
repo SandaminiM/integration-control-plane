@@ -13,7 +13,7 @@ One file per domain. Each file exports named `useQuery`/`useMutation` hooks — 
 - `useQuery` wrappers with stable `queryKey` arrays
 - `useMutation` wrappers with `onSuccess` cache invalidation
 - `useQueryClient` for manual cache operations
-- Derived/normalised state computed from raw API responses
+- Consumer-level projections of already-normalized domain data — filtering a list, computing a count, sorting, picking a single record by id (see "Hooks do NOT normalize types" below)
 - Polling via `refetchInterval`
 - Lazy imperative fetch via `queryClient.fetchQuery()` (for event-driven flows like OIDC callbacks)
 
@@ -23,6 +23,40 @@ One file per domain. Each file exports named `useQuery`/`useMutation` hooks — 
 - Navigation (`useNavigate`) — that goes in the component
 - Raw `fetch` / `authenticatedFetch` calls — those go in `src/api/`
 - Type definitions — those go in `src/types/`
+- **Wire-shape → domain-shape normalization** (see next section)
+
+---
+
+## Hooks do NOT normalize types
+
+The hooks layer is **shared across all three products** (`wip`, `cloud`, `icp`). If hooks did wire-shape normalization, they would have to know which product's protocol they were dealing with — defeating the entire one-hook-for-all-products goal.
+
+**Normalization lives in the API layer**, inside each product's domain file. By the time data reaches a hook, it is already shaped as a `src/types/*` domain type — regardless of whether `wip/` got it from GraphQL or `cloud/` got it from REST. See `src/api/AGENTS.md` for the mapping convention.
+
+### What IS allowed in hooks (consumer-level projections)
+
+```ts
+// Projecting domain data — fine
+const sortedImages = images.sort((a, b) => new Date(b.builtAt).getTime() - new Date(a.builtAt).getTime());
+
+// Polling logic — fine
+refetchInterval: isInProgress ? 5000 : false;
+
+// Picking out a subset via TanStack's `select` — fine
+useQuery({ queryKey: [...], queryFn: ..., select: (components) => components.filter(c => c.isPrebuilt) });
+```
+
+### What is NOT allowed in hooks
+
+```ts
+// ❌ Reshaping wire fields to domain fields — must happen in api/
+const normalized = raw.map(r => ({ id: r.component_id, displayName: r.display_name }));
+
+// ❌ Branching on the protocol — couples hooks to a product
+if (response.__typename === 'GqlEnvironment') { ... }
+```
+
+If you find yourself wanting to do either of these in a hook, the work belongs one layer down in `src/api/<product>/<domain>.ts`.
 
 ---
 

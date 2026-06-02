@@ -19,7 +19,7 @@
 // TODO: implement using Choreo v3 REST APIs
 
 import type { OrgEntry, OrgComponentLimits, OrgSubscription, RegisterUserResponse } from '../../types/org';
-import type { GqlProject } from '../../types/project';
+import type { Project } from '../../types/project';
 
 const ni = (name: string): never => { throw new Error(`[cloud] org.${name}: not implemented`); };
 
@@ -28,7 +28,7 @@ export const fetchOrgs = (): Promise<OrgEntry[]> => ni('fetchOrgs');
 export const validateOrgName = (_orgName: string): Promise<boolean> => ni('validateOrgName');
 export const registerUser = (_orgName: string, _termsAccepted: boolean, _serviceName: string): Promise<RegisterUserResponse> => ni('registerUser');
 export const initOrg = (_orgUuid: string, _region: string): Promise<void> => ni('initOrg');
-export const fetchProjectsByOrgId = (_orgNumericId: number): Promise<GqlProject[]> => ni('fetchProjectsByOrgId');
+export const fetchProjectsByOrgId = (_orgNumericId: number): Promise<Project[]> => ni('fetchProjectsByOrgId');
 export const createDefaultProject = (_orgNumericId: number, _orgHandler: string, _projectHandler?: string): Promise<{ id: string; handler: string }> => ni('createDefaultProject');
 export const fetchOrgComponentLimits = (_orgUuid: string): Promise<OrgComponentLimits> => ni('fetchOrgComponentLimits');
 export const fetchOrgSubscriptions = (_orgUuid: string): Promise<OrgSubscription[]> => ni('fetchOrgSubscriptions');

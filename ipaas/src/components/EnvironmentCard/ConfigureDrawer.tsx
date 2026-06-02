@@ -22,7 +22,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEnvEndpoints } from '../../hooks/useDeployments';
 import { useSchemaConfig, useCertificateGroups, useCertificateMappings, useConfigGroups } from '../../hooks/useConfiguration';
-import type { GqlEnvEndpoint } from '../../types/component';
+import type { EnvEndpoint } from '../../types/component';
 import type { SchemaConfigItem, CertGroup, CertMapping, CertMappingConfig } from '../../types/configuration';
 import { useGenerateComponentEndpoints, useUpdateEndpoint } from '../../hooks/useComponents';
 import { useSaveSchemaConfig, usePostCertificateMappings } from '../../hooks/useConfiguration';
@@ -84,7 +84,7 @@ function StepIndicator({ step, steps }: { step: number; steps: string[] }) {
 // ── ManageEndpoint (inline edit view) ─────────────────────────────────────────
 
 interface ManageEndpointProps {
-  ep: GqlEnvEndpoint;
+  ep: EnvEndpoint;
   componentId: string;
   versionId: string;
   releaseId: string;
@@ -877,7 +877,7 @@ function GenericServiceConfigureDrawer({
   const [linkedCerts, setLinkedCerts] = useState<LinkedCert[]>([]);
   const [importedFileName, setImportedFileName] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [managingEp, setManagingEp] = useState<GqlEnvEndpoint | null>(null);
+  const [managingEp, setManagingEp] = useState<EnvEndpoint | null>(null);
   const [manageDrawerOpen, setManageDrawerOpen] = useState(false);
   const [manageApimId, setManageApimId] = useState<string | null>(null);
   const seededRef = useRef(false);
@@ -1128,7 +1128,7 @@ function GenericServiceConfigureDrawer({
     }
   };
 
-  const handleSettings = (ep: GqlEnvEndpoint) => {
+  const handleSettings = (ep: EnvEndpoint) => {
     setManageApimId(ep.apimId ?? null);
     setManageDrawerOpen(true);
   };

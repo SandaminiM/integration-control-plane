@@ -19,16 +19,16 @@
 import { Box, Button, CircularProgress, Divider, Drawer, IconButton, Stack, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import type { GqlDeploymentTrackImage } from '../../types/deployment';
+import type { DeploymentTrackImage } from '../../types/deployment';
 import BuildImageCard from './BuildImageCard';
 
 interface BuildAreaImageDrawerProps {
   open: boolean;
   onClose: () => void;
-  images: GqlDeploymentTrackImage[];
+  images: DeploymentTrackImage[];
   isLoading: boolean;
   selectedImageId: string | null;
-  onSelect: (image: GqlDeploymentTrackImage) => void;
+  onSelect: (image: DeploymentTrackImage) => void;
 }
 
 export default function BuildAreaImageDrawer({ open, onClose, images, isLoading, selectedImageId, onSelect }: BuildAreaImageDrawerProps): JSX.Element {

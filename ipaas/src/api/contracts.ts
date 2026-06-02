@@ -36,22 +36,28 @@
 import type { AlertComponentType } from '../constants/alerts';
 import type { AlertHistoryResponse, AlertRule, AlertRuleCountUsage } from '../types/alerts';
 import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory } from '../types/apim';
-import type { GqlArtifactType, GqlArtifact, GqlArtifactParam, ArtifactStatusInput, ListenerStateInput, ArtifactToggleStatusInput, ArtifactToggleKind, TriggerTaskInput } from '../types/artifact';
-import type { User, Role, RoleDetail, Group, GroupRoleMapping, GroupUser, PermissionsResponse, RoleGroupMapping, UserPermissionsResponse } from '../types/auth';
+import type { ArtifactType, Artifact, ArtifactParam, ArtifactStatusInput, ListenerStateInput, ArtifactToggleStatusInput, ArtifactToggleKind, TriggerTaskInput } from '../types/artifact';
+import type {
+  User, Role, RoleDetail, Group, GroupRoleMapping, GroupUser, PermissionsResponse, RoleGroupMapping, UserPermissionsResponse,
+  ChangePasswordInput, ForceChangePasswordInput, CreateUserInput, UpdateUserInput, UpdateUserGroupsInput,
+  CreateRoleInput, UpdateRoleInput, CreateGroupInput, UpdateGroupInput,
+  AddRolesToGroupInput, RemoveRoleFromGroupInput, AddUsersToGroupInput, RemoveUserFromGroupInput,
+  MessageResult, ResetPasswordResult,
+} from '../types/auth';
 import type { BuildRunLogs, DeployComponentInput, UpdateBuildpackConfigsInput } from '../types/build';
 import type { ContainerRegistry } from '../types/cloudEditor';
-import type { GqlComponent, GqlComponentDetail, GqlEndpoint, GqlEnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability, DeleteComponentResult } from '../types/component';
+import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability, DeleteComponentResult } from '../types/component';
 import type { CertGroup, CertMapping, SchemaConfigData, ConfigMgtData, SchemaConfigItem, SaveSchemaConfigInput, PostConfigMgtInput } from '../types/configuration';
-import type { GqlComponentDeployment, GqlDeploymentStatus, GqlReleaseMgtDeployment, GqlDeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../types/deployment';
-import type { GqlEnvironment, CloudDataPlane, EnvironmentInput } from '../types/environment';
-import type { GqlExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput } from '../types/executions';
+import type { ComponentDeployment, BuildRun, ReleaseMgtDeployment, DeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../types/deployment';
+import type { Environment, CloudDataPlane, EnvironmentInput } from '../types/environment';
+import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput } from '../types/executions';
 import type { InsightsEnvironment, ComponentInsights } from '../types/insights';
 import type { LogsRequest, ComponentLogsRequest, LogRow } from '../types/logs';
 import type { ApiDocument, RuleAdherenceResponse, ThrottlingPolicy } from '../types/marketplace';
 import type { OrgEntry, OrgComponentLimits, OrgSubscription, RegisterUserResponse } from '../types/org';
-import type { PrebuiltIntegration, PrebuiltIntegrationsData, PrebuiltComponentRef, PrebuiltEnvironmentRef } from '../types/prebuilt';
-import type { GqlProject, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput } from '../types/project';
-import type { GqlRepository, GqlCommit, GqlUserRepo, GqlRepoBranch, GqlRepoMetadata, RepoTreeNode, ChoreoSampleImageEntry } from '../types/repository';
+import type { PrebuiltIntegration, PrebuiltComponentRef, PrebuiltEnvironmentRef } from '../types/prebuilt';
+import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput } from '../types/project';
+import type { Repository, Commit, UserRepo, RepoBranch, RepoMetadata, RepoTreeNode, ChoreoSampleImageEntry } from '../types/repository';
 import type { Sample } from '../types/samples';
 
 // ---------------------------------------------------------------------------
@@ -95,11 +101,11 @@ export interface ArtifactToggleMutationsApi {
 // ---------------------------------------------------------------------------
 
 export interface ArtifactsApi {
-  fetchArtifactTypes(componentId: string, envId: string): Promise<GqlArtifactType[]>;
-  fetchArtifacts(artifactType: string, envId: string, componentId: string): Promise<GqlArtifact[]>;
+  fetchArtifactTypes(componentId: string, envId: string): Promise<ArtifactType[]>;
+  fetchArtifacts(artifactType: string, envId: string, componentId: string): Promise<Artifact[]>;
   fetchArtifactSource(envId: string, componentId: string, artifactType: string, artifactName: string): Promise<string>;
   fetchLocalEntryValue(componentId: string, entryName: string, envId: string): Promise<string>;
-  fetchArtifactParams(componentId: string, artifactType: string, artifactName: string, envId: string, runtimeId?: string): Promise<GqlArtifactParam[]>;
+  fetchArtifactParams(componentId: string, artifactType: string, artifactName: string, envId: string, runtimeId?: string): Promise<ArtifactParam[]>;
   fetchArtifactWsdl(componentId: string, artifactType: string, artifactName: string, envId: string, runtimeId?: string): Promise<string>;
   updateArtifactStatus(input: ArtifactStatusInput): Promise<{ status: string; message: string }>;
   updateListenerState(input: ListenerStateInput): Promise<{ success: boolean; message: string; commandIds: string[] }>;
@@ -115,32 +121,32 @@ export interface AuthApi {
   fetchComponentPermissions(orgHandle: string, userId: string, projectId: string, componentId: string): Promise<UserPermissionsResponse>;
   fetchCurrentUser(orgHandler: string, userId: string): Promise<User>;
   fetchUsers(orgHandler: string): Promise<User[]>;
-  changePassword(input: { currentPassword: string; newPassword: string }): Promise<{ message: string }>;
-  forceChangePassword(input: { newPassword: string }): Promise<{ message: string }>;
-  resetPassword(orgHandler: string, userId: string): Promise<{ password: string; message: string }>;
-  revokeUserTokens(orgHandler: string, userId: string): Promise<{ message: string }>;
-  unlockAccount(orgHandler: string, userId: string): Promise<{ message: string }>;
-  createUser(orgHandler: string, input: { username: string; displayName: string; password: string }): Promise<unknown>;
-  updateUser(orgHandler: string, input: { userId: string; displayName: string; groupIds: string[] }): Promise<unknown>;
-  updateUserGroups(orgHandler: string, input: { userId: string; groupIds: string[] }): Promise<unknown>;
+  changePassword(input: ChangePasswordInput): Promise<MessageResult>;
+  forceChangePassword(input: ForceChangePasswordInput): Promise<MessageResult>;
+  resetPassword(orgHandler: string, userId: string): Promise<ResetPasswordResult>;
+  revokeUserTokens(orgHandler: string, userId: string): Promise<MessageResult>;
+  unlockAccount(orgHandler: string, userId: string): Promise<MessageResult>;
+  createUser(orgHandler: string, input: CreateUserInput): Promise<unknown>;
+  updateUser(orgHandler: string, input: UpdateUserInput): Promise<unknown>;
+  updateUserGroups(orgHandler: string, input: UpdateUserGroupsInput): Promise<unknown>;
   deleteUser(orgHandler: string, userId: string): Promise<unknown>;
   fetchRoles(orgHandler: string, projectId?: string, integrationId?: string): Promise<Role[]>;
   fetchRoleDetail(orgHandler: string, roleId: string, projectId?: string, integrationId?: string): Promise<RoleDetail>;
   fetchAllPermissions(): Promise<PermissionsResponse>;
-  createRole(orgHandler: string, input: { roleName: string; description: string; permissionIds: string[] }): Promise<unknown>;
-  updateRole(orgHandler: string, input: { roleId: string; roleName: string; description: string; permissionIds: string[] }): Promise<unknown>;
+  createRole(orgHandler: string, input: CreateRoleInput): Promise<unknown>;
+  updateRole(orgHandler: string, input: UpdateRoleInput): Promise<unknown>;
   deleteRole(orgHandler: string, roleId: string): Promise<unknown>;
   fetchRoleGroups(orgHandler: string, roleId: string, projectId?: string, integrationId?: string): Promise<RoleGroupMapping[]>;
   fetchGroups(orgHandler: string, projectId?: string, integrationId?: string): Promise<Group[]>;
-  createGroup(orgHandler: string, input: { groupName: string; description: string }): Promise<unknown>;
-  updateGroup(orgHandler: string, input: { groupId: string; groupName: string; description: string }): Promise<unknown>;
+  createGroup(orgHandler: string, input: CreateGroupInput): Promise<unknown>;
+  updateGroup(orgHandler: string, input: UpdateGroupInput): Promise<unknown>;
   deleteGroup(orgHandler: string, groupId: string): Promise<unknown>;
   fetchGroupRoles(orgHandler: string, groupId: string, projectId?: string, integrationId?: string): Promise<GroupRoleMapping[]>;
   fetchGroupUsers(orgHandler: string, groupId: string): Promise<GroupUser[]>;
-  addRolesToGroup(orgHandler: string, input: { groupId: string; roleIds: string[]; envUuid?: string }, projectId?: string, componentId?: string): Promise<unknown>;
-  removeRoleFromGroup(orgHandler: string, input: { groupId: string; mappingId: number }): Promise<unknown>;
-  addUsersToGroup(orgHandler: string, input: { groupId: string; userIds: string[] }): Promise<unknown>;
-  removeUserFromGroup(orgHandler: string, input: { groupId: string; userId: string }): Promise<unknown>;
+  addRolesToGroup(orgHandler: string, input: AddRolesToGroupInput, projectId?: string, componentId?: string): Promise<unknown>;
+  removeRoleFromGroup(orgHandler: string, input: RemoveRoleFromGroupInput): Promise<unknown>;
+  addUsersToGroup(orgHandler: string, input: AddUsersToGroupInput): Promise<unknown>;
+  removeUserFromGroup(orgHandler: string, input: RemoveUserFromGroupInput): Promise<unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -166,14 +172,14 @@ export interface CloudEditorApi {
 // ---------------------------------------------------------------------------
 
 export interface ComponentsApi {
-  fetchComponents(orgHandler: string, projectId: string): Promise<GqlComponent[]>;
-  fetchComponentByHandler(projectId: string, componentHandler: string): Promise<GqlComponentDetail>;
-  fetchComponentEndpoints(componentId: string, versionId: string): Promise<GqlEndpoint[]>;
-  createComponent(input: CreateComponentInput): Promise<GqlComponent>;
+  fetchComponents(orgHandler: string, projectId: string): Promise<Component[]>;
+  fetchComponentByHandler(projectId: string, componentHandler: string): Promise<ComponentDetail>;
+  fetchComponentEndpoints(componentId: string, versionId: string): Promise<Endpoint[]>;
+  createComponent(input: CreateComponentInput): Promise<Component>;
   deleteComponent(input: { orgHandler: string; componentId: string; projectId: string }): Promise<DeleteComponentResult>;
-  updateComponent(input: UpdateComponentInput): Promise<GqlComponent>;
+  updateComponent(input: UpdateComponentInput): Promise<Component>;
   updateAutoDeployEnabled(input: UpdateAutoDeployInput): Promise<{ id: string; autoDeployEnabled: boolean }>;
-  generateComponentEndpoints(input: GenerateComponentEndpointsInput): Promise<GqlEnvEndpoint[]>;
+  generateComponentEndpoints(input: GenerateComponentEndpointsInput): Promise<EnvEndpoint[]>;
   fetchComponentNameAvailability(projectId: string, componentNameCandidate: string): Promise<ComponentNameAvailability>;
   fetchComponentEndpointSpec(componentId: string, versionId: string, endpointId: string): Promise<string | null>;
 }
@@ -209,11 +215,11 @@ export interface CopilotApi {
 // ---------------------------------------------------------------------------
 
 export interface DeploymentsApi {
-  fetchComponentDeployment(orgHandler: string, orgUuid: string, componentId: string, versionId: string, environmentId: string): Promise<GqlComponentDeployment | null>;
-  fetchEnvEndpoints(componentId: string, versionId: string, releaseId: string): Promise<GqlEnvEndpoint[]>;
-  fetchDeploymentStatus(componentId: string, versionId: string): Promise<GqlDeploymentStatus[]>;
-  fetchReleaseMgtDeployments(orgUuid: string, projectId: string, componentId: string, versionId: string, environmentId: string): Promise<GqlReleaseMgtDeployment[]>;
-  fetchDeploymentTrackImages(componentId: string, versionId: string): Promise<GqlDeploymentTrackImage[]>;
+  fetchComponentDeployment(orgHandler: string, orgUuid: string, componentId: string, versionId: string, environmentId: string): Promise<ComponentDeployment | null>;
+  fetchEnvEndpoints(componentId: string, versionId: string, releaseId: string): Promise<EnvEndpoint[]>;
+  fetchDeploymentStatus(componentId: string, versionId: string): Promise<BuildRun[]>;
+  fetchReleaseMgtDeployments(orgUuid: string, projectId: string, componentId: string, versionId: string, environmentId: string): Promise<ReleaseMgtDeployment[]>;
+  fetchDeploymentTrackImages(componentId: string, versionId: string): Promise<DeploymentTrackImage[]>;
   deployDeploymentTrack(input: DeployDeploymentTrackInput): Promise<string>;
   triggerBuild(input: DeployComponentInput): Promise<{ message: string; success: boolean }>;
   promote(input: PromoteInput): Promise<string>;
@@ -227,11 +233,11 @@ export interface DeploymentsApi {
 // ---------------------------------------------------------------------------
 
 export interface EnvironmentsApi {
-  fetchEnvironments(orgUuid: string, projectId: string): Promise<GqlEnvironment[]>;
-  fetchAllEnvironments(): Promise<GqlEnvironment[]>;
+  fetchEnvironments(orgUuid: string, projectId: string): Promise<Environment[]>;
+  fetchAllEnvironments(): Promise<Environment[]>;
   fetchCloudDataPlanes(orgUuid: string): Promise<CloudDataPlane[]>;
-  createEnvironment(input: EnvironmentInput): Promise<GqlEnvironment>;
-  updateEnvironment(input: EnvironmentInput & { environmentId: string }): Promise<GqlEnvironment>;
+  createEnvironment(input: EnvironmentInput): Promise<Environment>;
+  updateEnvironment(input: EnvironmentInput & { environmentId: string }): Promise<Environment>;
   deleteEnvironment(environmentId: string): Promise<string>;
 }
 
@@ -240,7 +246,7 @@ export interface EnvironmentsApi {
 // ---------------------------------------------------------------------------
 
 export interface ExecutionsApi {
-  fetchExecutionConfigs(componentId: string, releaseId: string): Promise<GqlExecutionConfigs | null>;
+  fetchExecutionConfigs(componentId: string, releaseId: string): Promise<ExecutionConfigs | null>;
   fetchTaskExecutions(releaseId: string): Promise<TaskExecution[]>;
   fetchExecutionArguments(runId: string, componentId: string, releaseId: string): Promise<ExecutionArgument[]>;
   fetchExecutionLogs(componentId: string, deploymentTrackId: string, executionId: string, environmentId: string): Promise<ExecutionLogEntry[]>;
@@ -288,7 +294,7 @@ export interface OrgApi {
   validateOrgName(orgName: string): Promise<boolean>;
   registerUser(orgName: string, termsAccepted: boolean, serviceName: string): Promise<RegisterUserResponse>;
   initOrg(orgUuid: string, region: string): Promise<void>;
-  fetchProjectsByOrgId(orgNumericId: number): Promise<GqlProject[]>;
+  fetchProjectsByOrgId(orgNumericId: number): Promise<Project[]>;
   createDefaultProject(orgNumericId: number, orgHandler: string, projectHandler?: string): Promise<{ id: string; handler: string }>;
   fetchOrgComponentLimits(orgUuid: string): Promise<OrgComponentLimits>;
   fetchOrgSubscriptions(orgUuid: string): Promise<OrgSubscription[]>;
@@ -306,8 +312,6 @@ export interface PrebuiltApi {
   fetchFirstEnvironment(orgUuid: string, projectId: string): Promise<PrebuiltEnvironmentRef>;
   fetchLatestCommitSha(componentId: string, branch: string): Promise<string>;
   savePrebuiltConfig(projectId: string, componentId: string, envId: string, deploymentTrackId: string, configurations: SchemaConfigItem[], commitHash: string): Promise<void>;
-  // Pure data normalizer — sync but lives in the same module surface.
-  normalizePrebuiltIntegrations(raw: { prebuiltIntegrations: PrebuiltIntegration[] }): PrebuiltIntegrationsData;
 }
 
 // ---------------------------------------------------------------------------
@@ -315,14 +319,14 @@ export interface PrebuiltApi {
 // ---------------------------------------------------------------------------
 
 export interface ProjectsApi {
-  fetchProjects(orgId: number): Promise<GqlProject[]>;
-  fetchProject(orgId: number, projectId: string): Promise<GqlProject>;
-  fetchProjectByHandler(orgId: number, projectHandler: string): Promise<GqlProject>;
+  fetchProjects(orgId: number): Promise<Project[]>;
+  fetchProject(orgId: number, projectId: string): Promise<Project>;
+  fetchProjectByHandler(orgId: number, projectHandler: string): Promise<Project>;
   fetchProjectContributors(orgId: number, projectId: string): Promise<ProjectContributor[]>;
   fetchProjectComponentLabels(orgId: number, projectId: string): Promise<string[]>;
   fetchProjectHandlerAvailability(orgId: number, candidate: string): Promise<ProjectHandlerAvailability>;
-  createProject(input: CreateProjectInput): Promise<GqlProject>;
-  createMonoRepoProject(input: CreateMonoRepoProjectInput): Promise<GqlProject>;
+  createProject(input: CreateProjectInput): Promise<Project>;
+  createMonoRepoProject(input: CreateMonoRepoProjectInput): Promise<Project>;
 }
 
 // ---------------------------------------------------------------------------
@@ -330,11 +334,11 @@ export interface ProjectsApi {
 // ---------------------------------------------------------------------------
 
 export interface RepositoryApi {
-  fetchComponentRepository(projectId: string, componentHandler: string): Promise<GqlRepository | null>;
-  fetchCommitHistory(componentId: string, branch: string): Promise<GqlCommit[]>;
-  fetchGitHubUserRepos(): Promise<GqlUserRepo[]>;
-  fetchRepoBranches(repoOrg: string, repoName: string, isPublicRepo: boolean): Promise<GqlRepoBranch[]>;
-  fetchRepoMetadata(org: string, repo: string, branch: string, subPath: string, isPublicRepo?: boolean): Promise<GqlRepoMetadata>;
+  fetchComponentRepository(projectId: string, componentHandler: string): Promise<Repository | null>;
+  fetchCommitHistory(componentId: string, branch: string): Promise<Commit[]>;
+  fetchGitHubUserRepos(): Promise<UserRepo[]>;
+  fetchRepoBranches(repoOrg: string, repoName: string, isPublicRepo: boolean): Promise<RepoBranch[]>;
+  fetchRepoMetadata(org: string, repo: string, branch: string, subPath: string, isPublicRepo?: boolean): Promise<RepoMetadata>;
   fetchChoreoSampleImages(orgUuid: string, projectId: string): Promise<ChoreoSampleImageEntry[]>;
   updateBuildpackConfigs(input: UpdateBuildpackConfigsInput): Promise<string>;
   obtainGithubToken(authorizationCode: string): Promise<{ success: boolean; message: string }>;

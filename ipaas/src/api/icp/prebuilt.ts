@@ -20,7 +20,6 @@
 const ni = (name: string): never => { throw new Error(`[icp] prebuilt.${name}: not implemented`); };
 
 export const fetchPrebuiltIntegrations = (..._args: unknown[]): never => ni('fetchPrebuiltIntegrations');
-export const normalizePrebuiltIntegrations = (..._args: unknown[]): never => ni('normalizePrebuiltIntegrations');
 export const fetchPrebuiltAsset = (..._args: unknown[]): never => ni('fetchPrebuiltAsset');
 export const checkNameAvailability = (..._args: unknown[]): never => ni('checkNameAvailability');
 export const fetchComponentDetail = (..._args: unknown[]): never => ni('fetchComponentDetail');

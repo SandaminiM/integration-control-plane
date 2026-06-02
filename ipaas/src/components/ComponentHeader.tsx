@@ -20,9 +20,9 @@ import { Avatar, Box, Button, ButtonGroup, Chip, CircularProgress, ClickAwayList
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Tag, Cloud, Github, GitBranch, GitCommitHorizontal, Copy, Check, ChevronDown, Code2, Pencil, Globe, Lock, ShieldCheck, CodeXml, MCP, Recycle } from '@wso2/oxygen-ui-icons-react';
-import type { GqlComponentDetail } from '../types/component';
-import type { GqlProject } from '../types/project';
-import type { GqlRepository, GqlCommit } from '../types/repository';
+import type { ComponentDetail } from '../types/component';
+import type { Project } from '../types/project';
+import type { Repository, Commit } from '../types/repository';
 import { useApimApi } from '../hooks/useApim';
 import { useUpdateComponent } from '../hooks/useComponents';
 import { useChoreoSampleImages } from '../hooks/useRepository';
@@ -34,7 +34,7 @@ import { useOrgUuid } from '../hooks/useOrgUuid';
 import { getDisplayLabel } from '../constants/integrations';
 import { getDevPortalBaseUrl } from '../config/runtimeConfig';
 
-function buildRepoUrl(repo: GqlRepository): string {
+function buildRepoUrl(repo: Repository): string {
   const { gitProvider, organizationApp, nameApp, branch, appSubPath, bitbucketServerUrl, serverUrl, projectApp } = repo;
   const subPath = appSubPath || '';
   const encodedBranch = encodeURIComponent(branch);
@@ -59,10 +59,10 @@ function buildRepoUrl(repo: GqlRepository): string {
 const REST_API_TYPES = new Set(['restApi', 'byocRestApi', 'miRestApi', 'buildRestApi', 'miApiService', 'ballerinaService', 'byocService', 'byoiService', 'graphql', 'buildpackService']);
 
 interface ComponentHeaderProps {
-  component: GqlComponentDetail;
-  project?: GqlProject | null;
-  repository?: GqlRepository | null;
-  latestCommit?: GqlCommit | null;
+  component: ComponentDetail;
+  project?: Project | null;
+  repository?: Repository | null;
+  latestCommit?: Commit | null;
   orgHandler: string;
   projectId: string;
   projectHandler: string;

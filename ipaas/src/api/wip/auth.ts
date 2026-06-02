@@ -17,7 +17,13 @@
  */
 
 import { authClient } from './httpClients';
-import type { User, Role, RoleDetail, Group, GroupRoleMapping, GroupUser, PermissionsResponse, RoleGroupMapping, UserPermissionsResponse } from '../../types/auth';
+import type {
+  User, Role, RoleDetail, Group, GroupRoleMapping, GroupUser, PermissionsResponse, RoleGroupMapping, UserPermissionsResponse,
+  ChangePasswordInput, ForceChangePasswordInput, CreateUserInput, UpdateUserInput, UpdateUserGroupsInput,
+  CreateRoleInput, UpdateRoleInput, CreateGroupInput, UpdateGroupInput,
+  AddRolesToGroupInput, RemoveRoleFromGroupInput, AddUsersToGroupInput, RemoveUserFromGroupInput,
+  MessageResult, ResetPasswordResult,
+} from '../../types/auth';
 
 const authGet = <T>(path: string): Promise<T> => authClient.get<T>(path);
 const authPost = <T>(path: string, body: unknown): Promise<T> => authClient.post<T>(path, body);
@@ -56,35 +62,35 @@ export function fetchUsers(orgHandler: string): Promise<User[]> {
   return authGet<{ users: User[]; count: number }>(`/orgs/${orgHandler}/users`).then((d) => d.users);
 }
 
-export function changePassword(input: { currentPassword: string; newPassword: string }): Promise<{ message: string }> {
-  return authPost<{ message: string }>('/change-password', input);
+export function changePassword(input: ChangePasswordInput): Promise<MessageResult> {
+  return authPost<MessageResult>('/change-password', input);
 }
 
-export function forceChangePassword(input: { newPassword: string }): Promise<{ message: string }> {
-  return authPost<{ message: string }>('/force-change-password', input);
+export function forceChangePassword(input: ForceChangePasswordInput): Promise<MessageResult> {
+  return authPost<MessageResult>('/force-change-password', input);
 }
 
-export function resetPassword(orgHandler: string, userId: string): Promise<{ password: string; message: string }> {
-  return authPost<{ password: string; message: string }>(`/orgs/${orgHandler}/users/${userId}/reset-password`, {});
+export function resetPassword(orgHandler: string, userId: string): Promise<ResetPasswordResult> {
+  return authPost<ResetPasswordResult>(`/orgs/${orgHandler}/users/${userId}/reset-password`, {});
 }
 
-export function revokeUserTokens(orgHandler: string, userId: string): Promise<{ message: string }> {
-  return authPost<{ message: string }>(`/orgs/${orgHandler}/users/${userId}/revoke-tokens`, {});
+export function revokeUserTokens(orgHandler: string, userId: string): Promise<MessageResult> {
+  return authPost<MessageResult>(`/orgs/${orgHandler}/users/${userId}/revoke-tokens`, {});
 }
 
-export function unlockAccount(orgHandler: string, userId: string): Promise<{ message: string }> {
-  return authPost<{ message: string }>(`/orgs/${orgHandler}/users/${userId}/unlock-account`, {});
+export function unlockAccount(orgHandler: string, userId: string): Promise<MessageResult> {
+  return authPost<MessageResult>(`/orgs/${orgHandler}/users/${userId}/unlock-account`, {});
 }
 
-export function createUser(orgHandler: string, input: { username: string; displayName: string; password: string }): Promise<unknown> {
+export function createUser(orgHandler: string, input: CreateUserInput): Promise<unknown> {
   return authPost(`/orgs/${orgHandler}/users`, input);
 }
 
-export function updateUser(orgHandler: string, input: { userId: string; displayName: string; groupIds: string[] }): Promise<unknown> {
+export function updateUser(orgHandler: string, input: UpdateUserInput): Promise<unknown> {
   return authPut(`/orgs/${orgHandler}/users/${input.userId}`, { displayName: input.displayName, groupIds: input.groupIds });
 }
 
-export function updateUserGroups(orgHandler: string, input: { userId: string; groupIds: string[] }): Promise<unknown> {
+export function updateUserGroups(orgHandler: string, input: UpdateUserGroupsInput): Promise<unknown> {
   return authPut(`/orgs/${orgHandler}/users/${input.userId}/groups`, { groupIds: input.groupIds });
 }
 
@@ -106,11 +112,11 @@ export function fetchAllPermissions(): Promise<PermissionsResponse> {
   return authGet<PermissionsResponse>('/permissions');
 }
 
-export function createRole(orgHandler: string, input: { roleName: string; description: string; permissionIds: string[] }): Promise<unknown> {
+export function createRole(orgHandler: string, input: CreateRoleInput): Promise<unknown> {
   return authPost(`/orgs/${orgHandler}/roles`, input);
 }
 
-export function updateRole(orgHandler: string, input: { roleId: string; roleName: string; description: string; permissionIds: string[] }): Promise<unknown> {
+export function updateRole(orgHandler: string, input: UpdateRoleInput): Promise<unknown> {
   return authPut(`/orgs/${orgHandler}/roles/${input.roleId}`, { roleName: input.roleName, description: input.description, permissionIds: input.permissionIds });
 }
 
@@ -128,11 +134,11 @@ export function fetchGroups(orgHandler: string, projectId?: string, integrationI
   return authGet<Group[]>(`/orgs/${orgHandler}/groups${scopedQueryString(projectId, integrationId)}`);
 }
 
-export function createGroup(orgHandler: string, input: { groupName: string; description: string }): Promise<unknown> {
+export function createGroup(orgHandler: string, input: CreateGroupInput): Promise<unknown> {
   return authPost(`/orgs/${orgHandler}/groups`, input);
 }
 
-export function updateGroup(orgHandler: string, input: { groupId: string; groupName: string; description: string }): Promise<unknown> {
+export function updateGroup(orgHandler: string, input: UpdateGroupInput): Promise<unknown> {
   return authPut(`/orgs/${orgHandler}/groups/${input.groupId}`, { groupName: input.groupName, description: input.description });
 }
 
@@ -148,7 +154,7 @@ export function fetchGroupUsers(orgHandler: string, groupId: string): Promise<Gr
   return authGet<{ users: GroupUser[] }>(`/orgs/${orgHandler}/groups/${groupId}/users`).then((d) => d.users ?? []);
 }
 
-export function addRolesToGroup(orgHandler: string, input: { groupId: string; roleIds: string[]; envUuid?: string }, projectId?: string, componentId?: string): Promise<unknown> {
+export function addRolesToGroup(orgHandler: string, input: AddRolesToGroupInput, projectId?: string, componentId?: string): Promise<unknown> {
   const body = {
     roleIds: input.roleIds,
     envUuid: input.envUuid,
@@ -158,14 +164,14 @@ export function addRolesToGroup(orgHandler: string, input: { groupId: string; ro
   return authPost(`/orgs/${orgHandler}/groups/${input.groupId}/roles`, body);
 }
 
-export function removeRoleFromGroup(orgHandler: string, input: { groupId: string; mappingId: number }): Promise<unknown> {
+export function removeRoleFromGroup(orgHandler: string, input: RemoveRoleFromGroupInput): Promise<unknown> {
   return authDelete(`/orgs/${orgHandler}/groups/${input.groupId}/roles/${input.mappingId}`);
 }
 
-export function addUsersToGroup(orgHandler: string, input: { groupId: string; userIds: string[] }): Promise<unknown> {
+export function addUsersToGroup(orgHandler: string, input: AddUsersToGroupInput): Promise<unknown> {
   return authPost(`/orgs/${orgHandler}/groups/${input.groupId}/users`, { userIds: input.userIds });
 }
 
-export function removeUserFromGroup(orgHandler: string, input: { groupId: string; userId: string }): Promise<unknown> {
+export function removeUserFromGroup(orgHandler: string, input: RemoveUserFromGroupInput): Promise<unknown> {
   return authDelete(`/orgs/${orgHandler}/groups/${input.groupId}/users/${input.userId}`);
 }

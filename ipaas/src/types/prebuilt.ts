@@ -73,11 +73,6 @@ export interface DeployPrebuiltIntegrationState {
   configSaveError: boolean;
 }
 
-export interface PrebuiltNameAvailability {
-  componentNameUnique: boolean;
-  alternateComponentName: string;
-}
-
 export interface PrebuiltComponentRef {
   id: string;
   handler: string;

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-export interface GqlExecutionConfigs {
+export interface ExecutionConfigs {
   cronjobFrequency: string;
   cronjobTimezone: string;
   cronjobAllowConcurrency?: boolean;

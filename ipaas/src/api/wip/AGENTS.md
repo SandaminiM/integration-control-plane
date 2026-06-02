@@ -64,3 +64,52 @@ Only one domain file calls `authenticatedFetch` directly. All other 403 retry ca
 ## GraphQL inline queries
 
 Some mutations are built with string interpolation rather than variables (e.g. `createComponent`, `fetchReleaseMgtDeployments`). Always use the local `gqlStr()` / `esc()` helpers for user-supplied values to avoid injection. Never concatenate raw strings into a GraphQL query without escaping.
+
+---
+
+## GraphQL response → domain mapping
+
+The general mapping rule (raw wire shape → `src/types/*` domain type) is documented in `src/api/AGENTS.md`. This section covers what that looks like in `wip/` specifically.
+
+### Today: mostly pass-through
+
+Most wip GraphQL responses already match the domain shape, so the function reads:
+
+```ts
+export async function fetchComponents(orgHandler: string, projectId: string): Promise<Component[]> {
+  return gql<{ components: Component[] }>(COMPONENTS_QUERY, { orgHandler, projectId }).then((d) => d.components);
+}
+```
+
+Here `gql<{ components: Component[] }>` simply declares the expected wrapper, and the domain type `Component` is reused directly because the GraphQL field names happen to match. **No private raw type is needed.** Add one only when the wire shape diverges from the domain shape.
+
+### When you need an explicit mapper
+
+Some GraphQL responses already use snake_case or restructured fields (e.g. `fetchReleaseMgtDeployments` returns `release_mgt_id`, `environment_id`, `component_configs.config_mapping_revision`, …). For these:
+
+1. Declare a private raw type inside the wip file, mirroring the wire shape exactly:
+   ```ts
+   interface RawReleaseMgtDeployment {
+     id: string;
+     release_mgt_id: string;
+     environment_id: string;
+     component_configs: { config_mapping_revision: number; /* … */ };
+     // …
+   }
+   ```
+2. Write a private `toReleaseMgtDeployment(raw)` mapper that translates field names and reshapes nested objects to match the domain type.
+3. Return domain types from the exported function:
+   ```ts
+   export async function fetchReleaseMgtDeployments(...): Promise<ReleaseMgtDeployment[]> {
+     const data = await gql<{ componentReleaseMgtDeployments: { deployments: RawReleaseMgtDeployment[] } }>(QUERY, vars);
+     return (data.componentReleaseMgtDeployments?.deployments ?? []).map(toReleaseMgtDeployment);
+   }
+   ```
+
+Today some of the snake_case responses leak through to consumers because the domain type itself was shaped to match the wire (a known cleanup item). When migrating one of these to a proper mapper, also update the domain type in `src/types/` to use idiomatic camelCase — components and hooks then need their property access updated. Do this one domain at a time and lean on `tsc` to catch every call site.
+
+### Where mappers must NOT go
+
+- **Not in `src/types/`** — those are pure domain types.
+- **Not in `src/hooks/`** — hooks consume already-normalized domain types.
+- **Not in components/pages** — by the time data reaches the UI, it must already be domain-shaped.

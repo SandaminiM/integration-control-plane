@@ -18,7 +18,7 @@
 
 import { gql } from './graphql';
 import { toBackendArtifactType } from './artifactToggleMutations';
-import type { GqlArtifactType, GqlArtifact, GqlArtifactParam, ArtifactStatusInput, ListenerStateInput } from '../../types/artifact';
+import type { ArtifactType, Artifact, ArtifactParam, ArtifactStatusInput, ListenerStateInput } from '../../types/artifact';
 
 export const ARTIFACT_QUERY_MAP: Record<string, { queryName: string; field: string; fields: string; gqlFields: string }> = {
   RestApi: {
@@ -135,8 +135,8 @@ const UPDATE_LISTENER_STATE = `
     }
   }`;
 
-export async function fetchArtifactTypes(componentId: string, envId: string): Promise<GqlArtifactType[]> {
-  return gql<{ componentArtifactTypes: GqlArtifactType[] }>(
+export async function fetchArtifactTypes(componentId: string, envId: string): Promise<ArtifactType[]> {
+  return gql<{ componentArtifactTypes: ArtifactType[] }>(
     `query ComponentArtifactTypes($componentId: String!, $environmentId: String!) {
       componentArtifactTypes(componentId: $componentId, environmentId: $environmentId) {
         artifactType, artifactCount
@@ -146,13 +146,13 @@ export async function fetchArtifactTypes(componentId: string, envId: string): Pr
   ).then((d) => d.componentArtifactTypes);
 }
 
-export async function fetchArtifacts(artifactType: string, envId: string, componentId: string): Promise<GqlArtifact[]> {
+export async function fetchArtifacts(artifactType: string, envId: string, componentId: string): Promise<Artifact[]> {
   const mapping = ARTIFACT_QUERY_MAP[artifactType];
   if (!mapping) return [];
-  const data = await gql<Record<string, GqlArtifact[]>>(`query ArtifactQuery($environmentId: String!, $componentId: String!) { ${mapping.field}(environmentId: $environmentId, componentId: $componentId) { ${mapping.gqlFields} } }`, {
+  const data = await gql<Record<string, Artifact[]>>(`query ArtifactQuery($environmentId: String!, $componentId: String!) { ${mapping.field}(environmentId: $environmentId, componentId: $componentId) { ${mapping.gqlFields} } }`, {
     environmentId: envId,
     componentId,
-  }).catch(() => ({}) as Record<string, GqlArtifact[]>);
+  }).catch(() => ({}) as Record<string, Artifact[]>);
   return data[mapping.field] ?? [];
 }
 
@@ -164,8 +164,8 @@ export async function fetchLocalEntryValue(componentId: string, entryName: strin
   return gql<{ localEntryValueByComponent: string }>(LOCAL_ENTRY_VALUE_QUERY, { componentId, entryName, environmentId: envId }).then((d) => d.localEntryValueByComponent);
 }
 
-export async function fetchArtifactParams(componentId: string, artifactType: string, artifactName: string, envId: string, runtimeId?: string): Promise<GqlArtifactParam[]> {
-  return gql<{ artifactParametersByComponent: GqlArtifactParam[] }>(ARTIFACT_PARAMS_QUERY, { componentId, artifactType, artifactName, environmentId: envId, runtimeId }).then((d) => d.artifactParametersByComponent);
+export async function fetchArtifactParams(componentId: string, artifactType: string, artifactName: string, envId: string, runtimeId?: string): Promise<ArtifactParam[]> {
+  return gql<{ artifactParametersByComponent: ArtifactParam[] }>(ARTIFACT_PARAMS_QUERY, { componentId, artifactType, artifactName, environmentId: envId, runtimeId }).then((d) => d.artifactParametersByComponent);
 }
 
 export async function fetchArtifactWsdl(componentId: string, artifactType: string, artifactName: string, envId: string, runtimeId?: string): Promise<string> {

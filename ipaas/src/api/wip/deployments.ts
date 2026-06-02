@@ -17,8 +17,8 @@
  */
 
 import { gql } from './graphql';
-import type { GqlComponentDeployment, GqlDeploymentStatus, GqlReleaseMgtDeployment, GqlDeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../../types/deployment';
-import type { GqlEnvEndpoint } from '../../types/component';
+import type { ComponentDeployment, BuildRun, ReleaseMgtDeployment, DeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../../types/deployment';
+import type { EnvEndpoint } from '../../types/component';
 import type { DeployComponentInput } from '../../types/build';
 
 /** Escapes a string for embedding in a GraphQL inline query string. */
@@ -122,23 +122,23 @@ const DEPLOY_PREBUILT_INTEGRATION = `
     deployPrebuiltIntegration(input: $input)
   }`;
 
-export async function fetchComponentDeployment(orgHandler: string, orgUuid: string, componentId: string, versionId: string, environmentId: string): Promise<GqlComponentDeployment | null> {
-  return gql<{ componentDeployment: GqlComponentDeployment }>(COMPONENT_DEPLOYMENT_QUERY, { orgHandler, orgUuid, componentId, versionId, environmentId })
+export async function fetchComponentDeployment(orgHandler: string, orgUuid: string, componentId: string, versionId: string, environmentId: string): Promise<ComponentDeployment | null> {
+  return gql<{ componentDeployment: ComponentDeployment }>(COMPONENT_DEPLOYMENT_QUERY, { orgHandler, orgUuid, componentId, versionId, environmentId })
     .then((d) => d.componentDeployment)
     .catch((): null => null);
 }
 
-export async function fetchEnvEndpoints(componentId: string, versionId: string, releaseId: string): Promise<GqlEnvEndpoint[]> {
-  return gql<{ componentEndpoints: GqlEnvEndpoint[] }>(ENV_ENDPOINTS_QUERY, { componentId, versionId, releaseId })
+export async function fetchEnvEndpoints(componentId: string, versionId: string, releaseId: string): Promise<EnvEndpoint[]> {
+  return gql<{ componentEndpoints: EnvEndpoint[] }>(ENV_ENDPOINTS_QUERY, { componentId, versionId, releaseId })
     .then((d) => d.componentEndpoints ?? [])
     .catch(() => []);
 }
 
-export async function fetchDeploymentStatus(componentId: string, versionId: string): Promise<GqlDeploymentStatus[]> {
-  return gql<{ deploymentStatusByVersion: GqlDeploymentStatus[] }>(DEPLOYMENT_STATUS_QUERY, { versionId, componentId }).then((d) => d.deploymentStatusByVersion ?? []);
+export async function fetchDeploymentStatus(componentId: string, versionId: string): Promise<BuildRun[]> {
+  return gql<{ deploymentStatusByVersion: BuildRun[] }>(DEPLOYMENT_STATUS_QUERY, { versionId, componentId }).then((d) => d.deploymentStatusByVersion ?? []);
 }
 
-export async function fetchReleaseMgtDeployments(orgUuid: string, projectId: string, componentId: string, versionId: string, environmentId: string): Promise<GqlReleaseMgtDeployment[]> {
+export async function fetchReleaseMgtDeployments(orgUuid: string, projectId: string, componentId: string, versionId: string, environmentId: string): Promise<ReleaseMgtDeployment[]> {
   const query = `query {
     componentReleaseMgtDeployments(input: {
       organization_id: "${esc(orgUuid)}"
@@ -158,15 +158,15 @@ export async function fetchReleaseMgtDeployments(orgUuid: string, projectId: str
       }
     }
   }`;
-  return gql<{ componentReleaseMgtDeployments: { deployments: GqlReleaseMgtDeployment[] } }>(query)
+  return gql<{ componentReleaseMgtDeployments: { deployments: ReleaseMgtDeployment[] } }>(query)
     .then((d) => d.componentReleaseMgtDeployments?.deployments ?? [])
-    .catch(() => [] as GqlReleaseMgtDeployment[]);
+    .catch(() => [] as ReleaseMgtDeployment[]);
 }
 
-export async function fetchDeploymentTrackImages(componentId: string, versionId: string): Promise<GqlDeploymentTrackImage[]> {
-  return gql<{ deploymentTrackImages: GqlDeploymentTrackImage[] }>(DEPLOYMENT_TRACK_IMAGES_QUERY, { componentId, versionId })
+export async function fetchDeploymentTrackImages(componentId: string, versionId: string): Promise<DeploymentTrackImage[]> {
+  return gql<{ deploymentTrackImages: DeploymentTrackImage[] }>(DEPLOYMENT_TRACK_IMAGES_QUERY, { componentId, versionId })
     .then((d) => d.deploymentTrackImages ?? [])
-    .catch(() => [] as GqlDeploymentTrackImage[]);
+    .catch(() => [] as DeploymentTrackImage[]);
 }
 
 export async function deployDeploymentTrack(input: DeployDeploymentTrackInput): Promise<string> {

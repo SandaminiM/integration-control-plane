@@ -18,7 +18,7 @@
 
 import { choreoClient, withStsRetry } from './httpClients';
 import { gql } from './graphql';
-import type { GqlRepository, GqlCommit, GqlUserRepo, GqlRepoBranch, GqlRepoMetadata, RepoTreeNode, ChoreoSampleImageEntry } from '../../types/repository';
+import type { Repository, Commit, UserRepo, RepoBranch, RepoMetadata, RepoTreeNode, ChoreoSampleImageEntry } from '../../types/repository';
 import type { UpdateBuildpackConfigsInput } from '../../types/build';
 
 const COMPONENT_REPOSITORY_QUERY = `
@@ -116,24 +116,24 @@ const OBTAIN_USER_TOKEN = `
     }
   }`;
 
-export async function fetchComponentRepository(projectId: string, componentHandler: string): Promise<GqlRepository | null> {
-  return gql<{ component: { repository: GqlRepository } }>(COMPONENT_REPOSITORY_QUERY, { projectId, componentHandler }).then((d) => d.component?.repository ?? null);
+export async function fetchComponentRepository(projectId: string, componentHandler: string): Promise<Repository | null> {
+  return gql<{ component: { repository: Repository } }>(COMPONENT_REPOSITORY_QUERY, { projectId, componentHandler }).then((d) => d.component?.repository ?? null);
 }
 
-export async function fetchCommitHistory(componentId: string, branch: string): Promise<GqlCommit[]> {
-  return gql<{ commitHistory: GqlCommit[] }>(COMMIT_HISTORY_QUERY, { componentId, branch }).then((d) => d.commitHistory ?? []);
+export async function fetchCommitHistory(componentId: string, branch: string): Promise<Commit[]> {
+  return gql<{ commitHistory: Commit[] }>(COMMIT_HISTORY_QUERY, { componentId, branch }).then((d) => d.commitHistory ?? []);
 }
 
-export async function fetchGitHubUserRepos(): Promise<GqlUserRepo[]> {
-  return gql<{ userRepos: GqlUserRepo[] }>(USER_REPOS_QUERY).then((d) => d.userRepos ?? []);
+export async function fetchGitHubUserRepos(): Promise<UserRepo[]> {
+  return gql<{ userRepos: UserRepo[] }>(USER_REPOS_QUERY).then((d) => d.userRepos ?? []);
 }
 
-export async function fetchRepoBranches(repoOrg: string, repoName: string, isPublicRepo: boolean): Promise<GqlRepoBranch[]> {
-  return gql<{ repoBranchList: GqlRepoBranch[] }>(REPO_BRANCHES_QUERY, { repositoryOrganization: repoOrg, repositoryName: repoName, isPublicRepo }).then((d) => d.repoBranchList ?? []);
+export async function fetchRepoBranches(repoOrg: string, repoName: string, isPublicRepo: boolean): Promise<RepoBranch[]> {
+  return gql<{ repoBranchList: RepoBranch[] }>(REPO_BRANCHES_QUERY, { repositoryOrganization: repoOrg, repositoryName: repoName, isPublicRepo }).then((d) => d.repoBranchList ?? []);
 }
 
-export async function fetchRepoMetadata(org: string, repo: string, branch: string, subPath: string, isPublicRepo = false): Promise<GqlRepoMetadata> {
-  return gql<{ repoMetadata: GqlRepoMetadata }>(REPO_METADATA_QUERY, {
+export async function fetchRepoMetadata(org: string, repo: string, branch: string, subPath: string, isPublicRepo = false): Promise<RepoMetadata> {
+  return gql<{ repoMetadata: RepoMetadata }>(REPO_METADATA_QUERY, {
     organizationName: org,
     repoName: repo,
     branch,

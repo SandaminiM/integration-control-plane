@@ -16,9 +16,9 @@
  * under the License.
  */
 
-import type { GqlCommit } from './repository';
-import type { GqlComponentDeployment, GqlDeploymentTrackImage, DeploymentStatus } from './deployment';
-import type { GqlEnvironment } from './environment';
+import type { Commit } from './repository';
+import type { ComponentDeployment, DeploymentTrackImage, DeploymentStatus } from './deployment';
+import type { Environment } from './environment';
 import type { ComponentTypeFlags } from '../utils/componentType';
 
 export interface BuildAreaProps {
@@ -30,7 +30,7 @@ export interface BuildAreaProps {
   deploymentPipelineId: string;
   flags: ComponentTypeFlags;
   branch: string;
-  commits: GqlCommit[];
+  commits: Commit[];
   firstEnvId: string;
   firstEnvTemplateId: string;
   autoDeployEnabled?: boolean;
@@ -47,7 +47,7 @@ export interface DeployEnvironmentCardProps {
   versionId: string;
   deploymentPipelineId: string;
   flags: ComponentTypeFlags;
-  env: GqlEnvironment;
+  env: Environment;
   branch: string;
   componentName: string;
   projectHandler: string;
@@ -74,13 +74,13 @@ export interface DeployEnvironmentCardHeaderProps {
 export interface DeployEnvironmentCardBodyProps {
   status: DeploymentStatus | undefined;
   flags: ComponentTypeFlags;
-  deployment: GqlComponentDeployment | null;
+  deployment: ComponentDeployment | null;
   scheduleDescription: string | null;
   nextRunLabel: string | null;
   releaseId: string;
   isLoading: boolean;
   isImageLoading?: boolean;
-  deployedImage: GqlDeploymentTrackImage | null;
+  deployedImage: DeploymentTrackImage | null;
   deployedAt: string | null;
   envCritical: boolean;
   endpointCount?: number;

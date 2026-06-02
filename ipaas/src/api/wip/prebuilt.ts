@@ -19,7 +19,13 @@
 import { gql } from './graphql';
 import { choreoClient } from './httpClients';
 import type { SchemaConfigItem } from '../../types/configuration';
-import type { PrebuiltIntegration, PrebuiltIntegrationsData, PrebuiltNameAvailability, PrebuiltComponentRef, PrebuiltEnvironmentRef } from '../../types/prebuilt';
+import type { PrebuiltIntegration, PrebuiltComponentRef, PrebuiltEnvironmentRef } from '../../types/prebuilt';
+
+// Raw wire shape — private to this file.
+interface RawNameAvailability {
+  componentNameUnique: boolean;
+  alternateComponentName: string;
+}
 
 export async function fetchPrebuiltIntegrations(url: string, signal?: AbortSignal): Promise<{ prebuiltIntegrations: PrebuiltIntegration[] }> {
   const response = await fetch(url, { cache: 'no-store', signal });
@@ -27,14 +33,6 @@ export async function fetchPrebuiltIntegrations(url: string, signal?: AbortSigna
   const data = (await response.json()) as { prebuiltIntegrations: PrebuiltIntegration[] };
   if (!Array.isArray(data?.prebuiltIntegrations)) throw new Error('Invalid response format: missing prebuiltIntegrations array');
   return data;
-}
-
-export function normalizePrebuiltIntegrations(raw: { prebuiltIntegrations: PrebuiltIntegration[] }): PrebuiltIntegrationsData {
-  const appSet = new Set<string>();
-  for (const integration of raw.prebuiltIntegrations) {
-    integration.applications?.forEach((app) => appSet.add(app));
-  }
-  return { prebuiltIntegrations: raw.prebuiltIntegrations, applications: Array.from(appSet).sort() };
 }
 
 export async function fetchPrebuiltAsset(baseUrl: string, filename: string, signal?: AbortSignal): Promise<Response> {
@@ -45,7 +43,7 @@ export async function fetchPrebuiltAsset(baseUrl: string, filename: string, sign
 
 export async function checkNameAvailability(projectId: string, candidate: string): Promise<string> {
   const safe = candidate.replace(/["\\\n\r]/g, '');
-  const data = await gql<{ componentNameAvailability: PrebuiltNameAvailability }>(`query { componentNameAvailability(projectId: "${projectId}", componentNameCandidate: "${safe}") { componentNameUnique alternateComponentName } }`);
+  const data = await gql<{ componentNameAvailability: RawNameAvailability }>(`query { componentNameAvailability(projectId: "${projectId}", componentNameCandidate: "${safe}") { componentNameUnique alternateComponentName } }`);
   return data.componentNameAvailability.componentNameUnique ? candidate : data.componentNameAvailability.alternateComponentName;
 }
 

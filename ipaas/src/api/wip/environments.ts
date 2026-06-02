@@ -18,7 +18,7 @@
 
 import { gql } from './graphql';
 import { choreoClient } from './httpClients';
-import type { GqlEnvironment, CloudDataPlane, GqlLogger, EnvironmentInput, UpdateLogLevelInput } from '../../types/environment';
+import type { Environment, CloudDataPlane, Logger, EnvironmentInput, UpdateLogLevelInput } from '../../types/environment';
 
 const ENVIRONMENTS_QUERY = `
   query GetEnvironments($orgUuid: String!, $projectId: String!) {
@@ -64,28 +64,28 @@ const UPDATE_LOG_LEVEL = `
     }
   }`;
 
-export async function fetchEnvironments(orgUuid: string, projectId: string): Promise<GqlEnvironment[]> {
-  return gql<{ environments: GqlEnvironment[] }>(ENVIRONMENTS_QUERY, { orgUuid, projectId }).then((d) => d.environments);
+export async function fetchEnvironments(orgUuid: string, projectId: string): Promise<Environment[]> {
+  return gql<{ environments: Environment[] }>(ENVIRONMENTS_QUERY, { orgUuid, projectId }).then((d) => d.environments);
 }
 
-export async function fetchAllEnvironments(): Promise<GqlEnvironment[]> {
-  return gql<{ environments: GqlEnvironment[] }>(ALL_ENVIRONMENTS_QUERY).then((d) => d.environments);
+export async function fetchAllEnvironments(): Promise<Environment[]> {
+  return gql<{ environments: Environment[] }>(ALL_ENVIRONMENTS_QUERY).then((d) => d.environments);
 }
 
 export async function fetchCloudDataPlanes(orgUuid: string): Promise<CloudDataPlane[]> {
   return choreoClient.get<CloudDataPlane[]>(`/devops/1.0.0/api/v1/clusters/clouddataplanes?org_uuid=${encodeURIComponent(orgUuid)}`);
 }
 
-export async function fetchLoggers(environmentId: string, componentId: string): Promise<GqlLogger[]> {
-  return gql<{ loggersByEnvironmentAndComponent: GqlLogger[] }>(LOGGERS_QUERY, { environmentId, componentId }).then((d) => d.loggersByEnvironmentAndComponent);
+export async function fetchLoggers(environmentId: string, componentId: string): Promise<Logger[]> {
+  return gql<{ loggersByEnvironmentAndComponent: Logger[] }>(LOGGERS_QUERY, { environmentId, componentId }).then((d) => d.loggersByEnvironmentAndComponent);
 }
 
-export async function createEnvironment(input: EnvironmentInput): Promise<GqlEnvironment> {
-  return gql<{ createEnvironment: GqlEnvironment }>(CREATE_ENVIRONMENT, { ...input }).then((d) => d.createEnvironment);
+export async function createEnvironment(input: EnvironmentInput): Promise<Environment> {
+  return gql<{ createEnvironment: Environment }>(CREATE_ENVIRONMENT, { ...input }).then((d) => d.createEnvironment);
 }
 
-export async function updateEnvironment(input: EnvironmentInput & { environmentId: string }): Promise<GqlEnvironment> {
-  return gql<{ updateEnvironment: GqlEnvironment }>(UPDATE_ENVIRONMENT, { ...input }).then((d) => d.updateEnvironment);
+export async function updateEnvironment(input: EnvironmentInput & { environmentId: string }): Promise<Environment> {
+  return gql<{ updateEnvironment: Environment }>(UPDATE_ENVIRONMENT, { ...input }).then((d) => d.updateEnvironment);
 }
 
 export async function deleteEnvironment(environmentId: string): Promise<string> {

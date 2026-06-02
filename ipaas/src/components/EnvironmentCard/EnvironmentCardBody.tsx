@@ -25,7 +25,7 @@ import EnvCardAutomationInsights from './EnvCardAutomationInsights';
 import SwaggerOperationsList from './SwaggerOperationsList';
 import { useFetchComponentEndpointSpec } from '../../hooks/useComponents';
 import { useApiDefinition } from '../../hooks/useDeployments';
-import type { GqlEnvEndpoint } from '../../types/component';
+import type { EnvEndpoint } from '../../types/component';
 
 // ---------- helpers ----------
 
@@ -64,19 +64,19 @@ const VISIBILITY_ROWS = [
     key: 'public',
     label: 'Public',
     Icon: Globe,
-    getUrl: (ep: GqlEnvEndpoint) => ep.publicUrl || ep.defaultPublicUrl || ep.invokeUrl || '',
+    getUrl: (ep: EnvEndpoint) => ep.publicUrl || ep.defaultPublicUrl || ep.invokeUrl || '',
   },
   {
     key: 'organization',
     label: 'Organization',
     Icon: Building2,
-    getUrl: (ep: GqlEnvEndpoint) => ep.organizationUrl || ep.defaultOrganizationUrl || '',
+    getUrl: (ep: EnvEndpoint) => ep.organizationUrl || ep.defaultOrganizationUrl || '',
   },
   {
     key: 'project',
     label: 'Project',
     Icon: Folder,
-    getUrl: (ep: GqlEnvEndpoint) => ep.projectUrl || '',
+    getUrl: (ep: EnvEndpoint) => ep.projectUrl || '',
   },
 ] as const;
 
@@ -107,7 +107,7 @@ function VisibilityUrlRow({ Icon, label, url }: { Icon: React.ElementType; label
 // ---------- EndpointUrlsPanel ----------
 
 interface EndpointUrlsPanelProps {
-  endpoints: GqlEnvEndpoint[];
+  endpoints: EnvEndpoint[];
   selectedIdx: number;
   onSelect: (idx: number) => void;
   componentId: string;
@@ -115,6 +115,7 @@ interface EndpointUrlsPanelProps {
 }
 
 function EndpointUrlsPanel({ endpoints, selectedIdx, onSelect, componentId, deploymentTrackId }: EndpointUrlsPanelProps) {
+  const fetchSpecMutation = useFetchComponentEndpointSpec();
   const ep = endpoints[selectedIdx];
   if (!ep) return null;
 
@@ -122,7 +123,6 @@ function EndpointUrlsPanel({ endpoints, selectedIdx, onSelect, componentId, depl
   // Fallback to invokeUrl if no visibility-specific URL
   const fallbackUrl = urlRows.length === 0 ? ep.invokeUrl || '' : '';
 
-  const fetchSpecMutation = useFetchComponentEndpointSpec();
   const handleDownload = async () => {
     if (!ep.id) return;
     try {
@@ -218,7 +218,7 @@ interface EnvironmentCardBodyProps {
   loadingEnvDeployment: boolean;
   hasDeployment: boolean;
   deploymentStatusV2?: string | null;
-  envEndpoints?: GqlEnvEndpoint[];
+  envEndpoints?: EnvEndpoint[];
   scheduleDescription: string | null;
   releaseId: string;
   projectId: string;
@@ -237,7 +237,7 @@ interface EnvironmentCardBodyProps {
   envName?: string;
   apimEnvId?: string;
   apiId?: string;
-  prevEnvEndpoints?: GqlEnvEndpoint[];
+  prevEnvEndpoints?: EnvEndpoint[];
   prevEnvName?: string;
   notification?: { text: string; severity: 'success' | 'error' } | null;
 }

@@ -18,7 +18,7 @@
 
 import { choreoClient, systemClient, withScopeRetry } from './httpClients';
 import { gql } from './graphql';
-import type { GqlExecutionConfigs, TaskExecution, ExecutionLogEntry, UpdateJobConfigsInput, TriggerComponentInput, ExecutionArgument } from '../../types/executions';
+import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, UpdateJobConfigsInput, TriggerComponentInput, ExecutionArgument } from '../../types/executions';
 import type { TriggerTaskInput } from '../../types/artifact';
 
 const EXECUTION_CONFIGS_QUERY = `
@@ -47,8 +47,8 @@ const TRIGGER_ARTIFACT = `
     }
   }`;
 
-export async function fetchExecutionConfigs(componentId: string, releaseId: string): Promise<GqlExecutionConfigs | null> {
-  return gql<{ executionConfigs: GqlExecutionConfigs }>(EXECUTION_CONFIGS_QUERY, { componentId, releaseId })
+export async function fetchExecutionConfigs(componentId: string, releaseId: string): Promise<ExecutionConfigs | null> {
+  return gql<{ executionConfigs: ExecutionConfigs }>(EXECUTION_CONFIGS_QUERY, { componentId, releaseId })
     .then((d) => d.executionConfigs)
     .catch(() => null);
 }

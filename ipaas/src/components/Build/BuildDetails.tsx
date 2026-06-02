@@ -20,7 +20,7 @@ import { Alert, Box, Chip, CircularProgress, IconButton, Stack, Tooltip, Typogra
 import { Check, Copy } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
 import { useBuildLogs } from '../../hooks/useBuilds';
-import type { GqlDeploymentStatus } from '../../types/deployment';
+import type { BuildRun } from '../../types/deployment';
 import { BUILD_STAGES } from '../../constants/build';
 import { formatBuildDate, getStepStatus } from '../../utils/build';
 import BuildAccordionStepper from './BuildAccordionStepper';
@@ -28,7 +28,7 @@ import BuildAccordionStepper from './BuildAccordionStepper';
 interface BuildDetailsProps {
   componentId: string;
   versionId: string;
-  build: GqlDeploymentStatus;
+  build: BuildRun;
   onLogsToggle?: (open: boolean) => void;
 }
 

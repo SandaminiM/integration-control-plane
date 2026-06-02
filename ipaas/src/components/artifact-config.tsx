@@ -18,7 +18,7 @@
 
 import { Globe, Link2, ListOrdered, Clock, FolderArchive, Package, Plug, FileText, Radio, Server, Wifi, Layers, Zap, Database, Cpu, LayoutTemplate, Table, HardDrive } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import type { GqlArtifact } from '../types/artifact';
+import type { Artifact } from '../types/artifact';
 
 /** Format artifact type name for display: "RestApi" → "Rest Api" */
 export function formatArtifactTypeName(t: string): string {
@@ -93,7 +93,7 @@ export const ENTRY_POINT_DETAIL_TABS: Record<string, string[]> = {
 export const ENTRY_POINT_TYPE_SET = new Set(Object.keys(ENTRY_POINT_CONFIG));
 
 export interface SelectedArtifact {
-  artifact: GqlArtifact;
+  artifact: Artifact;
   artifactType: string;
   envId: string;
   componentId: string;

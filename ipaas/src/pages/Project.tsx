@@ -60,7 +60,7 @@ import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjec
 import { useComponents } from '../hooks/useComponents';
 import { useOrgs, useOrgComponentLimits, useOrgSubscriptions } from '../hooks/useOrg';
 import { useChoreoSampleImages } from '../hooks/useRepository';
-import type { GqlComponent } from '../types/component';
+import type { Component } from '../types/component';
 import { useDeleteComponent, useCreateComponent } from '../hooks/useComponents';
 import NotFound from '../components/NotFound';
 import { formatDistanceToNow } from '../utils/time';
@@ -484,7 +484,7 @@ function LinkRepositoryDialog({ open, onClose }: { scope: ProjectScope; open: bo
   );
 }
 
-function DeleteDialog({ component, scope, projectId, onClose }: { component: GqlComponent; scope: ProjectScope; projectId: string; onClose: () => void }) {
+function DeleteDialog({ component, scope, projectId, onClose }: { component: Component; scope: ProjectScope; projectId: string; onClose: () => void }) {
   const [confirmation, setConfirmation] = useState('');
   const mutation = useDeleteComponent();
   const confirmed = confirmation === component.displayName;
@@ -529,7 +529,7 @@ function IntegrationsTable({
   orgDevantComponentCount,
   onSelect,
 }: {
-  components: GqlComponent[];
+  components: Component[];
   isLoading: boolean;
   isRefreshing: boolean;
   onRefresh: () => void;
@@ -542,7 +542,7 @@ function IntegrationsTable({
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [deleting, setDeleting] = useState<GqlComponent | null>(null);
+  const [deleting, setDeleting] = useState<Component | null>(null);
   const quotaReached = orgDevantComponentCount >= FREE_COMPONENT_LIMIT;
   const q = query.trim().toLowerCase();
   const filtered = components

@@ -45,6 +45,54 @@ TypeScript always type-checks against `wip/` (via `tsconfig.app.json` paths) so 
 
 ---
 
+## Mapping responsibility (raw wire shape → domain type)
+
+**This is where normalization lives.** Each product's API file is the *only* place that knows the wire protocol (GraphQL, REST shape, snake_case, etc.). Domain functions return types from `src/types/*` — never raw protocol shapes.
+
+When `wip/` calls GraphQL and the response already matches the domain shape, no mapping is needed — the function passes through. When `cloud/` calls REST and the response uses different field names (e.g. snake_case, nested envelopes), the function maps explicitly before returning.
+
+### Canonical pattern
+
+```ts
+// src/api/cloud/components.ts (hypothetical future REST impl)
+
+import { choreoClient } from './httpClients';
+import type { Component } from '../../types/component';
+
+// Raw wire shape — private to this file, never exported, never in src/types/
+interface RawCloudComponent {
+  component_id: string;
+  display_name: string;
+  component_type: string;
+  // ...
+}
+
+// Mapper — private to this file
+function toComponent(raw: RawCloudComponent): Component {
+  return {
+    id: raw.component_id,
+    displayName: raw.display_name,
+    displayType: raw.component_type,
+    // ...
+  };
+}
+
+export async function fetchComponents(orgHandler: string, projectId: string): Promise<Component[]> {
+  const raw = await choreoClient.get<{ items: RawCloudComponent[] }>(`/components?org=${orgHandler}&project=${projectId}`);
+  return raw.items.map(toComponent);
+}
+```
+
+### Three rules
+
+1. **Raw types stay private to the product file** — never `export`, never in `src/types/`. They describe a wire shape, which is a product concern.
+2. **Mappers stay private to the product file** — named `toDomain(raw)` for response mapping, `fromInput(input)` only if the input also needs shape conversion in the other direction.
+3. **The exported function signature uses domain types only** — that's the contract the hooks layer (and `contracts.ts`) relies on.
+
+If a domain happens to have a pass-through shape (the wire response equals the domain shape, as is common in current `wip/` files), no mapper is needed — just declare the return type and return directly.
+
+---
+
 ## API contracts (`contracts.ts` + per-product `_check.ts`)
 
 `src/api/contracts.ts` is the single source of truth for the function signatures each product must implement. It groups signatures into one interface per domain (`ComponentsApi`, `DeploymentsApi`, …) and an aggregate `AppApi`.

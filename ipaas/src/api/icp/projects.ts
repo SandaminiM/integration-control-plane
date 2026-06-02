@@ -18,15 +18,15 @@
 
 // TODO: implement using ICP local REST APIs
 
-import type { GqlProject, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput } from '../../types/project';
+import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput } from '../../types/project';
 
 const ni = (name: string): never => { throw new Error(`[icp] projects.${name}: not implemented`); };
 
-export const fetchProjects = (_orgId: number): Promise<GqlProject[]> => ni('fetchProjects');
-export const fetchProject = (_orgId: number, _projectId: string): Promise<GqlProject> => ni('fetchProject');
-export const fetchProjectByHandler = (_orgId: number, _projectHandler: string): Promise<GqlProject> => ni('fetchProjectByHandler');
+export const fetchProjects = (_orgId: number): Promise<Project[]> => ni('fetchProjects');
+export const fetchProject = (_orgId: number, _projectId: string): Promise<Project> => ni('fetchProject');
+export const fetchProjectByHandler = (_orgId: number, _projectHandler: string): Promise<Project> => ni('fetchProjectByHandler');
 export const fetchProjectContributors = (_orgId: number, _projectId: string): Promise<ProjectContributor[]> => ni('fetchProjectContributors');
 export const fetchProjectComponentLabels = (_orgId: number, _projectId: string): Promise<string[]> => ni('fetchProjectComponentLabels');
 export const fetchProjectHandlerAvailability = (_orgId: number, _candidate: string): Promise<ProjectHandlerAvailability> => ni('fetchProjectHandlerAvailability');
-export const createProject = (_input: CreateProjectInput): Promise<GqlProject> => ni('createProject');
-export const createMonoRepoProject = (_input: CreateMonoRepoProjectInput): Promise<GqlProject> => ni('createMonoRepoProject');
+export const createProject = (_input: CreateProjectInput): Promise<Project> => ni('createProject');
+export const createMonoRepoProject = (_input: CreateMonoRepoProjectInput): Promise<Project> => ni('createMonoRepoProject');

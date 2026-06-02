@@ -21,7 +21,7 @@ import { ArrowLeft, ArrowRight, Search, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useRef, useState } from 'react';
 import { useApiDefinition, useEnvEndpoints } from '../../hooks/useDeployments';
 import { useApimApi, useUpdateApimApi } from '../../hooks/useApim';
-import type { GqlEnvEndpoint } from '../../types/component';
+import type { EnvEndpoint } from '../../types/component';
 import type { ApimApiInfo, ApimApiOperation } from '../../types/apim';
 import { API_KEY_SCHEME, OAUTH2_SCHEME, OPS_PER_PAGE } from '../../constants/endpointConfig';
 import { buildEndpointSecurityState, extractScopesFromSwagger, toggleSchemeToken } from '../../utils/deploy';
@@ -42,7 +42,7 @@ const drawerSx = {
   },
 } as const;
 
-function EndpointPanel({ ep, onSaved }: { ep: GqlEnvEndpoint; onSaved: () => void }) {
+function EndpointPanel({ ep, onSaved }: { ep: EnvEndpoint; onSaved: () => void }) {
   const { data: swaggerDoc } = useApiDefinition(ep.apimRevisionId);
   const { data, isLoading } = useApimApi(ep.apimId ?? null);
   const apimApiInfo: ApimApiInfo | null = data ?? null;
@@ -338,7 +338,7 @@ export default function EndpointConfigDrawer({ open, onClose, componentId, versi
     onClose();
   };
 
-  const selectedEp: GqlEnvEndpoint | null = endpoints[selectedIdx] ?? null;
+  const selectedEp: EnvEndpoint | null = endpoints[selectedIdx] ?? null;
 
   return (
     <Drawer anchor="right" open={open} onClose={handleClose} variant="temporary" sx={drawerSx}>

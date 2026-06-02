@@ -18,7 +18,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ARTIFACT_QUERY_MAP, fetchArtifactTypes, fetchArtifacts, fetchArtifactSource, fetchLocalEntryValue, fetchArtifactParams, fetchArtifactWsdl, updateArtifactStatus, updateListenerState } from '#api/artifacts';
-import type { GqlArtifact, ArtifactStatusInput, ListenerStateInput } from '../types/artifact';
+import type { Artifact, ArtifactStatusInput, ListenerStateInput } from '../types/artifact';
 
 export { ARTIFACT_QUERY_MAP };
 
@@ -79,15 +79,15 @@ export function useUpdateArtifactStatus() {
     onMutate: async (input) => {
       const scope = (q: { queryKey: readonly unknown[] }) => q.queryKey[2] === input.envId && q.queryKey[3] === input.componentId;
       await qc.cancelQueries({ queryKey: ['artifacts', input.artifactType], predicate: scope });
-      const previousArtifacts = qc.getQueriesData<GqlArtifact[]>({ queryKey: ['artifacts', input.artifactType], predicate: scope });
+      const previousArtifacts = qc.getQueriesData<Artifact[]>({ queryKey: ['artifacts', input.artifactType], predicate: scope });
       const newState = input.status === 'active' ? 'enabled' : 'disabled';
-      qc.setQueriesData<GqlArtifact[]>({ queryKey: ['artifacts', input.artifactType], predicate: scope }, (old) => old?.map((a) => (a.name === input.artifactName ? { ...a, state: newState } : a)));
+      qc.setQueriesData<Artifact[]>({ queryKey: ['artifacts', input.artifactType], predicate: scope }, (old) => old?.map((a) => (a.name === input.artifactName ? { ...a, state: newState } : a)));
       return { previousArtifacts, scope };
     },
     onError: (_err, _input, context) => {
       if (context?.previousArtifacts) {
         for (const [queryKey, data] of context.previousArtifacts) {
-          qc.setQueryData<GqlArtifact[]>(queryKey, data);
+          qc.setQueryData<Artifact[]>(queryKey, data);
         }
       }
     },

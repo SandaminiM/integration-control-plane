@@ -17,11 +17,11 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { GqlDeploymentStatus } from '../types/deployment';
+import type { BuildRun } from '../types/deployment';
 
 interface BuildAutoEffectsConfig {
-  builds: GqlDeploymentStatus[];
-  onAutoOpen: (build: GqlDeploymentStatus) => void;
+  builds: BuildRun[];
+  onAutoOpen: (build: BuildRun) => void;
 }
 
 export function useBuildAutoEffects({ builds, onAutoOpen }: BuildAutoEffectsConfig) {

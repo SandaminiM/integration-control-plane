@@ -16,7 +16,7 @@
  * under the License.
  */
 
-export interface GqlEnvironment {
+export interface Environment {
   id: string;
   name: string;
   critical: boolean;
@@ -36,7 +36,7 @@ export interface CloudDataPlane {
   is_cilium?: boolean;
 }
 
-export interface GqlLogger {
+export interface Logger {
   componentName: string;
   logLevel: string;
   runtimeIds: string[];

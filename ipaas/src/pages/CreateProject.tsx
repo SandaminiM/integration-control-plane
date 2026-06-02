@@ -25,7 +25,7 @@ import { useCreateProject, useCreateMonoRepoProject } from '../hooks/useProjects
 import { useCreateComponent } from '../hooks/useComponents';
 import { useGitHubUserRepos, useRepoBranches, useRepoContents } from '../hooks/useRepository';
 import { useOrgs, useOrgComponentLimits, useOrgSubscriptions } from '../hooks/useOrg';
-import type { GqlProject } from '../types/project';
+import type { Project } from '../types/project';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import DirectoryPickerField from '../components/DirectoryPicker';
 import WorkspaceModuleTable from '../components/ProjectCreate/WorkspaceModuleTable';
@@ -227,7 +227,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
     setSubmitError(null);
 
     // Step 1: create the project. Any failure here is surfaced immediately.
-    let project: GqlProject;
+    let project: Project;
     try {
       if (attachGit && activeOrg && activeRepo && selectedBranch) {
         project = await createMonoRepoProject.mutateAsync({

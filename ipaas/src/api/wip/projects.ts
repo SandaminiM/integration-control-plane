@@ -17,7 +17,7 @@
  */
 
 import { gql } from './graphql';
-import type { GqlProject, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput } from '../../types/project';
+import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput } from '../../types/project';
 
 const PROJECT_FIELDS = 'id, orgId, name, handler, description, version, createdDate, updatedAt, region, type, defaultDeploymentPipelineId';
 
@@ -103,16 +103,16 @@ const CREATE_MONO_REPO_PROJECT = `
     }
   }`;
 
-export async function fetchProjects(orgId: number): Promise<GqlProject[]> {
-  return gql<{ projects: GqlProject[] }>(PROJECTS_QUERY, { orgId }).then((d) => d.projects);
+export async function fetchProjects(orgId: number): Promise<Project[]> {
+  return gql<{ projects: Project[] }>(PROJECTS_QUERY, { orgId }).then((d) => d.projects);
 }
 
-export async function fetchProject(orgId: number, projectId: string): Promise<GqlProject> {
-  return gql<{ project: GqlProject }>(PROJECT_QUERY, { orgId, projectId }).then((d) => d.project);
+export async function fetchProject(orgId: number, projectId: string): Promise<Project> {
+  return gql<{ project: Project }>(PROJECT_QUERY, { orgId, projectId }).then((d) => d.project);
 }
 
-export async function fetchProjectByHandler(orgId: number, projectHandler: string): Promise<GqlProject> {
-  return gql<{ projectByHandler: GqlProject }>(PROJECT_BY_HANDLER_QUERY, { orgId, projectHandler }).then((d) => d.projectByHandler);
+export async function fetchProjectByHandler(orgId: number, projectHandler: string): Promise<Project> {
+  return gql<{ projectByHandler: Project }>(PROJECT_BY_HANDLER_QUERY, { orgId, projectHandler }).then((d) => d.projectByHandler);
 }
 
 export async function fetchProjectContributors(orgId: number, projectId: string): Promise<ProjectContributor[]> {
@@ -129,12 +129,12 @@ export async function fetchProjectHandlerAvailability(orgId: number, candidate: 
   return gql<{ projectHandlerAvailability: ProjectHandlerAvailability }>(PROJECT_HANDLER_AVAILABILITY_QUERY, { orgId, projectHandlerCandidate: candidate }).then((d) => d.projectHandlerAvailability);
 }
 
-export async function createProject(input: CreateProjectInput): Promise<GqlProject> {
+export async function createProject(input: CreateProjectInput): Promise<Project> {
   const orgId = window.API_CONFIG.asgardeoOrgNumericId;
   if (orgId === undefined || !Number.isFinite(orgId)) {
     return Promise.reject(new Error('API_CONFIG.asgardeoOrgNumericId is missing or invalid; cannot create project without a valid organization numeric ID'));
   }
-  return gql<{ createProject: GqlProject }>(CREATE_PROJECT, {
+  return gql<{ createProject: Project }>(CREATE_PROJECT, {
     name: input.name,
     description: input.description,
     projectHandler: input.handler,
@@ -143,12 +143,12 @@ export async function createProject(input: CreateProjectInput): Promise<GqlProje
   }).then((d) => d.createProject);
 }
 
-export async function createMonoRepoProject(input: CreateMonoRepoProjectInput): Promise<GqlProject> {
+export async function createMonoRepoProject(input: CreateMonoRepoProjectInput): Promise<Project> {
   const orgId = window.API_CONFIG.asgardeoOrgNumericId;
   if (orgId === undefined || !Number.isFinite(orgId)) {
     return Promise.reject(new Error('API_CONFIG.asgardeoOrgNumericId is missing or invalid; cannot create mono-repo project without a valid organization numeric ID'));
   }
-  return gql<{ createProject: GqlProject }>(CREATE_MONO_REPO_PROJECT, {
+  return gql<{ createProject: Project }>(CREATE_MONO_REPO_PROJECT, {
     name: input.name,
     description: input.description,
     projectHandler: input.handler,

@@ -16,11 +16,11 @@
  * under the License.
  */
 
-import type { GqlRepoMetadata, DetectedMode, RepoTreeNode } from '../types/repository';
+import type { RepoMetadata, DetectedMode, RepoTreeNode } from '../types/repository';
 import type { WorkspaceModule } from '../types/project';
 import { formatRepoNameToDisplayName } from './string';
 
-export function detectTechnology(metadata: GqlRepoMetadata | undefined): DetectedMode {
+export function detectTechnology(metadata: RepoMetadata | undefined): DetectedMode {
   if (!metadata) return null;
 
   const { hasBallerinaTomlInPath, hasBallerinaTomlInRoot, hasPomXmlInPath, hasPomXmlInRoot, isSubPathEmpty } = metadata;

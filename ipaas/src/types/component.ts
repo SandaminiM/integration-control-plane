@@ -16,7 +16,7 @@
  * under the License.
  */
 
-export interface GqlComponent {
+export interface Component {
   projectId: string;
   id: string;
   name: string;
@@ -36,7 +36,7 @@ export interface GqlComponent {
   isPrebuilt?: boolean;
 }
 
-export interface GqlDeploymentTrack {
+export interface DeploymentTrack {
   id: string;
   autoDeployEnabled?: boolean;
   branch?: string;
@@ -44,7 +44,7 @@ export interface GqlDeploymentTrack {
   latest?: boolean;
 }
 
-export interface GqlApiVersion {
+export interface ApiVersion {
   id: string;
   apiVersion: string;
   branch: string;
@@ -52,19 +52,19 @@ export interface GqlApiVersion {
   accessibility?: string;
 }
 
-export interface GqlComponentDetail extends GqlComponent {
+export interface ComponentDetail extends Component {
   orgHandler: string;
-  deploymentTracks?: GqlDeploymentTrack[];
-  apiVersions?: GqlApiVersion[];
+  deploymentTracks?: DeploymentTrack[];
+  apiVersions?: ApiVersion[];
 }
 
-export interface GqlEndpoint {
+export interface Endpoint {
   displayName: string;
   visibility: string;
   apimId?: string | null;
 }
 
-export interface GqlEnvEndpoint {
+export interface EnvEndpoint {
   id: string;
   name?: string | null;
   createdAt?: string | null;

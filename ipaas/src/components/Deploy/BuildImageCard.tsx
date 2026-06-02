@@ -20,11 +20,11 @@ import { Avatar, Card, Chip, CircularProgress, Divider, IconButton, Stack, Toolt
 import { Check, Copy, Edit, GitBranch } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
 import type { JSX } from 'react';
-import type { GqlDeploymentTrackImage } from '../../types/deployment';
+import type { DeploymentTrackImage } from '../../types/deployment';
 import { formatDistanceToNow } from '../../utils/time';
 
 interface BuildImageCardProps {
-  image: GqlDeploymentTrackImage;
+  image: DeploymentTrackImage;
   isLatest: boolean;
   variant?: 'detail' | 'selectable';
   isSelected?: boolean;

@@ -19,7 +19,7 @@
 import { Autocomplete, Box, Button, Grid, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { type JSX, useEffect, useState } from 'react';
-import type { GqlEnvironment } from '../../types/environment';
+import type { Environment } from '../../types/environment';
 import type { AlertRule, AlertRuleFormProps, AlertTypeOption } from '../../types/alerts';
 import { ALERTS_CREATE_NEW_RULE_BACK_BUTTON_TEXT, ALERTS_CREATE_NEW_RULE_TITLE, ALERTS_EDIT_RULE_TITLE, AlertTypeConstants } from '../../constants/alerts';
 import { getAlertTypeOptionByValue, getAlertTypeOptions } from '../../utils/alerts';
@@ -33,9 +33,9 @@ import BuildAlertRuleForm from './AlertRuleForms/BuildAlertRuleForm';
 
 interface CreateAlertRuleProps {
   goBackToAlertRules: () => void;
-  environments: GqlEnvironment[];
-  selectedEnvironment: GqlEnvironment;
-  setSelectedEnvironment: (env: GqlEnvironment) => void;
+  environments: Environment[];
+  selectedEnvironment: Environment;
+  setSelectedEnvironment: (env: Environment) => void;
   selectedAlertType: AlertTypeOption;
   setSelectedAlertType: (type: AlertTypeOption) => void;
   componentId: string;
@@ -101,7 +101,7 @@ export default function CreateAlertRule(props: CreateAlertRuleProps): JSX.Elemen
   } = props;
 
   const [alertType, setAlertType] = useState<AlertTypeOption>(selectedAlertType);
-  const [environment, setEnvironment] = useState<GqlEnvironment>(selectedEnvironment);
+  const [environment, setEnvironment] = useState<Environment>(selectedEnvironment);
   const [isAlertRuleHalfConfigured, setIsAlertRuleHalfConfigured] = useState(false);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const [pendingAlertType, setPendingAlertType] = useState<AlertTypeOption | null>(null);

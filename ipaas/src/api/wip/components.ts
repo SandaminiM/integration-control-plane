@@ -17,7 +17,7 @@
  */
 
 import { gql } from './graphql';
-import type { GqlComponent, GqlComponentDetail, GqlEndpoint, GqlEnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, DisplayType, DeleteComponentResult } from '../../types/component';
+import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, DisplayType, DeleteComponentResult } from '../../types/component';
 import type { ComponentNameAvailability } from '../../types/component';
 
 function gqlStr(value: string): string {
@@ -205,21 +205,21 @@ const GENERATE_COMPONENT_ENDPOINTS = `
     }
   }`;
 
-export async function fetchComponents(orgHandler: string, projectId: string): Promise<GqlComponent[]> {
-  return gql<{ components: GqlComponent[] }>(COMPONENTS_QUERY, { orgHandler, projectId }).then((d) => d.components);
+export async function fetchComponents(orgHandler: string, projectId: string): Promise<Component[]> {
+  return gql<{ components: Component[] }>(COMPONENTS_QUERY, { orgHandler, projectId }).then((d) => d.components);
 }
 
-export async function fetchComponentByHandler(projectId: string, componentHandler: string): Promise<GqlComponentDetail> {
-  return gql<{ component: GqlComponentDetail }>(COMPONENT_BY_HANDLER_QUERY, { projectId, componentHandler }).then((d) => d.component);
+export async function fetchComponentByHandler(projectId: string, componentHandler: string): Promise<ComponentDetail> {
+  return gql<{ component: ComponentDetail }>(COMPONENT_BY_HANDLER_QUERY, { projectId, componentHandler }).then((d) => d.component);
 }
 
-export async function fetchComponentEndpoints(componentId: string, versionId: string): Promise<GqlEndpoint[]> {
-  return gql<{ componentEndpoints: GqlEndpoint[] }>(COMPONENT_ENDPOINTS_QUERY, { componentId, versionId })
+export async function fetchComponentEndpoints(componentId: string, versionId: string): Promise<Endpoint[]> {
+  return gql<{ componentEndpoints: Endpoint[] }>(COMPONENT_ENDPOINTS_QUERY, { componentId, versionId })
     .then((d) => d.componentEndpoints ?? [])
     .catch(() => []);
 }
 
-export async function createComponent(input: CreateComponentInput): Promise<GqlComponent> {
+export async function createComponent(input: CreateComponentInput): Promise<Component> {
   if (MI_DISPLAY_TYPES.has(input.displayType)) {
     const d = await gql<{ createIntegrationComponent: { id: string; handle: string; projectId: string; organizationId: string } }>(buildCreateMiComponentQuery(input));
     return {
@@ -237,7 +237,7 @@ export async function createComponent(input: CreateComponentInput): Promise<GqlC
       lastBuildDate: '',
     };
   }
-  return gql<{ createComponent: GqlComponent }>(buildCreateComponentQuery(input)).then((d) => d.createComponent);
+  return gql<{ createComponent: Component }>(buildCreateComponentQuery(input)).then((d) => d.createComponent);
 }
 
 export async function deleteComponent(input: { orgHandler: string; componentId: string; projectId: string }): Promise<DeleteComponentResult> {
@@ -262,8 +262,8 @@ export async function updateAutoDeployEnabled(input: UpdateAutoDeployInput): Pro
   }).then((d) => d.updateDeploymentTrack);
 }
 
-export async function updateComponent(input: UpdateComponentInput): Promise<GqlComponent> {
-  return gql<{ updateComponent: GqlComponent }>(UPDATE_COMPONENT, {
+export async function updateComponent(input: UpdateComponentInput): Promise<Component> {
+  return gql<{ updateComponent: Component }>(UPDATE_COMPONENT, {
     id: input.id,
     displayName: input.displayName,
     description: input.description,
@@ -291,8 +291,8 @@ export async function updateEndpoint(input: { componentId: string; versionId: st
   return gql<{ updateComponentEndpoint: object }>(query, {}).then((d) => d.updateComponentEndpoint);
 }
 
-export async function generateComponentEndpoints(input: GenerateComponentEndpointsInput): Promise<GqlEnvEndpoint[]> {
-  return gql<{ generateComponentEndpoints: GqlEnvEndpoint[] }>(GENERATE_COMPONENT_ENDPOINTS, {
+export async function generateComponentEndpoints(input: GenerateComponentEndpointsInput): Promise<EnvEndpoint[]> {
+  return gql<{ generateComponentEndpoints: EnvEndpoint[] }>(GENERATE_COMPONENT_ENDPOINTS, {
     componentId: input.componentId,
     versionId: input.versionId,
     releaseId: input.releaseId,

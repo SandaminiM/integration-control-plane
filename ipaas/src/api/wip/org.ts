@@ -19,7 +19,7 @@
 import { gql } from './graphql';
 import { choreoClient, subscriptionsClient } from './httpClients';
 import type { OrgEntry, OrgComponentLimits, OrgSubscription, RegisterUserResponse } from '../../types/org';
-import type { GqlProject } from '../../types/project';
+import type { Project } from '../../types/project';
 
 // Types moved to src/types/org — re-exported here so existing imports continue to work
 
@@ -66,8 +66,8 @@ const PROJECTS_QUERY = `
     }
   }`;
 
-export async function fetchProjectsByOrgId(orgNumericId: number): Promise<GqlProject[]> {
-  return gql<{ projects: GqlProject[] }>(PROJECTS_QUERY, { orgId: orgNumericId }).then((d) => d.projects ?? []);
+export async function fetchProjectsByOrgId(orgNumericId: number): Promise<Project[]> {
+  return gql<{ projects: Project[] }>(PROJECTS_QUERY, { orgId: orgNumericId }).then((d) => d.projects ?? []);
 }
 
 /** Creates the default project for a newly onboarded org. Returns { id, handler }. */

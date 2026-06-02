@@ -19,7 +19,7 @@
 import { Box, Chip, Collapse, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Building2, Check, ChevronDown, ChevronUp, Copy, Folder, Globe, Pencil, Settings } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useState } from 'react';
-import type { GqlEnvEndpoint } from '../../types/component';
+import type { EnvEndpoint } from '../../types/component';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const VISIBILITY_OPTS = [
@@ -71,9 +71,9 @@ export function CopyBtn({ text }: { text: string }) {
 }
 
 export interface EndpointCardProps {
-  ep: GqlEnvEndpoint;
-  onEdit?: (ep: GqlEnvEndpoint) => void;
-  onSettings?: (ep: GqlEnvEndpoint) => void;
+  ep: EnvEndpoint;
+  onEdit?: (ep: EnvEndpoint) => void;
+  onSettings?: (ep: EnvEndpoint) => void;
   defaultExpanded?: boolean;
   readOnly?: boolean;
 }

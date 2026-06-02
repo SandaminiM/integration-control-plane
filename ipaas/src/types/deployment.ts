@@ -26,12 +26,12 @@ export const DeploymentStatus = {
 
 export type DeploymentStatus = (typeof DeploymentStatus)[keyof typeof DeploymentStatus];
 
-export interface GqlReleaseMgtDeploymentRef {
+export interface ReleaseMgtDeploymentRef {
   releaseMgtReleaseId: string;
   releaseMgtDeploymentId: string;
 }
 
-export interface GqlComponentDeployment {
+export interface ComponentDeployment {
   releaseId: string;
   cron: string;
   cronTimezone: string;
@@ -39,7 +39,7 @@ export interface GqlComponentDeployment {
   invokeUrl?: string | null;
   imageUrl?: string | null;
   configCount?: number;
-  releaseMgtDeployment?: GqlReleaseMgtDeploymentRef | null;
+  releaseMgtDeployment?: ReleaseMgtDeploymentRef | null;
   build?: {
     buildId: string;
     deployedAt?: string;
@@ -53,7 +53,7 @@ export interface GqlComponentDeployment {
   };
 }
 
-export interface GqlDeploymentStatus {
+export interface BuildRun {
   id: number;
   sha: string;
   started_at: string;
@@ -69,7 +69,7 @@ export interface GqlDeploymentStatus {
   buildRef?: string;
 }
 
-export interface GqlReleaseMgtDeployment {
+export interface ReleaseMgtDeployment {
   id: string;
   release_mgt_id: string;
   environment_id: string;
@@ -90,7 +90,7 @@ export interface GqlReleaseMgtDeployment {
   created_at: string;
 }
 
-export interface GqlDeploymentTrackImage {
+export interface DeploymentTrackImage {
   imageId: string;
   createdAt: string;
   updatedAt: string;
