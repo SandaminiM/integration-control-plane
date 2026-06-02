@@ -69,8 +69,9 @@ export default function CloudEditorDeployment(): JSX.Element {
         let registry;
         try {
           registry = await getOrCreateRegistryMutation.mutateAsync(deploymentParams.orgUuid);
-        } catch {
-          throw new Error('Unable to set up the Cloud Editor environment. Please try again or contact support if the problem persists.');
+        } catch (err) {
+          console.error('[CloudEditor] Failed to get or create sample registry:', err);
+          throw new Error('Unable to set up the Cloud Editor environment. Please try again or contact support if the problem persists.', { cause: err });
         }
 
         // 3. Call createCodeServer — backend provisions the container and returns its URL
@@ -87,8 +88,9 @@ export default function CloudEditorDeployment(): JSX.Element {
             registryId: registry.id,
             sourceCommitHash: deploymentParams.sourceCommitHash || undefined,
           });
-        } catch {
-          throw new Error('Unable to start the Cloud Editor. Please try again or contact support if the problem persists.');
+        } catch (err) {
+          console.error('[CloudEditor] Failed to create code server:', err);
+          throw new Error('Unable to start the Cloud Editor. Please try again or contact support if the problem persists.', { cause: err });
         }
 
         // 4. Validate URL is HTTPS and redirect — replace() so the loading page is not in back history
