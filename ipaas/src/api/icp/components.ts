@@ -18,17 +18,17 @@
 
 // TODO: implement using ICP local REST APIs
 
-import type { GqlComponent, GqlComponentDetail, GqlEndpoint, GqlEnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability } from '../../types/component';
+import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability, DeleteComponentResult } from '../../types/component';
 
 const ni = (name: string): never => { throw new Error(`[icp] components.${name}: not implemented`); };
 
-export const fetchComponents = (_orgHandler: string, _projectId: string): Promise<GqlComponent[]> => ni('fetchComponents');
-export const fetchComponentByHandler = (_projectId: string, _componentHandler: string): Promise<GqlComponentDetail> => ni('fetchComponentByHandler');
-export const fetchComponentEndpoints = (_componentId: string, _versionId: string): Promise<GqlEndpoint[]> => ni('fetchComponentEndpoints');
-export const createComponent = (_input: CreateComponentInput): Promise<GqlComponent> => ni('createComponent');
-export const deleteComponent = (_input: { orgHandler: string; componentId: string; projectId: string }): Promise<{ success: boolean }> => ni('deleteComponent');
-export const updateComponent = (_input: UpdateComponentInput): Promise<GqlComponent> => ni('updateComponent');
+export const fetchComponents = (_orgHandler: string, _projectId: string): Promise<Component[]> => ni('fetchComponents');
+export const fetchComponentByHandler = (_projectId: string, _componentHandler: string): Promise<ComponentDetail> => ni('fetchComponentByHandler');
+export const fetchComponentEndpoints = (_componentId: string, _versionId: string): Promise<Endpoint[]> => ni('fetchComponentEndpoints');
+export const createComponent = (_input: CreateComponentInput): Promise<Component> => ni('createComponent');
+export const deleteComponent = (_input: { orgHandler: string; componentId: string; projectId: string }): Promise<DeleteComponentResult> => ni('deleteComponent');
+export const updateComponent = (_input: UpdateComponentInput): Promise<Component> => ni('updateComponent');
 export const updateAutoDeployEnabled = (_input: UpdateAutoDeployInput): Promise<{ id: string; autoDeployEnabled: boolean }> => ni('updateAutoDeployEnabled');
-export const generateComponentEndpoints = (_input: GenerateComponentEndpointsInput): Promise<GqlEnvEndpoint[]> => ni('generateComponentEndpoints');
+export const generateComponentEndpoints = (_input: GenerateComponentEndpointsInput): Promise<EnvEndpoint[]> => ni('generateComponentEndpoints');
 export const fetchComponentNameAvailability = (_projectId: string, _candidate: string): Promise<ComponentNameAvailability> => ni('fetchComponentNameAvailability');
 export const fetchComponentEndpointSpec = (_componentId: string, _versionId: string, _endpointId: string): Promise<string | null> => ni('fetchComponentEndpointSpec');

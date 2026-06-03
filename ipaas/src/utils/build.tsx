@@ -20,7 +20,7 @@
 import { Box, Stack, Typography } from '@wso2/oxygen-ui';
 import type { JSX, ReactNode } from 'react';
 import type { BuildRunLogs } from '../types/build';
-import type { GqlRepository } from '../types/repository';
+import type { Repository } from '../types/repository';
 import { BUILD_STAGES } from '../constants/build';
 
 export function Row({ label, children }: { label: string; children: ReactNode }): JSX.Element {
@@ -115,7 +115,7 @@ export function gitProviderLabel(provider: string): string {
   }
 }
 
-export function repoUrl(repository: GqlRepository): string {
+export function repoUrl(repository: Repository): string {
   const { gitProvider, serverUrl, bitbucketServerUrl, organizationApp, nameApp, projectApp } = repository;
   const base = serverUrl || bitbucketServerUrl;
 

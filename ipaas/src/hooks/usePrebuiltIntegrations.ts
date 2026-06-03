@@ -22,15 +22,14 @@ import type { JSONSchema } from '../types/schema';
 import type { PrebuiltIntegrationsData, PrebuiltInstructionsResult, PrebuiltConfigSchemaResult, PrebuiltDiagramResult } from '../types/prebuilt';
 import { DEFAULT_PREBUILT_INTEGRATIONS_URL } from '../constants/samples';
 import { getDotChoreoBaseUrl } from '../utils/prebuilt';
-import { fetchPrebuiltIntegrations, normalizePrebuiltIntegrations, fetchPrebuiltAsset } from '../api/prebuilt';
+import { fetchPrebuiltIntegrations, fetchPrebuiltAsset } from '#api/prebuilt';
 
 export function usePrebuiltIntegrations() {
   return useQuery<PrebuiltIntegrationsData>({
     queryKey: ['prebuiltIntegrations'],
-    queryFn: async ({ signal }) => {
+    queryFn: ({ signal }) => {
       const url = window.API_CONFIG?.prebuiltIntegrationsUrl ?? DEFAULT_PREBUILT_INTEGRATIONS_URL;
-      const raw = await fetchPrebuiltIntegrations(url, signal);
-      return normalizePrebuiltIntegrations(raw);
+      return fetchPrebuiltIntegrations(url, signal);
     },
     retry: 3,
     staleTime: 5 * 60 * 1000,

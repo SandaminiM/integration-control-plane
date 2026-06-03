@@ -56,7 +56,7 @@ import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useComponentDeployment } from '../hooks/useDeployments';
 import { useExecutionConfigs, useTriggerTask } from '../hooks/useExecutions';
-import type { GqlEnvironment } from '../types/environment';
+import type { Environment } from '../types/environment';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useDeployDeploymentTrack } from '../hooks/useDeployments';
 import { useGenerateComponentEnvironmentJwtSecret, useRotateComponentEnvironmentJwtSecret } from '../hooks/useComponents';
@@ -65,7 +65,7 @@ import Authorized from './Authorized';
 import { Permissions } from '../constants/permissions';
 import { useUpdateArtifactTracingStatus, useUpdateArtifactStatisticsStatus } from '../hooks/useArtifactToggles';
 import { useUpdateArtifactStatus, useUpdateListenerState, useArtifacts } from '../hooks/useArtifacts';
-import type { GqlArtifact } from '../types/artifact';
+import type { Artifact } from '../types/artifact';
 import { type SelectedArtifact, ENTRY_POINT_CONFIG, ENTRY_POINT_DETAIL_TABS } from './artifact-config';
 import { ArtifactApiDefinition, ServiceResources, ProxyApiReference } from './ArtifactTabs';
 
@@ -404,7 +404,7 @@ function EntryPointDetail({ selected, onOpenDrawerTab }: { selected: SelectedArt
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function EntryPointsList({ envId, componentId, projectId, componentType, onOpenDrawer }: { envId: string; componentId: string; projectId: string; componentType: string; onOpenDrawer: (a: GqlArtifact, type: string, envId: string, tab: string) => void }) {
+function EntryPointsList({ envId, componentId, projectId, componentType, onOpenDrawer }: { envId: string; componentId: string; projectId: string; componentType: string; onOpenDrawer: (a: Artifact, type: string, envId: string, tab: string) => void }) {
   const [selectedKey, setSelectedKey] = useState('');
   const isMI = componentType === 'MI';
 
@@ -925,7 +925,7 @@ export default function Environment({
   deploymentPipelineId,
   latestCommit,
 }: {
-  env: GqlEnvironment;
+  env: Environment;
   componentId: string;
   projectId: string;
   componentType: string;

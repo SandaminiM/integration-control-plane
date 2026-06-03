@@ -18,7 +18,7 @@
 
 import { useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createDefaultProject, fetchOrgComponentLimits, fetchOrgSubscriptions, fetchOrgs, fetchProjectsByOrgId, initOrg, registerUser, validateOrgName } from '../api/org';
+import { createDefaultProject, fetchOrgComponentLimits, fetchOrgSubscriptions, fetchOrgs, fetchProjectsByOrgId, initOrg, registerUser, validateOrgName } from '#api/org';
 
 export function useOrgs() {
   return useQuery({

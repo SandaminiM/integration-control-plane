@@ -17,7 +17,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchBuildLogs, fetchBuildRunLogs } from '../api/builds';
+import { fetchBuildLogs, fetchBuildRunLogs } from '#api/builds';
 
 export function useBuildLogs(componentId: string, versionId: string, workflowName: string, isInProgress: boolean) {
   return useQuery({

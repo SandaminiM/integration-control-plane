@@ -16,17 +16,17 @@
  * under the License.
  */
 
-export interface GqlArtifactType {
+export interface ArtifactType {
   artifactType: string;
   artifactCount: number;
 }
 
-export interface GqlArtifact {
+export interface Artifact {
   name: string;
   [key: string]: unknown;
 }
 
-export interface GqlArtifactParam {
+export interface ArtifactParam {
   name: string;
   value: string;
 }

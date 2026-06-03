@@ -16,7 +16,7 @@
  * under the License.
  */
 
-export interface GqlBuildpackConfig {
+export interface BuildpackConfig {
   versionId: string;
   buildContext: string;
   isUnitTestEnabled: boolean;
@@ -26,7 +26,7 @@ export interface GqlBuildpackConfig {
   keyValues?: Array<{ id?: string; key: string; value: string }>;
 }
 
-export interface GqlRepository {
+export interface Repository {
   gitProvider: string;
   organizationApp: string;
   nameApp: string;
@@ -36,10 +36,10 @@ export interface GqlRepository {
   serverUrl?: string;
   projectApp?: string;
   isBuildConfigurationMigrated?: boolean;
-  buildpackConfig?: GqlBuildpackConfig[];
+  buildpackConfig?: BuildpackConfig[];
 }
 
-export interface GqlCommit {
+export interface Commit {
   sha: string;
   message: string;
   isLatest: boolean;
@@ -51,17 +51,17 @@ export interface GqlCommit {
   };
 }
 
-export interface GqlUserRepo {
+export interface UserRepo {
   orgName: string;
   repositories: { name: string }[];
 }
 
-export interface GqlRepoBranch {
+export interface RepoBranch {
   name: string;
   isDefault: boolean;
 }
 
-export interface GqlRepoMetadata {
+export interface RepoMetadata {
   isBareRepo: boolean;
   isSubPathEmpty: boolean;
   isSubPathValid: boolean;
@@ -84,4 +84,9 @@ export interface RepoTreeNode {
   subPath: string;
   type: 'tree' | 'blob';
   children?: RepoTreeNode[];
+}
+
+export interface ChoreoSampleImageEntry {
+  name: string;
+  [key: string]: unknown;
 }

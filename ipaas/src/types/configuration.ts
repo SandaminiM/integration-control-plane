@@ -118,3 +118,14 @@ export interface ConfigMgtSaveItem {
   configPackageName?: string;
   configPackageOrganization?: string;
 }
+
+export interface PostConfigMgtInput {
+  orgHandler: string;
+  projectId: string;
+  componentId: string;
+  envId: string;
+  versionId: string;
+  moduleName: string;
+  commitHash: string;
+  configs: ConfigMgtSaveItem[];
+}

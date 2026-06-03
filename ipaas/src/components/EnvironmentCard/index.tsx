@@ -23,8 +23,8 @@ import { useNavigate } from 'react-router';
 import { useComponentDeployment, useEnvEndpoints } from '../../hooks/useDeployments';
 import { useExecutionConfigs } from '../../hooks/useExecutions';
 import { useSchemaConfig } from '../../hooks/useConfiguration';
-import type { GqlEnvironment } from '../../types/environment';
-import type { GqlEnvEndpoint } from '../../types/component';
+import type { Environment } from '../../types/environment';
+import type { EnvEndpoint } from '../../types/component';
 import { getRequiredPathsAtLevel } from '../SchemaConfigForm/schemaUtils';
 import { useOrgUuid } from '../../hooks/useOrgUuid';
 import { useTriggerComponent } from '../../hooks/useExecutions';
@@ -38,8 +38,8 @@ import ConfigureDrawer from './ConfigureDrawer';
 import ServiceLogsDrawer from './ServiceLogsDrawer';
 
 interface EnvironmentProps {
-  env: GqlEnvironment;
-  prevEnv?: GqlEnvironment;
+  env: Environment;
+  prevEnv?: Environment;
   componentId: string;
   projectId: string;
   componentType: string;
@@ -303,7 +303,7 @@ export default function Environment({ env, prevEnv, componentId, projectId, comp
           envName={env.name}
           apimEnvId={env.apimEnvId}
           apiId={apiId ?? componentId}
-          prevEnvEndpoints={prevEnvEndpoints as GqlEnvEndpoint[]}
+          prevEnvEndpoints={prevEnvEndpoints as EnvEndpoint[]}
           prevEnvName={prevEnv?.name}
           notification={notification}
         />

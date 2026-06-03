@@ -20,10 +20,10 @@ import { Box, Button, Chip, Divider, MenuItem, Select, Stack, Tooltip, Typograph
 import { GitBranch, HelpCircle, Plus } from '@wso2/oxygen-ui-icons-react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import type { GqlDeploymentTrack } from '../types/component';
+import type { DeploymentTrack } from '../types/component';
 
 interface DeploymentTrackBarProps {
-  tracks: GqlDeploymentTrack[];
+  tracks: DeploymentTrack[];
   selectedId: string;
   onChange: (id: string) => void;
   orgHandler: string;
@@ -36,7 +36,7 @@ interface DeploymentTrackBarProps {
 
 const TOOLTIP_TEXT = 'Deployment tracks control the release path of your component versions through different environments.';
 
-function TrackLabel({ track, versionView }: { track: GqlDeploymentTrack; versionView?: boolean }) {
+function TrackLabel({ track, versionView }: { track: DeploymentTrack; versionView?: boolean }) {
   if (versionView) {
     return (
       <Typography variant="body2" sx={{ fontSize: '0.8125rem' }}>

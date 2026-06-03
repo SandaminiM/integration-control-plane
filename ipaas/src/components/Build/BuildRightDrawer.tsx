@@ -19,8 +19,8 @@
 import { Box, Drawer, IconButton, Stack, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState } from 'react';
-import type { GqlCommit, GqlRepository } from '../../types/repository';
-import type { GqlDeploymentStatus } from '../../types/deployment';
+import type { Commit, Repository } from '../../types/repository';
+import type { BuildRun } from '../../types/deployment';
 import { BUILD_DRAWER_TITLES, BuildDrawerType } from '../../constants/build';
 import BuildConfigPanel from './BuildConfigPanel';
 import BuildDetails from './BuildDetails';
@@ -30,14 +30,14 @@ interface BuildRightDrawerProps {
   open: boolean;
   onClose: () => void;
   drawerType: BuildDrawerType | null;
-  selectedBuild: GqlDeploymentStatus | null;
+  selectedBuild: BuildRun | null;
   componentId: string;
   versionId: string;
-  commits: GqlCommit[];
+  commits: Commit[];
   commitsLoading: boolean;
-  onCommitBuild: (commit: GqlCommit) => void;
+  onCommitBuild: (commit: Commit) => void;
   isBuildTriggering: boolean;
-  repository: GqlRepository | null;
+  repository: Repository | null;
   onNotify: (message: string, severity: 'success' | 'error') => void;
 }
 

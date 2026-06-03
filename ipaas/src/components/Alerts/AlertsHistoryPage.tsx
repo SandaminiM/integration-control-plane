@@ -18,13 +18,13 @@
 
 import { Autocomplete, Box, CircularProgress, MenuItem, Select, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@wso2/oxygen-ui';
 import { type JSX, useMemo, useState } from 'react';
-import type { CloudDataPlane, GqlEnvironment } from '../../types/environment';
+import type { CloudDataPlane, Environment } from '../../types/environment';
 import { choreoAlertingApiUrl } from '../../config/runtimeConfig';
 import { useGetAlertHistory } from '../../hooks/useAlerts';
 
 interface AlertsHistoryPageProps {
   componentId: string;
-  environments: GqlEnvironment[];
+  environments: Environment[];
   cloudDataPlanes: CloudDataPlane[];
 }
 
@@ -54,7 +54,7 @@ function formatCellValue(value: unknown, columnType: string): string {
 }
 
 export default function AlertsHistoryPage({ componentId, environments, cloudDataPlanes }: AlertsHistoryPageProps): JSX.Element {
-  const [selectedEnvironment, setSelectedEnvironment] = useState<GqlEnvironment | undefined>(environments[0]);
+  const [selectedEnvironment, setSelectedEnvironment] = useState<Environment | undefined>(environments[0]);
   const [timeRangeHours, setTimeRangeHours] = useState(1);
 
   const alertingBaseUrl = useMemo(() => {

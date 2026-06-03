@@ -9,8 +9,8 @@ Everything else lives in `src/components/` and `src/pages/` as usual.
 
 ```
 src/product/
-  devant/          # Devant (Choreo v2) variants
-  cloud/           # Cloud (Choreo v3) variants  ← currently empty; cloud shares devant UI
+  wip/             # Wip (Choreo v2) variants
+  cloud/           # Cloud (Choreo v3) variants  ← currently empty; cloud shares wip UI
   icp/             # ICP (local) variants
 ```
 
@@ -18,10 +18,10 @@ src/product/
 
 ## Aliases
 
-| Alias        | Resolves to (build time)    | TS path mapping          |
-|--------------|-----------------------------|--------------------------:|
-| `#api/*`     | `src/api/<product>/*`       | → `src/api/devant/*`     |
-| `#product/*` | `src/product/<product>/*`   | → `src/product/devant/*` |
+| Alias        | Resolves to (build time)    | TS path mapping       |
+|--------------|-----------------------------|----------------------:|
+| `#api/*`     | `src/api/<product>/*`       | → `src/api/wip/*`     |
+| `#product/*` | `src/product/<product>/*`   | → `src/product/wip/*` |
 
 Vite replaces these at build time. Only the selected product's files enter the bundle — the other two products are eliminated by Rollup dead code elimination (DCE).
 
@@ -31,7 +31,7 @@ Vite replaces these at build time. Only the selected product's files enter the b
 
 | Situation | Approach |
 |-----------|----------|
-| 1–2 element toggle (e.g. hide a button) | `IS_ICP` / `IS_DEVANT` inline in the shared component |
+| 1–2 element toggle (e.g. hide a button) | `IS_ICP` / `IS_WIP` inline in the shared component |
 | Many toggles following a consistent pattern | `productConfig` in `src/product-config.ts` |
 | Whole component renders completely differently | `#product/ComponentName` alias |
 | Page only exists in one product | stays in `src/pages/`, route gated in `src/config/routes.tsx` |
@@ -40,9 +40,9 @@ When in doubt, start with an inline `IS_ICP` flag. Only extract to `#product` wh
 
 ---
 
-## Cloud vs devant
+## Cloud vs wip
 
-Cloud and devant have the **same UI**. The only difference is in `src/api/cloud/` vs `src/api/devant/`. You should rarely (if ever) need to add a file to `src/product/cloud/`.
+Cloud and wip have the **same UI**. The only difference is in `src/api/cloud/` vs `src/api/wip/`. You should rarely (if ever) need to add a file to `src/product/cloud/`.
 
 ---
 
@@ -62,11 +62,11 @@ Cloud and devant have the **same UI**. The only difference is in `src/api/cloud/
    ```
 
    ```tsx
-   // src/product/devant/EnvironmentCardBody.tsx
+   // src/product/wip/EnvironmentCardBody.tsx
    import EnvironmentCardShell from '../../components/EnvironmentCard/EnvironmentCardShell';
 
    export default function EnvironmentCardBody(props: Props) {
-     return <EnvironmentCardShell {...props}>/* devant-specific content */</EnvironmentCardShell>;
+     return <EnvironmentCardShell {...props}>/* wip-specific content */</EnvironmentCardShell>;
    }
    ```
 

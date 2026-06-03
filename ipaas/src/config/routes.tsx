@@ -44,7 +44,7 @@ import BrowseSamples from '../pages/BrowseSamples';
 import BrowsePrebuiltIntegrations from '../pages/BrowsePrebuiltIntegrations';
 import PrebuiltIntegrationSetup from '../pages/PrebuiltIntegrationSetup';
 import PrebuiltIntegrationDeploy from '../pages/PrebuiltIntegrationDeploy';
-import { IS_DEVANT } from '../features';
+import { IS_WIP } from '../features';
 import GitHubOAuthCallback from '../pages/GitHubOAuthCallback';
 import Project from '../pages/Project';
 import Component from '../pages/Component';
@@ -189,7 +189,7 @@ const routes: AppRoute[] = [
               { path: projectGroupDetailUrl(':orgHandler', ':projectHandler', ':groupId'), element: <ProjectGroupDetail /> },
               { path: componentGroupDetailUrl(':orgHandler', ':projectHandler', ':componentHandler', ':groupId'), element: <ComponentGroupDetail /> },
               { path: '/profile', element: <Profile /> },
-              ...(IS_DEVANT ? [
+              ...(IS_WIP ? [
                 { path: 'organizations/:orgHandler/projects/:projectHandler/prebuilt-integrations', element: createElement(withScope(BrowsePrebuiltIntegrations, ['projects'])) },
                 {
                   element: (

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import type { GqlEnvironment } from './environment';
+import type { Environment } from './environment';
 import type { AlertComponentType, AlertTypeConstants, AlertTypes } from '../constants/alerts';
 
 export interface AlertTypeOption {
@@ -56,7 +56,7 @@ export interface AlertRuleCountUsage {
 }
 
 export interface AlertRuleFormProps {
-  environment: GqlEnvironment;
+  environment: Environment;
   componentId: string;
   projectId: string;
   versionId: string;

@@ -20,13 +20,13 @@ import { Box, Button, CircularProgress, Divider, FormControlLabel, Link, Stack, 
 import { GitBranch } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useRef, useState } from 'react';
 import { useUpdateBuildpackConfigs } from '../../hooks/useRepository';
-import type { GqlRepository } from '../../types/repository';
+import type { Repository } from '../../types/repository';
 import type { BuildEnvVar } from '../../types/build';
 import { gitProviderLabel, repoUrl, Row } from '../../utils/build';
 import BuildEnvVarsEditor from './BuildEnvVarsEditor';
 
 interface BuildConfigPanelProps {
-  repository: GqlRepository;
+  repository: Repository;
   componentId: string;
   versionId: string;
   onClose: () => void;

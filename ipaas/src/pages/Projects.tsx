@@ -22,7 +22,7 @@ import SearchField from '../components/SearchField';
 import { useNavigate } from 'react-router';
 import { useState, type JSX } from 'react';
 import { useProjectsByOrg } from '../hooks/useProjects';
-import type { GqlProject } from '../types/project';
+import type { Project } from '../types/project';
 import EmptyListing from '../components/EmptyListing';
 import { formatDistanceToNow } from '../utils/time';
 import { newProjectUrl, importProjectUrl, type OrgScope } from '../nav';
@@ -31,7 +31,7 @@ import { useAccessControl } from '../contexts/AccessControlContext';
 import { Permissions } from '../constants/permissions';
 import Authorized from '../components/Authorized';
 
-function ProjectCard({ project, onClick }: { project: GqlProject; onClick: () => void }) {
+function ProjectCard({ project, onClick }: { project: Project; onClick: () => void }) {
   return (
     <Card variant="outlined" sx={{ cursor: 'pointer', '&:hover': { boxShadow: 2 } }} onClick={onClick}>
       <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2.5 }}>

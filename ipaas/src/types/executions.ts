@@ -16,7 +16,7 @@
  * under the License.
  */
 
-export interface GqlExecutionConfigs {
+export interface ExecutionConfigs {
   cronjobFrequency: string;
   cronjobTimezone: string;
   cronjobAllowConcurrency?: boolean;
@@ -38,6 +38,11 @@ export interface TaskExecution {
 export interface ExecutionLogEntry {
   timestamp: string;
   message: string;
+}
+
+export interface ExecutionArgument {
+  argumentName: string;
+  argumentValue: string;
 }
 
 export interface UpdateJobConfigsInput {

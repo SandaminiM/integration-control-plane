@@ -17,7 +17,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { changeLifecycleState, deploySettingsV2, fetchApimApi, fetchApimSwagger, fetchLifecycleHistory, fetchLifecycleState, generateTestKey, updateApimApi } from '../api/apim';
+import { changeLifecycleState, deploySettingsV2, fetchApimApi, fetchApimSwagger, fetchLifecycleHistory, fetchLifecycleState, generateTestKey, updateApimApi } from '#api/apim';
 import type { ApimApiInfo, DeploySettingsV2Payload, GeneratedTestKey, LifecycleHistory, LifecycleState } from '../types/apim';
 
 export function useApimApi(apimId: string | undefined | null) {

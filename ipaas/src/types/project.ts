@@ -16,7 +16,7 @@
  * under the License.
  */
 
-export interface GqlProject {
+export interface Project {
   id: string;
   orgId: number;
   name: string;

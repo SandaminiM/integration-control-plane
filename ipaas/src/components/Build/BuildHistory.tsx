@@ -21,8 +21,8 @@ import { GitCommit, Settings } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useTriggerBuild } from '../../hooks/useDeployments';
-import type { GqlCommit, GqlRepository } from '../../types/repository';
-import type { GqlDeploymentStatus } from '../../types/deployment';
+import type { Commit, Repository } from '../../types/repository';
+import type { BuildRun } from '../../types/deployment';
 import { BuildDrawerType } from '../../constants/build';
 import { useBuildAutoEffects } from '../../hooks/useBuildAutoEffects';
 import { formatDistanceToNow } from '../../utils/time';
@@ -34,17 +34,17 @@ interface BuildHistoryProps {
   versionId: string;
   envId: string;
   branch: string;
-  builds: GqlDeploymentStatus[];
+  builds: BuildRun[];
   buildsLoading: boolean;
-  commits: GqlCommit[];
+  commits: Commit[];
   commitsLoading: boolean;
-  repository: GqlRepository | null;
+  repository: Repository | null;
 }
 
 export default function BuildHistory({ componentId, versionId, envId, branch, builds, buildsLoading, commits, commitsLoading, repository }: BuildHistoryProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerType, setDrawerType] = useState<BuildDrawerType | null>(null);
-  const [selectedBuild, setSelectedBuild] = useState<GqlDeploymentStatus | null>(null);
+  const [selectedBuild, setSelectedBuild] = useState<BuildRun | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
@@ -54,7 +54,7 @@ export default function BuildHistory({ componentId, versionId, envId, branch, bu
   const [searchParams, setSearchParams] = useSearchParams();
   const triggerBuild = useTriggerBuild();
 
-  const handleAutoOpen = useCallback((build: GqlDeploymentStatus) => {
+  const handleAutoOpen = useCallback((build: BuildRun) => {
     setSelectedBuild(build);
     setDrawerType(BuildDrawerType.BuildLogs);
     setDrawerOpen(true);
@@ -91,7 +91,7 @@ export default function BuildHistory({ componentId, versionId, envId, branch, bu
     );
   };
 
-  const handleViewDetails = (build: GqlDeploymentStatus) => {
+  const handleViewDetails = (build: BuildRun) => {
     setSelectedBuild(build);
     setDrawerType(BuildDrawerType.BuildLogs);
     setDrawerOpen(true);
@@ -110,7 +110,7 @@ export default function BuildHistory({ componentId, versionId, envId, branch, bu
     setDrawerOpen(true);
   };
 
-  const handleCommitBuild = (commit: GqlCommit) => {
+  const handleCommitBuild = (commit: Commit) => {
     if (!envId) return;
     setJustTriggered(true);
     triggerBuild.mutate(
@@ -243,7 +243,7 @@ export default function BuildHistory({ componentId, versionId, envId, branch, bu
 
                 <ListingTable.Cell>
                   <Typography variant="body2" color="text.secondary">
-                    {build.started_at ? formatDistanceToNow(build.started_at) : '—'}
+                    {build.startedAt ? formatDistanceToNow(build.startedAt) : '—'}
                   </Typography>
                 </ListingTable.Cell>
 

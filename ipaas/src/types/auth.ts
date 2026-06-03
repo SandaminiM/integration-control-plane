@@ -86,3 +86,94 @@ export interface RoleGroupMapping {
   envUuid: string | null;
   integrationUuid: string | null;
 }
+
+export interface UserPermissionsResponse {
+  userId: string;
+  scope: { orgUuid: string; projectUuid?: string; integrationUuid?: string; envUuid?: string };
+  permissions: { permissionId: number; permissionName: string; permissionDomain: string; description: string }[];
+  permissionNames: string[];
+}
+
+// ── Auth mutation input types ──
+
+export interface ChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ForceChangePasswordInput {
+  newPassword: string;
+}
+
+export interface CreateUserInput {
+  username: string;
+  displayName: string;
+  password: string;
+}
+
+export interface UpdateUserInput {
+  userId: string;
+  displayName: string;
+  groupIds: string[];
+}
+
+export interface UpdateUserGroupsInput {
+  userId: string;
+  groupIds: string[];
+}
+
+export interface CreateRoleInput {
+  roleName: string;
+  description: string;
+  permissionIds: string[];
+}
+
+export interface UpdateRoleInput {
+  roleId: string;
+  roleName: string;
+  description: string;
+  permissionIds: string[];
+}
+
+export interface CreateGroupInput {
+  groupName: string;
+  description: string;
+}
+
+export interface UpdateGroupInput {
+  groupId: string;
+  groupName: string;
+  description: string;
+}
+
+export interface AddRolesToGroupInput {
+  groupId: string;
+  roleIds: string[];
+  envUuid?: string;
+}
+
+export interface RemoveRoleFromGroupInput {
+  groupId: string;
+  mappingId: number;
+}
+
+export interface AddUsersToGroupInput {
+  groupId: string;
+  userIds: string[];
+}
+
+export interface RemoveUserFromGroupInput {
+  groupId: string;
+  userId: string;
+}
+
+// ── Auth mutation result types ──
+
+export interface MessageResult {
+  message: string;
+}
+
+export interface ResetPasswordResult {
+  password: string;
+  message: string;
+}

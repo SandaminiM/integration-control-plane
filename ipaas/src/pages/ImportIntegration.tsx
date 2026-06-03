@@ -110,7 +110,6 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   const resetDownstreamState = (options: { includeDisplayName?: boolean; includeTechnology?: boolean } = {}) => {
     setSelectedBranch('');
     setSubPath('/');
-    setDetectedMode(null);
     if (options.includeTechnology) setSelectedTechnology(null);
     if (options.includeDisplayName) {
       setDisplayName('');
@@ -131,19 +130,19 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
 
   // Technology detection
   useEffect(() => {
-    if (!pathReady || isValidating) return;
+    if (!pathReady || isValidating) {
+      setDetectedMode(null);
+      return;
+    }
     setDetectedMode(detectTechnology(repoMetadata));
-  }, [repoMetadata, isValidating, pathReady]);
+  }, [pathReady, isValidating, repoMetadata]);
 
+  // Project detected mode onto the selectable technology
   useEffect(() => {
     if (detectedMode === 'mi') setSelectedTechnology('MI');
     else if (detectedMode === 'ballerina') setSelectedTechnology('BI');
     else if (detectedMode === null) setSelectedTechnology(null);
-  }, [detectedMode]);
-
-  useEffect(() => {
-    setDetectedMode(null);
-  }, [selectedBranch]);
+  }, [detectedMode, activeRepo, selectedBranch, subPath]);
 
   // GitHub mode: reset downstream when repo changes.
   useEffect(() => {
@@ -373,9 +372,17 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
               required
               value={selectedOrg}
               onChange={(e) => {
+                // Switching organizations should reset every downstream field —
+                // the user explicitly asked for a fresh start on org change.
                 setSelectedOrg(e.target.value);
                 setSelectedRepo('');
                 setSelectedBranch('');
+                setSubPath('/');
+                setDisplayName('');
+                setDescription('');
+                setSelectedTechnology(null);
+                setSelectedIntegrationType(null);
+                displayNameAutoRef.current = false;
               }}
               fullWidth
               disabled={!isAuthenticated || isReposLoading}

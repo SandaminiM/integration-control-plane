@@ -18,7 +18,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Query } from '@tanstack/react-query';
-import { fetchApimSwagger } from '../api/apim';
+import { fetchApimSwagger } from '#api/apim';
 import {
   fetchComponentDeployment,
   fetchEnvEndpoints,
@@ -31,14 +31,14 @@ import {
   stopDeployment,
   redeployDeployment,
   deployPrebuiltImage,
-} from '../api/deployments';
-import type { GqlComponentDeployment, GqlDeploymentStatus, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../types/deployment';
+} from '#api/deployments';
+import type { ComponentDeployment, BuildRun, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../types/deployment';
 import type { DeployComponentInput } from '../types/build';
 
 const TERMINAL_CONCLUSIONS = new Set(['success', 'failure', 'cancelled', 'timed_out', 'neutral', 'skipped']);
 
-export function useComponentDeployment(orgHandler: string, orgUuid: string, componentId: string, versionId: string, environmentId: string, options?: { refetchInterval?: number | false | ((query: Query<GqlComponentDeployment | null>) => number | false) }) {
-  return useQuery<GqlComponentDeployment | null, Error, GqlComponentDeployment | null>({
+export function useComponentDeployment(orgHandler: string, orgUuid: string, componentId: string, versionId: string, environmentId: string, options?: { refetchInterval?: number | false | ((query: Query<ComponentDeployment | null>) => number | false) }) {
+  return useQuery<ComponentDeployment | null, Error, ComponentDeployment | null>({
     queryKey: ['componentDeployment', orgHandler, orgUuid, componentId, versionId, environmentId],
     queryFn: () => fetchComponentDeployment(orgHandler, orgUuid, componentId, versionId, environmentId),
     enabled: !!orgHandler && !!orgUuid && !!componentId && !!versionId && !!environmentId,
@@ -74,7 +74,7 @@ export function useDeploymentStatus(componentId: string, versionId: string) {
     enabled: !!componentId && !!versionId,
     retry: false,
     refetchInterval: (query) => {
-      const data = query.state.data as GqlDeploymentStatus[] | undefined;
+      const data = query.state.data as BuildRun[] | undefined;
       if (!data || data.length === 0) return 15000;
       const allTerminal = data.every((d) => d.status === 'completed' || TERMINAL_CONCLUSIONS.has((d.conclusionV2 ?? d.conclusion ?? '').toLowerCase()));
       return allTerminal ? false : 15000;

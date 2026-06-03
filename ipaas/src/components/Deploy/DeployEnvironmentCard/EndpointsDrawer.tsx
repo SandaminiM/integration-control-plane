@@ -19,14 +19,14 @@
 import { Box, CircularProgress, Drawer, IconButton, Stack, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
-import type { GqlEnvEndpoint } from '../../../types/component';
+import type { EnvEndpoint } from '../../../types/component';
 import { EndpointCard } from '../../EnvironmentCard/EndpointCard';
 import ManageDrawer from '../../EnvironmentCard/ManageDrawer';
 
 interface EndpointsDrawerProps {
   open: boolean;
   onClose: () => void;
-  endpoints: GqlEnvEndpoint[];
+  endpoints: EnvEndpoint[];
   isLoading?: boolean;
   envName: string;
   // Context for deploy-settings-v2 redeploy and visibility editing
@@ -52,14 +52,14 @@ const drawerSx = {
 
 export default function EndpointsDrawer({ open, onClose, endpoints, isLoading, envName, componentId, versionId, releaseId, buildId, environmentId }: EndpointsDrawerProps) {
   const [manageDrawerOpen, setManageDrawerOpen] = useState(false);
-  const [selectedEndpoint, setSelectedEndpoint] = useState<GqlEnvEndpoint | null>(null);
+  const [selectedEndpoint, setSelectedEndpoint] = useState<EnvEndpoint | null>(null);
 
   const handleClose = () => {
     (document.activeElement as HTMLElement)?.blur();
     onClose();
   };
 
-  const handleSettings = (ep: GqlEnvEndpoint) => {
+  const handleSettings = (ep: EnvEndpoint) => {
     setSelectedEndpoint(ep);
     setManageDrawerOpen(true);
   };

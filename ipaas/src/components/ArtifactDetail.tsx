@@ -45,7 +45,7 @@ import {
 import { ChevronRight, Maximize2, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState } from 'react';
 import { useArtifactTypes, useArtifacts, ARTIFACT_QUERY_MAP } from '../hooks/useArtifacts';
-import type { GqlArtifact } from '../types/artifact';
+import type { Artifact } from '../types/artifact';
 import { useUpdateArtifactStatus, useUpdateListenerState } from '../hooks/useArtifacts';
 import { useUpdateArtifactTracingStatus, useUpdateArtifactStatisticsStatus } from '../hooks/useArtifactToggles';
 import SearchField from './SearchField';
@@ -84,10 +84,10 @@ function ListenerConfirmDialog({ open, action, listenerName, onConfirm, onCancel
   );
 }
 
-function SelectedTypeArtifacts({ artifacts, artifactType, envId, componentId, query, onSelect }: { artifacts: GqlArtifact[]; artifactType: string; envId: string; componentId: string; query: string; onSelect: (a: GqlArtifact) => void }) {
+function SelectedTypeArtifacts({ artifacts, artifactType, envId, componentId, query, onSelect }: { artifacts: Artifact[]; artifactType: string; envId: string; componentId: string; query: string; onSelect: (a: Artifact) => void }) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; artifact: GqlArtifact | null; action: 'START' | 'STOP' } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; artifact: Artifact | null; action: 'START' | 'STOP' } | null>(null);
   const qc = useQueryClient();
   const toggleStatus = useUpdateArtifactStatus();
   const updateListenerState = useUpdateListenerState();
@@ -141,7 +141,7 @@ function SelectedTypeArtifacts({ artifacts, artifactType, envId, componentId, qu
   // Calculate how many extra columns to distribute (remainder)
   const extraColumns = dataColumnsSpace - dataColumnSize * columns.length;
 
-  const handleToggle = (artifact: GqlArtifact, enabled: boolean) => {
+  const handleToggle = (artifact: Artifact, enabled: boolean) => {
     if (artifactType === 'Listener') {
       // Show confirmation dialog for listeners
       setConfirmDialog({
@@ -155,7 +155,7 @@ function SelectedTypeArtifacts({ artifacts, artifactType, envId, componentId, qu
     }
   };
 
-  const handleTracingToggle = (artifact: GqlArtifact, enabled: boolean, e: React.MouseEvent) => {
+  const handleTracingToggle = (artifact: Artifact, enabled: boolean, e: React.MouseEvent) => {
     e.stopPropagation();
     updateTracingStatus.mutate(
       {
@@ -174,7 +174,7 @@ function SelectedTypeArtifacts({ artifacts, artifactType, envId, componentId, qu
     );
   };
 
-  const handleStatisticsToggle = (artifact: GqlArtifact, enabled: boolean, e: React.MouseEvent) => {
+  const handleStatisticsToggle = (artifact: Artifact, enabled: boolean, e: React.MouseEvent) => {
     e.stopPropagation();
     updateStatisticsStatus.mutate(
       {
@@ -328,7 +328,7 @@ function SelectedTypeArtifacts({ artifacts, artifactType, envId, componentId, qu
   );
 }
 
-export function ArtifactTypeSelector({ envId, componentId, onSelectArtifact }: { envId: string; componentId: string; onSelectArtifact: (a: GqlArtifact, type: string, envId: string) => void }) {
+export function ArtifactTypeSelector({ envId, componentId, onSelectArtifact }: { envId: string; componentId: string; onSelectArtifact: (a: Artifact, type: string, envId: string) => void }) {
   const { data: allTypes = [], isLoading } = useArtifactTypes(componentId, envId);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [query, setQuery] = useState('');

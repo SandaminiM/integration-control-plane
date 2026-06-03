@@ -17,7 +17,21 @@
  */
 
 import { toHandler } from './string';
-import type { PrebuiltIntegration } from '../types/prebuilt';
+import type { PrebuiltIntegration, PrebuiltIntegrationsData } from '../types/prebuilt';
+
+/**
+ * Reduces a raw prebuilt-integrations response to the consumable
+ * `PrebuiltIntegrationsData` shape (deduplicated, sorted applications list).
+ * Pure transformation — independent of any backend protocol, so it lives in
+ * `utils/` rather than `api/<product>/`.
+ */
+export function normalizePrebuiltIntegrations(raw: { prebuiltIntegrations: PrebuiltIntegration[] }): PrebuiltIntegrationsData {
+  const appSet = new Set<string>();
+  for (const integration of raw.prebuiltIntegrations) {
+    integration.applications?.forEach((app) => appSet.add(app));
+  }
+  return { prebuiltIntegrations: raw.prebuiltIntegrations, applications: Array.from(appSet).sort() };
+}
 
 const VALID_HANDLER = /^[a-z0-9][a-z0-9-]*[a-z0-9]$/;
 
