@@ -379,7 +379,7 @@ export default function EnvironmentCardBody({
         </Typography>
       )}
       {showServiceInsights && <EnvCardInsights envName={envName!} envId={envId!} apimEnvId={apimEnvId} projectId={projectId!} apiId={insightsApiId} />}
-      {showAutomationInsights && <EnvCardAutomationInsights releaseId={releaseId} />}
+      {showAutomationInsights && <EnvCardAutomationInsights releaseId={releaseId} componentId={componentId} envId={environmentId} projectId={projectId} />}
     </>
   );
 }

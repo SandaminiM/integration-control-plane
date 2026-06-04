@@ -487,7 +487,9 @@ export function getOrgUuidFromToken(): string | null {
   if (!token) return null;
   try {
     const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    return (payload.organization?.uuid as string) ?? null;
+    // Choreo issues the org UUID under `organization.uuid`; Thunder (cloud) issues
+    // it as the `ouId` claim. Fall back so the org UUID resolves under either IdP.
+    return (payload.organization?.uuid as string) ?? (payload.ouId as string) ?? null;
   } catch {
     return null;
   }

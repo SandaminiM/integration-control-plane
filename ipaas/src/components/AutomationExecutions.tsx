@@ -108,7 +108,7 @@ export default function AutomationExecutions({
   const [selectedExecution, setSelectedExecution] = useState<TaskExecution | null>(null);
   const [logsExecution, setLogsExecution] = useState<TaskExecution | null>(null);
 
-  const { data: executions = [], isLoading } = useTaskExecutions(releaseId);
+  const { data: executions = [], isLoading } = useTaskExecutions(releaseId, componentId, environmentId, projectId);
 
   // Only poll while there is something to wait for: a pending trigger, an in-progress execution,
   // or an extended-poll window opened after the 60s sentinel timeout fires.

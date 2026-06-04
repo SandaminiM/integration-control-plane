@@ -22,6 +22,7 @@ import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { loginApiUrl } from '../config/runtimeConfig';
 import { loginUrl } from '../paths';
+import { IS_CLOUD } from '../features';
 import {
   saveTokens,
   clearTokens,
@@ -197,6 +198,31 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       } catch {
         /* use defaults */
       }
+    }
+
+    // Cloud variant short-circuit: Thunder is the IdP and the access token
+    // already carries the org context. There is no /user-mgt/1.0.0/validate/user
+    // and no STS exchange to perform — read the org handle from the JWT
+    // (root-level ouHandle, or nested organization.handle) and persist it.
+    if (IS_CLOUD) {
+      let cloudOrgHandle: string | undefined;
+      try {
+        const payload = JSON.parse(atob(asgardeoToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as Record<string, unknown>;
+        const org = (payload.organization as Record<string, unknown> | undefined) ?? {};
+        cloudOrgHandle = (org.handle as string | undefined) ?? (payload.ouHandle as string | undefined);
+      } catch {
+        /* ignore */
+      }
+      if (cloudOrgHandle) {
+        localStorage.setItem('icp_org_handle', cloudOrgHandle);
+      }
+      saveTokens({ token: asgardeoToken, expiresIn: tokenData.expires_in ?? 3600, refreshToken: tokenData.refresh_token ?? '', refreshTokenExpiresIn: 86400 });
+      saveOidcAuthMetadata(cloudOrgHandle);
+      const user: UserInfo = { userId, username, displayName, pictureUrl, isOidcUser: true, requirePasswordChange: false };
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      setUserInfo(user);
+      setIsAuthenticated(true);
+      return { isNewUser: false };
     }
 
     // Asgardeo's super-tenant — not a real ICP org, always skip.

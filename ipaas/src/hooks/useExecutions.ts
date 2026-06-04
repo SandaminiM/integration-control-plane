@@ -21,21 +21,23 @@ import { fetchExecutionConfigs, fetchTaskExecutions, fetchExecutionArguments, fe
 import type { UpdateJobConfigsInput, TriggerComponentInput } from '../types/executions';
 import type { TriggerTaskInput } from '../types/artifact';
 
-export function useExecutionConfigs(componentId: string, releaseId: string) {
+// envId/projectId are needed by the cloud (OpenChoreo) product, which keys
+// schedules + executions per environment; the devant backend keys by releaseId
+// and ignores them. The enable guard accepts either key so both products fetch.
+export function useExecutionConfigs(componentId: string, releaseId: string, envId = '', projectId = '') {
   return useQuery({
-    queryKey: ['executionConfigs', componentId, releaseId],
-    queryFn: () => fetchExecutionConfigs(componentId, releaseId),
-    enabled: !!componentId && !!releaseId,
+    queryKey: ['executionConfigs', componentId, releaseId, envId],
+    queryFn: () => fetchExecutionConfigs(componentId, releaseId, envId, projectId),
+    enabled: !!componentId && (!!releaseId || !!envId),
     retry: false,
   });
 }
 
-export function useTaskExecutions(releaseId: string) {
-  const baseUrl = window.API_CONFIG?.systemApisBaseUrl ?? '';
+export function useTaskExecutions(releaseId: string, componentId = '', envId = '', projectId = '') {
   return useQuery({
-    queryKey: ['taskExecutions', releaseId, baseUrl],
-    queryFn: () => fetchTaskExecutions(releaseId),
-    enabled: !!baseUrl && !!releaseId,
+    queryKey: ['taskExecutions', releaseId, componentId, envId],
+    queryFn: () => fetchTaskExecutions(releaseId, componentId, envId, projectId),
+    enabled: !!releaseId || (!!componentId && !!envId),
     retry: false,
     staleTime: 0,
     placeholderData: keepPreviousData,
@@ -63,12 +65,11 @@ export function useExecutionLogs(componentId: string, deploymentTrackId: string,
   });
 }
 
-export function useTaskExecutionCount(releaseId: string) {
-  const baseUrl = window.API_CONFIG?.systemApisBaseUrl ?? '';
+export function useTaskExecutionCount(releaseId: string, componentId = '', envId = '', projectId = '') {
   return useQuery({
-    queryKey: ['taskExecutionCount', releaseId, baseUrl],
-    queryFn: () => fetchTaskExecutionCount(releaseId),
-    enabled: !!baseUrl && !!releaseId,
+    queryKey: ['taskExecutionCount', releaseId, componentId, envId],
+    queryFn: () => fetchTaskExecutionCount(releaseId, componentId, envId, projectId),
+    enabled: !!releaseId || (!!componentId && !!envId),
     retry: false,
     staleTime: 30_000,
     refetchInterval: 30_000,

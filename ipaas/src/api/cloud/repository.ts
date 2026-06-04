@@ -1,0 +1,163 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+/**
+ * Cloud (OpenChoreo) repository API.
+ *
+ * Wired (call the BFF directly):
+ *   - fetchComponentRepository → GET /components/{name}/repository?projectName=...
+ *   - fetchCommitHistory       → GET /components/{name}/commit-history?branch=...
+ *   - fetchRepoBranches        → GET /repos/{owner}/{repo}/branches
+ *   - fetchRepoContents        → GET /repos/{owner}/{repo}/contents?branch=...
+ *
+ * fetchRepoMetadata has no BFF route; we derive it from the wired tree endpoint
+ * so technology auto-detection in the import flow still fires. The remaining
+ * exports return safe defaults until the BFF adds the matching endpoints.
+ */
+
+import { bff, items, q, seg, type ListResponse } from './_client';
+import type {
+  GqlRepository,
+  GqlCommit,
+  GqlUserRepo,
+  GqlRepoBranch,
+  GqlRepoMetadata,
+  RepoTreeNode,
+  ChoreoSampleImageEntry,
+} from '../../types/repository';
+import type { UpdateBuildpackConfigsInput } from '../../types/build';
+
+const REPO_METADATA_DEFAULT: GqlRepoMetadata = {
+  isBareRepo: false,
+  isSubPathEmpty: false,
+  isSubPathValid: true,
+  isValidRepo: true,
+  hasBallerinaTomlInPath: false,
+  hasBallerinaTomlInRoot: false,
+  isDockerfilePathValid: true,
+  hasDockerfileInPath: false,
+  hasPomXmlInPath: false,
+  hasPomXmlInRoot: false,
+  isBuildpackPathValid: true,
+  isProcfileExists: false,
+  isEndpointYamlExists: false,
+};
+
+// BFF ComponentRepository fields map 1:1 to GqlRepository; projectName scopes
+// the lookup to the component within the caller's namespace.
+export async function fetchComponentRepository(projectId: string, componentHandler: string): Promise<GqlRepository | null> {
+  try {
+    return await bff.get<GqlRepository | null>(`/components/${seg(componentHandler)}/repository${q({ projectName: projectId })}`) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// BFF derives the commit list from GitHub for the given branch; the Commit
+// model matches GqlCommit field-for-field.
+export async function fetchCommitHistory(componentId: string, branch: string): Promise<GqlCommit[]> {
+  try {
+    return items(await bff.get<ListResponse<GqlCommit>>(`/components/${seg(componentId)}/commit-history${q({ branch })}`));
+  } catch {
+    return [];
+  }
+}
+
+// awaits: GET /repos (BFF route does not exist yet).
+export async function fetchGitHubUserRepos(): Promise<GqlUserRepo[]> {
+  return [];
+}
+
+// BFF proxies GitHub's List Branches API and stamps isDefault against
+// default_branch. Public repos work unauthenticated; private repos need a
+// GitHub OAuth token the cloud variant does not have (empty in that case).
+export async function fetchRepoBranches(repoOrg: string, repoName: string, _isPublicRepo: boolean): Promise<GqlRepoBranch[]> {
+  try {
+    return items(await bff.get<ListResponse<GqlRepoBranch>>(`/repos/${seg(repoOrg)}/${seg(repoName)}/branches`));
+  } catch {
+    return [];
+  }
+}
+
+// Flatten the nested GitHub tree into full blob paths from the repo root
+// (e.g. "samples/svc/Ballerina.toml").
+function collectBlobPaths(nodes: RepoTreeNode[], acc: string[] = []): string[] {
+  for (const n of nodes) {
+    if (n.type === 'blob') acc.push(n.path);
+    if (n.children?.length) collectBlobPaths(n.children, acc);
+  }
+  return acc;
+}
+
+// Derived from the wired tree endpoint because the BFF has no repoMetadata
+// equivalent. We compute only the flags the import flow uses for technology
+// detection + sub-path validation; on any failure we fall back to the default
+// so the importer degrades to "non-empty" rather than hanging.
+export async function fetchRepoMetadata(org: string, repo: string, branch: string, subPath: string, isPublicRepo = false): Promise<GqlRepoMetadata> {
+  try {
+    const tree = await fetchRepoContents(org, repo, branch, isPublicRepo);
+    if (tree.length === 0) return REPO_METADATA_DEFAULT;
+
+    const blobs = collectBlobPaths(tree);
+    const norm = subPath.replace(/^\/+/, '').replace(/\/+$/, '');
+    const atRoot = (file: string) => blobs.includes(file);
+    const atPath = (file: string) => (norm === '' ? atRoot(file) : blobs.includes(`${norm}/${file}`));
+    const childrenOfPath = norm === '' ? blobs : blobs.filter((p) => p.startsWith(`${norm}/`));
+
+    return {
+      ...REPO_METADATA_DEFAULT,
+      isValidRepo: true,
+      isSubPathValid: norm === '' || childrenOfPath.length > 0,
+      isSubPathEmpty: childrenOfPath.length === 0,
+      hasBallerinaTomlInRoot: atRoot('Ballerina.toml'),
+      hasBallerinaTomlInPath: atPath('Ballerina.toml'),
+      hasPomXmlInRoot: atRoot('pom.xml'),
+      hasPomXmlInPath: atPath('pom.xml'),
+      hasDockerfileInPath: atPath('Dockerfile'),
+      isProcfileExists: atPath('Procfile'),
+      isEndpointYamlExists: atPath('endpoints.yaml') || atPath('endpoint.yaml'),
+    };
+  } catch {
+    return REPO_METADATA_DEFAULT;
+  }
+}
+
+// awaits: GET /samples/images.
+export async function fetchChoreoSampleImages(_orgUuid: string, _projectId: string): Promise<ChoreoSampleImageEntry[]> {
+  return [];
+}
+
+// awaits: PUT /components/{name}/buildpack-config.
+export async function updateBuildpackConfigs(_input: UpdateBuildpackConfigsInput): Promise<string> {
+  return '';
+}
+
+// awaits: POST /github/oauth/token.
+export async function obtainGithubToken(_authorizationCode: string): Promise<{ success: boolean; message: string }> {
+  return { success: false, message: 'GitHub OAuth is not supported in this build.' };
+}
+
+// BFF proxies GitHub's recursive Get-Tree API and assembles a nested
+// RepoTreeNode tree. Empty on any failure so the importer doesn't retry-spin.
+export async function fetchRepoContents(org: string, repo: string, branch: string, _isPublicRepo = false): Promise<RepoTreeNode[]> {
+  try {
+    return items(await bff.get<ListResponse<RepoTreeNode>>(`/repos/${seg(org)}/${seg(repo)}/contents${q({ branch })}`));
+  } catch {
+    return [];
+  }
+}

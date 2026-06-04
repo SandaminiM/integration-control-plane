@@ -85,3 +85,8 @@ export interface RepoTreeNode {
   type: 'tree' | 'blob';
   children?: RepoTreeNode[];
 }
+
+export interface ChoreoSampleImageEntry {
+  name: string;
+  [key: string]: unknown;
+}

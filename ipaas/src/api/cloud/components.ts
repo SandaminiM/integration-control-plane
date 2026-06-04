@@ -16,19 +16,204 @@
  * under the License.
  */
 
-// TODO: implement using Choreo v3 REST APIs
+/** Cloud (OpenChoreo) component API. Calls the ipaas-service BFF. */
 
-import type { GqlComponent, GqlComponentDetail, GqlEndpoint, GqlEnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability } from '../../types/component';
+import type {
+  GqlComponent,
+  GqlComponentDetail,
+  GqlEndpoint,
+  GqlEnvEndpoint,
+  CreateComponentInput,
+  UpdateComponentInput,
+  UpdateAutoDeployInput,
+  GenerateComponentEndpointsInput,
+  ComponentNameAvailability,
+  DisplayType,
+  GqlDeploymentTrack,
+} from '../../types/component';
+import { bff, items, q, seg, type ListResponse } from './_client';
 
-const ni = (name: string): never => { throw new Error(`[cloud] components.${name}: not implemented`); };
+// Underscored params (_orgHandler, _versionId, _releaseId) are kept on exported
+// signatures so cloud matches the devant contract that tsconfig type-checks
+// against; the cloud BFF does not need them.
 
-export const fetchComponents = (_orgHandler: string, _projectId: string): Promise<GqlComponent[]> => ni('fetchComponents');
-export const fetchComponentByHandler = (_projectId: string, _componentHandler: string): Promise<GqlComponentDetail> => ni('fetchComponentByHandler');
-export const fetchComponentEndpoints = (_componentId: string, _versionId: string): Promise<GqlEndpoint[]> => ni('fetchComponentEndpoints');
-export const createComponent = (_input: CreateComponentInput): Promise<GqlComponent> => ni('createComponent');
-export const deleteComponent = (_input: { orgHandler: string; componentId: string; projectId: string }): Promise<{ success: boolean }> => ni('deleteComponent');
-export const updateComponent = (_input: UpdateComponentInput): Promise<GqlComponent> => ni('updateComponent');
-export const updateAutoDeployEnabled = (_input: UpdateAutoDeployInput): Promise<{ id: string; autoDeployEnabled: boolean }> => ni('updateAutoDeployEnabled');
-export const generateComponentEndpoints = (_input: GenerateComponentEndpointsInput): Promise<GqlEnvEndpoint[]> => ni('generateComponentEndpoints');
-export const fetchComponentNameAvailability = (_projectId: string, _candidate: string): Promise<ComponentNameAvailability> => ni('fetchComponentNameAvailability');
-export const fetchComponentEndpointSpec = (_componentId: string, _versionId: string, _endpointId: string): Promise<string | null> => ni('fetchComponentEndpointSpec');
+// Devant's deleteComponent result shape. Mirrored locally (devant keeps it
+// file-local too) so cloud preserves the same contract.
+interface DeleteComponentResult {
+  status: string;
+  canDelete: boolean;
+  message: string;
+  encodedData: string;
+}
+
+// Shape returned by GET /components/{name}/deployment-track on the BFF; fields
+// are optional because the BFF returns null when no track has been created yet.
+interface BffDeploymentTrack {
+  id?: string;
+  branch?: string;
+  latest?: boolean;
+  autoDeployEnabled?: boolean;
+}
+
+// OpenChoreo annotation keys the BFF reads displayName/description back from
+// (clients/openchoreo/component_client.go#normalizeComponent). They must be set
+// on create or the component round-trips with an empty name/description.
+const ANN_DISPLAY_NAME = 'openchoreo.dev/display-name';
+const ANN_DESCRIPTION = 'openchoreo.dev/description';
+
+// Frontend DisplayType -> OpenChoreo ComponentType reference + ClusterWorkflow
+// (buildpack builder). `componentType` is the {workloadType}/{componentTypeName}
+// pair required by the Component CRD; `workflow` must appear in that
+// ComponentType's spec.allowedWorkflows.
+//
+// The Ballerina (BI) entries resolve against real cluster resources. The MI /
+// event entries are placeholders — their ClusterWorkflow / ComponentType do not
+// exist on the cluster yet, so creating them will 400 until the control plane
+// provisions those resources.
+const DISPLAY_TYPE_MAP: Record<DisplayType, { componentType: string; workflow: string }> = {
+  ballerinaService: { componentType: 'deployment/service', workflow: 'ballerina-buildpack-builder' },
+  scheduledTask: { componentType: 'cronjob/scheduled-task', workflow: 'ballerina-buildpack-builder' },
+  manualTrigger: { componentType: 'cronjob/scheduled-task', workflow: 'ballerina-buildpack-builder' },
+  webhook: { componentType: 'deployment/event-integration', workflow: 'ballerina-buildpack-builder' },
+  miApiService: { componentType: 'deployment/service', workflow: 'mi-buildpack-builder' },
+  miCronjob: { componentType: 'cronjob/scheduled-task', workflow: 'mi-buildpack-builder' },
+  miJob: { componentType: 'cronjob/scheduled-task', workflow: 'mi-buildpack-builder' },
+  miWebhook: { componentType: 'deployment/event-integration', workflow: 'mi-buildpack-builder' },
+  miEventHandler: { componentType: 'deployment/event-integration', workflow: 'mi-buildpack-builder' },
+};
+
+// Reverse map (read path): the BFF returns a composite displayType from
+// buildDisplayType() — lower(buildpackType)+Cap(componentType), e.g. "biService"
+// / "miService". The console's label resolvers only recognise the canonical
+// frontend DisplayType values, so we translate using the logical componentType
+// the BFF also returns plus the BI/MI buildpack prefix.
+const LOGICAL_TYPE_TO_DISPLAY_TYPE: Record<string, { bi: string; mi: string }> = {
+  service: { bi: 'ballerinaService', mi: 'miApiService' },
+  automation: { bi: 'scheduledTask', mi: 'miCronjob' },
+  eventIntegration: { bi: 'webhook', mi: 'miEventHandler' },
+  fileIntegration: { bi: 'ballerinaFileIntegration', mi: 'miFileIntegration' },
+  aiAgent: { bi: 'aiAgent', mi: 'aiAgent' },
+  proxy: { bi: 'proxy', mi: 'proxy' },
+};
+
+function withFrontendDisplayType<T extends GqlComponent>(c: T): T {
+  const entry = LOGICAL_TYPE_TO_DISPLAY_TYPE[c.componentType ?? ''];
+  if (!entry) return c;
+  const isMI = (c.displayType ?? '').toLowerCase().startsWith('mi');
+  return { ...c, displayType: isMI ? entry.mi : entry.bi };
+}
+
+// Reshape the flat CreateComponentInput into the K8s-style { metadata, spec }
+// body the OpenChoreo BFF expects. The frontend `name` is already the RFC 1123
+// slug, so it maps straight to metadata.name; displayName/description ride
+// along as annotations.
+function toBffCreateComponentBody(input: CreateComponentInput) {
+  const mapping = DISPLAY_TYPE_MAP[input.displayType] ?? DISPLAY_TYPE_MAP.ballerinaService;
+  const appPath = (input.repositorySubPath ?? '/').replace(/^\/+/, '');
+  return {
+    metadata: {
+      name: input.name,
+      annotations: {
+        [ANN_DISPLAY_NAME]: input.displayName,
+        [ANN_DESCRIPTION]: input.description ?? '',
+      },
+    },
+    spec: {
+      owner: { projectName: input.projectId },
+      componentType: { kind: 'ComponentType', name: mapping.componentType },
+      autoDeploy: input.enableAutoDeploy ?? true,
+      autoBuild: true,
+      workflow: {
+        kind: 'ClusterWorkflow',
+        name: mapping.workflow,
+        parameters: {
+          repository: {
+            url: input.srcGitRepoUrl ?? '',
+            revision: { branch: input.repositoryBranch ?? '' },
+            appPath,
+          },
+        },
+      },
+    },
+  };
+}
+
+export const fetchComponents = (_orgHandler: string, projectId: string): Promise<GqlComponent[]> =>
+  bff.get<ListResponse<GqlComponent>>(`/projects/${seg(projectId)}/components`)
+    .then((r) => items(r).map(withFrontendDisplayType));
+
+// The BFF's GET /projects/{p}/components/{name} returns an empty stub today
+// (TODO: revert to a single GET once the detail endpoint is live). Until then
+// we derive the component from the (wired) list endpoint and enrich it with
+// its deployment track — otherwise the detail page renders empty id/handler
+// and downstream writes (e.g. updateComponent) PUT to an empty name and 404.
+export const fetchComponentByHandler = async (projectId: string, componentHandler: string): Promise<GqlComponentDetail> => {
+  const components = await fetchComponents('', projectId);
+  const match = components.find((c) => c.handler === componentHandler || c.id === componentHandler);
+  if (!match) throw new Error(`Component "${componentHandler}" not found in project "${projectId}"`);
+
+  // Track enrichment is best-effort: the detail page is still usable without it.
+  let track: BffDeploymentTrack | null = null;
+  try {
+    track = await bff.get<BffDeploymentTrack | null>(`/components/${seg(match.handler)}/deployment-track`);
+  } catch {
+    // Ignore — a synthetic track is used below.
+  }
+
+  // OpenChoreo synthesizes a track (id == UID) only for components whose
+  // spec.workflow.parameters.repository is set; otherwise the BFF returns an
+  // empty track. Consumers gate build/endpoint queries on a non-empty versionId
+  // (== selected track id), so fall back to the component id as a stable track
+  // id to keep those queries enabled. The component id is always non-empty.
+  const deploymentTracks: GqlDeploymentTrack[] = [
+    track?.id
+      ? { id: track.id, branch: track.branch, latest: track.latest, autoDeployEnabled: track.autoDeployEnabled }
+      : { id: match.id, branch: track?.branch, latest: true, autoDeployEnabled: track?.autoDeployEnabled },
+  ];
+
+  // orgHandler is unused by cloud consumers but kept in the shape for parity.
+  return { ...match, orgHandler: '', deploymentTracks };
+};
+
+// awaits: real /endpoints mapping in the BFF (currently returns an empty list).
+export const fetchComponentEndpoints = (componentId: string, _versionId: string): Promise<GqlEndpoint[]> =>
+  bff.get<ListResponse<GqlEndpoint>>(`/components/${seg(componentId)}/endpoints`).then(items);
+
+export const fetchComponentNameAvailability = (projectId: string, candidate: string): Promise<ComponentNameAvailability> =>
+  bff.get<ComponentNameAvailability>(`/projects/${seg(projectId)}/components/name-availability${q({ candidate })}`);
+
+export const fetchComponentEndpointSpec = (componentId: string, _versionId: string, endpointId: string): Promise<string | null> =>
+  bff.get<{ spec: string | null }>(`/components/${seg(componentId)}/endpoints/${seg(endpointId)}/spec`).then((r) => r.spec ?? null);
+
+export const createComponent = (input: CreateComponentInput): Promise<GqlComponent> =>
+  bff.post<GqlComponent>(`/projects/${seg(input.projectId)}/components`, toBffCreateComponentBody(input));
+
+export const deleteComponent = (input: { orgHandler: string; componentId: string; projectId: string }): Promise<DeleteComponentResult> =>
+  bff.delete<DeleteComponentResult | null>(`/projects/${seg(input.projectId)}/components/${seg(input.componentId)}`)
+    .then((r) => r ?? { status: 'success', canDelete: true, message: '', encodedData: '' });
+
+// OpenChoreo addresses components by name (== handler == id here), and the BFF
+// UpdateComponent only consumes displayName/description. Use the handler so the
+// name segment is never empty, and send just the mutable fields.
+export const updateComponent = (input: UpdateComponentInput): Promise<GqlComponent> =>
+  bff.put<GqlComponent>(
+    `/projects/${seg(input.projectId)}/components/${seg(input.handler || input.id)}`,
+    { displayName: input.displayName, description: input.description },
+  ).then(withFrontendDisplayType);
+
+export const updateAutoDeployEnabled = (input: UpdateAutoDeployInput): Promise<{ id: string; autoDeployEnabled: boolean }> =>
+  bff.patch<{ id: string; autoDeployEnabled: boolean }>(`/components/${seg(input.componentId)}/auto-deploy`, input);
+
+export const generateComponentEndpoints = (input: GenerateComponentEndpointsInput): Promise<GqlEnvEndpoint[]> =>
+  bff.post<ListResponse<GqlEnvEndpoint>>(`/components/${seg(input.componentId)}/endpoints/generate`, input).then(items);
+
+export const generateComponentEnvironmentJwtSecret = (componentId: string, environmentId: string): Promise<string> =>
+  bff.post<{ secret: string }>(`/components/${seg(componentId)}/environments/${seg(environmentId)}/jwt-secret`)
+    .then((r) => r?.secret ?? '');
+
+export const rotateComponentEnvironmentJwtSecret = (componentId: string, environmentId: string): Promise<string> =>
+  bff.put<{ secret: string }>(`/components/${seg(componentId)}/environments/${seg(environmentId)}/jwt-secret/rotate`)
+    .then((r) => r?.secret ?? '');
+
+export const updateEndpoint = (input: { componentId: string; versionId: string; releaseId: string; endpointId: string; displayName: string; networkVisibilities: string[] }): Promise<object> =>
+  bff.put<object>(`/components/${seg(input.componentId)}/endpoints/${seg(input.endpointId)}/visibility`, input);

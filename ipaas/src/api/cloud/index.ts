@@ -22,3 +22,4 @@ export * as deployments from './deployments';
 export * as environments from './environments';
 export * as org from './org';
 export * as builds from './builds';
+export * as repository from './repository';

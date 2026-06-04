@@ -21,17 +21,24 @@ import { UUID_RE } from '../utils/string';
 import { fetchProjects, fetchProject, fetchProjectByHandler, fetchProjectContributors, fetchProjectComponentLabels, fetchProjectHandlerAvailability, createProject, createMonoRepoProject } from '../api/projects';
 import type { CreateProjectInput, CreateMonoRepoProjectInput } from '../types/project';
 import { useOrgs } from './useOrg';
+import { IS_CLOUD } from '../features';
 
 function orgId(): number {
   return window.API_CONFIG?.asgardeoOrgNumericId ?? 0;
 }
+
+// In cloud, Thunder does not issue an asgardeoOrgNumericId, so the legacy
+// numeric-ID gate (id > 0) blocks every project query indefinitely. The org
+// scope is carried by the JWT, so the cloud variant's fetchProjects family
+// ignores the numericId argument — we just need to let the queries fire.
+const isOrgScopeReady = (id: number): boolean => IS_CLOUD || id > 0;
 
 export function useProjects() {
   const id = orgId();
   return useQuery({
     queryKey: ['projects', id],
     queryFn: () => fetchProjects(id),
-    enabled: id > 0,
+    enabled: isOrgScopeReady(id),
   });
 }
 
@@ -41,7 +48,7 @@ export function useProjectsByOrg(orgHandle: string) {
   return useQuery({
     queryKey: ['projects', numericId],
     queryFn: () => fetchProjects(numericId),
-    enabled: numericId > 0,
+    enabled: isOrgScopeReady(numericId),
   });
 }
 
@@ -50,7 +57,7 @@ export function useProject(projectId: string) {
   return useQuery({
     queryKey: ['project', projectId, id],
     queryFn: () => fetchProject(id, projectId),
-    enabled: !!projectId && id > 0,
+    enabled: !!projectId && isOrgScopeReady(id),
   });
 }
 
@@ -60,7 +67,7 @@ export function useProjectByHandler(handler: string) {
     queryKey: ['project', 'handler', handler, id],
     queryFn: () => fetchProjectByHandler(id, handler),
     // Guard: never call if handler is empty or looks like a UUID (should use useProject instead)
-    enabled: !!handler && id > 0 && !UUID_RE.test(handler),
+    enabled: !!handler && isOrgScopeReady(id) && !UUID_RE.test(handler),
   });
 }
 
@@ -69,7 +76,7 @@ export function useProjectContributors(projectId: string) {
   return useQuery({
     queryKey: ['projectContributors', projectId, id],
     queryFn: () => fetchProjectContributors(id, projectId),
-    enabled: !!projectId && id > 0,
+    enabled: !!projectId && isOrgScopeReady(id),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -79,7 +86,7 @@ export function useProjectComponentLabels(projectId: string) {
   return useQuery({
     queryKey: ['projectComponentLabels', projectId, id],
     queryFn: () => fetchProjectComponentLabels(id, projectId),
-    enabled: !!projectId && id > 0,
+    enabled: !!projectId && isOrgScopeReady(id),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -89,7 +96,7 @@ export function useProjectHandlerAvailability(candidate: string, enabled: boolea
   return useQuery({
     queryKey: ['projectHandlerAvailability', id, candidate],
     queryFn: () => fetchProjectHandlerAvailability(id, candidate),
-    enabled: enabled && id > 0 && !!candidate && candidate.length >= 2,
+    enabled: enabled && isOrgScopeReady(id) && !!candidate && candidate.length >= 2,
     staleTime: 0,
     retry: false,
   });

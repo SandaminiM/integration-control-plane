@@ -108,7 +108,7 @@ export default function Environment({ env, prevEnv, componentId, projectId, comp
   const prevEnvReleaseId = prevEnvDeployment?.releaseId ?? '';
   const { data: prevEnvEndpoints = [] } = useEnvEndpoints(prevEnvEnabled && !!prevEnvReleaseId ? componentId : '', prevEnvEnabled && !!prevEnvReleaseId ? versionId : '', prevEnvEnabled && !!prevEnvReleaseId ? prevEnvReleaseId : '');
 
-  const { data: scheduleConfig } = useExecutionConfigs(isAutomation ? componentId : '', isAutomation ? envReleaseId : '');
+  const { data: scheduleConfig } = useExecutionConfigs(isAutomation ? componentId : '', isAutomation ? envReleaseId : '', isAutomation ? env.id : '', isAutomation ? projectId : '');
   const scheduleDescription = scheduleConfig?.cronjobFrequency ? `${describeCron(scheduleConfig.cronjobFrequency)}, in time zone ${scheduleConfig.cronjobTimezone || 'UTC'}` : null;
 
   const envTemplateId = env.templateId ?? env.id;
@@ -181,7 +181,7 @@ export default function Environment({ env, prevEnv, componentId, projectId, comp
 
   const handleStop = () => {
     stopMutation.mutate(
-      { orgHandler, componentId, releaseId: envReleaseId, type: displayType ?? '', clearCron: false },
+      { orgHandler, componentId, releaseId: envReleaseId, environment: env.id, type: displayType ?? '', clearCron: false },
       {
         onSuccess: () => {
           setShouldPollOnce(true);

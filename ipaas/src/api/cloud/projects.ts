@@ -16,17 +16,84 @@
  * under the License.
  */
 
-// TODO: implement using Choreo v3 REST APIs
+/** Cloud (OpenChoreo) project API. Calls the ipaas-service BFF. */
 
-import type { GqlProject, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput } from '../../types/project';
+import type {
+  GqlProject,
+  ProjectContributor,
+  ProjectHandlerAvailability,
+  CreateProjectInput,
+  CreateMonoRepoProjectInput,
+} from '../../types/project';
+import { bff, items, q, seg, type ListResponse } from './_client';
 
-const ni = (name: string): never => { throw new Error(`[cloud] projects.${name}: not implemented`); };
+// _orgId is kept on the signatures for devant contract parity; cloud derives
+// the org from the access token instead of taking a numeric id from the caller.
 
-export const fetchProjects = (_orgId: number): Promise<GqlProject[]> => ni('fetchProjects');
-export const fetchProject = (_orgId: number, _projectId: string): Promise<GqlProject> => ni('fetchProject');
-export const fetchProjectByHandler = (_orgId: number, _projectHandler: string): Promise<GqlProject> => ni('fetchProjectByHandler');
-export const fetchProjectContributors = (_orgId: number, _projectId: string): Promise<ProjectContributor[]> => ni('fetchProjectContributors');
-export const fetchProjectComponentLabels = (_orgId: number, _projectId: string): Promise<string[]> => ni('fetchProjectComponentLabels');
-export const fetchProjectHandlerAvailability = (_orgId: number, _candidate: string): Promise<ProjectHandlerAvailability> => ni('fetchProjectHandlerAvailability');
-export const createProject = (_input: CreateProjectInput): Promise<GqlProject> => ni('createProject');
-export const createMonoRepoProject = (_input: CreateMonoRepoProjectInput): Promise<GqlProject> => ni('createMonoRepoProject');
+export const fetchProjects = (_orgId: number): Promise<GqlProject[]> =>
+  bff.get<ListResponse<GqlProject>>('/projects').then(items);
+
+export const fetchProject = (_orgId: number, projectId: string): Promise<GqlProject> =>
+  bff.get<GqlProject>(`/projects/${seg(projectId)}`);
+
+export const fetchProjectByHandler = (_orgId: number, projectHandler: string): Promise<GqlProject> =>
+  bff.get<GqlProject>(`/projects/${seg(projectHandler)}`);
+
+export const fetchProjectContributors = (_orgId: number, projectId: string): Promise<ProjectContributor[]> =>
+  bff.get<ListResponse<ProjectContributor>>(`/projects/${seg(projectId)}/contributors`).then(items);
+
+export const fetchProjectComponentLabels = (_orgId: number, projectId: string): Promise<string[]> =>
+  bff.get<ListResponse<string>>(`/projects/${seg(projectId)}/labels`).then(items);
+
+export const fetchProjectHandlerAvailability = (_orgId: number, candidate: string): Promise<ProjectHandlerAvailability> =>
+  bff.get<ProjectHandlerAvailability>(`/projects/handler-availability${q({ candidate })}`);
+
+// OpenChoreo Project names are K8s resource names (RFC 1123: lowercase
+// alphanumeric, '-' or '.'). The frontend separates `name` (display label)
+// from `handler` (URL-safe slug); the BFF expects `name` to be the slug and
+// `displayName` to be the label, so we remap before posting.
+//
+// The `deploymentPipeline` field is required by the BFF and must reference an
+// existing DeploymentPipeline resource. We resolve it dynamically and cache
+// the lookup for the session — pipelines are namespace-scoped and stable at
+// runtime. On failure we drop the cache so the next create retries the lookup.
+let defaultPipelinePromise: Promise<string> | null = null;
+const fetchDefaultPipelineName = (): Promise<string> => {
+  if (!defaultPipelinePromise) {
+    defaultPipelinePromise = bff.get<ListResponse<{ name: string }>>('/deploymentpipelines')
+      .then((r) => {
+        const list = items(r);
+        if (!list.length) return '';
+        return list.find((p) => p.name === 'default')?.name ?? list[0].name;
+      })
+      .catch(() => {
+        defaultPipelinePromise = null;
+        return '';
+      });
+  }
+  return defaultPipelinePromise;
+};
+
+const toBffCreateProjectBody = async (input: CreateProjectInput) => ({
+  name: input.handler,
+  displayName: input.name,
+  description: input.description,
+  deploymentPipeline: await fetchDefaultPipelineName(),
+});
+
+const toBffCreateMonoRepoProjectBody = async (input: CreateMonoRepoProjectInput) => ({
+  ...(await toBffCreateProjectBody(input)),
+  monoRepo: true,
+  repository: input.repository,
+  gitOrganization: input.gitOrganization,
+  branch: input.branch,
+  directoryPath: input.directoryPath,
+  gitProvider: input.gitProvider,
+  isPublicRepo: input.isPublicRepo,
+});
+
+export const createProject = async (input: CreateProjectInput): Promise<GqlProject> =>
+  bff.post<GqlProject>('/projects', await toBffCreateProjectBody(input));
+
+export const createMonoRepoProject = async (input: CreateMonoRepoProjectInput): Promise<GqlProject> =>
+  bff.post<GqlProject>('/projects', await toBffCreateMonoRepoProjectBody(input));

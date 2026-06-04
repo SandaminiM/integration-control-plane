@@ -23,7 +23,9 @@ import { Alert, Box, CircularProgress, Typography } from '@wso2/oxygen-ui';
 import { useAuth } from '../auth/AuthContext';
 import { validateAndClearOIDCState, getAndClearRedirectUrl } from '../auth/tokenManager';
 import { useFetchProjectsByOrgId } from '../hooks/useOrg';
+import { fetchProjects as fetchProjectsApi } from '../api/projects';
 import { loginUrl, projectHomeUrl, projectsRedirectUrl, registerOrgUrl } from '../paths';
+import { IS_CLOUD } from '../features';
 
 export default function OIDCCallback(): JSX.Element {
   const [searchParams] = useSearchParams();
@@ -65,8 +67,10 @@ export default function OIDCCallback(): JSX.Element {
       try {
         const { isNewUser } = await handleOIDCCallback(code, state);
 
-        if (isNewUser) {
-          // First-time user — no org yet; send to org registration
+        if (isNewUser && !IS_CLOUD) {
+          // First-time user — no org yet; send to org registration.
+          // In cloud, Thunder has already provisioned the org at sign-up,
+          // so we fall through to the normal post-login routing below.
           navigate(registerOrgUrl(), { replace: true });
           return;
         }
@@ -100,18 +104,20 @@ export default function OIDCCallback(): JSX.Element {
                 }
               }
 
-              // 2. No stored last project — fetch from API and use the most recently updated one
+              // 2. No stored last project — fetch from API and use the most recently updated one.
+              // In cloud the numericId concept doesn't exist (Thunder doesn't issue one); fall
+              // back to the JWT-scoped fetchProjects which ignores the orgId argument.
               if (!navigatedToLastProject) {
                 const numericId = window.API_CONFIG.asgardeoOrgNumericId ?? parseInt(localStorage.getItem('icp_org_numeric_id') ?? '0', 10);
-                if (numericId > 0) {
-                  const projects = (await fetchProjects(numericId)).filter((p) => p.handler);
-                  if (projects.length > 0) {
-                    const recent = projects.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
-                    // Mark ToS accepted — this user already has projects, they've been through onboarding
-                    localStorage.setItem(`icp_tos_accepted:${userId}:${orgHandle}`, 'true');
-                    navigate(projectHomeUrl(orgHandle, recent.handler), { replace: true });
-                    navigatedToLastProject = true;
-                  }
+                const projects = IS_CLOUD
+                  ? (await fetchProjectsApi(0)).filter((p) => p.handler)
+                  : numericId > 0 ? (await fetchProjects(numericId)).filter((p) => p.handler) : [];
+                if (projects.length > 0) {
+                  const recent = projects.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
+                  // Mark ToS accepted — this user already has projects, they've been through onboarding
+                  localStorage.setItem(`icp_tos_accepted:${userId}:${orgHandle}`, 'true');
+                  navigate(projectHomeUrl(orgHandle, recent.handler), { replace: true });
+                  navigatedToLastProject = true;
                 }
               }
             }
@@ -120,7 +126,15 @@ export default function OIDCCallback(): JSX.Element {
           }
 
           if (!navigatedToLastProject) {
-            // Redirect to the projects/redirect route which shows the ToS welcome dialog
+            // Redirect to the projects/redirect route which shows the ToS welcome dialog.
+            // In cloud, if orgHandle is missing from localStorage we surface an
+            // error rather than route to RegisterOrganization (it is a no-op in
+            // cloud, and hitting it means the Thunder login flow did not seed
+            // the org handle).
+            if (!orgHandle && IS_CLOUD) {
+              setError('Missing organization context after sign-in. Please try logging in again.');
+              return;
+            }
             navigate(orgHandle ? projectsRedirectUrl(orgHandle) : registerOrgUrl(), { replace: true });
           }
         }
