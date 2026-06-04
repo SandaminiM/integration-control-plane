@@ -18,7 +18,7 @@
 
 import { Autocomplete, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { useEffect, useState } from 'react';
-import type { GqlComponentDetail } from '../types/component';
+import type { ComponentDetail } from '../types/component';
 import { useProjectComponentLabels } from '../hooks/useProjects';
 import { useUpdateComponent } from '../hooks/useComponents';
 
@@ -113,7 +113,7 @@ const LABEL_OPTIONS = [
 interface LabelDialogProps {
   open: boolean;
   onClose: () => void;
-  component: GqlComponentDetail;
+  component: ComponentDetail;
   projectId: string;
   currentLabels: string[];
 }

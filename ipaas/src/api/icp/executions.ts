@@ -16,20 +16,14 @@
  * under the License.
  */
 
-// TODO: implement using ICP local REST APIs
-
-import type { GqlExecutionConfigs, TaskExecution, ExecutionLogEntry, UpdateJobConfigsInput, TriggerComponentInput } from '../../types/executions';
-import type { TriggerTaskInput } from '../../types/artifact';
-
-interface ExecutionArgument { argumentName: string; argumentValue: string }
-
+// TODO: implement using icp APIs
 const ni = (name: string): never => { throw new Error(`[icp] executions.${name}: not implemented`); };
 
-export const fetchExecutionConfigs = (_componentId: string, _releaseId: string, _envId = '', _projectId = ''): Promise<GqlExecutionConfigs | null> => ni('fetchExecutionConfigs');
-export const fetchTaskExecutions = (_releaseId: string, _componentId = '', _envId = '', _projectId = ''): Promise<TaskExecution[]> => ni('fetchTaskExecutions');
-export const fetchExecutionArguments = (_runId: string, _componentId: string, _releaseId: string): Promise<ExecutionArgument[]> => ni('fetchExecutionArguments');
-export const fetchExecutionLogs = (_componentId: string, _deploymentTrackId: string, _executionId: string, _environmentId: string): Promise<ExecutionLogEntry[]> => ni('fetchExecutionLogs');
-export const fetchTaskExecutionCount = (_releaseId: string, _componentId = '', _envId = '', _projectId = ''): Promise<number | null> => ni('fetchTaskExecutionCount');
-export const updateJobConfigs = (_input: UpdateJobConfigsInput): Promise<boolean> => ni('updateJobConfigs');
-export const triggerTask = (_input: TriggerTaskInput): Promise<{ status: string; message: string; successCount: number; failedCount: number; details: string[] }> => ni('triggerTask');
-export const triggerComponentRun = (_input: TriggerComponentInput): Promise<unknown> => ni('triggerComponentRun');
+export const fetchExecutionConfigs = (..._args: unknown[]): never => ni('fetchExecutionConfigs');
+export const fetchTaskExecutions = (..._args: unknown[]): never => ni('fetchTaskExecutions');
+export const fetchExecutionArguments = (..._args: unknown[]): never => ni('fetchExecutionArguments');
+export const fetchExecutionLogs = (..._args: unknown[]): never => ni('fetchExecutionLogs');
+export const fetchTaskExecutionCount = (..._args: unknown[]): never => ni('fetchTaskExecutionCount');
+export const updateJobConfigs = (..._args: unknown[]): never => ni('updateJobConfigs');
+export const triggerTask = (..._args: unknown[]): never => ni('triggerTask');
+export const triggerComponentRun = (..._args: unknown[]): never => ni('triggerComponentRun');

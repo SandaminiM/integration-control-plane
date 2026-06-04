@@ -25,7 +25,7 @@ import AlertsConfigurePage from '../components/Alerts/AlertsConfigurePage';
 import AlertsHistoryPage from '../components/Alerts/AlertsHistoryPage';
 import type { ComponentScope } from '../nav';
 import { UUID_RE } from '../utils/string';
-import { useProjectId } from '../hooks/useProjectId';
+import { useProjectId } from '../hooks/useProjects';
 
 export default function Alerts(scope: ComponentScope): JSX.Element {
   const [activeTab, setActiveTab] = useState(0);

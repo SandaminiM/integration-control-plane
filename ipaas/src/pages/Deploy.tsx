@@ -23,7 +23,7 @@ import { useComponentByHandler } from '../hooks/useComponents';
 import { useCommitHistory } from '../hooks/useRepository';
 import { useEnvironments } from '../hooks/useEnvironments';
 import { useOrgs } from '../hooks/useOrg';
-import { useProjectId } from '../hooks/useProjectId';
+import { useProjectId } from '../hooks/useProjects';
 import { UUID_RE } from '../utils/string';
 import BuildArea from '../components/Deploy/BuildArea';
 import ComingSoon from './ComingSoon';
@@ -87,7 +87,7 @@ export default function Deploy(scope: ComponentScope): JSX.Element {
   }
 
   return (
-    <PageContent fullWidth sx={{ overflowX: 'scroll' }}>
+    <PageContent>
       <Typography variant="h1" sx={{ mb: 4 }}>Deploy</Typography>
       <Box sx={{ display: 'flex', alignItems: 'flex-start', minWidth: 'max-content' }}>
         {/* Left panel — build artifact selection + deploy trigger */}

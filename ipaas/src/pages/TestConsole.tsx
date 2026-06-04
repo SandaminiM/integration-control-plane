@@ -25,11 +25,11 @@ import { useApimSwagger, useGenerateTestKey } from '../hooks/useApim';
 import { useComponentByHandler } from '../hooks/useComponents';
 import { useComponentDeployment, useEnvEndpoints } from '../hooks/useDeployments';
 import { useEnvironments } from '../hooks/useEnvironments';
-import type { GqlEnvEndpoint } from '../types/component';
+import type { EnvEndpoint } from '../types/component';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import NotFound from '../components/NotFound';
-import { useProjectId } from '../hooks/useProjectId';
+import { useProjectId } from '../hooks/useProjects';
 import { broaden, resourceUrl, type ComponentScope } from '../nav';
 
 const ENV_STATUS_DOT: Record<string, string> = {
@@ -61,7 +61,7 @@ interface VisibilityOption {
   url: string;
 }
 
-function getVisibilityOptions(endpoint: GqlEnvEndpoint): VisibilityOption[] {
+function getVisibilityOptions(endpoint: EnvEndpoint): VisibilityOption[] {
   const opts: VisibilityOption[] = [];
   if (endpoint.publicUrl) opts.push({ label: 'Public', url: endpoint.publicUrl });
   if (endpoint.organizationUrl) opts.push({ label: 'Organization', url: endpoint.organizationUrl });

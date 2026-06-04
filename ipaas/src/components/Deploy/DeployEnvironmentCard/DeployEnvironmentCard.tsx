@@ -132,7 +132,7 @@ export default function DeployEnvironmentCard({ orgHandler, orgUuid, projectId, 
 
   // Construct displayed image from componentDeployment.build (per-environment source of truth).
   // builtAt: use trackImage.builtAt when runId matches (direct build), otherwise fall back to
-  // deploymentStatus.completed_at for the run (same as Devant), then deployedAt as last resort.
+  // deploymentStatus.completedAt for the run (same as Devant), then deployedAt as last resort.
   const deployedImage: typeof matchedTrackImage =
     deployedRunId && deployment?.build?.commit
       ? {
@@ -140,7 +140,7 @@ export default function DeployEnvironmentCard({ orgHandler, orgUuid, projectId, 
           runId: deployedRunId,
           commitHash: deployment.build.commit.sha,
           commitMessage: deployment.build.commit.message,
-          builtAt: (matchedTrackImage?.runId === deployedRunId ? matchedTrackImage.builtAt : null) ?? deploymentStatus.find((s) => s.id.toString() === deployedRunId)?.completed_at ?? deployment.build.deployedAt ?? '',
+          builtAt: (matchedTrackImage?.runId === deployedRunId ? matchedTrackImage.builtAt : null) ?? deploymentStatus.find((s) => s.id.toString() === deployedRunId)?.completedAt ?? deployment.build.deployedAt ?? '',
           author: deployment.build.commit.author,
           createdAt: matchedTrackImage?.createdAt ?? '',
           updatedAt: matchedTrackImage?.updatedAt ?? '',

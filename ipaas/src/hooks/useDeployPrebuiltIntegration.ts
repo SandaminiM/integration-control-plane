@@ -22,7 +22,7 @@ import { useDeployPrebuiltImage } from './useDeployments';
 import { getOrgUuidFromToken } from '../auth/tokenManager';
 import { displayTypeFromSample } from '../constants/integrations';
 import { derivePrebuiltSlug } from '../utils/prebuilt';
-import { checkNameAvailability, fetchComponentDetail, fetchFirstEnvironment, fetchLatestCommitSha, savePrebuiltConfig } from '../api/prebuilt';
+import { checkNameAvailability, fetchComponentDetail, fetchFirstEnvironment, fetchLatestCommitSha, savePrebuiltConfig } from '#api/prebuilt';
 import type { DeployPrebuiltIntegrationInput, DeployPrebuiltIntegrationState } from '../types/prebuilt';
 
 const IDLE_STATE: DeployPrebuiltIntegrationState = {

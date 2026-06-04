@@ -24,7 +24,7 @@ import { useComponentByHandler, useComponentEndpoints } from '../hooks/useCompon
 import { useEnvironments } from '../hooks/useEnvironments';
 import { useCommitHistory, useComponentRepository } from '../hooks/useRepository';
 import { useApimApi } from '../hooks/useApim';
-import { IS_DEVANT } from '../features';
+import { IS_WIP } from '../features';
 import { useDeploymentStatus } from '../hooks/useDeployments';
 import BusinessInfo from '../components/BusinessInfo';
 import NotFound from '../components/NotFound';
@@ -71,7 +71,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
   const versionId = selectedTrackId;
 
   const { data: endpoints = [] } = useComponentEndpoints(component?.id ?? '', versionId);
-  const apimId = IS_DEVANT ? (endpoints.find((e) => e.apimId)?.apimId ?? null) : null;
+  const apimId = IS_WIP ? (endpoints.find((e) => e.apimId)?.apimId ?? null) : null;
   const { data: apimApiInfo } = useApimApi(apimId);
   const [selectedArtifact, setSelectedArtifact] = useState<SelectedArtifact | null>(null);
 
@@ -117,7 +117,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
         {tracks.length > 0 && <DeploymentTrackBar tracks={tracks} selectedId={versionId} onChange={setSelectedTrackId} orgHandler={scope.org} projectHandler={project?.handler ?? ''} componentHandler={component.handler} />}
 
         {/* <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}> */}
-        <PageContent fullWidth sx={{ overflowX: 'auto' }}>
+        <PageContent>
           {/* Component header */}
           <ComponentHeader component={component} project={project} repository={repository} latestCommit={latestCommit} orgHandler={scope.org} projectId={projectId} projectHandler={project?.handler ?? scope.project} apimId={apimId} />
 
@@ -157,7 +157,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
           ))}
 
           {/* Subscription Plans, Documents, and Compliance cards — devant only (requires APIM) */}
-          {IS_DEVANT && apimId && (
+          {IS_WIP && apimId && (
             <BusinessInfo
               projectId={projectId}
               componentId={component.id}

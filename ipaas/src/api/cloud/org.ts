@@ -27,7 +27,7 @@
  */
 
 import type { OrgEntry, OrgComponentLimits, OrgSubscription, RegisterUserResponse } from '../../types/org';
-import type { GqlProject } from '../../types/project';
+import type { Project } from '../../types/project';
 import { getAccessToken } from '../../auth/tokenManager';
 import { bff, items, seg, type ListResponse } from './_client';
 
@@ -90,8 +90,8 @@ export const registerUser = async (
 // already provisioned upstream by the time the user reaches OrgHome.
 export const initOrg = async (_orgUuid: string, _region: string): Promise<void> => {};
 
-export const fetchProjectsByOrgId = (orgNumericId: number): Promise<GqlProject[]> =>
-  bff.get<ListResponse<GqlProject>>(`/orgs/${seg(String(orgNumericId))}/projects`).then(items);
+export const fetchProjectsByOrgId = (orgNumericId: number): Promise<Project[]> =>
+  bff.get<ListResponse<Project>>(`/orgs/${seg(String(orgNumericId))}/projects`).then(items);
 
 export const createDefaultProject = (orgNumericId: number, orgHandler: string, projectHandler?: string): Promise<{ id: string; handler: string }> =>
   bff.post<{ id: string; handler: string }>(`/orgs/${seg(String(orgNumericId))}/projects/default`, { orgHandler, projectHandler });

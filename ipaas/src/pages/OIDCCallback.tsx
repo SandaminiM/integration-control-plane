@@ -23,7 +23,7 @@ import { Alert, Box, CircularProgress, Typography } from '@wso2/oxygen-ui';
 import { useAuth } from '../auth/AuthContext';
 import { validateAndClearOIDCState, getAndClearRedirectUrl } from '../auth/tokenManager';
 import { useFetchProjectsByOrgId } from '../hooks/useOrg';
-import { fetchProjects as fetchProjectsApi } from '../api/projects';
+import { fetchProjects as fetchProjectsApi } from '#api/projects';
 import { loginUrl, projectHomeUrl, projectsRedirectUrl, registerOrgUrl } from '../paths';
 import { IS_CLOUD } from '../features';
 

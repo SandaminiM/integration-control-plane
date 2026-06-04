@@ -36,24 +36,24 @@
  */
 
 import type {
-  GqlComponentDeployment,
-  GqlDeploymentStatus,
-  GqlReleaseMgtDeployment,
-  GqlDeploymentTrackImage,
+  ComponentDeployment,
+  BuildRun,
+  ReleaseMgtDeployment,
+  DeploymentTrackImage,
   DeployDeploymentTrackInput,
   PromoteInput,
   StopDeploymentInput,
   DeployPrebuiltImageInput,
 } from '../../types/deployment';
-import type { GqlEnvEndpoint } from '../../types/component';
+import type { EnvEndpoint } from '../../types/component';
 import type { DeployComponentInput } from '../../types/build';
 import { bff, items, q, seg, type ListResponse, type MessageResponse } from './_client';
 
 // Underscored params (_orgHandler, _orgUuid, _projectId, _versionId) are kept
 // on these signatures for devant contract parity; cloud does not use them.
 
-export const fetchComponentDeployment = (_orgHandler: string, _orgUuid: string, componentId: string, _versionId: string, environmentId: string): Promise<GqlComponentDeployment | null> =>
-  bff.get<GqlComponentDeployment | null>(`/components/${seg(componentId)}/deployments${q({ environmentId })}`);
+export const fetchComponentDeployment = (_orgHandler: string, _orgUuid: string, componentId: string, _versionId: string, environmentId: string): Promise<ComponentDeployment | null> =>
+  bff.get<ComponentDeployment | null>(`/components/${seg(componentId)}/deployments${q({ environmentId })}`);
 
 // Shape of GET /components/{name}/releases/{releaseId}/endpoints (BFF
 // APIResourcesResponse): the workload's endpoints with resolved URLs and the
@@ -80,7 +80,7 @@ function buildUrl(u?: BffEndpointURL): string {
   return `${scheme}://${u.host}${portSuffix}${path}`;
 }
 
-function toGqlEnvEndpoint(ep: BffEndpointResources, releaseId: string): GqlEnvEndpoint {
+function toEnvEndpoint(ep: BffEndpointResources, releaseId: string): EnvEndpoint {
   const networkVisibilities = (ep.visibility ?? []).map((v) => VISIBILITY_LABEL[v] ?? v);
   const publicUrl = buildUrl(ep.urls?.external);
   const organizationUrl = buildUrl(ep.urls?.internal);
@@ -102,9 +102,9 @@ function toGqlEnvEndpoint(ep: BffEndpointResources, releaseId: string): GqlEnvEn
   };
 }
 
-export const fetchEnvEndpoints = (componentId: string, _versionId: string, releaseId: string): Promise<GqlEnvEndpoint[]> =>
+export const fetchEnvEndpoints = (componentId: string, _versionId: string, releaseId: string): Promise<EnvEndpoint[]> =>
   bff.get<{ endpoints?: BffEndpointResources[] }>(`/components/${seg(componentId)}/releases/${seg(releaseId)}/endpoints`)
-    .then((r) => (r?.endpoints ?? []).map((ep) => toGqlEnvEndpoint(ep, releaseId)));
+    .then((r) => (r?.endpoints ?? []).map((ep) => toEnvEndpoint(ep, releaseId)));
 
 // Shape of a build run from GET /components/{name}/builds (BFF WorkflowRun).
 // Newest-first per the BFF, so items[0] is the latest build.
@@ -117,7 +117,7 @@ interface BffWorkflowRun {
 }
 
 // OpenChoreo workflow-run status -> the build vocabulary the build card expects
-// (GqlDeploymentStatus.status / .conclusion).
+// (BuildRun.status / .conclusion).
 const WORKFLOW_STATUS_MAP: Record<string, { status: string; conclusion: string }> = {
   Succeeded: { status: 'completed', conclusion: 'success' },
   Failed: { status: 'completed', conclusion: 'failure' },
@@ -126,21 +126,21 @@ const WORKFLOW_STATUS_MAP: Record<string, { status: string; conclusion: string }
 };
 
 // Stable per-run numeric id so the consumer's per-build state (keyed on id)
-// resets between builds; GqlDeploymentStatus.id is numeric in the contract.
+// resets between builds; BuildRun.id is numeric in the contract.
 function hashRunName(name: string): number {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (Math.imul(31, h) + name.charCodeAt(i)) | 0;
   return Math.abs(h);
 }
 
-function toDeploymentStatus(run: BffWorkflowRun): GqlDeploymentStatus {
+function toBuildRun(run: BffWorkflowRun): BuildRun {
   const name = run.name ?? '';
   const { status, conclusion } = WORKFLOW_STATUS_MAP[run.status ?? ''] ?? WORKFLOW_STATUS_MAP.Pending;
   return {
     id: hashRunName(name),
     sha: run.commit ?? '',
-    started_at: run.startedAt ?? '',
-    completed_at: run.completedAt ?? '',
+    startedAt: run.startedAt ?? '',
+    completedAt: run.completedAt ?? '',
     status,
     conclusion,
     conclusionV2: conclusion,
@@ -154,19 +154,19 @@ function toDeploymentStatus(run: BffWorkflowRun): GqlDeploymentStatus {
 }
 
 // Devant's deploymentStatusByVersion returns build records; the cloud build feed
-// is the BFF builds (WorkflowRun) list, reshaped to the same GqlDeploymentStatus
+// is the BFF builds (WorkflowRun) list, reshaped to the same BuildRun
 // contract. (The BFF /deployments/history endpoint is release-binding state, not
 // builds, so it is intentionally not used here.)
-export const fetchDeploymentStatus = (componentId: string, _versionId: string): Promise<GqlDeploymentStatus[]> =>
-  bff.get<ListResponse<BffWorkflowRun>>(`/components/${seg(componentId)}/builds`).then(items).then((runs) => runs.map(toDeploymentStatus));
+export const fetchDeploymentStatus = (componentId: string, _versionId: string): Promise<BuildRun[]> =>
+  bff.get<ListResponse<BffWorkflowRun>>(`/components/${seg(componentId)}/builds`).then(items).then((runs) => runs.map(toBuildRun));
 
 // Wired — the BFF serves this from GetDeploymentHistory in the
-// GqlReleaseMgtDeployment shape. The environment query scopes the listing.
-export const fetchReleaseMgtDeployments = (_orgUuid: string, _projectId: string, componentId: string, _versionId: string, environmentId: string): Promise<GqlReleaseMgtDeployment[]> =>
-  bff.get<ListResponse<GqlReleaseMgtDeployment>>(`/components/${seg(componentId)}/release-mgt-deployments${q({ environment: environmentId })}`).then(items);
+// ReleaseMgtDeployment shape. The environment query scopes the listing.
+export const fetchReleaseMgtDeployments = (_orgUuid: string, _projectId: string, componentId: string, _versionId: string, environmentId: string): Promise<ReleaseMgtDeployment[]> =>
+  bff.get<ListResponse<ReleaseMgtDeployment>>(`/components/${seg(componentId)}/release-mgt-deployments${q({ environment: environmentId })}`).then(items);
 
-export const fetchDeploymentTrackImages = (componentId: string, _versionId: string): Promise<GqlDeploymentTrackImage[]> =>
-  bff.get<ListResponse<GqlDeploymentTrackImage>>(`/components/${seg(componentId)}/releases`).then(items);
+export const fetchDeploymentTrackImages = (componentId: string, _versionId: string): Promise<DeploymentTrackImage[]> =>
+  bff.get<ListResponse<DeploymentTrackImage>>(`/components/${seg(componentId)}/releases`).then(items);
 
 export const deployDeploymentTrack = (input: DeployDeploymentTrackInput): Promise<string> =>
   bff.post<MessageResponse>(`/components/${seg(input.componentId)}/deployments`, input).then((r) => r?.message ?? '');

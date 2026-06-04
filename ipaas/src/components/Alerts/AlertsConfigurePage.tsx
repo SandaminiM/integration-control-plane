@@ -19,7 +19,7 @@
 import { Alert, Autocomplete, Box, Button, CircularProgress, Tab, Tabs, TextField, Typography } from '@wso2/oxygen-ui';
 import { Plus } from '@wso2/oxygen-ui-icons-react';
 import { type JSX, useEffect, useMemo, useState } from 'react';
-import type { CloudDataPlane, GqlEnvironment } from '../../types/environment';
+import type { CloudDataPlane, Environment } from '../../types/environment';
 import { choreoAlertingApiUrl } from '../../config/runtimeConfig';
 import { IS_CLOUD } from '../../features';
 import { useDeleteAlertRule, useGetAlertRules, useGetAlertRulesCount, useUpdateAlertRule } from '../../hooks/useAlerts';
@@ -39,7 +39,7 @@ interface AlertsConfigurePageProps {
   versionName: string;
   isProxy: boolean;
   hasPublicOrOrgVisibility: boolean;
-  environments: GqlEnvironment[];
+  environments: Environment[];
   cloudDataPlanes: CloudDataPlane[];
 }
 
@@ -62,7 +62,7 @@ export default function AlertsConfigurePage(props: AlertsConfigurePageProps): JS
   const [isDeleteAlertRule, setIsDeleteAlertRule] = useState(false);
   const [isToggleAlertRule, setIsToggleAlertRule] = useState(false);
 
-  const [selectedEnvironment, setSelectedEnvironment] = useState<GqlEnvironment>(environments[0]);
+  const [selectedEnvironment, setSelectedEnvironment] = useState<Environment>(environments[0]);
 
   const alertingBaseUrl = useMemo(() => {
     if (IS_CLOUD) return '';

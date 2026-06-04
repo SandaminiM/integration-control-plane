@@ -19,7 +19,7 @@
 /** Cloud (OpenChoreo) project API. Calls the ipaas-service BFF. */
 
 import type {
-  GqlProject,
+  Project,
   ProjectContributor,
   ProjectHandlerAvailability,
   CreateProjectInput,
@@ -30,14 +30,14 @@ import { bff, items, q, seg, type ListResponse } from './_client';
 // _orgId is kept on the signatures for devant contract parity; cloud derives
 // the org from the access token instead of taking a numeric id from the caller.
 
-export const fetchProjects = (_orgId: number): Promise<GqlProject[]> =>
-  bff.get<ListResponse<GqlProject>>('/projects').then(items);
+export const fetchProjects = (_orgId: number): Promise<Project[]> =>
+  bff.get<ListResponse<Project>>('/projects').then(items);
 
-export const fetchProject = (_orgId: number, projectId: string): Promise<GqlProject> =>
-  bff.get<GqlProject>(`/projects/${seg(projectId)}`);
+export const fetchProject = (_orgId: number, projectId: string): Promise<Project> =>
+  bff.get<Project>(`/projects/${seg(projectId)}`);
 
-export const fetchProjectByHandler = (_orgId: number, projectHandler: string): Promise<GqlProject> =>
-  bff.get<GqlProject>(`/projects/${seg(projectHandler)}`);
+export const fetchProjectByHandler = (_orgId: number, projectHandler: string): Promise<Project> =>
+  bff.get<Project>(`/projects/${seg(projectHandler)}`);
 
 export const fetchProjectContributors = (_orgId: number, projectId: string): Promise<ProjectContributor[]> =>
   bff.get<ListResponse<ProjectContributor>>(`/projects/${seg(projectId)}/contributors`).then(items);
@@ -92,8 +92,8 @@ const toBffCreateMonoRepoProjectBody = async (input: CreateMonoRepoProjectInput)
   isPublicRepo: input.isPublicRepo,
 });
 
-export const createProject = async (input: CreateProjectInput): Promise<GqlProject> =>
-  bff.post<GqlProject>('/projects', await toBffCreateProjectBody(input));
+export const createProject = async (input: CreateProjectInput): Promise<Project> =>
+  bff.post<Project>('/projects', await toBffCreateProjectBody(input));
 
-export const createMonoRepoProject = async (input: CreateMonoRepoProjectInput): Promise<GqlProject> =>
-  bff.post<GqlProject>('/projects', await toBffCreateMonoRepoProjectBody(input));
+export const createMonoRepoProject = async (input: CreateMonoRepoProjectInput): Promise<Project> =>
+  bff.post<Project>('/projects', await toBffCreateMonoRepoProjectBody(input));

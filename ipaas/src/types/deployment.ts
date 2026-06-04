@@ -26,12 +26,12 @@ export const DeploymentStatus = {
 
 export type DeploymentStatus = (typeof DeploymentStatus)[keyof typeof DeploymentStatus];
 
-export interface GqlReleaseMgtDeploymentRef {
+export interface ReleaseMgtDeploymentRef {
   releaseMgtReleaseId: string;
   releaseMgtDeploymentId: string;
 }
 
-export interface GqlComponentDeployment {
+export interface ComponentDeployment {
   releaseId: string;
   cron: string;
   cronTimezone: string;
@@ -39,7 +39,7 @@ export interface GqlComponentDeployment {
   invokeUrl?: string | null;
   imageUrl?: string | null;
   configCount?: number;
-  releaseMgtDeployment?: GqlReleaseMgtDeploymentRef | null;
+  releaseMgtDeployment?: ReleaseMgtDeploymentRef | null;
   build?: {
     buildId: string;
     deployedAt?: string;
@@ -53,11 +53,11 @@ export interface GqlComponentDeployment {
   };
 }
 
-export interface GqlDeploymentStatus {
+export interface BuildRun {
   id: number;
   sha: string;
-  started_at: string;
-  completed_at: string;
+  startedAt: string;
+  completedAt: string;
   status: string;
   conclusion: string;
   conclusionV2: string;
@@ -69,28 +69,30 @@ export interface GqlDeploymentStatus {
   buildRef?: string;
 }
 
-export interface GqlReleaseMgtDeployment {
-  id: string;
-  release_mgt_id: string;
-  environment_id: string;
-  deployment_name: string;
-  attempt: number;
-  config_revision: number;
-  status: string;
-  comment: string;
-  deployed_at: string;
-  deployed_by: string;
-  release_name: string;
-  commit_hash: string;
-  component_configs: {
-    config_mapping_revision: number;
-    schema_based_config_revision: number;
-    api_settings: string;
-  };
-  created_at: string;
+export interface ReleaseMgtDeploymentComponentConfigs {
+  configMappingRevision: number;
+  schemaBasedConfigRevision: number;
+  apiSettings: string;
 }
 
-export interface GqlDeploymentTrackImage {
+export interface ReleaseMgtDeployment {
+  id: string;
+  releaseMgtId: string;
+  environmentId: string;
+  deploymentName: string;
+  attempt: number;
+  configRevision: number;
+  status: string;
+  comment: string;
+  deployedAt: string;
+  deployedBy: string;
+  releaseName: string;
+  commitHash: string;
+  componentConfigs: ReleaseMgtDeploymentComponentConfigs;
+  createdAt: string;
+}
+
+export interface DeploymentTrackImage {
   imageId: string;
   createdAt: string;
   updatedAt: string;

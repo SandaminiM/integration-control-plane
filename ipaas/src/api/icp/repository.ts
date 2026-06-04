@@ -16,27 +16,15 @@
  * under the License.
  */
 
-// TODO: implement using ICP local REST APIs
-
-import type {
-  GqlRepository,
-  GqlCommit,
-  GqlUserRepo,
-  GqlRepoBranch,
-  GqlRepoMetadata,
-  RepoTreeNode,
-  ChoreoSampleImageEntry,
-} from '../../types/repository';
-import type { UpdateBuildpackConfigsInput } from '../../types/build';
-
+// TODO: implement using icp APIs
 const ni = (name: string): never => { throw new Error(`[icp] repository.${name}: not implemented`); };
 
-export const fetchComponentRepository = (_projectId: string, _componentHandler: string): Promise<GqlRepository | null> => ni('fetchComponentRepository');
-export const fetchCommitHistory = (_componentId: string, _branch: string): Promise<GqlCommit[]> => ni('fetchCommitHistory');
-export const fetchGitHubUserRepos = (): Promise<GqlUserRepo[]> => ni('fetchGitHubUserRepos');
-export const fetchRepoBranches = (_repoOrg: string, _repoName: string, _isPublicRepo: boolean): Promise<GqlRepoBranch[]> => ni('fetchRepoBranches');
-export const fetchRepoMetadata = (_org: string, _repo: string, _branch: string, _subPath: string, _isPublicRepo?: boolean): Promise<GqlRepoMetadata> => ni('fetchRepoMetadata');
-export const fetchChoreoSampleImages = (_orgUuid: string, _projectId: string): Promise<ChoreoSampleImageEntry[]> => ni('fetchChoreoSampleImages');
-export const updateBuildpackConfigs = (_input: UpdateBuildpackConfigsInput): Promise<string> => ni('updateBuildpackConfigs');
-export const obtainGithubToken = (_authorizationCode: string): Promise<{ success: boolean; message: string }> => ni('obtainGithubToken');
-export const fetchRepoContents = (_org: string, _repo: string, _branch: string, _isPublicRepo?: boolean): Promise<RepoTreeNode[]> => ni('fetchRepoContents');
+export const fetchComponentRepository = (..._args: unknown[]): never => ni('fetchComponentRepository');
+export const fetchCommitHistory = (..._args: unknown[]): never => ni('fetchCommitHistory');
+export const fetchGitHubUserRepos = (..._args: unknown[]): never => ni('fetchGitHubUserRepos');
+export const fetchRepoBranches = (..._args: unknown[]): never => ni('fetchRepoBranches');
+export const fetchRepoMetadata = (..._args: unknown[]): never => ni('fetchRepoMetadata');
+export const fetchChoreoSampleImages = (..._args: unknown[]): never => ni('fetchChoreoSampleImages');
+export const updateBuildpackConfigs = (..._args: unknown[]): never => ni('updateBuildpackConfigs');
+export const obtainGithubToken = (..._args: unknown[]): never => ni('obtainGithubToken');
+export const fetchRepoContents = (..._args: unknown[]): never => ni('fetchRepoContents');

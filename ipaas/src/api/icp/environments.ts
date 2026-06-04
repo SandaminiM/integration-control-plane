@@ -18,13 +18,13 @@
 
 // TODO: implement using ICP local REST APIs
 
-import type { GqlEnvironment, CloudDataPlane, EnvironmentInput } from '../../types/environment';
+import type { Environment, CloudDataPlane, EnvironmentInput } from '../../types/environment';
 
 const ni = (name: string): never => { throw new Error(`[icp] environments.${name}: not implemented`); };
 
-export const fetchEnvironments = (_orgUuid: string, _projectId: string): Promise<GqlEnvironment[]> => ni('fetchEnvironments');
-export const fetchAllEnvironments = (): Promise<GqlEnvironment[]> => ni('fetchAllEnvironments');
+export const fetchEnvironments = (_orgUuid: string, _projectId: string): Promise<Environment[]> => ni('fetchEnvironments');
+export const fetchAllEnvironments = (): Promise<Environment[]> => ni('fetchAllEnvironments');
 export const fetchCloudDataPlanes = (_orgUuid: string): Promise<CloudDataPlane[]> => ni('fetchCloudDataPlanes');
-export const createEnvironment = (_input: EnvironmentInput): Promise<GqlEnvironment> => ni('createEnvironment');
-export const updateEnvironment = (_input: EnvironmentInput & { environmentId: string }): Promise<GqlEnvironment> => ni('updateEnvironment');
+export const createEnvironment = (_input: EnvironmentInput): Promise<Environment> => ni('createEnvironment');
+export const updateEnvironment = (_input: EnvironmentInput & { environmentId: string }): Promise<Environment> => ni('updateEnvironment');
 export const deleteEnvironment = (_environmentId: string): Promise<string> => ni('deleteEnvironment');

@@ -21,11 +21,11 @@ import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useAllEnvironments } from '../hooks/useEnvironments';
-import type { GqlEnvironment } from '../types/environment';
+import type { Environment } from '../types/environment';
 import { useUpdateEnvironment } from '../hooks/useEnvironments';
 import { resourceUrl } from '../nav';
 
-function EditEnvironmentForm({ env, orgHandler }: { env: GqlEnvironment; orgHandler: string }): JSX.Element {
+function EditEnvironmentForm({ env, orgHandler }: { env: Environment; orgHandler: string }): JSX.Element {
   const navigate = useNavigate();
   const [name, setName] = useState(env.name);
   const [description, setDescription] = useState(env.description ?? '');

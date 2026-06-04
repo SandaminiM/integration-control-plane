@@ -72,3 +72,14 @@ export interface DeployPrebuiltIntegrationState {
   componentHandler: string | null;
   configSaveError: boolean;
 }
+
+export interface PrebuiltComponentRef {
+  id: string;
+  handler: string;
+  deploymentTracks: { id: string }[];
+}
+
+export interface PrebuiltEnvironmentRef {
+  id: string;
+  templateId?: string;
+}

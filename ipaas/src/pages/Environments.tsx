@@ -21,7 +21,7 @@ import { Clock, Layers, Pencil, Plus, Trash2, AlertTriangle } from '@wso2/oxygen
 import { useState, useMemo, useEffect, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { useAllEnvironments } from '../hooks/useEnvironments';
-import type { GqlEnvironment } from '../types/environment';
+import type { Environment } from '../types/environment';
 import { useDeleteEnvironment } from '../hooks/useEnvironments';
 import { editEnvironmentUrl } from '../paths';
 import EmptyListing from '../components/EmptyListing';
@@ -63,7 +63,7 @@ function formatErrorMessage(error: Error, action: 'create' | 'update' | 'delete'
   return `Failed to ${action} environment. Please try again.`;
 }
 
-function DeleteDialog({ env, onClose, onSuccess, onError }: { env: GqlEnvironment; onClose: () => void; onSuccess: (name: string) => void; onError: (error: Error) => void }) {
+function DeleteDialog({ env, onClose, onSuccess, onError }: { env: Environment; onClose: () => void; onSuccess: (name: string) => void; onError: (error: Error) => void }) {
   const [confirm, setConfirm] = useState('');
   const mutation = useDeleteEnvironment();
 
@@ -114,7 +114,7 @@ export default function Environments(scope: OrgScope | ProjectScope): JSX.Elemen
   const { hasOrgPermission } = useAccessControl();
   const canManageEnv = hasOrgPermission(Permissions.ENVIRONMENT_MANAGE);
   const { data: environments, isLoading } = useAllEnvironments();
-  const [deleting, setDeleting] = useState<GqlEnvironment | null>(null);
+  const [deleting, setDeleting] = useState<Environment | null>(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);

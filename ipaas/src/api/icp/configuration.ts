@@ -16,28 +16,16 @@
  * under the License.
  */
 
-// TODO: implement using ICP local REST APIs
-
-import type { CertGroup, CertMapping, SchemaConfigData, ConfigMgtData, SchemaConfigItem, SaveSchemaConfigInput, ConfigMgtSaveItem } from '../../types/configuration';
-
-export interface PostConfigMgtInput {
-  orgHandler: string;
-  projectId: string;
-  componentId: string;
-  envId: string;
-  versionId: string;
-  moduleName: string;
-  commitHash: string;
-  configs: ConfigMgtSaveItem[];
-}
-
+// TODO: implement using icp APIs
 const ni = (name: string): never => { throw new Error(`[icp] configuration.${name}: not implemented`); };
 
-export const fetchCertificateGroups = (_projectId: string, _componentId: string): Promise<CertGroup[]> => ni('fetchCertificateGroups');
-export const fetchConfigGroups = (_projectId: string, _componentId: string): Promise<CertGroup[]> => ni('fetchConfigGroups');
-export const fetchCertificateMappings = (_projectId: string, _componentId: string, _envId: string, _deploymentTrackId: string): Promise<CertMapping | null> => ni('fetchCertificateMappings');
-export const fetchSchemaConfig = (_projectId: string, _componentId: string, _envId: string, _deploymentTrackId: string, _commitHash?: string): Promise<SchemaConfigData | null> => ni('fetchSchemaConfig');
-export const fetchConfigMgt = (_orgHandler: string, _projectId: string, _componentId: string, _envId: string, _versionId: string, _componentName: string, _commitHash?: string): Promise<ConfigMgtData> => ni('fetchConfigMgt');
-export const saveSchemaConfig = (_input: SaveSchemaConfigInput): Promise<{ configurations: SchemaConfigItem[] }> => ni('saveSchemaConfig');
-export const postConfigMgt = (_input: PostConfigMgtInput): Promise<unknown> => ni('postConfigMgt');
-export const postCertificateMappings = (_data: CertMapping): Promise<unknown> => ni('postCertificateMappings');
+export type { PostConfigMgtInput } from '../../types/configuration';
+
+export const fetchCertificateGroups = (..._args: unknown[]): never => ni('fetchCertificateGroups');
+export const fetchConfigGroups = (..._args: unknown[]): never => ni('fetchConfigGroups');
+export const fetchCertificateMappings = (..._args: unknown[]): never => ni('fetchCertificateMappings');
+export const fetchSchemaConfig = (..._args: unknown[]): never => ni('fetchSchemaConfig');
+export const fetchConfigMgt = (..._args: unknown[]): never => ni('fetchConfigMgt');
+export const saveSchemaConfig = (..._args: unknown[]): never => ni('saveSchemaConfig');
+export const postConfigMgt = (..._args: unknown[]): never => ni('postConfigMgt');
+export const postCertificateMappings = (..._args: unknown[]): never => ni('postCertificateMappings');

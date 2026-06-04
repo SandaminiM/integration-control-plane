@@ -19,9 +19,9 @@
 import { Card, CardContent, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { GitBranch, RefreshCw } from '@wso2/oxygen-ui-icons-react';
 import { CellDiagram, ComponentType, DiagramLayer } from '@wso2/cell-diagram';
-import type { Project, Component, Services } from '@wso2/cell-diagram';
+import type { Project as DiagramProject, Component as DiagramComponent, Services } from '@wso2/cell-diagram';
 import { useMemo } from 'react';
-import type { GqlComponent } from '../types/component';
+import type { Component } from '../types/component';
 import type { JSX } from 'react';
 
 function getComponentType(displayType: string, componentSubType: string | null): ComponentType | null {
@@ -146,9 +146,9 @@ function getDefaultServices(componentId: string, componentType: ComponentType): 
   };
 }
 
-function buildProjectModel(projectId: string, components: GqlComponent[]): Project {
-  const diagramComponents: Component[] = components
-    .map((c) => {
+function buildProjectModel(projectId: string, components: Component[]): DiagramProject {
+  const diagramComponents: DiagramComponent[] = components
+    .map((c): DiagramComponent | null => {
       const type = getComponentType(c.displayType ?? '', c.componentSubType ?? null);
       if (type === null) return null;
       return {
@@ -160,7 +160,7 @@ function buildProjectModel(projectId: string, components: GqlComponent[]): Proje
         connections: [],
       };
     })
-    .filter((c): c is Component => c !== null);
+    .filter((c): c is DiagramComponent => c !== null);
 
   return {
     id: projectId,
@@ -170,7 +170,7 @@ function buildProjectModel(projectId: string, components: GqlComponent[]): Proje
   };
 }
 
-export default function ArchitectureCard({ projectId, components, isLoading, isRefreshing, onRefresh }: { projectId: string; components: GqlComponent[]; isLoading: boolean; isRefreshing: boolean; onRefresh: () => void }): JSX.Element {
+export default function ArchitectureCard({ projectId, components, isLoading, isRefreshing, onRefresh }: { projectId: string; components: Component[]; isLoading: boolean; isRefreshing: boolean; onRefresh: () => void }): JSX.Element {
   const project = useMemo(() => buildProjectModel(projectId, components), [projectId, components]);
 
   return (

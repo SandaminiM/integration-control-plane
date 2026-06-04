@@ -23,7 +23,7 @@ import { Alert, Box, Button, ButtonBase, Card, CardContent, CircularProgress, Fo
 import { ArrowRight, Settings, Users } from '@wso2/oxygen-ui-icons-react';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useCreateDefaultProject, useFetchProjectsByOrgId, useInitOrg } from '../hooks/useOrg';
-import { fetchProjects as fetchProjectsApi } from '../api/projects';
+import { fetchProjects as fetchProjectsApi } from '#api/projects';
 import { projectHomeUrl } from '../paths';
 import { IS_CLOUD } from '../features';
 import Projects from './Projects';

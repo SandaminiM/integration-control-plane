@@ -48,7 +48,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useDeployDeploymentTrack } from '../../hooks/useDeployments';
 import { useUpdateAutoDeployEnabled } from '../../hooks/useComponents';
 import { useComponentDeployment, useDeploymentStatus, useDeploymentTrackImages } from '../../hooks/useDeployments';
-import type { GqlDeploymentTrackImage } from '../../types/deployment';
+import type { DeploymentTrackImage } from '../../types/deployment';
 import ConfigureDrawer from '../EnvironmentCard/ConfigureDrawer';
 import BuildAreaImageDrawer from './BuildAreaImageDrawer';
 import BuildImageCard from './BuildImageCard';
@@ -82,7 +82,7 @@ export default function BuildArea({
   const { data: firstEnvDeployment } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, firstEnvId);
   const firstEnvReleaseId = firstEnvDeployment?.releaseId ?? '';
 
-  const [selectedImage, setSelectedImage] = useState<GqlDeploymentTrackImage | null>(null);
+  const [selectedImage, setSelectedImage] = useState<DeploymentTrackImage | null>(null);
   const [imageDrawerOpen, setImageDrawerOpen] = useState(false);
   const [splitOpen, setSplitOpen] = useState(false);
   const [configureOpen, setConfigureOpen] = useState(false);
@@ -226,11 +226,11 @@ export default function BuildArea({
               <BuildImageCard
                 image={{
                   imageId: '',
-                  createdAt: inProgressBuild!.started_at,
-                  updatedAt: inProgressBuild!.started_at,
+                  createdAt: inProgressBuild!.startedAt,
+                  updatedAt: inProgressBuild!.startedAt,
                   commitHash: inProgressBuild!.sha,
                   commitMessage: buildingCommit?.message ?? inProgressBuild!.sha.slice(0, 8),
-                  builtAt: inProgressBuild!.started_at,
+                  builtAt: inProgressBuild!.startedAt,
                   runId: String(inProgressBuild!.id),
                   author: buildingCommit?.author ? { name: buildingCommit.author.name, email: buildingCommit.author.email, date: buildingCommit.author.date, avatarUrl: buildingCommit.author.avatarUrl } : { name: '', email: '', date: '', avatarUrl: '' },
                 }}

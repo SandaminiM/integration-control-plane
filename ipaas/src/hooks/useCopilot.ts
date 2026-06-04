@@ -18,12 +18,12 @@
 
 import { useContext, useRef, useState } from 'react';
 import { useComponentByHandler } from './useComponents';
-import { getAiCopilotAnswer } from '../api/copilot';
+import { getAiCopilotAnswer } from '#api/copilot';
 import { COPILOT_CONNECTION_ERROR, COPILOT_CONNECTION_URL_ERROR, COPILOT_PROCESSING_ERROR } from '../constants/copilot';
 import { CopilotContext } from '../contexts/CopilotContext';
 import { hasComponent, hasProject, useScope } from '../nav';
 import type { ApiChatExecutionResult } from '../types/copilot';
-import { useProjectId } from './useProjectId';
+import { useProjectId } from './useProjects';
 
 function useCopilot() {
   const [isLoading, setIsLoading] = useState(false);

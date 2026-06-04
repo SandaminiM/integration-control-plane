@@ -52,9 +52,9 @@ Use `useNavigate()` from React Router. URL helpers live in `src/paths.ts` and `s
 Gate the route in `src/config/routes.tsx` using build-time flags:
 
 ```tsx
-import { IS_DEVANT } from '../features';
+import { IS_WIP } from '../features';
 
-...(IS_DEVANT ? [
+...(IS_WIP ? [
   { path: '/prebuilt-integrations', element: <PrebuiltIntegrations /> },
 ] : [])
 ```
@@ -66,16 +66,16 @@ The page file stays in `src/pages/` — the gating happens in the route definiti
 Use inline flags from `src/features.ts`:
 
 ```tsx
-import { IS_DEVANT } from '../features';
+import { IS_WIP } from '../features';
 
-{IS_DEVANT && <BusinessInfo />}
+{IS_WIP && <BusinessInfo />}
 ```
 
 Vite's `define` + Rollup DCE ensures the unused branch is not bundled.
 
 ### Before adding a page — check the product
 
-Ask: does this page make sense for all three products (devant / cloud / icp)?
+Ask: does this page make sense for all three products (wip / cloud / icp)?
 
 - **Yes** → add normally, no gating needed.
 - **Only one product** → gate the route in `routes.tsx`.

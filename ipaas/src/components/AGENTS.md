@@ -36,10 +36,10 @@ Use `useOrgUuid()` from `src/hooks/useOrgUuid.ts`. Never call `getOrgUuidFromTok
 Use the build-time flags from `src/features.ts`:
 
 ```tsx
-import { IS_DEVANT, IS_ICP } from '../features';
+import { IS_WIP, IS_ICP } from '../features';
 
-// Renders only in the devant bundle; tree-shaken from cloud and icp
-{IS_DEVANT && <CopilotButton />}
+// Renders only in the wip bundle; tree-shaken from cloud and icp
+{IS_WIP && <CopilotButton />}
 ```
 
 ### Whole component differs per product — the shell pattern
@@ -57,7 +57,7 @@ import EnvironmentCardBody from '#product/EnvironmentCardBody';
 
 **Critical rule**: the shell must never import from `src/product/`. Product files import the shell — not the reverse. Reversing this would pull all product variants into every bundle, defeating dead code elimination.
 
-Cloud and devant share the same UI. Only `src/product/icp/` is expected to accumulate variants over time.
+Cloud and wip share the same UI. Only `src/product/icp/` is expected to accumulate variants over time.
 
 See `src/product/README.md` for the full guide and decision table.
 

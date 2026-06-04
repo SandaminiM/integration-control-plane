@@ -30,7 +30,7 @@ import {
   updateComponent,
   updateEndpoint,
   generateComponentEndpoints,
-} from '../api/components';
+} from '#api/components';
 import type { CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput } from '../types/component';
 
 export function useComponents(orgHandler: string, projectId: string) {

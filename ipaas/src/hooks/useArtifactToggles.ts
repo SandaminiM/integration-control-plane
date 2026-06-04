@@ -17,8 +17,8 @@
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { TOGGLE_CONFIG, updateArtifactToggleStatus } from '../api/artifactToggleMutations';
-import type { GqlArtifact, ArtifactToggleStatusInput, ArtifactTracingInput, ArtifactStatisticsInput, ArtifactToggleKind } from '../types/artifact';
+import { TOGGLE_CONFIG, updateArtifactToggleStatus } from '#api/artifactToggleMutations';
+import type { Artifact, ArtifactToggleStatusInput, ArtifactTracingInput, ArtifactStatisticsInput, ArtifactToggleKind } from '../types/artifact';
 
 export function useUpdateArtifactToggleStatus(kind: ArtifactToggleKind) {
   const qc = useQueryClient();
@@ -30,9 +30,9 @@ export function useUpdateArtifactToggleStatus(kind: ArtifactToggleKind) {
       const scope = (q: { queryKey: readonly unknown[] }) => q.queryKey[2] === input.envId && q.queryKey[3] === input.componentId;
       const filters = { queryKey: ['artifacts', input.artifactType] as const, predicate: scope };
       await qc.cancelQueries(filters);
-      const previous = qc.getQueriesData<GqlArtifact[]>(filters);
+      const previous = qc.getQueriesData<Artifact[]>(filters);
       const newValue = input.value === 'enable' ? 'enabled' : 'disabled';
-      qc.setQueriesData<GqlArtifact[]>(filters, (old) => old?.map((a) => (a.name === input.artifactName ? { ...a, [config.cacheField]: newValue } : a)));
+      qc.setQueriesData<Artifact[]>(filters, (old) => old?.map((a) => (a.name === input.artifactName ? { ...a, [config.cacheField]: newValue } : a)));
       return { previous };
     },
     onError: (_err, _input, context) => {

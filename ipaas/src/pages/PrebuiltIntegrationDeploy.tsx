@@ -23,7 +23,7 @@ import { useDeployPrebuiltIntegration } from '../hooks/useDeployPrebuiltIntegrat
 import { usePrebuiltIntegrationConfig } from '../contexts/PrebuiltIntegrationConfigContext';
 import { resourceUrl, narrow, type ProjectScope } from '../nav';
 import { prebuiltIntegrationsUrl } from '../paths';
-import { useProjectId } from '../hooks/useProjectId';
+import { useProjectId } from '../hooks/useProjects';
 
 export default function PrebuiltIntegrationDeploy(scope: ProjectScope): JSX.Element {
   const navigate = useNavigate();

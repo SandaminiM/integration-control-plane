@@ -19,17 +19,17 @@
 /** Cloud (OpenChoreo) component API. Calls the ipaas-service BFF. */
 
 import type {
-  GqlComponent,
-  GqlComponentDetail,
-  GqlEndpoint,
-  GqlEnvEndpoint,
+  Component,
+  ComponentDetail,
+  Endpoint,
+  EnvEndpoint,
   CreateComponentInput,
   UpdateComponentInput,
   UpdateAutoDeployInput,
   GenerateComponentEndpointsInput,
   ComponentNameAvailability,
   DisplayType,
-  GqlDeploymentTrack,
+  DeploymentTrack,
 } from '../../types/component';
 import { bff, items, q, seg, type ListResponse } from './_client';
 
@@ -96,7 +96,7 @@ const LOGICAL_TYPE_TO_DISPLAY_TYPE: Record<string, { bi: string; mi: string }> =
   proxy: { bi: 'proxy', mi: 'proxy' },
 };
 
-function withFrontendDisplayType<T extends GqlComponent>(c: T): T {
+function withFrontendDisplayType<T extends Component>(c: T): T {
   const entry = LOGICAL_TYPE_TO_DISPLAY_TYPE[c.componentType ?? ''];
   if (!entry) return c;
   const isMI = (c.displayType ?? '').toLowerCase().startsWith('mi');
@@ -138,8 +138,8 @@ function toBffCreateComponentBody(input: CreateComponentInput) {
   };
 }
 
-export const fetchComponents = (_orgHandler: string, projectId: string): Promise<GqlComponent[]> =>
-  bff.get<ListResponse<GqlComponent>>(`/projects/${seg(projectId)}/components`)
+export const fetchComponents = (_orgHandler: string, projectId: string): Promise<Component[]> =>
+  bff.get<ListResponse<Component>>(`/projects/${seg(projectId)}/components`)
     .then((r) => items(r).map(withFrontendDisplayType));
 
 // The BFF's GET /projects/{p}/components/{name} returns an empty stub today
@@ -147,7 +147,7 @@ export const fetchComponents = (_orgHandler: string, projectId: string): Promise
 // we derive the component from the (wired) list endpoint and enrich it with
 // its deployment track — otherwise the detail page renders empty id/handler
 // and downstream writes (e.g. updateComponent) PUT to an empty name and 404.
-export const fetchComponentByHandler = async (projectId: string, componentHandler: string): Promise<GqlComponentDetail> => {
+export const fetchComponentByHandler = async (projectId: string, componentHandler: string): Promise<ComponentDetail> => {
   const components = await fetchComponents('', projectId);
   const match = components.find((c) => c.handler === componentHandler || c.id === componentHandler);
   if (!match) throw new Error(`Component "${componentHandler}" not found in project "${projectId}"`);
@@ -165,7 +165,7 @@ export const fetchComponentByHandler = async (projectId: string, componentHandle
   // empty track. Consumers gate build/endpoint queries on a non-empty versionId
   // (== selected track id), so fall back to the component id as a stable track
   // id to keep those queries enabled. The component id is always non-empty.
-  const deploymentTracks: GqlDeploymentTrack[] = [
+  const deploymentTracks: DeploymentTrack[] = [
     track?.id
       ? { id: track.id, branch: track.branch, latest: track.latest, autoDeployEnabled: track.autoDeployEnabled }
       : { id: match.id, branch: track?.branch, latest: true, autoDeployEnabled: track?.autoDeployEnabled },
@@ -176,8 +176,8 @@ export const fetchComponentByHandler = async (projectId: string, componentHandle
 };
 
 // awaits: real /endpoints mapping in the BFF (currently returns an empty list).
-export const fetchComponentEndpoints = (componentId: string, _versionId: string): Promise<GqlEndpoint[]> =>
-  bff.get<ListResponse<GqlEndpoint>>(`/components/${seg(componentId)}/endpoints`).then(items);
+export const fetchComponentEndpoints = (componentId: string, _versionId: string): Promise<Endpoint[]> =>
+  bff.get<ListResponse<Endpoint>>(`/components/${seg(componentId)}/endpoints`).then(items);
 
 export const fetchComponentNameAvailability = (projectId: string, candidate: string): Promise<ComponentNameAvailability> =>
   bff.get<ComponentNameAvailability>(`/projects/${seg(projectId)}/components/name-availability${q({ candidate })}`);
@@ -185,8 +185,8 @@ export const fetchComponentNameAvailability = (projectId: string, candidate: str
 export const fetchComponentEndpointSpec = (componentId: string, _versionId: string, endpointId: string): Promise<string | null> =>
   bff.get<{ spec: string | null }>(`/components/${seg(componentId)}/endpoints/${seg(endpointId)}/spec`).then((r) => r.spec ?? null);
 
-export const createComponent = (input: CreateComponentInput): Promise<GqlComponent> =>
-  bff.post<GqlComponent>(`/projects/${seg(input.projectId)}/components`, toBffCreateComponentBody(input));
+export const createComponent = (input: CreateComponentInput): Promise<Component> =>
+  bff.post<Component>(`/projects/${seg(input.projectId)}/components`, toBffCreateComponentBody(input));
 
 export const deleteComponent = (input: { orgHandler: string; componentId: string; projectId: string }): Promise<DeleteComponentResult> =>
   bff.delete<DeleteComponentResult | null>(`/projects/${seg(input.projectId)}/components/${seg(input.componentId)}`)
@@ -195,8 +195,8 @@ export const deleteComponent = (input: { orgHandler: string; componentId: string
 // OpenChoreo addresses components by name (== handler == id here), and the BFF
 // UpdateComponent only consumes displayName/description. Use the handler so the
 // name segment is never empty, and send just the mutable fields.
-export const updateComponent = (input: UpdateComponentInput): Promise<GqlComponent> =>
-  bff.put<GqlComponent>(
+export const updateComponent = (input: UpdateComponentInput): Promise<Component> =>
+  bff.put<Component>(
     `/projects/${seg(input.projectId)}/components/${seg(input.handler || input.id)}`,
     { displayName: input.displayName, description: input.description },
   ).then(withFrontendDisplayType);
@@ -204,8 +204,8 @@ export const updateComponent = (input: UpdateComponentInput): Promise<GqlCompone
 export const updateAutoDeployEnabled = (input: UpdateAutoDeployInput): Promise<{ id: string; autoDeployEnabled: boolean }> =>
   bff.patch<{ id: string; autoDeployEnabled: boolean }>(`/components/${seg(input.componentId)}/auto-deploy`, input);
 
-export const generateComponentEndpoints = (input: GenerateComponentEndpointsInput): Promise<GqlEnvEndpoint[]> =>
-  bff.post<ListResponse<GqlEnvEndpoint>>(`/components/${seg(input.componentId)}/endpoints/generate`, input).then(items);
+export const generateComponentEndpoints = (input: GenerateComponentEndpointsInput): Promise<EnvEndpoint[]> =>
+  bff.post<ListResponse<EnvEndpoint>>(`/components/${seg(input.componentId)}/endpoints/generate`, input).then(items);
 
 export const generateComponentEnvironmentJwtSecret = (componentId: string, environmentId: string): Promise<string> =>
   bff.post<{ secret: string }>(`/components/${seg(componentId)}/environments/${seg(environmentId)}/jwt-secret`)

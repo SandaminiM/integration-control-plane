@@ -18,7 +18,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getOrgUuidFromToken } from '../auth/tokenManager';
-import { fetchEnvironments, fetchAllEnvironments, fetchCloudDataPlanes, fetchLoggers, createEnvironment, updateEnvironment, deleteEnvironment, updateLogLevel } from '../api/environments';
+import { fetchEnvironments, fetchAllEnvironments, fetchCloudDataPlanes, fetchLoggers, createEnvironment, updateEnvironment, deleteEnvironment, updateLogLevel } from '#api/environments';
 import type { EnvironmentInput } from '../types/environment';
 
 export function useEnvironments(orgUuid: string, projectId: string) {

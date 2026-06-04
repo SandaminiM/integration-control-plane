@@ -23,14 +23,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { BuildRunLogs } from '../types/build';
 import { useDeploymentStatus } from '../hooks/useDeployments';
 import { useBuildRunLogs } from '../hooks/useBuilds';
-import type { GqlCommit } from '../types/repository';
+import type { Commit } from '../types/repository';
 
 interface BuildCardProps {
   componentId: string;
   versionId: string;
   orgHandler: string;
   projectId: string;
-  latestCommit?: GqlCommit | null;
+  latestCommit?: Commit | null;
 }
 
 const STAGES = [

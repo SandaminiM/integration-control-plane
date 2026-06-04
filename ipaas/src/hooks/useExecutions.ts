@@ -17,7 +17,7 @@
  */
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchExecutionConfigs, fetchTaskExecutions, fetchExecutionArguments, fetchExecutionLogs, fetchTaskExecutionCount, updateJobConfigs, triggerTask, triggerComponentRun } from '../api/executions';
+import { fetchExecutionConfigs, fetchTaskExecutions, fetchExecutionArguments, fetchExecutionLogs, fetchTaskExecutionCount, updateJobConfigs, triggerTask, triggerComponentRun } from '#api/executions';
 import type { UpdateJobConfigsInput, TriggerComponentInput } from '../types/executions';
 import type { TriggerTaskInput } from '../types/artifact';
 

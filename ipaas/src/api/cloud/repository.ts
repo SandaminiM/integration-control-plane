@@ -32,17 +32,17 @@
 
 import { bff, items, q, seg, type ListResponse } from './_client';
 import type {
-  GqlRepository,
-  GqlCommit,
-  GqlUserRepo,
-  GqlRepoBranch,
-  GqlRepoMetadata,
+  Repository,
+  Commit,
+  UserRepo,
+  RepoBranch,
+  RepoMetadata,
   RepoTreeNode,
   ChoreoSampleImageEntry,
 } from '../../types/repository';
 import type { UpdateBuildpackConfigsInput } from '../../types/build';
 
-const REPO_METADATA_DEFAULT: GqlRepoMetadata = {
+const REPO_METADATA_DEFAULT: RepoMetadata = {
   isBareRepo: false,
   isSubPathEmpty: false,
   isSubPathValid: true,
@@ -58,37 +58,37 @@ const REPO_METADATA_DEFAULT: GqlRepoMetadata = {
   isEndpointYamlExists: false,
 };
 
-// BFF ComponentRepository fields map 1:1 to GqlRepository; projectName scopes
+// BFF ComponentRepository fields map 1:1 to Repository; projectName scopes
 // the lookup to the component within the caller's namespace.
-export async function fetchComponentRepository(projectId: string, componentHandler: string): Promise<GqlRepository | null> {
+export async function fetchComponentRepository(projectId: string, componentHandler: string): Promise<Repository | null> {
   try {
-    return await bff.get<GqlRepository | null>(`/components/${seg(componentHandler)}/repository${q({ projectName: projectId })}`) ?? null;
+    return await bff.get<Repository | null>(`/components/${seg(componentHandler)}/repository${q({ projectName: projectId })}`) ?? null;
   } catch {
     return null;
   }
 }
 
 // BFF derives the commit list from GitHub for the given branch; the Commit
-// model matches GqlCommit field-for-field.
-export async function fetchCommitHistory(componentId: string, branch: string): Promise<GqlCommit[]> {
+// model matches Commit field-for-field.
+export async function fetchCommitHistory(componentId: string, branch: string): Promise<Commit[]> {
   try {
-    return items(await bff.get<ListResponse<GqlCommit>>(`/components/${seg(componentId)}/commit-history${q({ branch })}`));
+    return items(await bff.get<ListResponse<Commit>>(`/components/${seg(componentId)}/commit-history${q({ branch })}`));
   } catch {
     return [];
   }
 }
 
 // awaits: GET /repos (BFF route does not exist yet).
-export async function fetchGitHubUserRepos(): Promise<GqlUserRepo[]> {
+export async function fetchGitHubUserRepos(): Promise<UserRepo[]> {
   return [];
 }
 
 // BFF proxies GitHub's List Branches API and stamps isDefault against
 // default_branch. Public repos work unauthenticated; private repos need a
 // GitHub OAuth token the cloud variant does not have (empty in that case).
-export async function fetchRepoBranches(repoOrg: string, repoName: string, _isPublicRepo: boolean): Promise<GqlRepoBranch[]> {
+export async function fetchRepoBranches(repoOrg: string, repoName: string, _isPublicRepo: boolean): Promise<RepoBranch[]> {
   try {
-    return items(await bff.get<ListResponse<GqlRepoBranch>>(`/repos/${seg(repoOrg)}/${seg(repoName)}/branches`));
+    return items(await bff.get<ListResponse<RepoBranch>>(`/repos/${seg(repoOrg)}/${seg(repoName)}/branches`));
   } catch {
     return [];
   }
@@ -108,7 +108,7 @@ function collectBlobPaths(nodes: RepoTreeNode[], acc: string[] = []): string[] {
 // equivalent. We compute only the flags the import flow uses for technology
 // detection + sub-path validation; on any failure we fall back to the default
 // so the importer degrades to "non-empty" rather than hanging.
-export async function fetchRepoMetadata(org: string, repo: string, branch: string, subPath: string, isPublicRepo = false): Promise<GqlRepoMetadata> {
+export async function fetchRepoMetadata(org: string, repo: string, branch: string, subPath: string, isPublicRepo = false): Promise<RepoMetadata> {
   try {
     const tree = await fetchRepoContents(org, repo, branch, isPublicRepo);
     if (tree.length === 0) return REPO_METADATA_DEFAULT;

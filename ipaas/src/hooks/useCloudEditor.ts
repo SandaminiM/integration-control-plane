@@ -17,7 +17,7 @@
  */
 
 import { useMutation } from '@tanstack/react-query';
-import { callCreateCodeServer, getOrCreateSampleRegistry } from '../api/cloudEditor';
+import { callCreateCodeServer, getOrCreateSampleRegistry } from '#api/cloudEditor';
 
 export function useGetOrCreateSampleRegistry() {
   return useMutation({

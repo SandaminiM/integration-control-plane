@@ -26,7 +26,10 @@
 
 import { authenticatedFetch } from '../../auth/tokenManager';
 
-export { withStsRetry, withScopeRetry } from '../httpClients';
+// Token-scope 403 retry helpers are product-agnostic shared HTTP infra; they
+// live alongside the base HTTP clients in wip/. Re-exported so cloud domain
+// files can wrap scope-sensitive BFF calls without reaching across folders.
+export { withStsRetry, withScopeRetry } from '../wip/httpClients';
 
 /** Standard BFF list envelope: { items: T[] }. */
 export interface ListResponse<T> { items: T[] }
