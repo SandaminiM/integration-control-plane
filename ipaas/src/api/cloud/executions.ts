@@ -84,12 +84,14 @@ export const fetchExecutionConfigs = (componentId: string, _releaseId: string, e
     .catch(() => null);
 };
 
-// GET /components/{name}/schedules/{envId}/executions — the CronJob's job runs
-// (newest-first), keyed by component + env (+ project) like the schedule route.
-export const fetchTaskExecutions = (_releaseId: string, componentId = '', envId = '', projectId = ''): Promise<TaskExecution[]> => {
+// GET /components/{name}/environments/{envId}/resource-tree/executions — the
+// CronJob's job runs (newest-first), keyed by component + env.
+//
+// Sourced from OpenChoreo's rendered resource tree (control-plane API) 
+export const fetchTaskExecutions = (_releaseId: string, componentId = '', envId = '', _projectId = ''): Promise<TaskExecution[]> => {
   if (!componentId || !envId) return Promise.resolve([]);
   return bff
-    .get<{ items?: BffExecution[] }>(`/components/${seg(componentId)}/schedules/${seg(envId)}/executions${q({ projectName: projectId })}`)
+    .get<{ items?: BffExecution[] }>(`/components/${seg(componentId)}/environments/${seg(envId)}/resource-tree/executions`)
     .then((r) => (r?.items ?? []).map(toTaskExecution))
     .catch(() => []);
 };
