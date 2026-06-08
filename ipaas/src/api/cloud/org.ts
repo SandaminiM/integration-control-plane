@@ -37,7 +37,11 @@ function readJwtOrgClaims(): { handle?: string; uuid?: string } {
   const token = getAccessToken();
   if (!token) return {};
   try {
-    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as Record<string, unknown>;
+    // JWT payloads are base64url without padding; restore '+'/'/' and pad to a
+    // multiple of 4 so atob doesn't reject otherwise-valid segments.
+    const normalized = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
+    const payload = JSON.parse(atob(padded)) as Record<string, unknown>;
     const org = (payload.organization as Record<string, unknown> | undefined) ?? {};
     const handle = (org.handle as string | undefined) ?? (payload.ouHandle as string | undefined);
     const uuid = (org.uuid as string | undefined) ?? (payload.ouId as string | undefined);

@@ -26,7 +26,7 @@ import type { TriggerTaskInput } from '../types/artifact';
 // and ignores them. The enable guard accepts either key so both products fetch.
 export function useExecutionConfigs(componentId: string, releaseId: string, envId = '', projectId = '') {
   return useQuery({
-    queryKey: ['executionConfigs', componentId, releaseId, envId],
+    queryKey: ['executionConfigs', componentId, releaseId, envId, projectId],
     queryFn: () => fetchExecutionConfigs(componentId, releaseId, envId, projectId),
     enabled: !!componentId && (!!releaseId || !!envId),
     retry: false,
@@ -35,7 +35,7 @@ export function useExecutionConfigs(componentId: string, releaseId: string, envI
 
 export function useTaskExecutions(releaseId: string, componentId = '', envId = '', projectId = '') {
   return useQuery({
-    queryKey: ['taskExecutions', releaseId, componentId, envId],
+    queryKey: ['taskExecutions', releaseId, componentId, envId, projectId],
     queryFn: () => fetchTaskExecutions(releaseId, componentId, envId, projectId),
     enabled: !!releaseId || (!!componentId && !!envId),
     retry: false,
@@ -67,7 +67,7 @@ export function useExecutionLogs(componentId: string, deploymentTrackId: string,
 
 export function useTaskExecutionCount(releaseId: string, componentId = '', envId = '', projectId = '') {
   return useQuery({
-    queryKey: ['taskExecutionCount', releaseId, componentId, envId],
+    queryKey: ['taskExecutionCount', releaseId, componentId, envId, projectId],
     queryFn: () => fetchTaskExecutionCount(releaseId, componentId, envId, projectId),
     enabled: !!releaseId || (!!componentId && !!envId),
     retry: false,

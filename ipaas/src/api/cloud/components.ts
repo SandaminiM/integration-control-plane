@@ -186,7 +186,8 @@ export const fetchComponentEndpointSpec = (componentId: string, _versionId: stri
   bff.get<{ spec: string | null }>(`/components/${seg(componentId)}/endpoints/${seg(endpointId)}/spec`).then((r) => r.spec ?? null);
 
 export const createComponent = (input: CreateComponentInput): Promise<Component> =>
-  bff.post<Component>(`/projects/${seg(input.projectId)}/components`, toBffCreateComponentBody(input));
+  bff.post<Component>(`/projects/${seg(input.projectId)}/components`, toBffCreateComponentBody(input))
+    .then(withFrontendDisplayType);
 
 export const deleteComponent = (input: { orgHandler: string; componentId: string; projectId: string }): Promise<DeleteComponentResult> =>
   bff.delete<DeleteComponentResult | null>(`/projects/${seg(input.projectId)}/components/${seg(input.componentId)}`)

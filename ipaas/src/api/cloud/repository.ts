@@ -16,20 +16,6 @@
  * under the License.
  */
 
-/**
- * Cloud (OpenChoreo) repository API.
- *
- * Wired (call the BFF directly):
- *   - fetchComponentRepository → GET /components/{name}/repository?projectName=...
- *   - fetchCommitHistory       → GET /components/{name}/commit-history?branch=...
- *   - fetchRepoBranches        → GET /repos/{owner}/{repo}/branches
- *   - fetchRepoContents        → GET /repos/{owner}/{repo}/contents?branch=...
- *
- * fetchRepoMetadata has no BFF route; we derive it from the wired tree endpoint
- * so technology auto-detection in the import flow still fires. The remaining
- * exports return safe defaults until the BFF adds the matching endpoints.
- */
-
 import { bff, items, q, seg, type ListResponse } from './_client';
 import type {
   Repository,
@@ -56,6 +42,15 @@ const REPO_METADATA_DEFAULT: RepoMetadata = {
   isBuildpackPathValid: true,
   isProcfileExists: false,
   isEndpointYamlExists: false,
+};
+
+// A reachable repo whose tree is empty: the sub-path holds no files, so the
+// import flow must detect "empty" (not fall back to "non-empty"). Distinct from
+// REPO_METADATA_DEFAULT, which stands in only when the tree can't be fetched.
+const REPO_METADATA_EMPTY: RepoMetadata = {
+  ...REPO_METADATA_DEFAULT,
+  isSubPathValid: false,
+  isSubPathEmpty: true,
 };
 
 // BFF ComponentRepository fields map 1:1 to Repository; projectName scopes
@@ -111,7 +106,7 @@ function collectBlobPaths(nodes: RepoTreeNode[], acc: string[] = []): string[] {
 export async function fetchRepoMetadata(org: string, repo: string, branch: string, subPath: string, isPublicRepo = false): Promise<RepoMetadata> {
   try {
     const tree = await fetchRepoContents(org, repo, branch, isPublicRepo);
-    if (tree.length === 0) return REPO_METADATA_DEFAULT;
+    if (tree.length === 0) return REPO_METADATA_EMPTY;
 
     const blobs = collectBlobPaths(tree);
     const norm = subPath.replace(/^\/+/, '').replace(/\/+$/, '');

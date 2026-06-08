@@ -63,7 +63,10 @@ export async function changeLifecycleState(_apimId: string, _action: string): Pr
 export async function fetchApimSwagger(schemaContent: string): Promise<unknown> {
   if (!schemaContent) return null;
   try {
-    return parseYaml(atob(schemaContent));
+    // atob yields a Latin-1 byte string; decode those bytes as UTF-8 so
+    // non-ASCII characters in the OpenAPI document survive intact.
+    const bytes = Uint8Array.from(atob(schemaContent), (ch) => ch.charCodeAt(0));
+    return parseYaml(new TextDecoder().decode(bytes));
   } catch {
     return null;
   }

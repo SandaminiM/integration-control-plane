@@ -23,6 +23,7 @@ import { Alert, Box, Button, ButtonBase, Card, CardContent, CircularProgress, Fo
 import { ArrowRight, Settings, Users } from '@wso2/oxygen-ui-icons-react';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useCreateDefaultProject, useFetchProjectsByOrgId, useInitOrg } from '../hooks/useOrg';
+import { useCreateProject } from '../hooks/useProjects';
 import { fetchProjects as fetchProjectsApi } from '#api/projects';
 import { projectHomeUrl } from '../paths';
 import { IS_CLOUD } from '../features';
@@ -88,6 +89,7 @@ export default function OrgHome(): JSX.Element {
   const fetchProjects = useFetchProjectsByOrgId();
   const initOrgMutation = useInitOrg();
   const createProjectMutation = useCreateDefaultProject();
+  const createCloudProjectMutation = useCreateProject();
   const orgUuidFromToken = useOrgUuid();
 
   // Derived on every render so the effect below re-fires once AppLayout's async
@@ -160,8 +162,14 @@ export default function OrgHome(): JSX.Element {
           await initOrgMutation.mutateAsync({ orgUuid, region });
         }
 
-        // Step 2: Create the default project via GraphQL
-        if (orgNumericId) {
+        // Step 2: Create the default project.
+        // cloud: Thunder issues no numeric org id, so the numericId-gated
+        // default-project route is unavailable; provision through the JWT-scoped
+        // create API instead. Either path must succeed before we navigate to the
+        // project route below, otherwise onboarding lands on a missing project.
+        if (IS_CLOUD) {
+          await createCloudProjectMutation.mutateAsync({ name: 'Default', handler: DEFAULT_PROJECT_HANDLER, description: '', orgHandler: handle });
+        } else if (orgNumericId) {
           await createProjectMutation.mutateAsync({ orgNumericId, orgHandler: handle, projectHandler: DEFAULT_PROJECT_HANDLER });
         }
 

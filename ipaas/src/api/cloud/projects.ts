@@ -63,12 +63,17 @@ const fetchDefaultPipelineName = (): Promise<string> => {
     defaultPipelinePromise = bff.get<ListResponse<{ name: string }>>('/deploymentpipelines')
       .then((r) => {
         const list = items(r);
-        if (!list.length) return '';
+        // deploymentPipeline is a required, non-empty BFF field; reject rather
+        // than resolve to '' so a create never POSTs an invalid pipeline ref.
+        if (!list.length) {
+          defaultPipelinePromise = null;
+          throw new Error('No deployment pipeline available');
+        }
         return list.find((p) => p.name === 'default')?.name ?? list[0].name;
       })
-      .catch(() => {
+      .catch((err) => {
         defaultPipelinePromise = null;
-        return '';
+        throw err;
       });
   }
   return defaultPipelinePromise;
