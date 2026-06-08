@@ -38,11 +38,11 @@ export interface PostConfigMgtInput {
   configs: ConfigMgtSaveItem[];
 }
 
-export const fetchSchemaConfig = (_projectId: string, componentId: string, envId: string, _deploymentTrackId: string, commitHash?: string): Promise<SchemaConfigData | null> =>
-  bff.get<SchemaConfigData>(`/components/${seg(componentId)}/environments/${seg(envId)}/config-schema${q({ commitHash })}`).catch(() => null);
+export const fetchSchemaConfig = (projectId: string, componentId: string, envId: string, _deploymentTrackId: string, _commitHash?: string): Promise<SchemaConfigData | null> =>
+  bff.get<SchemaConfigData>(`/components/${seg(componentId)}/environments/${seg(envId)}/config-schema${q({ projectName: projectId })}`).catch(() => null);
 
 export const saveSchemaConfig = (input: SaveSchemaConfigInput): Promise<{ configurations: SchemaConfigItem[] }> =>
-  bff.post<{ configurations?: SchemaConfigItem[] }>(`/components/${seg(input.componentId)}/environments/${seg(input.envId)}/config-schema`, {
+  bff.post<{ configurations?: SchemaConfigItem[] }>(`/components/${seg(input.componentId)}/environments/${seg(input.envId)}/config-schema${q({ projectName: input.projectId })}`, {
     configurations: input.configurations,
     ...(input.commitHash ? { commitHash: input.commitHash } : {}),
   }).then((r) => ({ configurations: r?.configurations ?? input.configurations }));
