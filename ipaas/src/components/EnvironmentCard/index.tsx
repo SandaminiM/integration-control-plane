@@ -36,6 +36,7 @@ import EnvironmentCardBody from './EnvironmentCardBody';
 import RunWithArgsDialog from './RunWithArgsDialog';
 import ConfigureDrawer from './ConfigureDrawer';
 import ServiceLogsDrawer from './ServiceLogsDrawer';
+import { IS_CLOUD } from '../../features';
 
 interface EnvironmentProps {
   env: Environment;
@@ -181,7 +182,8 @@ export default function Environment({ env, prevEnv, componentId, projectId, comp
 
   const handleStop = () => {
     stopMutation.mutate(
-      { orgHandler, componentId, releaseId: envReleaseId, environment: env.id, type: displayType ?? '', clearCron: false },
+      // cloud: OpenChoreo's stop endpoint is per-environment; wip ignores it.
+      { orgHandler, componentId, releaseId: envReleaseId, ...(IS_CLOUD ? { environment: env.id } : {}), type: displayType ?? '', clearCron: false },
       {
         onSuccess: () => {
           setShouldPollOnce(true);

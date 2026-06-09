@@ -47,15 +47,13 @@ const TRIGGER_ARTIFACT = `
     }
   }`;
 
-// envId/projectId are accepted (and ignored) to satisfy the shared ExecutionsApi
-// contract; the cloud product keys executions per environment, wip by releaseId.
-export async function fetchExecutionConfigs(componentId: string, releaseId: string, _envId = '', _projectId = ''): Promise<ExecutionConfigs | null> {
+export async function fetchExecutionConfigs(componentId: string, releaseId: string): Promise<ExecutionConfigs | null> {
   return gql<{ executionConfigs: ExecutionConfigs }>(EXECUTION_CONFIGS_QUERY, { componentId, releaseId })
     .then((d) => d.executionConfigs)
     .catch(() => null);
 }
 
-export async function fetchTaskExecutions(releaseId: string, _componentId = '', _envId = '', _projectId = ''): Promise<TaskExecution[]> {
+export async function fetchTaskExecutions(releaseId: string): Promise<TaskExecution[]> {
   return systemClient.get<TaskExecution[]>(`/systemapis/choreoobsapi/0.3.0/tasks/executions?releaseId=${encodeURIComponent(releaseId)}&limit=10&verbose=true`);
 }
 
@@ -77,7 +75,7 @@ export async function fetchExecutionLogs(componentId: string, deploymentTrackId:
   }));
 }
 
-export async function fetchTaskExecutionCount(releaseId: string, _componentId = '', _envId = '', _projectId = ''): Promise<number | null> {
+export async function fetchTaskExecutionCount(releaseId: string): Promise<number | null> {
   const to = new Date();
   const from = new Date(to);
   from.setDate(to.getDate() - 30);

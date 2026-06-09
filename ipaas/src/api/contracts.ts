@@ -246,15 +246,11 @@ export interface EnvironmentsApi {
 // ---------------------------------------------------------------------------
 
 export interface ExecutionsApi {
-  // The trailing envId/projectId are optional because the cloud (OpenChoreo)
-  // product keys executions per environment, whereas the wip backend keys by
-  // releaseId and ignores them. They are threaded through the shared hook so
-  // both products can fetch from the same call site.
-  fetchExecutionConfigs(componentId: string, releaseId: string, envId?: string, projectId?: string): Promise<ExecutionConfigs | null>;
-  fetchTaskExecutions(releaseId: string, componentId?: string, envId?: string, projectId?: string): Promise<TaskExecution[]>;
+  fetchExecutionConfigs(componentId: string, releaseId: string): Promise<ExecutionConfigs | null>;
+  fetchTaskExecutions(releaseId: string): Promise<TaskExecution[]>;
   fetchExecutionArguments(runId: string, componentId: string, releaseId: string): Promise<ExecutionArgument[]>;
   fetchExecutionLogs(componentId: string, deploymentTrackId: string, executionId: string, environmentId: string): Promise<ExecutionLogEntry[]>;
-  fetchTaskExecutionCount(releaseId: string, componentId?: string, envId?: string, projectId?: string): Promise<number | null>;
+  fetchTaskExecutionCount(releaseId: string): Promise<number | null>;
   updateJobConfigs(input: UpdateJobConfigsInput): Promise<boolean>;
   triggerTask(input: TriggerTaskInput): Promise<{ status: string; message: string; successCount: number; failedCount: number; details: string[] }>;
   triggerComponentRun(input: TriggerComponentInput): Promise<unknown>;
