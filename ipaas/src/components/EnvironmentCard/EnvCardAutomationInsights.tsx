@@ -57,12 +57,12 @@ function MetricTile({ icon, label, value, unit, loading }: MetricTileProps) {
 
 interface EnvCardAutomationInsightsProps {
   releaseId: string;
-  componentId: string;
-  envId: string;
-  projectId: string;
+  componentId?: string;
+  envId?: string;
+  projectId?: string;
 }
 
-export default function EnvCardAutomationInsights({ releaseId, componentId, envId, projectId }: EnvCardAutomationInsightsProps) {
+export default function EnvCardAutomationInsights({ releaseId, componentId = '', envId = '', projectId = '' }: EnvCardAutomationInsightsProps) {
   const { data: count, isLoading: countLoading } = useTaskExecutionCount(releaseId, componentId, envId, projectId);
   const { data: executions, isLoading: execLoading } = useTaskExecutions(releaseId, componentId, envId, projectId);
 

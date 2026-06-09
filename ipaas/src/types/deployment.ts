@@ -132,7 +132,6 @@ export interface StopDeploymentInput {
   orgHandler: string;
   componentId: string;
   releaseId: string;
-  // Required by the cloud (OpenChoreo) BFF
   environment?: string;
   type?: string;
   clearCron?: boolean;
