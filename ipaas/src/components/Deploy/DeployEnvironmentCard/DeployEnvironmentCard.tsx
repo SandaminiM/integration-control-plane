@@ -35,6 +35,7 @@ import DeployEnvironmentCardBody from './DeployEnvironmentCardBody';
 import DeploymentHistoryDrawer from './DeploymentHistoryDrawer';
 import EndpointsDrawer from './EndpointsDrawer';
 import type { DeployEnvironmentCardProps } from '../../../types/deploy';
+import { IS_CLOUD } from '../../../features';
 
 export default function DeployEnvironmentCard({ orgHandler, orgUuid, projectId, componentId, versionId, deploymentPipelineId, flags, env, componentName, projectHandler, nextEnvId, onPromoteStarted, onPromoteSettled }: DeployEnvironmentCardProps): JSX.Element {
   const qc = useQueryClient();
@@ -200,6 +201,8 @@ export default function DeployEnvironmentCard({ orgHandler, orgUuid, projectId, 
         orgHandler,
         componentId,
         releaseId,
+        // cloud: OpenChoreo's stop endpoint is per-environment; wip ignores it.
+        ...(IS_CLOUD ? { environment: env.id } : {}),
         type: flags.isAutomation ? 'scheduledTask' : 'service',
         clearCron: flags.isAutomation,
       },

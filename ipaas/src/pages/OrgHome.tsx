@@ -23,7 +23,10 @@ import { Alert, Box, Button, ButtonBase, Card, CardContent, CircularProgress, Fo
 import { ArrowRight, Settings, Users } from '@wso2/oxygen-ui-icons-react';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useCreateDefaultProject, useFetchProjectsByOrgId, useInitOrg } from '../hooks/useOrg';
+import { useCreateProject } from '../hooks/useProjects';
+import { fetchProjects as fetchProjectsApi } from '#api/projects';
 import { projectHomeUrl } from '../paths';
+import { IS_CLOUD } from '../features';
 import Projects from './Projects';
 
 const PERSONA_KEY = 'icp_persona';
@@ -86,6 +89,7 @@ export default function OrgHome(): JSX.Element {
   const fetchProjects = useFetchProjectsByOrgId();
   const initOrgMutation = useInitOrg();
   const createProjectMutation = useCreateDefaultProject();
+  const createCloudProjectMutation = useCreateProject();
   const orgUuidFromToken = useOrgUuid();
 
   // Derived on every render so the effect below re-fires once AppLayout's async
@@ -98,6 +102,27 @@ export default function OrgHome(): JSX.Element {
   // prematurely fall through to the persona step before the ID has been recovered.
   useEffect(() => {
     if (step !== 'checking') return;
+
+    // Cloud: numeric IDs aren't issued by Thunder; skip the AppLayout
+    // ID-recovery wait and use the JWT-scoped fetchProjects. Navigate
+    // straight to the most recently updated project when one exists so
+    // users land in a project view instead of the org-home spinner.
+    if (IS_CLOUD) {
+      fetchProjectsApi(0)
+        .then((projects) => {
+          const usable = projects.filter((p) => p.handler);
+          if (usable.length > 0) {
+            const recent = usable.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
+            localStorage.setItem(PERSONA_KEY, 'developer');
+            navigate(projectHomeUrl(orgHandler!, recent.handler), { replace: true });
+          } else {
+            setStep('persona');
+          }
+        })
+        .catch(() => setStep('persona'));
+      return;
+    }
+
     if (!orgNumericId) return; // wait for AppLayout's ID-recovery to complete
     fetchProjects(orgNumericId)
       .then((projects) => {
@@ -109,7 +134,7 @@ export default function OrgHome(): JSX.Element {
         }
       })
       .catch(() => setStep('persona'));
-  }, [step, orgNumericId, fetchProjects]);
+  }, [step, orgNumericId, fetchProjects, navigate, orgHandler]);
 
   if (step === 'checking') {
     return (
@@ -137,8 +162,14 @@ export default function OrgHome(): JSX.Element {
           await initOrgMutation.mutateAsync({ orgUuid, region });
         }
 
-        // Step 2: Create the default project via GraphQL
-        if (orgNumericId) {
+        // Step 2: Create the default project.
+        // cloud: Thunder issues no numeric org id, so the numericId-gated
+        // default-project route is unavailable; provision through the JWT-scoped
+        // create API instead. Either path must succeed before we navigate to the
+        // project route below, otherwise onboarding lands on a missing project.
+        if (IS_CLOUD) {
+          await createCloudProjectMutation.mutateAsync({ name: 'Default', handler: DEFAULT_PROJECT_HANDLER, description: '', orgHandler: handle });
+        } else if (orgNumericId) {
           await createProjectMutation.mutateAsync({ orgNumericId, orgHandler: handle, projectHandler: DEFAULT_PROJECT_HANDLER });
         }
 

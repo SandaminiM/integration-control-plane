@@ -56,7 +56,7 @@ export default function ScheduleDialog({ open, onClose, onSaveSuccess, onSaveErr
   const orgUuid = useOrgUuid() ?? '';
   const { data: deployment, isLoading: loadingDeployment } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, envId);
   const releaseId = deployment?.releaseId ?? '';
-  const { data: existingConfigs, isLoading: loadingExecConfigs } = useExecutionConfigs(componentId, releaseId);
+  const { data: existingConfigs, isLoading: loadingExecConfigs } = useExecutionConfigs(componentId, releaseId, envId);
   const loadingConfigs = loadingDeployment || loadingExecConfigs;
   const deployTrack = useDeployDeploymentTrack();
 

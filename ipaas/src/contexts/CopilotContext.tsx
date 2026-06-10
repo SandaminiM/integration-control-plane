@@ -20,6 +20,7 @@ import { createContext, useCallback, useEffect, useMemo, useRef, useState, type 
 import { useCloudDataPlanes } from '../hooks/useEnvironments';
 import { useOrgs } from '../hooks/useOrg';
 import { copilotApiUrl } from '../config/runtimeConfig';
+import { IS_CLOUD } from '../features';
 import { COPILOT_REGION_DISPLAY_NAMES, COPILOT_SESSION_MESSAGES_KEY } from '../constants/copilot';
 import { useScope } from '../nav';
 import type { CopilotRegion, IMessage } from '../types/copilot';
@@ -138,6 +139,10 @@ export function CopilotProvider({ children }: CopilotProviderProps) {
 
   // Build available regions from data planes
   useEffect(() => {
+    if (IS_CLOUD) {
+      setAvailableRegions([]);
+      return;
+    }
     if (!isDataPlanesLoading && dataPlanes.length > 0) {
       const regions: CopilotRegion[] = dataPlanes.map((dp) => ({
         name: COPILOT_REGION_DISPLAY_NAMES[dp.region] ?? dp.region,

@@ -119,7 +119,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { CopilotContext, CopilotProvider } from '../contexts/CopilotContext';
 import CopilotDrawer from '../components/AiCopilot/CopilotDrawer';
-import { IS_WIP } from '../features';
+import { IS_WIP, IS_CLOUD } from '../features';
 import AIIcon from '../assets/icons/ai/AIIcon';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions';
 import { UUID_RE } from '../utils/string';
@@ -554,7 +554,7 @@ function AppLayoutInner(): JSX.Element {
                 onOpen={() => {}}
                 size="small"
                 sx={{ minWidth: 180 }}
-                IconComponent={({ ownerState: _ownerState, ...props }) => (
+                IconComponent={IS_CLOUD ? () => null : ({ ownerState: _ownerState, ...props }) => (
                   <span
                     {...props}
                     role="button"

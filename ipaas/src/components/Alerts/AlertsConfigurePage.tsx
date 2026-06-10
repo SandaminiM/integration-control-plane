@@ -21,6 +21,7 @@ import { Plus } from '@wso2/oxygen-ui-icons-react';
 import { type JSX, useEffect, useMemo, useState } from 'react';
 import type { CloudDataPlane, Environment } from '../../types/environment';
 import { choreoAlertingApiUrl } from '../../config/runtimeConfig';
+import { IS_CLOUD } from '../../features';
 import { useDeleteAlertRule, useGetAlertRules, useGetAlertRulesCount, useUpdateAlertRule } from '../../hooks/useAlerts';
 import type { AlertRule, AlertTypeOption } from '../../types/alerts';
 import { ALERTS_CREATE_NEW_RULE_BUTTON_TEXT, AlertComponentType, AlertTypeConstants, AlertTypes } from '../../constants/alerts';
@@ -64,6 +65,7 @@ export default function AlertsConfigurePage(props: AlertsConfigurePageProps): JS
   const [selectedEnvironment, setSelectedEnvironment] = useState<Environment>(environments[0]);
 
   const alertingBaseUrl = useMemo(() => {
+    if (IS_CLOUD) return '';
     if (!selectedEnvironment?.dpId || !cloudDataPlanes.length) return '';
     const cdp = cloudDataPlanes.find((c) => c.id.toLowerCase() === selectedEnvironment.dpId!.toLowerCase());
     return cdp ? choreoAlertingApiUrl(cdp.external_gateway_virtual_host) : '';

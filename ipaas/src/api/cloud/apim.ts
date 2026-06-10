@@ -16,14 +16,58 @@
  * under the License.
  */
 
-// TODO: implement using cloud APIs
-const ni = (name: string): never => { throw new Error(`[cloud] apim.${name}: not implemented`); };
+/**
+ * Cloud (OpenChoreo) APIM surface.
+ *
+ * OpenChoreo has no API Manager, so the API/lifecycle/test-key functions return
+ * safe defaults — their consumers are gated on IS_DEVANT and never call them in
+ * cloud builds. The one function that matters is fetchApimSwagger: the cloud env
+ * card carries each endpoint's base64 OpenAPI (from the BFF api-resources) in the
+ * `apimRevisionId` slot, so here we decode + parse it into the document object
+ * the swagger view expects (instead of fetching a revision from APIM).
+ */
 
-export const fetchApimApi = (..._args: unknown[]): never => ni('fetchApimApi');
-export const updateApimApi = (..._args: unknown[]): never => ni('updateApimApi');
-export const generateTestKey = (..._args: unknown[]): never => ni('generateTestKey');
-export const deploySettingsV2 = (..._args: unknown[]): never => ni('deploySettingsV2');
-export const fetchLifecycleState = (..._args: unknown[]): never => ni('fetchLifecycleState');
-export const fetchLifecycleHistory = (..._args: unknown[]): never => ni('fetchLifecycleHistory');
-export const changeLifecycleState = (..._args: unknown[]): never => ni('changeLifecycleState');
-export const fetchApimSwagger = (..._args: unknown[]): never => ni('fetchApimSwagger');
+import { parse as parseYaml } from 'yaml';
+import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory } from '../../types/apim';
+
+export async function fetchApimApi(_apimId: string): Promise<ApimApiInfo | null> {
+  return null;
+}
+
+export async function updateApimApi(_apimId: string, body: ApimApiInfo): Promise<ApimApiInfo> {
+  return body;
+}
+
+export async function generateTestKey(_apimId: string, _keyType: 'Development' | 'Production'): Promise<GeneratedTestKey | null> {
+  return null;
+}
+
+export async function deploySettingsV2(_componentId: string, _versionId: string, _payload: DeploySettingsV2Payload): Promise<void> {
+  // No APIM in cloud — nothing to deploy.
+}
+
+export async function fetchLifecycleState(_apimId: string): Promise<LifecycleState | null> {
+  return null;
+}
+
+export async function fetchLifecycleHistory(_apimId: string): Promise<LifecycleHistory | null> {
+  return null;
+}
+
+export async function changeLifecycleState(_apimId: string, _action: string): Promise<LifecycleState> {
+  throw new Error('Lifecycle management is not supported in this build.');
+}
+
+// schemaContent is the endpoint's base64-encoded OpenAPI (YAML or JSON), carried
+// via the endpoint's apimRevisionId field by cloud fetchEnvEndpoints.
+export async function fetchApimSwagger(schemaContent: string): Promise<unknown> {
+  if (!schemaContent) return null;
+  try {
+    // atob yields a Latin-1 byte string; decode those bytes as UTF-8 so
+    // non-ASCII characters in the OpenAPI document survive intact.
+    const bytes = Uint8Array.from(atob(schemaContent), (ch) => ch.charCodeAt(0));
+    return parseYaml(new TextDecoder().decode(bytes));
+  } catch {
+    return null;
+  }
+}

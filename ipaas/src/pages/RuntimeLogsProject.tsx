@@ -26,6 +26,7 @@ import { useEnvironments, useAllEnvironments, useCloudDataPlanes } from '../hook
 import { useInfiniteLogs } from '../hooks/useLogs';
 import type { LogsRequest } from '../types/logs';
 import { choreologgingProjectLogsApiUrl } from '../config/runtimeConfig';
+import { IS_CLOUD } from '../features';
 import { AUTO_FETCH_INTERVAL, DEFAULT_DP_REGION, PAGE_SIZE } from '../utils/logs';
 import LogsFilters from '../components/Logs/LogsFilters';
 import LogsPageLayout from '../components/Logs/LogsPageLayout';
@@ -66,6 +67,7 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
   const levelFilterKey = levelFilter.join(',');
 
   const logsApiUrl = useMemo(() => {
+    if (IS_CLOUD) return undefined;
     if (!primaryEnv?.dpId || !cdps) return undefined;
     const cdp = cdps.find((c) => c.id.toLowerCase() === primaryEnv.dpId!.toLowerCase());
     return cdp ? choreologgingProjectLogsApiUrl(cdp.external_gateway_virtual_host) : undefined;

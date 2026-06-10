@@ -1,0 +1,35 @@
+# Build artifacts and caches we'll regenerate inside the image
+node_modules
+dist
+.vite
+.cache
+.turbo
+coverage
+stats.html
+**/coverage
+**/stats.html
+
+# VCS
+.git
+.gitignore
+
+# Editor/IDE
+.idea
+.vscode
+*.swp
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Docs not needed at runtime
+AGENTS.md
+HOUSE_RULES.md
+README.md
+RUNTIME_CONFIG.md
+
+# The Dockerfile itself doesn't need to be in the build context's COPY
+.dockerignore
+Dockerfile

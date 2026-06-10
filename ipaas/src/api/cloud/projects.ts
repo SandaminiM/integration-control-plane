@@ -16,17 +16,89 @@
  * under the License.
  */
 
-// TODO: implement using Choreo v3 REST APIs
+/** Cloud (OpenChoreo) project API. Calls the ipaas-service BFF. */
 
-import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput } from '../../types/project';
+import type {
+  Project,
+  ProjectContributor,
+  ProjectHandlerAvailability,
+  CreateProjectInput,
+  CreateMonoRepoProjectInput,
+} from '../../types/project';
+import { bff, items, q, seg, type ListResponse } from './_client';
 
-const ni = (name: string): never => { throw new Error(`[cloud] projects.${name}: not implemented`); };
+// _orgId is kept on the signatures for devant contract parity; cloud derives
+// the org from the access token instead of taking a numeric id from the caller.
 
-export const fetchProjects = (_orgId: number): Promise<Project[]> => ni('fetchProjects');
-export const fetchProject = (_orgId: number, _projectId: string): Promise<Project> => ni('fetchProject');
-export const fetchProjectByHandler = (_orgId: number, _projectHandler: string): Promise<Project> => ni('fetchProjectByHandler');
-export const fetchProjectContributors = (_orgId: number, _projectId: string): Promise<ProjectContributor[]> => ni('fetchProjectContributors');
-export const fetchProjectComponentLabels = (_orgId: number, _projectId: string): Promise<string[]> => ni('fetchProjectComponentLabels');
-export const fetchProjectHandlerAvailability = (_orgId: number, _candidate: string): Promise<ProjectHandlerAvailability> => ni('fetchProjectHandlerAvailability');
-export const createProject = (_input: CreateProjectInput): Promise<Project> => ni('createProject');
-export const createMonoRepoProject = (_input: CreateMonoRepoProjectInput): Promise<Project> => ni('createMonoRepoProject');
+export const fetchProjects = (_orgId: number): Promise<Project[]> =>
+  bff.get<ListResponse<Project>>('/projects').then(items);
+
+export const fetchProject = (_orgId: number, projectId: string): Promise<Project> =>
+  bff.get<Project>(`/projects/${seg(projectId)}`);
+
+export const fetchProjectByHandler = (_orgId: number, projectHandler: string): Promise<Project> =>
+  bff.get<Project>(`/projects/${seg(projectHandler)}`);
+
+export const fetchProjectContributors = (_orgId: number, projectId: string): Promise<ProjectContributor[]> =>
+  bff.get<ListResponse<ProjectContributor>>(`/projects/${seg(projectId)}/contributors`).then(items);
+
+export const fetchProjectComponentLabels = (_orgId: number, projectId: string): Promise<string[]> =>
+  bff.get<ListResponse<string>>(`/projects/${seg(projectId)}/labels`).then(items);
+
+export const fetchProjectHandlerAvailability = (_orgId: number, candidate: string): Promise<ProjectHandlerAvailability> =>
+  bff.get<ProjectHandlerAvailability>(`/projects/handler-availability${q({ candidate })}`);
+
+// OpenChoreo Project names are K8s resource names (RFC 1123: lowercase
+// alphanumeric, '-' or '.'). The frontend separates `name` (display label)
+// from `handler` (URL-safe slug); the BFF expects `name` to be the slug and
+// `displayName` to be the label, so we remap before posting.
+//
+// The `deploymentPipeline` field is required by the BFF and must reference an
+// existing DeploymentPipeline resource. We resolve it dynamically and cache
+// the lookup for the session — pipelines are namespace-scoped and stable at
+// runtime. On failure we drop the cache so the next create retries the lookup.
+let defaultPipelinePromise: Promise<string> | null = null;
+const fetchDefaultPipelineName = (): Promise<string> => {
+  if (!defaultPipelinePromise) {
+    defaultPipelinePromise = bff.get<ListResponse<{ name: string }>>('/deploymentpipelines')
+      .then((r) => {
+        const list = items(r);
+        // deploymentPipeline is a required, non-empty BFF field; reject rather
+        // than resolve to '' so a create never POSTs an invalid pipeline ref.
+        if (!list.length) {
+          defaultPipelinePromise = null;
+          throw new Error('No deployment pipeline available');
+        }
+        return list.find((p) => p.name === 'default')?.name ?? list[0].name;
+      })
+      .catch((err) => {
+        defaultPipelinePromise = null;
+        throw err;
+      });
+  }
+  return defaultPipelinePromise;
+};
+
+const toBffCreateProjectBody = async (input: CreateProjectInput) => ({
+  name: input.handler,
+  displayName: input.name,
+  description: input.description,
+  deploymentPipeline: await fetchDefaultPipelineName(),
+});
+
+const toBffCreateMonoRepoProjectBody = async (input: CreateMonoRepoProjectInput) => ({
+  ...(await toBffCreateProjectBody(input)),
+  monoRepo: true,
+  repository: input.repository,
+  gitOrganization: input.gitOrganization,
+  branch: input.branch,
+  directoryPath: input.directoryPath,
+  gitProvider: input.gitProvider,
+  isPublicRepo: input.isPublicRepo,
+});
+
+export const createProject = async (input: CreateProjectInput): Promise<Project> =>
+  bff.post<Project>('/projects', await toBffCreateProjectBody(input));
+
+export const createMonoRepoProject = async (input: CreateMonoRepoProjectInput): Promise<Project> =>
+  bff.post<Project>('/projects', await toBffCreateMonoRepoProjectBody(input));
