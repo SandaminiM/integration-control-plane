@@ -33,9 +33,9 @@ import { GENERIC_SERVICE_TYPES } from '../../constants/integrations';
 import { nextCronRunMs, formatTimeUntil, describeCron } from '../../utils/cronUtils';
 import EnvironmentCardHeader from './EnvironmentCardHeader';
 import EnvironmentCardBody from './EnvironmentCardBody';
-import RunWithArgsDialog from '../overview/automation/RunWithArgsDialog';
+import RunWithArgsDialog from '../Overview/automation/RunWithArgsDialog';
 import ConfigureDrawer from './ConfigureDrawer';
-import ServiceLogsDrawer from '../overview/integration-as-api/ServiceLogsDrawer';
+import ServiceLogsDrawer from '../Overview/integration-as-api/ServiceLogsDrawer';
 import { IS_CLOUD } from '../../features';
 
 interface EnvironmentProps {

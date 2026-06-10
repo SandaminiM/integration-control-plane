@@ -28,7 +28,7 @@ import { useGetConfigMgt, useSchemaConfig } from '../../../hooks/useConfiguratio
 import { useRedeployDeployment, useStopDeployment } from '../../../hooks/useDeployments';
 import { nextCronRunMs, formatTimeUntil, describeCron } from '../../../utils/cronUtils';
 import ConfigureDrawer from '../../EnvironmentCard/ConfigureDrawer';
-import ScheduleDialog from '../../overview/automation/ScheduleDialog';
+import ScheduleDialog from '../../Overview/automation/ScheduleDialog';
 import PromoteButton from '../../EnvironmentCard/PromoteButton';
 import DeployEnvironmentCardHeader from './DeployEnvironmentCardHeader';
 import DeployEnvironmentCardBody from './DeployEnvironmentCardBody';
