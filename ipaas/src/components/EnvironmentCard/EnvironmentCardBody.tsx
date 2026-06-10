@@ -26,7 +26,6 @@ import SwaggerOperationsList from './SwaggerOperationsList';
 import { useFetchComponentEndpointSpec } from '../../hooks/useComponents';
 import { useApiDefinition } from '../../hooks/useDeployments';
 import type { EnvEndpoint } from '../../types/component';
-import { IS_CLOUD } from '../../features';
 
 // ---------- helpers ----------
 
@@ -380,7 +379,7 @@ export default function EnvironmentCardBody({
         </Typography>
       )}
       {showServiceInsights && <EnvCardInsights envName={envName!} envId={envId!} apimEnvId={apimEnvId} projectId={projectId!} apiId={insightsApiId} />}
-      {showAutomationInsights && <EnvCardAutomationInsights releaseId={releaseId} {...(IS_CLOUD ? { componentId, envId: environmentId, projectId } : {})} />}
+      {showAutomationInsights && <EnvCardAutomationInsights releaseId={releaseId} executionScope={{ componentId, envId: environmentId, projectId }} />}
     </>
   );
 }
