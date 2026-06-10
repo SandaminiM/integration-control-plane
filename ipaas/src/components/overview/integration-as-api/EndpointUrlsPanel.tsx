@@ -18,7 +18,7 @@
 
 import { Box, IconButton, MenuItem, Select, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Building2, Check, Copy, Download, Folder, Globe } from '@wso2/oxygen-ui-icons-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFetchComponentEndpointSpec } from '../../../hooks/useComponents';
 import type { EnvEndpoint } from '../../../types/component';
 
@@ -33,10 +33,13 @@ function trimEndpointName(name: string) {
 
 function CopyButton({ url }: { url: string }) {
   const [copied, setCopied] = useState(false);
+  const resetTimer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(resetTimer.current), []);
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      clearTimeout(resetTimer.current);
+      resetTimer.current = setTimeout(() => setCopied(false), 2000);
     });
   }, [url]);
   return (

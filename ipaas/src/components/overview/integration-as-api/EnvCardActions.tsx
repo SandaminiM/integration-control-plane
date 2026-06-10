@@ -61,7 +61,7 @@ export default function EnvCardActions({
   const handleStop = () => {
     stopMutation.mutate(
       // cloud: OpenChoreo's stop endpoint is per-environment; wip ignores it.
-      { orgHandler, componentId: component.id, releaseId, ...(IS_CLOUD ? { environment: env.id } : {}), type: component.displayType ?? '', clearCron: false },
+      { orgHandler, componentId: component.id, releaseId, ...(IS_CLOUD ? { environment: env.id } : {}), type: 'service', clearCron: false },
       {
         onSuccess: () => {
           requestPoll();
@@ -74,7 +74,7 @@ export default function EnvCardActions({
 
   const handleRedeploy = () => {
     redeployMutation.mutate(
-      { orgHandler, componentId: component.id, releaseId, type: component.displayType ?? '', releaseMgtReleaseId, releaseMgtDeploymentId },
+      { orgHandler, componentId: component.id, releaseId, type: 'service', releaseMgtReleaseId, releaseMgtDeploymentId },
       {
         onSuccess: () => {
           requestPoll();

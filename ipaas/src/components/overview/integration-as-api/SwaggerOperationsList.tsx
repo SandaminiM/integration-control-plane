@@ -47,7 +47,7 @@ const HidePlugin = () => ({
   },
 });
 
-interface SwaggerDocument {
+export interface SwaggerDocument {
   paths?: Record<string, Record<string, unknown>>;
   [key: string]: unknown;
 }

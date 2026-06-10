@@ -8,7 +8,7 @@ the "how to add a type" steps live in `src/components/AGENTS.md`
 
 ## Structure
 
-```
+```text
 overview/
 ├── _shared/                     generic frame + dispatch — NO type-specific logic
 │   ├── OverviewShell.tsx        lays out env cards + PromoteButton between envs

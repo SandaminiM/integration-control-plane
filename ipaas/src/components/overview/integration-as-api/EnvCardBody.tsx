@@ -25,7 +25,7 @@ import type { EnvCardBodyProps } from '../../../types/integration';
 import EnvCardSkeleton from '../_shared/EnvCardSkeleton';
 import EndpointUrlsPanel from './EndpointUrlsPanel';
 import ServiceInsights from './ServiceInsights';
-import SwaggerOperationsList from './SwaggerOperationsList';
+import SwaggerOperationsList, { type SwaggerDocument } from './SwaggerOperationsList';
 
 /**
  * Integration-as-API's content-only body: a deployment-in-progress spinner, the
@@ -93,8 +93,7 @@ export default function EnvCardBody({ component, env, prevEnv, projectId, versio
       {hasDeployment &&
         deploymentStatusV2 !== 'IN_PROGRESS' &&
         (isSwaggerChanged
-          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            !!swagger && <SwaggerOperationsList swagger={swagger as any} />
+          ? !!swagger && <SwaggerOperationsList swagger={swagger as SwaggerDocument} />
           : !!prevEnv?.name && (
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, mb: 1.5, p: 1, bgcolor: 'action.selected', borderLeft: '3px solid', borderColor: 'primary.main', minWidth: 200 }}>
                 <Typography variant="body2">

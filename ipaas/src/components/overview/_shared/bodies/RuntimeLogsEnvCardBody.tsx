@@ -115,7 +115,7 @@ function InlineLogsView({ isLoading, error, logs }: { isLoading: boolean; error:
       <Stack direction="column" alignItems="center" justifyContent="center" gap={1} sx={{ py: 1.5 }}>
         <ScrollText size={24} style={{ opacity: 0.4 }} />
         <Typography variant="body2" color="text.secondary">
-          Failed to fetch file integration data. Click 'refresh' to try again.
+          Failed to fetch integration data. Click 'refresh' to try again.
         </Typography>
       </Stack>
     );
@@ -126,7 +126,7 @@ function InlineLogsView({ isLoading, error, logs }: { isLoading: boolean; error:
       <Stack direction="column" alignItems="center" justifyContent="center" gap={1} sx={{ py: 1.5 }}>
         <ScrollText size={24} style={{ opacity: 0.4 }} />
         <Typography variant="body2" color="text.secondary">
-          No file integration data available. Click 'refresh' to get the latest file integration data.
+          No integration data available. Click 'refresh' to get the latest integration data.
         </Typography>
       </Stack>
     );
