@@ -75,7 +75,7 @@ function useCopilot() {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder('utf-8');
       setIsStreaming(true);
-       
+
       if (!reader) {
         throw new Error('Error while fetching answer from Copilot. Reader is undefined.');
       }

@@ -18,7 +18,7 @@
 
 import { Avatar, Box, CircularProgress, Divider, Stack, Typography } from '@wso2/oxygen-ui';
 import { Activity, AlertTriangle, Clock, TrendingUp } from '@wso2/oxygen-ui-icons-react';
-import { useTaskExecutionCount, useTaskExecutions } from '../../hooks/useExecutions';
+import { useTaskExecutionCount, useTaskExecutions } from '../../../hooks/useExecutions';
 
 interface MetricTileProps {
   icon: React.ReactNode;
@@ -60,7 +60,7 @@ function MetricTile({ icon, label, value, unit, loading }: MetricTileProps) {
 // wip data path keys by releaseId and ignores it. It is one optional, all-or-nothing
 // object so the contract reads clearly: that per-product behavior lives in the gated
 // useExecutions hook + src/api/{cloud,wip}, keeping this component product-agnostic.
-interface EnvCardAutomationInsightsProps {
+interface AutomationInsightsProps {
   releaseId: string;
   executionScope?: {
     componentId: string;
@@ -69,7 +69,7 @@ interface EnvCardAutomationInsightsProps {
   };
 }
 
-export default function EnvCardAutomationInsights({ releaseId, executionScope }: EnvCardAutomationInsightsProps) {
+export default function AutomationInsights({ releaseId, executionScope }: AutomationInsightsProps) {
   const { data: count, isLoading: countLoading } = useTaskExecutionCount(releaseId, executionScope?.componentId, executionScope?.envId, executionScope?.projectId);
   const { data: executions, isLoading: execLoading } = useTaskExecutions(releaseId, executionScope?.componentId, executionScope?.envId, executionScope?.projectId);
 

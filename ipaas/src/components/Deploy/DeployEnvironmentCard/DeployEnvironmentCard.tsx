@@ -28,7 +28,7 @@ import { useGetConfigMgt, useSchemaConfig } from '../../../hooks/useConfiguratio
 import { useRedeployDeployment, useStopDeployment } from '../../../hooks/useDeployments';
 import { nextCronRunMs, formatTimeUntil, describeCron } from '../../../utils/cronUtils';
 import ConfigureDrawer from '../../EnvironmentCard/ConfigureDrawer';
-import ScheduleDialog from '../../EnvironmentCard/ScheduleDialog';
+import ScheduleDialog from '../../overview/automation/ScheduleDialog';
 import PromoteButton from '../../EnvironmentCard/PromoteButton';
 import DeployEnvironmentCardHeader from './DeployEnvironmentCardHeader';
 import DeployEnvironmentCardBody from './DeployEnvironmentCardBody';
@@ -37,7 +37,25 @@ import EndpointsDrawer from './EndpointsDrawer';
 import type { DeployEnvironmentCardProps } from '../../../types/deploy';
 import { IS_CLOUD } from '../../../features';
 
-export default function DeployEnvironmentCard({ orgHandler, orgUuid, projectId, componentId, versionId, deploymentPipelineId, flags, env, componentName, projectHandler, nextEnvId, onPromoteStarted, onPromoteSettled }: DeployEnvironmentCardProps): JSX.Element {
+export default function DeployEnvironmentCard({
+  orgHandler,
+  orgUuid,
+  projectId,
+  componentId,
+  versionId,
+  deploymentPipelineId,
+  flags,
+  isFileIntegration = false,
+  env,
+  componentName,
+  projectHandler,
+  nextEnvId,
+  onPromoteStarted,
+  onPromoteSettled,
+}: DeployEnvironmentCardProps): JSX.Element {
+  // A file integration deploys like a service but exposes no endpoints — treat
+  // it as "service, minus endpoints" on the deploy card.
+  const showEndpoints = !flags.isAutomation && !isFileIntegration;
   const qc = useQueryClient();
   const [configureOpen, setConfigureOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -119,7 +137,7 @@ export default function DeployEnvironmentCard({ orgHandler, orgUuid, projectId, 
 
   const { data: trackImages = [] } = useDeploymentTrackImages(componentId, versionId);
   const { data: deploymentStatus = [] } = useDeploymentStatus(componentId, versionId);
-  const { data: endpoints = [], isLoading: endpointsLoading } = useEnvEndpoints(!flags.isAutomation ? componentId : '', !flags.isAutomation ? versionId : '', !flags.isAutomation && releaseId ? releaseId : '');
+  const { data: endpoints = [], isLoading: endpointsLoading } = useEnvEndpoints(showEndpoints ? componentId : '', showEndpoints ? versionId : '', showEndpoints && releaseId ? releaseId : '');
 
   const deployedRunId = deployment?.build?.runId ?? null;
   const deployedBuildId = deployment?.build?.buildId ?? null;
@@ -308,7 +326,7 @@ export default function DeployEnvironmentCard({ orgHandler, orgUuid, projectId, 
             onJobConfigClick={flags.isAutomation ? () => setScheduleOpen(true) : undefined}
             onHistoryClick={() => setHistoryOpen(true)}
             configurablesCount={configurablesCount}
-            onEndpointsClick={!flags.isAutomation ? () => setEndpointsOpen(true) : undefined}
+            onEndpointsClick={showEndpoints ? () => setEndpointsOpen(true) : undefined}
           />
         </CardContent>
 
@@ -358,7 +376,7 @@ export default function DeployEnvironmentCard({ orgHandler, orgUuid, projectId, 
 
       <DeploymentHistoryDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} orgUuid={orgUuid} projectId={projectId} componentId={componentId} versionId={versionId} environmentId={env.id} envName={env.name} />
 
-      {!flags.isAutomation && (
+      {showEndpoints && (
         <EndpointsDrawer
           open={endpointsOpen}
           onClose={() => setEndpointsOpen(false)}

@@ -24,7 +24,7 @@ import { useCreateComponent } from '../hooks/useComponents';
 import FilterSection from '../components/FilterSection';
 import SampleGridCard from '../components/SampleGridCard';
 import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
-import { displayTypeFromSample, formatBuildPack, formatComponentType, normalizeComponentType } from '../constants/integrations';
+import { componentSubTypeFromSample, displayTypeFromSample, formatBuildPack, formatComponentType, normalizeComponentType } from '../constants/integrations';
 import { PAGE_SIZE } from '../constants/samples';
 import { useSamples } from '../hooks/useSamples';
 import { resourceUrl, narrow, newComponentUrl, type ProjectScope } from '../nav';
@@ -70,6 +70,7 @@ export default function BrowseSamples(scope: ProjectScope): JSX.Element {
         orgHandler: scope.org,
         projectId,
         displayType: displayTypeFromSample(sample.componentType, sample.buildPack),
+        componentSubType: componentSubTypeFromSample(sample.componentType, sample.buildPack),
         srcGitRepoUrl: sample.repositoryUrl,
         repositorySubPath: `${sample.subDirectory ?? ''}${sample.componentPath}`,
         repositoryBranch: sample.branch ?? 'main',

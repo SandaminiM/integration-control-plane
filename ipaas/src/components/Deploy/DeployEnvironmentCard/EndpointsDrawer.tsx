@@ -20,7 +20,7 @@ import { Box, CircularProgress, Drawer, IconButton, Stack, Typography } from '@w
 import { X } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
 import type { EnvEndpoint } from '../../../types/component';
-import { EndpointCard } from '../../EnvironmentCard/EndpointCard';
+import { EndpointCard } from '../../EndpointCard';
 import ManageDrawer from '../../EnvironmentCard/ManageDrawer';
 
 interface EndpointsDrawerProps {

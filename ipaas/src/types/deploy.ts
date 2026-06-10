@@ -47,6 +47,12 @@ export interface DeployEnvironmentCardProps {
   versionId: string;
   deploymentPipelineId: string;
   flags: ComponentTypeFlags;
+  /**
+   * Resolved via `identifyIntegration` (by `componentSubType`), not from
+   * `getComponentTypeFlags`. A file integration shares a service `displayType`
+   * but has no endpoints — so its endpoint UI is hidden on the deploy card.
+   */
+  isFileIntegration?: boolean;
   env: Environment;
   branch: string;
   componentName: string;

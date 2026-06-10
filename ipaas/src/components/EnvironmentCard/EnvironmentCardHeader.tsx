@@ -18,8 +18,8 @@
 
 import { Box, Button, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { RefreshCw, Clock, SlidersHorizontal, GitCommit, Square, RotateCw, FlaskConical, List } from '@wso2/oxygen-ui-icons-react';
-import ScheduleButton, { type ScheduleButtonProps } from './ScheduleButton';
-import RunButton from './RunButton';
+import ScheduleButton, { type ScheduleButtonProps } from '../overview/automation/ScheduleButton';
+import RunButton from '../overview/automation/RunButton';
 
 interface EnvironmentCardHeaderProps {
   envName: string;

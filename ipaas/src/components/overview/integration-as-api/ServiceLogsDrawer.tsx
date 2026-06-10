@@ -19,13 +19,13 @@
 import { Box, Checkbox, Drawer, FormControlLabel, IconButton, MenuItem, Select, Stack, TextField, Tooltip, Typography, Button } from '@wso2/oxygen-ui';
 import { Download, RefreshCw, X } from '@wso2/oxygen-ui-icons-react';
 import { useMemo } from 'react';
-import { useInfiniteComponentLogs } from '../../hooks/useLogs';
-import type { ComponentLogsRequest } from '../../types/logs';
-import { choreologgingComponentGatewayLogsApiUrl } from '../../config/runtimeConfig';
-import { useLogsFilters } from '../../hooks/useLogsFilters';
-import { AUTO_FETCH_INTERVAL, DEFAULT_DP_REGION, LOG_LEVELS, PAGE_SIZE, TIME_PRESETS, downloadLogs } from '../../utils/logs';
-import SearchField from '../SearchField';
-import LogsPanel from '../Logs/LogsPanel';
+import { useInfiniteComponentLogs } from '../../../hooks/useLogs';
+import type { ComponentLogsRequest } from '../../../types/logs';
+import { choreologgingComponentGatewayLogsApiUrl } from '../../../config/runtimeConfig';
+import { useLogsFilters } from '../../../hooks/useLogsFilters';
+import { AUTO_FETCH_INTERVAL, DEFAULT_DP_REGION, LOG_LEVELS, PAGE_SIZE, TIME_PRESETS, downloadLogs } from '../../../utils/logs';
+import SearchField from '../../SearchField';
+import LogsPanel from '../../Logs/LogsPanel';
 
 function formatLocalDatetime(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');

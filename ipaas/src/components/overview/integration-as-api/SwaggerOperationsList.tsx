@@ -22,7 +22,7 @@ import { useMemo, useState } from 'react';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
 import './swagger-ui-overrides.scss';
-import { getHttpMethodColors } from '../../utils/httpMethods';
+import { getHttpMethodColors } from '../../../utils/httpMethods';
 
 const VALID_METHODS = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options', 'trace'];
 
