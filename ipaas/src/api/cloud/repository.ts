@@ -17,15 +17,7 @@
  */
 
 import { bff, items, q, seg, type ListResponse } from './_client';
-import type {
-  Repository,
-  Commit,
-  UserRepo,
-  RepoBranch,
-  RepoMetadata,
-  RepoTreeNode,
-  ChoreoSampleImageEntry,
-} from '../../types/repository';
+import type { Repository, Commit, UserRepo, RepoBranch, RepoMetadata, RepoTreeNode, ChoreoSampleImageEntry } from '../../types/repository';
 import type { UpdateBuildpackConfigsInput } from '../../types/build';
 
 const REPO_METADATA_DEFAULT: RepoMetadata = {
@@ -57,7 +49,7 @@ const REPO_METADATA_EMPTY: RepoMetadata = {
 // the lookup to the component within the caller's namespace.
 export async function fetchComponentRepository(projectId: string, componentHandler: string): Promise<Repository | null> {
   try {
-    return await bff.get<Repository | null>(`/components/${seg(componentHandler)}/repository${q({ projectName: projectId })}`) ?? null;
+    return (await bff.get<Repository | null>(`/components/${seg(componentHandler)}/repository${q({ projectName: projectId })}`)) ?? null;
   } catch {
     return null;
   }

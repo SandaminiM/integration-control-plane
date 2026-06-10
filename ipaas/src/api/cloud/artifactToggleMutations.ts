@@ -17,7 +17,9 @@
  */
 
 // TODO: implement using cloud APIs
-const ni = (name: string): never => { throw new Error(`[cloud] artifactToggleMutations.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[cloud] artifactToggleMutations.${name}: not implemented`);
+};
 
 export const toBackendArtifactType = (..._args: unknown[]): never => ni('toBackendArtifactType');
 export const updateArtifactToggleStatus = (..._args: unknown[]): never => ni('updateArtifactToggleStatus');

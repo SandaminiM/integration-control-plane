@@ -17,7 +17,9 @@
  */
 
 // TODO: implement using icp APIs
-const ni = (name: string): never => { throw new Error(`[icp] repository.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[icp] repository.${name}: not implemented`);
+};
 
 export const fetchComponentRepository = (..._args: unknown[]): never => ni('fetchComponentRepository');
 export const fetchCommitHistory = (..._args: unknown[]): never => ni('fetchCommitHistory');

@@ -20,7 +20,9 @@
 
 import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability, DeleteComponentResult } from '../../types/component';
 
-const ni = (name: string): never => { throw new Error(`[icp] components.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[icp] components.${name}: not implemented`);
+};
 
 export const fetchComponents = (_orgHandler: string, _projectId: string): Promise<Component[]> => ni('fetchComponents');
 export const fetchComponentByHandler = (_projectId: string, _componentHandler: string): Promise<ComponentDetail> => ni('fetchComponentByHandler');

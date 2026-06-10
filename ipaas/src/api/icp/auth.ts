@@ -17,7 +17,9 @@
  */
 
 // TODO: implement using icp APIs
-const ni = (name: string): never => { throw new Error(`[icp] auth.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[icp] auth.${name}: not implemented`);
+};
 
 export const fetchOrgPermissions = (..._args: unknown[]): never => ni('fetchOrgPermissions');
 export const fetchProjectPermissions = (..._args: unknown[]): never => ni('fetchProjectPermissions');

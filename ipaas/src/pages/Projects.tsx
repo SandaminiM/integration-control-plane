@@ -103,7 +103,9 @@ export default function Projects(scope: OrgScope): JSX.Element {
                 <ListingTable.Cell>
                   <Stack direction="row" alignItems="center" gap={1.5}>
                     <Avatar sx={{ width: 32, height: 32, fontSize: 14, bgcolor: 'action.hover', color: 'text.primary' }}>{p.name[0].toUpperCase()}</Avatar>
-                    <Typography variant="body2" fontWeight={600}>{p.name}</Typography>
+                    <Typography variant="body2" fontWeight={600}>
+                      {p.name}
+                    </Typography>
                   </Stack>
                 </ListingTable.Cell>
                 <ListingTable.Cell>
@@ -112,7 +114,9 @@ export default function Projects(scope: OrgScope): JSX.Element {
                   </Typography>
                 </ListingTable.Cell>
                 <ListingTable.Cell>
-                  <Typography variant="body2" color="text.secondary">{formatDistanceToNow(p.updatedAt)}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {formatDistanceToNow(p.updatedAt)}
+                  </Typography>
                 </ListingTable.Cell>
                 <ListingTable.Cell>
                   <IconButton size="small" aria-label={`Settings for ${p.name}`} onClick={(e) => e.stopPropagation()}>

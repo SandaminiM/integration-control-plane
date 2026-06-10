@@ -36,7 +36,7 @@ const fetchTaskExecutionCountScoped: (releaseId: string, componentId: string, en
 // whereas wip keys by releaseId and reaches the observability API through
 // systemApisBaseUrl. The cache key, fetcher, and enable guard co-vary per product,
 // so each hook selects them as one `wiring` block; the rest of the query config is
-// shared. 
+// shared.
 export function useExecutionConfigs(componentId: string, releaseId: string, envId = '', projectId = '') {
   const wiring = IS_CLOUD
     ? { queryKey: ['executionConfigs', componentId, releaseId, envId, projectId], queryFn: () => fetchExecutionConfigsScoped(componentId, releaseId, envId, projectId), enabled: !!componentId && !!envId }

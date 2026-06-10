@@ -17,7 +17,9 @@
  */
 
 // TODO: implement using cloud APIs
-const ni = (name: string): never => { throw new Error(`[cloud] auth.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[cloud] auth.${name}: not implemented`);
+};
 
 export const fetchOrgPermissions = (..._args: unknown[]): never => ni('fetchOrgPermissions');
 export const fetchProjectPermissions = (..._args: unknown[]): never => ni('fetchProjectPermissions');

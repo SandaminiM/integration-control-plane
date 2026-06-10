@@ -17,7 +17,9 @@
  */
 
 // TODO: implement using icp APIs
-const ni = (name: string): never => { throw new Error(`[icp] executions.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[icp] executions.${name}: not implemented`);
+};
 
 export const fetchExecutionConfigs = (..._args: unknown[]): never => ni('fetchExecutionConfigs');
 export const fetchTaskExecutions = (..._args: unknown[]): never => ni('fetchTaskExecutions');

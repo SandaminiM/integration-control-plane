@@ -20,7 +20,9 @@
 
 import type { BuildRunLogs } from '../../types/build';
 
-const ni = (name: string): never => { throw new Error(`[icp] builds.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[icp] builds.${name}: not implemented`);
+};
 
 export const fetchBuildRunLogs = (_orgHandler: string, _projectId: string, _componentId: string, _runId: string): Promise<BuildRunLogs | null> => ni('fetchBuildRunLogs');
 export const fetchBuildLogs = (_componentId: string, _versionId: string, _workflowName: string): Promise<BuildRunLogs | null> => ni('fetchBuildLogs');

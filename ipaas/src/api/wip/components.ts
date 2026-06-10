@@ -70,7 +70,7 @@ function buildCreateComponentQuery(input: CreateComponentInput): string {
         isPublicRepo: ${input.isPublicRepo ?? false},
         enableAutoDeploy: ${input.enableAutoDeploy ?? true},
         enableAutoBuild: true,
-        componentSubType: "",
+        componentSubType: ${gqlStr(input.componentSubType ?? '')},
         originCloud: "devant",
         isUnitTestEnabled: true,
         pullLatestSubmodules: true,
@@ -108,7 +108,7 @@ function buildCreateMiComponentQuery(input: CreateComponentInput): string {
         isPublicRepo: ${input.isPublicRepo ?? false},
         enableAutoDeploy: ${input.enableAutoDeploy ?? true},
         enableAutoBuild: true,
-        componentSubType: "",
+        componentSubType: ${gqlStr(input.componentSubType ?? '')},
         originCloud: "devant",
         isPrebuilt: ${input.isPrebuilt ?? false}
       }){

@@ -17,7 +17,9 @@
  */
 
 // TODO: implement using icp APIs
-const ni = (name: string): never => { throw new Error(`[icp] cloudEditor.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[icp] cloudEditor.${name}: not implemented`);
+};
 
 export const getOrCreateSampleRegistry = (..._args: unknown[]): never => ni('getOrCreateSampleRegistry');
 export const callCreateCodeServer = (..._args: unknown[]): never => ni('callCreateCodeServer');

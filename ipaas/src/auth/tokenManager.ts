@@ -491,7 +491,7 @@ export function getOrgUuidFromToken(): string | null {
     // Choreo issues the org UUID under `organization.uuid`. Cloud's Thunder IdP
     // issues it as the `ouId` claim instead, so the cloud build falls back to it.
     const orgUuid = (payload.organization?.uuid as string) ?? null;
-    return IS_CLOUD ? orgUuid ?? (payload.ouId as string) ?? null : orgUuid;
+    return IS_CLOUD ? (orgUuid ?? (payload.ouId as string) ?? null) : orgUuid;
   } catch {
     return null;
   }

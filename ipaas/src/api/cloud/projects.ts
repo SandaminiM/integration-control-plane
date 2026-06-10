@@ -18,35 +18,23 @@
 
 /** Cloud (OpenChoreo) project API. Calls the ipaas-service BFF. */
 
-import type {
-  Project,
-  ProjectContributor,
-  ProjectHandlerAvailability,
-  CreateProjectInput,
-  CreateMonoRepoProjectInput,
-} from '../../types/project';
+import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput } from '../../types/project';
 import { bff, items, q, seg, type ListResponse } from './_client';
 
 // _orgId is kept on the signatures for devant contract parity; cloud derives
 // the org from the access token instead of taking a numeric id from the caller.
 
-export const fetchProjects = (_orgId: number): Promise<Project[]> =>
-  bff.get<ListResponse<Project>>('/projects').then(items);
+export const fetchProjects = (_orgId: number): Promise<Project[]> => bff.get<ListResponse<Project>>('/projects').then(items);
 
-export const fetchProject = (_orgId: number, projectId: string): Promise<Project> =>
-  bff.get<Project>(`/projects/${seg(projectId)}`);
+export const fetchProject = (_orgId: number, projectId: string): Promise<Project> => bff.get<Project>(`/projects/${seg(projectId)}`);
 
-export const fetchProjectByHandler = (_orgId: number, projectHandler: string): Promise<Project> =>
-  bff.get<Project>(`/projects/${seg(projectHandler)}`);
+export const fetchProjectByHandler = (_orgId: number, projectHandler: string): Promise<Project> => bff.get<Project>(`/projects/${seg(projectHandler)}`);
 
-export const fetchProjectContributors = (_orgId: number, projectId: string): Promise<ProjectContributor[]> =>
-  bff.get<ListResponse<ProjectContributor>>(`/projects/${seg(projectId)}/contributors`).then(items);
+export const fetchProjectContributors = (_orgId: number, projectId: string): Promise<ProjectContributor[]> => bff.get<ListResponse<ProjectContributor>>(`/projects/${seg(projectId)}/contributors`).then(items);
 
-export const fetchProjectComponentLabels = (_orgId: number, projectId: string): Promise<string[]> =>
-  bff.get<ListResponse<string>>(`/projects/${seg(projectId)}/labels`).then(items);
+export const fetchProjectComponentLabels = (_orgId: number, projectId: string): Promise<string[]> => bff.get<ListResponse<string>>(`/projects/${seg(projectId)}/labels`).then(items);
 
-export const fetchProjectHandlerAvailability = (_orgId: number, candidate: string): Promise<ProjectHandlerAvailability> =>
-  bff.get<ProjectHandlerAvailability>(`/projects/handler-availability${q({ candidate })}`);
+export const fetchProjectHandlerAvailability = (_orgId: number, candidate: string): Promise<ProjectHandlerAvailability> => bff.get<ProjectHandlerAvailability>(`/projects/handler-availability${q({ candidate })}`);
 
 // OpenChoreo Project names are K8s resource names (RFC 1123: lowercase
 // alphanumeric, '-' or '.'). The frontend separates `name` (display label)
@@ -60,7 +48,8 @@ export const fetchProjectHandlerAvailability = (_orgId: number, candidate: strin
 let defaultPipelinePromise: Promise<string> | null = null;
 const fetchDefaultPipelineName = (): Promise<string> => {
   if (!defaultPipelinePromise) {
-    defaultPipelinePromise = bff.get<ListResponse<{ name: string }>>('/deploymentpipelines')
+    defaultPipelinePromise = bff
+      .get<ListResponse<{ name: string }>>('/deploymentpipelines')
       .then((r) => {
         const list = items(r);
         // deploymentPipeline is a required, non-empty BFF field; reject rather
@@ -97,8 +86,6 @@ const toBffCreateMonoRepoProjectBody = async (input: CreateMonoRepoProjectInput)
   isPublicRepo: input.isPublicRepo,
 });
 
-export const createProject = async (input: CreateProjectInput): Promise<Project> =>
-  bff.post<Project>('/projects', await toBffCreateProjectBody(input));
+export const createProject = async (input: CreateProjectInput): Promise<Project> => bff.post<Project>('/projects', await toBffCreateProjectBody(input));
 
-export const createMonoRepoProject = async (input: CreateMonoRepoProjectInput): Promise<Project> =>
-  bff.post<Project>('/projects', await toBffCreateMonoRepoProjectBody(input));
+export const createMonoRepoProject = async (input: CreateMonoRepoProjectInput): Promise<Project> => bff.post<Project>('/projects', await toBffCreateMonoRepoProjectBody(input));

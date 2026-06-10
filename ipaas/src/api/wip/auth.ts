@@ -18,11 +18,30 @@
 
 import { authClient } from './httpClients';
 import type {
-  User, Role, RoleDetail, Group, GroupRoleMapping, GroupUser, PermissionsResponse, RoleGroupMapping, UserPermissionsResponse,
-  ChangePasswordInput, ForceChangePasswordInput, CreateUserInput, UpdateUserInput, UpdateUserGroupsInput,
-  CreateRoleInput, UpdateRoleInput, CreateGroupInput, UpdateGroupInput,
-  AddRolesToGroupInput, RemoveRoleFromGroupInput, AddUsersToGroupInput, RemoveUserFromGroupInput,
-  MessageResult, ResetPasswordResult,
+  User,
+  Role,
+  RoleDetail,
+  Group,
+  GroupRoleMapping,
+  GroupUser,
+  PermissionsResponse,
+  RoleGroupMapping,
+  UserPermissionsResponse,
+  ChangePasswordInput,
+  ForceChangePasswordInput,
+  CreateUserInput,
+  UpdateUserInput,
+  UpdateUserGroupsInput,
+  CreateRoleInput,
+  UpdateRoleInput,
+  CreateGroupInput,
+  UpdateGroupInput,
+  AddRolesToGroupInput,
+  RemoveRoleFromGroupInput,
+  AddUsersToGroupInput,
+  RemoveUserFromGroupInput,
+  MessageResult,
+  ResetPasswordResult,
 } from '../../types/auth';
 
 const authGet = <T>(path: string): Promise<T> => authClient.get<T>(path);

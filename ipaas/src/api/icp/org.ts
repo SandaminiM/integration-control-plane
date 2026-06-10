@@ -21,7 +21,9 @@
 import type { OrgEntry, OrgComponentLimits, OrgSubscription, RegisterUserResponse } from '../../types/org';
 import type { Project } from '../../types/project';
 
-const ni = (name: string): never => { throw new Error(`[icp] org.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[icp] org.${name}: not implemented`);
+};
 
 export const fetchOrgList = (): Promise<OrgEntry[]> => ni('fetchOrgList');
 export const fetchOrgs = (): Promise<OrgEntry[]> => ni('fetchOrgs');

@@ -32,10 +32,14 @@ import { authenticatedFetch } from '../../auth/tokenManager';
 export { withStsRetry, withScopeRetry } from '../wip/httpClients';
 
 /** Standard BFF list envelope: { items: T[] }. */
-export interface ListResponse<T> { items: T[] }
+export interface ListResponse<T> {
+  items: T[];
+}
 
 /** Standard BFF mutation envelope returning a server message. */
-export interface MessageResponse { message?: string }
+export interface MessageResponse {
+  message?: string;
+}
 
 /** Unwraps a ListResponse to its items array, tolerating null/undefined. */
 export const items = <T>(r: ListResponse<T> | null | undefined): T[] => r?.items ?? [];
@@ -55,7 +59,7 @@ async function request<T>(method: string, path: string, body?: unknown, headers?
   const res = await authenticatedFetch(`${bffBaseUrl()}${path}`, init);
   const text = await res.text().catch(() => '');
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
-  return (text ? (JSON.parse(text) as T) : (undefined as unknown as T));
+  return text ? (JSON.parse(text) as T) : (undefined as unknown as T);
 }
 
 export const bff = {

@@ -17,7 +17,9 @@
  */
 
 // TODO: implement using icp APIs
-const ni = (name: string): never => { throw new Error(`[icp] logs.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[icp] logs.${name}: not implemented`);
+};
 
 export const fetchLogs = (..._args: unknown[]): never => ni('fetchLogs');
 export const fetchComponentLogs = (..._args: unknown[]): never => ni('fetchComponentLogs');

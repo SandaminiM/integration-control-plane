@@ -17,6 +17,8 @@
  */
 
 // TODO: implement using cloud APIs
-const ni = (name: string): never => { throw new Error(`[cloud] samples.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[cloud] samples.${name}: not implemented`);
+};
 
 export const fetchSamples = (..._args: unknown[]): never => ni('fetchSamples');

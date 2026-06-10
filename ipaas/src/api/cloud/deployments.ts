@@ -35,16 +35,7 @@
  * workstream) rather than adding a query here.
  */
 
-import type {
-  ComponentDeployment,
-  BuildRun,
-  ReleaseMgtDeployment,
-  DeploymentTrackImage,
-  DeployDeploymentTrackInput,
-  PromoteInput,
-  StopDeploymentInput,
-  DeployPrebuiltImageInput,
-} from '../../types/deployment';
+import type { ComponentDeployment, BuildRun, ReleaseMgtDeployment, DeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../../types/deployment';
 import type { EnvEndpoint } from '../../types/component';
 import type { DeployComponentInput } from '../../types/build';
 import { bff, items, q, seg, type ListResponse, type MessageResponse } from './_client';
@@ -58,7 +49,12 @@ export const fetchComponentDeployment = (_orgHandler: string, _orgUuid: string, 
 // Shape of GET /components/{name}/releases/{releaseId}/endpoints (BFF
 // APIResourcesResponse): the workload's endpoints with resolved URLs and the
 // base64 OpenAPI spec. The BFF resolves the env from the releaseId.
-interface BffEndpointURL { host?: string; path?: string; port?: number; scheme?: string }
+interface BffEndpointURL {
+  host?: string;
+  path?: string;
+  port?: number;
+  scheme?: string;
+}
 interface BffEndpointResources {
   name: string;
   displayName?: string;
@@ -103,8 +99,7 @@ function toEnvEndpoint(ep: BffEndpointResources, releaseId: string): EnvEndpoint
 }
 
 export const fetchEnvEndpoints = (componentId: string, _versionId: string, releaseId: string): Promise<EnvEndpoint[]> =>
-  bff.get<{ endpoints?: BffEndpointResources[] }>(`/components/${seg(componentId)}/releases/${seg(releaseId)}/endpoints`)
-    .then((r) => (r?.endpoints ?? []).map((ep) => toEnvEndpoint(ep, releaseId)));
+  bff.get<{ endpoints?: BffEndpointResources[] }>(`/components/${seg(componentId)}/releases/${seg(releaseId)}/endpoints`).then((r) => (r?.endpoints ?? []).map((ep) => toEnvEndpoint(ep, releaseId)));
 
 // Shape of a build run from GET /components/{name}/builds (BFF WorkflowRun).
 // Newest-first per the BFF, so items[0] is the latest build.
@@ -158,28 +153,26 @@ function toBuildRun(run: BffWorkflowRun): BuildRun {
 // contract. (The BFF /deployments/history endpoint is release-binding state, not
 // builds, so it is intentionally not used here.)
 export const fetchDeploymentStatus = (componentId: string, _versionId: string): Promise<BuildRun[]> =>
-  bff.get<ListResponse<BffWorkflowRun>>(`/components/${seg(componentId)}/builds`).then(items).then((runs) => runs.map(toBuildRun));
+  bff
+    .get<ListResponse<BffWorkflowRun>>(`/components/${seg(componentId)}/builds`)
+    .then(items)
+    .then((runs) => runs.map(toBuildRun));
 
 // Wired — the BFF serves this from GetDeploymentHistory in the
 // ReleaseMgtDeployment shape. The environment query scopes the listing.
 export const fetchReleaseMgtDeployments = (_orgUuid: string, _projectId: string, componentId: string, _versionId: string, environmentId: string): Promise<ReleaseMgtDeployment[]> =>
   bff.get<ListResponse<ReleaseMgtDeployment>>(`/components/${seg(componentId)}/release-mgt-deployments${q({ environment: environmentId })}`).then(items);
 
-export const fetchDeploymentTrackImages = (componentId: string, _versionId: string): Promise<DeploymentTrackImage[]> =>
-  bff.get<ListResponse<DeploymentTrackImage>>(`/components/${seg(componentId)}/releases`).then(items);
+export const fetchDeploymentTrackImages = (componentId: string, _versionId: string): Promise<DeploymentTrackImage[]> => bff.get<ListResponse<DeploymentTrackImage>>(`/components/${seg(componentId)}/releases`).then(items);
 
-export const deployDeploymentTrack = (input: DeployDeploymentTrackInput): Promise<string> =>
-  bff.post<MessageResponse>(`/components/${seg(input.componentId)}/deployments`, input).then((r) => r?.message ?? '');
+export const deployDeploymentTrack = (input: DeployDeploymentTrackInput): Promise<string> => bff.post<MessageResponse>(`/components/${seg(input.componentId)}/deployments`, input).then((r) => r?.message ?? '');
 
 export const triggerBuild = (input: DeployComponentInput): Promise<{ message: string; success: boolean }> =>
-  bff.post<{ message: string; success: boolean }>(`/components/${seg(input.componentId)}/builds`, input)
-    .then((r) => r ?? { message: '', success: true });
+  bff.post<{ message: string; success: boolean }>(`/components/${seg(input.componentId)}/builds`, input).then((r) => r ?? { message: '', success: true });
 
-export const promote = (input: PromoteInput): Promise<string> =>
-  bff.post<MessageResponse>(`/components/${seg(input.componentId)}/deployments/promote`, input).then((r) => r?.message ?? '');
+export const promote = (input: PromoteInput): Promise<string> => bff.post<MessageResponse>(`/components/${seg(input.componentId)}/deployments/promote`, input).then((r) => r?.message ?? '');
 
-export const stopDeployment = (input: StopDeploymentInput): Promise<string> =>
-  bff.put<MessageResponse>(`/components/${seg(input.componentId)}/deployments/stop`, input).then((r) => r?.message ?? '');
+export const stopDeployment = (input: StopDeploymentInput): Promise<string> => bff.put<MessageResponse>(`/components/${seg(input.componentId)}/deployments/stop`, input).then((r) => r?.message ?? '');
 
 // Redeploy by releaseId — the BFF resolves the env from the release binding and
 // re-activates it (the env-keyed /deployments/redeploy route requires an env the
@@ -190,5 +183,4 @@ export const redeployDeployment = (input: { orgHandler: string; componentId: str
 // BFF stub: returns `{message: "prebuilt deploy accepted"}` without actually
 // deploying. Until the route is wired the Deploy flow will show a success
 // toast for a no-op.
-export const deployPrebuiltImage = (input: DeployPrebuiltImageInput): Promise<string> =>
-  bff.post<MessageResponse>(`/components/${seg(input.componentId)}/deploy-prebuilt`, input).then((r) => r?.message ?? '');
+export const deployPrebuiltImage = (input: DeployPrebuiltImageInput): Promise<string> => bff.post<MessageResponse>(`/components/${seg(input.componentId)}/deploy-prebuilt`, input).then((r) => r?.message ?? '');

@@ -20,7 +20,9 @@
 
 import type { Environment, CloudDataPlane, EnvironmentInput } from '../../types/environment';
 
-const ni = (name: string): never => { throw new Error(`[icp] environments.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[icp] environments.${name}: not implemented`);
+};
 
 export const fetchEnvironments = (_orgUuid: string, _projectId: string): Promise<Environment[]> => ni('fetchEnvironments');
 export const fetchAllEnvironments = (): Promise<Environment[]> => ni('fetchAllEnvironments');

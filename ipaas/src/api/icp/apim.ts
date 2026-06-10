@@ -17,7 +17,9 @@
  */
 
 // TODO: implement using icp APIs
-const ni = (name: string): never => { throw new Error(`[icp] apim.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[icp] apim.${name}: not implemented`);
+};
 
 export const fetchApimApi = (..._args: unknown[]): never => ni('fetchApimApi');
 export const updateApimApi = (..._args: unknown[]): never => ni('updateApimApi');

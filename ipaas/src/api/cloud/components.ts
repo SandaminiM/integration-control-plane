@@ -18,19 +18,7 @@
 
 /** Cloud (OpenChoreo) component API. Calls the ipaas-service BFF. */
 
-import type {
-  Component,
-  ComponentDetail,
-  Endpoint,
-  EnvEndpoint,
-  CreateComponentInput,
-  UpdateComponentInput,
-  UpdateAutoDeployInput,
-  GenerateComponentEndpointsInput,
-  ComponentNameAvailability,
-  DisplayType,
-  DeploymentTrack,
-} from '../../types/component';
+import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability, DisplayType, DeploymentTrack } from '../../types/component';
 import { bff, items, q, seg, type ListResponse } from './_client';
 
 // Underscored params (_orgHandler, _versionId, _releaseId) are kept on exported
@@ -138,9 +126,7 @@ function toBffCreateComponentBody(input: CreateComponentInput) {
   };
 }
 
-export const fetchComponents = (_orgHandler: string, projectId: string): Promise<Component[]> =>
-  bff.get<ListResponse<Component>>(`/projects/${seg(projectId)}/components`)
-    .then((r) => items(r).map(withFrontendDisplayType));
+export const fetchComponents = (_orgHandler: string, projectId: string): Promise<Component[]> => bff.get<ListResponse<Component>>(`/projects/${seg(projectId)}/components`).then((r) => items(r).map(withFrontendDisplayType));
 
 // The BFF's GET /projects/{p}/components/{name} returns an empty stub today
 // (TODO: revert to a single GET once the detail endpoint is live). Until then
@@ -166,9 +152,7 @@ export const fetchComponentByHandler = async (projectId: string, componentHandle
   // (== selected track id), so fall back to the component id as a stable track
   // id to keep those queries enabled. The component id is always non-empty.
   const deploymentTracks: DeploymentTrack[] = [
-    track?.id
-      ? { id: track.id, branch: track.branch, latest: track.latest, autoDeployEnabled: track.autoDeployEnabled }
-      : { id: match.id, branch: track?.branch, latest: true, autoDeployEnabled: track?.autoDeployEnabled },
+    track?.id ? { id: track.id, branch: track.branch, latest: track.latest, autoDeployEnabled: track.autoDeployEnabled } : { id: match.id, branch: track?.branch, latest: true, autoDeployEnabled: track?.autoDeployEnabled },
   ];
 
   // orgHandler is unused by cloud consumers but kept in the shape for parity.
@@ -176,45 +160,32 @@ export const fetchComponentByHandler = async (projectId: string, componentHandle
 };
 
 // awaits: real /endpoints mapping in the BFF (currently returns an empty list).
-export const fetchComponentEndpoints = (componentId: string, _versionId: string): Promise<Endpoint[]> =>
-  bff.get<ListResponse<Endpoint>>(`/components/${seg(componentId)}/endpoints`).then(items);
+export const fetchComponentEndpoints = (componentId: string, _versionId: string): Promise<Endpoint[]> => bff.get<ListResponse<Endpoint>>(`/components/${seg(componentId)}/endpoints`).then(items);
 
-export const fetchComponentNameAvailability = (projectId: string, candidate: string): Promise<ComponentNameAvailability> =>
-  bff.get<ComponentNameAvailability>(`/projects/${seg(projectId)}/components/name-availability${q({ candidate })}`);
+export const fetchComponentNameAvailability = (projectId: string, candidate: string): Promise<ComponentNameAvailability> => bff.get<ComponentNameAvailability>(`/projects/${seg(projectId)}/components/name-availability${q({ candidate })}`);
 
 export const fetchComponentEndpointSpec = (componentId: string, _versionId: string, endpointId: string): Promise<string | null> =>
   bff.get<{ spec: string | null }>(`/components/${seg(componentId)}/endpoints/${seg(endpointId)}/spec`).then((r) => r.spec ?? null);
 
-export const createComponent = (input: CreateComponentInput): Promise<Component> =>
-  bff.post<Component>(`/projects/${seg(input.projectId)}/components`, toBffCreateComponentBody(input))
-    .then(withFrontendDisplayType);
+export const createComponent = (input: CreateComponentInput): Promise<Component> => bff.post<Component>(`/projects/${seg(input.projectId)}/components`, toBffCreateComponentBody(input)).then(withFrontendDisplayType);
 
 export const deleteComponent = (input: { orgHandler: string; componentId: string; projectId: string }): Promise<DeleteComponentResult> =>
-  bff.delete<DeleteComponentResult | null>(`/projects/${seg(input.projectId)}/components/${seg(input.componentId)}`)
-    .then((r) => r ?? { status: 'success', canDelete: true, message: '', encodedData: '' });
+  bff.delete<DeleteComponentResult | null>(`/projects/${seg(input.projectId)}/components/${seg(input.componentId)}`).then((r) => r ?? { status: 'success', canDelete: true, message: '', encodedData: '' });
 
 // OpenChoreo addresses components by name (== handler == id here), and the BFF
 // UpdateComponent only consumes displayName/description. Use the handler so the
 // name segment is never empty, and send just the mutable fields.
 export const updateComponent = (input: UpdateComponentInput): Promise<Component> =>
-  bff.put<Component>(
-    `/projects/${seg(input.projectId)}/components/${seg(input.handler || input.id)}`,
-    { displayName: input.displayName, description: input.description },
-  ).then(withFrontendDisplayType);
+  bff.put<Component>(`/projects/${seg(input.projectId)}/components/${seg(input.handler || input.id)}`, { displayName: input.displayName, description: input.description }).then(withFrontendDisplayType);
 
-export const updateAutoDeployEnabled = (input: UpdateAutoDeployInput): Promise<{ id: string; autoDeployEnabled: boolean }> =>
-  bff.patch<{ id: string; autoDeployEnabled: boolean }>(`/components/${seg(input.componentId)}/auto-deploy`, input);
+export const updateAutoDeployEnabled = (input: UpdateAutoDeployInput): Promise<{ id: string; autoDeployEnabled: boolean }> => bff.patch<{ id: string; autoDeployEnabled: boolean }>(`/components/${seg(input.componentId)}/auto-deploy`, input);
 
-export const generateComponentEndpoints = (input: GenerateComponentEndpointsInput): Promise<EnvEndpoint[]> =>
-  bff.post<ListResponse<EnvEndpoint>>(`/components/${seg(input.componentId)}/endpoints/generate`, input).then(items);
+export const generateComponentEndpoints = (input: GenerateComponentEndpointsInput): Promise<EnvEndpoint[]> => bff.post<ListResponse<EnvEndpoint>>(`/components/${seg(input.componentId)}/endpoints/generate`, input).then(items);
 
-export const generateComponentEnvironmentJwtSecret = (componentId: string, environmentId: string): Promise<string> =>
-  bff.post<{ secret: string }>(`/components/${seg(componentId)}/environments/${seg(environmentId)}/jwt-secret`)
-    .then((r) => r?.secret ?? '');
+export const generateComponentEnvironmentJwtSecret = (componentId: string, environmentId: string): Promise<string> => bff.post<{ secret: string }>(`/components/${seg(componentId)}/environments/${seg(environmentId)}/jwt-secret`).then((r) => r?.secret ?? '');
 
 export const rotateComponentEnvironmentJwtSecret = (componentId: string, environmentId: string): Promise<string> =>
-  bff.put<{ secret: string }>(`/components/${seg(componentId)}/environments/${seg(environmentId)}/jwt-secret/rotate`)
-    .then((r) => r?.secret ?? '');
+  bff.put<{ secret: string }>(`/components/${seg(componentId)}/environments/${seg(environmentId)}/jwt-secret/rotate`).then((r) => r?.secret ?? '');
 
 export const updateEndpoint = (input: { componentId: string; versionId: string; releaseId: string; endpointId: string; displayName: string; networkVisibilities: string[] }): Promise<object> =>
   bff.put<object>(`/components/${seg(input.componentId)}/endpoints/${seg(input.endpointId)}/visibility`, input);

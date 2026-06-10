@@ -71,11 +71,7 @@ export const validateOrgName = (_orgName: string): Promise<boolean> => Promise.r
 // registerUser becomes a client-side no-op that synthesises the response from
 // JWT claims (falling back to the supplied orgName) so the post-registration
 // navigation in RegisterOrganization.tsx still works.
-export const registerUser = async (
-  orgName: string,
-  _termsAccepted: boolean,
-  _serviceName: string,
-): Promise<RegisterUserResponse> => {
+export const registerUser = async (orgName: string, _termsAccepted: boolean, _serviceName: string): Promise<RegisterUserResponse> => {
   const { handle, uuid } = readJwtOrgClaims();
   const resolvedHandle = handle || orgName;
   return {
@@ -94,14 +90,11 @@ export const registerUser = async (
 // already provisioned upstream by the time the user reaches OrgHome.
 export const initOrg = async (_orgUuid: string, _region: string): Promise<void> => {};
 
-export const fetchProjectsByOrgId = (orgNumericId: number): Promise<Project[]> =>
-  bff.get<ListResponse<Project>>(`/orgs/${seg(String(orgNumericId))}/projects`).then(items);
+export const fetchProjectsByOrgId = (orgNumericId: number): Promise<Project[]> => bff.get<ListResponse<Project>>(`/orgs/${seg(String(orgNumericId))}/projects`).then(items);
 
 export const createDefaultProject = (orgNumericId: number, orgHandler: string, projectHandler?: string): Promise<{ id: string; handler: string }> =>
   bff.post<{ id: string; handler: string }>(`/orgs/${seg(String(orgNumericId))}/projects/default`, { orgHandler, projectHandler });
 
-export const fetchOrgComponentLimits = (orgUuid: string): Promise<OrgComponentLimits> =>
-  bff.get<OrgComponentLimits>(`/orgs/${seg(orgUuid)}/component-limits`);
+export const fetchOrgComponentLimits = (orgUuid: string): Promise<OrgComponentLimits> => bff.get<OrgComponentLimits>(`/orgs/${seg(orgUuid)}/component-limits`);
 
-export const fetchOrgSubscriptions = (orgUuid: string): Promise<OrgSubscription[]> =>
-  bff.get<ListResponse<OrgSubscription>>(`/orgs/${seg(orgUuid)}/subscriptions`).then(items);
+export const fetchOrgSubscriptions = (orgUuid: string): Promise<OrgSubscription[]> => bff.get<ListResponse<OrgSubscription>>(`/orgs/${seg(orgUuid)}/subscriptions`).then(items);
