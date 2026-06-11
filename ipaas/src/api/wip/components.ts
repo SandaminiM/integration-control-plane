@@ -231,7 +231,7 @@ export async function createComponent(input: CreateComponentInput): Promise<Comp
       displayType: input.displayType,
       description: input.description,
       status: '',
-      componentSubType: null,
+      componentSubType: input.componentSubType ?? null,
       version: '1.0.0',
       createdAt: '',
       lastBuildDate: '',
