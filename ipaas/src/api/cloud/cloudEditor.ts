@@ -17,7 +17,9 @@
  */
 
 // TODO: implement using cloud APIs
-const ni = (name: string): never => { throw new Error(`[cloud] cloudEditor.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[cloud] cloudEditor.${name}: not implemented`);
+};
 
 export const getOrCreateSampleRegistry = (..._args: unknown[]): never => ni('getOrCreateSampleRegistry');
 export const callCreateCodeServer = (..._args: unknown[]): never => ni('callCreateCodeServer');

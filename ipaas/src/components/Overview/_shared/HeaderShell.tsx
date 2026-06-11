@@ -20,19 +20,19 @@ import { Avatar, Box, Button, ButtonGroup, Chip, CircularProgress, ClickAwayList
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Tag, Cloud, Github, GitBranch, GitCommitHorizontal, Copy, Check, ChevronDown, Code2, Pencil, Globe, Lock, ShieldCheck, CodeXml, MCP, Recycle } from '@wso2/oxygen-ui-icons-react';
-import type { ComponentDetail } from '../types/component';
-import type { Project } from '../types/project';
-import type { Repository, Commit } from '../types/repository';
-import { useApimApi } from '../hooks/useApim';
-import { useUpdateComponent } from '../hooks/useComponents';
-import { useChoreoSampleImages } from '../hooks/useRepository';
-import LabelDialog from './LabelDialog';
-import SecurityDrawer from './SecurityDrawer';
-import { formatDistanceToNow } from '../utils/time';
-import { useAuth } from '../auth/AuthContext';
-import { useOrgUuid } from '../hooks/useOrgUuid';
-import { getDisplayLabel } from '../constants/integrations';
-import { getDevPortalBaseUrl } from '../config/runtimeConfig';
+import type { ComponentDetail } from '../../../types/component';
+import type { Project } from '../../../types/project';
+import type { Repository, Commit } from '../../../types/repository';
+import { useApimApi } from '../../../hooks/useApim';
+import { useUpdateComponent } from '../../../hooks/useComponents';
+import { useChoreoSampleImages } from '../../../hooks/useRepository';
+import LabelDialog from '../../LabelDialog';
+import SecurityDrawer from '../../SecurityDrawer';
+import { formatDistanceToNow } from '../../../utils/time';
+import { useAuth } from '../../../auth/AuthContext';
+import { useOrgUuid } from '../../../hooks/useOrgUuid';
+import { getDisplayLabel } from '../../../constants/integrations';
+import { getDevPortalBaseUrl } from '../../../config/runtimeConfig';
 
 function buildRepoUrl(repo: Repository): string {
   const { gitProvider, organizationApp, nameApp, branch, appSubPath, bitbucketServerUrl, serverUrl, projectApp } = repo;

@@ -19,11 +19,11 @@
 import { Button, ButtonGroup, ClickAwayListener, Grow, MenuItem, MenuList, Paper, Popper } from '@wso2/oxygen-ui';
 import { CalendarClock, ChevronDown } from '@wso2/oxygen-ui-icons-react';
 import { useRef, useState } from 'react';
-import Authorized from '../Authorized';
-import { Permissions } from '../../constants/permissions';
-import { useStopDeployment } from '../../hooks/useDeployments';
+import Authorized from '../../Authorized';
+import { Permissions } from '../../../constants/permissions';
+import { useStopDeployment } from '../../../hooks/useDeployments';
 import ScheduleDialog from './ScheduleDialog';
-import { IS_CLOUD } from '../../features';
+import { IS_CLOUD } from '../../../features';
 
 export interface ScheduleButtonProps {
   envId: string;

@@ -20,9 +20,9 @@ import { Alert, Box, CircularProgress, Divider, IconButton, MenuItem, Select, St
 import { Building2, Check, Copy, Download, Folder, Globe } from '@wso2/oxygen-ui-icons-react';
 import { useState, useCallback, useMemo } from 'react';
 import AutomationExecutions from '../AutomationExecutions';
-import EnvCardInsights from './EnvCardInsights';
-import EnvCardAutomationInsights from './EnvCardAutomationInsights';
-import SwaggerOperationsList from './SwaggerOperationsList';
+import EnvCardInsights from '../Overview/integration-as-api/ServiceInsights';
+import EnvCardAutomationInsights from '../Overview/automation/AutomationInsights';
+import SwaggerOperationsList from '../Overview/integration-as-api/SwaggerOperationsList';
 import { useFetchComponentEndpointSpec } from '../../hooks/useComponents';
 import { useApiDefinition } from '../../hooks/useDeployments';
 import type { EnvEndpoint } from '../../types/component';

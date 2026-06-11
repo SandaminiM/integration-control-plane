@@ -20,7 +20,9 @@
 
 import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput } from '../../types/project';
 
-const ni = (name: string): never => { throw new Error(`[icp] projects.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[icp] projects.${name}: not implemented`);
+};
 
 export const fetchProjects = (_orgId: number): Promise<Project[]> => ni('fetchProjects');
 export const fetchProject = (_orgId: number, _projectId: string): Promise<Project> => ni('fetchProject');

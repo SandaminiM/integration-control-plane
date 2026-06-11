@@ -23,11 +23,9 @@ import { bff, items, q, seg, type ListResponse, type MessageResponse } from './_
 
 // _orgUuid is kept for devant contract parity; cloud derives the org from the token.
 
-export const fetchEnvironments = (_orgUuid: string, projectId: string): Promise<Environment[]> =>
-  bff.get<ListResponse<Environment>>(`/environments${q({ project: projectId })}`).then(items);
+export const fetchEnvironments = (_orgUuid: string, projectId: string): Promise<Environment[]> => bff.get<ListResponse<Environment>>(`/environments${q({ project: projectId })}`).then(items);
 
-export const fetchAllEnvironments = (): Promise<Environment[]> =>
-  bff.get<ListResponse<Environment>>('/environments').then(items);
+export const fetchAllEnvironments = (): Promise<Environment[]> => bff.get<ListResponse<Environment>>('/environments').then(items);
 
 // CloudDataPlanes drive devant-era URL derivation (alerting, runtime logs,
 // copilot region endpoints). In cloud there is one dataplane with the gateway
@@ -51,17 +49,12 @@ export const fetchCloudDataPlanes = async (_orgUuid: string): Promise<CloudDataP
   }
 };
 
-export const fetchLoggers = (environmentId: string, componentId: string): Promise<Logger[]> =>
-  bff.get<ListResponse<Logger>>(`/components/${seg(componentId)}/loggers${q({ environment: environmentId })}`).then(items);
+export const fetchLoggers = (environmentId: string, componentId: string): Promise<Logger[]> => bff.get<ListResponse<Logger>>(`/components/${seg(componentId)}/loggers${q({ environment: environmentId })}`).then(items);
 
-export const updateLogLevel = (input: UpdateLogLevelInput): Promise<{ success: boolean; message: string; commandIds: string[] }> =>
-  bff.put<{ success: boolean; message: string; commandIds: string[] }>(`/components/${seg(input.componentName)}/loggers`, input);
+export const updateLogLevel = (input: UpdateLogLevelInput): Promise<{ success: boolean; message: string; commandIds: string[] }> => bff.put<{ success: boolean; message: string; commandIds: string[] }>(`/components/${seg(input.componentName)}/loggers`, input);
 
-export const createEnvironment = (input: EnvironmentInput): Promise<Environment> =>
-  bff.post<Environment>('/environments', input);
+export const createEnvironment = (input: EnvironmentInput): Promise<Environment> => bff.post<Environment>('/environments', input);
 
-export const updateEnvironment = (input: EnvironmentInput & { environmentId: string }): Promise<Environment> =>
-  bff.put<Environment>(`/environments/${seg(input.environmentId)}`, input);
+export const updateEnvironment = (input: EnvironmentInput & { environmentId: string }): Promise<Environment> => bff.put<Environment>(`/environments/${seg(input.environmentId)}`, input);
 
-export const deleteEnvironment = (environmentId: string): Promise<string> =>
-  bff.delete<MessageResponse>(`/environments/${seg(environmentId)}`).then((r) => r?.message ?? '');
+export const deleteEnvironment = (environmentId: string): Promise<string> => bff.delete<MessageResponse>(`/environments/${seg(environmentId)}`).then((r) => r?.message ?? '');

@@ -152,10 +152,27 @@ export function displayTypeFromSample(componentType: string, buildPack: string):
     case 'ai-agent':
       return 'ballerinaService';
     case 'file-integration':
-      return 'ballerinaService';
+      return isMI ? 'miApiService' : 'ballerinaService';
     default:
       return isMI ? 'miApiService' : 'ballerinaService';
   }
+}
+
+/**
+ * Maps a sample's `componentType` + `buildPack` to the `componentSubType`
+ * the create API should receive. Returns `undefined` for sample categories
+ * that share a `displayType` with another category and need no further
+ * subtyping (regular services, automations, etc.).
+ *
+ * File Integration is the first case that needs this: its displayType is
+ * the same as a generic service (`ballerinaService` / `miApiService`), so
+ * the backend uses `componentSubType` to distinguish it.
+ */
+export function componentSubTypeFromSample(componentType: string, buildPack: string): string | undefined {
+  if (componentType === 'file-integration') {
+    return buildPack === 'wso2-mi' ? 'miFileIntegration' : 'ballerinaFileIntegration';
+  }
+  return undefined;
 }
 
 export const BUILDPACK_LABELS: Record<string, string> = {
@@ -172,7 +189,7 @@ export function normalizeComponentType(type: string): string {
   return type === 'automation' ? 'scheduled-task' : type;
 }
 
-export const ALLOWED_SAMPLE_TYPES = new Set(['service', 'scheduled-task', 'automation']);
+export const ALLOWED_SAMPLE_TYPES = new Set(['service', 'scheduled-task', 'automation', 'file-integration']);
 
 export const APP_COLORS: Record<string, string> = {
   S: '#00a1e0', // Salesforce blue

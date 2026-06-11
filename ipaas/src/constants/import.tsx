@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Globe, Clock, Layers, Repeat, Server } from '@wso2/oxygen-ui-icons-react';
+import { Globe, Clock, Layers, Repeat, Server, Folder, HardDrive } from '@wso2/oxygen-ui-icons-react';
 import { Box } from '@wso2/oxygen-ui';
 import type { ReactNode } from 'react';
 import type { IntegrationTypeOption } from '../types/import';
@@ -40,6 +40,16 @@ export const INTEGRATION_TYPES: IntegrationTypeOption[] = [
     icons: [
       { icon: <Clock size={16} />, label: 'Scheduled' },
       { icon: <Repeat size={16} />, label: 'Recurring' },
+    ],
+  },
+  {
+    id: 'file-integration',
+    title: 'File Integration',
+    description: 'Process files from storage systems like FTP or AWS S3 when they arrive',
+    docLink: 'https://wso2.com/integration-platform/docs/get-started/build-file-driven-integration',
+    icons: [
+      { icon: <Folder size={16} />, label: 'Files' },
+      { icon: <HardDrive size={16} />, label: 'Storage' },
     ],
   },
 ];

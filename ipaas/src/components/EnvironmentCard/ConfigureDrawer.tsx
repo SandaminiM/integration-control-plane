@@ -28,7 +28,7 @@ import { useGenerateComponentEndpoints, useUpdateEndpoint } from '../../hooks/us
 import { useSaveSchemaConfig, usePostCertificateMappings } from '../../hooks/useConfiguration';
 import { useDeployDeploymentTrack } from '../../hooks/useDeployments';
 import ManageDrawer from './ManageDrawer';
-import { EndpointCard, VISIBILITY_OPTS } from './EndpointCard';
+import { EndpointCard, VISIBILITY_OPTS } from '../EndpointCard';
 import { ConfigForm, type BaseType, type LinkingInfo, type JSONSchema } from '../SchemaConfigForm';
 import ImportConfigTomlButton from '../ImportConfigTomlButton';
 

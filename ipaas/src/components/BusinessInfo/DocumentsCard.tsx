@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, Button, Card, CardContent, CircularProgress, Divider, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, Card, CardContent, Divider, Skeleton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ExternalLink, FileText } from '@wso2/oxygen-ui-icons-react';
 import { useNavigate } from 'react-router';
 import { useApiDocuments } from '../../hooks/useMarketplace';
@@ -40,9 +40,10 @@ export default function DocumentsCard({ apimId, docsPath }: Props) {
       <Divider />
       <CardContent sx={{ flexGrow: 1, pb: (theme) => `${theme.spacing(2)} !important` }}>
         {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-            <CircularProgress size={20} />
-          </Box>
+          <Stack direction="row" gap={1} flexWrap="wrap" sx={{ mt: 0.5 }}>
+            <Skeleton variant="rounded" width={140} height={42} />
+            <Skeleton variant="rounded" width={140} height={42} />
+          </Stack>
         ) : documents.length === 0 ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2, gap: 1 }}>
             <FileText size={32} style={{ opacity: 0.3 }} />

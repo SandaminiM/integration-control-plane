@@ -30,13 +30,28 @@ import { bff, q, seg } from './_client';
 import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, UpdateJobConfigsInput, TriggerComponentInput } from '../../types/executions';
 import type { TriggerTaskInput } from '../../types/artifact';
 
-interface ExecutionArgument { argumentName: string; argumentValue: string }
+interface ExecutionArgument {
+  argumentName: string;
+  argumentValue: string;
+}
 
 // BFF Execution (k8s job) from GET /components/{name}/schedules/{envId}/executions.
-interface BffExecution { jobId?: string; status?: string; startTime?: string; completionTime?: string; revisionId?: string }
+interface BffExecution {
+  jobId?: string;
+  status?: string;
+  startTime?: string;
+  completionTime?: string;
+  revisionId?: string;
+}
 
 // BFF Schedule (CronJob spec) from GET /components/{name}/schedules/{envId}.
-interface BffSchedule { cronExpression: string; cronTimezone?: string; state?: string; backoffLimit?: number | null; activeDeadlineSeconds?: number | null }
+interface BffSchedule {
+  cronExpression: string;
+  cronTimezone?: string;
+  state?: string;
+  backoffLimit?: number | null;
+  activeDeadlineSeconds?: number | null;
+}
 
 // The BFF returns ISO timestamps; the env card parses startTime/completionTime
 // as unix seconds (parseInt * 1000), so convert.
@@ -87,7 +102,7 @@ export const fetchExecutionConfigs = (componentId: string, _releaseId: string, e
 // GET /components/{name}/environments/{envId}/resource-tree/executions — the
 // CronJob's job runs (newest-first), keyed by component + env.
 //
-// Sourced from OpenChoreo's rendered resource tree (control-plane API) 
+// Sourced from OpenChoreo's rendered resource tree (control-plane API)
 export const fetchTaskExecutions = (_releaseId: string, componentId = '', envId = '', _projectId = ''): Promise<TaskExecution[]> => {
   if (!componentId || !envId) return Promise.resolve([]);
   return bff
@@ -97,17 +112,21 @@ export const fetchTaskExecutions = (_releaseId: string, componentId = '', envId 
 };
 
 export const fetchExecutionArguments = (runId: string, componentId: string, _releaseId: string): Promise<ExecutionArgument[]> =>
-  bff.get<ExecutionArgument[]>(`/components/${seg(componentId)}/executions/${seg(runId)}/arguments`).then((r) => r ?? []).catch(() => []);
+  bff
+    .get<ExecutionArgument[]>(`/components/${seg(componentId)}/executions/${seg(runId)}/arguments`)
+    .then((r) => r ?? [])
+    .catch(() => []);
 
 // awaits: BFF execution-log plumbing (pod logs via resource-tree).
 export const fetchExecutionLogs = (_componentId: string, _deploymentTrackId: string, _executionId: string, _environmentId: string): Promise<ExecutionLogEntry[]> => Promise.resolve([]);
 
 // No dedicated count endpoint; approximate from the listed job runs.
 export const fetchTaskExecutionCount = (releaseId: string, componentId = '', envId = '', projectId = ''): Promise<number | null> =>
-  fetchTaskExecutions(releaseId, componentId, envId, projectId).then((items) => items.length).catch(() => null);
+  fetchTaskExecutions(releaseId, componentId, envId, projectId)
+    .then((items) => items.length)
+    .catch(() => null);
 
-export const updateJobConfigs = (input: UpdateJobConfigsInput): Promise<boolean> =>
-  bff.put<{ success?: boolean }>(`/components/${seg(input.componentId)}/job-configs`, input).then((r) => r?.success ?? true);
+export const updateJobConfigs = (input: UpdateJobConfigsInput): Promise<boolean> => bff.put<{ success?: boolean }>(`/components/${seg(input.componentId)}/job-configs`, input).then((r) => r?.success ?? true);
 
 // MI artifact trigger — no API Manager / MI runtime on the OpenChoreo stack.
 export const triggerTask = (_input: TriggerTaskInput): Promise<{ status: string; message: string; successCount: number; failedCount: number; details: string[] }> =>

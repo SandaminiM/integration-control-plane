@@ -116,6 +116,14 @@ export interface CreateComponentInput {
   orgHandler: string;
   projectId: string;
   displayType: DisplayType;
+  /**
+   * Optional subtype that further classifies the component beyond its
+   * `displayType`. Used to flag File Integration (`'ballerinaFileIntegration'`,
+   * `'miFileIntegration'`), AI Agent, MCP, Tailscale, etc., where the build
+   * runtime is shared with another type (e.g. `ballerinaService`) but the
+   * functional category differs.
+   */
+  componentSubType?: string;
   srcGitRepoUrl?: string;
   repositoryBranch?: string;
   repositorySubPath?: string;

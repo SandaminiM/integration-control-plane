@@ -42,15 +42,18 @@ export const fetchSchemaConfig = (projectId: string, componentId: string, envId:
   bff.get<SchemaConfigData>(`/components/${seg(componentId)}/environments/${seg(envId)}/config-schema${q({ projectName: projectId })}`).catch(() => null);
 
 export const saveSchemaConfig = (input: SaveSchemaConfigInput): Promise<{ configurations: SchemaConfigItem[] }> =>
-  bff.post<{ configurations?: SchemaConfigItem[] }>(`/components/${seg(input.componentId)}/environments/${seg(input.envId)}/config-schema${q({ projectName: input.projectId })}`, {
-    configurations: input.configurations,
-    ...(input.commitHash ? { commitHash: input.commitHash } : {}),
-  }).then((r) => ({ configurations: r?.configurations ?? input.configurations }));
+  bff
+    .post<{ configurations?: SchemaConfigItem[] }>(`/components/${seg(input.componentId)}/environments/${seg(input.envId)}/config-schema${q({ projectName: input.projectId })}`, {
+      configurations: input.configurations,
+      ...(input.commitHash ? { commitHash: input.commitHash } : {}),
+    })
+    .then((r) => ({ configurations: r?.configurations ?? input.configurations }));
 
 // --- Choreo-v2 concepts not present on the OpenChoreo stack: safe defaults. ---
 export const fetchCertificateGroups = (_projectId: string, _componentId: string): Promise<CertGroup[]> => Promise.resolve([]);
 export const fetchConfigGroups = (_projectId: string, _componentId: string): Promise<CertGroup[]> => Promise.resolve([]);
 export const fetchCertificateMappings = (_projectId: string, _componentId: string, _envId: string, _deploymentTrackId: string): Promise<CertMapping | null> => Promise.resolve(null);
-export const fetchConfigMgt = (_orgHandler: string, _projectId: string, _componentId: string, _envId: string, _versionId: string, _componentName: string, _commitHash?: string): Promise<ConfigMgtData> => Promise.resolve({ configurations: [] } as unknown as ConfigMgtData);
+export const fetchConfigMgt = (_orgHandler: string, _projectId: string, _componentId: string, _envId: string, _versionId: string, _componentName: string, _commitHash?: string): Promise<ConfigMgtData> =>
+  Promise.resolve({ configurations: [] } as unknown as ConfigMgtData);
 export const postConfigMgt = (_input: PostConfigMgtInput): Promise<unknown> => Promise.resolve(null);
 export const postCertificateMappings = (_data: CertMapping): Promise<unknown> => Promise.resolve(null);

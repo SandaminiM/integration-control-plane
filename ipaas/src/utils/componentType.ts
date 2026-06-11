@@ -40,6 +40,15 @@ export interface ComponentTypeFlags {
  * Derives a set of boolean flags from a component's `displayType` (and optionally
  * `componentSubType`).  All unknown / unsupported types return all-false flags —
  * the Deploy page should show a "Coming Soon" fallback for those.
+ *
+ * NOTE: legacy utility. Per the agreed architecture (see the
+ * `icp-integration-architecture` memory), integration-type identification
+ * must happen exactly once via `identifyIntegration`, never re-derived here.
+ * Do NOT add new type discriminators (e.g. file-integration) to this function —
+ * they belong in `identifyIntegration` and are consumed via
+ * `useIntegrationIdentity`. This utility exists only because the Deploy
+ * subsystem hasn't been migrated to the new architecture yet; a future
+ * Deploy migration will delete it.
  */
 export function getComponentTypeFlags(displayType: string, componentSubType?: string | null): ComponentTypeFlags {
   const isProxy = displayType === 'proxy' || displayType === 'gitProxy';

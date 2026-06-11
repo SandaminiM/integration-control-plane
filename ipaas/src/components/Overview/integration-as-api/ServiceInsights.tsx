@@ -18,9 +18,9 @@
 
 import { Avatar, Box, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
 import { Activity, AlertTriangle, Clock, TrendingUp } from '@wso2/oxygen-ui-icons-react';
-import { useOrgUuid } from '../../hooks/useOrgUuid';
-import { useComponentInsights, useInsightsEnvironments } from '../../hooks/useInsights';
-import type { ComponentInsights } from '../../types/insights';
+import { useOrgUuid } from '../../../hooks/useOrgUuid';
+import { useComponentInsights, useInsightsEnvironments } from '../../../hooks/useInsights';
+import type { ComponentInsights } from '../../../types/insights';
 
 const ZERO_METRICS: ComponentInsights = { requestCount: 0, errorCount: 0, errorRate: 0, latency: 0 };
 
@@ -73,9 +73,9 @@ function MetricTile({ icon, label, value, unit, loading, isLast }: MetricTilePro
   );
 }
 
-// ---------- EnvCardInsights ----------
+// ---------- ServiceInsights ----------
 
-interface EnvCardInsightsProps {
+interface ServiceInsightsProps {
   envName: string;
   envId: string;
   apimEnvId?: string;
@@ -83,7 +83,7 @@ interface EnvCardInsightsProps {
   apiId: string;
 }
 
-export default function EnvCardInsights({ envName, envId, apimEnvId, projectId, apiId }: EnvCardInsightsProps) {
+export default function ServiceInsights({ envName, envId, apimEnvId, projectId, apiId }: ServiceInsightsProps) {
   const orgUuid = useOrgUuid() ?? '';
 
   // Shared React Query hook — deduplicated across all env cards for the same project

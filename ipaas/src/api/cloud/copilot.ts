@@ -17,7 +17,9 @@
  */
 
 // TODO: implement using cloud APIs
-const ni = (name: string): never => { throw new Error(`[cloud] copilot.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[cloud] copilot.${name}: not implemented`);
+};
 
 export const getAiCopilotAnswer = (..._args: unknown[]): never => ni('getAiCopilotAnswer');
 export const provideCopilotFeedback = (..._args: unknown[]): never => ni('provideCopilotFeedback');

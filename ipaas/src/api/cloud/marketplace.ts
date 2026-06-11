@@ -17,7 +17,9 @@
  */
 
 // TODO: implement using cloud APIs
-const ni = (name: string): never => { throw new Error(`[cloud] marketplace.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[cloud] marketplace.${name}: not implemented`);
+};
 
 export const fetchThrottlingPolicies = (..._args: unknown[]): never => ni('fetchThrottlingPolicies');
 export const fetchApiDocuments = (..._args: unknown[]): never => ni('fetchApiDocuments');

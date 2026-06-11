@@ -22,7 +22,9 @@ import type { ComponentDeployment, BuildRun, ReleaseMgtDeployment, DeploymentTra
 import type { EnvEndpoint } from '../../types/component';
 import type { DeployComponentInput } from '../../types/build';
 
-const ni = (name: string): never => { throw new Error(`[icp] deployments.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[icp] deployments.${name}: not implemented`);
+};
 
 export const fetchComponentDeployment = (_orgHandler: string, _orgUuid: string, _componentId: string, _versionId: string, _environmentId: string): Promise<ComponentDeployment | null> => ni('fetchComponentDeployment');
 export const fetchEnvEndpoints = (_componentId: string, _versionId: string, _releaseId: string): Promise<EnvEndpoint[]> => ni('fetchEnvEndpoints');

@@ -30,6 +30,7 @@ import ComingSoon from './ComingSoon';
 import DeployEnvironmentCard from '../components/Deploy/DeployEnvironmentCard/DeployEnvironmentCard';
 import type { ComponentScope } from '../nav';
 import { getComponentTypeFlags } from '../utils/componentType';
+import { identifyIntegration } from '../utils/identifyIntegration';
 import { getDisplayLabel } from '../constants/integrations';
 
 export default function Deploy(scope: ComponentScope): JSX.Element {
@@ -77,18 +78,25 @@ export default function Deploy(scope: ComponentScope): JSX.Element {
 
   const flags = getComponentTypeFlags(component.displayType ?? '', component.componentSubType);
   const displayLabel = getDisplayLabel(component.displayType ?? '', component.componentSubType ?? null);
+  // Type identified once, via the canonical resolver — NOT re-derived in
+  // `getComponentTypeFlags` (which keys only on displayType). A file integration
+  // shares a service displayType + build pipeline, so it deploys like a service;
+  // only its (non-existent) endpoint UI is suppressed on the card below.
+  const isFileIntegration = identifyIntegration(component.displayType ?? '', component.componentSubType ?? null).type === 'file-integration';
 
   if (flags.isProxy) {
     return <ComingSoon title="Proxy Deploy Coming Soon" description="Deploy management for REST API Proxy components will be available in a future release." />;
   }
 
-  if (!flags.isDeployable) {
+  if (!flags.isDeployable && !isFileIntegration) {
     return <ComingSoon title="Deploy Not Yet Supported" description={`Deploy management for ${displayLabel} components is coming soon.`} />;
   }
 
   return (
     <PageContent>
-      <Typography variant="h1" sx={{ mb: 4 }}>Deploy</Typography>
+      <Typography variant="h1" sx={{ mb: 4 }}>
+        Deploy
+      </Typography>
       <Box sx={{ display: 'flex', alignItems: 'flex-start', minWidth: 'max-content' }}>
         {/* Left panel — build artifact selection + deploy trigger */}
         <Box sx={{ flexShrink: 0 }}>
@@ -126,6 +134,7 @@ export default function Deploy(scope: ComponentScope): JSX.Element {
                   versionId={versionId}
                   deploymentPipelineId={project?.defaultDeploymentPipelineId ?? ''}
                   flags={flags}
+                  isFileIntegration={isFileIntegration}
                   env={env}
                   branch={branch}
                   componentName={component.name}

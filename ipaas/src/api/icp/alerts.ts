@@ -17,7 +17,9 @@
  */
 
 // TODO: implement using icp APIs
-const ni = (name: string): never => { throw new Error(`[icp] alerts.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[icp] alerts.${name}: not implemented`);
+};
 
 export const getAlertRulesCount = (..._args: unknown[]): never => ni('getAlertRulesCount');
 export const getAlertRules = (..._args: unknown[]): never => ni('getAlertRules');

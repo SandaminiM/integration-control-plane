@@ -116,8 +116,6 @@ async function loadBuildRunLogs(componentId: string, runId: string, projectQuery
   return buildRunLogsFromTasks(run, rawLogs?.build?.log ?? null);
 }
 
-export const fetchBuildRunLogs = (_orgHandler: string, projectId: string, componentId: string, runId: string): Promise<BuildRunLogs | null> =>
-  loadBuildRunLogs(componentId, runId, q({ projectName: projectId }));
+export const fetchBuildRunLogs = (_orgHandler: string, projectId: string, componentId: string, runId: string): Promise<BuildRunLogs | null> => loadBuildRunLogs(componentId, runId, q({ projectName: projectId }));
 
-export const fetchBuildLogs = (componentId: string, _versionId: string, workflowName: string): Promise<BuildRunLogs | null> =>
-  loadBuildRunLogs(componentId, workflowName, '');
+export const fetchBuildLogs = (componentId: string, _versionId: string, workflowName: string): Promise<BuildRunLogs | null> => loadBuildRunLogs(componentId, workflowName, '');

@@ -217,8 +217,7 @@ function toReleaseMgtDeployment(raw: RawReleaseMgtDeployment): ReleaseMgtDeploym
 }
 
 export async function fetchDeploymentStatus(componentId: string, versionId: string): Promise<BuildRun[]> {
-  return gql<{ deploymentStatusByVersion: RawBuildRun[] }>(DEPLOYMENT_STATUS_QUERY, { versionId, componentId })
-    .then((d) => (d.deploymentStatusByVersion ?? []).map(toBuildRun));
+  return gql<{ deploymentStatusByVersion: RawBuildRun[] }>(DEPLOYMENT_STATUS_QUERY, { versionId, componentId }).then((d) => (d.deploymentStatusByVersion ?? []).map(toBuildRun));
 }
 
 export async function fetchReleaseMgtDeployments(orgUuid: string, projectId: string, componentId: string, versionId: string, environmentId: string): Promise<ReleaseMgtDeployment[]> {

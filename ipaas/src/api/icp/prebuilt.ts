@@ -17,7 +17,9 @@
  */
 
 // TODO: implement using icp APIs
-const ni = (name: string): never => { throw new Error(`[icp] prebuilt.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[icp] prebuilt.${name}: not implemented`);
+};
 
 export const fetchPrebuiltIntegrations = (..._args: unknown[]): never => ni('fetchPrebuiltIntegrations');
 export const fetchPrebuiltAsset = (..._args: unknown[]): never => ni('fetchPrebuiltAsset');

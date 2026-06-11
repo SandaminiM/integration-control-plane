@@ -110,6 +110,7 @@ import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjec
 import { useComponents } from '../hooks/useComponents';
 import { useOrgs } from '../hooks/useOrg';
 import { SUPPORTED_DISPLAY_TYPES, GENERIC_SERVICE_TYPES } from '../constants/integrations';
+import { identifyIntegration } from '../utils/identifyIntegration';
 import { useOrgPermissions } from '../hooks/useAuth';
 import { switchOrgToken } from '../auth/tokenManager';
 import { mockNotifications } from '../mock-data/mockNotifications';
@@ -554,27 +555,31 @@ function AppLayoutInner(): JSX.Element {
                 onOpen={() => {}}
                 size="small"
                 sx={{ minWidth: 180 }}
-                IconComponent={IS_CLOUD ? () => null : ({ ownerState: _ownerState, ...props }) => (
-                  <span
-                    {...props}
-                    role="button"
-                    tabIndex={0}
-                    aria-label="Change organization"
-                    style={{ position: 'absolute', top: 'auto', bottom: '0', right: '6px', display: 'flex', pointerEvents: 'all', cursor: 'pointer' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOrgMenuAnchor(orgCardRef.current);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setOrgMenuAnchor(orgCardRef.current);
-                      }
-                    }}>
-                    <ChevronDown size={18} />
-                  </span>
-                )}
+                IconComponent={
+                  IS_CLOUD
+                    ? () => null
+                    : ({ ownerState: _ownerState, ...props }) => (
+                        <span
+                          {...props}
+                          role="button"
+                          tabIndex={0}
+                          aria-label="Change organization"
+                          style={{ position: 'absolute', top: 'auto', bottom: '0', right: '6px', display: 'flex', pointerEvents: 'all', cursor: 'pointer' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOrgMenuAnchor(orgCardRef.current);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setOrgMenuAnchor(orgCardRef.current);
+                            }
+                          }}>
+                          <ChevronDown size={18} />
+                        </span>
+                      )
+                }
                 SelectDisplayProps={{ 'aria-label': 'Select organization' }}
                 renderValue={() => <ComplexSelect.MenuItem.Text primary={scope.org} secondary="Organization" />}
                 label="Organization">
@@ -1229,6 +1234,10 @@ function AppLayoutInner(): JSX.Element {
             ) : hasComponent(scope) ? (
               (() => {
                 const isGenericService = GENERIC_SERVICE_TYPES.has(currentComponent?.displayType ?? '');
+                // File integrations share a service displayType but have no API test
+                // console — like automation, their Test tab has no Console sub-item and
+                // `/test` falls to the Coming Soon page. (Scoped to the Test tab only.)
+                const isFileIntegration = identifyIntegration(currentComponent?.displayType ?? '', currentComponent?.componentSubType ?? null).type === 'file-integration';
                 return (
                   <>
                     <Sidebar.Category>
@@ -1292,7 +1301,7 @@ function AppLayoutInner(): JSX.Element {
                         <Sidebar.ItemLabel>Deploy</Sidebar.ItemLabel>
                       </Sidebar.Item>
 
-                      {!isGenericService ? (
+                      {!isGenericService || isFileIntegration ? (
                         <Sidebar.Item id="test">
                           <Sidebar.ItemIcon>
                             <FlaskConical size={20} />

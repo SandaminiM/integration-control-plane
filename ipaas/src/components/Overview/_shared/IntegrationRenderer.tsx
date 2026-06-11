@@ -1,0 +1,112 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { Card, CardContent, Skeleton } from '@wso2/oxygen-ui';
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
+import type { Component } from '../../../types/component';
+import type { Environment } from '../../../types/environment';
+import type { IntegrationIdentity, IntegrationModule } from '../../../types/integration';
+import { integrationModuleLoaders } from '../registry';
+import EnvCardSkeleton from './EnvCardSkeleton';
+import OverviewShell from './OverviewShell';
+
+interface IntegrationRendererProps {
+  component: Component;
+  identity: IntegrationIdentity;
+  environments: Environment[];
+  versionId: string;
+  projectId: string;
+  orgHandler: string;
+  projectHandler: string;
+  deploymentPipelineId: string;
+  latestCommit?: { sha: string; message: string } | null;
+  isBuildInProgress?: boolean;
+}
+
+/**
+ * Single dispatch point used by `pages/Component.tsx`. Loads the
+ * type-specific module on demand (one bundle chunk per integration type)
+ * and either:
+ *   - renders the module's `CustomOverview` if it provides one (outliers
+ *     like Tailscale that have no env-card concept), or
+ *   - hands the module to `OverviewShell`, which fills its slots and
+ *     applies any shared cross-cutting features.
+ *
+ * The dynamic import is an external system, so an effect is the correct
+ * tool here per HOUSE_RULES — not a derivation that could live in render.
+ */
+export default function IntegrationRenderer({ component, identity, environments, versionId, projectId, orgHandler, projectHandler, deploymentPipelineId, latestCommit, isBuildInProgress }: IntegrationRendererProps): ReactNode {
+  const [module, setModule] = useState<IntegrationModule | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setModule(null);
+    integrationModuleLoaders[identity.type]()
+      .then((loaded) => {
+        if (!cancelled) setModule(loaded.default);
+      })
+      .catch(() => {
+        // Loader failures fall through to the loading state. The registry
+        // points every type at a real loader (UnsupportedFallback during
+        // Phase 0), so a failure here means the bundle itself is broken,
+        // which a deploy gate would catch before reaching a user.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [identity.type]);
+
+  if (!module) {
+    // The type module is a lazily-imported chunk; while it loads, show one
+    // frame-shaped skeleton per environment so the cards take their final shape
+    // immediately instead of flashing a spinner then popping in.
+    return (
+      <>
+        {environments.map((env) => (
+          <Card key={env.id} variant="outlined" sx={{ mb: 3 }}>
+            <CardContent>
+              <Skeleton variant="text" width="30%" height={32} />
+              <EnvCardSkeleton />
+            </CardContent>
+          </Card>
+        ))}
+      </>
+    );
+  }
+
+  if (module.CustomOverview) {
+    return <module.CustomOverview component={component} identity={identity} />;
+  }
+
+  return (
+    <OverviewShell
+      component={component}
+      identity={identity}
+      environments={environments}
+      versionId={versionId}
+      projectId={projectId}
+      orgHandler={orgHandler}
+      projectHandler={projectHandler}
+      deploymentPipelineId={deploymentPipelineId}
+      latestCommit={latestCommit}
+      isBuildInProgress={isBuildInProgress}
+      module={module}
+    />
+  );
+}

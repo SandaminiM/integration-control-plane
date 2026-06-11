@@ -32,7 +32,7 @@ import SampleRowCard from '../components/SampleRowCard';
 import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
 import GitIcon from '../assets/icons/GitIcon';
 import AzureIcon from '../assets/icons/AzureIcon';
-import { displayTypeFromSample } from '../constants/integrations';
+import { componentSubTypeFromSample, displayTypeFromSample } from '../constants/integrations';
 import { GITHUB_AUTH } from '../constants/github';
 import { CARD_HOVER_SX, PROVIDER_ICON_SX } from '../constants/styles';
 import { resourceUrl, narrow, type ProjectScope } from '../nav';
@@ -135,6 +135,7 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
         orgHandler: scope.org,
         projectId,
         displayType: displayTypeFromSample(sample.componentType, sample.buildPack),
+        componentSubType: componentSubTypeFromSample(sample.componentType, sample.buildPack),
         srcGitRepoUrl: sample.repositoryUrl,
         repositorySubPath: `${sample.subDirectory ?? ''}${sample.componentPath}`,
         repositoryBranch: sample.branch ?? 'main',

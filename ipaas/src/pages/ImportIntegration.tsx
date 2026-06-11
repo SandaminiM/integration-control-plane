@@ -230,11 +230,24 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   const reposForOrg = userRepos?.find((o) => o.orgName === selectedOrg)?.repositories.map((r) => r.name) ?? [];
 
   // Submit handler
+  //
+  // File Integration shares displayType with a regular service
+  // (`ballerinaService` / `miApiService`); the distinguishing signal is
+  // `componentSubType` (`ballerinaFileIntegration` / `miFileIntegration`),
+  // resolved by `resolveComponentSubType`. Automation and Integration as
+  // API don't need a subType.
   const resolveDisplayType = (): DisplayType => {
     if (selectedTechnology === 'BI') {
-      return selectedIntegrationType === 'automation' ? 'scheduledTask' : 'ballerinaService';
+      if (selectedIntegrationType === 'automation') return 'scheduledTask';
+      return 'ballerinaService';
     }
-    return selectedIntegrationType === 'automation' ? 'miCronjob' : 'miApiService';
+    if (selectedIntegrationType === 'automation') return 'miCronjob';
+    return 'miApiService';
+  };
+
+  const resolveComponentSubType = (): string | undefined => {
+    if (selectedIntegrationType !== 'file-integration') return undefined;
+    return selectedTechnology === 'BI' ? 'ballerinaFileIntegration' : 'miFileIntegration';
   };
 
   const canSubmit = Boolean(activeOrg && activeRepo && selectedBranch && selectedTechnology && selectedIntegrationType && displayName.trim() && handlerValid && projectId && (isPublicRepo || isAuthenticated));
@@ -248,6 +261,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
         orgHandler: scope.org,
         projectId,
         displayType: resolveDisplayType(),
+        componentSubType: resolveComponentSubType(),
         srcGitRepoUrl: `https://github.com/${activeOrg}/${activeRepo}`,
         repositoryBranch: selectedBranch,
         repositorySubPath: subPath || '/',

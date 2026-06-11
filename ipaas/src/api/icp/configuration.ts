@@ -17,7 +17,9 @@
  */
 
 // TODO: implement using icp APIs
-const ni = (name: string): never => { throw new Error(`[icp] configuration.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[icp] configuration.${name}: not implemented`);
+};
 
 export type { PostConfigMgtInput } from '../../types/configuration';
 

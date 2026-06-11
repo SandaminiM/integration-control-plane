@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, Button, Card, CardContent, CircularProgress, Divider, Stack, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, Card, CardContent, Divider, Skeleton, Stack, Typography } from '@wso2/oxygen-ui';
 import { ListChecks } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
 import type { ApimApiInfo } from '../../types/apim';
@@ -73,9 +73,11 @@ export default function SubscriptionPlansCard({ activePolicies = [], apimId, api
         <Divider />
         <CardContent sx={{ flexGrow: 1, pb: (theme) => `${theme.spacing(2)} !important` }}>
           {isLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-              <CircularProgress size={20} />
-            </Box>
+            <Stack direction="row" gap={1} sx={{ mt: 0.5 }}>
+              {[0, 1, 2, 3].map((i) => (
+                <Skeleton key={i} variant="rounded" height={56} sx={{ flex: 1 }} />
+              ))}
+            </Stack>
           ) : policies.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
               No subscription plans available.

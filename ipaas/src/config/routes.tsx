@@ -189,20 +189,22 @@ const routes: AppRoute[] = [
               { path: projectGroupDetailUrl(':orgHandler', ':projectHandler', ':groupId'), element: <ProjectGroupDetail /> },
               { path: componentGroupDetailUrl(':orgHandler', ':projectHandler', ':componentHandler', ':groupId'), element: <ComponentGroupDetail /> },
               { path: '/profile', element: <Profile /> },
-              ...(IS_WIP ? [
-                { path: 'organizations/:orgHandler/projects/:projectHandler/prebuilt-integrations', element: createElement(withScope(BrowsePrebuiltIntegrations, ['projects'])) },
-                {
-                  element: (
-                    <PrebuiltIntegrationConfigProvider>
-                      <Outlet />
-                    </PrebuiltIntegrationConfigProvider>
-                  ),
-                  children: [
-                    { path: 'organizations/:orgHandler/projects/:projectHandler/prebuilt-integrations/:slug', element: createElement(withScope(PrebuiltIntegrationSetup, ['projects'])) },
-                    { path: 'organizations/:orgHandler/projects/:projectHandler/prebuilt-integrations/:slug/deploy', element: createElement(withScope(PrebuiltIntegrationDeploy, ['projects'])) },
-                  ],
-                },
-              ] : []),
+              ...(IS_WIP
+                ? [
+                    { path: 'organizations/:orgHandler/projects/:projectHandler/prebuilt-integrations', element: createElement(withScope(BrowsePrebuiltIntegrations, ['projects'])) },
+                    {
+                      element: (
+                        <PrebuiltIntegrationConfigProvider>
+                          <Outlet />
+                        </PrebuiltIntegrationConfigProvider>
+                      ),
+                      children: [
+                        { path: 'organizations/:orgHandler/projects/:projectHandler/prebuilt-integrations/:slug', element: createElement(withScope(PrebuiltIntegrationSetup, ['projects'])) },
+                        { path: 'organizations/:orgHandler/projects/:projectHandler/prebuilt-integrations/:slug/deploy', element: createElement(withScope(PrebuiltIntegrationDeploy, ['projects'])) },
+                      ],
+                    },
+                  ]
+                : []),
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/new/import-coming-soon',
                 element: <ComingSoon title="Coming Soon" description="Importing from this Git provider is currently not available. You'll be able to import integrations from this source soon." />,

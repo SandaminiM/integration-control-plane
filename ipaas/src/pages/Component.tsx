@@ -21,7 +21,9 @@ import { Fragment, useEffect, useMemo, useRef, useState, type JSX } from 'react'
 import { useQueryClient } from '@tanstack/react-query';
 import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjects';
 import { useComponentByHandler, useComponentEndpoints } from '../hooks/useComponents';
+import { useIntegrationIdentity } from '../hooks/useIntegrationIdentity';
 import { useEnvironments } from '../hooks/useEnvironments';
+import type { IntegrationType } from '../types/integration';
 import { useCommitHistory, useComponentRepository } from '../hooks/useRepository';
 import { useApimApi } from '../hooks/useApim';
 import { IS_WIP } from '../features';
@@ -31,13 +33,23 @@ import NotFound from '../components/NotFound';
 import { ArtifactDetail } from '../components/ArtifactDetail';
 import Environment from '../components/EnvironmentCard';
 import PromoteButton from '../components/EnvironmentCard/PromoteButton';
-import ComponentHeader from '../components/ComponentHeader';
+import IntegrationRenderer from '../components/Overview/_shared/IntegrationRenderer';
+import HeaderShell from '../components/Overview/_shared/HeaderShell';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import type { SelectedArtifact } from '../components/artifact-config';
 import { resourceUrl, broaden, type ComponentScope } from '../nav';
 import { useLoadComponentPermissions } from '../hooks/usePermissionLoader';
 import BuildCard from '../components/BuildCard';
 import { UUID_RE } from '../utils/string';
+
+/**
+ * Integration types whose Overview rendering has been migrated to the new
+ * `components/overview/<type>/` modules. Add a type here as part of its
+ * migration phase. This constant goes away entirely in Phase 4, when every
+ * type uses the new dispatch and the legacy `<Environment>` is deleted.
+ * See [[icp-integration-migration]] and [[icp-phase4-commitment]] in memory.
+ */
+const MIGRATED_INTEGRATION_TYPES = new Set<IntegrationType>(['automation', 'integration-as-api', 'file-integration']);
 
 export default function Component(scope: ComponentScope): JSX.Element {
   // Support both UUID and handler in the URL — only one query will be enabled at a time
@@ -90,6 +102,10 @@ export default function Component(scope: ComponentScope): JSX.Element {
     prevBuildStatusRef.current = current?.status;
   }, [buildDeployments, queryClient]);
 
+  // Identity hook must run before any early return — rules of hooks. The
+  // hook itself handles `undefined` component by returning `null`.
+  const identity = useIntegrationIdentity(component);
+
   const isLoading = loadingProject || loadingComponent;
   if (isLoading)
     return (
@@ -101,6 +117,13 @@ export default function Component(scope: ComponentScope): JSX.Element {
 
   const displayType = component.displayType ?? '';
   const latestCommit = commits.find((c) => c.isLatest) ?? commits[0] ?? null;
+  // Types whose Overview rendering has been migrated to the new
+  // `components/overview/<type>/` modules. Other types continue using
+  // the legacy `<Environment>` until their own migration phase. Bridge
+  // fields (orgHandler etc.) are threaded through so the registry-loaded
+  // module can delegate to existing chrome. This set goes away in Phase 4
+  // when every type uses the new dispatch unconditionally.
+  const useIntegrationsModule = identity ? MIGRATED_INTEGRATION_TYPES.has(identity.type) : false;
 
   return (
     <>
@@ -119,7 +142,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
         {/* <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}> */}
         <PageContent>
           {/* Component header */}
-          <ComponentHeader component={component} project={project} repository={repository} latestCommit={latestCommit} orgHandler={scope.org} projectId={projectId} projectHandler={project?.handler ?? scope.project} apimId={apimId} />
+          <HeaderShell component={component} project={project} repository={repository} latestCommit={latestCommit} orgHandler={scope.org} projectId={projectId} projectHandler={project?.handler ?? scope.project} apimId={apimId} />
 
           {/* Latest build card — not applicable for prebuilt integrations */}
           {!component.isPrebuilt && (
@@ -129,32 +152,49 @@ export default function Component(scope: ComponentScope): JSX.Element {
             </>
           )}
 
-          {/* Environment cards with Promote between them */}
-          {environments.map((env, index) => (
-            <Fragment key={env.id}>
-              <Environment
-                env={env}
-                prevEnv={index > 0 ? environments[index - 1] : undefined}
-                componentId={component.id}
-                projectId={projectId}
-                componentType={component.componentType ?? ''}
-                displayType={displayType}
-                componentHandler={component.handler}
-                projectHandler={project?.handler ?? ''}
-                orgHandler={scope.org}
-                versionId={versionId}
-                deploymentPipelineId={project?.defaultDeploymentPipelineId ?? ''}
-                latestCommit={latestCommit}
-                apiId={component.apiId}
-                isBuildInProgress={isBuildInProgress}
-              />
-              {index < environments.length - 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-                  <PromoteButton orgHandler={scope.org} componentId={component.id} versionId={versionId} deploymentPipelineId={project?.defaultDeploymentPipelineId ?? ''} sourceEnvId={env.id} targetEnvId={environments[index + 1].id} />
-                </Box>
-              )}
-            </Fragment>
-          ))}
+          {/* Environment cards with Promote between them.
+              Automation routes through the new registry; other types keep
+              the legacy rendering until their own migration phase. */}
+          {useIntegrationsModule && identity ? (
+            <IntegrationRenderer
+              component={component}
+              identity={identity}
+              environments={environments}
+              versionId={versionId}
+              projectId={projectId}
+              orgHandler={scope.org}
+              projectHandler={project?.handler ?? ''}
+              deploymentPipelineId={project?.defaultDeploymentPipelineId ?? ''}
+              latestCommit={latestCommit}
+              isBuildInProgress={isBuildInProgress}
+            />
+          ) : (
+            environments.map((env, index) => (
+              <Fragment key={env.id}>
+                <Environment
+                  env={env}
+                  prevEnv={index > 0 ? environments[index - 1] : undefined}
+                  componentId={component.id}
+                  projectId={projectId}
+                  componentType={component.componentType ?? ''}
+                  displayType={displayType}
+                  componentHandler={component.handler}
+                  projectHandler={project?.handler ?? ''}
+                  orgHandler={scope.org}
+                  versionId={versionId}
+                  deploymentPipelineId={project?.defaultDeploymentPipelineId ?? ''}
+                  latestCommit={latestCommit}
+                  apiId={component.apiId}
+                  isBuildInProgress={isBuildInProgress}
+                />
+                {index < environments.length - 1 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                    <PromoteButton orgHandler={scope.org} componentId={component.id} versionId={versionId} deploymentPipelineId={project?.defaultDeploymentPipelineId ?? ''} sourceEnvId={env.id} targetEnvId={environments[index + 1].id} />
+                  </Box>
+                )}
+              </Fragment>
+            ))
+          )}
 
           {/* Subscription Plans, Documents, and Compliance cards — devant only (requires APIM) */}
           {IS_WIP && apimId && (

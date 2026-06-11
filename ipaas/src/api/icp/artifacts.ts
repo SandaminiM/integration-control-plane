@@ -17,7 +17,9 @@
  */
 
 // TODO: implement using icp APIs
-const ni = (name: string): never => { throw new Error(`[icp] artifacts.${name}: not implemented`); };
+const ni = (name: string): never => {
+  throw new Error(`[icp] artifacts.${name}: not implemented`);
+};
 
 export const fetchArtifactTypes = (..._args: unknown[]): never => ni('fetchArtifactTypes');
 export const fetchArtifacts = (..._args: unknown[]): never => ni('fetchArtifacts');

@@ -1,0 +1,40 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { getRequiredPathsAtLevel } from '../../SchemaConfigForm/schemaUtils';
+import type { SchemaConfigData } from '../../../types/configuration';
+
+/**
+ * True when the schema declares required configuration keys that have no value
+ * yet. Shared by automation's `HeaderStatus` (Configure button colour) and
+ * `EnvCardActions` (disabling Run/Schedule) so the rule lives in one place;
+ * both call `useSchemaConfig` (de-duplicated by react-query) and pass the
+ * result here.
+ */
+export function hasMissingRequiredConfigs(schemaConfig: SchemaConfigData | null | undefined): boolean {
+  if (!schemaConfig?.jsonSchema) return false;
+  try {
+    const schema = JSON.parse(atob(schemaConfig.jsonSchema));
+    const allRequired = getRequiredPathsAtLevel(schema).filter((p) => !p.includes('[*]') && !p.includes('.*'));
+    if (allRequired.length === 0) return false;
+    const filledKeys = new Set((schemaConfig.configurations ?? []).filter((c) => c.values?.[0]?.value).map((c) => c.key));
+    return allRequired.some((k) => !filledKeys.has(k));
+  } catch {
+    return false;
+  }
+}
