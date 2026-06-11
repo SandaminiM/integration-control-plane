@@ -49,7 +49,7 @@ import { UUID_RE } from '../utils/string';
  * type uses the new dispatch and the legacy `<Environment>` is deleted.
  * See [[icp-integration-migration]] and [[icp-phase4-commitment]] in memory.
  */
-const MIGRATED_INTEGRATION_TYPES = new Set<IntegrationType>(['automation', 'integration-as-api', 'file-integration']);
+const MIGRATED_INTEGRATION_TYPES = new Set<IntegrationType>(['automation', 'integration-as-api', 'file-integration', 'event-integration']);
 
 export default function Component(scope: ComponentScope): JSX.Element {
   // Support both UUID and handler in the URL — only one query will be enabled at a time

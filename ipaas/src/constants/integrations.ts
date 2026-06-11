@@ -148,7 +148,7 @@ export function displayTypeFromSample(componentType: string, buildPack: string):
     case 'manual-task':
       return isMI ? 'miJob' : 'manualTrigger';
     case 'event-handler':
-      return isMI ? 'miEventHandler' : 'webhook';
+      return isMI ? 'miEventHandler' : 'ballerinaEventHandler';
     case 'ai-agent':
       return 'ballerinaService';
     case 'file-integration':
@@ -164,9 +164,11 @@ export function displayTypeFromSample(componentType: string, buildPack: string):
  * that share a `displayType` with another category and need no further
  * subtyping (regular services, automations, etc.).
  *
- * File Integration is the first case that needs this: its displayType is
- * the same as a generic service (`ballerinaService` / `miApiService`), so
- * the backend uses `componentSubType` to distinguish it.
+ * File Integration is the case that needs this: its displayType is the same as
+ * a generic service (`ballerinaService` / `miApiService`), so the backend uses
+ * `componentSubType` to distinguish it. Event handlers do NOT use this — they
+ * carry their identity in `displayType` (see `displayTypeFromSample`), matching
+ * devant's create flow.
  */
 export function componentSubTypeFromSample(componentType: string, buildPack: string): string | undefined {
   if (componentType === 'file-integration') {
@@ -189,7 +191,7 @@ export function normalizeComponentType(type: string): string {
   return type === 'automation' ? 'scheduled-task' : type;
 }
 
-export const ALLOWED_SAMPLE_TYPES = new Set(['service', 'scheduled-task', 'automation', 'file-integration']);
+export const ALLOWED_SAMPLE_TYPES = new Set(['service', 'scheduled-task', 'automation', 'file-integration', 'event-handler']);
 
 export const APP_COLORS: Record<string, string> = {
   S: '#00a1e0', // Salesforce blue

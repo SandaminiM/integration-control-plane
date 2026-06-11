@@ -53,6 +53,12 @@ export function identifyIntegration(displayType: string, componentSubType: strin
   if (componentSubType === 'miFileIntegration') {
     return { type: 'file-integration', runtime: 'mi', raw };
   }
+  if (componentSubType === 'ballerinaEventHandler') {
+    return { type: 'event-integration', runtime: 'ballerina', raw };
+  }
+  if (componentSubType === 'miEventHandler') {
+    return { type: 'event-integration', runtime: 'mi', raw };
+  }
   if (componentSubType === 'aiAgent') {
     return { type: 'ai-agent', runtime: 'ballerina', raw };
   }

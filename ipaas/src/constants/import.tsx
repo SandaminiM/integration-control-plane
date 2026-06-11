@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Globe, Clock, Layers, Repeat, Server, Folder, HardDrive } from '@wso2/oxygen-ui-icons-react';
+import { Globe, Clock, Layers, Repeat, Server, Folder, HardDrive, Zap, Radio } from '@wso2/oxygen-ui-icons-react';
 import { Box } from '@wso2/oxygen-ui';
 import type { ReactNode } from 'react';
 import type { IntegrationTypeOption } from '../types/import';
@@ -50,6 +50,16 @@ export const INTEGRATION_TYPES: IntegrationTypeOption[] = [
     icons: [
       { icon: <Folder size={16} />, label: 'Files' },
       { icon: <HardDrive size={16} />, label: 'Storage' },
+    ],
+  },
+  {
+    id: 'event-integration',
+    title: 'Event Integration',
+    description: 'React to events from sources like Kafka, Azure Service Bus, RabbitMQ or NATS',
+    docLink: 'https://wso2.com/integration-platform/docs/get-started/build-event-driven-integration',
+    icons: [
+      { icon: <Zap size={16} />, label: 'Events' },
+      { icon: <Radio size={16} />, label: 'Streaming' },
     ],
   },
 ];
