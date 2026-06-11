@@ -22,6 +22,7 @@ interface RuntimeConfig {
   VITE_OBSERVABILITY_URL?: string;
   VITE_ALERTING_URL?: string;
   SYSTEM_APIS_BASE_URL?: string;
+  BILLING_API_BASE_URL?: string;
   ASGARDEO_CLIENT_ID?: string;
   ASGARDEO_AUTHORIZE_ENDPOINT?: string;
   ASGARDEO_TOKEN_ENDPOINT?: string;
@@ -68,6 +69,7 @@ export interface ApiConfig {
   githubAppClientId?: string;
   githubAppAuthRedirectUrl?: string;
   subscriptionsApiUrl: string;
+  billingApiBaseUrl: string;
   samplesUrl?: string;
   prebuiltIntegrationsUrl?: string;
   asgardeoSignupUrl: string;
@@ -105,6 +107,7 @@ const DEFAULT_CONFIG: ApiConfig = {
   githubAppClientId: '',
   githubAppAuthRedirectUrl: `${window.location.origin}/ghapp`,
   subscriptionsApiUrl: import.meta.env.DEV ? '/subscriptions-proxy' : 'https://subscriptions.dv.wso2.com',
+  billingApiBaseUrl: '',
   asgardeoSignupUrl: 'https://dev.asgardeo.io/signup',
   aiCopilotUrlSuffix: '',
   aiCopilotDatacollectorBaseUrl: '',
@@ -153,6 +156,7 @@ export async function loadConfig(): Promise<void> {
       githubAppClientId: config.GITHUB_APP_CLIENT_ID || DEFAULT_CONFIG.githubAppClientId,
       githubAppAuthRedirectUrl: config.GITHUB_APP_AUTH_REDIRECTION_URL || DEFAULT_CONFIG.githubAppAuthRedirectUrl,
       subscriptionsApiUrl: config.SUBSCRIPTIONS_API_URL || DEFAULT_CONFIG.subscriptionsApiUrl,
+      billingApiBaseUrl: trim(config.BILLING_API_BASE_URL || DEFAULT_CONFIG.billingApiBaseUrl),
       samplesUrl: config.SAMPLES_URL || undefined,
       prebuiltIntegrationsUrl: config.PREBUILT_INTEGRATIONS_URL || undefined,
       asgardeoSignupUrl: config.ASGARDEO_SIGNUP_URL || DEFAULT_CONFIG.asgardeoSignupUrl,
