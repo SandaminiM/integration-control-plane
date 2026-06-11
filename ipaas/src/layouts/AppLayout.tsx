@@ -21,6 +21,7 @@ import {
   AppShell,
   Badge,
   Button,
+  Chip,
   ColorSchemeToggle,
   ComplexSelect,
   Dialog,
@@ -109,6 +110,7 @@ import FeaturePreviewModal from '../components/FeaturePreview/FeaturePreviewModa
 import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
 import { useOrgs } from '../hooks/useOrg';
+import { useBillingOrg } from '../hooks/useBillingOrg';
 import { SUPPORTED_DISPLAY_TYPES, GENERIC_SERVICE_TYPES } from '../constants/integrations';
 import { identifyIntegration } from '../utils/identifyIntegration';
 import { useOrgPermissions } from '../hooks/useAuth';
@@ -200,6 +202,14 @@ function AppLayoutInner(): JSX.Element {
   const queryClient = useQueryClient();
   const { username, displayName, pictureUrl, logout, userId, isOidcUser } = useAuth();
   const { hasAnyPermission, setOrgPermissions } = useAccessControl();
+
+  // Cloud-only billing trial indicator. useBillingOrg is gated to IS_CLOUD, so
+  // wip/icp return null here and the chip below is never rendered or bundled.
+  const { org: billingOrg } = useBillingOrg('integration-platform');
+  const billingTrial = billingOrg?.subscription?.status === 'trial' ? billingOrg.subscription.trial : null;
+  const trialEndLabel = billingTrial?.trial_end
+    ? `Trial ends ${new Date(billingTrial.trial_end).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
+    : '';
 
   const { state: shell, actions } = useAppShell({ initialCollapsed: true });
 
@@ -972,6 +982,16 @@ function AppLayoutInner(): JSX.Element {
           </Header.Switchers>
           <Header.Spacer />
           <Header.Actions>
+            {IS_CLOUD && billingTrial && (
+              <Tooltip title={trialEndLabel}>
+                <Chip
+                  label={`Trial · ${billingTrial.days_remaining} day${billingTrial.days_remaining === 1 ? '' : 's'} remaining`}
+                  color="warning"
+                  size="small"
+                  sx={{ fontWeight: 500, mr: 0.5 }}
+                />
+              </Tooltip>
+            )}
             <ColorSchemeToggle />
             <Tooltip title="Notifications">
               <IconButton onClick={actions.toggleNotificationPanel} size="small" sx={{ color: 'text.secondary' }}>

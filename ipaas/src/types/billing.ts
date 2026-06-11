@@ -16,11 +16,21 @@
  * under the License.
  */
 
-export * as components from './components';
-export * as projects from './projects';
-export * as deployments from './deployments';
-export * as environments from './environments';
-export * as org from './org';
-export * as builds from './builds';
-export * as repository from './repository';
-export * as billing from './billing';
+export interface BillingOrg {
+  id: string;
+  name: string;
+  owner_email?: string;
+  subscription?: {
+    id: string;
+    org_id: string;
+    status: 'trial' | 'active' | 'past_due' | 'cancelled' | string;
+    billing_period?: string;
+    current_period_start?: string;
+    current_period_end?: string;
+    trial?: {
+      days_remaining: number;
+      trial_end: string;
+    };
+    product?: { id: string; name: string; code: string };
+  };
+}
