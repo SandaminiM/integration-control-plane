@@ -55,13 +55,23 @@ function MetricTile({ icon, label, value, unit, loading }: MetricTileProps) {
   );
 }
 
+// releaseId is the only intrinsic input. executionScope is the per-environment scope
+// (component/env/project) that the cloud (OpenChoreo) execution queries key on; the
+// wip data path keys by releaseId and ignores it. It is one optional, all-or-nothing
+// object so the contract reads clearly: that per-product behavior lives in the gated
+// useExecutions hook + src/api/{cloud,wip}, keeping this component product-agnostic.
 interface EnvCardAutomationInsightsProps {
   releaseId: string;
+  executionScope?: {
+    componentId: string;
+    envId: string;
+    projectId: string;
+  };
 }
 
-export default function EnvCardAutomationInsights({ releaseId }: EnvCardAutomationInsightsProps) {
-  const { data: count, isLoading: countLoading } = useTaskExecutionCount(releaseId);
-  const { data: executions, isLoading: execLoading } = useTaskExecutions(releaseId);
+export default function EnvCardAutomationInsights({ releaseId, executionScope }: EnvCardAutomationInsightsProps) {
+  const { data: count, isLoading: countLoading } = useTaskExecutionCount(releaseId, executionScope?.componentId, executionScope?.envId, executionScope?.projectId);
+  const { data: executions, isLoading: execLoading } = useTaskExecutions(releaseId, executionScope?.componentId, executionScope?.envId, executionScope?.projectId);
 
   const durations = executions?.map((e) => Number(e.completionTime) - Number(e.startTime)).filter((d) => d > 0) ?? [];
 

@@ -132,6 +132,7 @@ export interface StopDeploymentInput {
   orgHandler: string;
   componentId: string;
   releaseId: string;
+  environment?: string;
   type?: string;
   clearCron?: boolean;
 }

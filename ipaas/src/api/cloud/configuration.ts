@@ -16,16 +16,41 @@
  * under the License.
  */
 
-// TODO: implement using cloud APIs
-const ni = (name: string): never => { throw new Error(`[cloud] configuration.${name}: not implemented`); };
+/**
+ * Cloud (OpenChoreo) configuration API. Calls the ipaas-service BFF.
+ *
+ * The config schema (component configurables) is wired to the BFF config-schema
+ * route. Certificate/config-mgt groups & mappings are Choreo-v2 concepts absent
+ * on the OpenChoreo stack, so they return safe defaults (matching the reference).
+ */
 
-export type { PostConfigMgtInput } from '../../types/configuration';
+import { bff, q, seg } from './_client';
+import type { CertGroup, CertMapping, SchemaConfigData, ConfigMgtData, SchemaConfigItem, SaveSchemaConfigInput, ConfigMgtSaveItem } from '../../types/configuration';
 
-export const fetchCertificateGroups = (..._args: unknown[]): never => ni('fetchCertificateGroups');
-export const fetchConfigGroups = (..._args: unknown[]): never => ni('fetchConfigGroups');
-export const fetchCertificateMappings = (..._args: unknown[]): never => ni('fetchCertificateMappings');
-export const fetchSchemaConfig = (..._args: unknown[]): never => ni('fetchSchemaConfig');
-export const fetchConfigMgt = (..._args: unknown[]): never => ni('fetchConfigMgt');
-export const saveSchemaConfig = (..._args: unknown[]): never => ni('saveSchemaConfig');
-export const postConfigMgt = (..._args: unknown[]): never => ni('postConfigMgt');
-export const postCertificateMappings = (..._args: unknown[]): never => ni('postCertificateMappings');
+export interface PostConfigMgtInput {
+  orgHandler: string;
+  projectId: string;
+  componentId: string;
+  envId: string;
+  versionId: string;
+  moduleName: string;
+  commitHash: string;
+  configs: ConfigMgtSaveItem[];
+}
+
+export const fetchSchemaConfig = (projectId: string, componentId: string, envId: string, _deploymentTrackId: string, _commitHash?: string): Promise<SchemaConfigData | null> =>
+  bff.get<SchemaConfigData>(`/components/${seg(componentId)}/environments/${seg(envId)}/config-schema${q({ projectName: projectId })}`).catch(() => null);
+
+export const saveSchemaConfig = (input: SaveSchemaConfigInput): Promise<{ configurations: SchemaConfigItem[] }> =>
+  bff.post<{ configurations?: SchemaConfigItem[] }>(`/components/${seg(input.componentId)}/environments/${seg(input.envId)}/config-schema${q({ projectName: input.projectId })}`, {
+    configurations: input.configurations,
+    ...(input.commitHash ? { commitHash: input.commitHash } : {}),
+  }).then((r) => ({ configurations: r?.configurations ?? input.configurations }));
+
+// --- Choreo-v2 concepts not present on the OpenChoreo stack: safe defaults. ---
+export const fetchCertificateGroups = (_projectId: string, _componentId: string): Promise<CertGroup[]> => Promise.resolve([]);
+export const fetchConfigGroups = (_projectId: string, _componentId: string): Promise<CertGroup[]> => Promise.resolve([]);
+export const fetchCertificateMappings = (_projectId: string, _componentId: string, _envId: string, _deploymentTrackId: string): Promise<CertMapping | null> => Promise.resolve(null);
+export const fetchConfigMgt = (_orgHandler: string, _projectId: string, _componentId: string, _envId: string, _versionId: string, _componentName: string, _commitHash?: string): Promise<ConfigMgtData> => Promise.resolve({ configurations: [] } as unknown as ConfigMgtData);
+export const postConfigMgt = (_input: PostConfigMgtInput): Promise<unknown> => Promise.resolve(null);
+export const postCertificateMappings = (_data: CertMapping): Promise<unknown> => Promise.resolve(null);

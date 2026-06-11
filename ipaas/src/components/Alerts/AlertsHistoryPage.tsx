@@ -20,6 +20,7 @@ import { Autocomplete, Box, CircularProgress, MenuItem, Select, Table, TableBody
 import { type JSX, useMemo, useState } from 'react';
 import type { CloudDataPlane, Environment } from '../../types/environment';
 import { choreoAlertingApiUrl } from '../../config/runtimeConfig';
+import { IS_CLOUD } from '../../features';
 import { useGetAlertHistory } from '../../hooks/useAlerts';
 
 interface AlertsHistoryPageProps {
@@ -58,6 +59,7 @@ export default function AlertsHistoryPage({ componentId, environments, cloudData
   const [timeRangeHours, setTimeRangeHours] = useState(1);
 
   const alertingBaseUrl = useMemo(() => {
+    if (IS_CLOUD) return '';
     if (!selectedEnvironment?.dpId || !cloudDataPlanes.length) return '';
     const cdp = cloudDataPlanes.find((c) => c.id.toLowerCase() === selectedEnvironment.dpId!.toLowerCase());
     return cdp ? choreoAlertingApiUrl(cdp.external_gateway_virtual_host) : '';

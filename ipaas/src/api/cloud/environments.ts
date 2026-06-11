@@ -16,15 +16,52 @@
  * under the License.
  */
 
-// TODO: implement using Choreo v3 REST APIs
+/** Cloud (OpenChoreo) environment / dataplane API. Calls the ipaas-service BFF. */
 
-import type { Environment, CloudDataPlane, EnvironmentInput } from '../../types/environment';
+import type { Environment, CloudDataPlane, EnvironmentInput, Logger, UpdateLogLevelInput } from '../../types/environment';
+import { bff, items, q, seg, type ListResponse, type MessageResponse } from './_client';
 
-const ni = (name: string): never => { throw new Error(`[cloud] environments.${name}: not implemented`); };
+// _orgUuid is kept for devant contract parity; cloud derives the org from the token.
 
-export const fetchEnvironments = (_orgUuid: string, _projectId: string): Promise<Environment[]> => ni('fetchEnvironments');
-export const fetchAllEnvironments = (): Promise<Environment[]> => ni('fetchAllEnvironments');
-export const fetchCloudDataPlanes = (_orgUuid: string): Promise<CloudDataPlane[]> => ni('fetchCloudDataPlanes');
-export const createEnvironment = (_input: EnvironmentInput): Promise<Environment> => ni('createEnvironment');
-export const updateEnvironment = (_input: EnvironmentInput & { environmentId: string }): Promise<Environment> => ni('updateEnvironment');
-export const deleteEnvironment = (_environmentId: string): Promise<string> => ni('deleteEnvironment');
+export const fetchEnvironments = (_orgUuid: string, projectId: string): Promise<Environment[]> =>
+  bff.get<ListResponse<Environment>>(`/environments${q({ project: projectId })}`).then(items);
+
+export const fetchAllEnvironments = (): Promise<Environment[]> =>
+  bff.get<ListResponse<Environment>>('/environments').then(items);
+
+// CloudDataPlanes drive devant-era URL derivation (alerting, runtime logs,
+// copilot region endpoints). In cloud there is one dataplane with the gateway
+// host fixed at deploy time, so when the BFF returns nothing or errors we
+// synthesise a single default entry — otherwise pages that gate on loadingCdps
+// (Alerts, RuntimeLogsProject) hang while React Query retries.
+const DEFAULT_CLOUD_DATAPLANE: CloudDataPlane = {
+  id: 'default',
+  external_gateway_virtual_host: '',
+  internal_gateway_virtual_host: '',
+  region: 'default',
+  is_cilium: false,
+};
+
+export const fetchCloudDataPlanes = async (_orgUuid: string): Promise<CloudDataPlane[]> => {
+  try {
+    const list = items(await bff.get<ListResponse<CloudDataPlane>>('/dataplanes'));
+    return list.length > 0 ? list : [DEFAULT_CLOUD_DATAPLANE];
+  } catch {
+    return [DEFAULT_CLOUD_DATAPLANE];
+  }
+};
+
+export const fetchLoggers = (environmentId: string, componentId: string): Promise<Logger[]> =>
+  bff.get<ListResponse<Logger>>(`/components/${seg(componentId)}/loggers${q({ environment: environmentId })}`).then(items);
+
+export const updateLogLevel = (input: UpdateLogLevelInput): Promise<{ success: boolean; message: string; commandIds: string[] }> =>
+  bff.put<{ success: boolean; message: string; commandIds: string[] }>(`/components/${seg(input.componentName)}/loggers`, input);
+
+export const createEnvironment = (input: EnvironmentInput): Promise<Environment> =>
+  bff.post<Environment>('/environments', input);
+
+export const updateEnvironment = (input: EnvironmentInput & { environmentId: string }): Promise<Environment> =>
+  bff.put<Environment>(`/environments/${seg(input.environmentId)}`, input);
+
+export const deleteEnvironment = (environmentId: string): Promise<string> =>
+  bff.delete<MessageResponse>(`/environments/${seg(environmentId)}`).then((r) => r?.message ?? '');

@@ -23,6 +23,7 @@ import Authorized from '../Authorized';
 import { Permissions } from '../../constants/permissions';
 import { useStopDeployment } from '../../hooks/useDeployments';
 import ScheduleDialog from './ScheduleDialog';
+import { IS_CLOUD } from '../../features';
 
 export interface ScheduleButtonProps {
   envId: string;
@@ -47,7 +48,8 @@ export default function ScheduleButton({ hasSchedule, disabled, onSaveSuccess, o
 
   const handleStopSchedule = () => {
     setSplitOpen(false);
-    stopDeployment.mutate({ orgHandler: dialogProps.orgHandler, componentId: dialogProps.componentId, releaseId: dialogProps.releaseId }, { onSuccess: () => onStopSuccess?.() });
+    // cloud: OpenChoreo's stop endpoint is per-environment; wip ignores it.
+    stopDeployment.mutate({ orgHandler: dialogProps.orgHandler, componentId: dialogProps.componentId, releaseId: dialogProps.releaseId, ...(IS_CLOUD ? { environment: dialogProps.envId } : {}) }, { onSuccess: () => onStopSuccess?.() });
   };
 
   return (

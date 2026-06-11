@@ -17,6 +17,7 @@
  */
 
 import { refreshTokenApiUrl, revokeTokenApiUrl } from '../config/runtimeConfig';
+import { IS_CLOUD } from '../features';
 
 const ACCESS_TOKEN_KEY = 'icp_auth_token';
 const REFRESH_TOKEN_KEY = 'icp_refresh_token';
@@ -487,7 +488,10 @@ export function getOrgUuidFromToken(): string | null {
   if (!token) return null;
   try {
     const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    return (payload.organization?.uuid as string) ?? null;
+    // Choreo issues the org UUID under `organization.uuid`. Cloud's Thunder IdP
+    // issues it as the `ouId` claim instead, so the cloud build falls back to it.
+    const orgUuid = (payload.organization?.uuid as string) ?? null;
+    return IS_CLOUD ? orgUuid ?? (payload.ouId as string) ?? null : orgUuid;
   } catch {
     return null;
   }
