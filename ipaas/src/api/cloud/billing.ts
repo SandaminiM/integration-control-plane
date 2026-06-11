@@ -43,5 +43,9 @@ export async function fetchBillingOrg(product: string): Promise<BillingOrg> {
   });
   const text = await res.text().catch(() => '');
   if (!res.ok) throw new Error(`Billing API error ${res.status}: ${text || res.statusText}`);
-  return JSON.parse(text) as BillingOrg;
+  try {
+    return JSON.parse(text) as BillingOrg;
+  } catch {
+    throw new Error(`Billing API returned invalid JSON (HTTP ${res.status})`);
+  }
 }
