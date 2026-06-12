@@ -67,7 +67,10 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
   const levelFilterKey = levelFilter.join(',');
 
   const logsApiUrl = useMemo(() => {
-    if (IS_CLOUD) return undefined;
+    // cloud: logs come from the wso2cloud observability proxy — the cloud
+    // fetchLogs resolves its own base URL and ignores this value, which only
+    // gates the query (stays disabled when the proxy URL is unconfigured).
+    if (IS_CLOUD) return window.API_CONFIG?.observabilityUrl || undefined;
     if (!primaryEnv?.dpId || !cdps) return undefined;
     const cdp = cdps.find((c) => c.id.toLowerCase() === primaryEnv.dpId!.toLowerCase());
     return cdp ? choreologgingProjectLogsApiUrl(cdp.external_gateway_virtual_host) : undefined;

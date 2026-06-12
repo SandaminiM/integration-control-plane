@@ -31,6 +31,11 @@ import { authenticatedFetch } from '../../auth/tokenManager';
 // files can wrap scope-sensitive BFF calls without reaching across folders.
 export { withStsRetry, withScopeRetry } from '../wip/httpClients';
 
+// Observability client (window.API_CONFIG.observabilityUrl). In the cloud
+// deployment that URL points at the wso2cloud observability proxy, which logs
+// and metrics are queried from directly rather than through the BFF.
+export { obsClient } from '../wip/httpClients';
+
 /** Standard BFF list envelope: { items: T[] }. */
 export interface ListResponse<T> {
   items: T[];
