@@ -234,20 +234,24 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   // File Integration shares displayType with a regular service
   // (`ballerinaService` / `miApiService`); the distinguishing signal is
   // `componentSubType` (`ballerinaFileIntegration` / `miFileIntegration`),
-  // resolved by `resolveComponentSubType`. Automation and Integration as
-  // API don't need a subType.
+  // resolved by `resolveComponentSubType`. Event Integration is different —
+  // it carries its identity in `displayType` (`ballerinaEventHandler` /
+  // `miEventHandler`) with no subType, matching devant's create flow.
+  // Automation and Integration as API don't need a subType.
   const resolveDisplayType = (): DisplayType => {
     if (selectedTechnology === 'BI') {
       if (selectedIntegrationType === 'automation') return 'scheduledTask';
+      if (selectedIntegrationType === 'event-integration') return 'ballerinaEventHandler';
       return 'ballerinaService';
     }
     if (selectedIntegrationType === 'automation') return 'miCronjob';
+    if (selectedIntegrationType === 'event-integration') return 'miEventHandler';
     return 'miApiService';
   };
 
   const resolveComponentSubType = (): string | undefined => {
-    if (selectedIntegrationType !== 'file-integration') return undefined;
-    return selectedTechnology === 'BI' ? 'ballerinaFileIntegration' : 'miFileIntegration';
+    if (selectedIntegrationType === 'file-integration') return selectedTechnology === 'BI' ? 'ballerinaFileIntegration' : 'miFileIntegration';
+    return undefined;
   };
 
   const canSubmit = Boolean(activeOrg && activeRepo && selectedBranch && selectedTechnology && selectedIntegrationType && displayName.trim() && handlerValid && projectId && (isPublicRepo || isAuthenticated));
@@ -540,7 +544,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   }
 
   if (createComponent.isPending || createComponent.isSuccess || createComponent.isError) {
-    const integrationLabel = selectedIntegrationType === 'automation' ? 'Automation' : 'Integration as API';
+    const integrationLabel = selectedIntegrationType === 'automation' ? 'Automation' : selectedIntegrationType === 'file-integration' ? 'File Integration' : selectedIntegrationType === 'event-integration' ? 'Event Integration' : 'Integration as API';
     return (
       <PageContent sx={{ pt: 5, display: 'flex', flexDirection: 'column', flex: 1 }}>
         <IntegrationCreationLoader

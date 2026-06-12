@@ -45,7 +45,7 @@ export default function DeployEnvironmentCard({
   versionId,
   deploymentPipelineId,
   flags,
-  isFileIntegration = false,
+  hideEndpoints = false,
   env,
   componentName,
   projectHandler,
@@ -53,9 +53,9 @@ export default function DeployEnvironmentCard({
   onPromoteStarted,
   onPromoteSettled,
 }: DeployEnvironmentCardProps): JSX.Element {
-  // A file integration deploys like a service but exposes no endpoints — treat
-  // it as "service, minus endpoints" on the deploy card.
-  const showEndpoints = !flags.isAutomation && !isFileIntegration;
+  // File/event integrations deploy like a service but expose no endpoints —
+  // treat them as "service, minus endpoints" on the deploy card.
+  const showEndpoints = !flags.isAutomation && !hideEndpoints;
   const qc = useQueryClient();
   const [configureOpen, setConfigureOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -368,6 +368,7 @@ export default function DeployEnvironmentCard({
         displayType={flags.isAutomation ? 'scheduledTask' : 'service'}
         isAutomation={flags.isAutomation}
         envTemplateId={envTemplateId}
+        hideEndpoints={hideEndpoints}
       />
 
       {flags.isAutomation && hasRelease && scheduleOpen && (

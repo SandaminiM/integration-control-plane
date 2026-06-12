@@ -79,16 +79,17 @@ export default function Deploy(scope: ComponentScope): JSX.Element {
   const flags = getComponentTypeFlags(component.displayType ?? '', component.componentSubType);
   const displayLabel = getDisplayLabel(component.displayType ?? '', component.componentSubType ?? null);
   // Type identified once, via the canonical resolver — NOT re-derived in
-  // `getComponentTypeFlags` (which keys only on displayType). A file integration
-  // shares a service displayType + build pipeline, so it deploys like a service;
-  // only its (non-existent) endpoint UI is suppressed on the card below.
-  const isFileIntegration = identifyIntegration(component.displayType ?? '', component.componentSubType ?? null).type === 'file-integration';
+  // `getComponentTypeFlags` (which keys only on displayType). File and event
+  // integrations share a service displayType + build pipeline, so they deploy
+  // like a service; only their (non-existent) endpoint UI is suppressed below.
+  const integrationType = identifyIntegration(component.displayType ?? '', component.componentSubType ?? null).type;
+  const hideEndpoints = integrationType === 'file-integration' || integrationType === 'event-integration';
 
   if (flags.isProxy) {
     return <ComingSoon title="Proxy Deploy Coming Soon" description="Deploy management for REST API Proxy components will be available in a future release." />;
   }
 
-  if (!flags.isDeployable && !isFileIntegration) {
+  if (!flags.isDeployable && !hideEndpoints) {
     return <ComingSoon title="Deploy Not Yet Supported" description={`Deploy management for ${displayLabel} components is coming soon.`} />;
   }
 
@@ -134,7 +135,7 @@ export default function Deploy(scope: ComponentScope): JSX.Element {
                   versionId={versionId}
                   deploymentPipelineId={project?.defaultDeploymentPipelineId ?? ''}
                   flags={flags}
-                  isFileIntegration={isFileIntegration}
+                  hideEndpoints={hideEndpoints}
                   env={env}
                   branch={branch}
                   componentName={component.name}

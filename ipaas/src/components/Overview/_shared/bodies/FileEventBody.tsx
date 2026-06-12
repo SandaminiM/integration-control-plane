@@ -27,12 +27,12 @@ import type { EnvCardBodyProps } from '../../../../types/integration';
 import EnvCardSkeleton from '../EnvCardSkeleton';
 
 /**
- * Shared env-card body for event-driven integration types whose meaningful
- * per-env signal is the runtime log stream.
+ * Shared env-card body for the two runtime-logs integration types whose
+ * meaningful per-env signal is the runtime log stream:
+ *   - `file-integration`
+ *   - `event-integration`
  *
- * Currently used by:
- *   - `file-integration` (live)
- *   - `event-integration` (planned — same body)
+ * Both also share the `_shared/FileEventHeader` chrome.
  *
  * Architecture notes:
  *   - Reuses the data layer (`useInfiniteComponentLogs` + `ComponentLogsRequest`)
@@ -45,11 +45,11 @@ import EnvCardSkeleton from '../EnvCardSkeleton';
  *   - Time window is locked at mount: past 24h to mount + 1y. The forward
  *     buffer keeps the cache key stable (no per-render churn) while letting
  *     auto-fetch surface newly-arrived logs within the window.
- *   - Content-only: the Card frame, the header (env name + Critical chip +
- *     Refresh) and the Refresh wiring live in the shared `EnvCardShell` and the
- *     type's `CustomHeader`. This body renders just the log stream.
+ *   - Content-only: the Card frame and the header live in the shared
+ *     `EnvCardShell` and `_shared/FileEventHeader`. This body renders just the
+ *     log stream.
  */
-export default function RuntimeLogsEnvCardBody({ component, env, versionId }: EnvCardBodyProps): ReactNode {
+export default function FileEventBody({ component, env, versionId }: EnvCardBodyProps): ReactNode {
   const logsApiUrl = choreologgingComponentGatewayLogsApiUrl();
 
   // Lock the time window at mount. Forward buffer lets auto-fetch pick up
@@ -142,7 +142,7 @@ function InlineLogsView({ isLoading, error, logs }: { isLoading: boolean; error:
         bgcolor: 'background.paper',
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: 1,
+        borderRadius: 0.5,
       }}>
       {logs.map((log, idx) => (
         <InlineLogRow key={`${log.timestamp}-${idx}`} log={log} />

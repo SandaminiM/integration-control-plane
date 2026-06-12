@@ -53,6 +53,17 @@ export function identifyIntegration(displayType: string, componentSubType: strin
   if (componentSubType === 'miFileIntegration') {
     return { type: 'file-integration', runtime: 'mi', raw };
   }
+  // Defensive: some components may carry the event-handler value in
+  // `componentSubType`. The *primary* path for event integrations is the
+  // `displayType` switch below — devant's create flow (and the backend) set
+  // `displayType = mi/ballerinaEventHandler` with no subType, so these two
+  // branches are a fallback, not the common case.
+  if (componentSubType === 'ballerinaEventHandler') {
+    return { type: 'event-integration', runtime: 'ballerina', raw };
+  }
+  if (componentSubType === 'miEventHandler') {
+    return { type: 'event-integration', runtime: 'mi', raw };
+  }
   if (componentSubType === 'aiAgent') {
     return { type: 'ai-agent', runtime: 'ballerina', raw };
   }

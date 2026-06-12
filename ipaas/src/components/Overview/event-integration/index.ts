@@ -22,20 +22,19 @@ import CustomHeader from '../_shared/FileEventHeader';
 import EnvCardBody from '../_shared/bodies/FileEventBody';
 
 /**
- * File Integration module.
+ * Event Integration module.
  *
- * Resolves from components whose `componentSubType` is `ballerinaFileIntegration`
- * or `miFileIntegration` (they share a service `displayType`, so the subtype is
- * the discriminator — see `identifyIntegration`).
- *
- * devant renders file and event integrations identically — status + Stop/Start,
- * commit/build data, Configure, and a runtime-log stream — so both reuse the
- * shared `_shared/FileEventHeader` and `_shared/bodies/FileEventBody`.
+ * Resolves from components whose `displayType` is `ballerinaEventHandler` or
+ * `miEventHandler` (event-driven listeners — Kafka, Azure Service Bus, etc.).
+ * devant renders event and file integrations identically (status + Stop/Start,
+ * commit/build data, Configure, and a runtime-log stream), so this module
+ * reuses the shared `_shared/FileEventHeader` and `_shared/bodies/FileEventBody`
+ * with File Integration.
  */
-const fileIntegrationModule: IntegrationModule = {
-  ...INTEGRATION_TYPE_INFO['file-integration'],
+const eventIntegrationModule: IntegrationModule = {
+  ...INTEGRATION_TYPE_INFO['event-integration'],
   CustomHeader,
   EnvCardBody,
 };
 
-export default fileIntegrationModule;
+export default eventIntegrationModule;

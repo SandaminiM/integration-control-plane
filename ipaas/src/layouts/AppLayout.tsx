@@ -1254,10 +1254,7 @@ function AppLayoutInner(): JSX.Element {
             ) : hasComponent(scope) ? (
               (() => {
                 const isGenericService = GENERIC_SERVICE_TYPES.has(currentComponent?.displayType ?? '');
-                // File integrations share a service displayType but have no API test
-                // console — like automation, their Test tab has no Console sub-item and
-                // `/test` falls to the Coming Soon page. (Scoped to the Test tab only.)
-                const isFileIntegration = identifyIntegration(currentComponent?.displayType ?? '', currentComponent?.componentSubType ?? null).type === 'file-integration';
+                const runtimeLogsType = ['file-integration', 'event-integration'].includes(identifyIntegration(currentComponent?.displayType ?? '', currentComponent?.componentSubType ?? null).type);
                 return (
                   <>
                     <Sidebar.Category>
@@ -1321,7 +1318,7 @@ function AppLayoutInner(): JSX.Element {
                         <Sidebar.ItemLabel>Deploy</Sidebar.ItemLabel>
                       </Sidebar.Item>
 
-                      {!isGenericService || isFileIntegration ? (
+                      {!isGenericService || runtimeLogsType ? (
                         <Sidebar.Item id="test">
                           <Sidebar.ItemIcon>
                             <FlaskConical size={20} />

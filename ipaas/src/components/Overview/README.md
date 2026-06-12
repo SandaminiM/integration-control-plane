@@ -22,11 +22,13 @@ overview/
 │   ├── EnvCardSkeleton.tsx      common body loading skeleton
 │   ├── StatusDot.tsx            presentational status dot (composed by a type)
 │   ├── ConfigureButton.tsx      presentational Configure button (composed by a type)
+│   ├── FileEventHeader.tsx      shared CustomHeader for file- + event-integration
+│   │                           (status dot + Critical chip + Configure + Stop/Start)
 │   ├── HeaderShell.tsx          integration-level header rendered above the cards
 │   ├── UnsupportedFallback.tsx  module for not-yet-migrated types (CustomOverview)
 │   ├── UnsupportedOverview.tsx
 │   └── bodies/                  bodies shared by >1 type
-│       └── RuntimeLogsEnvCardBody.tsx   (file-integration; future event-integration)
+│       └── FileEventBody.tsx    runtime-log stream (file- + event-integration)
 ├── automation/                  one folder per type → exports an IntegrationModule
 │   ├── index.ts                 { ...INTEGRATION_TYPE_INFO['automation'], …slots }
 │   ├── HeaderStatus.tsx         Configure + missing-config state (no status dot)
@@ -37,8 +39,8 @@ overview/
 │   │                            endpoint URLs + swagger + service insights
 │   ├── HeaderStatus.tsx  EnvCardActions.tsx  EnvCardBody.tsx  EndpointUrlsPanel.tsx
 │   └── ServiceInsights / ServiceLogsDrawer / SwaggerOperationsList
-├── file-integration/            CustomHeader (env name + Critical chip) + logs body
-│   ├── index.ts  CustomHeader.tsx   (EnvCardBody = _shared/bodies/RuntimeLogsEnvCardBody)
+├── file-integration/            index.ts → shared FileEventHeader + FileEventBody
+├── event-integration/           index.ts → shared FileEventHeader + FileEventBody
 └── registry.ts                  IntegrationType → () => import('./<type>')  (one chunk per type)
 ```
 
@@ -54,7 +56,7 @@ optional `EnvCardFooter`. A type with no env-card concept (e.g. Tailscale) expor
 | `EnvCardBody` | every rendered type | executions table / endpoints / logs |
 | `HeaderStatus` | types with a status/Configure | service status dot + Configure |
 | `EnvCardActions` | types with header actions | Run/Schedule, Stop/Test/Logs |
-| `CustomHeader` | header outliers | file-integration (Critical chip, no commit) |
+| `CustomHeader` | header outliers | file- + event-integration (shared `FileEventHeader`) |
 | `EnvCardFooter` | optional | — none today |
 | `CustomOverview` | full-surface outliers | Tailscale |
 

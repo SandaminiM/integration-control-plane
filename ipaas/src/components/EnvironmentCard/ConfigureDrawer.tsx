@@ -822,6 +822,8 @@ export interface ConfigureDrawerProps {
   releaseMgtReleaseId?: string;
   releaseMgtDeploymentId?: string;
   isAutomation?: boolean;
+  /** Hide the Endpoints step — file/event integrations have no endpoints. */
+  hideEndpoints?: boolean;
   envTemplateId?: string;
   buildId?: string;
 }
@@ -867,8 +869,14 @@ function GenericServiceConfigureDrawer({
   releaseMgtReleaseId: _releaseMgtReleaseId,
   releaseMgtDeploymentId: _releaseMgtDeploymentId,
   envTemplateId,
+  hideEndpoints = false,
 }: ConfigureDrawerProps) {
   const schemaEnvId = envTemplateId ?? envId;
+  // File/event integrations have no endpoints (devant: they open the
+  // ConfigurationWizard, not the ConfigEndpointWizard). Their flow is the same
+  // 2-step shape automation uses — Configurations + Certificate Mount, Apply on
+  // step 2 — but stays on the service save path, not automation's cron deploy.
+  const lastStep = hideEndpoints ? 2 : 3;
   const [step, setStep] = useState(1);
   const [valueMap, setValueMap] = useState<Map<string, BaseType>>(new Map());
   const [validationMap, setValidationMap] = useState<Map<string, boolean>>(new Map());
@@ -892,7 +900,7 @@ function GenericServiceConfigureDrawer({
   const { data, isLoading, isError } = useSchemaConfig(projectId, componentId, schemaEnvId, versionId, commitHash);
   const { data: existingCertMappings } = useCertificateMappings(projectId, componentId, schemaEnvId, versionId, open);
   const { data: configGroups } = useConfigGroups(projectId, componentId, open);
-  const { data: endpoints = [] } = useEnvEndpoints(open ? componentId : '', open ? versionId : '', open && releaseId ? releaseId : '');
+  const { data: endpoints = [] } = useEnvEndpoints(open && !hideEndpoints ? componentId : '', open && !hideEndpoints ? versionId : '', open && !hideEndpoints && releaseId ? releaseId : '');
   const save = useSaveSchemaConfig();
   const saveCertMappings = usePostCertificateMappings();
   const generateEp = useGenerateComponentEndpoints();
@@ -1101,7 +1109,9 @@ function GenericServiceConfigureDrawer({
   const handleNext = () => {
     setSaveError(null);
     if (step === 1) {
-      if (!releaseId || !commitHash) {
+      // File/event have no endpoints — skip endpoint generation and go
+      // straight to Certificate Mount (the final step for them).
+      if (hideEndpoints || !releaseId || !commitHash) {
         setStep(2);
         return;
       }
@@ -1112,7 +1122,7 @@ function GenericServiceConfigureDrawer({
           onError: (err) => setSaveError(err instanceof Error ? err.message : 'Failed to prepare endpoints'),
         },
       );
-    } else if (step === 2) {
+    } else if (step === 2 && !hideEndpoints) {
       setStep(3);
     } else {
       handleApply();
@@ -1213,9 +1223,9 @@ function GenericServiceConfigureDrawer({
   const hasCertPathErrors = linkedCerts.some((c) => c.mountPath && !c.mountPath.startsWith('/'));
   const isApplying = save.isPending || saveCertMappings.isPending;
   const prevLabel = step === 1 ? 'Cancel' : 'Back';
-  const nextLabel = step === 3 ? (isApplying ? 'Applying…' : 'Apply') : step === 1 && generateEp.isPending ? 'Loading…' : 'Next';
-  const nextDisabled = (step === 1 && (hasValidationErrors || isLoading || generateEp.isPending)) || (step === 2 && hasCertPathErrors) || (step === 3 && isApplying);
-  const showFooter = !(step === 3 && managingEp !== null);
+  const nextLabel = step === lastStep ? (isApplying ? 'Applying…' : 'Apply') : step === 1 && generateEp.isPending ? 'Loading…' : 'Next';
+  const nextDisabled = (step === 1 && (hasValidationErrors || isLoading || generateEp.isPending)) || (step === 2 && hasCertPathErrors) || (step === lastStep && isApplying);
+  const showFooter = !(step === lastStep && managingEp !== null);
 
   return (
     <>
@@ -1247,7 +1257,7 @@ function GenericServiceConfigureDrawer({
         </Stack>
 
         {/* Step indicator */}
-        <StepIndicator step={step} steps={SERVICE_STEPS} />
+        <StepIndicator step={step} steps={hideEndpoints ? AUTOMATION_STEPS : SERVICE_STEPS} />
 
         {/* Scrollable content */}
         <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>{stepContent}</Box>
@@ -1263,7 +1273,7 @@ function GenericServiceConfigureDrawer({
         {showFooter && (
           <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
             <Button onClick={handlePrev}>{prevLabel}</Button>
-            <Button variant="contained" onClick={handleNext} disabled={nextDisabled} startIcon={(step === 3 && isApplying) || (step === 1 && generateEp.isPending) ? <CircularProgress color="inherit" size={16} /> : undefined}>
+            <Button variant="contained" onClick={handleNext} disabled={nextDisabled} startIcon={(step === lastStep && isApplying) || (step === 1 && generateEp.isPending) ? <CircularProgress color="inherit" size={16} /> : undefined}>
               {nextLabel}
             </Button>
           </Stack>

@@ -107,7 +107,7 @@ export interface ComponentNameAvailability {
   alternateComponentName: string;
 }
 
-export type DisplayType = 'ballerinaService' | 'scheduledTask' | 'manualTrigger' | 'webhook' | 'miApiService' | 'miCronjob' | 'miJob' | 'miWebhook' | 'miEventHandler';
+export type DisplayType = 'ballerinaService' | 'scheduledTask' | 'manualTrigger' | 'webhook' | 'miApiService' | 'miCronjob' | 'miJob' | 'miWebhook' | 'miEventHandler' | 'ballerinaEventHandler';
 
 export interface CreateComponentInput {
   displayName: string;
