@@ -1225,7 +1225,7 @@ function GenericServiceConfigureDrawer({
   const prevLabel = step === 1 ? 'Cancel' : 'Back';
   const nextLabel = step === lastStep ? (isApplying ? 'Applying…' : 'Apply') : step === 1 && generateEp.isPending ? 'Loading…' : 'Next';
   const nextDisabled = (step === 1 && (hasValidationErrors || isLoading || generateEp.isPending)) || (step === 2 && hasCertPathErrors) || (step === lastStep && isApplying);
-  const showFooter = !(step === 3 && managingEp !== null);
+  const showFooter = !(step === lastStep && managingEp !== null);
 
   return (
     <>
@@ -1273,7 +1273,7 @@ function GenericServiceConfigureDrawer({
         {showFooter && (
           <Stack direction="row" justifyContent="flex-end" gap={1} sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
             <Button onClick={handlePrev}>{prevLabel}</Button>
-            <Button variant="contained" onClick={handleNext} disabled={nextDisabled} startIcon={(step === 3 && isApplying) || (step === 1 && generateEp.isPending) ? <CircularProgress color="inherit" size={16} /> : undefined}>
+            <Button variant="contained" onClick={handleNext} disabled={nextDisabled} startIcon={(step === lastStep && isApplying) || (step === 1 && generateEp.isPending) ? <CircularProgress color="inherit" size={16} /> : undefined}>
               {nextLabel}
             </Button>
           </Stack>

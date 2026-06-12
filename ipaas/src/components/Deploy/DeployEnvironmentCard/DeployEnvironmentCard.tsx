@@ -368,6 +368,7 @@ export default function DeployEnvironmentCard({
         displayType={flags.isAutomation ? 'scheduledTask' : 'service'}
         isAutomation={flags.isAutomation}
         envTemplateId={envTemplateId}
+        hideEndpoints={hideEndpoints}
       />
 
       {flags.isAutomation && hasRelease && scheduleOpen && (
