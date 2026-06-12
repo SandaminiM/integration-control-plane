@@ -92,7 +92,7 @@ const DISPLAY_TYPE_MAP: Record<DisplayType, { componentType: string; workflow: s
 const LOGICAL_TYPE_TO_DISPLAY_TYPE: Record<string, { bi: string; mi: string }> = {
   service: { bi: 'ballerinaService', mi: 'miApiService' },
   automation: { bi: 'scheduledTask', mi: 'miCronjob' },
-  eventIntegration: { bi: 'webhook', mi: 'miEventHandler' },
+  eventIntegration: { bi: 'ballerinaEventHandler', mi: 'miEventHandler' },
   fileIntegration: { bi: 'ballerinaFileIntegration', mi: 'miFileIntegration' },
   aiAgent: { bi: 'aiAgent', mi: 'aiAgent' },
   proxy: { bi: 'proxy', mi: 'proxy' },
