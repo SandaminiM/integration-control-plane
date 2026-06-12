@@ -18,7 +18,20 @@
 
 /** Cloud (OpenChoreo) component API. Calls the ipaas-service BFF. */
 
-import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability, DisplayType, DeploymentTrack } from '../../types/component';
+import type {
+  Component,
+  ComponentDetail,
+  Endpoint,
+  EnvEndpoint,
+  CreateComponentInput,
+  UpdateComponentInput,
+  UpdateAutoDeployInput,
+  GenerateComponentEndpointsInput,
+  ComponentNameAvailability,
+  DisplayType,
+  DeploymentTrack,
+  ApiVersion,
+} from '../../types/component';
 import { bff, items, q, seg, type ListResponse } from './_client';
 
 // Underscored params (_orgHandler, _versionId, _releaseId) are kept on exported
@@ -63,6 +76,7 @@ const DISPLAY_TYPE_MAP: Record<DisplayType, { componentType: string; workflow: s
   scheduledTask: { componentType: 'cronjob/scheduled-task', workflow: 'ballerina-buildpack-builder' },
   manualTrigger: { componentType: 'cronjob/scheduled-task', workflow: 'ballerina-buildpack-builder' },
   webhook: { componentType: 'deployment/event-integration', workflow: 'ballerina-buildpack-builder' },
+  ballerinaEventHandler: { componentType: 'deployment/event-integration', workflow: 'ballerina-buildpack-builder' },
   miApiService: { componentType: 'deployment/service', workflow: 'mi-buildpack-builder' },
   miCronjob: { componentType: 'cronjob/scheduled-task', workflow: 'mi-buildpack-builder' },
   miJob: { componentType: 'cronjob/scheduled-task', workflow: 'mi-buildpack-builder' },
@@ -78,7 +92,7 @@ const DISPLAY_TYPE_MAP: Record<DisplayType, { componentType: string; workflow: s
 const LOGICAL_TYPE_TO_DISPLAY_TYPE: Record<string, { bi: string; mi: string }> = {
   service: { bi: 'ballerinaService', mi: 'miApiService' },
   automation: { bi: 'scheduledTask', mi: 'miCronjob' },
-  eventIntegration: { bi: 'webhook', mi: 'miEventHandler' },
+  eventIntegration: { bi: 'ballerinaEventHandler', mi: 'miEventHandler' },
   fileIntegration: { bi: 'ballerinaFileIntegration', mi: 'miFileIntegration' },
   aiAgent: { bi: 'aiAgent', mi: 'aiAgent' },
   proxy: { bi: 'proxy', mi: 'proxy' },
@@ -155,8 +169,14 @@ export const fetchComponentByHandler = async (projectId: string, componentHandle
     track?.id ? { id: track.id, branch: track.branch, latest: track.latest, autoDeployEnabled: track.autoDeployEnabled } : { id: match.id, branch: track?.branch, latest: true, autoDeployEnabled: track?.autoDeployEnabled },
   ];
 
+  // Devant exposes the track also as apiVersions, and pages that need a
+  // versionId (Build, Alerts) read it from there. Cloud has a single implicit
+  // version per component, so mirror the synthesized track; apiVersion has no
+  // OpenChoreo equivalent and stays empty.
+  const apiVersions: ApiVersion[] = deploymentTracks.map((t) => ({ id: t.id, apiVersion: '', branch: t.branch ?? '', latest: t.latest ?? true }));
+
   // orgHandler is unused by cloud consumers but kept in the shape for parity.
-  return { ...match, orgHandler: '', deploymentTracks };
+  return { ...match, orgHandler: '', deploymentTracks, apiVersions };
 };
 
 // awaits: real /endpoints mapping in the BFF (currently returns an empty list).

@@ -17,18 +17,22 @@
  */
 
 /**
- * Cloud (OpenChoreo) build-log API. Calls the ipaas-service BFF.
+ * Cloud (OpenChoreo) build-log API.
  *
- * The build card's stepper needs per-stage status + steps, but the BFF logs
- * endpoint (GET /components/{name}/builds/{runId}/logs) only carries raw
- * build-stage log text — its stage status/steps are empty. The real per-step
+ * The build card's stepper needs per-stage status + steps. The per-step
  * progress lives in the WorkflowRun's tasks (GET /components/{name}/builds/{runId},
- * each task has a phase), so we fetch the run and synthesize the BuildRunLogs
- * (init/build/deploy) from its task phases, folding in the log text when present.
+ * each task has a phase), so we fetch the run from the BFF and synthesize the
+ * BuildRunLogs (init/build/deploy) from its task phases.
+ *
+ * The log text itself comes from the wso2cloud observability proxy, queried by
+ * WorkflowRun name (see cloud/logs.ts). The BFF logs route
+ * (GET /components/{name}/builds/{runId}/logs) is kept as a fallback for
+ * deployments without the proxy.
  */
 
 import type { BuildRunLogs, BuildStage, BuildStep } from '../../types/build';
 import { bff, q, seg } from './_client';
+import { queryObsLogs } from './logs';
 
 // Underscored params (_orgHandler, _versionId) are kept for devant contract
 // parity; cloud addresses builds by component name + run id only.
@@ -42,6 +46,8 @@ interface BffWorkflowTask {
 }
 interface BffBuildRun {
   status?: string;
+  startedAt?: string;
+  completedAt?: string;
   tasks?: BffWorkflowTask[];
 }
 
@@ -104,16 +110,42 @@ function buildRunLogsFromTasks(run: BffBuildRun, rawBuildLog: string | null): Bu
   return { init: mk('init', null), build: mk('build', encodeLog(rawBuildLog)), deploy: mk('deploy', null) };
 }
 
-// Fetch the run (for task phases → steps) and its logs (best-effort) and
+// Fetch the build's log lines from the observability proxy, keyed by the
+// WorkflowRun name. The time window starts at the run's start (30 days back
+// when unknown) and is padded 10 minutes past completion to capture logs that
+// arrive late in the ingestion pipeline; in-progress runs read up to now.
+async function fetchObsBuildLogText(runId: string, run: BffBuildRun): Promise<string | null> {
+  const startTime = run.startedAt || new Date(Date.now() - 30 * 24 * 3600_000).toISOString();
+  const endTime = run.completedAt ? new Date(new Date(run.completedAt).getTime() + 10 * 60_000).toISOString() : new Date().toISOString();
+  try {
+    const rows = await queryObsLogs({
+      searchScope: { workflowRunName: runId },
+      startTime,
+      endTime,
+      limit: 500,
+      sortOrder: 'asc',
+      logLevels: [],
+      searchPhrase: '',
+    });
+    return rows.length > 0 ? rows.map((r) => r.logLine).join('\n') : null;
+  } catch {
+    return null;
+  }
+}
+
+// Fetch the run (for task phases → steps) and its log text (best-effort) and
 // synthesize the BuildRunLogs the stepper consumes. The build run is required;
-// a logs 503 (observability not configured) just drops the log text.
+// the log text is sourced from the observability proxy, with the BFF logs
+// route as fallback when the proxy is unavailable or has nothing for the run.
 async function loadBuildRunLogs(componentId: string, runId: string, projectQuery: string): Promise<BuildRunLogs | null> {
-  const [run, rawLogs] = await Promise.all([
-    bff.get<BffBuildRun | null>(`/components/${seg(componentId)}/builds/${seg(runId)}${projectQuery}`).catch(() => null),
-    bff.get<BuildRunLogs | null>(`/components/${seg(componentId)}/builds/${seg(runId)}/logs${projectQuery}`).catch(() => null),
-  ]);
+  const run = await bff.get<BffBuildRun | null>(`/components/${seg(componentId)}/builds/${seg(runId)}${projectQuery}`).catch(() => null);
   if (!run) return null;
-  return buildRunLogsFromTasks(run, rawLogs?.build?.log ?? null);
+  let rawLog = await fetchObsBuildLogText(runId, run);
+  if (rawLog === null) {
+    const bffLogs = await bff.get<BuildRunLogs | null>(`/components/${seg(componentId)}/builds/${seg(runId)}/logs${projectQuery}`).catch(() => null);
+    rawLog = bffLogs?.build?.log ?? null;
+  }
+  return buildRunLogsFromTasks(run, rawLog);
 }
 
 export const fetchBuildRunLogs = (_orgHandler: string, projectId: string, componentId: string, runId: string): Promise<BuildRunLogs | null> => loadBuildRunLogs(componentId, runId, q({ projectName: projectId }));
