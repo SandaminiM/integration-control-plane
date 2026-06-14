@@ -207,9 +207,7 @@ function AppLayoutInner(): JSX.Element {
   // wip/icp return null here and the chip below is never rendered or bundled.
   const { org: billingOrg } = useBillingOrg('integration-platform');
   const billingTrial = billingOrg?.subscription?.status === 'trial' ? billingOrg.subscription.trial : null;
-  const trialEndLabel = billingTrial?.trial_end
-    ? `Trial ends ${new Date(billingTrial.trial_end).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
-    : '';
+  const trialEndLabel = billingTrial?.trial_end ? `Trial ends ${new Date(billingTrial.trial_end).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}` : '';
 
   const { state: shell, actions } = useAppShell({ initialCollapsed: true });
 
@@ -986,12 +984,7 @@ function AppLayoutInner(): JSX.Element {
           <Header.Actions>
             {IS_CLOUD && billingTrial && (
               <Tooltip title={trialEndLabel}>
-                <Chip
-                  label={`Trial · ${billingTrial.days_remaining} day${billingTrial.days_remaining === 1 ? '' : 's'} remaining`}
-                  color="warning"
-                  size="small"
-                  sx={{ fontWeight: 500, mr: 0.5 }}
-                />
+                <Chip label={`Trial · ${billingTrial.days_remaining} day${billingTrial.days_remaining === 1 ? '' : 's'} remaining`} color="warning" size="small" sx={{ fontWeight: 500, mr: 0.5 }} />
               </Tooltip>
             )}
             <ColorSchemeToggle />

@@ -50,7 +50,7 @@ export default function AgentChatConsole(scope: ComponentScope): JSX.Element {
   const [selectedTrackId, setSelectedTrackId] = useState('');
   useEffect(() => {
     if (!tracks.length) return;
-    setSelectedTrackId((prev) => (prev && tracks.some((t) => t.id === prev) ? prev : tracks.find((t) => t.latest)?.id ?? tracks[0].id));
+    setSelectedTrackId((prev) => (prev && tracks.some((t) => t.id === prev) ? prev : (tracks.find((t) => t.latest)?.id ?? tracks[0].id)));
   }, [component?.id, tracks]);
 
   const [selectedEnvId, setSelectedEnvId] = useState('');

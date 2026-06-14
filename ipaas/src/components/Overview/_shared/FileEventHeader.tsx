@@ -33,7 +33,7 @@ import ConfigureDrawer from '../../EnvironmentCard/ConfigureDrawer';
 
 /**
  * Shared header for the two runtime-logs integration types — **file-integration**
- * and **event-integration** 
+ * and **event-integration**
  */
 export default function FileEventHeader({
   component,

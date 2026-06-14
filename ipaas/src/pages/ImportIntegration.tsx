@@ -547,7 +547,16 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   }
 
   if (createComponent.isPending || createComponent.isSuccess || createComponent.isError) {
-    const integrationLabel = selectedIntegrationType === 'automation' ? 'Automation' : selectedIntegrationType === 'file-integration' ? 'File Integration' : selectedIntegrationType === 'event-integration' ? 'Event Integration' : selectedIntegrationType === 'ai-agent' ? 'AI Agent' : 'Integration as API';
+    const integrationLabel =
+      selectedIntegrationType === 'automation'
+        ? 'Automation'
+        : selectedIntegrationType === 'file-integration'
+          ? 'File Integration'
+          : selectedIntegrationType === 'event-integration'
+            ? 'Event Integration'
+            : selectedIntegrationType === 'ai-agent'
+              ? 'AI Agent'
+              : 'Integration as API';
     return (
       <PageContent sx={{ pt: 5, display: 'flex', flexDirection: 'column', flex: 1 }}>
         <IntegrationCreationLoader
