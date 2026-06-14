@@ -17,7 +17,7 @@
  */
 
 import { Button, Tooltip } from '@wso2/oxygen-ui';
-import { MessageSquare, List, RotateCw, Square } from '@wso2/oxygen-ui-icons-react';
+import { List, RotateCw, Square, Funnel } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
@@ -92,7 +92,7 @@ export default function EnvCardActions({
         <Button
           variant="text"
           size="small"
-          startIcon={<MessageSquare size={14} />}
+          startIcon={<Funnel size={14} />}
           onClick={() => navigate(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/test/agent-chat`)}
           disabled={buildDisabled}
           sx={{ textTransform: 'none' }}>
