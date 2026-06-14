@@ -74,6 +74,7 @@ import OrgDeploy from '../pages/OrgDeploy';
 import ProjectDeploy from '../pages/ProjectDeploy';
 import CloudEditorDeployment from '../pages/CloudEditorDeployment';
 import TestConsole from '../pages/TestConsole';
+import AgentChatConsole from '../pages/AgentChatConsole';
 import Deploy from '../pages/Deploy';
 import ProjectsRedirect from '../pages/ProjectsRedirect';
 import OrgHome from '../pages/OrgHome';
@@ -216,6 +217,10 @@ const routes: AppRoute[] = [
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test/console',
                 element: createElement(withScope(TestConsole, ['components'])),
+              },
+              {
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test/agent-chat',
+                element: createElement(withScope(AgentChatConsole, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test/api-chat',

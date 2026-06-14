@@ -21,10 +21,11 @@ import type { SchemaConfigData } from '../../../types/configuration';
 
 /**
  * True when the schema declares required configuration keys that have no value
- * yet. Shared by automation's `HeaderStatus` (Configure button colour) and
- * `EnvCardActions` (disabling Run/Schedule) so the rule lives in one place;
- * both call `useSchemaConfig` (de-duplicated by react-query) and pass the
- * result here.
+ * yet. Shared across the types whose env card has a Configure button —
+ * automation, file/event integrations — so the rule lives in one place; each
+ * caller fetches `useSchemaConfig` (de-duplicated by react-query) and passes
+ * the result here. Drives the Configure button colour/label ("Configure to
+ * Continue") and the disabling of Run/Schedule actions.
  */
 export function hasMissingRequiredConfigs(schemaConfig: SchemaConfigData | null | undefined): boolean {
   if (!schemaConfig?.jsonSchema) return false;

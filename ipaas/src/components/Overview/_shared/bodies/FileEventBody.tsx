@@ -20,7 +20,7 @@ import { Box, CircularProgress, Divider, Stack, Typography } from '@wso2/oxygen-
 import { ScrollText } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, type ReactNode } from 'react';
 import { useInfiniteComponentLogs } from '../../../../hooks/useLogs';
-import { choreologgingComponentGatewayLogsApiUrl } from '../../../../config/runtimeConfig';
+import { choreologgingComponentLogsApiUrl } from '../../../../config/runtimeConfig';
 import { AUTO_FETCH_INTERVAL, DEFAULT_DP_REGION, LEVEL_COLORS, PAGE_SIZE } from '../../../../utils/logs';
 import type { ComponentLogsRequest, LogRow } from '../../../../types/logs';
 import type { EnvCardBodyProps } from '../../../../types/integration';
@@ -50,16 +50,19 @@ import EnvCardSkeleton from '../EnvCardSkeleton';
  *     log stream.
  */
 export default function FileEventBody({ component, env, versionId }: EnvCardBodyProps): ReactNode {
-  const logsApiUrl = choreologgingComponentGatewayLogsApiUrl();
+  // File/event runtime logs come from the *application* logs stream (the
+  // integration's own runtime output), not the gateway (API-traffic) stream —
+  // matching devant, and `RuntimeLogsIntegration` for non-generic services.
+  const logsApiUrl = choreologgingComponentLogsApiUrl();
 
-  // Lock the time window at mount. Forward buffer lets auto-fetch pick up
-  // new logs that arrive after the card is rendered; backward bound gives
-  // a sensible default history depth without exposing filter controls.
+  // Last 24h up to now, locked at mount. The v2 live-logs query rejects a
+  // far-future endTime (OBS-L-22), so the window must end at ~now — matching
+  // the full Runtime Logs page. Manual Refresh remounts to pick up newer logs.
   const window = useMemo(() => {
     const now = Date.now();
     return {
       startTime: new Date(now - 24 * 3600_000).toISOString(),
-      endTime: new Date(now + 365 * 24 * 3600_000).toISOString(),
+      endTime: new Date(now).toISOString(),
     };
   }, []);
 
@@ -77,7 +80,8 @@ export default function FileEventBody({ component, env, versionId }: EnvCardBody
       region: DEFAULT_DP_REGION,
       searchPhrase: '',
       regexPhrase: '',
-      logType: 'singleLine',
+      // No `logType`: file/event are non-generic, so the application-logs query
+      // omits it (the full Runtime Logs page only sends it for generic services).
     };
   }, [component.id, env.id, versionId, window.startTime, window.endTime]);
 

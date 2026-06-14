@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Globe, Clock, Layers, Repeat, Server, Folder, HardDrive, Zap, Radio } from '@wso2/oxygen-ui-icons-react';
+import { Globe, Clock, Layers, Repeat, Server, Folder, HardDrive, Zap, Radio, Sparkles, Bot } from '@wso2/oxygen-ui-icons-react';
 import { Box } from '@wso2/oxygen-ui';
 import type { ReactNode } from 'react';
 import type { IntegrationTypeOption } from '../types/import';
@@ -60,6 +60,16 @@ export const INTEGRATION_TYPES: IntegrationTypeOption[] = [
     icons: [
       { icon: <Zap size={16} />, label: 'Events' },
       { icon: <Radio size={16} />, label: 'Streaming' },
+    ],
+  },
+  {
+    id: 'ai-agent',
+    title: 'AI Agent',
+    description: 'Build AI agents that reason over your integrations and call tools and services',
+    docLink: 'https://wso2.com/integration-platform/docs/get-started/build-ai-agent',
+    icons: [
+      { icon: <Bot size={16} />, label: 'Agent' },
+      { icon: <Sparkles size={16} />, label: 'AI' },
     ],
   },
 ];

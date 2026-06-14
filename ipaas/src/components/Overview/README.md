@@ -9,7 +9,7 @@ the "how to add a type" steps live in `src/components/AGENTS.md`
 ## Structure
 
 ```text
-overview/
+Overview/
 ├── _shared/                     generic frame + dispatch — NO type-specific logic
 │   ├── OverviewShell.tsx        lays out env cards + PromoteButton between envs
 │   ├── IntegrationRenderer.tsx  lazy-loads the type module from the registry;
@@ -21,9 +21,12 @@ overview/
 │   │                            with {status} (left) and {actions} (right) slots
 │   ├── EnvCardSkeleton.tsx      common body loading skeleton
 │   ├── StatusDot.tsx            presentational status dot (composed by a type)
-│   ├── ConfigureButton.tsx      presentational Configure button (composed by a type)
+│   ├── ConfigureButton.tsx      presentational Configure button — flips to
+│   │                            "Configure to Continue" when required configs are unset
+│   ├── configStatus.ts          hasMissingRequiredConfigs() — shared by automation,
+│   │                            file/event, ai-agent (drives the button + Run/Schedule)
 │   ├── FileEventHeader.tsx      shared CustomHeader for file- + event-integration
-│   │                           (status dot + Critical chip + Configure + Stop/Start)
+│   │                            (status dot + Configure + Stop/Start; logs are in the body)
 │   ├── HeaderShell.tsx          integration-level header rendered above the cards
 │   ├── UnsupportedFallback.tsx  module for not-yet-migrated types (CustomOverview)
 │   ├── UnsupportedOverview.tsx
@@ -41,8 +44,18 @@ overview/
 │   └── ServiceInsights / ServiceLogsDrawer / SwaggerOperationsList
 ├── file-integration/            index.ts → shared FileEventHeader + FileEventBody
 ├── event-integration/           index.ts → shared FileEventHeader + FileEventBody
+├── ai-agent/                    status dot + Configure(hideEndpoints) / Test·Logs·Stop·Start;
+│   │                            body is an inline chat against the deployed agent
+│   ├── HeaderStatus.tsx         status dot + Configure / Configure-to-Continue
+│   ├── EnvCardActions.tsx       Test (→ test/agent-chat) · View Logs · Stop/Start
+│   └── EnvCardBody.tsx          renders <AgentChat> (or "deploy to chat" when undeployed)
 └── registry.ts                  IntegrationType → () => import('./<type>')  (one chunk per type)
 ```
+
+> **Cross-surface note:** the chat itself lives at **`src/components/AgentChat.tsx`** (top
+> level, *not* under `overview/`) because two surfaces consume it: the ai-agent
+> `EnvCardBody` here and the Test page (`pages/AgentChatConsole.tsx`, route
+> `test/agent-chat`). Its message/connection types are in `src/types/agentChat.ts`.
 
 ## The model in one line
 
@@ -53,12 +66,17 @@ optional `EnvCardFooter`. A type with no env-card concept (e.g. Tailscale) expor
 
 | Slot | Who provides it | Example |
 |---|---|---|
-| `EnvCardBody` | every rendered type | executions table / endpoints / logs |
-| `HeaderStatus` | types with a status/Configure | service status dot + Configure |
+| `EnvCardBody` | every rendered type | executions table / endpoints / runtime logs / agent chat |
+| `HeaderStatus` | types with a status/Configure | service / ai-agent status dot + Configure |
 | `EnvCardActions` | types with header actions | Run/Schedule, Stop/Test/Logs |
 | `CustomHeader` | header outliers | file- + event-integration (shared `FileEventHeader`) |
 | `EnvCardFooter` | optional | — none today |
 | `CustomOverview` | full-surface outliers | Tailscale |
+
+`ai-agent` uses the generic-frame slots (`HeaderStatus` + `EnvCardActions` + `EnvCardBody`)
+like integration-as-api — it's a generic service under the hood (`componentSubType: aiAgent`),
+so it Tests (→ `test/agent-chat`), shows logs, and Stop/Starts. File/event use a `CustomHeader`
+instead and have **no** Test/View-Logs buttons (their body *is* the log stream).
 
 The shell passes shared per-env data (deployment status, `releaseId`, build ids) and
 cross-slot callbacks (`onNotify`, `onTrigger`, `requestPoll`) to every slot via
