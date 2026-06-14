@@ -47,10 +47,12 @@ function formatTime(ts: number): string {
 export default function AgentChat({ componentId, versionId, releaseId, envCritical, waitForConfig = false, variant = 'card', onConnectionChange }: AgentChatProps): ReactNode {
   const { data: endpoints = [] } = useEnvEndpoints(componentId, versionId, releaseId);
 
-  // Candidate chat endpoint: the first reachable one with an APIM id. We
-  // confirm it exposes a `/chat` operation below, but still fall back to it so
-  // an agent whose operations aren't surfaced in APIM remains chat-able.
-  const candidate = useMemo(() => endpoints.find((e) => e.publicUrl && e.apimId) ?? endpoints.find((e) => e.publicUrl) ?? null, [endpoints]);
+  // Candidate chat endpoint: the first reachable one that ALSO has an APIM id —
+  // the test key is minted per APIM API, so a key-less endpoint can never
+  // authenticate. devant likewise skips endpoints without an apimId. (The
+  // `/chat` operation is confirmed below only for a hint; we still use the
+  // endpoint if APIM doesn't surface its operations.)
+  const candidate = useMemo(() => endpoints.find((e) => e.publicUrl && e.apimId) ?? null, [endpoints]);
   const { data: apimApi } = useApimApi(candidate?.apimId);
   const hasChatOperation = apimApi?.operations?.some((op) => op.target === '/chat') ?? false;
   const chatUrl = candidate?.publicUrl ?? '';
@@ -60,15 +62,18 @@ export default function AgentChat({ componentId, versionId, releaseId, envCritic
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [authError, setAuthError] = useState(false);
   const fetchTestKey = useMemo(
-    () => async () => {
-      if (!apimId) return;
+    () => async (): Promise<string | null> => {
+      if (!apimId) return null;
       setAuthError(false);
       try {
         const result = await generateKey.mutateAsync({ apimId, keyType: envCritical ? 'Production' : 'Development' });
-        setApiKey(result?.apikey ?? null);
-        if (!result?.apikey) setAuthError(true);
+        const key = result?.apikey ?? null;
+        setApiKey(key);
+        if (!key) setAuthError(true);
+        return key;
       } catch {
         setAuthError(true);
+        return null;
       }
     },
     // generateKey is a stable mutation object; apimId/envCritical drive identity
@@ -109,22 +114,27 @@ export default function AgentChat({ componentId, versionId, releaseId, envCritic
     setTimeout(() => setCopiedIdx((cur) => (cur === idx ? null : cur)), 1500);
   };
 
-  const send = async (message: string, allowKeyRefresh = true): Promise<void> => {
-    if (!chatUrl || !apiKey) return;
+  const send = async (message: string, allowKeyRefresh = true, keyOverride?: string | null): Promise<void> => {
+    const key = keyOverride ?? apiKey;
+    if (!chatUrl || !key) return;
     setChatError(null);
     setIsSending(true);
     try {
       const response = await fetch(`${chatUrl}/chat`, {
         method: 'POST',
-        headers: { 'test-key': apiKey, 'Content-Type': 'application/json' },
+        headers: { 'test-key': key, 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, message }),
       });
 
       if (response.status === 401 && allowKeyRefresh && apimId) {
-        // Key expired — regenerate once and retry.
-        await fetchTestKey();
-        await send(message, false);
-        return;
+        // Key likely expired — regenerate once and retry with the fresh key
+        // passed directly; a setApiKey state update wouldn't reach this
+        // closure in time. If we can't refresh, fall through to surface the 401.
+        const fresh = await fetchTestKey();
+        if (fresh) {
+          await send(message, false, fresh);
+          return;
+        }
       }
       if (!response.ok) {
         setChatError(`HTTP ${response.status} ${response.statusText}`);
