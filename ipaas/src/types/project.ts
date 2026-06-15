@@ -61,7 +61,7 @@ export interface CreateMonoRepoProjectInput extends CreateProjectInput {
 
 export type GitProvider = 'github' | 'public';
 
-export type WorkspaceIntegrationType = 'service' | 'automation' | 'file-integration' | 'event-integration';
+export type WorkspaceIntegrationType = 'service' | 'automation' | 'file-integration' | 'event-integration' | 'ai-agent';
 
 export interface ProjectGitSource {
   provider: GitProvider;

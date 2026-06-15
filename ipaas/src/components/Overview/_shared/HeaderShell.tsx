@@ -18,21 +18,18 @@
 
 import { Avatar, Box, Button, ButtonGroup, Chip, CircularProgress, ClickAwayListener, Grow, IconButton, InputBase, MenuList, MenuItem, Paper, Popper, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router';
-import { Tag, Cloud, Github, GitBranch, GitCommitHorizontal, Copy, Check, ChevronDown, Code2, Pencil, Globe, Lock, ShieldCheck, CodeXml, MCP, Recycle } from '@wso2/oxygen-ui-icons-react';
+import { Tag, Cloud, Github, GitBranch, GitCommitHorizontal, Copy, Check, ChevronDown, Code2, Pencil, Globe, Lock } from '@wso2/oxygen-ui-icons-react';
 import type { ComponentDetail } from '../../../types/component';
 import type { Project } from '../../../types/project';
 import type { Repository, Commit } from '../../../types/repository';
-import { useApimApi } from '../../../hooks/useApim';
 import { useUpdateComponent } from '../../../hooks/useComponents';
 import { useChoreoSampleImages } from '../../../hooks/useRepository';
 import LabelDialog from '../../LabelDialog';
-import SecurityDrawer from '../../SecurityDrawer';
 import { formatDistanceToNow } from '../../../utils/time';
 import { useAuth } from '../../../auth/AuthContext';
 import { useOrgUuid } from '../../../hooks/useOrgUuid';
 import { getDisplayLabel } from '../../../constants/integrations';
-import { getDevPortalBaseUrl } from '../../../config/runtimeConfig';
+import type { IntegrationModule } from '../../../types/integration';
 
 function buildRepoUrl(repo: Repository): string {
   const { gitProvider, organizationApp, nameApp, branch, appSubPath, bitbucketServerUrl, serverUrl, projectApp } = repo;
@@ -67,16 +64,15 @@ interface ComponentHeaderProps {
   projectId: string;
   projectHandler: string;
   apimId?: string | null;
+  module?: IntegrationModule | null;
 }
 
-export default function ComponentHeader({ component, project, repository, latestCommit, orgHandler, projectId, projectHandler, apimId }: ComponentHeaderProps) {
-  const navigate = useNavigate();
+export default function ComponentHeader({ component, project, repository, latestCommit, orgHandler, projectId, projectHandler, apimId, module }: ComponentHeaderProps) {
   const { userId } = useAuth();
   const [copied, setCopied] = useState(false);
   const [splitOpen, setSplitOpen] = useState(false);
   const splitButtonRef = useRef<HTMLDivElement>(null);
   const [labelDialogOpen, setLabelDialogOpen] = useState(false);
-  const [securityDrawerOpen, setSecurityDrawerOpen] = useState(false);
   const [descHovered, setDescHovered] = useState(false);
 
   const [nameEditing, setNameEditing] = useState(false);
@@ -182,24 +178,13 @@ export default function ComponentHeader({ component, project, repository, latest
   const typeLabel = getDisplayLabel(displayType, component.componentSubType ?? null) || null;
   const showAccessMode = REST_API_TYPES.has(displayType) && !!component.serviceAccessMode;
   const isExternal = component.serviceAccessMode?.toLowerCase() === 'external';
-  const envMatch = (window.API_CONFIG?.choreoOrgApiUrl ?? '').match(/\/\/apis\.([^.]+)\.choreo\.dev/);
-  const devantOrigin = envMatch ? `https://${envMatch[1]}.devant.dev` : null;
 
-  const showApiActions = REST_API_TYPES.has(displayType) || component.componentSubType === 'mcpServer';
-  const { data: apimApi } = useApimApi(showApiActions ? apimId : null);
-  const lifecycleStatus = apimApi?.lifeCycleStatus ?? null;
-  const isPublished = lifecycleStatus === 'PUBLISHED' || lifecycleStatus === 'PROTOTYPED';
-  const devPortalBase = getDevPortalBaseUrl();
-  const devPortalUrl = devPortalBase && apimApi ? `${devPortalBase}/${orgHandler}/views/default/api/${encodeURIComponent(apimApi.name)}-${encodeURIComponent(apimApi.version)}` : null;
-  const lifecycleColor: 'success' | 'error' | 'warning' | 'default' = lifecycleStatus === 'PUBLISHED' ? 'success' : lifecycleStatus === 'DEPRECATED' || lifecycleStatus === 'BLOCKED' ? 'error' : lifecycleStatus === 'PROTOTYPED' ? 'warning' : 'default';
-  const lifecycleLabel: Record<string, string> = {
-    CREATED: 'Created',
-    PUBLISHED: 'Published',
-    PROTOTYPED: 'Prototyped',
-    DEPRECATED: 'Deprecated',
-    BLOCKED: 'Blocked',
-  };
-  const generateMcpUrl = devantOrigin && project ? `${devantOrigin}/organizations/${orgHandler}/projects/${project.handler}/components/new?type=mcp&sourceApiId=${apimId ?? ''}` : null;
+  // Overview header actions are strictly opt-in: a type renders them only by
+  // providing its own `OverviewHeaderActions` slot (integration-as-api → the
+  // shared API block + Generate MCP; ai-agent → the shared block). Types that
+  // don't (file/event/automation/…) show no header actions — just the
+  // Open-in-Cloud split button below. The shell makes no per-type decision.
+  const HeaderActions = module?.OverviewHeaderActions;
 
   const repoUrl = repository ? buildRepoUrl(repository) : null;
 
@@ -537,67 +522,11 @@ export default function ComponentHeader({ component, project, repository, latest
             </Popper>
           </Box>
 
-          {/* API management action buttons — Configure Security, Lifecycle Status, Dev Portal, Generate MCP */}
-          {showApiActions && (
-            <Stack gap={1} alignItems={'flex-end'}>
-              {/* Configure Security row */}
-              <Stack direction="row" alignItems="center" gap={1}>
-                <Button
-                  variant="text"
-                  size="small"
-                  startIcon={<ShieldCheck size={14} />}
-                  onClick={() => setSecurityDrawerOpen(true)}
-                  sx={{ color: 'text.secondary', textTransform: 'none', p: 0, minWidth: 0, '&:hover': { background: 'none', textDecoration: 'underline' } }}>
-                  Configure Security
-                </Button>
-                <Box sx={{ width: 20, height: 20, borderRadius: '50%', bgcolor: 'success.main', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}>
-                  <Check size={10} />
-                </Box>
-              </Stack>
-              {/* Lifecycle Status row */}
-              <Stack direction="row" alignItems="center" gap={1}>
-                <Button
-                  variant="text"
-                  size="small"
-                  onClick={() => navigate(`/organizations/${orgHandler}/projects/${projectHandler}/components/${component.handler}/manage/lifecycle`)}
-                  startIcon={<Recycle size={14} />}
-                  sx={{ color: 'text.secondary', textTransform: 'none', p: 0, minWidth: 0, '&:hover': { background: 'none', textDecoration: 'underline' } }}>
-                  Lifecycle Status
-                </Button>
-                {lifecycleStatus && <Chip label={lifecycleLabel[lifecycleStatus] ?? lifecycleStatus} size="small" color={lifecycleColor} variant="outlined" sx={{ height: 22, fontSize: '0.7rem' }} />}
-              </Stack>
-              {/* Dev Portal + Generate MCP icon buttons */}
-              <Stack direction="row" alignItems="center" gap={1}>
-                <Tooltip title={isPublished ? 'Go to Developer Portal' : 'Publish API to access Developer Portal'}>
-                  <IconButton
-                    size="small"
-                    component="a"
-                    href={devPortalUrl ?? '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    disabled={!isPublished || !devPortalUrl}
-                    sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, color: isPublished && devPortalUrl ? 'text.secondary' : 'text.disabled', pointerEvents: 'auto' }}>
-                    <CodeXml size={16} />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title={isPublished && apimId ? 'Generate MCP Server' : 'Publish API to generate MCP Server'}>
-                  <IconButton
-                    size="small"
-                    component="a"
-                    href={isPublished && apimId && generateMcpUrl ? generateMcpUrl : '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    disabled={!isPublished || !apimId}
-                    sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, color: isPublished && apimId ? 'text.secondary' : 'text.disabled', pointerEvents: 'auto' }}>
-                    <MCP size={16} />
-                  </IconButton>
-                </Tooltip>
-              </Stack>
-            </Stack>
-          )}
+          {/* Overview-header API actions — rendered only when the type opts in
+              via its module's `OverviewHeaderActions` slot. */}
+          {HeaderActions && <HeaderActions component={component} apimId={apimId} orgHandler={orgHandler} projectHandler={projectHandler} />}
         </Stack>
       </Stack>
-      <SecurityDrawer open={securityDrawerOpen} onClose={() => setSecurityDrawerOpen(false)} apimId={apimId} componentId={component.id} versionId={component.deploymentTracks?.[0]?.id} />
     </>
   );
 }

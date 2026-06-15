@@ -18,26 +18,22 @@
 
 import { Button, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { GitCommit, RefreshCw, RotateCw, Square } from '@wso2/oxygen-ui-icons-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useRedeployDeployment, useStopDeployment } from '../../../hooks/useDeployments';
+import { useSchemaConfig } from '../../../hooks/useConfiguration';
 import { IS_CLOUD } from '../../../features';
 import type { CustomHeaderProps } from '../../../types/integration';
 import StatusDot from './StatusDot';
 import ConfigureButton from './ConfigureButton';
+import { hasMissingRequiredConfigs } from './configStatus';
 // Transitional: legacy ConfigureDrawer (defaults to the generic-service form
 // when `isAutomation` is absent) until its genericisation in phase 4.5.
 import ConfigureDrawer from '../../EnvironmentCard/ConfigureDrawer';
 
 /**
  * Shared header for the two runtime-logs integration types — **file-integration**
- * and **event-integration** — which devant renders identically: env name +
- * commit, a deployment status dot, a Configure entry point, and Stop/Start
- * actions. The runtime-logs body lives in `_shared/bodies/FileEventBody`.
- *
- * It's a `CustomHeader` (replaces the generic `EnvCardHeader` frame) so it can
- * own the Stop/Start mutations and the Configure drawer; the shell still owns the
- * deployment fetch + Refresh and passes them in via `CustomHeaderProps`.
+ * and **event-integration**
  */
 export default function FileEventHeader({
   component,
@@ -69,6 +65,11 @@ export default function FileEventHeader({
   const canStop = deploymentStatusV2 === 'ACTIVE' || deploymentStatusV2 === 'ERROR';
   const canStart = deploymentStatusV2 === 'SUSPENDED';
   const isInProgress = deploymentStatusV2 === 'IN_PROGRESS';
+
+  // Switch the Configure button to "Configure to Continue" when the schema has
+  // required configs without values (devant: `hasAllRequiredConfigs`).
+  const { data: schemaConfig } = useSchemaConfig(projectId, component.id, envTemplateId, versionId, deployedCommitSha);
+  const missingConfigs = useMemo(() => hasMissingRequiredConfigs(schemaConfig), [schemaConfig]);
 
   const handleStop = () => {
     stopMutation.mutate(
@@ -121,7 +122,7 @@ export default function FileEventHeader({
 
         {hasDeployment && (
           <>
-            <ConfigureButton onClick={() => setConfigureOpen(true)} />
+            <ConfigureButton onClick={() => setConfigureOpen(true)} hasMissingConfigs={missingConfigs} />
             <ConfigureDrawer
               open={configureOpen}
               onClose={() => setConfigureOpen(false)}

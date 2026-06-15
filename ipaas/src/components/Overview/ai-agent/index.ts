@@ -24,22 +24,23 @@ import EnvCardBody from './EnvCardBody';
 import OverviewHeaderActions from './OverviewHeaderActions';
 
 /**
- * Integration as API integration module. Covers REST API / GraphQL / WebSocket
- * services backed by `ballerinaService`, `miApiService`, `restApi`,
- * `miRestApi`. (Webhook components resolve to their own `webhook` type.)
+ * AI Agent integration module.
  *
- * Composes the shared `EnvCardShell` frame via `HeaderStatus` (status dot +
- * Configure), `EnvCardActions` (Test / View Logs / Stop / Start), and a
- * content-only `EnvCardBody` (endpoint URLs + swagger + service insights).
- * `OverviewHeaderActions` adds the Generate MCP button to the shared
- * component-header actions — specific to this type.
+ * Resolves from components whose `componentSubType` is `aiAgent` (they share a
+ * service `displayType` — `ballerinaService` / `miApiService` — so the subtype
+ * is the discriminator; see `identifyIntegration`).
+ *
+ * Builds and deploys like a service, but its env-card body is an inline chat
+ * against the deployed agent (`AgentChat`), and Configure hides the Endpoints
+ * step. Mirrors devant, where AI agents render a chat instead of the endpoint
+ * metrics body and route Test to `test/agent-chat`.
  */
-const integrationAsApiModule: IntegrationModule = {
-  ...INTEGRATION_TYPE_INFO['integration-as-api'],
+const aiAgentModule: IntegrationModule = {
+  ...INTEGRATION_TYPE_INFO['ai-agent'],
   HeaderStatus,
   EnvCardActions,
   EnvCardBody,
   OverviewHeaderActions,
 };
 
-export default integrationAsApiModule;
+export default aiAgentModule;

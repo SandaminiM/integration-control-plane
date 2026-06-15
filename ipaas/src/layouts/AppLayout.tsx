@@ -207,9 +207,7 @@ function AppLayoutInner(): JSX.Element {
   // wip/icp return null here and the chip below is never rendered or bundled.
   const { org: billingOrg } = useBillingOrg('integration-platform');
   const billingTrial = billingOrg?.subscription?.status === 'trial' ? billingOrg.subscription.trial : null;
-  const trialEndLabel = billingTrial?.trial_end
-    ? `Trial ends ${new Date(billingTrial.trial_end).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
-    : '';
+  const trialEndLabel = billingTrial?.trial_end ? `Trial ends ${new Date(billingTrial.trial_end).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}` : '';
 
   const { state: shell, actions } = useAppShell({ initialCollapsed: true });
 
@@ -278,6 +276,7 @@ function AppLayoutInner(): JSX.Element {
     if (rest.startsWith('deploy')) return 'deploy';
     if (rest.startsWith('test/console')) return 'console';
     if (rest.startsWith('test/api-chat')) return 'api-chat';
+    if (rest.startsWith('test/agent-chat')) return 'agent-chat';
     if (rest.startsWith('test')) return 'test';
     if (rest.startsWith('manage/lifecycle')) return 'lifecycle';
     if (rest.startsWith('documents')) return 'documents';
@@ -514,6 +513,7 @@ function AppLayoutInner(): JSX.Element {
       test: `${compBase}/test`,
       console: `${compBase}/test/console`,
       'api-chat': `${compBase}/test/api-chat`,
+      'agent-chat': `${compBase}/test/agent-chat`,
       usage: `${compBase}/insights/usage`,
       delivery: `${compBase}/insights/delivery`,
       compliance: `${compBase}/insights/compliance`,
@@ -984,12 +984,7 @@ function AppLayoutInner(): JSX.Element {
           <Header.Actions>
             {IS_CLOUD && billingTrial && (
               <Tooltip title={trialEndLabel}>
-                <Chip
-                  label={`Trial · ${billingTrial.days_remaining} day${billingTrial.days_remaining === 1 ? '' : 's'} remaining`}
-                  color="warning"
-                  size="small"
-                  sx={{ fontWeight: 500, mr: 0.5 }}
-                />
+                <Chip label={`Trial · ${billingTrial.days_remaining} day${billingTrial.days_remaining === 1 ? '' : 's'} remaining`} color="warning" size="small" sx={{ fontWeight: 500, mr: 0.5 }} />
               </Tooltip>
             )}
             <ColorSchemeToggle />
@@ -1254,7 +1249,9 @@ function AppLayoutInner(): JSX.Element {
             ) : hasComponent(scope) ? (
               (() => {
                 const isGenericService = GENERIC_SERVICE_TYPES.has(currentComponent?.displayType ?? '');
-                const runtimeLogsType = ['file-integration', 'event-integration'].includes(identifyIntegration(currentComponent?.displayType ?? '', currentComponent?.componentSubType ?? null).type);
+                const integrationType = identifyIntegration(currentComponent?.displayType ?? '', currentComponent?.componentSubType ?? null).type;
+                const runtimeLogsType = ['file-integration', 'event-integration'].includes(integrationType);
+                const aiAgentType = integrationType === 'ai-agent';
                 return (
                   <>
                     <Sidebar.Category>
@@ -1318,7 +1315,14 @@ function AppLayoutInner(): JSX.Element {
                         <Sidebar.ItemLabel>Deploy</Sidebar.ItemLabel>
                       </Sidebar.Item>
 
-                      {!isGenericService || runtimeLogsType ? (
+                      {aiAgentType ? (
+                        <Sidebar.Item id="agent-chat">
+                          <Sidebar.ItemIcon>
+                            <FlaskConical size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+                      ) : !isGenericService || runtimeLogsType ? (
                         <Sidebar.Item id="test">
                           <Sidebar.ItemIcon>
                             <FlaskConical size={20} />

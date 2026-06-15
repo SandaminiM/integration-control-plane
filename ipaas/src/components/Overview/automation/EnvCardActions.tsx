@@ -28,7 +28,7 @@ import type { EnvCardActionsProps } from '../../../types/integration';
 import ScheduleButton from './ScheduleButton';
 import RunButton from './RunButton';
 import RunWithArgsDialog from './RunWithArgsDialog';
-import { hasMissingRequiredConfigs } from './configStatus';
+import { hasMissingRequiredConfigs } from '../_shared/configStatus';
 
 /**
  * Automation's right-header slot: the next-run label (with cron auto-fire

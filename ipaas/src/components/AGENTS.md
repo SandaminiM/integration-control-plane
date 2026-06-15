@@ -103,7 +103,7 @@ frame + state every type shares; each type fills slots.** For Overview today:
 
 A type omits any slot it doesn't need — no null-returning placeholders. Bodies shared by
 two types live in `_shared/bodies/` and are parameterised by **behaviour props, not type
-flags**. See `src/components/overview/README.md` for the concrete layout.
+flags**. See `src/components/Overview/README.md` for the concrete layout.
 
 ### Adding a new integration type
 
@@ -125,14 +125,28 @@ flags**. See `src/components/overview/README.md` for the concrete layout.
 
 ### Status — this milestone
 
-Only the **Overview** surface (`src/components/overview/`) is built this way today.
+Only the **Overview** surface (`src/components/Overview/`) is built fully this way today.
+The types with a real Overview module are **automation, integration-as-api,
+file-integration, event-integration, and ai-agent** (gated by `MIGRATED_INTEGRATION_TYPES`
+in `pages/Component.tsx`); the rest fall back to `UnsupportedFallback`.
+
 **Build, Develop, Deploy, Logs, ComponentHeader, and every other Integration-level
 surface that customises by type should follow this same surface + slots structure when
 migrated.** They currently use legacy per-type branching (e.g. Deploy's
 `getComponentTypeFlags` in `src/utils/componentType.ts`) — do not extend those utils with
-new discriminators; add the type to `identifyIntegration` and consume it instead. (The
-Deploy page already does this for the file-integration endpoint-hiding case as a stopgap,
-pending its full migration.)
+new discriminators; add the type to `identifyIntegration` and consume it instead. A few
+surfaces already do this as targeted stopgaps pending full migration:
+
+- **Deploy** (`pages/Deploy.tsx`, `BuildArea`, `DeployEnvironmentCard`) hides endpoint UI
+  for file-/event-/ai-agent integrations via a `hideEndpoints` flag derived from
+  `identifyIntegration` (they share a service `displayType` but expose no endpoints).
+- **Test** (`layouts/AppLayout.tsx`) routes ai-agent to a chat surface (`test/agent-chat`,
+  `pages/AgentChatConsole.tsx`) instead of the API console, again keyed off
+  `identifyIntegration`, not a new `displayType` set.
+
+Cross-surface shared pieces (e.g. **`components/AgentChat.tsx`**, consumed by both the
+ai-agent Overview body and the Test page) live at the top of `components/`, not under a
+single surface folder.
 
 ---
 
