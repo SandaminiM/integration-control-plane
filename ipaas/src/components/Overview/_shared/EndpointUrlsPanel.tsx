@@ -111,7 +111,11 @@ interface EndpointUrlsPanelProps {
  */
 export default function EndpointUrlsPanel({ endpoints, selectedIdx, onSelect, componentId, deploymentTrackId }: EndpointUrlsPanelProps) {
   const fetchSpecMutation = useFetchComponentEndpointSpec();
-  const ep = endpoints[selectedIdx];
+  // Clamp a stale/out-of-bounds selection (e.g. the endpoint list shrank) to a
+  // valid index so the panel stays visible and the selector stays consistent,
+  // instead of silently rendering nothing.
+  const safeIdx = selectedIdx >= 0 && selectedIdx < endpoints.length ? selectedIdx : 0;
+  const ep = endpoints[safeIdx];
   if (!ep) return null;
 
   const urlRows = VISIBILITY_ROWS.map((row) => ({ ...row, url: row.getUrl(ep) })).filter((r) => !!r.url && (!ep.networkVisibilities?.length || ep.networkVisibilities.includes(r.label)));
@@ -154,7 +158,7 @@ export default function EndpointUrlsPanel({ endpoints, selectedIdx, onSelect, co
       {/* Row 2 – Values (all centre-aligned with each other) */}
       <Box sx={{ alignSelf: 'start' }}>
         {endpoints.length > 1 ? (
-          <Select size="small" value={selectedIdx} onChange={(e) => onSelect(Number(e.target.value))} sx={{ fontSize: '13px', width: '100%' }}>
+          <Select size="small" value={safeIdx} onChange={(e) => onSelect(Number(e.target.value))} sx={{ fontSize: '13px', width: '100%' }}>
             {endpoints.map((e, i) => (
               <MenuItem key={e.id} value={i} sx={{ fontSize: '13px' }}>
                 {trimEndpointName(e.displayName)}
