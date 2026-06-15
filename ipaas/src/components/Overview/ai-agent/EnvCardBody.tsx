@@ -44,9 +44,8 @@ export default function EnvCardBody({ component, env, versionId, releaseId, hasD
     );
   }
 
-  // Endpoint URLs only for non-critical envs — matches devant, which shows the
-  // endpoint block + chat only for non-critical (critical shows the notice).
-  const showEndpoints = !env.critical && endpoints.length > 0;
+  // Show the deployed endpoint URLs whenever the agent is deployed
+  const showEndpoints = endpoints.length > 0;
 
   return (
     <>

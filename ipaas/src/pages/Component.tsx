@@ -35,6 +35,7 @@ import Environment from '../components/EnvironmentCard';
 import PromoteButton from '../components/EnvironmentCard/PromoteButton';
 import IntegrationRenderer from '../components/Overview/_shared/IntegrationRenderer';
 import HeaderShell from '../components/Overview/_shared/HeaderShell';
+import { useIntegrationModule } from '../hooks/useIntegrationModule';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import type { SelectedArtifact } from '../components/artifact-config';
 import { resourceUrl, broaden, type ComponentScope } from '../nav';
@@ -105,6 +106,9 @@ export default function Component(scope: ComponentScope): JSX.Element {
   // Identity hook must run before any early return — rules of hooks. The
   // hook itself handles `undefined` component by returning `null`.
   const identity = useIntegrationIdentity(component);
+  // Resolve the type's Overview module once; shared by the header (HeaderShell)
+  // and the env-card renderer (IntegrationRenderer) so neither re-resolves it.
+  const overviewModule = useIntegrationModule(identity?.type ?? null);
 
   const isLoading = loadingProject || loadingComponent;
   if (isLoading)
@@ -142,7 +146,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
         {/* <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}> */}
         <PageContent>
           {/* Component header */}
-          <HeaderShell component={component} project={project} repository={repository} latestCommit={latestCommit} orgHandler={scope.org} projectId={projectId} projectHandler={project?.handler ?? scope.project} apimId={apimId} />
+          <HeaderShell component={component} project={project} repository={repository} latestCommit={latestCommit} orgHandler={scope.org} projectId={projectId} projectHandler={project?.handler ?? scope.project} apimId={apimId} module={overviewModule} />
 
           {/* Latest build card — not applicable for prebuilt integrations */}
           {!component.isPrebuilt && (
@@ -167,6 +171,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
               deploymentPipelineId={project?.defaultDeploymentPipelineId ?? ''}
               latestCommit={latestCommit}
               isBuildInProgress={isBuildInProgress}
+              module={overviewModule}
             />
           ) : (
             environments.map((env, index) => (

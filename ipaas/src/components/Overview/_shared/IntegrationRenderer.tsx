@@ -17,12 +17,10 @@
  */
 
 import { Card, CardContent, Skeleton } from '@wso2/oxygen-ui';
-import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Component } from '../../../types/component';
 import type { Environment } from '../../../types/environment';
 import type { IntegrationIdentity, IntegrationModule } from '../../../types/integration';
-import { integrationModuleLoaders } from '../registry';
 import EnvCardSkeleton from './EnvCardSkeleton';
 import OverviewShell from './OverviewShell';
 
@@ -37,41 +35,23 @@ interface IntegrationRendererProps {
   deploymentPipelineId: string;
   latestCommit?: { sha: string; message: string } | null;
   isBuildInProgress?: boolean;
+  /** The type's module, resolved once by `useIntegrationModule` in the page. */
+  module: IntegrationModule | null;
 }
 
 /**
- * Single dispatch point used by `pages/Component.tsx`. Loads the
- * type-specific module on demand (one bundle chunk per integration type)
- * and either:
+ * Single dispatch point used by `pages/Component.tsx`. Given the (already
+ * resolved) type-specific module, it either:
+ *   - shows per-env skeletons while the module chunk is still loading,
  *   - renders the module's `CustomOverview` if it provides one (outliers
  *     like Tailscale that have no env-card concept), or
  *   - hands the module to `OverviewShell`, which fills its slots and
  *     applies any shared cross-cutting features.
  *
- * The dynamic import is an external system, so an effect is the correct
- * tool here per HOUSE_RULES — not a derivation that could live in render.
+ * The module is loaded by `useIntegrationModule` (shared with `HeaderShell`),
+ * so the type is resolved once per page, not per consumer.
  */
-export default function IntegrationRenderer({ component, identity, environments, versionId, projectId, orgHandler, projectHandler, deploymentPipelineId, latestCommit, isBuildInProgress }: IntegrationRendererProps): ReactNode {
-  const [module, setModule] = useState<IntegrationModule | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setModule(null);
-    integrationModuleLoaders[identity.type]()
-      .then((loaded) => {
-        if (!cancelled) setModule(loaded.default);
-      })
-      .catch(() => {
-        // Loader failures fall through to the loading state. The registry
-        // points every type at a real loader (UnsupportedFallback during
-        // Phase 0), so a failure here means the bundle itself is broken,
-        // which a deploy gate would catch before reaching a user.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [identity.type]);
-
+export default function IntegrationRenderer({ component, identity, environments, versionId, projectId, orgHandler, projectHandler, deploymentPipelineId, latestCommit, isBuildInProgress, module }: IntegrationRendererProps): ReactNode {
   if (!module) {
     // The type module is a lazily-imported chunk; while it loads, show one
     // frame-shaped skeleton per environment so the cards take their final shape
