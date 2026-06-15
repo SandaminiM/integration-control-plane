@@ -1,0 +1,4 @@
+# Staging environment — disallow all crawlers.
+# Update this file before going to production.
+User-agent: *
+Disallow: /

@@ -47,7 +47,7 @@ export default function AuthMarketingPanel(): JSX.Element {
           src={{ light: `${base}assets/images/logo/WSO2-Integration-Platform-Black.svg`, dark: `${base}assets/images/logo/WSO2-Integration-Platform-White.svg` }}
           alt={{ light: 'WSO2 Integration Platform Logo', dark: 'WSO2 Integration Platform Logo' }}
           height={60}
-          width="auto"
+          width={240}
           style={{ alignSelf: 'flex-start' }}
         />
         <Typography variant="h1" sx={{ textAlign: 'left', width: '100%' }}>
@@ -77,7 +77,7 @@ export default function AuthMarketingPanel(): JSX.Element {
           mt: 2,
           width: '100%',
         }}>
-        <img src={`${base}assets/images/WIP-login.svg`} alt="WSO2 Integration Platform illustration" style={{ maxWidth: '90%', maxHeight: '280px', objectFit: 'contain' }} />
+        <img src={`${base}assets/images/WIP-login.svg`} alt="WSO2 Integration Platform illustration" fetchPriority="high" style={{ maxWidth: '90%', maxHeight: '280px', objectFit: 'contain' }} />
       </Box>
     </Grid>
   );

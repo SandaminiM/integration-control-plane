@@ -26,7 +26,7 @@ export const INTEGRATION_TYPES: IntegrationTypeOption[] = [
     id: 'service',
     title: 'Integration as API',
     description: 'Expose your integration as a REST, GraphQL or WebSocket API',
-    docLink: 'https://wso2.com/devant/docs/quick-start-guides/develop-your-first-integration-as-api',
+    docLink: 'https://wso2.com/integration-platform/docs/get-started/build-integration-api',
     icons: [
       { icon: <Globe size={16} />, label: 'REST' },
       { icon: <Layers size={16} />, label: 'GraphQL' },
@@ -36,7 +36,7 @@ export const INTEGRATION_TYPES: IntegrationTypeOption[] = [
     id: 'automation',
     title: 'Automation',
     description: 'Run integrations on a schedule or as a recurring task',
-    docLink: 'https://wso2.com/devant/docs/quick-start-guides/schedule-your-first-automation/',
+    docLink: 'https://wso2.com/integration-platform/docs/get-started/build-automation',
     icons: [
       { icon: <Clock size={16} />, label: 'Scheduled' },
       { icon: <Repeat size={16} />, label: 'Recurring' },

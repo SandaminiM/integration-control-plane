@@ -19,7 +19,6 @@
 import { Box, Link, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import { Link as NavLink } from 'react-router';
 import { useNavigate } from 'react-router';
 import { external, loginUrl, privacyPolicyUrl } from '../paths';
 
@@ -70,7 +69,7 @@ export default function CookiePolicy(): JSX.Element {
             </Typography>
             <Typography variant="body1">
               This cookie policy is part of the{' '}
-              <Link component={NavLink} to={privacyPolicyUrl()} sx={{ textDecoration: 'underline' }}>
+              <Link href={privacyPolicyUrl()} target="_blank" rel="noopener noreferrer" sx={{ textDecoration: 'underline' }}>
                 WSO2 Integration Platform Privacy Policy.
               </Link>
             </Typography>

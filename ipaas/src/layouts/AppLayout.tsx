@@ -117,7 +117,7 @@ import { useOrgPermissions } from '../hooks/useAuth';
 import { switchOrgToken } from '../auth/tokenManager';
 import { mockNotifications } from '../mock-data/mockNotifications';
 import { useScope, useResource, resourceUrl, broaden, narrow, newProjectUrl, newComponentUrl, hasProject, hasComponent, type Resource } from '../nav';
-import { componentOverviewUrl, cookiePolicyUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, projectHomeUrl } from '../paths';
+import { componentOverviewUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, projectHomeUrl, termsOfUseUrl } from '../paths';
 import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { CopilotContext, CopilotProvider } from '../contexts/CopilotContext';
@@ -207,9 +207,7 @@ function AppLayoutInner(): JSX.Element {
   // wip/icp return null here and the chip below is never rendered or bundled.
   const { org: billingOrg } = useBillingOrg('integration-platform');
   const billingTrial = billingOrg?.subscription?.status === 'trial' ? billingOrg.subscription.trial : null;
-  const trialEndLabel = billingTrial?.trial_end
-    ? `Trial ends ${new Date(billingTrial.trial_end).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
-    : '';
+  const trialEndLabel = billingTrial?.trial_end ? `Trial ends ${new Date(billingTrial.trial_end).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}` : '';
 
   const { state: shell, actions } = useAppShell({ initialCollapsed: true });
 
@@ -984,12 +982,7 @@ function AppLayoutInner(): JSX.Element {
           <Header.Actions>
             {IS_CLOUD && billingTrial && (
               <Tooltip title={trialEndLabel}>
-                <Chip
-                  label={`Trial · ${billingTrial.days_remaining} day${billingTrial.days_remaining === 1 ? '' : 's'} remaining`}
-                  color="warning"
-                  size="small"
-                  sx={{ fontWeight: 500, mr: 0.5 }}
-                />
+                <Chip label={`Trial · ${billingTrial.days_remaining} day${billingTrial.days_remaining === 1 ? '' : 's'} remaining`} color="warning" size="small" sx={{ fontWeight: 500, mr: 0.5 }} />
               </Tooltip>
             )}
             <ColorSchemeToggle />
@@ -1627,27 +1620,15 @@ function AppLayoutInner(): JSX.Element {
 
       <AppShell.Footer>
         <Footer>
-          <Footer.Link
-            href={privacyPolicyUrl()}
-            onClick={(e) => {
-              if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.defaultPrevented) {
-                e.preventDefault();
-                navigate(privacyPolicyUrl());
-              }
-            }}>
+          <Footer.Link href={termsOfUseUrl()} target="_blank" rel="noopener noreferrer">
+            Terms of Use
+          </Footer.Link>
+          <Footer.Link href={privacyPolicyUrl()} target="_blank" rel="noopener noreferrer">
             Privacy Policy
           </Footer.Link>
-          <Footer.Link
-            href={cookiePolicyUrl()}
-            onClick={(e) => {
-              if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.defaultPrevented) {
-                e.preventDefault();
-                navigate(cookiePolicyUrl());
-              }
-            }}>
-            Cookie Policy
+          <Footer.Link href="https://discord.com/invite/wso2" target="_blank" rel="noopener noreferrer">
+            Support
           </Footer.Link>
-          <Footer.Link href="#support">Support</Footer.Link>
           <Footer.Copyright>&copy; {new Date().getFullYear()}, WSO2 LLC.</Footer.Copyright>
         </Footer>
       </AppShell.Footer>

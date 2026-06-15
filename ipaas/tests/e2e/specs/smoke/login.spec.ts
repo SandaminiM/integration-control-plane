@@ -29,6 +29,20 @@ test.describe('login page @smoke', () => {
     await page.getByRole('link', { name: 'Sign up!' }).click();
     await expect(page).toHaveURL(/\/signup/);
   });
+
+  test('shows wso2.com/integration-platform, Privacy Policy, and Terms of Use links', async ({ page }) => {
+    const moreDetailsLink = page.getByRole('link', { name: 'wso2.com/integration-platform' });
+    const privacyLink = page.getByRole('link', { name: 'Privacy Policy' });
+    const termsLink = page.getByRole('link', { name: 'Terms of Use' });
+
+    await expect(moreDetailsLink).toBeVisible();
+    await expect(privacyLink).toBeVisible();
+    await expect(termsLink).toBeVisible();
+
+    await expect(moreDetailsLink).toHaveAttribute('href', 'https://wso2.com/integration-platform');
+    await expect(privacyLink).toHaveAttribute('href', 'https://wso2.com/privacy-policy');
+    await expect(termsLink).toHaveAttribute('href', 'https://wso2.com/integration-platform/terms-of-use');
+  });
 });
 
 // -------------------------------------------------------------------------
@@ -55,6 +69,20 @@ test.describe('signup page @smoke', () => {
     await page.getByRole('link', { name: 'Sign In' }).click();
     await expect(page).toHaveURL(/\/login/);
   });
+
+  test('shows wso2.com/integration-platform, Privacy Policy, and Terms of Use links', async ({ page }) => {
+    const moreDetailsLink = page.getByRole('link', { name: 'wso2.com/integration-platform' });
+    const privacyLink = page.getByRole('link', { name: 'Privacy Policy' });
+    const termsLink = page.getByRole('link', { name: 'Terms of Use' });
+
+    await expect(moreDetailsLink).toBeVisible();
+    await expect(privacyLink).toBeVisible();
+    await expect(termsLink).toBeVisible();
+
+    await expect(moreDetailsLink).toHaveAttribute('href', 'https://wso2.com/integration-platform');
+    await expect(privacyLink).toHaveAttribute('href', 'https://wso2.com/privacy-policy');
+    await expect(termsLink).toHaveAttribute('href', 'https://wso2.com/integration-platform/terms-of-use');
+  });
 });
 
 // -------------------------------------------------------------------------
@@ -74,7 +102,7 @@ test.describe('sign-in flows', () => {
     const beforeSignIn = Date.now();
 
     await Promise.all([
-      page.waitForURL(url => url.hostname.includes('asgardeo.io'), {
+      page.waitForURL((url) => url.hostname.includes('asgardeo.io'), {
         timeout: 30_000,
         waitUntil: 'domcontentloaded',
       }),
@@ -86,7 +114,7 @@ test.describe('sign-in flows', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
 
     const wentToOTP = await page
-      .waitForURL(url => url.pathname.includes('email_otp'), {
+      .waitForURL((url) => url.pathname.includes('email_otp'), {
         timeout: 10_000,
         waitUntil: 'domcontentloaded',
       })
@@ -110,22 +138,22 @@ test.describe('sign-in flows', () => {
     await expect(page).toHaveURL(/\/organizations\/[^/]+/);
   });
 
-  test.skip('Continue with Google — redirects to Google OAuth', async ({ page }) => {
+  test.skip('Continue with Google — redirects to Google OAuth', async () => {
     // TODO: Google blocks automated OAuth ("This browser or app may not be secure").
     // Needs a service account or OAuth workaround before this can be enabled.
   });
 
-  test.skip('Continue with GitHub — redirects to GitHub OAuth', async ({ page }) => {
+  test.skip('Continue with GitHub — redirects to GitHub OAuth', async () => {
     // TODO: Needs a dedicated GitHub test account (wip-e2e-bot).
     //       Set E2E_GITHUB_USERNAME / E2E_GITHUB_PASSWORD secrets before enabling.
   });
 
-  test.skip('Continue with Microsoft — redirects to Microsoft OAuth', async ({ page }) => {
+  test.skip('Continue with Microsoft — redirects to Microsoft OAuth', async () => {
     // TODO: Needs a dedicated Microsoft test account.
     //       Set E2E_MICROSOFT_USERNAME / E2E_MICROSOFT_PASSWORD secrets before enabling.
   });
 
-  test.skip('Sign in with Enterprise ID — redirects to enterprise IDP', async ({ page }) => {
+  test.skip('Sign in with Enterprise ID — redirects to enterprise IDP', async () => {
     // TODO: Needs an enterprise IDP configured in Asgardeo.
     //       Set E2E_ENTERPRISE_USERNAME / E2E_ENTERPRISE_PASSWORD before enabling.
   });

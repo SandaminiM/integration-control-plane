@@ -169,16 +169,16 @@ export default function Login(): JSX.Element {
             <Box sx={{ mt: 4, textAlign: 'center' }}>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
                 More details at{' '}
-                <Link href="https://wso2.com/devant" target="_blank" rel="noopener noreferrer" underline="hover" color="primary">
-                  wso2.com/devant
+                <Link href="https://wso2.com/integration-platform" target="_blank" rel="noopener noreferrer" underline="hover" color="primary">
+                  wso2.com/integration-platform
                 </Link>
               </Typography>
               <Stack direction="row" justifyContent="center" alignItems="center" spacing={0.5}>
-                <Link component={NavLink} to={privacyPolicyUrl()} underline="hover" color="primary" sx={{ fontSize: '0.75rem' }}>
+                <Link href={privacyPolicyUrl()} target="_blank" rel="noopener noreferrer" underline="hover" color="primary" sx={{ fontSize: '0.75rem' }}>
                   Privacy Policy
                 </Link>
                 <Typography sx={{ color: 'text.disabled', fontSize: '0.75rem' }}>|</Typography>
-                <Link href="https://wso2.com/devant/terms-of-use" target="_blank" rel="noopener noreferrer" underline="hover" color="primary" sx={{ fontSize: '0.75rem' }}>
+                <Link href="https://wso2.com/integration-platform/terms-of-use" target="_blank" rel="noopener noreferrer" underline="hover" color="primary" sx={{ fontSize: '0.75rem' }}>
                   Terms of Use
                 </Link>
               </Stack>

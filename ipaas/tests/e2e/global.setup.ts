@@ -27,7 +27,7 @@ setup('authenticate', async ({ page }) => {
 
   // Wait until we reach Asgardeo — its URL also contains "/login" so we can't match on pathname.
   await Promise.all([
-    page.waitForURL(url => url.hostname.includes('asgardeo.io'), {
+    page.waitForURL((url) => url.hostname.includes('asgardeo.io'), {
       timeout: 30_000,
       waitUntil: 'domcontentloaded',
     }),
@@ -42,7 +42,7 @@ setup('authenticate', async ({ page }) => {
   // After Continue, Asgardeo either navigates to email_otp.do or stays on login.do with a password field.
   // We cannot use url.includes('login.do') as a condition — it resolves immediately since we're already there.
   const wentToOTP = await page
-    .waitForURL(url => url.pathname.includes('email_otp'), {
+    .waitForURL((url) => url.pathname.includes('email_otp'), {
       timeout: 10_000,
       waitUntil: 'domcontentloaded',
     })
@@ -98,9 +98,7 @@ setup('authenticate', async ({ page }) => {
   // This ensures saved storage state never triggers onboarding screens in tests.
   await page.goto(`/organizations/${orgMatch[1]}/home`, { waitUntil: 'domcontentloaded' });
 
-  const personaVisible = await page
-    .getByRole('heading', { name: 'Welcome to WSO2 Integration Platform' })
-    .isVisible();
+  const personaVisible = await page.getByRole('heading', { name: 'Welcome to WSO2 Integration Platform' }).isVisible();
 
   if (personaVisible) {
     // Step 1 — Persona selector: Developer/Architect/PM is pre-selected; just click Next.
@@ -125,8 +123,11 @@ setup('authenticate', async ({ page }) => {
   // Save auth state after onboarding has been completed.
   await page.context().storageState({ path: AUTH_FILE });
 
-  await writeFile(CONTEXT_FILE, JSON.stringify({
-    orgHandler: orgMatch[1],
-    projectHandler: projectMatch?.[1] ?? null,
-  }));
+  await writeFile(
+    CONTEXT_FILE,
+    JSON.stringify({
+      orgHandler: orgMatch[1],
+      projectHandler: projectMatch?.[1] ?? null,
+    }),
+  );
 });

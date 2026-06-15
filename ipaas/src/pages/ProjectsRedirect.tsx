@@ -21,7 +21,7 @@ import type { JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Link, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
-import { Link as NavLink } from 'react-router';
+
 import { useAuth } from '../auth/AuthContext';
 import { loginUrl, orgHomeUrl, privacyPolicyUrl } from '../paths';
 
@@ -65,11 +65,11 @@ export default function ProjectsRedirect(): JSX.Element {
       <DialogContent>
         <Typography variant="body1">
           Please accept{' '}
-          <Link href="https://wso2.com/devant/terms-of-use" target="_blank" rel="noopener noreferrer">
+          <Link href="https://wso2.com/integration-platform/terms-of-use" target="_blank" rel="noopener noreferrer">
             Terms of Use
           </Link>{' '}
           and{' '}
-          <Link component={NavLink} to={privacyPolicyUrl()} target="_blank" rel="noopener noreferrer">
+          <Link href={privacyPolicyUrl()} target="_blank" rel="noopener noreferrer">
             Privacy Policy
           </Link>{' '}
           to continue!

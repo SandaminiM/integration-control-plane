@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import type { JSX } from 'react';
+import { Suspense, type JSX } from 'react';
 import { Route, Routes } from 'react-router';
 import routes, { type AppRoute } from './config/routes';
 import './App.css';
@@ -35,7 +35,11 @@ function renderRoutes(routeList: AppRoute[]): JSX.Element[] {
 }
 
 function App() {
-  return <Routes>{renderRoutes(routes)}</Routes>;
+  return (
+    <Suspense fallback={null}>
+      <Routes>{renderRoutes(routes)}</Routes>
+    </Suspense>
+  );
 }
 
 export default App;
