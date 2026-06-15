@@ -98,7 +98,11 @@ setup('authenticate', async ({ page }) => {
   // This ensures saved storage state never triggers onboarding screens in tests.
   await page.goto(`/organizations/${orgMatch[1]}/home`, { waitUntil: 'domcontentloaded' });
 
-  const personaVisible = await page.getByRole('heading', { name: 'Welcome to WSO2 Integration Platform' }).isVisible();
+  const personaVisible = await page
+    .getByRole('heading', { name: 'Welcome to WSO2 Integration Platform' })
+    .waitFor({ state: 'visible', timeout: 5_000 })
+    .then(() => true)
+    .catch(() => false);
 
   if (personaVisible) {
     // Step 1 — Persona selector: Developer/Architect/PM is pre-selected; just click Next.

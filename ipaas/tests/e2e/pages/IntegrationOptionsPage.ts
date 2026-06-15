@@ -23,6 +23,6 @@ export class IntegrationOptionsPage {
   async expectOptionsVisible() {
     await expect(this.page).toHaveURL(/\/components\/new/);
     // At least one of the creation options must be visible.
-    await expect(this.page.getByRole('button', { name: /scratch|blank|samples|import/i }).first()).toBeVisible();
+    await expect(this.page.getByRole('button', { name: /scratch|blank|samples|import/i })).toBeVisible();
   }
 }
