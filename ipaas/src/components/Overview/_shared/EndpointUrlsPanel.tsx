@@ -155,7 +155,7 @@ export default function EndpointUrlsPanel({ endpoints, selectedIdx, onSelect, co
         Download Spec
       </Typography>
 
-      {/* Row 2 – Values (all centre-aligned with each other) */}
+      {/* Row 2 – Values (each cell top-aligned via alignSelf: 'start') */}
       <Box sx={{ alignSelf: 'start' }}>
         {endpoints.length > 1 ? (
           <Select size="small" value={safeIdx} onChange={(e) => onSelect(Number(e.target.value))} sx={{ fontSize: '13px', width: '100%' }}>

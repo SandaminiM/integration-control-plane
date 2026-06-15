@@ -45,16 +45,21 @@ export default function GenerateMcpButton({ apimId, orgHandler, projectHandler }
   const devantOrigin = envMatch ? `https://${envMatch[1]}.devant.dev` : null;
   const generateMcpUrl = devantOrigin ? `${devantOrigin}/organizations/${orgHandler}/projects/${projectHandler}/components/new?type=mcp&sourceApiId=${apimId ?? ''}` : null;
 
+  // Single source of truth for enablement: published API + an APIM id + a
+  // resolvable target URL (the last is null off choreo.dev hosts). Gates the
+  // disabled state, the href, and the colour so they can't disagree.
+  const canGenerate = isPublished && !!apimId && !!generateMcpUrl;
+
   return (
-    <Tooltip title={isPublished && apimId ? 'Generate MCP Server' : 'Publish API to generate MCP Server'}>
+    <Tooltip title={canGenerate ? 'Generate MCP Server' : 'Publish API to generate MCP Server'}>
       <IconButton
         size="small"
         component="a"
-        href={isPublished && apimId && generateMcpUrl ? generateMcpUrl : '#'}
+        href={canGenerate ? generateMcpUrl : '#'}
         target="_blank"
         rel="noopener noreferrer"
-        disabled={!isPublished || !apimId}
-        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, color: isPublished && apimId ? 'text.secondary' : 'text.disabled', pointerEvents: 'auto' }}>
+        disabled={!canGenerate}
+        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, color: canGenerate ? 'text.secondary' : 'text.disabled', pointerEvents: 'auto' }}>
         <MCP size={16} />
       </IconButton>
     </Tooltip>
