@@ -18,11 +18,18 @@
 
 import { Divider, Stack, Typography } from '@wso2/oxygen-ui';
 import { Sparkles } from '@wso2/oxygen-ui-icons-react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { useEnvEndpoints } from '../../../hooks/useDeployments';
 import type { EnvCardBodyProps } from '../../../types/integration';
 import AgentChat from '../../AgentChat';
+import EndpointUrlsPanel from '../_shared/EndpointUrlsPanel';
 
+//AI Agent env-card body
 export default function EnvCardBody({ component, env, versionId, releaseId, hasDeployment }: EnvCardBodyProps): ReactNode {
+  // Per-env endpoints for the current release (drives the URLs/Download-Spec panel).
+  const { data: endpoints = [] } = useEnvEndpoints(component.id, versionId, releaseId);
+  const [selectedEpIdx, setSelectedEpIdx] = useState(0);
+
   if (!hasDeployment) {
     return (
       <>
@@ -37,9 +44,14 @@ export default function EnvCardBody({ component, env, versionId, releaseId, hasD
     );
   }
 
+  // Endpoint URLs only for non-critical envs — matches devant, which shows the
+  // endpoint block + chat only for non-critical (critical shows the notice).
+  const showEndpoints = !env.critical && endpoints.length > 0;
+
   return (
     <>
       <Divider sx={{ my: 2 }} />
+      {showEndpoints && <EndpointUrlsPanel endpoints={endpoints} selectedIdx={selectedEpIdx} onSelect={setSelectedEpIdx} componentId={component.id} deploymentTrackId={versionId} />}
       <AgentChat componentId={component.id} versionId={versionId} releaseId={releaseId} envCritical={!!env.critical} />
     </>
   );

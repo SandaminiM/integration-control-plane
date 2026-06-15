@@ -20,6 +20,8 @@ Overview/
 │   ├── EnvCardHeader.tsx        thin header frame: env name + commit + Refresh,
 │   │                            with {status} (left) and {actions} (right) slots
 │   ├── EnvCardSkeleton.tsx      common body loading skeleton
+│   ├── EndpointUrlsPanel.tsx    Endpoint selector + visibility URLs + Download Spec
+│   │                            (shared by integration-as-api + ai-agent bodies)
 │   ├── StatusDot.tsx            presentational status dot (composed by a type)
 │   ├── ConfigureButton.tsx      presentational Configure button — flips to
 │   │                            "Configure to Continue" when required configs are unset
@@ -40,7 +42,7 @@ Overview/
 │   └── … (RunButton, ScheduleButton, dialogs, insights, configStatus)
 ├── integration-as-api/          status dot + Configure / Test·Logs·Stop·Start /
 │   │                            endpoint URLs + swagger + service insights
-│   ├── HeaderStatus.tsx  EnvCardActions.tsx  EnvCardBody.tsx  EndpointUrlsPanel.tsx
+│   ├── HeaderStatus.tsx  EnvCardActions.tsx  EnvCardBody.tsx  (EndpointUrlsPanel is in _shared/)
 │   └── ServiceInsights / ServiceLogsDrawer / SwaggerOperationsList
 ├── file-integration/            index.ts → shared FileEventHeader + FileEventBody
 ├── event-integration/           index.ts → shared FileEventHeader + FileEventBody
@@ -48,7 +50,7 @@ Overview/
 │   │                            body is an inline chat against the deployed agent
 │   ├── HeaderStatus.tsx         status dot + Configure / Configure-to-Continue
 │   ├── EnvCardActions.tsx       Test (→ test/agent-chat) · View Logs · Stop/Start
-│   └── EnvCardBody.tsx          renders <AgentChat> (or "deploy to chat" when undeployed)
+│   └── EnvCardBody.tsx          shared EndpointUrlsPanel (non-critical) + <AgentChat>
 └── registry.ts                  IntegrationType → () => import('./<type>')  (one chunk per type)
 ```
 

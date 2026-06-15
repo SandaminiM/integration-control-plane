@@ -273,7 +273,7 @@ export default function AgentChat({ componentId, versionId, releaseId, envCritic
             <Stack direction="row" gap={1} alignItems="center" sx={{ py: 1 }}>
               <CircularProgress size={14} />
               <Typography variant="caption" color="text.secondary">
-                Agent is typing…
+                Agent is thinking...
               </Typography>
             </Stack>
           </Stack>
