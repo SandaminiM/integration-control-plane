@@ -16,15 +16,76 @@
  * under the License.
  */
 
-// TODO: implement using cloud APIs
-const ni = (name: string): never => {
-  throw new Error(`[cloud] prebuilt.${name}: not implemented`);
-};
+/**
+ * Cloud prebuilt-integrations API.
+ *
+ * The catalog and its per-integration assets are static files on a public URL
+ * (window.API_CONFIG.prebuiltIntegrationsUrl, GitHub raw by default) — those
+ * fetches are identical to devant's. The setup-flow functions delegate to the
+ * cloud BFF functions already wired in the sibling domain files instead of
+ * devant's GraphQL/system APIs.
+ */
 
-export const fetchPrebuiltIntegrations = (..._args: unknown[]): never => ni('fetchPrebuiltIntegrations');
-export const fetchPrebuiltAsset = (..._args: unknown[]): never => ni('fetchPrebuiltAsset');
-export const checkNameAvailability = (..._args: unknown[]): never => ni('checkNameAvailability');
-export const fetchComponentDetail = (..._args: unknown[]): never => ni('fetchComponentDetail');
-export const fetchFirstEnvironment = (..._args: unknown[]): never => ni('fetchFirstEnvironment');
-export const fetchLatestCommitSha = (..._args: unknown[]): never => ni('fetchLatestCommitSha');
-export const savePrebuiltConfig = (..._args: unknown[]): never => ni('savePrebuiltConfig');
+import { normalizePrebuiltIntegrations } from '../../utils/prebuilt';
+import type { SchemaConfigItem } from '../../types/configuration';
+import type { PrebuiltIntegration, PrebuiltIntegrationsData, PrebuiltComponentRef, PrebuiltEnvironmentRef } from '../../types/prebuilt';
+import { fetchComponentByHandler, fetchComponentNameAvailability } from './components';
+import { fetchEnvironments } from './environments';
+import { fetchCommitHistory } from './repository';
+import { saveSchemaConfig } from './configuration';
+
+export async function fetchPrebuiltIntegrations(url: string, signal?: AbortSignal): Promise<PrebuiltIntegrationsData> {
+  const response = await fetch(url, { cache: 'no-store', signal });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  const data = (await response.json()) as { prebuiltIntegrations: PrebuiltIntegration[] };
+  if (!Array.isArray(data?.prebuiltIntegrations)) throw new Error('Invalid response format: missing prebuiltIntegrations array');
+  return normalizePrebuiltIntegrations(data);
+}
+
+export async function fetchPrebuiltAsset(baseUrl: string, filename: string, signal?: AbortSignal): Promise<Response> {
+  const res = await fetch(`${baseUrl.replace(/\/?$/, '/')}${filename}`, { cache: 'no-store', signal });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res;
+}
+
+// Devant resolves a free name via GraphQL; cloud asks the BFF, which checks the
+// candidate against the project's K8s component names. A random suffix is the
+// last resort so the prebuilt flow never stalls on a name collision.
+export async function checkNameAvailability(projectId: string, candidate: string): Promise<string> {
+  try {
+    const result = await fetchComponentNameAvailability(projectId, candidate);
+    if (result.componentNameUnique) return candidate;
+    return result.alternateComponentName || `${candidate}-${Math.random().toString(36).slice(2, 7)}`;
+  } catch {
+    return `${candidate}-${Math.random().toString(36).slice(2, 7)}`;
+  }
+}
+
+export async function fetchComponentDetail(projectId: string, handler: string): Promise<PrebuiltComponentRef> {
+  const component = await fetchComponentByHandler(projectId, handler);
+  return { id: component.id, handler: component.handler, deploymentTracks: (component.deploymentTracks ?? []).map((t) => ({ id: t.id })) };
+}
+
+export async function fetchFirstEnvironment(orgUuid: string, projectId: string): Promise<PrebuiltEnvironmentRef> {
+  const environments = await fetchEnvironments(orgUuid, projectId);
+  const env = environments[0];
+  if (!env) throw new Error('No environments found for this project');
+  return { id: env.id, templateId: env.templateId };
+}
+
+export async function fetchLatestCommitSha(componentId: string, branch: string): Promise<string> {
+  const commits = await fetchCommitHistory(componentId, branch);
+  const latest = commits.find((c) => c.isLatest) ?? commits[0];
+  if (!latest) throw new Error('No commits found');
+  return latest.sha;
+}
+
+export async function savePrebuiltConfig(projectId: string, componentId: string, envId: string, deploymentTrackId: string, configurations: SchemaConfigItem[], commitHash: string): Promise<void> {
+  // Devant stamps each value with the target environment before saving; keep
+  // parity so the saved config is scoped the same way.
+  const configurationsWithEnv = configurations.map((item) => ({
+    ...item,
+    values: item.values.map((v) => ({ ...v, environmentUuid: envId })),
+  }));
+  await saveSchemaConfig({ projectId, componentId, envId, deploymentTrackId, configurations: configurationsWithEnv, commitHash });
+}

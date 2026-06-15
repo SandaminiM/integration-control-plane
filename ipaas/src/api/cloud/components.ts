@@ -67,10 +67,12 @@ const ANN_DESCRIPTION = 'openchoreo.dev/description';
 // pair required by the Component CRD; `workflow` must appear in that
 // ComponentType's spec.allowedWorkflows.
 //
-// The Ballerina (BI) entries resolve against real cluster resources. The MI /
-// event entries are placeholders — their ClusterWorkflow / ComponentType do not
-// exist on the cluster yet, so creating them will 400 until the control plane
-// provisions those resources.
+// The Ballerina (BI) entries resolve against real cluster resources: every
+// ComponentType referenced here (deployment/service, cronjob/scheduled-task,
+// deployment/event-integration) is provisioned with ballerina-buildpack-builder
+// in its allowedWorkflows. The MI entries are placeholders — mi-buildpack-builder
+// is not in any ComponentType's allowedWorkflows yet, so creating MI components
+// will 400 until the control plane provisions that ClusterWorkflow.
 const DISPLAY_TYPE_MAP: Record<DisplayType, { componentType: string; workflow: string }> = {
   ballerinaService: { componentType: 'deployment/service', workflow: 'ballerina-buildpack-builder' },
   scheduledTask: { componentType: 'cronjob/scheduled-task', workflow: 'ballerina-buildpack-builder' },
@@ -93,16 +95,35 @@ const LOGICAL_TYPE_TO_DISPLAY_TYPE: Record<string, { bi: string; mi: string }> =
   service: { bi: 'ballerinaService', mi: 'miApiService' },
   automation: { bi: 'scheduledTask', mi: 'miCronjob' },
   eventIntegration: { bi: 'ballerinaEventHandler', mi: 'miEventHandler' },
-  fileIntegration: { bi: 'ballerinaFileIntegration', mi: 'miFileIntegration' },
   aiAgent: { bi: 'aiAgent', mi: 'aiAgent' },
   proxy: { bi: 'proxy', mi: 'proxy' },
 };
 
 function withFrontendDisplayType<T extends Component>(c: T): T {
+  const isMI = (c.displayType ?? '').toLowerCase().startsWith('mi');
+  // File integrations reuse the BI/MI service build runtime, so the app
+  // distinguishes them by componentSubType — not displayType (identifyIntegration,
+  // getDisplayLabel and ArchitectureCard all key off it). The BFF returns
+  // componentType 'fileIntegration' but no subType, so surface the service
+  // displayType plus the file componentSubType; otherwise the overview would
+  // classify them as 'unsupported'.
+  // TODO: Remove this SubType logic once WIP is decommissioned. 
+  if (c.componentType === 'fileIntegration') {
+    return { ...c, displayType: isMI ? 'miApiService' : 'ballerinaService', componentSubType: isMI ? 'miFileIntegration' : 'ballerinaFileIntegration' };
+  }
   const entry = LOGICAL_TYPE_TO_DISPLAY_TYPE[c.componentType ?? ''];
   if (!entry) return c;
-  const isMI = (c.displayType ?? '').toLowerCase().startsWith('mi');
   return { ...c, displayType: isMI ? entry.mi : entry.bi };
+}
+
+// File integrations reuse the BI/MI service build runtime, so they arrive with
+// displayType ballerinaService/miApiService — the builder is already correct
+// from that lookup; only the OpenChoreo ComponentType differs (the
+// file-integration CR name, workloadType deployment).
+function resolveCreateMapping(input: CreateComponentInput): { componentType: string; workflow: string } {
+  const mapping = DISPLAY_TYPE_MAP[input.displayType] ?? DISPLAY_TYPE_MAP.ballerinaService;
+  const isFileIntegration = input.componentSubType === 'ballerinaFileIntegration' || input.componentSubType === 'miFileIntegration';
+  return isFileIntegration ? { ...mapping, componentType: 'deployment/file-integration' } : mapping;
 }
 
 // Reshape the flat CreateComponentInput into the K8s-style { metadata, spec }
@@ -110,7 +131,7 @@ function withFrontendDisplayType<T extends Component>(c: T): T {
 // slug, so it maps straight to metadata.name; displayName/description ride
 // along as annotations.
 function toBffCreateComponentBody(input: CreateComponentInput) {
-  const mapping = DISPLAY_TYPE_MAP[input.displayType] ?? DISPLAY_TYPE_MAP.ballerinaService;
+  const mapping = resolveCreateMapping(input);
   const appPath = (input.repositorySubPath ?? '/').replace(/^\/+/, '');
   return {
     metadata: {
