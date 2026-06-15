@@ -83,7 +83,10 @@ export default function Deploy(scope: ComponentScope): JSX.Element {
   // integrations share a service displayType + build pipeline, so they deploy
   // like a service; only their (non-existent) endpoint UI is suppressed below.
   const integrationType = identifyIntegration(component.displayType ?? '', component.componentSubType ?? null).type;
-  const hideEndpoints = integrationType === 'file-integration' || integrationType === 'event-integration';
+  // File/event/AI-agent integrations share a service displayType but expose no
+  // user-configurable endpoints — devant opens the endpoint-less
+  // ConfigurationWizard for all three. Suppress the endpoint UI accordingly.
+  const hideEndpoints = integrationType === 'file-integration' || integrationType === 'event-integration' || integrationType === 'ai-agent';
 
   if (flags.isProxy) {
     return <ComingSoon title="Proxy Deploy Coming Soon" description="Deploy management for REST API Proxy components will be available in a future release." />;
@@ -117,6 +120,7 @@ export default function Deploy(scope: ComponentScope): JSX.Element {
             componentName={component.name}
             projectHandler={project?.handler ?? ''}
             displayType={component.displayType}
+            hideEndpoints={hideEndpoints}
           />
         </Box>
 

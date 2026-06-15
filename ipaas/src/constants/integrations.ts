@@ -150,7 +150,7 @@ export function displayTypeFromSample(componentType: string, buildPack: string):
     case 'event-handler':
       return isMI ? 'miEventHandler' : 'ballerinaEventHandler';
     case 'ai-agent':
-      return 'ballerinaService';
+      return isMI ? 'miApiService' : 'ballerinaService';
     case 'file-integration':
       return isMI ? 'miApiService' : 'ballerinaService';
     default:
@@ -174,6 +174,11 @@ export function componentSubTypeFromSample(componentType: string, buildPack: str
   if (componentType === 'file-integration') {
     return buildPack === 'wso2-mi' ? 'miFileIntegration' : 'ballerinaFileIntegration';
   }
+  // AI agents share a generic service displayType across runtimes; `aiAgent` is
+  // the discriminator (runtime-independent), matching devant's create flow.
+  if (componentType === 'ai-agent') {
+    return 'aiAgent';
+  }
   return undefined;
 }
 
@@ -191,7 +196,7 @@ export function normalizeComponentType(type: string): string {
   return type === 'automation' ? 'scheduled-task' : type;
 }
 
-export const ALLOWED_SAMPLE_TYPES = new Set(['service', 'scheduled-task', 'automation', 'file-integration', 'event-handler']);
+export const ALLOWED_SAMPLE_TYPES = new Set(['service', 'scheduled-task', 'automation', 'file-integration', 'event-handler', 'ai-agent']);
 
 export const APP_COLORS: Record<string, string> = {
   S: '#00a1e0', // Salesforce blue

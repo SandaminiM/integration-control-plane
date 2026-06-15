@@ -37,6 +37,13 @@ export interface BuildAreaProps {
   componentName: string;
   projectHandler: string;
   displayType?: string;
+  /**
+   * Hide endpoint configuration on the Set Up card. True for file-/event-/
+   * AI-agent integrations: they share a service displayType but expose no
+   * user-configurable endpoints (devant only shows endpoint config for generic
+   * services / MCP). Resolved by `identifyIntegration` in Deploy.tsx.
+   */
+  hideEndpoints?: boolean;
 }
 
 export interface DeployEnvironmentCardProps {

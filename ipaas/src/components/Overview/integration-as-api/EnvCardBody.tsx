@@ -23,7 +23,7 @@ import { useApiDefinition, useComponentDeployment, useEnvEndpoints } from '../..
 import { useOrgUuid } from '../../../hooks/useOrgUuid';
 import type { EnvCardBodyProps } from '../../../types/integration';
 import EnvCardSkeleton from '../_shared/EnvCardSkeleton';
-import EndpointUrlsPanel from './EndpointUrlsPanel';
+import EndpointUrlsPanel from '../_shared/EndpointUrlsPanel';
 import ServiceInsights from './ServiceInsights';
 import SwaggerOperationsList, { type SwaggerDocument } from './SwaggerOperationsList';
 

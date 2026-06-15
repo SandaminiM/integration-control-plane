@@ -18,20 +18,13 @@
 
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { useSchemaConfig } from '../../../hooks/useConfiguration';
 import type { HeaderStatusProps } from '../../../types/integration';
+import { useSchemaConfig } from '../../../hooks/useConfiguration';
+import StatusDot from '../_shared/StatusDot';
 import ConfigureButton from '../_shared/ConfigureButton';
-// Transitional: the legacy ConfigureDrawer (branches internally on `isAutomation`)
-// stays until its genericisation in phase 4.5. Imported here, inside the type's
-// own folder — never from `_shared`.
 import ConfigureDrawer from '../../EnvironmentCard/ConfigureDrawer';
 import { hasMissingRequiredConfigs } from '../_shared/configStatus';
 
-/**
- * Automation's left-header slot: a Configure entry point (no status dot — an
- * automation has no deployment-status indicator in the overview). Owns the
- * Configure drawer's open state and the missing-config computation.
- */
 export default function HeaderStatus({
   component,
   env,
@@ -42,6 +35,7 @@ export default function HeaderStatus({
   componentHandler,
   envTemplateId,
   hasDeployment,
+  deploymentStatusV2,
   deployedCommitSha,
   releaseId,
   releaseMgtReleaseId,
@@ -49,33 +43,39 @@ export default function HeaderStatus({
   buildId,
 }: HeaderStatusProps): ReactNode {
   const [configureOpen, setConfigureOpen] = useState(false);
+
+  // Switch the Configure button to "Configure to Continue" when the schema has
+  // required configs without values (devant: `hasAllRequiredConfigs`).
   const { data: schemaConfig } = useSchemaConfig(projectId, component.id, envTemplateId, versionId, deployedCommitSha);
   const missingConfigs = useMemo(() => hasMissingRequiredConfigs(schemaConfig), [schemaConfig]);
 
-  if (!hasDeployment) return null;
-
   return (
     <>
-      <ConfigureButton onClick={() => setConfigureOpen(true)} hasMissingConfigs={missingConfigs} />
-      <ConfigureDrawer
-        open={configureOpen}
-        onClose={() => setConfigureOpen(false)}
-        orgHandler={orgHandler}
-        projectId={projectId}
-        componentId={component.id}
-        envId={env.id}
-        versionId={versionId}
-        componentName={componentHandler}
-        projectHandler={projectHandler}
-        commitHash={deployedCommitSha}
-        releaseId={releaseId}
-        displayType={component.displayType}
-        releaseMgtReleaseId={releaseMgtReleaseId}
-        releaseMgtDeploymentId={releaseMgtDeploymentId}
-        isAutomation
-        envTemplateId={envTemplateId}
-        buildId={buildId}
-      />
+      <StatusDot status={deploymentStatusV2} />
+      {hasDeployment && (
+        <>
+          <ConfigureButton onClick={() => setConfigureOpen(true)} hasMissingConfigs={missingConfigs} />
+          <ConfigureDrawer
+            open={configureOpen}
+            onClose={() => setConfigureOpen(false)}
+            orgHandler={orgHandler}
+            projectId={projectId}
+            componentId={component.id}
+            envId={env.id}
+            versionId={versionId}
+            componentName={componentHandler}
+            projectHandler={projectHandler}
+            commitHash={deployedCommitSha}
+            releaseId={releaseId}
+            displayType={component.displayType}
+            releaseMgtReleaseId={releaseMgtReleaseId}
+            releaseMgtDeploymentId={releaseMgtDeploymentId}
+            envTemplateId={envTemplateId}
+            buildId={buildId}
+            hideEndpoints
+          />
+        </>
+      )}
     </>
   );
 }

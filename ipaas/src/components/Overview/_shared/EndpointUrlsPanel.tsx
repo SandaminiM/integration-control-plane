@@ -33,7 +33,7 @@ function trimEndpointName(name: string) {
 
 function CopyButton({ url }: { url: string }) {
   const [copied, setCopied] = useState(false);
-  const resetTimer = useRef<ReturnType<typeof setTimeout>>();
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(resetTimer.current), []);
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(url).then(() => {
@@ -105,13 +105,17 @@ interface EndpointUrlsPanelProps {
 }
 
 /**
- * Per-environment endpoint URLs panel for services: endpoint selector, the
- * visibility-scoped invoke URLs (with copy), and the API-spec download. Moved
- * out of the legacy monolith — it's integration-as-api-specific content.
+ * Per-environment endpoint URLs panel: endpoint selector, the visibility-scoped
+ * invoke URLs (with copy), and the API-spec download. Shared by the env-card
+ * bodies of integration-as-api and ai-agent
  */
 export default function EndpointUrlsPanel({ endpoints, selectedIdx, onSelect, componentId, deploymentTrackId }: EndpointUrlsPanelProps) {
   const fetchSpecMutation = useFetchComponentEndpointSpec();
-  const ep = endpoints[selectedIdx];
+  // Clamp a stale/out-of-bounds selection (e.g. the endpoint list shrank) to a
+  // valid index so the panel stays visible and the selector stays consistent,
+  // instead of silently rendering nothing.
+  const safeIdx = selectedIdx >= 0 && selectedIdx < endpoints.length ? selectedIdx : 0;
+  const ep = endpoints[safeIdx];
   if (!ep) return null;
 
   const urlRows = VISIBILITY_ROWS.map((row) => ({ ...row, url: row.getUrl(ep) })).filter((r) => !!r.url && (!ep.networkVisibilities?.length || ep.networkVisibilities.includes(r.label)));
@@ -151,10 +155,10 @@ export default function EndpointUrlsPanel({ endpoints, selectedIdx, onSelect, co
         Download Spec
       </Typography>
 
-      {/* Row 2 – Values (all centre-aligned with each other) */}
+      {/* Row 2 – Values (each cell top-aligned via alignSelf: 'start') */}
       <Box sx={{ alignSelf: 'start' }}>
         {endpoints.length > 1 ? (
-          <Select size="small" value={selectedIdx} onChange={(e) => onSelect(Number(e.target.value))} sx={{ fontSize: '13px', width: '100%' }}>
+          <Select size="small" value={safeIdx} onChange={(e) => onSelect(Number(e.target.value))} sx={{ fontSize: '13px', width: '100%' }}>
             {endpoints.map((e, i) => (
               <MenuItem key={e.id} value={i} sx={{ fontSize: '13px' }}>
                 {trimEndpointName(e.displayName)}
@@ -178,7 +182,7 @@ export default function EndpointUrlsPanel({ endpoints, selectedIdx, onSelect, co
         )}
       </Box>
 
-      <Box sx={{ minWidth: 0, alignSelf: 'start' }}>
+      <Box sx={{ minWidth: 0, alignSelf: 'center' }}>
         {urlRows.length > 0 ? (
           <Stack gap={0.5}>
             {urlRows.map((row) => (
@@ -194,7 +198,7 @@ export default function EndpointUrlsPanel({ endpoints, selectedIdx, onSelect, co
         )}
       </Box>
 
-      <Box sx={{ alignSelf: 'start' }}>
+      <Box sx={{ alignSelf: 'center' }}>
         <Tooltip title="Download API specification">
           <IconButton size="small" onClick={() => void handleDownload()}>
             <Download size={16} />

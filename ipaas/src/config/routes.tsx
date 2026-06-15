@@ -61,6 +61,7 @@ const OrgDeploy = lazy(() => import('../pages/OrgDeploy'));
 const ProjectDeploy = lazy(() => import('../pages/ProjectDeploy'));
 const Deploy = lazy(() => import('../pages/Deploy'));
 const TestConsole = lazy(() => import('../pages/TestConsole'));
+const AgentChatConsole = lazy(() => import('../pages/AgentChatConsole'));
 const Lifecycle = lazy(() => import('../pages/Lifecycle'));
 const Alerts = lazy(() => import('../pages/Alerts'));
 const Environments = lazy(() => import('../pages/Environments'));
@@ -220,6 +221,10 @@ const routes: AppRoute[] = [
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test/console',
                 element: createElement(withScope(TestConsole, ['components'])),
+              },
+              {
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test/agent-chat',
+                element: createElement(withScope(AgentChatConsole, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test/api-chat',

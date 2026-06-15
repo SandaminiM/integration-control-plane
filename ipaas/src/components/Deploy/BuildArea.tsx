@@ -71,6 +71,7 @@ export default function BuildArea({
   componentName,
   projectHandler,
   displayType,
+  hideEndpoints = false,
 }: BuildAreaProps): JSX.Element {
   // Determine build-in-progress state first so images can poll faster during active builds
   const { data: builds = [] } = useDeploymentStatus(componentId, versionId);
@@ -273,8 +274,9 @@ export default function BuildArea({
             sx={{ mb: 2, ml: 0, mr: 0, width: '100%', justifyContent: 'space-between', flexDirection: 'row-reverse' }}
           />
 
-          {/* ── Endpoint Configurations (only for deployed service integrations) ── */}
-          {!flags.isAutomation && !!firstEnvReleaseId && (
+          {/* ── Endpoint Configurations (only for deployed service integrations;
+               hidden for file/event/AI-agent, which have no endpoints) ── */}
+          {!flags.isAutomation && !hideEndpoints && !!firstEnvReleaseId && (
             <Button variant="text" size="small" startIcon={<Settings size={14} />} onClick={() => setEndpointConfigOpen(true)} sx={{ mb: 2, width: '100%', justifyContent: 'flex-start' }}>
               Endpoint Configurations
             </Button>
@@ -322,7 +324,7 @@ export default function BuildArea({
       </Card>
 
       {/* Endpoint configuration drawer */}
-      {!flags.isAutomation && !!firstEnvReleaseId && <EndpointConfigDrawer open={endpointConfigOpen} onClose={() => setEndpointConfigOpen(false)} componentId={componentId} versionId={versionId} firstEnvReleaseId={firstEnvReleaseId} />}
+      {!flags.isAutomation && !hideEndpoints && !!firstEnvReleaseId && <EndpointConfigDrawer open={endpointConfigOpen} onClose={() => setEndpointConfigOpen(false)} componentId={componentId} versionId={versionId} firstEnvReleaseId={firstEnvReleaseId} />}
 
       {/* Image selection drawer */}
       <BuildAreaImageDrawer open={imageDrawerOpen} onClose={() => setImageDrawerOpen(false)} images={images} isLoading={imagesLoading} selectedImageId={selectedImage?.imageId ?? null} onSelect={setSelectedImage} />
