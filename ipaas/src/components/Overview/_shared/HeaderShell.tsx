@@ -431,66 +431,66 @@ export default function ComponentHeader({ component, project, repository, latest
           {/* Source + Latest Commit — only for components with a source repo
               (hidden for proxy/converted integrations like MCP proxy). */}
           {hasSource && (
-          <Stack gap={0.5}>
-            <Stack direction="row" alignItems="center" gap={1}>
-              <Typography variant="body2" color="text.secondary" sx={{ minWidth: 110 }}>
-                Source:
-              </Typography>
-              {repository?.gitProvider === 'github' ? <Github size={12} /> : <GitBranch size={12} />}
-              {repoUrl ? (
-                <>
-                  <Typography
-                    variant="body2"
-                    component="a"
-                    href={repoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' }, maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                    title={repoUrl}>
-                    {repoUrl}
-                  </Typography>
-                  <Tooltip title={copied ? 'Copied!' : 'Copy URL'}>
-                    <IconButton size="small" onClick={() => handleCopyRepoUrl(repoUrl)} sx={{ p: 0.25 }}>
-                      {copied ? <Check size={12} /> : <Copy size={12} />}
-                    </IconButton>
-                  </Tooltip>
-                </>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  —
+            <Stack gap={0.5}>
+              <Stack direction="row" alignItems="center" gap={1}>
+                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 110 }}>
+                  Source:
                 </Typography>
-              )}
-            </Stack>
-            <Stack direction="row" alignItems="center" gap={1}>
-              <Typography variant="body2" color="text.secondary" sx={{ minWidth: 110 }}>
-                Latest Commit:
-              </Typography>
-              <GitCommitHorizontal size={12} />
-              {latestCommit ? (
-                <>
-                  <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                    {latestCommit.sha.substring(0, 7)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={latestCommit.message}>
-                    {latestCommit.message}
-                  </Typography>
+                {repository?.gitProvider === 'github' ? <Github size={12} /> : <GitBranch size={12} />}
+                {repoUrl ? (
+                  <>
+                    <Typography
+                      variant="body2"
+                      component="a"
+                      href={repoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' }, maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      title={repoUrl}>
+                      {repoUrl}
+                    </Typography>
+                    <Tooltip title={copied ? 'Copied!' : 'Copy URL'}>
+                      <IconButton size="small" onClick={() => handleCopyRepoUrl(repoUrl)} sx={{ p: 0.25 }}>
+                        {copied ? <Check size={12} /> : <Copy size={12} />}
+                      </IconButton>
+                    </Tooltip>
+                  </>
+                ) : (
                   <Typography variant="body2" color="text.secondary">
-                    {formatDistanceToNow(latestCommit.author.date)}
+                    —
                   </Typography>
-                  <Avatar src={latestCommit.author.avatarUrl} alt={latestCommit.author.name ?? 'Commit author'} sx={{ width: 16, height: 16, fontSize: 10 }}>
-                    {latestCommit.author.name?.[0]?.toUpperCase()}
-                  </Avatar>
-                  <Typography variant="body2" color="text.secondary">
-                    {latestCommit.author.name}
-                  </Typography>
-                </>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  —
+                )}
+              </Stack>
+              <Stack direction="row" alignItems="center" gap={1}>
+                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 110 }}>
+                  Latest Commit:
                 </Typography>
-              )}
+                <GitCommitHorizontal size={12} />
+                {latestCommit ? (
+                  <>
+                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                      {latestCommit.sha.substring(0, 7)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={latestCommit.message}>
+                      {latestCommit.message}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {formatDistanceToNow(latestCommit.author.date)}
+                    </Typography>
+                    <Avatar src={latestCommit.author.avatarUrl} alt={latestCommit.author.name ?? 'Commit author'} sx={{ width: 16, height: 16, fontSize: 10 }}>
+                      {latestCommit.author.name?.[0]?.toUpperCase()}
+                    </Avatar>
+                    <Typography variant="body2" color="text.secondary">
+                      {latestCommit.author.name}
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    —
+                  </Typography>
+                )}
+              </Stack>
             </Stack>
-          </Stack>
           )}
         </Stack>
 
@@ -498,42 +498,42 @@ export default function ComponentHeader({ component, project, repository, latest
         <Stack direction="column" gap={1.5} alignItems="flex-end" sx={{ mt: 1, flexShrink: 0, width: 'auto' }}>
           {/* Open in Cloud / VS Code — hidden for repo-less / MCP components */}
           {showOpenInEditor && (
-          <Box sx={{ position: 'relative' }}>
-            <ButtonGroup variant="outlined" size="small" ref={splitButtonRef}>
-              <Button startIcon={<Cloud size={14} />} onClick={handleOpenInCloud} disabled={!codeServerSample} sx={{ whiteSpace: 'nowrap' }}>
-                Open in Cloud&nbsp;
-                <Chip label="Beta" size="small" sx={{ height: 16, fontSize: 10, cursor: 'pointer' }} />
-              </Button>
-              <Button size="small" sx={{ px: 0.5 }} aria-label="More options" aria-expanded={splitOpen} onClick={() => setSplitOpen((prev) => !prev)}>
-                <ChevronDown size={14} />
-              </Button>
-            </ButtonGroup>
-            <Popper open={splitOpen} anchorEl={splitButtonRef.current} placement="bottom-end" transition disablePortal style={{ zIndex: 1300 }}>
-              {({ TransitionProps }) => (
-                <Grow {...TransitionProps}>
-                  <Paper elevation={3}>
-                    <ClickAwayListener onClickAway={() => setSplitOpen(false)}>
-                      <MenuList dense sx={{ minWidth: 200 }}>
-                        <MenuItem onClick={handleOpenInCloud} selected disabled={!codeServerSample}>
-                          <Stack direction="row" alignItems="center" gap={1}>
-                            <Cloud size={14} />
-                            <Typography variant="body2">Open in Cloud</Typography>
-                            <Chip label="Beta" size="small" sx={{ height: 16, fontSize: 10 }} />
-                          </Stack>
-                        </MenuItem>
-                        <MenuItem onClick={handleOpenInVSCode}>
-                          <Stack direction="row" alignItems="center" gap={1}>
-                            <Code2 size={14} />
-                            <Typography variant="body2">Open in VS Code</Typography>
-                          </Stack>
-                        </MenuItem>
-                      </MenuList>
-                    </ClickAwayListener>
-                  </Paper>
-                </Grow>
-              )}
-            </Popper>
-          </Box>
+            <Box sx={{ position: 'relative' }}>
+              <ButtonGroup variant="outlined" size="small" ref={splitButtonRef}>
+                <Button startIcon={<Cloud size={14} />} onClick={handleOpenInCloud} disabled={!codeServerSample} sx={{ whiteSpace: 'nowrap' }}>
+                  Open in Cloud&nbsp;
+                  <Chip label="Beta" size="small" sx={{ height: 16, fontSize: 10, cursor: 'pointer' }} />
+                </Button>
+                <Button size="small" sx={{ px: 0.5 }} aria-label="More options" aria-expanded={splitOpen} onClick={() => setSplitOpen((prev) => !prev)}>
+                  <ChevronDown size={14} />
+                </Button>
+              </ButtonGroup>
+              <Popper open={splitOpen} anchorEl={splitButtonRef.current} placement="bottom-end" transition disablePortal style={{ zIndex: 1300 }}>
+                {({ TransitionProps }) => (
+                  <Grow {...TransitionProps}>
+                    <Paper elevation={3}>
+                      <ClickAwayListener onClickAway={() => setSplitOpen(false)}>
+                        <MenuList dense sx={{ minWidth: 200 }}>
+                          <MenuItem onClick={handleOpenInCloud} selected disabled={!codeServerSample}>
+                            <Stack direction="row" alignItems="center" gap={1}>
+                              <Cloud size={14} />
+                              <Typography variant="body2">Open in Cloud</Typography>
+                              <Chip label="Beta" size="small" sx={{ height: 16, fontSize: 10 }} />
+                            </Stack>
+                          </MenuItem>
+                          <MenuItem onClick={handleOpenInVSCode}>
+                            <Stack direction="row" alignItems="center" gap={1}>
+                              <Code2 size={14} />
+                              <Typography variant="body2">Open in VS Code</Typography>
+                            </Stack>
+                          </MenuItem>
+                        </MenuList>
+                      </ClickAwayListener>
+                    </Paper>
+                  </Grow>
+                )}
+              </Popper>
+            </Box>
           )}
 
           {/* Overview-header API actions — rendered only when the type opts in

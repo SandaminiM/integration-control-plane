@@ -17,15 +17,14 @@
  */
 
 import { getOrgUuidFromToken } from '../../auth/tokenManager';
-import { apimClient, choreoClient } from './httpClients';
-import type { CreateMcpApiInput, CreatedMcpApi, McpFeatureOperation, McpProxyMetadata, ProxyBuildsResponse, ProxyDeployerResponse } from '../../types/mcpProxy';
+import { apimClient } from './httpClients';
+import type { CreateMcpApiInput, CreatedMcpApi, McpFeatureOperation, McpProxyMetadata } from '../../types/mcpProxy';
 
 /**
  * The MCP "convert from existing HTTP API" backend flow — identical to devant
- * (same backend): generate tool features from the chosen operations, create an
- * APIM API of `type: MCP`, then deploy it via the proxy deployer. (The proxy
- * component itself is created via the GraphQL `createComponent` mutation in
- * `components.ts`.)
+ * (same backend): generate tool features from the chosen operations, then create
+ * an APIM API of `type: MCP`. (The proxy component itself is created via the
+ * GraphQL `createComponent` mutation in `components.ts`.)
  */
 
 /** CORS config applied to MCP APIs — verbatim from devant. */
@@ -75,22 +74,4 @@ export async function createMcpApi(input: CreateMcpApiInput): Promise<CreatedMcp
     additionalProperties: [{ name: 'projectId', value: input.projectId, display: true }],
   };
   return apimClient.post<CreatedMcpApi>(`/api/am/publisher/v2/apis?${params.toString()}`, payload);
-}
-
-// ── Proxy deployer (proxy components deploy here, not via the build pipeline) ──
-
-const PROXY_DEPLOYER = '/proxy/deployer/v1';
-
-export async function initiateProxyDeployment(componentId: string, versionId: string, environmentId: string): Promise<ProxyDeployerResponse> {
-  const params = new URLSearchParams({ environmentId, accessMode: 'external' });
-  return choreoClient.post<ProxyDeployerResponse>(`${PROXY_DEPLOYER}/components/${encodeURIComponent(componentId)}/versions/${encodeURIComponent(versionId)}/initiate-deployment?${params.toString()}`, {});
-}
-
-export async function getProxyBuilds(componentId: string, versionId: string): Promise<ProxyBuildsResponse> {
-  return choreoClient.get<ProxyBuildsResponse>(`${PROXY_DEPLOYER}/components/${encodeURIComponent(componentId)}/versions/${encodeURIComponent(versionId)}/builds?limit=20`);
-}
-
-export async function deployProxyService(componentId: string, versionId: string, buildId: string, environmentId: string): Promise<ProxyDeployerResponse> {
-  const params = new URLSearchParams({ buildId, environmentId, accessMode: 'external' });
-  return choreoClient.post<ProxyDeployerResponse>(`${PROXY_DEPLOYER}/components/${encodeURIComponent(componentId)}/versions/${encodeURIComponent(versionId)}/deploy-service?${params.toString()}`, null);
 }

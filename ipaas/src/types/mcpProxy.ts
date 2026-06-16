@@ -79,19 +79,3 @@ export interface CreateMcpProxyComponentInput {
   /** The created APIM API version (proxies keep the API version). */
   version: string;
 }
-
-/** Proxy-deployer responses (loose — only the fields we read). */
-export interface ProxyDeployerResponse {
-  requestId?: string;
-  status?: string;
-}
-
-export interface ProxyBuild {
-  id: string;
-  status?: string;
-  conclusion?: string;
-}
-
-export interface ProxyBuildsResponse {
-  builds?: ProxyBuild[];
-}

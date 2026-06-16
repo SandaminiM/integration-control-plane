@@ -154,7 +154,7 @@ export default function McpPolicies(scope: ComponentScope): JSX.Element {
     <Box sx={{ position: 'relative', overflow: 'hidden', flex: 1 }}>
       {tracks.length > 0 && <DeploymentTrackBar tracks={tracks} selectedId={selectedTrackId} onChange={setSelectedTrackId} orgHandler={scope.org} projectHandler={scope.project} componentHandler={scope.component} versionView />}
 
-      <PageContent sx={{ pt: 5 }} >
+      <PageContent sx={{ pt: 5 }}>
         <Button variant="text" size="small" startIcon={<ArrowLeft size={16} />} onClick={() => navigate(resourceUrl(scope, 'overview'))} sx={{ mb: 2, textTransform: 'none' }}>
           Back
         </Button>
@@ -169,7 +169,16 @@ export default function McpPolicies(scope: ComponentScope): JSX.Element {
           <Stack gap={2}>
             <SearchField value={searchText} onChange={setSearchText} placeholder="Filter input and output fields" fullWidth />
 
-            <McpProxyCanvas operations={operations} backendEndpoint={backendEndpoint} searchText={searchText} onAddPolicy={() => setPolicyOpen(true)} onConfigureSecurity={() => setSecurityOpen(true)} onViewContract={() => setContractOpen(true)} onConfigureTool={openToolEditor} onDeleteTool={(op) => setDeleteTool(op)} />
+            <McpProxyCanvas
+              operations={operations}
+              backendEndpoint={backendEndpoint}
+              searchText={searchText}
+              onAddPolicy={() => setPolicyOpen(true)}
+              onConfigureSecurity={() => setSecurityOpen(true)}
+              onViewContract={() => setContractOpen(true)}
+              onConfigureTool={openToolEditor}
+              onDeleteTool={(op) => setDeleteTool(op)}
+            />
 
             {error && (
               <Alert severity="error" onClose={() => setError('')}>
@@ -274,7 +283,13 @@ export default function McpPolicies(scope: ComponentScope): JSX.Element {
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
                   Schema
                 </Typography>
-                {editToolSchema != null ? <JsonView value={editToolSchema} maxHeight="50vh" /> : <Typography variant="body2" color="text.secondary">This tool has no input schema.</Typography>}
+                {editToolSchema != null ? (
+                  <JsonView value={editToolSchema} maxHeight="50vh" />
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    This tool has no input schema.
+                  </Typography>
+                )}
               </Box>
             </Stack>
           </Box>

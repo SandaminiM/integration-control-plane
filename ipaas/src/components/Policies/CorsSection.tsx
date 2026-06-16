@@ -55,10 +55,7 @@ function TagField({ label, placeholder, options, values, onChange, disabled }: {
 export default function CorsSection({ value, onChange, disabled }: CorsSectionProps): ReactNode {
   return (
     <Stack gap={1.5}>
-      <FormControlLabel
-        control={<Switch size="small" checked={value.enabled} onChange={(e) => onChange({ ...value, enabled: e.target.checked })} disabled={disabled} />}
-        label={<Typography variant="body2">Enable CORS</Typography>}
-      />
+      <FormControlLabel control={<Switch size="small" checked={value.enabled} onChange={(e) => onChange({ ...value, enabled: e.target.checked })} disabled={disabled} />} label={<Typography variant="body2">Enable CORS</Typography>} />
 
       <Collapse in={value.enabled} unmountOnExit>
         <Stack gap={2} sx={{ pl: 0.5 }}>

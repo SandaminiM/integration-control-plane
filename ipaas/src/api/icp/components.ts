@@ -19,6 +19,7 @@
 // TODO: implement using ICP local REST APIs
 
 import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability, DeleteComponentResult } from '../../types/component';
+import type { CreateMcpProxyComponentInput } from '../../types/mcpProxy';
 
 const ni = (name: string): never => {
   throw new Error(`[icp] components.${name}: not implemented`);
@@ -34,3 +35,4 @@ export const updateAutoDeployEnabled = (_input: UpdateAutoDeployInput): Promise<
 export const generateComponentEndpoints = (_input: GenerateComponentEndpointsInput): Promise<EnvEndpoint[]> => ni('generateComponentEndpoints');
 export const fetchComponentNameAvailability = (_projectId: string, _candidate: string): Promise<ComponentNameAvailability> => ni('fetchComponentNameAvailability');
 export const fetchComponentEndpointSpec = (_componentId: string, _versionId: string, _endpointId: string): Promise<string | null> => ni('fetchComponentEndpointSpec');
+export const createMcpProxyComponent = (_input: CreateMcpProxyComponentInput): Promise<Component> => ni('createMcpProxyComponent');

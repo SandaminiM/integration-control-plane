@@ -43,7 +43,9 @@ export default function OperationHeader({ badgeLabel, label, colors, description
     <Box sx={{ mb: 1.5 }}>
       <Stack direction="row" alignItems="center" gap={1.5} sx={{ border: '0.5px solid', borderColor, borderRadius: 0.5, px: 1.5, py: 1, bgcolor: colors.cardBg }}>
         <Box sx={{ bgcolor: colors.badgeBg, color: colors.badgeText ?? '#fff', fontWeight: 700, fontSize: '11px', minWidth: 64, px: 1, py: 0.5, borderRadius: 0.5, textAlign: 'center', flexShrink: 0 }}>{badgeLabel}</Box>
-        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 500, wordBreak: 'break-word', color: 'text.primary' }}>{label}</Typography>
+        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 500, wordBreak: 'break-word', color: 'text.primary' }}>
+          {label}
+        </Typography>
       </Stack>
       {description && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1, px: 0.5 }}>

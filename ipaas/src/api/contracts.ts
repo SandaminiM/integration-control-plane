@@ -73,6 +73,7 @@ import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgum
 import type { InsightsEnvironment, ComponentInsights } from '../types/insights';
 import type { LogsRequest, ComponentLogsRequest, LogRow } from '../types/logs';
 import type { ApiDocument, RuleAdherenceResponse, ThrottlingPolicy } from '../types/marketplace';
+import type { CreateMcpApiInput, CreatedMcpApi, McpFeatureOperation, McpProxyMetadata, CreateMcpProxyComponentInput } from '../types/mcpProxy';
 import type { OrgEntry, OrgComponentLimits, OrgSubscription, RegisterUserResponse } from '../types/org';
 import type { PrebuiltIntegrationsData, PrebuiltComponentRef, PrebuiltEnvironmentRef } from '../types/prebuilt';
 import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput } from '../types/project';
@@ -201,6 +202,7 @@ export interface ComponentsApi {
   generateComponentEndpoints(input: GenerateComponentEndpointsInput): Promise<EnvEndpoint[]>;
   fetchComponentNameAvailability(projectId: string, componentNameCandidate: string): Promise<ComponentNameAvailability>;
   fetchComponentEndpointSpec(componentId: string, versionId: string, endpointId: string): Promise<string | null>;
+  createMcpProxyComponent(input: CreateMcpProxyComponentInput): Promise<Component>;
 }
 
 // ---------------------------------------------------------------------------
@@ -304,6 +306,15 @@ export interface MarketplaceApi {
 }
 
 // ---------------------------------------------------------------------------
+// MCP proxy (convert an existing HTTP API to an MCP server)
+// ---------------------------------------------------------------------------
+
+export interface McpProxyApi {
+  generateMcpFeatures(items: McpProxyMetadata[]): Promise<McpFeatureOperation[]>;
+  createMcpApi(input: CreateMcpApiInput): Promise<CreatedMcpApi>;
+}
+
+// ---------------------------------------------------------------------------
 // Org
 // ---------------------------------------------------------------------------
 
@@ -393,6 +404,7 @@ export interface AppApi {
   insights: InsightsApi;
   logs: LogsApi;
   marketplace: MarketplaceApi;
+  mcpProxy: McpProxyApi;
   org: OrgApi;
   prebuilt: PrebuiltApi;
   projects: ProjectsApi;

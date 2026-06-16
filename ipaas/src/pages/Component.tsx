@@ -153,7 +153,18 @@ export default function Component(scope: ComponentScope): JSX.Element {
         {/* <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}> */}
         <PageContent>
           {/* Component header */}
-          <HeaderShell component={component} project={project} repository={repository} latestCommit={latestCommit} orgHandler={scope.org} projectId={projectId} projectHandler={project?.handler ?? scope.project} apimId={apimId} module={overviewModule} hasSource={hasSource} />
+          <HeaderShell
+            component={component}
+            project={project}
+            repository={repository}
+            latestCommit={latestCommit}
+            orgHandler={scope.org}
+            projectId={projectId}
+            projectHandler={project?.handler ?? scope.project}
+            apimId={apimId}
+            module={overviewModule}
+            hasSource={hasSource}
+          />
 
           {/* Latest build card — hidden for prebuilt + no-source-repo (MCP proxy) */}
           {showBuildCard && (

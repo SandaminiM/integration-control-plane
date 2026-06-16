@@ -168,7 +168,16 @@ export default function McpProxyFromApi(scope: ProjectScope): JSX.Element {
 
           {/* Version (new MCP, editable) + Base Path (disabled) — one row */}
           <Stack direction={{ xs: 'column', sm: 'row' }} gap={2} alignItems="flex-start">
-            <TextField required size="small" label="Version" value={version} onChange={(e) => setVersion(e.target.value)} sx={{ flex: 1, ...REQUIRED_SX, ...RESERVE_HELPER_SX }} error={!!version && !versionValid} helperText={version && !versionValid ? 'e.g. 1.0 or 1.0.0' : ' '} />
+            <TextField
+              required
+              size="small"
+              label="Version"
+              value={version}
+              onChange={(e) => setVersion(e.target.value)}
+              sx={{ flex: 1, ...REQUIRED_SX, ...RESERVE_HELPER_SX }}
+              error={!!version && !versionValid}
+              helperText={version && !versionValid ? 'e.g. 1.0 or 1.0.0' : ' '}
+            />
             <TextField size="small" label="Base Path" value={basePath} fullWidth disabled sx={{ flex: 1, ...RESERVE_HELPER_SX, '& input': { fontFamily: 'monospace' } }} helperText=" " />
           </Stack>
 

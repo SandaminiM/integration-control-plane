@@ -31,9 +31,7 @@ import ConfigureActionRow from '../_shared/ConfigureActionRow';
  */
 export default function OverviewHeaderActions({ component, apimId, orgHandler, projectHandler }: OverviewHeaderActionsProps): ReactNode {
   const navigate = useNavigate();
-  const configurePolicies = (
-    <ConfigureActionRow Icon={SlidersHorizontal} label="Configure Policies" onClick={() => navigate(`/organizations/${orgHandler}/projects/${projectHandler}/components/${component.handler}/manage/policies`)} />
-  );
+  const configurePolicies = <ConfigureActionRow Icon={SlidersHorizontal} label="Configure Policies" onClick={() => navigate(`/organizations/${orgHandler}/projects/${projectHandler}/components/${component.handler}/manage/policies`)} />;
 
   return <SharedOverviewHeaderActions component={component} apimId={apimId} orgHandler={orgHandler} projectHandler={projectHandler} extraConfigureRows={configurePolicies} />;
 }

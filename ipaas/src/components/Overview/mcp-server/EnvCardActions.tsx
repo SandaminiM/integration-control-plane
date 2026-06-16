@@ -30,19 +30,7 @@ import ServiceLogsDrawer from '../integration-as-api/ServiceLogsDrawer';
  * status. No Test button for now (the MCP playground is deferred; the Test tab
  * shows Coming Soon). Stop/Start poll via `requestPoll` and report via `onNotify`.
  */
-export default function EnvCardActions({
-  component,
-  env,
-  versionId,
-  releaseId,
-  orgHandler,
-  hasDeployment,
-  deploymentStatusV2,
-  releaseMgtReleaseId,
-  releaseMgtDeploymentId,
-  onNotify,
-  requestPoll,
-}: EnvCardActionsProps): ReactNode {
+export default function EnvCardActions({ component, env, versionId, releaseId, orgHandler, hasDeployment, deploymentStatusV2, releaseMgtReleaseId, releaseMgtDeploymentId, onNotify, requestPoll }: EnvCardActionsProps): ReactNode {
   const [logsOpen, setLogsOpen] = useState(false);
   const stopMutation = useStopDeployment();
   const redeployMutation = useRedeployDeployment();
