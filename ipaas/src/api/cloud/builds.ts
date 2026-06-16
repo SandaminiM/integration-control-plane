@@ -49,6 +49,9 @@ interface BffBuildRun {
   startedAt?: string;
   completedAt?: string;
   tasks?: BffWorkflowTask[];
+  // The run's K8s namespace (the org namespace); the observability proxy filters
+  // log queries on it.
+  namespace?: string;
 }
 
 type StageKey = 'init' | 'build' | 'deploy';
@@ -119,7 +122,7 @@ async function fetchObsBuildLogText(runId: string, run: BffBuildRun): Promise<st
   const endTime = run.completedAt ? new Date(new Date(run.completedAt).getTime() + 10 * 60_000).toISOString() : new Date().toISOString();
   try {
     const rows = await queryObsLogs({
-      searchScope: { workflowRunName: runId },
+      searchScope: { ...(run.namespace ? { namespace: run.namespace } : {}), workflowRunName: runId },
       startTime,
       endTime,
       limit: 500,
