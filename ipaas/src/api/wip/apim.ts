@@ -38,6 +38,11 @@ export async function updateApimApi(apimId: string, body: ApimApiInfo): Promise<
   }
 }
 
+export async function deleteApimApi(apimId: string): Promise<void> {
+  const orgUuid = getOrgUuidFromToken() ?? '';
+  await apimClient.delete<void>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}?organizationId=${encodeURIComponent(orgUuid)}`);
+}
+
 export async function generateTestKey(apimId: string, keyType: 'Development' | 'Production'): Promise<GeneratedTestKey | null> {
   const orgUuid = getOrgUuidFromToken() ?? '';
   try {

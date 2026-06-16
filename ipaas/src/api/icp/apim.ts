@@ -23,6 +23,7 @@ const ni = (name: string): never => {
 
 export const fetchApimApi = (..._args: unknown[]): never => ni('fetchApimApi');
 export const updateApimApi = (..._args: unknown[]): never => ni('updateApimApi');
+export const deleteApimApi = (..._args: unknown[]): never => ni('deleteApimApi');
 export const generateTestKey = (..._args: unknown[]): never => ni('generateTestKey');
 export const deploySettingsV2 = (..._args: unknown[]): never => ni('deploySettingsV2');
 export const fetchLifecycleState = (..._args: unknown[]): never => ni('fetchLifecycleState');

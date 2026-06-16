@@ -38,6 +38,10 @@ export async function updateApimApi(_apimId: string, body: ApimApiInfo): Promise
   return body;
 }
 
+export async function deleteApimApi(_apimId: string): Promise<void> {
+  // No-op: cloud doesn't manage standalone APIM APIs.
+}
+
 export async function generateTestKey(_apimId: string, _keyType: 'Development' | 'Production'): Promise<GeneratedTestKey | null> {
   return null;
 }

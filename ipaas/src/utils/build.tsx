@@ -85,7 +85,10 @@ export function getStepStatus(logs: BuildRunLogs | null, key: 'init' | 'build' |
   if (!stage) return 'pending';
   if (stage.status === 'in_progress') return 'active';
   if (stage.status === 'completed') {
-    const hasFailed = stage.steps.some((s) => s.conclusion === 'failure' || s.conclusion === 'failed');
+    const hasFailed = stage.steps.some((s) => {
+      const c = s.conclusion?.toLowerCase();
+      return c === 'failure' || c === 'failed';
+    });
     if (hasFailed) return 'error';
     const hasWarning = stage.steps.some((s) => s.conclusion?.toLowerCase() === 'warning');
     if (hasWarning) return 'warning';

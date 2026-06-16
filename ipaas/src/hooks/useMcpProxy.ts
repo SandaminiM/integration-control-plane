@@ -18,6 +18,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { generateMcpFeatures, createMcpApi } from '#api/mcpProxy';
+import { deleteApimApi } from '#api/apim';
 import { createMcpProxyComponent } from '#api/components';
 import type { Component } from '../types/component';
 import type { McpProxyMetadata } from '../types/mcpProxy';
@@ -56,7 +57,14 @@ export function useCreateMcpProxy() {
     mutationFn: async ({ orgHandler, projectId, name, displayName, description, context, version, endpoint, policies, selectedOperations }) => {
       const operations = await generateMcpFeatures(selectedOperations);
       const api = await createMcpApi({ name, displayName, version, description, context, policies, operations, endpoint, projectId });
-      return createMcpProxyComponent({ name, displayName, description, orgHandler, projectId, apiId: api.id, version: api.version });
+      try {
+        return await createMcpProxyComponent({ name, displayName, description, orgHandler, projectId, apiId: api.id, version: api.version });
+      } catch (err) {
+        // Component creation failed after the API was created — clean up the
+        // orphaned APIM API so a retry isn't blocked by a name/context clash.
+        await deleteApimApi(api.id).catch(() => {});
+        throw err;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['components'] });

@@ -50,6 +50,7 @@ export default function GenerateMcpButton({ apimId, sourceHandler, orgHandler, p
       <span>
         <IconButton
           size="small"
+          aria-label="Generate MCP Server"
           disabled={!canGenerate}
           onClick={() => navigate(generateMcpUrl({ org: orgHandler, project: projectHandler }, apimId ?? undefined, sourceHandler))}
           sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, color: canGenerate ? 'text.secondary' : 'text.disabled' }}>

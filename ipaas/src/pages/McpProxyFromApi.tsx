@@ -111,12 +111,13 @@ export default function McpProxyFromApi(scope: ProjectScope): JSX.Element {
 
   // Required fields: Display Name, Identifier, Version. The button enables once
   // they're all filled and valid, and the identifier isn't a known duplicate.
-  // (Don't gate on operations loading or an in-flight availability check —
-  // neither is a required field, and doing so leaves the button stuck disabled.)
+  // (Don't gate on an in-flight availability check — it leaves the button stuck
+  // disabled.) We do require the source API to have loaded so we never submit an
+  // empty tool set just because its operations hadn't arrived yet.
   const requiredFilled = displayName.trim().length > 0 && name.trim().length > 0 && version.trim().length > 0;
 
   const create = useCreateMcpProxy();
-  const canSubmit = !!apimId && requiredFilled && nameLengthValid && !nameTaken && versionValid && !create.isPending;
+  const canSubmit = !!apimId && !!apiInfo && requiredFilled && nameLengthValid && !nameTaken && versionValid && !create.isPending;
 
   const handleSubmit = () => {
     if (!apimId || !canSubmit) return;

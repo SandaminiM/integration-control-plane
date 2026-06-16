@@ -47,7 +47,7 @@ export function applyRateLimit(api: ApimApiInfo, value: RateLimitConfig): ApimAp
   return {
     ...api,
     apiThrottlingPolicy: value.requestCount || null,
-    throttlingLimit: Number.isFinite(count) && count > 0 ? { requestCount: count, unit: value.timeUnit } : null,
+    throttlingLimit: Number.isInteger(count) && count > 0 ? { requestCount: count, unit: value.timeUnit } : null,
   };
 }
 

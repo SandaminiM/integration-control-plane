@@ -42,11 +42,16 @@ export default function JsonView({ value, maxHeight }: JsonViewProps): ReactNode
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
   const onCopy = useCallback(() => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      clearTimeout(timer.current);
-      timer.current = setTimeout(() => setCopied(false), 2000);
-    });
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setCopied(true);
+        clearTimeout(timer.current);
+        timer.current = setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {
+        /* clipboard unavailable / denied — leave UI state untouched */
+      });
   }, [text]);
 
   return (

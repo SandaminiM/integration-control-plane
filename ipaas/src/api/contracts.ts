@@ -100,6 +100,7 @@ export interface AlertsApi {
 export interface ApimApi {
   fetchApimApi(apimId: string): Promise<ApimApiInfo | null>;
   updateApimApi(apimId: string, body: ApimApiInfo): Promise<ApimApiInfo>;
+  deleteApimApi(apimId: string): Promise<void>;
   generateTestKey(apimId: string, keyType: 'Development' | 'Production'): Promise<GeneratedTestKey | null>;
   deploySettingsV2(componentId: string, versionId: string, payload: DeploySettingsV2Payload): Promise<void>;
   fetchLifecycleState(apimId: string): Promise<LifecycleState | null>;

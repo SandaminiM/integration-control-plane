@@ -18,7 +18,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { StreamableHTTPClientTransport, StreamableHTTPError } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import type { McpTool } from '../types/mcp';
 
 interface UseMcpToolsParams {
@@ -63,10 +63,10 @@ export function useMcpTools({ baseUrl, apiKey, enabled }: UseMcpToolsParams): Us
       setError(null);
       setIsForbidden(false);
       try {
-        const transport = new StreamableHTTPClientTransport(new URL(`${baseUrl}/mcp?transportType=streamable-http`), {
+        const transport = new StreamableHTTPClientTransport(new URL(`${baseUrl.replace(/\/+$/, '')}/mcp?transportType=streamable-http`), {
           requestInit: { headers: { 'test-key': apiKey } },
         });
-        client = new Client({ name: 'icp', version: '1.0.0' }, { capabilities: { sampling: {}, roots: { listChanged: true } } });
+        client = new Client({ name: 'icp', version: '1.0.0' }, { capabilities: {} });
         await client.connect(transport);
         if (!client.getServerCapabilities()?.tools) throw new Error('MCP server does not support the tools capability');
         const response = await client.listTools();
@@ -74,7 +74,10 @@ export function useMcpTools({ baseUrl, apiKey, enabled }: UseMcpToolsParams): Us
       } catch (err) {
         if (cancelled) return;
         const msg = err instanceof Error ? err.message : 'Failed to load tools';
-        if (/\b(401|403)\b|forbidden|unauthor/i.test(msg)) setIsForbidden(true);
+        // Prefer the transport's structured status code; fall back to message
+        // matching only when the error isn't a typed StreamableHTTPError.
+        const forbidden = err instanceof StreamableHTTPError ? err.code === 401 || err.code === 403 : /\b(401|403)\b|forbidden|unauthor/i.test(msg);
+        if (forbidden) setIsForbidden(true);
         setError(msg);
       } finally {
         if (!cancelled) setIsLoading(false);
