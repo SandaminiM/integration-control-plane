@@ -25,9 +25,7 @@
  * BuildRunLogs (init/build/deploy) from its task phases.
  *
  * The log text itself comes from the wso2cloud observability proxy, queried by
- * WorkflowRun name (see cloud/logs.ts). The BFF logs route
- * (GET /components/{name}/builds/{runId}/logs) is kept as a fallback for
- * deployments without the proxy.
+ * WorkflowRun name (see cloud/logs.ts) — the same source as runtime logs.
  */
 
 import type { BuildRunLogs, BuildStage, BuildStep } from '../../types/build';
@@ -49,9 +47,6 @@ interface BffBuildRun {
   startedAt?: string;
   completedAt?: string;
   tasks?: BffWorkflowTask[];
-  // The run's K8s namespace (the org namespace); the observability proxy filters
-  // log queries on it.
-  namespace?: string;
 }
 
 type StageKey = 'init' | 'build' | 'deploy';
@@ -122,7 +117,7 @@ async function fetchObsBuildLogText(runId: string, run: BffBuildRun): Promise<st
   const endTime = run.completedAt ? new Date(new Date(run.completedAt).getTime() + 10 * 60_000).toISOString() : new Date().toISOString();
   try {
     const rows = await queryObsLogs({
-      searchScope: { ...(run.namespace ? { namespace: run.namespace } : {}), workflowRunName: runId },
+      searchScope: { workflowRunName: runId },
       startTime,
       endTime,
       limit: 500,
@@ -138,16 +133,12 @@ async function fetchObsBuildLogText(runId: string, run: BffBuildRun): Promise<st
 
 // Fetch the run (for task phases → steps) and its log text (best-effort) and
 // synthesize the BuildRunLogs the stepper consumes. The build run is required;
-// the log text is sourced from the observability proxy, with the BFF logs
-// route as fallback when the proxy is unavailable or has nothing for the run.
+// the log text is sourced solely from the observability proxy (a null result
+// just leaves the stage log empty and the card shows the live step list).
 async function loadBuildRunLogs(componentId: string, runId: string, projectQuery: string): Promise<BuildRunLogs | null> {
   const run = await bff.get<BffBuildRun | null>(`/components/${seg(componentId)}/builds/${seg(runId)}${projectQuery}`).catch(() => null);
   if (!run) return null;
-  let rawLog = await fetchObsBuildLogText(runId, run);
-  if (rawLog === null) {
-    const bffLogs = await bff.get<BuildRunLogs | null>(`/components/${seg(componentId)}/builds/${seg(runId)}/logs${projectQuery}`).catch(() => null);
-    rawLog = bffLogs?.build?.log ?? null;
-  }
+  const rawLog = await fetchObsBuildLogText(runId, run);
   return buildRunLogsFromTasks(run, rawLog);
 }
 

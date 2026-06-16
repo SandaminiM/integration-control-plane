@@ -38,7 +38,6 @@ export const DEFAULT_LOG_LEVELS = ['INFO', 'DEBUG', 'ERROR', 'WARN'];
 // Scope fields are independent label filters — any subset narrows the query
 // (e.g. build logs filter on workflowRunName alone).
 export interface ObsLogsScope {
-  namespace?: string;
   project?: string;
   component?: string;
   environment?: string;
@@ -95,53 +94,34 @@ export async function queryObsLogs(query: ObsLogsQuery): Promise<LogRow[]> {
   return (json?.logs ?? []).map(toLogRow);
 }
 
-// The proxy filters on searchScope.namespace, which is the org's K8s namespace
-// (e.g. wc-019ecb37-a8449032). The BFF only
-// surfaces it as metadata on a WorkflowRun (build.namespace) or a Project
-// (project.namespaceName). Resolve it from there and memoize — runtime logs
-// poll on an interval, and the value is stable for the lookup target.
-const namespaceCache = new Map<string, Promise<string | undefined>>();
+// Runtime-log queries must carry the owning project, but ComponentLogsRequest
+// has no project field. The BFF surfaces it as WorkflowRun metadata
+// (build.projectName), so resolve it from the component's latest build and
+// memoize — runtime logs poll on an interval and the value is stable per
+// component.
+const projectByComponent = new Map<string, Promise<string | undefined>>();
 
-async function resolveNamespace(opts: { componentId?: string; projectId?: string }): Promise<string | undefined> {
-  const key = opts.componentId ? `c:${opts.componentId}` : opts.projectId ? `p:${opts.projectId}` : '';
-  if (!key) return undefined;
-  let pending = namespaceCache.get(key);
+async function resolveProject(componentId: string): Promise<string | undefined> {
+  let pending = projectByComponent.get(componentId);
   if (!pending) {
-    pending = (async () => {
-      // Prefer a build's namespace (matches how the obs-proxy indexes build/
-      // runtime logs); fall back to the project's namespaceName when the target
-      // has no builds yet. projectName is optional on the builds route.
-      if (opts.componentId) {
-        const ns = await bff
-          .get<ListResponse<{ namespace?: string }>>(`/components/${seg(opts.componentId)}/builds`)
-          .then((r) => items(r)[0]?.namespace)
-          .catch(() => undefined);
-        if (ns) return ns;
-      }
-      if (opts.projectId) {
-        return bff
-          .get<{ namespaceName?: string }>(`/projects/${seg(opts.projectId)}`)
-          .then((p) => p?.namespaceName)
-          .catch(() => undefined);
-      }
-      return undefined;
-    })();
-    namespaceCache.set(key, pending);
+    pending = bff
+      .get<ListResponse<{ projectName?: string }>>(`/components/${seg(componentId)}/builds`)
+      .then((r) => items(r)[0]?.projectName)
+      .catch(() => undefined);
+    projectByComponent.set(componentId, pending);
   }
-  const namespace = await pending;
+  const project = await pending;
   // Don't cache an empty result — let a later call retry once builds exist.
-  if (!namespace) namespaceCache.delete(key);
-  return namespace;
+  if (!project) projectByComponent.delete(componentId);
+  return project;
 }
 
-export async function fetchLogs(req: LogsRequest, _logsApiUrl: string): Promise<LogRow[]> {
+export function fetchLogs(req: LogsRequest, _logsApiUrl: string): Promise<LogRow[]> {
   // A single entry means a specific integration was selected; multiple entries
   // mean "all in project", which the project scope already covers.
   const selectedComponent = req.componentIdList.length === 1 ? req.componentIdList[0] : undefined;
-  const namespace = await resolveNamespace({ componentId: selectedComponent, projectId: req.projectId });
   return queryObsLogs({
     searchScope: {
-      ...(namespace ? { namespace } : {}),
       project: req.projectId,
       ...(selectedComponent ? { component: selectedComponent } : {}),
       environment: req.environmentId.toLowerCase(),
@@ -156,12 +136,12 @@ export async function fetchLogs(req: LogsRequest, _logsApiUrl: string): Promise<
 }
 
 export async function fetchComponentLogs(req: ComponentLogsRequest, _logsApiUrl: string): Promise<LogRow[]> {
-  // ComponentLogsRequest carries no project field; the scope filters on
-  // component + environment within the org namespace.
-  const namespace = await resolveNamespace({ componentId: req.componentId });
+  // ComponentLogsRequest carries no project field, but the proxy requires it;
+  // resolve the owning project from the component's builds.
+  const project = await resolveProject(req.componentId);
   return queryObsLogs({
     searchScope: {
-      ...(namespace ? { namespace } : {}),
+      ...(project ? { project } : {}),
       component: req.componentId,
       environment: req.environmentId.toLowerCase(),
     },
