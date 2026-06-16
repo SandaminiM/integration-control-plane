@@ -16,9 +16,18 @@
  * under the License.
  */
 
-// TODO: implement using cloud APIs
-const ni = (name: string): never => {
-  throw new Error(`[cloud] samples.${name}: not implemented`);
-};
+/**
+ * Cloud samples API. The samples catalog is static JSON on a public URL
+ * (window.API_CONFIG.samplesUrl, GitHub raw by default) with no backend
+ * involvement, so the implementation is identical to devant's.
+ */
 
-export const fetchSamples = (..._args: unknown[]): never => ni('fetchSamples');
+import type { Sample } from '../../types/samples';
+
+export async function fetchSamples(url: string, signal?: AbortSignal): Promise<{ samples: Sample[] }> {
+  const response = await fetch(url, { cache: 'no-store', signal });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  const data = (await response.json()) as { samples: Sample[] };
+  if (!Array.isArray(data?.samples)) throw new Error('Invalid response format: missing samples array');
+  return data;
+}
