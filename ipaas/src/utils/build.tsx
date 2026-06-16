@@ -80,13 +80,16 @@ export function buildLogText(logs: BuildRunLogs | null): string | null {
   return lines.join('\n') || '';
 }
 
-export function getStepStatus(logs: BuildRunLogs | null, key: 'init' | 'build' | 'deploy'): 'success' | 'error' | 'active' | 'pending' {
+export function getStepStatus(logs: BuildRunLogs | null, key: 'init' | 'build' | 'deploy'): 'success' | 'error' | 'warning' | 'active' | 'pending' {
   const stage = logs?.[key];
   if (!stage) return 'pending';
   if (stage.status === 'in_progress') return 'active';
   if (stage.status === 'completed') {
     const hasFailed = stage.steps.some((s) => s.conclusion === 'failure' || s.conclusion === 'failed');
-    return hasFailed ? 'error' : 'success';
+    if (hasFailed) return 'error';
+    const hasWarning = stage.steps.some((s) => s.conclusion?.toLowerCase() === 'warning');
+    if (hasWarning) return 'warning';
+    return 'success';
   }
   return 'pending';
 }

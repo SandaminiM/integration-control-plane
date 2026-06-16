@@ -65,9 +65,14 @@ interface ComponentHeaderProps {
   projectHandler: string;
   apimId?: string | null;
   module?: IntegrationModule | null;
+  /**
+   * Whether the component has a source repo. False for proxy/converted
+   * integrations (e.g. MCP proxy) — hides Source/Commit + the editor entry.
+   */
+  hasSource?: boolean;
 }
 
-export default function ComponentHeader({ component, project, repository, latestCommit, orgHandler, projectId, projectHandler, apimId, module }: ComponentHeaderProps) {
+export default function ComponentHeader({ component, project, repository, latestCommit, orgHandler, projectId, projectHandler, apimId, module, hasSource = true }: ComponentHeaderProps) {
   const { userId } = useAuth();
   const [copied, setCopied] = useState(false);
   const [splitOpen, setSplitOpen] = useState(false);
@@ -185,6 +190,9 @@ export default function ComponentHeader({ component, project, repository, latest
   // don't (file/event/automation/…) show no header actions — just the
   // Open-in-Cloud split button below. The shell makes no per-type decision.
   const HeaderActions = module?.OverviewHeaderActions;
+  // Open-in-Cloud/VS Code editor entry: only for components with a source repo
+  // and types that don't opt out of it (e.g. MCP sets `hideOpenInEditor`).
+  const showOpenInEditor = hasSource && !module?.hideOpenInEditor;
 
   const repoUrl = repository ? buildRepoUrl(repository) : null;
 
@@ -420,6 +428,9 @@ export default function ComponentHeader({ component, project, repository, latest
               </>
             );
           })()}
+          {/* Source + Latest Commit — only for components with a source repo
+              (hidden for proxy/converted integrations like MCP proxy). */}
+          {hasSource && (
           <Stack gap={0.5}>
             <Stack direction="row" alignItems="center" gap={1}>
               <Typography variant="body2" color="text.secondary" sx={{ minWidth: 110 }}>
@@ -480,11 +491,13 @@ export default function ComponentHeader({ component, project, repository, latest
               )}
             </Stack>
           </Stack>
+          )}
         </Stack>
 
         {/* RIGHT COLUMN */}
         <Stack direction="column" gap={1.5} alignItems="flex-end" sx={{ mt: 1, flexShrink: 0, width: 'auto' }}>
-          {/* Open in Cloud / VS Code */}
+          {/* Open in Cloud / VS Code — hidden for repo-less / MCP components */}
+          {showOpenInEditor && (
           <Box sx={{ position: 'relative' }}>
             <ButtonGroup variant="outlined" size="small" ref={splitButtonRef}>
               <Button startIcon={<Cloud size={14} />} onClick={handleOpenInCloud} disabled={!codeServerSample} sx={{ whiteSpace: 'nowrap' }}>
@@ -521,6 +534,7 @@ export default function ComponentHeader({ component, project, repository, latest
               )}
             </Popper>
           </Box>
+          )}
 
           {/* Overview-header API actions — rendered only when the type opts in
               via its module's `OverviewHeaderActions` slot. */}

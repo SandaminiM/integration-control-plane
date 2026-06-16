@@ -17,7 +17,7 @@
  */
 
 import { Stack, Typography } from '@wso2/oxygen-ui';
-import { FailedIcon, InProgressIcon, QueuedIcon, SuccessIcon } from '../StatusIcons';
+import { FailedIcon, InProgressIcon, QueuedIcon, SuccessIcon, WarningIcon } from '../StatusIcons';
 
 interface BuildStatusLabelProps {
   status: string;
@@ -47,6 +47,14 @@ export default function BuildStatusLabel({ status, conclusion }: BuildStatusLabe
         <Stack direction="row" alignItems="center" gap={0.75}>
           <SuccessIcon size={16} />
           <Typography variant="body2">Success</Typography>
+        </Stack>
+      );
+    }
+    if (conclusion === 'warning') {
+      return (
+        <Stack direction="row" alignItems="center" gap={0.75}>
+          <WarningIcon size={16} />
+          <Typography variant="body2">Warning</Typography>
         </Stack>
       );
     }

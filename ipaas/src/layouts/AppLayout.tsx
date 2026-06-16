@@ -111,7 +111,7 @@ import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjec
 import { useComponents } from '../hooks/useComponents';
 import { useOrgs } from '../hooks/useOrg';
 import { useBillingOrg } from '../hooks/useBillingOrg';
-import { SUPPORTED_DISPLAY_TYPES, GENERIC_SERVICE_TYPES } from '../constants/integrations';
+import { isSupportedIntegration, GENERIC_SERVICE_TYPES } from '../constants/integrations';
 import { identifyIntegration } from '../utils/identifyIntegration';
 import { useOrgPermissions } from '../hooks/useAuth';
 import { switchOrgToken } from '../auth/tokenManager';
@@ -344,7 +344,7 @@ function AppLayoutInner(): JSX.Element {
   const project = isProjectUuid ? projectById : (projectByHandler ?? projectFromList);
   const projectId = project?.id ?? '';
   const { data: allComponents = [] } = useComponents(scope.org, projectId);
-  const components = allComponents.filter((c) => SUPPORTED_DISPLAY_TYPES.has(c.displayType));
+  const components = allComponents.filter((c) => isSupportedIntegration(c.displayType, c.componentSubType ?? null));
 
   // Helper to get project display name with fallback to projects list
   const getProjectDisplayName = () => {
@@ -1252,6 +1252,9 @@ function AppLayoutInner(): JSX.Element {
                 const integrationType = identifyIntegration(currentComponent?.displayType ?? '', currentComponent?.componentSubType ?? null).type;
                 const runtimeLogsType = ['file-integration', 'event-integration'].includes(integrationType);
                 const aiAgentType = integrationType === 'ai-agent';
+                // MCP (server + proxy): a single Test tab → the MCP playground
+                // (@wso2-org/mcp-playground). No Console/API-Chat sub-items.
+                const mcpType = integrationType === 'mcp-server' || integrationType === 'mcp-proxy';
                 return (
                   <>
                     <Sidebar.Category>
@@ -1322,7 +1325,7 @@ function AppLayoutInner(): JSX.Element {
                           </Sidebar.ItemIcon>
                           <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
                         </Sidebar.Item>
-                      ) : !isGenericService || runtimeLogsType ? (
+                      ) : mcpType || !isGenericService || runtimeLogsType ? (
                         <Sidebar.Item id="test">
                           <Sidebar.ItemIcon>
                             <FlaskConical size={20} />

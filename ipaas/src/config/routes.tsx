@@ -40,6 +40,9 @@ import CreateProject from '../pages/CreateProject';
 import ImportProject from '../pages/ImportProject';
 import CreateIntegrationOptions from '../pages/CreateIntegrationOptions';
 import ImportIntegration from '../pages/ImportIntegration';
+import McpProxyFromApi from '../pages/McpProxyFromApi';
+import McpPolicies from '../pages/McpPolicies';
+import McpTest from '../pages/McpTest';
 import BrowseSamples from '../pages/BrowseSamples';
 import BrowsePrebuiltIntegrations from '../pages/BrowsePrebuiltIntegrations';
 import PrebuiltIntegrationSetup from '../pages/PrebuiltIntegrationSetup';
@@ -177,6 +180,7 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new', element: createElement(withScope(CreateIntegrationOptions, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new/import', element: createElement(withScope(ImportIntegration, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new/samples', element: createElement(withScope(BrowseSamples, ['projects'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/components/new/generate-mcp', element: createElement(withScope(McpProxyFromApi, ['projects'])) },
               { path: 'organizations/:orgHandler/environments/new', element: createElement(withScope(CreateEnvironment, ['organizations'])) },
               { path: 'organizations/:orgHandler/environments/:envId/edit', element: <EditEnvironment /> },
               { path: 'organizations/:orgHandler/settings/access-control/users/new', element: <CreateUser /> },
@@ -212,7 +216,7 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test',
-                element: <ComingSoon title="Coming Soon" description="Testing tools are currently under development." />,
+                element: createElement(withScope(McpTest, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test/console',
@@ -229,6 +233,10 @@ const routes: AppRoute[] = [
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/lifecycle',
                 element: createElement(withScope(Lifecycle, ['components'])),
+              },
+              {
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/policies',
+                element: createElement(withScope(McpPolicies, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/documents',

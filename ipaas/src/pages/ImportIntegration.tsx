@@ -254,6 +254,9 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
     // AI Agent shares a generic service displayType (resolved above); `aiAgent`
     // is the discriminator, matching devant's create flow.
     if (selectedIntegrationType === 'ai-agent') return 'aiAgent';
+    // MCP Server (from source) — also a generic service displayType + `MCP`
+    // subtype. (The MCP *proxy* convert-from-API flow is separate.)
+    if (selectedIntegrationType === 'mcp-server') return 'MCP';
     return undefined;
   };
 
@@ -556,7 +559,9 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
             ? 'Event Integration'
             : selectedIntegrationType === 'ai-agent'
               ? 'AI Agent'
-              : 'Integration as API';
+              : selectedIntegrationType === 'mcp-server'
+                ? 'MCP Server'
+                : 'Integration as API';
     return (
       <PageContent sx={{ pt: 5, display: 'flex', flexDirection: 'column', flex: 1 }}>
         <IntegrationCreationLoader

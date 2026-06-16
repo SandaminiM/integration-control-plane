@@ -74,6 +74,12 @@ export default function Build(scope: ComponentScope): JSX.Element {
     return <ComingSoon title="Build Not Available for Prebuilt Integrations" description="Prebuilt integrations are deployed directly from a published image — there is no source build step." />;
   }
 
+  // Proxy/converted integrations (e.g. an MCP proxy from an existing HTTP API)
+  // have no source repository, so there's nothing to build.
+  if (component.displayType === 'proxy' || component.displayType === 'gitProxy') {
+    return <ComingSoon title="Build Not Available" description="This integration is created from an existing API and has no source repository to build." />;
+  }
+
   const envId = environments[0]?.id ?? '';
 
   return (

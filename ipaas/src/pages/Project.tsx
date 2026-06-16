@@ -70,7 +70,7 @@ import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useAuth } from '../auth/AuthContext';
 import { componentOverviewUrl, importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, importComingSoonUrl, buildGitHubOAuthUrl } from '../paths';
 import { Permissions } from '../constants/permissions';
-import { SUPPORTED_DISPLAY_TYPES, getDisplayLabel, displayTypeFromSample } from '../constants/integrations';
+import { isSupportedIntegration, getDisplayLabel, displayTypeFromSample } from '../constants/integrations';
 import { GITHUB_AUTH } from '../constants/github';
 import { CARD_HOVER_SX, PROVIDER_ICON_SX } from '../constants/styles';
 import Authorized from '../components/Authorized';
@@ -552,8 +552,8 @@ function IntegrationsTable({
       return c.displayName.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q) || label.toLowerCase().includes(q);
     })
     .sort((a, b) => {
-      const aSupported = SUPPORTED_DISPLAY_TYPES.has(a.displayType ?? '');
-      const bSupported = SUPPORTED_DISPLAY_TYPES.has(b.displayType ?? '');
+      const aSupported = isSupportedIntegration(a.displayType ?? '', a.componentSubType ?? null);
+      const bSupported = isSupportedIntegration(b.displayType ?? '', b.componentSubType ?? null);
       if (aSupported === bSupported) return 0;
       return aSupported ? -1 : 1;
     });
@@ -607,7 +607,7 @@ function IntegrationsTable({
             </ListingTable.Head>
             <ListingTable.Body>
               {paginated.map((c) => {
-                const isSupported = SUPPORTED_DISPLAY_TYPES.has(c.displayType ?? '');
+                const isSupported = isSupportedIntegration(c.displayType ?? '', c.componentSubType ?? null);
                 return (
                   <ListingTable.Row
                     key={c.id}

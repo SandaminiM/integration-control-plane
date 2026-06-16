@@ -16,26 +16,24 @@
  * under the License.
  */
 
+import { SlidersHorizontal } from '@wso2/oxygen-ui-icons-react';
 import type { ReactNode } from 'react';
+import { useNavigate } from 'react-router';
 import type { OverviewHeaderActionsProps } from '../../../types/integration';
 import SharedOverviewHeaderActions from '../_shared/OverviewHeaderActions';
-import GenerateMcpButton from './GenerateMcpButton';
+import ConfigureActionRow from '../_shared/ConfigureActionRow';
 
 /**
- * Integration-as-API's Overview-header actions slot: the shared default block
- * (Configure Security / Lifecycle / Dev Portal) **plus** the Generate MCP
- * button — which is specific to this type. Plugged into the generic
- * `HeaderShell` like any other module slot (EnvCardBody pattern), so MCP never
- * appears for other types.
+ * MCP Server's Overview-header actions: the shared block (Configure Security +
+ * Lifecycle + Dev Portal) PLUS a **Configure Policies** row, in the same style
+ * as Configure Security — matching devant, which shows both for MCP. The
+ * policies destination is a Coming Soon route until that page exists.
  */
 export default function OverviewHeaderActions({ component, apimId, orgHandler, projectHandler }: OverviewHeaderActionsProps): ReactNode {
-  return (
-    <SharedOverviewHeaderActions
-      component={component}
-      apimId={apimId}
-      orgHandler={orgHandler}
-      projectHandler={projectHandler}
-      extra={<GenerateMcpButton apimId={apimId} sourceHandler={component.handler} orgHandler={orgHandler} projectHandler={projectHandler} />}
-    />
+  const navigate = useNavigate();
+  const configurePolicies = (
+    <ConfigureActionRow Icon={SlidersHorizontal} label="Configure Policies" onClick={() => navigate(`/organizations/${orgHandler}/projects/${projectHandler}/components/${component.handler}/manage/policies`)} />
   );
+
+  return <SharedOverviewHeaderActions component={component} apimId={apimId} orgHandler={orgHandler} projectHandler={projectHandler} extraConfigureRows={configurePolicies} />;
 }
