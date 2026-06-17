@@ -68,6 +68,7 @@ import type { ContainerRegistry } from '../types/cloudEditor';
 import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability, DeleteComponentResult } from '../types/component';
 import type { CertGroup, CertMapping, SchemaConfigData, ConfigMgtData, SchemaConfigItem, SaveSchemaConfigInput, PostConfigMgtInput } from '../types/configuration';
 import type { ComponentDeployment, BuildRun, ReleaseMgtDeployment, DeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../types/deployment';
+import type { CreateDeploymentPipelineRequest, DeploymentPipeline, EnvTemplate, PipelineDeletionEligibility } from '../types/deploymentPipeline';
 import type { Environment, CloudDataPlane, EnvironmentInput } from '../types/environment';
 import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput } from '../types/executions';
 import type { InsightsEnvironment, ComponentInsights } from '../types/insights';
@@ -251,6 +252,22 @@ export interface DeploymentsApi {
 }
 
 // ---------------------------------------------------------------------------
+// Deployment (CD) pipelines
+// ---------------------------------------------------------------------------
+
+export interface DeploymentPipelinesApi {
+  fetchEnvTemplates(orgNumericId: number): Promise<EnvTemplate[]>;
+  fetchOrgDeploymentPipelines(orgUuid: string): Promise<DeploymentPipeline[]>;
+  fetchProjectDeploymentPipelines(orgUuid: string, projectId: string): Promise<DeploymentPipeline[]>;
+  createDeploymentPipeline(orgUuid: string, input: CreateDeploymentPipelineRequest): Promise<DeploymentPipeline>;
+  updateDeploymentPipeline(orgUuid: string, pipelineId: string, input: CreateDeploymentPipelineRequest): Promise<DeploymentPipeline>;
+  deleteDeploymentPipeline(orgUuid: string, pipelineId: string): Promise<void>;
+  fetchPipelineDeletionEligibility(orgUuid: string, pipelineId: string): Promise<PipelineDeletionEligibility>;
+  updateProjectDeploymentPipelines(orgUuid: string, projectId: string, deploymentPipelineIds: string[]): Promise<string[]>;
+  setDefaultProjectDeploymentPipeline(orgUuid: string, projectId: string, defaultDeploymentPipelineId: string): Promise<string>;
+}
+
+// ---------------------------------------------------------------------------
 // Environments
 // ---------------------------------------------------------------------------
 
@@ -400,6 +417,7 @@ export interface AppApi {
   configuration: ConfigurationApi;
   copilot: CopilotApi;
   deployments: DeploymentsApi;
+  deploymentPipelines: DeploymentPipelinesApi;
   environments: EnvironmentsApi;
   executions: ExecutionsApi;
   insights: InsightsApi;

@@ -22,6 +22,7 @@ export interface HttpClient {
   get: <T>(path: string) => Promise<T>;
   post: <T>(path: string, body?: unknown, headers?: Record<string, string>) => Promise<T>;
   put: <T>(path: string, body?: unknown, headers?: Record<string, string>) => Promise<T>;
+  patch: <T>(path: string, body?: unknown, headers?: Record<string, string>) => Promise<T>;
   delete: <T>(path: string, body?: unknown, headers?: Record<string, string>) => Promise<T>;
 }
 
@@ -65,6 +66,7 @@ export function createHttpClient(getBaseUrl: () => string, clientOptions?: HttpC
     get: <T>(path: string) => request<T>(path),
     post: <T>(path: string, body?: unknown, headers?: Record<string, string>) => request<T>(path, { method: 'POST', ...(body !== undefined ? { body: JSON.stringify(body) } : {}), headers }),
     put: <T>(path: string, body?: unknown, headers?: Record<string, string>) => request<T>(path, { method: 'PUT', ...(body !== undefined ? { body: JSON.stringify(body) } : {}), headers }),
+    patch: <T>(path: string, body?: unknown, headers?: Record<string, string>) => request<T>(path, { method: 'PATCH', ...(body !== undefined ? { body: JSON.stringify(body) } : {}), headers }),
     delete: <T>(path: string, body?: unknown, headers?: Record<string, string>) => request<T>(path, { method: 'DELETE', ...(body !== undefined ? { body: JSON.stringify(body) } : {}), headers }),
   };
 }
