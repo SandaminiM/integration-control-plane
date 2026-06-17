@@ -20,6 +20,7 @@
 import { Box, Stack, Typography } from '@wso2/oxygen-ui';
 import { Bitbucket, GitBranch, Github, Gitlab } from '@wso2/oxygen-ui-icons-react';
 import type { JSX, ReactNode } from 'react';
+import AzureIcon from '../assets/icons/AzureIcon';
 import type { BuildRunLogs } from '../types/build';
 import type { Repository } from '../types/repository';
 import { BUILD_STAGES } from '../constants/build';
@@ -122,8 +123,8 @@ export function gitProviderLabel(provider: string): string {
   }
 }
 
-/** Map a git provider to its brand icon (falls back to a generic branch icon for Azure DevOps / unknown). */
-export function getGitProviderIcon(provider?: string): typeof GitBranch {
+/** Map a git provider to its brand icon (generic branch icon for unknown providers). */
+export function getGitProviderIcon(provider?: string): (props: { size?: number }) => ReactNode {
   switch (provider?.toLowerCase()) {
     case 'github':
       return Github;
@@ -133,6 +134,8 @@ export function getGitProviderIcon(provider?: string): typeof GitBranch {
     case 'bitbucket':
     case 'bitbucket_server':
       return Bitbucket;
+    case 'azure_devops':
+      return AzureIcon;
     default:
       return GitBranch;
   }
