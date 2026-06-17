@@ -28,11 +28,15 @@ export function profileUrl(): string {
 }
 
 export function privacyPolicyUrl(): string {
-  return '/privacy-policy';
+  return 'https://wso2.com/privacy-policy';
 }
 
 export function cookiePolicyUrl(): string {
   return '/cookie-policy';
+}
+
+export function termsOfUseUrl(): string {
+  return 'https://wso2.com/integration-platform/terms-of-use';
 }
 
 export function forceChangePasswordUrl(): string {

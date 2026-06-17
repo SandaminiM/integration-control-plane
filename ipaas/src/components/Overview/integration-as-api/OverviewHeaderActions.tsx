@@ -29,13 +29,5 @@ import GenerateMcpButton from './GenerateMcpButton';
  * appears for other types.
  */
 export default function OverviewHeaderActions({ component, apimId, orgHandler, projectHandler }: OverviewHeaderActionsProps): ReactNode {
-  return (
-    <SharedOverviewHeaderActions
-      component={component}
-      apimId={apimId}
-      orgHandler={orgHandler}
-      projectHandler={projectHandler}
-      extra={<GenerateMcpButton apimId={apimId} orgHandler={orgHandler} projectHandler={projectHandler} />}
-    />
-  );
+  return <SharedOverviewHeaderActions component={component} apimId={apimId} orgHandler={orgHandler} projectHandler={projectHandler} extra={<GenerateMcpButton apimId={apimId} orgHandler={orgHandler} projectHandler={projectHandler} />} />;
 }

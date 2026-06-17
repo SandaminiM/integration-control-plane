@@ -35,18 +35,12 @@ test.describe.skip('integrations @smoke', () => {
   });
 
   test('browse samples page loads', async ({ page }) => {
-    await page.goto(
-      `/organizations/${orgHandler}/projects/${projectHandler}/components/new/samples`,
-      { waitUntil: 'domcontentloaded' },
-    );
+    await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/components/new/samples`, { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/components\/new\/samples/);
   });
 
   test('prebuilt integrations page loads (WIP only)', async ({ page }) => {
-    await page.goto(
-      `/organizations/${orgHandler}/projects/${projectHandler}/prebuilt-integrations`,
-      { waitUntil: 'domcontentloaded' },
-    );
+    await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/prebuilt-integrations`, { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/prebuilt-integrations/);
   });
 });

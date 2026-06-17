@@ -4,9 +4,7 @@ export class IntegrationOptionsPage {
   constructor(private readonly page: Page) {}
 
   async goto(orgHandler: string, projectHandler: string) {
-    await this.page.goto(
-      `/organizations/${orgHandler}/projects/${projectHandler}/components/new`,
-    );
+    await this.page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/components/new`);
     await this.page.waitForLoadState('domcontentloaded');
   }
 
@@ -25,8 +23,6 @@ export class IntegrationOptionsPage {
   async expectOptionsVisible() {
     await expect(this.page).toHaveURL(/\/components\/new/);
     // At least one of the creation options must be visible.
-    await expect(
-      this.page.getByRole('button', { name: /scratch|blank|samples|import/i }).first(),
-    ).toBeVisible();
+    await expect(this.page.getByRole('button', { name: /scratch|blank|samples|import/i })).toBeVisible();
   }
 }

@@ -19,12 +19,7 @@ function buildClient() {
  * after `afterMs` (epoch ms). Returns the first 6-digit code found.
  * Throws if no OTP is found within `timeoutMs`.
  */
-export async function waitForOTP(options: {
-  subjectPattern: RegExp;
-  afterMs: number;
-  timeoutMs?: number;
-  pollIntervalMs?: number;
-}): Promise<string> {
+export async function waitForOTP(options: { subjectPattern: RegExp; afterMs: number; timeoutMs?: number; pollIntervalMs?: number }): Promise<string> {
   const { subjectPattern, afterMs, timeoutMs = 30_000, pollIntervalMs = 3_000 } = options;
   const gmail = buildClient();
   const deadline = Date.now() + timeoutMs;
@@ -45,7 +40,7 @@ export async function waitForOTP(options: {
       const internalDate = Number(msg.data.internalDate ?? 0);
       if (internalDate < afterMs) continue;
 
-      const subjectHeader = msg.data.payload?.headers?.find(h => h.name === 'Subject');
+      const subjectHeader = msg.data.payload?.headers?.find((h) => h.name === 'Subject');
       if (!subjectHeader?.value || !subjectPattern.test(subjectHeader.value)) continue;
 
       const body = extractBody(msg.data);
@@ -53,7 +48,7 @@ export async function waitForOTP(options: {
       if (match) return match[1];
     }
 
-    await new Promise(r => setTimeout(r, pollIntervalMs));
+    await new Promise((r) => setTimeout(r, pollIntervalMs));
   }
 
   throw new Error(`No OTP found matching ${subjectPattern} within ${timeoutMs}ms`);

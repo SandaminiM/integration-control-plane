@@ -16,69 +16,76 @@
  * under the License.
  */
 
+import { lazy } from 'react';
 import { type RouteProps, Navigate, Outlet } from 'react-router';
-import { cookiePolicyUrl, loginUrl, orgRoleDetailUrl, privacyPolicyUrl, projectRoleDetailUrl, componentRoleDetailUrl, projectGroupDetailUrl, componentGroupDetailUrl, signupUrl, registerOrgUrl } from '../paths';
-import OrgHomeRedirect from '../components/OrgHomeRedirect';
-import Signup from '../pages/Signup';
-import RegisterOrganization from '../pages/RegisterOrganization';
-import CreateUser from '../pages/CreateUser';
-import EditUser from '../pages/EditUser';
-import CreateRole from '../pages/CreateRole';
-import CreateGroup from '../pages/CreateGroup';
-import EditGroup from '../pages/EditGroup';
-import EditEnvironment from '../pages/EditEnvironment';
-import PublicLayout from '../layouts/PublicLayout';
-import PolicyLayout from '../layouts/PolicyLayout';
-import Login from '../pages/Login';
-import CookiePolicy from '../pages/CookiePolicy';
-import PrivacyPolicy from '../pages/PrivacyPolicy';
-import OIDCCallback from '../pages/OIDCCallback';
-import AppLayout from '../layouts/AppLayout';
-import ProtectedRoute from '../auth/ProtectedRoute';
-import Projects from '../pages/Projects';
-import CreateProject from '../pages/CreateProject';
-import ImportProject from '../pages/ImportProject';
-import CreateIntegrationOptions from '../pages/CreateIntegrationOptions';
-import ImportIntegration from '../pages/ImportIntegration';
-import BrowseSamples from '../pages/BrowseSamples';
-import BrowsePrebuiltIntegrations from '../pages/BrowsePrebuiltIntegrations';
-import PrebuiltIntegrationSetup from '../pages/PrebuiltIntegrationSetup';
-import PrebuiltIntegrationDeploy from '../pages/PrebuiltIntegrationDeploy';
-import { IS_WIP } from '../features';
-import GitHubOAuthCallback from '../pages/GitHubOAuthCallback';
-import Project from '../pages/Project';
-import Component from '../pages/Component';
-import RuntimeLogsProject from '../pages/RuntimeLogsProject';
-import RuntimeLogsIntegration from '../pages/RuntimeLogsIntegration';
-
-import Environments from '../pages/Environments';
-import CreateEnvironment from '../pages/CreateEnvironment';
-
-import { OrgAccessControl, ProjectAccessControl, ComponentAccessControl } from '../pages/AccessControl';
-import RoleDetail from '../pages/RoleDetail';
-import ProjectRoleDetail from '../pages/ProjectRoleDetail';
-import ComponentRoleDetail from '../pages/ComponentRoleDetail';
-import ProjectGroupDetail from '../pages/ProjectGroupDetail';
-import ComponentGroupDetail from '../pages/ComponentGroupDetail';
-import Profile from '../pages/Profile';
-import ForceChangePassword from '../pages/ForceChangePassword';
-import ComingSoon from '../pages/ComingSoon';
-import Alerts from '../pages/Alerts';
+import { cookiePolicyUrl, loginUrl, orgRoleDetailUrl, projectRoleDetailUrl, componentRoleDetailUrl, projectGroupDetailUrl, componentGroupDetailUrl, signupUrl, registerOrgUrl } from '../paths';
 import { ScopeResolver, generateMatrixRoutes, withScope, type Matrix } from '../nav';
+import { IS_WIP } from '../features';
 import { createElement } from 'react';
-import { PrebuiltIntegrationConfigProvider } from '../contexts/PrebuiltIntegrationConfigContext';
-import Build from '../pages/Build';
-import OrgBuild from '../pages/OrgBuild';
-import ProjectBuild from '../pages/ProjectBuild';
-import OrgDeploy from '../pages/OrgDeploy';
-import ProjectDeploy from '../pages/ProjectDeploy';
-import CloudEditorDeployment from '../pages/CloudEditorDeployment';
-import TestConsole from '../pages/TestConsole';
-import AgentChatConsole from '../pages/AgentChatConsole';
-import Deploy from '../pages/Deploy';
-import ProjectsRedirect from '../pages/ProjectsRedirect';
-import OrgHome from '../pages/OrgHome';
-import Lifecycle from '../pages/Lifecycle';
+const PrebuiltIntegrationConfigProvider = lazy(() => import('../contexts/PrebuiltIntegrationConfigContext').then((m) => ({ default: m.PrebuiltIntegrationConfigProvider })));
+
+// Eager — needed on first paint for unauthenticated pages
+import PublicLayout from '../layouts/PublicLayout';
+import Login from '../pages/Login';
+import Signup from '../pages/Signup';
+
+// Lazy — authenticated app shell and all pages
+const AppLayout = lazy(() => import('../layouts/AppLayout'));
+const PolicyLayout = lazy(() => import('../layouts/PolicyLayout'));
+const ProtectedRoute = lazy(() => import('../auth/ProtectedRoute'));
+const OrgHomeRedirect = lazy(() => import('../components/OrgHomeRedirect'));
+
+const OIDCCallback = lazy(() => import('../pages/OIDCCallback'));
+const GitHubOAuthCallback = lazy(() => import('../pages/GitHubOAuthCallback'));
+const RegisterOrganization = lazy(() => import('../pages/RegisterOrganization'));
+const CookiePolicy = lazy(() => import('../pages/CookiePolicy'));
+const ForceChangePassword = lazy(() => import('../pages/ForceChangePassword'));
+const CloudEditorDeployment = lazy(() => import('../pages/CloudEditorDeployment'));
+const ProjectsRedirect = lazy(() => import('../pages/ProjectsRedirect'));
+const OrgHome = lazy(() => import('../pages/OrgHome'));
+const Projects = lazy(() => import('../pages/Projects'));
+const Project = lazy(() => import('../pages/Project'));
+const Component = lazy(() => import('../pages/Component'));
+const CreateProject = lazy(() => import('../pages/CreateProject'));
+const ImportProject = lazy(() => import('../pages/ImportProject'));
+const CreateIntegrationOptions = lazy(() => import('../pages/CreateIntegrationOptions'));
+const ImportIntegration = lazy(() => import('../pages/ImportIntegration'));
+const BrowseSamples = lazy(() => import('../pages/BrowseSamples'));
+const BrowsePrebuiltIntegrations = lazy(() => import('../pages/BrowsePrebuiltIntegrations'));
+const PrebuiltIntegrationSetup = lazy(() => import('../pages/PrebuiltIntegrationSetup'));
+const PrebuiltIntegrationDeploy = lazy(() => import('../pages/PrebuiltIntegrationDeploy'));
+const Build = lazy(() => import('../pages/Build'));
+const OrgBuild = lazy(() => import('../pages/OrgBuild'));
+const ProjectBuild = lazy(() => import('../pages/ProjectBuild'));
+const OrgDeploy = lazy(() => import('../pages/OrgDeploy'));
+const ProjectDeploy = lazy(() => import('../pages/ProjectDeploy'));
+const Deploy = lazy(() => import('../pages/Deploy'));
+const TestConsole = lazy(() => import('../pages/TestConsole'));
+const AgentChatConsole = lazy(() => import('../pages/AgentChatConsole'));
+const Lifecycle = lazy(() => import('../pages/Lifecycle'));
+const Alerts = lazy(() => import('../pages/Alerts'));
+const Environments = lazy(() => import('../pages/Environments'));
+const CreateEnvironment = lazy(() => import('../pages/CreateEnvironment'));
+const EditEnvironment = lazy(() => import('../pages/EditEnvironment'));
+const RuntimeLogsProject = lazy(() => import('../pages/RuntimeLogsProject'));
+const RuntimeLogsIntegration = lazy(() => import('../pages/RuntimeLogsIntegration'));
+const { OrgAccessControl, ProjectAccessControl, ComponentAccessControl } = {
+  OrgAccessControl: lazy(() => import('../pages/AccessControl').then((m) => ({ default: m.OrgAccessControl }))),
+  ProjectAccessControl: lazy(() => import('../pages/AccessControl').then((m) => ({ default: m.ProjectAccessControl }))),
+  ComponentAccessControl: lazy(() => import('../pages/AccessControl').then((m) => ({ default: m.ComponentAccessControl }))),
+};
+const RoleDetail = lazy(() => import('../pages/RoleDetail'));
+const ProjectRoleDetail = lazy(() => import('../pages/ProjectRoleDetail'));
+const ComponentRoleDetail = lazy(() => import('../pages/ComponentRoleDetail'));
+const ProjectGroupDetail = lazy(() => import('../pages/ProjectGroupDetail'));
+const ComponentGroupDetail = lazy(() => import('../pages/ComponentGroupDetail'));
+const CreateUser = lazy(() => import('../pages/CreateUser'));
+const EditUser = lazy(() => import('../pages/EditUser'));
+const CreateRole = lazy(() => import('../pages/CreateRole'));
+const CreateGroup = lazy(() => import('../pages/CreateGroup'));
+const EditGroup = lazy(() => import('../pages/EditGroup'));
+const Profile = lazy(() => import('../pages/Profile'));
+const ComingSoon = lazy(() => import('../pages/ComingSoon'));
 
 export interface AppRoute extends Omit<RouteProps, 'children'> {
   children?: AppRoute[];
@@ -106,10 +113,7 @@ const routes: AppRoute[] = [
   },
   {
     element: <PolicyLayout />,
-    children: [
-      { path: cookiePolicyUrl(), element: <CookiePolicy /> },
-      { path: privacyPolicyUrl(), element: <PrivacyPolicy /> },
-    ],
+    children: [{ path: cookiePolicyUrl(), element: <CookiePolicy /> }],
   },
   { path: '/signin', element: <OIDCCallback /> },
   { path: '/ghapp', element: <GitHubOAuthCallback /> },
