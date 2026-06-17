@@ -19,6 +19,7 @@
 import { Box, Button, Drawer, IconButton, Stack, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
 import { useState, type ReactNode } from 'react';
+import { OPERATION_DRAWER_BODY_SX, OPERATION_DRAWER_HEADER_SX, OPERATION_TILE_LABEL_SX, VIEW_DETAILS_BUTTON_SX, operationBadgeSx, operationDrawerPaperSx, operationTileSx } from './styles';
 
 /**
  * Colour configuration for an operation tile + its drawer header. Each consumer
@@ -61,31 +62,25 @@ interface OperationTileProps {
  */
 export default function OperationTile({ badgeLabel, label, colors, drawerContent, drawerTitle = 'Details', drawerWidth = 720 }: OperationTileProps): ReactNode {
   const [open, setOpen] = useState(false);
-  const borderColor = colors.border ?? colors.badgeBg;
 
   return (
     <>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 1, py: 0.75, mb: 0.75, border: '0.5px solid', borderColor, borderRadius: 0.5, bgcolor: colors.cardBg, '&:last-child': { mb: 0 } }}>
-        <Box sx={{ bgcolor: colors.badgeBg, color: colors.badgeText ?? '#fff', fontWeight: 700, fontSize: '11px', minWidth: 72, px: 1, py: 0.5, borderRadius: 0.5, textAlign: 'center', flexShrink: 0 }}>{badgeLabel}</Box>
-        <Typography sx={{ flex: 1, fontSize: '13px', fontWeight: 500, wordBreak: 'break-word', color: 'text.primary' }}>{label}</Typography>
-        <Button variant="text" size="small" onClick={() => setOpen(true)} sx={{ fontSize: '12px', flexShrink: 0, textTransform: 'none' }}>
+      <Box sx={operationTileSx(colors)}>
+        <Box sx={operationBadgeSx(colors, 72)}>{badgeLabel}</Box>
+        <Typography sx={OPERATION_TILE_LABEL_SX}>{label}</Typography>
+        <Button variant="text" size="small" onClick={() => setOpen(true)} sx={VIEW_DETAILS_BUTTON_SX}>
           View Details
         </Button>
       </Box>
 
-      <Drawer
-        anchor="right"
-        open={open}
-        onClose={() => setOpen(false)}
-        variant="temporary"
-        sx={{ '& .MuiDrawer-paper': { width: drawerWidth, maxWidth: '100vw', position: 'fixed', top: 64, height: 'calc(100% - 64px)', borderLeft: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: 'column' } }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
+      <Drawer anchor="right" open={open} onClose={() => setOpen(false)} variant="temporary" sx={operationDrawerPaperSx(drawerWidth)}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={OPERATION_DRAWER_HEADER_SX}>
           <Typography variant="h5">{drawerTitle}</Typography>
           <IconButton size="small" onClick={() => setOpen(false)} aria-label="Close">
             <X size={18} />
           </IconButton>
         </Stack>
-        <Box sx={{ flex: 1, overflowY: 'auto', px: 2, py: 2 }}>{open && drawerContent}</Box>
+        <Box sx={OPERATION_DRAWER_BODY_SX}>{open && drawerContent}</Box>
       </Drawer>
     </>
   );

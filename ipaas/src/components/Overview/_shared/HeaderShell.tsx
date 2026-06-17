@@ -18,7 +18,7 @@
 
 import { Avatar, Box, Button, ButtonGroup, Chip, CircularProgress, ClickAwayListener, Grow, IconButton, InputBase, MenuList, MenuItem, Paper, Popper, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { Tag, Cloud, Github, GitBranch, GitCommitHorizontal, Copy, Check, ChevronDown, Code2, Pencil, Globe, Lock } from '@wso2/oxygen-ui-icons-react';
+import { Tag, Cloud, GitCommitHorizontal, Copy, Check, ChevronDown, Code2, Pencil, Globe, Lock } from '@wso2/oxygen-ui-icons-react';
 import type { ComponentDetail } from '../../../types/component';
 import type { Project } from '../../../types/project';
 import type { Repository, Commit } from '../../../types/repository';
@@ -26,6 +26,7 @@ import { useUpdateComponent } from '../../../hooks/useComponents';
 import { useChoreoSampleImages } from '../../../hooks/useRepository';
 import LabelDialog from '../../LabelDialog';
 import { formatDistanceToNow } from '../../../utils/time';
+import { getGitProviderIcon } from '../../../utils/build';
 import { useAuth } from '../../../auth/AuthContext';
 import { useOrgUuid } from '../../../hooks/useOrgUuid';
 import { getDisplayLabel } from '../../../constants/integrations';
@@ -195,6 +196,7 @@ export default function ComponentHeader({ component, project, repository, latest
   const showOpenInEditor = hasSource && !module?.hideOpenInEditor;
 
   const repoUrl = repository ? buildRepoUrl(repository) : null;
+  const ProviderIcon = getGitProviderIcon(repository?.gitProvider);
 
   const orgUuidFromToken = useOrgUuid() ?? '';
   const { data: sampleImages } = useChoreoSampleImages(orgUuidFromToken, projectId);
@@ -436,7 +438,7 @@ export default function ComponentHeader({ component, project, repository, latest
                 <Typography variant="body2" color="text.secondary" sx={{ minWidth: 110 }}>
                   Source:
                 </Typography>
-                {repository?.gitProvider === 'github' ? <Github size={12} /> : <GitBranch size={12} />}
+                <ProviderIcon size={12} />
                 {repoUrl ? (
                   <>
                     <Typography

@@ -19,6 +19,7 @@
 import { Box, Stack, Typography } from '@wso2/oxygen-ui';
 import type { ReactNode } from 'react';
 import type { OperationTileColors } from './OperationTile';
+import { OPERATION_DESCRIPTION_SX, OPERATION_HEADER_LABEL_SX, operationBadgeSx, operationHeaderRowSx } from './styles';
 
 interface OperationHeaderProps {
   /** Text inside the coloured badge (e.g. `'GET'`, `'TOOL'`). */
@@ -37,18 +38,16 @@ interface OperationHeaderProps {
  * it. The reusable counterpart of devant's `OperationViews/OperationHeader`.
  */
 export default function OperationHeader({ badgeLabel, label, colors, description }: OperationHeaderProps): ReactNode {
-  const borderColor = colors.border ?? colors.badgeBg;
-
   return (
     <Box sx={{ mb: 1.5 }}>
-      <Stack direction="row" alignItems="center" gap={1.5} sx={{ border: '0.5px solid', borderColor, borderRadius: 0.5, px: 1.5, py: 1, bgcolor: colors.cardBg }}>
-        <Box sx={{ bgcolor: colors.badgeBg, color: colors.badgeText ?? '#fff', fontWeight: 700, fontSize: '11px', minWidth: 64, px: 1, py: 0.5, borderRadius: 0.5, textAlign: 'center', flexShrink: 0 }}>{badgeLabel}</Box>
-        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 500, wordBreak: 'break-word', color: 'text.primary' }}>
+      <Stack direction="row" alignItems="center" gap={1.5} sx={operationHeaderRowSx(colors)}>
+        <Box sx={operationBadgeSx(colors, 64)}>{badgeLabel}</Box>
+        <Typography variant="body2" sx={OPERATION_HEADER_LABEL_SX}>
           {label}
         </Typography>
       </Stack>
       {description && (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, px: 0.5 }}>
+        <Typography variant="body2" color="text.secondary" sx={OPERATION_DESCRIPTION_SX}>
           Description: {description}
         </Typography>
       )}

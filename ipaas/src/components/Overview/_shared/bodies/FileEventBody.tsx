@@ -24,6 +24,7 @@ import { choreologgingComponentLogsApiUrl } from '../../../../config/runtimeConf
 import { AUTO_FETCH_INTERVAL, DEFAULT_DP_REGION, LEVEL_COLORS, PAGE_SIZE } from '../../../../utils/logs';
 import type { ComponentLogsRequest, LogRow } from '../../../../types/logs';
 import type { EnvCardBodyProps } from '../../../../types/integration';
+import { LOG_CONTAINER_SX, LOG_LEVEL_CAPTION_SX, LOG_LINE_CAPTION_SX, LOG_ROW_SX, LOG_TIME_CAPTION_SX } from './styles';
 import EnvCardSkeleton from '../EnvCardSkeleton';
 
 /**
@@ -101,10 +102,6 @@ export default function FileEventBody({ component, env, versionId }: EnvCardBody
 
 // ── Inline display (intentionally minimal — no filters / no infinite scroll) ──
 
-// Maximum height of the logs scroll container. The container is `flex` so it
-// collapses to its content when sparse and grows up to this cap when full.
-const LOGS_MAX_HEIGHT = 300;
-
 function InlineLogsView({ isLoading, error, logs }: { isLoading: boolean; error: unknown; logs: LogRow[] }): ReactNode {
   if (isLoading && logs.length === 0) {
     return (
@@ -137,17 +134,7 @@ function InlineLogsView({ isLoading, error, logs }: { isLoading: boolean; error:
   }
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        maxHeight: LOGS_MAX_HEIGHT,
-        overflow: 'auto',
-        bgcolor: 'background.paper',
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 0.5,
-      }}>
+    <Box sx={LOG_CONTAINER_SX}>
       {logs.map((log, idx) => (
         <InlineLogRow key={`${log.timestamp}-${idx}`} log={log} />
       ))}
@@ -158,23 +145,14 @@ function InlineLogsView({ isLoading, error, logs }: { isLoading: boolean; error:
 function InlineLogRow({ log }: { log: LogRow }): ReactNode {
   const levelColor = LEVEL_COLORS[log.level]?.text ?? 'text.primary';
   return (
-    <Stack
-      direction="row"
-      gap={1.5}
-      sx={{
-        px: 1.5,
-        py: 0.5,
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-        '&:last-of-type': { borderBottom: 'none' },
-      }}>
-      <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.secondary', flexShrink: 0 }}>
+    <Stack direction="row" gap={1.5} sx={LOG_ROW_SX}>
+      <Typography variant="caption" sx={LOG_TIME_CAPTION_SX}>
         {formatTime(log.timestamp)}
       </Typography>
-      <Typography variant="caption" sx={{ fontFamily: 'monospace', color: levelColor, fontWeight: 600, minWidth: 48, flexShrink: 0 }}>
+      <Typography variant="caption" sx={{ ...LOG_LEVEL_CAPTION_SX, color: levelColor }}>
         {log.level}
       </Typography>
-      <Typography variant="caption" sx={{ fontFamily: 'monospace', wordBreak: 'break-word', flex: 1 }}>
+      <Typography variant="caption" sx={LOG_LINE_CAPTION_SX}>
         {log.logLine}
       </Typography>
     </Stack>

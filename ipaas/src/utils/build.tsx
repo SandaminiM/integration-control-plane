@@ -18,6 +18,7 @@
 
 /* eslint-disable react-refresh/only-export-components */
 import { Box, Stack, Typography } from '@wso2/oxygen-ui';
+import { Bitbucket, GitBranch, Github, Gitlab } from '@wso2/oxygen-ui-icons-react';
 import type { JSX, ReactNode } from 'react';
 import type { BuildRunLogs } from '../types/build';
 import type { Repository } from '../types/repository';
@@ -118,6 +119,22 @@ export function gitProviderLabel(provider: string): string {
       return 'Bitbucket Server';
     default:
       return provider ?? '—';
+  }
+}
+
+/** Map a git provider to its brand icon (falls back to a generic branch icon for Azure DevOps / unknown). */
+export function getGitProviderIcon(provider?: string): typeof GitBranch {
+  switch (provider?.toLowerCase()) {
+    case 'github':
+      return Github;
+    case 'gitlab':
+    case 'gitlab_self_managed':
+      return Gitlab;
+    case 'bitbucket':
+    case 'bitbucket_server':
+      return Bitbucket;
+    default:
+      return GitBranch;
   }
 }
 
