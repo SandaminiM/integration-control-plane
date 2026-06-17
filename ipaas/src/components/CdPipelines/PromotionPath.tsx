@@ -47,7 +47,7 @@ export default function PromotionPath({ tree, envTemplates }: PromotionPathProps
       {envs.map((env, index) => {
         const template = byId.get(env.envTemplateId);
         return (
-          <Fragment key={env.envTemplateId}>
+          <Fragment key={`${env.envTemplateId}-${index}`}>
             {index > 0 && <ArrowRight size={18} style={{ opacity: 0.4, flexShrink: 0 }} />}
             <PipelineEnvNode name={env.envName} region={template?.region} critical={template?.critical} />
           </Fragment>

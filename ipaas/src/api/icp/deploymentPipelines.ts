@@ -18,6 +18,10 @@
 
 import type { CreateDeploymentPipelineRequest, DeploymentPipeline, EnvTemplate, PipelineDeletionEligibility } from '../../types/deploymentPipeline';
 
+// Intentionally a stub for now (the standard icp-stub contract — see src/api/AGENTS.md).
+// `wip` is the reference implementation; the real icp wiring is deferred until the
+// `/devops/1.0.0` backend is reachable for icp, and is added across all domains together
+// rather than one-off here to avoid drift.
 const ni = (name: string): never => {
   throw new Error(`[icp] deploymentPipelines.${name}: not implemented`);
 };

@@ -35,7 +35,7 @@ export default function CdPipelineEditor(): JSX.Element {
   const isEdit = !!pipelineId;
 
   const { data: envTemplates, isLoading: loadingEnvs, isError: envError, refetch: refetchEnvs } = useEnvTemplates(orgHandler);
-  const { data: pipelines, isLoading: loadingPipelines } = useOrgDeploymentPipelines();
+  const { data: pipelines, isLoading: loadingPipelines, isError: pipelinesError, refetch: refetchPipelines } = useOrgDeploymentPipelines();
 
   if (loadingEnvs || (isEdit && loadingPipelines)) {
     return (
@@ -56,6 +56,24 @@ export default function CdPipelineEditor(): JSX.Element {
             </Button>
           }>
           Failed to load environment templates.
+        </Alert>
+      </PageContent>
+    );
+  }
+
+  // Edit mode needs the pipeline list to resolve `existing`; surface a load
+  // failure here rather than letting it fall through to "Pipeline not found".
+  if (isEdit && pipelinesError) {
+    return (
+      <PageContent>
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={() => refetchPipelines()}>
+              Retry
+            </Button>
+          }>
+          Failed to load deployment pipelines.
         </Alert>
       </PageContent>
     );

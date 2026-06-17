@@ -18,6 +18,10 @@
 
 import type { CreateDeploymentPipelineRequest, DeploymentPipeline, EnvTemplate, PipelineDeletionEligibility } from '../../types/deploymentPipeline';
 
+// These throw by design (the standard cloud-stub contract — see src/api/AGENTS.md).
+// Returning benign defaults (empty arrays / fabricated objects) would silently mask
+// an unimplemented endpoint and feed bogus data into the UI; a loud failure is correct
+// until cloud has a real implementation.
 const ni = (name: string): never => {
   throw new Error(`[cloud] deploymentPipelines.${name}: not implemented`);
 };

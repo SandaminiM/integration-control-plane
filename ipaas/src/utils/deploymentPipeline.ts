@@ -29,7 +29,7 @@ export const PIPELINE_NAME_MAX_LENGTH = 100;
 export function validatePipelineName(name: string, existingPipelines: DeploymentPipeline[], currentPipelineId?: string): string | null {
   const trimmed = name.trim();
   if (!trimmed) return 'Pipeline name is required';
-  if (trimmed.length > PIPELINE_NAME_MAX_LENGTH) return `Pipeline name must be less than ${PIPELINE_NAME_MAX_LENGTH} characters`;
+  if (trimmed.length > PIPELINE_NAME_MAX_LENGTH) return `Pipeline name must be at most ${PIPELINE_NAME_MAX_LENGTH} characters`;
   const duplicate = existingPipelines.some((p) => p.name === trimmed && p.id !== currentPipelineId);
   if (duplicate) return 'A pipeline with this name already exists';
   return null;
