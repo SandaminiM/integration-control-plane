@@ -23,6 +23,10 @@ export interface ApimApiOperation {
   authType?: string;
   throttlingPolicy?: string;
   scopes?: string[];
+  /** MCP tool description (operations that back an MCP tool carry one). */
+  description?: string;
+  /** MCP tool input schema, as a JSON string. */
+  schemaDefinition?: string | null;
 }
 
 export interface CorsConfiguration {
@@ -49,6 +53,7 @@ export interface ApimApiInfo {
   scopes?: { scope: { name: string } }[];
   corsConfiguration?: CorsConfiguration;
   apiThrottlingPolicy?: string | null;
+  throttlingLimit?: { requestCount: number; unit: string } | null;
   endpointConfig?: Record<string, unknown>;
   [key: string]: unknown;
 }

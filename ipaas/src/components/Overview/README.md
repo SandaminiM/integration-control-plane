@@ -33,7 +33,10 @@ Overview/
 │   ├── UnsupportedFallback.tsx  module for not-yet-migrated types (CustomOverview)
 │   ├── UnsupportedOverview.tsx
 │   └── bodies/                  bodies shared by >1 type
-│       └── FileEventBody.tsx    runtime-log stream (file- + event-integration)
+│       ├── FileEventBody.tsx    runtime-log stream (file- + event-integration)
+│       └── OperationTile.tsx / OperationHeader.tsx
+│                                operation/tool tile + drawer header
+│                                (integration-as-api swagger ops + mcp-server tools)
 ├── automation/                  one folder per type → exports an IntegrationModule
 │   ├── index.ts                 { ...INTEGRATION_TYPE_INFO['automation'], …slots }
 │   ├── HeaderStatus.tsx         Configure + missing-config state (no status dot)
@@ -51,6 +54,10 @@ Overview/
 │   ├── HeaderStatus.tsx         status dot + Configure / Configure-to-Continue
 │   ├── EnvCardActions.tsx       Test (→ test/agent-chat) · View Logs · Stop/Start
 │   └── EnvCardBody.tsx          shared EndpointUrlsPanel (non-critical) + <AgentChat>
+├── mcp-server/                  MCP Server + MCP Proxy (registry maps both here):
+│   │                            tools list via the MCP SDK + Configure Policies action
+│   ├── HeaderStatus.tsx  EnvCardActions.tsx  EnvCardBody.tsx  OverviewHeaderActions.tsx
+│   └── McpToolTile.tsx / McpToolDrawer.tsx  (reuse _shared/bodies/OperationTile + OperationHeader)
 └── registry.ts                  IntegrationType → () => import('./<type>')  (one chunk per type)
 ```
 

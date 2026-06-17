@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Globe, Clock, Layers, Repeat, Server, Folder, HardDrive, Zap, Radio, Sparkles, Bot } from '@wso2/oxygen-ui-icons-react';
+import { Globe, Clock, Layers, Repeat, Server, Folder, HardDrive, Zap, Radio, Sparkles, Bot, MCP, Wrench } from '@wso2/oxygen-ui-icons-react';
 import { Box } from '@wso2/oxygen-ui';
 import type { ReactNode } from 'react';
 import type { IntegrationTypeOption } from '../types/import';
@@ -70,6 +70,16 @@ export const INTEGRATION_TYPES: IntegrationTypeOption[] = [
     icons: [
       { icon: <Bot size={16} />, label: 'Agent' },
       { icon: <Sparkles size={16} />, label: 'AI' },
+    ],
+  },
+  {
+    id: 'mcp-server',
+    title: 'MCP Server',
+    description: 'Expose tools to AI agents and clients over the Model Context Protocol',
+    docLink: 'https://wso2.com/integration-platform/docs/get-started/develop-an-mcp-server',
+    icons: [
+      { icon: <MCP size={16} />, label: 'MCP' },
+      { icon: <Wrench size={16} />, label: 'Tools' },
     ],
   },
 ];

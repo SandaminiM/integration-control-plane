@@ -19,6 +19,7 @@
 import { gql } from './graphql';
 import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, DisplayType, DeleteComponentResult } from '../../types/component';
 import type { ComponentNameAvailability } from '../../types/component';
+import type { CreateMcpProxyComponentInput } from '../../types/mcpProxy';
 
 function gqlStr(value: string): string {
   return `"${value
@@ -75,6 +76,55 @@ function buildCreateComponentQuery(input: CreateComponentInput): string {
         isUnitTestEnabled: true,
         pullLatestSubmodules: true,
         isPrebuilt: ${input.isPrebuilt ?? false}
+      }){
+        id, name, displayName, handler, orgId, projectId, createdAt, updatedAt
+      }}`;
+}
+
+/**
+ * Builds the `createComponent` mutation for an **MCP proxy** — a `proxy`
+ * component (no source repo) that fronts an already-created APIM API via
+ * `apiId`, with `componentSubType: MCP`. Mirrors devant's `createChoreoComponent`
+ * for MCP: proxies keep the API `version` (not `v1.0`) and `repositoryType` is
+ * empty (no source build).
+ */
+function buildCreateMcpProxyComponentQuery(input: CreateMcpProxyComponentInput): string {
+  const rawOrgId = window.API_CONFIG.asgardeoOrgNumericId;
+  if (rawOrgId === undefined || !Number.isFinite(rawOrgId)) {
+    throw new Error('API_CONFIG.asgardeoOrgNumericId is missing or invalid; cannot create MCP proxy component without a valid organization numeric ID');
+  }
+  const orgId = rawOrgId;
+  return `mutation{ createComponent(
+      component: {
+        name: ${gqlStr(input.name)},
+        orgId: ${orgId},
+        orgHandler: ${gqlStr(input.orgHandler)},
+        displayName: ${gqlStr(input.displayName)},
+        displayType: "proxy",
+        projectId: ${gqlStr(input.projectId)},
+        labels: "",
+        version: ${gqlStr(input.version)},
+        description: ${gqlStr(input.description)},
+        apiId: ${gqlStr(input.apiId)},
+        ballerinaVersion: "swan-lake-alpha5",
+        triggerChannels: "",
+        triggerID: null,
+        httpBase: true,
+        sampleTemplate: "",
+        accessibility: "external",
+        repositorySubPath: "",
+        repositoryType: "",
+        repositoryBranch: "",
+        initializeAsBallerinaProject: false,
+        secretRef: "",
+        isPublicRepo: false,
+        enableAutoDeploy: true,
+        enableAutoBuild: true,
+        componentSubType: "MCP",
+        originCloud: "devant",
+        isUnitTestEnabled: true,
+        pullLatestSubmodules: true,
+        isPrebuilt: false
       }){
         id, name, displayName, handler, orgId, projectId, createdAt, updatedAt
       }}`;
@@ -238,6 +288,15 @@ export async function createComponent(input: CreateComponentInput): Promise<Comp
     };
   }
   return gql<{ createComponent: Component }>(buildCreateComponentQuery(input)).then((d) => d.createComponent);
+}
+
+/**
+ * Create an MCP **proxy** component (no source repo) fronting an existing APIM
+ * API. Uses the same `createComponent` mutation as devant's MCP convert flow,
+ * with `displayType: proxy` + `componentSubType: MCP` + the API `apiId`/`version`.
+ */
+export async function createMcpProxyComponent(input: CreateMcpProxyComponentInput): Promise<Component> {
+  return gql<{ createComponent: Component }>(buildCreateMcpProxyComponentQuery(input)).then((d) => d.createComponent);
 }
 
 export async function deleteComponent(input: { orgHandler: string; componentId: string; projectId: string }): Promise<DeleteComponentResult> {

@@ -32,6 +32,7 @@ import type {
   DeploymentTrack,
   ApiVersion,
 } from '../../types/component';
+import type { CreateMcpProxyComponentInput } from '../../types/mcpProxy';
 import { bff, items, q, seg, type ListResponse } from './_client';
 
 // Underscored params (_orgHandler, _versionId, _releaseId) are kept on exported
@@ -107,7 +108,7 @@ function withFrontendDisplayType<T extends Component>(c: T): T {
   // componentType 'fileIntegration' but no subType, so surface the service
   // displayType plus the file componentSubType; otherwise the overview would
   // classify them as 'unsupported'.
-  // TODO: Remove this SubType logic once WIP is decommissioned. 
+  // TODO: Remove this SubType logic once WIP is decommissioned.
   if (c.componentType === 'fileIntegration') {
     return { ...c, displayType: isMI ? 'miApiService' : 'ballerinaService', componentSubType: isMI ? 'miFileIntegration' : 'ballerinaFileIntegration' };
   }
@@ -230,3 +231,8 @@ export const rotateComponentEnvironmentJwtSecret = (componentId: string, environ
 
 export const updateEndpoint = (input: { componentId: string; versionId: string; releaseId: string; endpointId: string; displayName: string; networkVisibilities: string[] }): Promise<object> =>
   bff.put<object>(`/components/${seg(input.componentId)}/endpoints/${seg(input.endpointId)}/visibility`, input);
+
+// MCP proxy (convert from an existing HTTP API) is a wip/APIM-only flow.
+export const createMcpProxyComponent = (_input: CreateMcpProxyComponentInput): Promise<Component> => {
+  throw new Error('[cloud] components.createMcpProxyComponent: not implemented');
+};

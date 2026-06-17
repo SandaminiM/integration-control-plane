@@ -50,6 +50,9 @@ const CreateProject = lazy(() => import('../pages/CreateProject'));
 const ImportProject = lazy(() => import('../pages/ImportProject'));
 const CreateIntegrationOptions = lazy(() => import('../pages/CreateIntegrationOptions'));
 const ImportIntegration = lazy(() => import('../pages/ImportIntegration'));
+const McpProxyFromApi = lazy(() => import('../pages/McpProxyFromApi'));
+const McpPolicies = lazy(() => import('../pages/McpPolicies'));
+const McpTest = lazy(() => import('../pages/McpTest'));
 const BrowseSamples = lazy(() => import('../pages/BrowseSamples'));
 const BrowsePrebuiltIntegrations = lazy(() => import('../pages/BrowsePrebuiltIntegrations'));
 const PrebuiltIntegrationSetup = lazy(() => import('../pages/PrebuiltIntegrationSetup'));
@@ -181,6 +184,7 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new', element: createElement(withScope(CreateIntegrationOptions, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new/import', element: createElement(withScope(ImportIntegration, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new/samples', element: createElement(withScope(BrowseSamples, ['projects'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/components/new/generate-mcp', element: createElement(withScope(McpProxyFromApi, ['projects'])) },
               { path: 'organizations/:orgHandler/environments/new', element: createElement(withScope(CreateEnvironment, ['organizations'])) },
               { path: 'organizations/:orgHandler/environments/:envId/edit', element: <EditEnvironment /> },
               { path: 'organizations/:orgHandler/settings/access-control/users/new', element: <CreateUser /> },
@@ -216,7 +220,7 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test',
-                element: <ComingSoon title="Coming Soon" description="Testing tools are currently under development." />,
+                element: createElement(withScope(McpTest, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test/console',
@@ -233,6 +237,10 @@ const routes: AppRoute[] = [
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/lifecycle',
                 element: createElement(withScope(Lifecycle, ['components'])),
+              },
+              {
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/policies',
+                element: createElement(withScope(McpPolicies, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/documents',

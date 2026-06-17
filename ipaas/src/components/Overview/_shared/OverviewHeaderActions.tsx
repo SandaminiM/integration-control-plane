@@ -16,14 +16,15 @@
  * under the License.
  */
 
-import { Box, Button, Chip, IconButton, Stack, Tooltip } from '@wso2/oxygen-ui';
-import { Check, CodeXml, Recycle, ShieldCheck } from '@wso2/oxygen-ui-icons-react';
+import { Button, Chip, IconButton, Stack, Tooltip } from '@wso2/oxygen-ui';
+import { CodeXml, Recycle, ShieldCheck } from '@wso2/oxygen-ui-icons-react';
 import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { useApimApi } from '../../../hooks/useApim';
-import { getDevPortalBaseUrl } from '../../../config/runtimeConfig';
+import { getDevPortalApiUrl } from '../../../config/runtimeConfig';
 import type { OverviewHeaderActionsProps } from '../../../types/integration';
 import SecurityDrawer from '../../SecurityDrawer';
+import ConfigureActionRow from './ConfigureActionRow';
 
 /**
  * Props of the default block = the module-slot props + an `extra` slot. A type
@@ -37,6 +38,12 @@ interface DefaultOverviewHeaderActionsProps extends OverviewHeaderActionsProps {
    * types (ai-agent, mcp-server) leave it empty.
    */
   extra?: ReactNode;
+  /**
+   * Additional "Configure …" rows rendered right after Configure Security, in
+   * the same style (use `ConfigureActionRow`). e.g. MCP adds Configure Policies
+   * alongside Configure Security.
+   */
+  extraConfigureRows?: ReactNode;
 }
 
 const LIFECYCLE_LABEL: Record<string, string> = {
@@ -54,7 +61,7 @@ const LIFECYCLE_LABEL: Record<string, string> = {
  * Type-specific actions are appended via the `extra` slot so the shell and this
  * shared block stay type-agnostic (no `isAiAgent`/`isMcp` branching).
  */
-export default function OverviewHeaderActions({ component, apimId, orgHandler, projectHandler, extra }: DefaultOverviewHeaderActionsProps): ReactNode {
+export default function OverviewHeaderActions({ component, apimId, orgHandler, projectHandler, extra, extraConfigureRows }: DefaultOverviewHeaderActionsProps): ReactNode {
   const componentHandler = component.handler;
   const componentId = component.id;
   const versionId = component.deploymentTracks?.[0]?.id;
@@ -63,27 +70,15 @@ export default function OverviewHeaderActions({ component, apimId, orgHandler, p
   const { data: apimApi } = useApimApi(apimId);
   const lifecycleStatus = apimApi?.lifeCycleStatus ?? null;
   const isPublished = lifecycleStatus === 'PUBLISHED' || lifecycleStatus === 'PROTOTYPED';
-  const devPortalBase = getDevPortalBaseUrl();
-  const devPortalUrl = devPortalBase && apimApi ? `${devPortalBase}/${orgHandler}/views/default/api/${encodeURIComponent(apimApi.name)}-${encodeURIComponent(apimApi.version)}` : null;
+  const devPortalUrl = apimApi ? getDevPortalApiUrl(orgHandler, apimApi.name, apimApi.version) : null;
   const lifecycleColor: 'success' | 'error' | 'warning' | 'default' = lifecycleStatus === 'PUBLISHED' ? 'success' : lifecycleStatus === 'DEPRECATED' || lifecycleStatus === 'BLOCKED' ? 'error' : lifecycleStatus === 'PROTOTYPED' ? 'warning' : 'default';
 
   return (
     <>
       <Stack gap={1} alignItems="flex-end">
-        {/* Configure Security row */}
-        <Stack direction="row" alignItems="center" gap={1}>
-          <Button
-            variant="text"
-            size="small"
-            startIcon={<ShieldCheck size={14} />}
-            onClick={() => setSecurityDrawerOpen(true)}
-            sx={{ color: 'text.secondary', textTransform: 'none', p: 0, minWidth: 0, '&:hover': { background: 'none', textDecoration: 'underline' } }}>
-            Configure Security
-          </Button>
-          <Box sx={{ width: 20, height: 20, borderRadius: '50%', bgcolor: 'success.main', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}>
-            <Check size={10} />
-          </Box>
-        </Stack>
+        {/* Configure Security (always) + any extra configure rows (e.g. MCP → Configure Policies) */}
+        <ConfigureActionRow Icon={ShieldCheck} label="Configure Security" onClick={() => setSecurityDrawerOpen(true)} />
+        {extraConfigureRows}
         {/* Lifecycle Status row */}
         <Stack direction="row" alignItems="center" gap={1}>
           <Button

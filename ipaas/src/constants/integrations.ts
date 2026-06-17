@@ -48,6 +48,19 @@ export const SUPPORTED_DISPLAY_TYPES = new Set([
 ]);
 
 /**
+ * Whether a component is a supported (navigable, non-disabled) integration in
+ * ICP listings. This disabled-row gating is ICP-specific (for the in-progress
+ * type migration); devant has no equivalent. Keys primarily on `displayType`,
+ * but is `componentSubType`-aware so types sharing a displayType resolve
+ * correctly — notably an **MCP proxy** (`displayType: proxy` +
+ * `componentSubType: MCP`) is supported, while a plain HTTP REST API proxy
+ * (same displayType, no/`HTTP` subtype) stays unsupported.
+ */
+export function isSupportedIntegration(displayType: string, componentSubType: string | null): boolean {
+  return SUPPORTED_DISPLAY_TYPES.has(displayType) || componentSubType === 'MCP';
+}
+
+/**
  * Maps a component's displayType and componentSubType to a human-readable label.
  */
 export function getDisplayLabel(displayType: string, componentSubType: string | null): string {
@@ -57,7 +70,7 @@ export function getDisplayLabel(displayType: string, componentSubType: string | 
       return 'File Integration';
     case 'aiAgent':
       return 'AI Agent';
-    case 'mcpServer':
+    case 'MCP':
       return 'MCP Server';
   }
   switch (displayType) {

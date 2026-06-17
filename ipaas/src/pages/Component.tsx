@@ -50,7 +50,7 @@ import { UUID_RE } from '../utils/string';
  * type uses the new dispatch and the legacy `<Environment>` is deleted.
  * See [[icp-integration-migration]] and [[icp-phase4-commitment]] in memory.
  */
-const MIGRATED_INTEGRATION_TYPES = new Set<IntegrationType>(['automation', 'integration-as-api', 'file-integration', 'event-integration', 'ai-agent']);
+const MIGRATED_INTEGRATION_TYPES = new Set<IntegrationType>(['automation', 'integration-as-api', 'file-integration', 'event-integration', 'ai-agent', 'mcp-server', 'mcp-proxy']);
 
 export default function Component(scope: ComponentScope): JSX.Element {
   // Support both UUID and handler in the URL — only one query will be enabled at a time
@@ -129,6 +129,13 @@ export default function Component(scope: ComponentScope): JSX.Element {
   // when every type uses the new dispatch unconditionally.
   const useIntegrationsModule = identity ? MIGRATED_INTEGRATION_TYPES.has(identity.type) : false;
 
+  // "No source" capability: proxy/converted integrations (e.g. an MCP proxy
+  // built from an existing HTTP API) have no git repo. Drives the header's
+  // Source/Commit + Open-in-Cloud, and the Build card — matching devant.
+  const isProxyComponent = displayType === 'proxy' || displayType === 'gitProxy';
+  const hasSource = !isProxyComponent;
+  const showBuildCard = !component.isPrebuilt && hasSource;
+
   return (
     <>
       <style>
@@ -146,10 +153,21 @@ export default function Component(scope: ComponentScope): JSX.Element {
         {/* <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}> */}
         <PageContent>
           {/* Component header */}
-          <HeaderShell component={component} project={project} repository={repository} latestCommit={latestCommit} orgHandler={scope.org} projectId={projectId} projectHandler={project?.handler ?? scope.project} apimId={apimId} module={overviewModule} />
+          <HeaderShell
+            component={component}
+            project={project}
+            repository={repository}
+            latestCommit={latestCommit}
+            orgHandler={scope.org}
+            projectId={projectId}
+            projectHandler={project?.handler ?? scope.project}
+            apimId={apimId}
+            module={overviewModule}
+            hasSource={hasSource}
+          />
 
-          {/* Latest build card — not applicable for prebuilt integrations */}
-          {!component.isPrebuilt && (
+          {/* Latest build card — hidden for prebuilt + no-source-repo (MCP proxy) */}
+          {showBuildCard && (
             <>
               <BuildCard componentId={component.id} versionId={versionId} orgHandler={scope.org} projectId={projectId} latestCommit={latestCommit} />
               <Divider sx={{ mb: 3 }} />

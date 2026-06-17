@@ -127,8 +127,9 @@ flags**. See `src/components/Overview/README.md` for the concrete layout.
 
 Only the **Overview** surface (`src/components/Overview/`) is built fully this way today.
 The types with a real Overview module are **automation, integration-as-api,
-file-integration, event-integration, and ai-agent** (gated by `MIGRATED_INTEGRATION_TYPES`
-in `pages/Component.tsx`); the rest fall back to `UnsupportedFallback`.
+file-integration, event-integration, ai-agent, and mcp-server** (the latter shared by
+both `mcp-server` and `mcp-proxy` via the registry) — gated by `MIGRATED_INTEGRATION_TYPES`
+in `pages/Component.tsx`; the rest fall back to `UnsupportedFallback`.
 
 **Build, Develop, Deploy, Logs, ComponentHeader, and every other Integration-level
 surface that customises by type should follow this same surface + slots structure when

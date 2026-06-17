@@ -18,7 +18,9 @@
 
 /* eslint-disable react-refresh/only-export-components */
 import { Box, Stack, Typography } from '@wso2/oxygen-ui';
+import { Bitbucket, GitBranch, Github, Gitlab } from '@wso2/oxygen-ui-icons-react';
 import type { JSX, ReactNode } from 'react';
+import AzureIcon from '../assets/icons/AzureIcon';
 import type { BuildRunLogs } from '../types/build';
 import type { Repository } from '../types/repository';
 import { BUILD_STAGES } from '../constants/build';
@@ -80,13 +82,19 @@ export function buildLogText(logs: BuildRunLogs | null): string | null {
   return lines.join('\n') || '';
 }
 
-export function getStepStatus(logs: BuildRunLogs | null, key: 'init' | 'build' | 'deploy'): 'success' | 'error' | 'active' | 'pending' {
+export function getStepStatus(logs: BuildRunLogs | null, key: 'init' | 'build' | 'deploy'): 'success' | 'error' | 'warning' | 'active' | 'pending' {
   const stage = logs?.[key];
   if (!stage) return 'pending';
   if (stage.status === 'in_progress') return 'active';
   if (stage.status === 'completed') {
-    const hasFailed = stage.steps.some((s) => s.conclusion === 'failure' || s.conclusion === 'failed');
-    return hasFailed ? 'error' : 'success';
+    const hasFailed = stage.steps.some((s) => {
+      const c = s.conclusion?.toLowerCase();
+      return c === 'failure' || c === 'failed';
+    });
+    if (hasFailed) return 'error';
+    const hasWarning = stage.steps.some((s) => s.conclusion?.toLowerCase() === 'warning');
+    if (hasWarning) return 'warning';
+    return 'success';
   }
   return 'pending';
 }
@@ -112,6 +120,24 @@ export function gitProviderLabel(provider: string): string {
       return 'Bitbucket Server';
     default:
       return provider ?? '—';
+  }
+}
+
+/** Map a git provider to its brand icon (generic branch icon for unknown providers). */
+export function getGitProviderIcon(provider?: string): (props: { size?: number }) => ReactNode {
+  switch (provider?.toLowerCase()) {
+    case 'github':
+      return Github;
+    case 'gitlab':
+    case 'gitlab_self_managed':
+      return Gitlab;
+    case 'bitbucket':
+    case 'bitbucket_server':
+      return Bitbucket;
+    case 'azure_devops':
+      return AzureIcon;
+    default:
+      return GitBranch;
   }
 }
 

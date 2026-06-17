@@ -215,3 +215,17 @@ export const getDevPortalBaseUrl = (): string | null => {
     return null;
   }
 };
+
+// Path template for an API's page on the (third-party) Developer Portal.
+const DEV_PORTAL_API_VIEW_PATH = 'views/default/api';
+
+/**
+ * Full Developer Portal URL for a published API. The Dev Portal is a separate
+ * (third-party) portal, so its URL shape lives here, not inlined in components.
+ * Returns null when the base can't be derived.
+ */
+export const getDevPortalApiUrl = (orgHandler: string, apiName: string, apiVersion: string): string | null => {
+  const base = getDevPortalBaseUrl();
+  if (!base) return null;
+  return `${base}/${orgHandler}/${DEV_PORTAL_API_VIEW_PATH}/${encodeURIComponent(apiName)}-${encodeURIComponent(apiVersion)}`;
+};

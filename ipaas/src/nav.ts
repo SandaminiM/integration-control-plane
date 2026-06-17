@@ -152,6 +152,21 @@ export function newComponentUrl(scope: { org: string; project: string }): string
   return `/organizations/${scope.org}/projects/${scope.project}/components/new`;
 }
 
+/**
+ * The "Generate MCP Server from an existing API" create flow. Launched from an
+ * Integration as API's overview, so it preselects that source by its APIM id
+ * (`sourceApiId`) and carries the source component `sourceHandler` so the
+ * flow's Back/Cancel can return to that overview.
+ */
+export function generateMcpUrl(scope: { org: string; project: string }, sourceApiId?: string, sourceHandler?: string): string {
+  const base = `${newComponentUrl(scope)}/generate-mcp`;
+  const params = new URLSearchParams();
+  if (sourceApiId) params.set('sourceApiId', sourceApiId);
+  if (sourceHandler) params.set('sourceHandler', sourceHandler);
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
+}
+
 // ---------------------------------------------------------------------------
 // React context & ScopeResolver
 // ---------------------------------------------------------------------------

@@ -203,4 +203,11 @@ export interface IntegrationModule {
   // above-cards slot + full-overview escape hatch
   OverviewHeaderExtras?: ComponentType<OverviewHeaderSlotProps>;
   CustomOverview?: ComponentType<OverviewHeaderSlotProps>;
+
+  /**
+   * Component-header capability: hide the "Open in Cloud / VS Code" editor
+   * entry point. Set by types that have no in-editor source-editing surface —
+   * e.g. MCP (server + proxy), matching devant which excludes it for MCP.
+   */
+  hideOpenInEditor?: boolean;
 }

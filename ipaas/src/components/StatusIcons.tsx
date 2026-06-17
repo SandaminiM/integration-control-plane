@@ -17,7 +17,7 @@
  */
 
 import { Box } from '@wso2/oxygen-ui';
-import { Check, Clock, Loader, X } from '@wso2/oxygen-ui-icons-react';
+import { Check, Clock, Loader, TriangleAlert, X } from '@wso2/oxygen-ui-icons-react';
 import type { BuildStep } from '../types/build';
 
 interface StatusIconProps {
@@ -100,10 +100,26 @@ export function FailedIcon({ size = 20 }: StatusIconProps) {
   );
 }
 
-export function StageIcon({ status, size = 18 }: { status: 'success' | 'error' | 'active' | 'pending'; size?: number }) {
+export function WarningIcon({ size = 20 }: StatusIconProps) {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        color: 'warning.main',
+      }}>
+      <TriangleAlert size={size} />
+    </Box>
+  );
+}
+
+export function StageIcon({ status, size = 18 }: { status: 'success' | 'error' | 'warning' | 'active' | 'pending'; size?: number }) {
   if (status === 'active') return <InProgressIcon size={size} />;
   if (status === 'success') return <SuccessIcon size={size} />;
   if (status === 'error') return <FailedIcon size={size} />;
+  if (status === 'warning') return <WarningIcon size={size} />;
   return <QueuedIcon size={size} />;
 }
 
@@ -150,6 +166,7 @@ export function SubStepIcon({ step }: { step: BuildStep }) {
   const c = step.conclusion?.toLowerCase();
   if (c === 'success') return <StatusDot color="success.main" />;
   if (c === 'failure' || c === 'failed') return <StatusDot color="error.main" />;
+  if (c === 'warning') return <WarningIcon size={14} />;
   if (c === 'skipped') return <StatusDot color="text.disabled" />;
   return <PendingDot />;
 }

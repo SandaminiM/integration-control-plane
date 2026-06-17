@@ -16,13 +16,14 @@
  * under the License.
  */
 
-import { Box, Button, Drawer, IconButton, Stack, Typography } from '@wso2/oxygen-ui';
-import { X } from '@wso2/oxygen-ui-icons-react';
-import { useMemo, useState } from 'react';
+import { Box, Typography } from '@wso2/oxygen-ui';
+import { useMemo } from 'react';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
 import './swagger-ui-overrides.scss';
 import { getHttpMethodColors } from '../../../utils/httpMethods';
+import OperationTile from '../_shared/bodies/OperationTile';
+import OperationHeader from '../_shared/bodies/OperationHeader';
 
 const VALID_METHODS = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options', 'trace'];
 
@@ -57,16 +58,12 @@ interface Operation {
   path: string;
 }
 
-interface OperationDetailsProps {
-  method: string;
-  path: string;
-  swagger: SwaggerDocument;
-  onClose: () => void;
-}
-
-function OperationDetails({ method, path, swagger, onClose }: OperationDetailsProps) {
-  const colors = getHttpMethodColors(method);
-
+/**
+ * Drawer body for a single operation: the shared {@link OperationHeader} (method
+ * badge + path) followed by the SwaggerUI view for just that operation. Computed
+ * lazily — only rendered while the tile's drawer is open.
+ */
+function OperationDetailContent({ method, path, swagger }: { method: string; path: string; swagger: SwaggerDocument }) {
   const filteredSpec = useMemo(() => {
     const pathItem = swagger.paths?.[path];
     if (!pathItem) return null;
@@ -78,47 +75,16 @@ function OperationDetails({ method, path, swagger, onClose }: OperationDetailsPr
   }, [swagger, method, path]);
 
   return (
-    <Box sx={{ width: 720, maxWidth: '100vw', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Drawer header */}
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
-        <Typography variant="h5">Details</Typography>
-        <IconButton size="small" onClick={onClose} aria-label="Close">
-          <X size={18} />
-        </IconButton>
-      </Stack>
-
-      {/* Scrollable body */}
-      <Box sx={{ flex: 1, overflowY: 'auto', px: 2, py: 2 }}>
-        {/* Operation card */}
-        <Stack direction="row" alignItems="center" gap={1.5} sx={{ border: `0.5px solid ${colors.badgeBg}`, borderRadius: 0.5, px: 1.5, py: 1, mb: 1 }}>
-          <Box
-            sx={{
-              bgcolor: colors.badgeBg,
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: '11px',
-              minWidth: 64,
-              px: 1,
-              py: 0.5,
-              borderRadius: 0.5,
-              textAlign: 'center',
-            }}>
-            {method}
-          </Box>
-          <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 500, wordBreak: 'break-word', color: 'text.primary' }}>
-            {path}
-          </Typography>
-        </Stack>
-
-        {filteredSpec ? (
-          <SwaggerUI spec={filteredSpec} plugins={[HidePlugin]} docExpansion="full" />
-        ) : (
-          <Typography variant="body2" color="text.secondary">
-            No operation details available.
-          </Typography>
-        )}
-      </Box>
-    </Box>
+    <>
+      <OperationHeader badgeLabel={method} label={path} colors={{ badgeBg: getHttpMethodColors(method).badgeBg }} />
+      {filteredSpec ? (
+        <SwaggerUI spec={filteredSpec} plugins={[HidePlugin]} docExpansion="full" />
+      ) : (
+        <Typography variant="body2" color="text.secondary">
+          No operation details available.
+        </Typography>
+      )}
+    </>
   );
 }
 
@@ -127,8 +93,6 @@ interface SwaggerOperationsListProps {
 }
 
 export default function SwaggerOperationsList({ swagger }: SwaggerOperationsListProps) {
-  const [selected, setSelected] = useState<Operation | null>(null);
-
   const operations = useMemo<Operation[]>(() => {
     if (!swagger?.paths) return [];
     const ops: Operation[] = [];
@@ -147,61 +111,17 @@ export default function SwaggerOperationsList({ swagger }: SwaggerOperationsList
   if (operations.length === 0) return null;
 
   return (
-    <>
-      <Box sx={{ mt: 1.5 }}>
-        {operations.map((op) => {
-          const colors = getHttpMethodColors(op.method);
-          return (
-            <Box
-              key={`${op.method}-${op.path}`}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
-                px: 1,
-                py: 0.75,
-                mb: 0.75,
-                border: `0.5px solid ${colors.badgeBg}`,
-                borderRadius: 0.5,
-                '&:last-child': { mb: 0 },
-              }}>
-              {/* Method badge */}
-              <Box
-                sx={{
-                  bgcolor: colors.badgeBg,
-                  color: '#fff',
-                  fontWeight: 700,
-                  fontSize: '11px',
-                  minWidth: 72,
-                  px: 1,
-                  py: 0.5,
-                  borderRadius: 0.5,
-                  textAlign: 'center',
-                  flexShrink: 0,
-                }}>
-                {op.method}
-              </Box>
-
-              {/* Path */}
-              <Typography sx={{ flex: 1, fontSize: '13px', fontWeight: 500, wordBreak: 'break-word', color: 'text.primary' }}>{op.path}</Typography>
-
-              {/* View Details */}
-              <Button variant="text" size="small" onClick={() => setSelected(op)} sx={{ fontSize: '12px', flexShrink: 0, textTransform: 'none' }}>
-                View Details
-              </Button>
-            </Box>
-          );
-        })}
-      </Box>
-
-      <Drawer
-        anchor="right"
-        open={!!selected}
-        onClose={() => setSelected(null)}
-        variant="temporary"
-        sx={{ '& .MuiDrawer-paper': { width: 720, position: 'fixed', top: 64, height: 'calc(100% - 64px)', borderLeft: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: 'column' } }}>
-        {selected && <OperationDetails method={selected.method} path={selected.path} swagger={swagger} onClose={() => setSelected(null)} />}
-      </Drawer>
-    </>
+    <Box sx={{ mt: 1.5 }}>
+      {operations.map((op) => (
+        <OperationTile
+          key={`${op.method}-${op.path}`}
+          badgeLabel={op.method}
+          label={op.path}
+          colors={{ badgeBg: getHttpMethodColors(op.method).badgeBg }}
+          drawerContent={<OperationDetailContent method={op.method} path={op.path} swagger={swagger} />}
+          drawerWidth={720}
+        />
+      ))}
+    </Box>
   );
 }

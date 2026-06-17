@@ -45,8 +45,10 @@ export const integrationModuleLoaders: Record<IntegrationType, ModuleLoader> = {
   'file-integration': () => import('./file-integration'),
   'event-integration': () => import('./event-integration'),
   'ai-agent': () => import('./ai-agent'),
-  'mcp-server': () => import('./_shared/UnsupportedFallback'),
-  'mcp-proxy': () => import('./_shared/UnsupportedFallback'),
+  // Both MCP flavors share one Overview module; they differ only in whether the
+  // page shows a Build card (proxy/converted = no source repo → no build).
+  'mcp-server': () => import('./mcp-server'),
+  'mcp-proxy': () => import('./mcp-server'),
   'tailscale-vpn': () => import('./_shared/UnsupportedFallback'),
   unsupported: () => import('./_shared/UnsupportedFallback'),
 };
