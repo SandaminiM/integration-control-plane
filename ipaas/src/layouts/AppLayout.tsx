@@ -117,7 +117,7 @@ import { useOrgPermissions } from '../hooks/useAuth';
 import { switchOrgToken } from '../auth/tokenManager';
 import { mockNotifications } from '../mock-data/mockNotifications';
 import { useScope, useResource, resourceUrl, broaden, narrow, newProjectUrl, newComponentUrl, hasProject, hasComponent, type Resource } from '../nav';
-import { componentOverviewUrl, cookiePolicyUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, projectHomeUrl } from '../paths';
+import { componentOverviewUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, projectHomeUrl, termsOfUseUrl } from '../paths';
 import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { CopilotContext, CopilotProvider } from '../contexts/CopilotContext';
@@ -1634,27 +1634,15 @@ function AppLayoutInner(): JSX.Element {
 
       <AppShell.Footer>
         <Footer>
-          <Footer.Link
-            href={privacyPolicyUrl()}
-            onClick={(e) => {
-              if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.defaultPrevented) {
-                e.preventDefault();
-                navigate(privacyPolicyUrl());
-              }
-            }}>
+          <Footer.Link href={termsOfUseUrl()} target="_blank" rel="noopener noreferrer">
+            Terms of Use
+          </Footer.Link>
+          <Footer.Link href={privacyPolicyUrl()} target="_blank" rel="noopener noreferrer">
             Privacy Policy
           </Footer.Link>
-          <Footer.Link
-            href={cookiePolicyUrl()}
-            onClick={(e) => {
-              if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.defaultPrevented) {
-                e.preventDefault();
-                navigate(cookiePolicyUrl());
-              }
-            }}>
-            Cookie Policy
+          <Footer.Link href="https://discord.com/invite/wso2" target="_blank" rel="noopener noreferrer">
+            Support
           </Footer.Link>
-          <Footer.Link href="#support">Support</Footer.Link>
           <Footer.Copyright>&copy; {new Date().getFullYear()}, WSO2 LLC.</Footer.Copyright>
         </Footer>
       </AppShell.Footer>

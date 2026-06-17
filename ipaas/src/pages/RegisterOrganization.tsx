@@ -21,7 +21,7 @@ import type { JSX } from 'react';
 import { useNavigate } from 'react-router';
 import { Alert, Box, Button, Checkbox, CircularProgress, ColorSchemeImage, Divider, FormControlLabel, InputAdornment, InputLabel, Link, OutlinedInput, Stack, Typography } from '@wso2/oxygen-ui';
 import { Building2, CheckCircle, XCircle } from '@wso2/oxygen-ui-icons-react';
-import { Link as NavLink } from 'react-router';
+
 import { useAuth } from '../auth/AuthContext';
 import { useRegisterUser, useValidateOrgName } from '../hooks/useOrg';
 import type { RegisterUserResponse } from '../types/org';
@@ -209,11 +209,11 @@ export default function RegisterOrganization(): JSX.Element {
             label={
               <Typography variant="body2">
                 I agree to the{' '}
-                <Link href="https://wso2.com/devant/terms-of-use" target="_blank" rel="noopener noreferrer">
+                <Link href="https://wso2.com/integration-platform/terms-of-use" target="_blank" rel="noopener noreferrer">
                   Terms of Use
                 </Link>{' '}
                 and{' '}
-                <Link component={NavLink} to={privacyPolicyUrl()} target="_blank" rel="noopener noreferrer">
+                <Link href={privacyPolicyUrl()} target="_blank" rel="noopener noreferrer">
                   Privacy Policy
                 </Link>
               </Typography>

@@ -70,7 +70,7 @@ test.describe('org overview @smoke', () => {
     // Derive display name from the gear button's aria-label to avoid clicking the gear itself.
     const gearButton = page.getByRole('button', { name: /^Settings for /i }).first();
     await gearButton.waitFor({ state: 'visible' });
-    const ariaLabel = await gearButton.getAttribute('aria-label') ?? '';
+    const ariaLabel = (await gearButton.getAttribute('aria-label')) ?? '';
     const displayName = ariaLabel.replace(/^Settings for /i, '');
 
     await page.getByText(displayName, { exact: true }).first().click();
@@ -82,23 +82,23 @@ test.describe('org overview @smoke', () => {
   // Org overview interactions — TODO
   // -------------------------------------------------------------------------
 
-  test.skip('Create button opens create project flow', async ({ page }) => {
+  test.skip('Create button opens create project flow', async () => {
     // TODO: create project flow not yet finalized.
   });
 
-  test.skip('Import button opens import project flow', async ({ page }) => {
+  test.skip('Import button opens import project flow', async () => {
     // TODO: import project flow not yet finalized.
   });
 
-  test.skip('search filters the project list', async ({ page }) => {
+  test.skip('search filters the project list', async () => {
     // TODO: search functionality not yet tested.
   });
 
-  test.skip('grid/list view toggle changes the project layout', async ({ page }) => {
+  test.skip('grid/list view toggle changes the project layout', async () => {
     // TODO: grid/list view toggle not yet tested.
   });
 
-  test.skip('project settings gear opens project settings', async ({ page }) => {
+  test.skip('project settings gear opens project settings', async () => {
     // TODO: project settings page not yet implemented.
   });
 
@@ -106,11 +106,11 @@ test.describe('org overview @smoke', () => {
   // Onboarding flows — TODO
   // -------------------------------------------------------------------------
 
-  test.skip('Platform Engineer/SRE persona shows relevant org overview', async ({ page }) => {
+  test.skip('Platform Engineer/SRE persona shows relevant org overview', async () => {
     // TODO: test the Platform Engineer/SRE persona selection path through onboarding.
   });
 
-  test.skip('EU region selection during onboarding', async ({ page }) => {
+  test.skip('EU region selection during onboarding', async () => {
     // TODO: test EU data-residency region selection during onboarding.
   });
 });

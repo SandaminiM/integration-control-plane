@@ -21,12 +21,20 @@
  *
  * BFF route status:
  *   live – GET /deployments, GET /deployments/history, GET /releases,
+ *          GET  /release-mgt-deployments              (deployment history per env),
  *          GET  /releases/{releaseId}/endpoints       (workload endpoints + spec),
  *          POST /deployments, POST /deployments/promote,
  *          PUT  /deployments/stop, POST /deployments/redeploy (see redeploy note),
  *          POST /builds, GET /builds/{name}/logs
- *   stub – GET  /release-mgt-deployments              (returns empty list)
- *          POST /deploy-prebuilt                      (acknowledges; no-op)
+ *   stub – POST /deploy-prebuilt                      (acknowledges; no-op)
+ *
+ * OpenChoreo model notes:
+ *   - "Images" (GET /releases) are the component's successful builds, not
+ *     ComponentReleases — the latter are immutable snapshots created only at
+ *     deploy time, so they are empty before the first deploy.
+ *   - Deploying (POST /deployments) snapshots the current Workload via
+ *     generate-release and binds it; OpenChoreo can only release the latest
+ *     Workload, so the most recent successful build is what deploys.
  *
  * Write-path note: several POST/PUT handlers in the BFF accept `?projectName=…`.
  * The writes here omit it because the devant-typed input shapes do not carry
@@ -158,11 +166,48 @@ export const fetchDeploymentStatus = (componentId: string, _versionId: string): 
     .then(items)
     .then((runs) => runs.map(toBuildRun));
 
-// Wired — the BFF serves this from GetDeploymentHistory in the
-// ReleaseMgtDeployment shape. The environment query scopes the listing.
-export const fetchReleaseMgtDeployments = (_orgUuid: string, _projectId: string, componentId: string, _versionId: string, environmentId: string): Promise<ReleaseMgtDeployment[]> =>
-  bff.get<ListResponse<ReleaseMgtDeployment>>(`/components/${seg(componentId)}/release-mgt-deployments${q({ environment: environmentId })}`).then(items);
+// Shape of GET /components/{name}/release-mgt-deployments items (BFF
+// ReleaseMgtDeployment): the BFF serializes these in snake_case, but the
+// consumer (DeploymentHistoryDrawer) reads the camelCase ReleaseMgtDeployment
+// type, so the boundary is remapped below.
+interface BffReleaseMgtDeployment {
+  id?: string;
+  environment_id?: string;
+  status?: string;
+  release_name?: string;
+  deployed_at?: string;
+  deployed_by?: string;
+  commit_hash?: string;
+  comment?: string;
+  created_at?: string;
+}
 
+function toReleaseMgtDeployment(d: BffReleaseMgtDeployment): ReleaseMgtDeployment {
+  return {
+    id: d.id ?? '',
+    releaseMgtId: '',
+    environmentId: d.environment_id ?? '',
+    deploymentName: d.release_name ?? '',
+    attempt: 0,
+    configRevision: 0,
+    status: d.status ?? '',
+    comment: d.comment ?? '',
+    deployedAt: d.deployed_at ?? '',
+    deployedBy: d.deployed_by ?? '',
+    releaseName: d.release_name ?? '',
+    commitHash: d.commit_hash ?? '',
+    componentConfigs: { configMappingRevision: 0, schemaBasedConfigRevision: 0, apiSettings: '' },
+    createdAt: d.created_at ?? '',
+  };
+}
+
+// Wired — the BFF serves this from GetDeploymentHistory (one entry per current
+// ReleaseBinding) and maps the binding's readiness to SUCCESS/FAILED/PENDING.
+export const fetchReleaseMgtDeployments = (_orgUuid: string, _projectId: string, componentId: string, _versionId: string, environmentId: string): Promise<ReleaseMgtDeployment[]> =>
+  bff.get<ListResponse<BffReleaseMgtDeployment>>(`/components/${seg(componentId)}/release-mgt-deployments${q({ environment: environmentId })}`).then((r) => items(r).map(toReleaseMgtDeployment));
+
+// Deployable images are the component's successful builds (the BFF derives them
+// from WorkflowRuns, not ComponentReleases, which only exist post-deploy).
 export const fetchDeploymentTrackImages = (componentId: string, _versionId: string): Promise<DeploymentTrackImage[]> => bff.get<ListResponse<DeploymentTrackImage>>(`/components/${seg(componentId)}/releases`).then(items);
 
 export const deployDeploymentTrack = (input: DeployDeploymentTrackInput): Promise<string> => bff.post<MessageResponse>(`/components/${seg(input.componentId)}/deployments`, input).then((r) => r?.message ?? '');

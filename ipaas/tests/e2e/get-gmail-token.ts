@@ -19,15 +19,9 @@ if (!CREDENTIALS_PATH) {
   process.exit(1);
 }
 
-const { installed } = JSON.parse(
-  (await import('fs')).readFileSync(CREDENTIALS_PATH, 'utf8')
-) as { installed: { client_id: string; client_secret: string; redirect_uris: string[] } };
+const { installed } = JSON.parse((await import('fs')).readFileSync(CREDENTIALS_PATH, 'utf8')) as { installed: { client_id: string; client_secret: string; redirect_uris: string[] } };
 
-const oauth2Client = new google.auth.OAuth2(
-  installed.client_id,
-  installed.client_secret,
-  installed.redirect_uris[0]
-);
+const oauth2Client = new google.auth.OAuth2(installed.client_id, installed.client_secret, installed.redirect_uris[0]);
 
 const authUrl = oauth2Client.generateAuthUrl({
   access_type: 'offline',
@@ -41,8 +35,8 @@ console.log('\n' + authUrl + '\n');
 console.log('================================================\n');
 
 const rl = createInterface({ input: process.stdin, output: process.stdout });
-const code: string = await new Promise(resolve => {
-  rl.question('Paste the authorization code here: ', answer => {
+const code: string = await new Promise((resolve) => {
+  rl.question('Paste the authorization code here: ', (answer) => {
     rl.close();
     resolve(answer.trim());
   });

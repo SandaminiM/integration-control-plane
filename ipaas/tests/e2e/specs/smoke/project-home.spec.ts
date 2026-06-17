@@ -54,7 +54,7 @@ test.describe('project home @smoke', () => {
   // Create integration flow — TODO
   // -------------------------------------------------------------------------
 
-  test.skip('clicking Create an Integration opens the editor', async ({ page }) => {
+  test.skip('clicking Create an Integration opens the editor', async () => {
     // TODO: "Create an Integration" now opens the Cloud Editor instead of navigating
     // to /components/new — re-enable once the navigation flow is finalized.
   });

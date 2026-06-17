@@ -45,7 +45,6 @@ import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ChevronsLeft, Chevro
 import { useEffect, useMemo, useState } from 'react';
 import { useComponentEndpoints } from '../hooks/useComponents';
 import { useApimApi, useUpdateApimApi } from '../hooks/useApim';
-import type { ApimApiInfo } from '../types/apim';
 
 const OAUTH2 = 'oauth2';
 const API_KEY = 'api_key';

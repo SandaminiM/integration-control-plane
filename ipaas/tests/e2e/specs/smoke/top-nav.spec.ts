@@ -51,7 +51,7 @@ test.describe('top nav @smoke', () => {
   // Org card dropdown — TODO
   // -------------------------------------------------------------------------
 
-  test.skip('org card dropdown opens organization switcher', async ({ page }) => {
+  test.skip('org card dropdown opens organization switcher', async () => {
     // TODO: the ▼ caret on the org card opens an org switcher — not yet tested.
   });
 });
