@@ -53,6 +53,9 @@ const ImportIntegration = lazy(() => import('../pages/ImportIntegration'));
 const McpProxyFromApi = lazy(() => import('../pages/McpProxyFromApi'));
 const McpPolicies = lazy(() => import('../pages/McpPolicies'));
 const McpTest = lazy(() => import('../pages/McpTest'));
+const OrgCdPipelines = lazy(() => import('../pages/OrgCdPipelines'));
+const ProjectCdPipelines = lazy(() => import('../pages/ProjectCdPipelines'));
+const CdPipelineEditor = lazy(() => import('../pages/CdPipelineEditor'));
 const BrowseSamples = lazy(() => import('../pages/BrowseSamples'));
 const BrowsePrebuiltIntegrations = lazy(() => import('../pages/BrowsePrebuiltIntegrations'));
 const PrebuiltIntegrationSetup = lazy(() => import('../pages/PrebuiltIntegrationSetup'));
@@ -151,7 +154,9 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/admin/genai-services', element: <ComingSoon title="Coming Soon" description="GenAI Services management is currently under development." /> },
               { path: 'organizations/:orgHandler/admin/config-groups', element: <ComingSoon title="Coming Soon" description="Config Groups management is currently under development." /> },
               { path: 'organizations/:orgHandler/admin/governance', element: <ComingSoon title="Coming Soon" description="Governance management is currently under development." /> },
-              { path: 'organizations/:orgHandler/admin/cd-pipelines', element: <ComingSoon title="Coming Soon" description="CD Pipelines management is currently under development." /> },
+              { path: 'organizations/:orgHandler/admin/cd-pipelines', element: createElement(withScope(OrgCdPipelines, ['organizations'])) },
+              { path: 'organizations/:orgHandler/admin/cd-pipelines/new', element: <CdPipelineEditor /> },
+              { path: 'organizations/:orgHandler/admin/cd-pipelines/:pipelineId/edit', element: <CdPipelineEditor /> },
               { path: 'organizations/:orgHandler/admin/data-planes', element: <ComingSoon title="Coming Soon" description="Data Planes management is currently under development." /> },
               { path: 'organizations/:orgHandler/admin/audit-logs', element: <ComingSoon title="Coming Soon" description="Audit Logs are currently under development." /> },
               { path: 'organizations/:orgHandler/admin/approvals', element: <ComingSoon title="Coming Soon" description="Approvals management is currently under development." /> },
@@ -171,7 +176,7 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections', element: <ComingSoon title="Coming Soon" description="Connections management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/third-party-services', element: <ComingSoon title="Coming Soon" description="Third Party Services management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/gen-ai-services', element: <ComingSoon title="Coming Soon" description="GenAI Services management is currently under development." /> },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/cd-pipelines', element: <ComingSoon title="Coming Soon" description="CD Pipelines management is currently under development." /> },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/cd-pipelines', element: createElement(withScope(ProjectCdPipelines, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/devops/environments', element: createElement(withScope(Environments, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/settings', element: <ComingSoon title="Coming Soon" description="Settings are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/settings/project-overview', element: <ComingSoon title="Coming Soon" description="Project settings are currently under development." /> },

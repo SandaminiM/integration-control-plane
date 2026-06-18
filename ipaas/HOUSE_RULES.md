@@ -8,3 +8,4 @@
 - No string URLs/paths anywhere except in paths.ts
 - Don't trivially ignore empty/null/undefined cases. eg `name ?? ""`, `x ? .. : null`, `x!.y`. Try to make it impossible by redefining the type or adding a guards.
 - Effects let you “step outside” of React. If there is no external system involved, you shouldn’t need an Effect.
+- Oxygen-ui implementation and Devant share the same backend. Any endpoint/capability/data available to Devant is available to Oxygen-ui implementation too — use Devant as the reference and replicate its exact calls (paths, payloads, query params); never assume a feature that is available in Devant is unavailable on the backend for Oxygen-ui implementation.

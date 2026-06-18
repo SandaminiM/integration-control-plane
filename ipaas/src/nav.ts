@@ -148,6 +148,16 @@ export function newEnvironmentUrl(scope: { org: string }): string {
   return `/organizations/${scope.org}/environments/new`;
 }
 
+export function orgCdPipelinesUrl(scope: { org: string }): string {
+  return `/organizations/${scope.org}/admin/cd-pipelines`;
+}
+
+/** The org-level CD pipeline create/edit flow (edit when a `pipelineId` is given). */
+export function cdPipelineEditorUrl(scope: { org: string }, pipelineId?: string): string {
+  const base = orgCdPipelinesUrl(scope);
+  return pipelineId ? `${base}/${pipelineId}/edit` : `${base}/new`;
+}
+
 export function newComponentUrl(scope: { org: string; project: string }): string {
   return `/organizations/${scope.org}/projects/${scope.project}/components/new`;
 }
