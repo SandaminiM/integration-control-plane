@@ -58,6 +58,8 @@ export default function CopilotChatWindow(): JSX.Element {
   const { isAiCopilotLoading, isStreaming, answer, apiChatExecutionResult, sendMessage, trackingId, abortControllerRef } = useCopilot();
   const isStreamingRef = useRef(isStreaming);
   isStreamingRef.current = isStreaming;
+  const autoScrollEnabledRef = useRef(autoScrollEnabled);
+  autoScrollEnabledRef.current = autoScrollEnabled;
 
   const handleStopGenerating = () => {
     setIsCopilotTerminating(true);
@@ -75,11 +77,11 @@ export default function CopilotChatWindow(): JSX.Element {
           next[next.length - 1] = { ...next[next.length - 1], content: { data: answer.join('') } };
           return next;
         }
-        if (!autoScrollEnabled) setAutoScrollEnabled(true);
+        if (!autoScrollEnabledRef.current) setAutoScrollEnabled(true);
         return [...prev, { id: generateUUID(), content: { data: answer.join('') }, fromUser: false, type: MessageType.REGULAR }];
       });
     }
-  }, [answer]);
+  }, [answer, abortControllerRef, setMessages]);
 
   // Sync API chat execution results into messages
   useEffect(() => {
@@ -92,11 +94,11 @@ export default function CopilotChatWindow(): JSX.Element {
           next[next.length - 1].content.data = [...(next[next.length - 1].content.data as ApiChatExecutionResult[]), capturedResult];
           return next;
         }
-        if (!autoScrollEnabled) setAutoScrollEnabled(true);
+        if (!autoScrollEnabledRef.current) setAutoScrollEnabled(true);
         return [...prev, { id: generateUUID(), content: { data: [capturedResult] }, fromUser: false, type: MessageType.APICHAT }];
       });
     }
-  }, [apiChatExecutionResult]);
+  }, [apiChatExecutionResult, abortControllerRef, setMessages]);
 
   // Auto-scroll to bottom as new messages arrive
   useEffect(() => {

@@ -29,6 +29,7 @@ export type DeploymentStatus = (typeof DeploymentStatus)[keyof typeof Deployment
 export interface ReleaseMgtDeploymentRef {
   releaseMgtReleaseId: string;
   releaseMgtDeploymentId: string;
+  releaseMgtReleaseName?: string;
 }
 
 export interface ComponentDeployment {

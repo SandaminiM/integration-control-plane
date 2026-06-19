@@ -48,6 +48,7 @@ export default function DeployEnvironmentCardBody({
   scheduleDescription,
   nextRunLabel,
   releaseId,
+  releaseName,
   isLoading,
   isImageLoading = false,
   deployedImage,
@@ -124,9 +125,12 @@ export default function DeployEnvironmentCardBody({
       {hasBuildInfo && (
         <Stack gap={1}>
           <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Typography variant="body2" fontWeight={600}>
-              {buildSectionLabel}
-            </Typography>
+            <Stack direction="row" alignItems="center" gap={0.5}>
+              <Typography variant="body2" fontWeight={600}>
+                {releaseName ? 'Release' : buildSectionLabel}
+              </Typography>
+              {releaseName && <Chip variant="outlined" size="small" label={releaseName} sx={{ height: 18, fontSize: '0.65rem', borderRadius: 0.75 }} />}
+            </Stack>
             <Button variant="text" size="small" startIcon={<Clock size={13} />} sx={{ color: 'text.secondary', fontSize: '0.75rem', p: 0.5 }} onClick={onHistoryClick}>
               History
             </Button>

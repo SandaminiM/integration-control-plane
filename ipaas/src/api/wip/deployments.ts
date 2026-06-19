@@ -30,7 +30,7 @@ const COMPONENT_DEPLOYMENT_QUERY = `
   query GetComponentDeployment($orgHandler: String!, $orgUuid: String!, $componentId: String!, $versionId: String!, $environmentId: String!) {
     componentDeployment(orgHandler: $orgHandler, orgUuid: $orgUuid, componentId: $componentId, versionId: $versionId, environmentId: $environmentId) {
       releaseId, cron, cronTimezone, deploymentStatusV2, invokeUrl, imageUrl, configCount,
-      releaseMgtDeployment { releaseMgtReleaseId, releaseMgtDeploymentId },
+      releaseMgtDeployment { releaseMgtReleaseId, releaseMgtDeploymentId, releaseMgtReleaseName },
       build { buildId, deployedAt, runId, commit { sha, message, isLatest, author { name, date, email, avatarUrl } } }
     }
   }`;
