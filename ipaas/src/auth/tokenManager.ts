@@ -91,7 +91,7 @@ export function clearTokens(): void {
   localStorage.removeItem(REFRESH_TOKEN_EXPIRES_AT_KEY);
 }
 
-// Shared single-flight Asgardeo token refresh — ensures refreshOidcAccessToken and
+// Shared single-flight WSO2 Identity Platform token refresh — ensures refreshOidcAccessToken and
 // getOrRefreshAsgardeoToken never race on the same refresh token.
 async function doAsgardeoRefresh(): Promise<AsgardeoTokenData | null> {
   const cached = getAsgardeoToken();
@@ -118,7 +118,7 @@ async function doAsgardeoRefresh(): Promise<AsgardeoTokenData | null> {
         if (res.status === 401 || res.status === 403) {
           throw new Error(`Asgardeo refresh auth failure: ${res.status}`);
         }
-        console.warn('[tokenManager] Asgardeo token refresh transient error:', res.status);
+        console.warn('[tokenManager] WSO2 Identity Platform token refresh transient error:', res.status);
         return null;
       }
       const data: AsgardeoTokenData = await res.json();
@@ -129,7 +129,7 @@ async function doAsgardeoRefresh(): Promise<AsgardeoTokenData | null> {
       return data;
     } catch (err) {
       if (err instanceof Error && err.message.startsWith('Asgardeo refresh auth failure')) throw err;
-      console.warn('[tokenManager] Asgardeo token refresh error:', err);
+      console.warn('[tokenManager] WSO2 Identity Platform token refresh error:', err);
       return null;
     }
   })().finally(() => {
@@ -139,8 +139,8 @@ async function doAsgardeoRefresh(): Promise<AsgardeoTokenData | null> {
   return asgardeoRefreshPromise;
 }
 
-// Returns the raw Asgardeo token (needed for APIs that don't accept STS tokens).
-// Falls back to a fresh Asgardeo token via doAsgardeoRefresh if nothing is cached.
+// Returns the raw WSO2 Identity Platform token (needed for APIs that don't accept STS tokens).
+// Falls back to a fresh WSO2 Identity Platform token via doAsgardeoRefresh if nothing is cached.
 export async function getOrRefreshAsgardeoToken(): Promise<string | null> {
   try {
     const data = await doAsgardeoRefresh();
@@ -171,12 +171,12 @@ export function clearOidcAuthMetadata(): void {
 async function refreshOidcAccessToken(refreshToken: string): Promise<void> {
   const { stsTokenEndpoint, stsClientId, stsScope, choreoOrgApiUrl } = window.API_CONFIG;
 
-  // Step 1: Refresh Asgardeo access token (serialized with getOrRefreshAsgardeoToken)
+  // Step 1: Refresh WSO2 Identity Platform access token (serialized with getOrRefreshAsgardeoToken)
   let tokenData: AsgardeoTokenData | null;
   try {
     tokenData = await doAsgardeoRefresh();
   } catch {
-    // Definitive auth failure (401/403 from Asgardeo)
+    // Definitive auth failure (401/403 from WSO2 Identity Platform)
     clearTokens();
     onAuthFailure?.();
     return;
@@ -278,7 +278,7 @@ export async function refreshAccessToken(): Promise<void> {
     }
 
     // Check if this is an OIDC user — skip local backend entirely to prevent
-    // clearTokens() being called when the backend correctly rejects the Asgardeo token.
+    // clearTokens() being called when the backend correctly rejects the WSO2 Identity Platform token.
     let isOidcSession = false;
     try {
       const stored = localStorage.getItem('icp_user');

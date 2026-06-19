@@ -8,7 +8,7 @@ Playwright-based smoke tests for the WIP (formerly Devant) product, targeting `h
 
 ```
 tests/e2e/
-  global.setup.ts          # Logs in once via Asgardeo, saves auth state to .auth/user.json
+  global.setup.ts          # Logs in once via WSO2 Identity Platform, saves auth state to .auth/user.json
   pages/                   # Page-object models (one file per page)
     LoginPage.ts
     OrgHomePage.ts
@@ -35,7 +35,7 @@ tests/e2e/
 
 2. **Test user account**
 
-   You need a dedicated Asgardeo account for tests — never use a personal account.
+   You need a dedicated WSO2 Identity Platform account for tests — never use a personal account.
 
    | What | Value |
    |------|-------|
@@ -142,8 +142,8 @@ GitHub disables scheduled workflows on forks by default. After pushing:
 **`Not on an org page` error in OrgHomePage**
 → The test user has no org yet. Sign in manually at the app and create one.
 
-**Asgardeo login selectors fail in `global.setup.ts`**
-→ Run with `--headed` and watch the Asgardeo login page. Inspect the username/password field IDs and update the locator strings in `global.setup.ts` lines ~20–26.
+**WSO2 Identity Platform login selectors fail in `global.setup.ts`**
+→ Run with `--headed` and watch the WSO2 Identity Platform login page. Inspect the username/password field IDs and update the locator strings in `global.setup.ts` lines ~20–26.
 
 **Tests pass locally but fail in CI**
 → Check the uploaded `playwright-report` artifact in the GitHub Actions run. Traces and videos are saved on failure.

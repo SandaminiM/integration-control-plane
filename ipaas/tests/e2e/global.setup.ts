@@ -25,7 +25,7 @@ setup('authenticate', async ({ page }) => {
   // Record time before triggering sign-in so we only read OTPs that arrive after this point.
   const beforeSignIn = Date.now();
 
-  // Wait until we reach Asgardeo — its URL also contains "/login" so we can't match on pathname.
+  // Wait until we reach WSO2 Identity Platform — its URL also contains "/login" so we can't match on pathname.
   await Promise.all([
     page.waitForURL((url) => url.hostname.includes('asgardeo.io'), {
       timeout: 30_000,
@@ -34,12 +34,12 @@ setup('authenticate', async ({ page }) => {
     page.getByRole('button', { name: 'Sign in with Email' }).click(),
   ]);
 
-  // Asgardeo identifier-first flow: enter email → Continue
+  // WSO2 Identity Platform identifier-first flow: enter email → Continue
   await page.getByPlaceholder('Enter your email').waitFor({ state: 'visible', timeout: 15_000 });
   await page.getByPlaceholder('Enter your email').fill(username);
   await page.getByRole('button', { name: 'Continue' }).click();
 
-  // After Continue, Asgardeo either navigates to email_otp.do or stays on login.do with a password field.
+  // After Continue, WSO2 Identity Platform either navigates to email_otp.do or stays on login.do with a password field.
   // We cannot use url.includes('login.do') as a condition — it resolves immediately since we're already there.
   const wentToOTP = await page
     .waitForURL((url) => url.pathname.includes('email_otp'), {
@@ -65,7 +65,7 @@ setup('authenticate', async ({ page }) => {
     await page.locator('#loginButton, button[type="submit"], input[type="submit"]').first().click();
   }
 
-  // Asgardeo → app /signin callback → org page.
+  // WSO2 Identity Platform → app /signin callback → org page.
   // New users land on /account-register first; existing users go straight to /organizations/...
   await page.waitForURL(/account-register|\/organizations\/[^/]+/, {
     timeout: 90_000,

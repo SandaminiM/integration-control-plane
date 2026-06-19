@@ -187,14 +187,13 @@ export default function Signup(): JSX.Element {
             </Box>
           </Box>
 
-          {/* Asgardeo branding */}
+          {/* WSO2 Identity Platform branding */}
           <Box sx={{ width: '100%', maxWidth: 360, mx: 'auto', mt: 3, pt: 2, borderTop: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
             <Typography variant="caption" color="text.secondary">
               Identity Management powered by{' '}
               <Link href="https://asgardeo.io" target="_blank" rel="noopener noreferrer" underline="hover" color="primary" sx={{ fontWeight: 600 }}>
-                ASGARDEO
+                WSO2 Identity Platform
               </Link>{' '}
-              by WSO2
             </Typography>
           </Box>
         </Grid>
