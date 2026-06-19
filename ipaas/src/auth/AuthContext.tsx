@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     });
   }, [navigate, queryClient]);
 
-  // Bootstrap the Asgardeo token for existing sessions that pre-date saveAsgardeoToken.
+  // Bootstrap the WSO2 Identity Platform token for existing sessions that pre-date saveAsgardeoToken.
   // Runs once on mount; no-ops if already cached or if not an OIDC session.
   useEffect(() => {
     if (isAuthenticated && !getAsgardeoToken()) {
@@ -160,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     const codeVerifier = getAndClearCodeVerifier();
     if (!codeVerifier) throw new Error('Missing PKCE code verifier. Please try logging in again.');
 
-    // Step 1: Exchange auth code for Asgardeo tokens
+    // Step 1: Exchange auth code for WSO2 Identity Platform tokens
     const tokenRes = await fetch(asgardeoTokenEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -234,10 +234,10 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       return { isNewUser: false };
     }
 
-    // Asgardeo's super-tenant — not a real ICP org, always skip.
+    // WSO2 Identity Platform's super-tenant — not a real ICP org, always skip.
     const ASGARDEO_SUPER_TENANT = 'carbon.super';
 
-    // Step 2: Call validate/user (accepts raw Asgardeo token) to get the org handle.
+    // Step 2: Call validate/user (accepts raw WSO2 Identity Platform token) to get the org handle.
     // This is the primary org-discovery method. Falls back to STS-based lookup if unavailable.
     const userMgtBaseUrl = choreoOrgApiUrl?.replace('/orgs/1.0.0', '/user-mgt/1.0.0');
     let orgHandle: string | undefined;
@@ -298,7 +298,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
             registrationToken = ((await baseStsRes.json()) as { access_token: string }).access_token;
           }
         } catch {
-          /* use asgardeo token */
+          /* use WSO2 Identity Platform token */
         }
       }
       saveTokens({ token: registrationToken, expiresIn: 3600, refreshToken: tokenData.refresh_token ?? '', refreshTokenExpiresIn: 86400 });
@@ -390,7 +390,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
             return { isNewUser: true };
           }
         } else {
-          // STS unavailable — try orgs API with Asgardeo token directly (best-effort).
+          // STS unavailable — try orgs API with WSO2 Identity Platform token directly (best-effort).
           const orgResult = await fetchOrgHandle(asgardeoToken);
           if (orgResult && orgResult !== 'empty') {
             orgHandle = orgResult.handle;
@@ -427,7 +427,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
           } else if (orgStsRes.status < 500) {
             throw new Error(`Org-scoped STS exchange failed (${orgStsRes.status}): ${await orgStsRes.text()}`);
           } else {
-            console.warn(`[auth] Org-scoped STS unavailable (${orgStsRes.status}), using Asgardeo token`);
+            console.warn(`[auth] Org-scoped STS unavailable (${orgStsRes.status}), using WSO2 Identity Platform token`);
           }
         } catch (err) {
           if (err instanceof Error && err.message.startsWith('Org-scoped STS exchange failed')) throw err;

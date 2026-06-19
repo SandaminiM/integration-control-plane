@@ -154,7 +154,7 @@ test.describe('sign-in flows', () => {
   });
 
   test.skip('Sign in with Enterprise ID — redirects to enterprise IDP', async () => {
-    // TODO: Needs an enterprise IDP configured in Asgardeo.
+    // TODO: Needs an enterprise IDP configured in WSO2 Identity Platform.
     //       Set E2E_ENTERPRISE_USERNAME / E2E_ENTERPRISE_PASSWORD before enabling.
   });
 });

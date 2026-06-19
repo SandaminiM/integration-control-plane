@@ -38,7 +38,7 @@ export default function ProtectedRoute(): JSX.Element {
     }
 
     if (isOidcUser) {
-      // OIDC users are authorized by Choreo/Asgardeo with an org-scoped STS token.
+      // OIDC users are authorized by Choreo/WSO2 Identity Platform with an org-scoped STS token.
       // The local ICP permission backend does not apply — grant all ipass permissions.
       setOrgPermissions(Object.values(Permissions));
       return;
