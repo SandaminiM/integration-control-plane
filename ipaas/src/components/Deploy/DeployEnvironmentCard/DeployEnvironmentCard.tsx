@@ -315,6 +315,7 @@ export default function DeployEnvironmentCard({
             scheduleDescription={scheduleDescription}
             nextRunLabel={nextRunLabel}
             releaseId={releaseId}
+            releaseName={deployment?.releaseMgtDeployment?.releaseMgtReleaseName ?? ''}
             isLoading={isLoading || isRefreshing}
             isImageLoading={refetchingImages}
             deployedImage={deployedImage}

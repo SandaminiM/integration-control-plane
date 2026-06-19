@@ -92,6 +92,7 @@ export interface DeployEnvironmentCardBodyProps {
   scheduleDescription: string | null;
   nextRunLabel: string | null;
   releaseId: string;
+  releaseName: string;
   isLoading: boolean;
   isImageLoading?: boolean;
   deployedImage: DeploymentTrackImage | null;
