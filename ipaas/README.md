@@ -135,7 +135,7 @@ pnpm test:e2e:report    # open last HTML report
 
 ## Project Structure
 
-```
+```text
 src/
   auth/          # AuthContext, OIDC token flow, STS exchange
   config/        # routes.tsx — all app routes
