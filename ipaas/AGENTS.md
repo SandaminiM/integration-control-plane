@@ -38,7 +38,7 @@ Every feature follows a strict four-layer separation. Violating these boundaries
 
 types/      ← imported by any layer, never imports from any layer
 constants/  ← same
-utils/      ← same
+utils/      ← same; every file has a co-located *.test.ts Vitest unit test
 config/     ← same
 ```
 
@@ -186,7 +186,7 @@ src/
   constants/        Static lookup tables, style constants, route constants
   contexts/         React context providers (non-server state only)
   layouts/          App shell and layout wrappers
-  utils/            Pure utility functions (no React, no API calls)
+  utils/            Pure utility functions (no React, no API calls); each file has a co-located *.test.ts — run with pnpm test:unit
   assets/           SVG icons and static assets
   mock-data/        Local mock fixtures for development
 ```
@@ -204,3 +204,4 @@ src/
 - **Do not import from `src/api/wip/` (or `cloud/`/`icp/`) directly.** Always use the `#api/<domain>` alias so the build picks the correct product.
 - **Do not put a product variant file in `src/components/` or `src/pages/`.** Product-specific whole-component variants go in `src/product/<product>/`.
 - **Do not add new API functions only to `src/api/wip/`.** Add a matching stub to `cloud/` and `icp/` too, and update `src/api/contracts.ts` — otherwise `_check.ts` will fail to compile.
+- **When adding a new file to `src/utils/`, also add a co-located `*.test.ts`.** Pure utility functions must have unit tests; run `pnpm test:unit` to verify.
