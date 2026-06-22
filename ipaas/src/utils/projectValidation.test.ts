@@ -1,0 +1,92 @@
+import { describe, it, expect } from 'vitest';
+import { PROJECT_HANDLER_MAX_LENGTH, PROJECT_NAME_MIN_LENGTH } from '../constants/project';
+import { validateProjectName, validateProjectHandler, normalizeProjectError } from './projectValidation';
+
+describe('validateProjectName', () => {
+  it('returns error for empty string', () => {
+    expect(validateProjectName('')).toBe('Display name is required.');
+    expect(validateProjectName('   ')).toBe('Display name is required.');
+  });
+
+  it('returns error when shorter than minimum length', () => {
+    const short = 'ab'; // 2 chars, min is 3
+    expect(validateProjectName(short)).toContain(`${PROJECT_NAME_MIN_LENGTH}`);
+  });
+
+  it('returns error when name does not start with a letter', () => {
+    expect(validateProjectName('1project')).not.toBeNull();
+    expect(validateProjectName('-project')).not.toBeNull();
+  });
+
+  it('returns error for invalid characters', () => {
+    expect(validateProjectName('My@Project')).not.toBeNull();
+    expect(validateProjectName('proj#name')).not.toBeNull();
+  });
+
+  it('returns null for valid names', () => {
+    expect(validateProjectName('My Project')).toBeNull();
+    expect(validateProjectName('Project-123')).toBeNull();
+    expect(validateProjectName('A_b c')).toBeNull();
+  });
+});
+
+describe('validateProjectHandler', () => {
+  it('returns error for empty string', () => {
+    expect(validateProjectHandler('')).toBe('Name is required.');
+  });
+
+  it('returns error when longer than max length', () => {
+    const long = 'a'.repeat(PROJECT_HANDLER_MAX_LENGTH + 1);
+    expect(validateProjectHandler(long)).toContain(`${PROJECT_HANDLER_MAX_LENGTH}`);
+  });
+
+  it('returns error for uppercase letters', () => {
+    expect(validateProjectHandler('MyProject')).not.toBeNull();
+  });
+
+  it('returns error for special characters', () => {
+    expect(validateProjectHandler('my_project')).not.toBeNull();
+    expect(validateProjectHandler('my project')).not.toBeNull();
+  });
+
+  it('returns error when starting or ending with a hyphen', () => {
+    expect(validateProjectHandler('-project')).not.toBeNull();
+    expect(validateProjectHandler('project-')).not.toBeNull();
+  });
+
+  it('returns error for reserved names', () => {
+    expect(validateProjectHandler('new')).not.toBeNull();
+    expect(validateProjectHandler('settings')).not.toBeNull();
+    expect(validateProjectHandler('delete')).not.toBeNull();
+  });
+
+  it('returns null for valid handlers', () => {
+    expect(validateProjectHandler('my-project')).toBeNull();
+    expect(validateProjectHandler('project123')).toBeNull();
+    expect(validateProjectHandler('abc')).toBeNull();
+  });
+
+  it('accepts single character handler', () => {
+    // Single char doesn't hit the start/end check (length < 2)
+    expect(validateProjectHandler('a')).toBeNull();
+  });
+});
+
+describe('normalizeProjectError', () => {
+  it('humanizes "Failed to fetch"', () => {
+    const result = normalizeProjectError('Failed to fetch');
+    expect(result).toContain('Unable to connect');
+  });
+
+  it('normalizes duplicate/conflict messages', () => {
+    expect(normalizeProjectError('already taken')).toContain('already exists');
+    expect(normalizeProjectError('already exists')).toContain('already exists');
+    expect(normalizeProjectError('duplicate entry')).toContain('already exists');
+    expect(normalizeProjectError('HTTP 409 conflict')).toContain('already exists');
+  });
+
+  it('passes through unrecognized messages unchanged', () => {
+    const msg = 'Some unexpected error';
+    expect(normalizeProjectError(msg)).toBe(msg);
+  });
+});
