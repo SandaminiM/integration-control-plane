@@ -5,7 +5,7 @@
 The frontend for **WIP** (formerly Devant), WSO2's integration platform. Also builds as `cloud` and `icp` from the same source tree — controlled by the `PRODUCT` env var at build time.
 
 - Stack: Vite 7, React 19, React Router 7, TanStack Query 5, TypeScript 5, pnpm
-- Auth: Asgardeo OIDC (PKCE flow) + local username/password fallback
+- Auth: WSO2 Identity Platform OIDC (PKCE flow) + local username/password fallback
 - Runtime config: `public/config.json` (loaded at startup, not baked into the bundle)
 - Deployed WIP staging URL: `https://preview-o2-dev.devant.dev`
 
@@ -44,8 +44,8 @@ All authenticated routes are under `/organizations/:orgHandler/`. The `orgHandle
 ## Auth flow
 
 1. User clicks a sign-in button on `/login`
-2. `loginWithOIDC(fidp)` generates PKCE challenge → redirects to Asgardeo
-3. Asgardeo redirects back to `/signin` with auth code
+2. `loginWithOIDC(fidp)` generates PKCE challenge → redirects to WSO2 Identity Platform
+3. WSO2 Identity Platform redirects back to `/signin` with auth code
 4. `OIDCCallback` exchanges code → calls `validate/user` → STS token exchange
 5. Navigates to last project (localStorage) or projects/redirect
 
@@ -58,6 +58,16 @@ pnpm dev          # WIP on https://localhost:3000 (HTTPS)
 pnpm dev:cloud    # Cloud variant
 pnpm dev:icp      # ICP variant
 ```
+
+## Running unit tests
+
+```bash
+pnpm test:unit           # run once (CI / pre-push)
+pnpm test:unit:watch     # watch mode for local development
+pnpm test:unit:ui        # Vitest browser UI
+```
+
+Unit tests live alongside their source as `*.test.ts` / `*.test.tsx`. The current suite covers all utility modules in `src/utils/`. See `vitest.config.ts` for environment and alias setup.
 
 ## Running e2e tests
 

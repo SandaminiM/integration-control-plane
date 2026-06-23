@@ -90,10 +90,10 @@ nginx -g 'daemon off;'
 Run the development server:
 
 ```bash
-pnpm dev
+pnpm dev          # WIP on https://localhost:3000 (HTTPS)
+pnpm dev:cloud    # Cloud variant
+pnpm dev:icp      # ICP variant
 ```
-
-Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ### Build
 
@@ -109,19 +109,49 @@ Preview the production build:
 pnpm preview
 ```
 
+## Testing
+
+### Unit tests (Vitest)
+
+Fast, isolated tests for pure utility functions. Runs in under 2 seconds — use these for PR checks.
+
+```bash
+pnpm test:unit          # run once (CI / pre-push)
+pnpm test:unit:watch    # watch mode for local development
+pnpm test:unit:ui       # Vitest browser UI
+```
+
+Test files live alongside their source under `src/` and follow the `*.test.ts` / `*.test.tsx` naming convention. The current suite covers utility modules in `src/utils/` (time, deploy, string, cron, validation, and more). See `vitest.config.ts` for environment and alias configuration.
+
+### E2E tests (Playwright)
+
+Smoke tests targeting the live staging environment. See [`tests/e2e/README.md`](tests/e2e/README.md) for full setup and usage.
+
+```bash
+pnpm test:e2e           # run smoke suite
+pnpm test:e2e:ui        # interactive Playwright UI
+pnpm test:e2e:report    # open last HTML report
+```
+
 ## Project Structure
 
-```
-oxygen-ui-test-app/
-├── src/
-│   ├── App.tsx           # Main application component
-│   ├── main.tsx          # Application entry point
-│   └── ...
-├── public/               # Static assets
-├── index.html
-├── vite.config.ts        # Vite configuration
-├── tsconfig.json         # TypeScript configuration
-└── package.json
+```text
+src/
+  auth/          # AuthContext, OIDC token flow, STS exchange
+  config/        # routes.tsx — all app routes
+  layouts/       # AppLayout, PublicLayout, PolicyLayout
+  pages/         # One file per page/route
+  components/    # Shared and composite components
+  hooks/         # Custom React hooks
+  contexts/      # React context providers
+  api/           # API call modules (product-specific under api/wip/, api/cloud/, api/icp/)
+  product/       # Product-specific components (resolved via #product/ alias)
+  utils/         # Pure utility functions (each has a *.test.ts companion)
+  types/         # TypeScript interfaces and types
+  constants/     # App-wide constants
+public/
+  config.json    # Runtime config (API URLs, auth client ID — not baked into the bundle)
+tests/e2e/       # Playwright smoke suite
 ```
 
 ## Using Oxygen UI Components
