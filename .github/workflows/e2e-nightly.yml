@@ -76,7 +76,12 @@ jobs:
 
       - name: Notify on failure
         if: failure()
+        env:
+          BRANCH: ${{ inputs.branch || 'devant-migration' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
+          PAYLOAD=$(jq -n --arg branch "$BRANCH" --arg url "$RUN_URL" \
+            '{"text": "🔴 WIP E2E nightly failed on `\($branch)`. <\($url)|View run>"}')
           curl -s -X POST "${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
-            -d "{\"text\": \"🔴 WIP E2E nightly failed on \`${{ inputs.branch || 'devant-migration' }}\`. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>\"}"
+            -d "$PAYLOAD"
