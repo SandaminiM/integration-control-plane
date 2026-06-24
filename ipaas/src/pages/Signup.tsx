@@ -80,10 +80,11 @@ export default function Signup(): JSX.Element {
     <Box sx={{ height: '100vh', display: 'flex' }}>
       <Grid container sx={{ flex: 1 }}>
         {/* Left marketing panel */}
-        <AuthMarketingPanel />
+        <AuthMarketingPanel key="marketing-panel" />
 
         {/* Right panel — sign-up form */}
         <Grid
+          key="signup-panel"
           size={{ xs: 12, md: 4 }}
           sx={{
             display: 'flex',

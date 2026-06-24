@@ -76,12 +76,7 @@ jobs:
 
       - name: Notify on failure
         if: failure()
-        uses: slackapi/slack-github-action@v1
-        with:
-          payload: |
-            {
-              "text": ":red_circle: WIP E2E nightly failed on `${{ inputs.branch || 'devant-migration' }}`. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.E2E_SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+        run: |
+          curl -s -X POST "${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"text\": \"🔴 WIP E2E nightly failed on \`${{ inputs.branch || 'devant-migration' }}\`. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>\"}"

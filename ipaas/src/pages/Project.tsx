@@ -725,7 +725,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
   const isEmpty = !loadingComponents && components.length === 0;
 
   return (
-    <PageContent sx={{ 'container-type': 'inline-size' }}>
+    <PageContent sx={{ containerType: 'inline-size' }}>
       <Stack component="header" direction="row" alignItems="center" gap={2} sx={{ mb: isEmpty ? 3 : 4 }}>
         <Avatar sx={{ width: 56, height: 56, fontSize: 24, bgcolor: 'text.primary', color: 'background.paper' }}>{project?.name?.[0]?.toUpperCase() ?? 'P'}</Avatar>
         <div>

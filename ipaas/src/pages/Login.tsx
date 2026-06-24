@@ -67,10 +67,11 @@ export default function Login(): JSX.Element {
     <Box sx={{ height: '100vh', display: 'flex' }}>
       <Grid container sx={{ flex: 1 }}>
         {/* Left marketing panel */}
-        <AuthMarketingPanel />
+        <AuthMarketingPanel key="marketing-panel" />
 
         {/* Right sign-in panel */}
         <Grid
+          key="signin-panel"
           size={{ xs: 12, md: 4 }}
           sx={{
             display: 'flex',
