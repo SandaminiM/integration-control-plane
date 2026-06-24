@@ -16,11 +16,11 @@
  * under the License.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { type JSX } from 'react';
 import { Alert, Box, Button, CircularProgress, ColorSchemeImage, Divider, Grid, Link, Stack, Typography } from '@wso2/oxygen-ui';
 import { Building2, GitHub, Google, Mail } from '@wso2/oxygen-ui-icons-react';
-import { Link as NavLink } from 'react-router';
+import { Link as NavLink, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { privacyPolicyUrl, signupUrl } from '../paths';
 import AuthMarketingPanel from '../components/AuthMarketingPanel';
@@ -45,10 +45,21 @@ function friendlyError(err: unknown): string {
 export default function Login(): JSX.Element {
   const base = import.meta.env.BASE_URL;
   const { loginWithOIDC } = useAuth();
+  const [searchParams] = useSearchParams();
 
   const [loading, setLoading] = useState(false);
   const [provider, setProvider] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // After email signup, Asgardeo redirects here with method=basic. Auto-trigger
+  // login without fidp so Asgardeo reuses the active session from org creation
+  // rather than requiring LOCAL (password) auth which new accounts don't have.
+  useEffect(() => {
+    if (searchParams.get('method') === 'basic') {
+      setLoading(true);
+      loginWithOIDC().catch(() => setLoading(false));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSignIn = async (fidp: string) => {
     setError(null);
