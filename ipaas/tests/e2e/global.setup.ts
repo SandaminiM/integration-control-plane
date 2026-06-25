@@ -1,12 +1,15 @@
 import { expect, test as setup } from '@playwright/test';
-import { writeFile } from 'fs/promises';
+import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { waitForOTP } from './helpers/gmail.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const AUTH_FILE = path.join(__dirname, '../../.auth/user.json');
-const CONTEXT_FILE = path.join(__dirname, '../../.auth/context.json');
+const AUTH_DIR = path.join(__dirname, '../../.auth');
+const AUTH_FILE = path.join(AUTH_DIR, 'user.json');
+const CONTEXT_FILE = path.join(AUTH_DIR, 'context.json');
+
+await mkdir(AUTH_DIR, { recursive: true });
 
 // The full flow involves multiple cross-domain redirects. Allow extra time for slow staging servers.
 setup.setTimeout(180_000);

@@ -57,7 +57,7 @@ export default function Login(): JSX.Element {
   useEffect(() => {
     if (searchParams.get('method') === 'basic') {
       setLoading(true);
-      loginWithOIDC().catch(() => setLoading(false));
+      loginWithOIDC().catch((err) => { setLoading(false); setError(friendlyError(err)); });
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
