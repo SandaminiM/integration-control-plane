@@ -30,7 +30,7 @@ const authUrl = oauth2Client.generateAuthUrl({
 });
 
 console.log('\n================================================');
-console.log('Open this URL in your browser and sign in as zenitsukmtsu@gmail.com:');
+console.log('Open this URL in your browser and sign in as integration-e2e-test-bot@wso2.com:');
 console.log('\n' + authUrl + '\n');
 console.log('================================================\n');
 

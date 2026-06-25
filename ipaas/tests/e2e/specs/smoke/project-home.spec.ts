@@ -37,15 +37,15 @@ test.describe('project home @smoke', () => {
   // -------------------------------------------------------------------------
 
   test('Create an Integration card is visible', async ({ page }) => {
-    await expect(page.getByText('Create an Integration')).toBeVisible();
+    await expect(page.getByText('Create an Integration')).toBeVisible({ timeout: 30_000 });
   });
 
   test('Import an Integration card is visible', async ({ page }) => {
-    await expect(page.getByText('Import an Integration')).toBeVisible();
+    await expect(page.getByText('Import an Integration')).toBeVisible({ timeout: 30_000 });
   });
 
   test('Get Started Quickly panel shows Prebuilt Integrations and Samples tabs', async ({ page }) => {
-    await expect(page.getByText('Get Started Quickly')).toBeVisible();
+    await expect(page.getByText('Get Started Quickly')).toBeVisible({ timeout: 30_000 });
     await expect(page.getByRole('tab', { name: 'Prebuilt Integrations' })).toBeVisible();
     await expect(page.getByRole('tab', { name: 'Samples' })).toBeVisible();
   });

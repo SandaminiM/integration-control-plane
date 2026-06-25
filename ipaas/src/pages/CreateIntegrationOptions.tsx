@@ -168,7 +168,7 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
   }
 
   return (
-    <PageContent sx={{ pt: 5, 'container-type': 'inline-size' }}>
+    <PageContent sx={{ pt: 5, containerType: 'inline-size' }}>
       <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(resourceUrl(scope, 'overview'))} sx={{ mb: 3 }}>
         Back to Project Home
       </Button>

@@ -4,6 +4,17 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@wso2/cell-diagram@0.2.0':
+    hash: 9c04121b3e3acba24df1aef9973e599659ddec80258cbec631dd427c7d5a7b4a
+    path: patches/@wso2__cell-diagram@0.2.0.patch
+  '@wso2/oxygen-ui@0.8.0':
+    hash: 3d5383ca025056f8f624da4bbc8ca85bd6bf8c44bbbc6e6fe34ff9539ea92b64
+    path: patches/@wso2__oxygen-ui@0.8.0.patch
+  lucide-react@0.545.0:
+    hash: 1a047ba4cfdf0225fdcfcc1d4ecb3f45a73d5588d8f5045248e2eb46a2b91677
+    path: patches/lucide-react@0.545.0.patch
+
 importers:
 
   .:
@@ -19,13 +30,13 @@ importers:
         version: 5.90.20(react@19.2.3)
       '@wso2/cell-diagram':
         specifier: 0.2.0
-        version: 0.2.0(@types/react@19.2.2)(pathfinding@0.4.18)(paths-js@0.4.11)(resize-observer-polyfill@1.5.1)
+        version: 0.2.0(patch_hash=9c04121b3e3acba24df1aef9973e599659ddec80258cbec631dd427c7d5a7b4a)(@types/react@19.2.2)(pathfinding@0.4.18)(paths-js@0.4.11)(resize-observer-polyfill@1.5.1)
       '@wso2/oxygen-ui':
         specifier: ^0.8.0
-        version: 0.8.0(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        version: 0.8.0(patch_hash=3d5383ca025056f8f624da4bbc8ca85bd6bf8c44bbbc6e6fe34ff9539ea92b64)(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@wso2/oxygen-ui-charts-react':
         specifier: ^0.8.0
-        version: 0.8.0(@types/react@19.2.2)(@wso2/oxygen-ui@0.8.0(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react-is@19.2.4)(react@19.2.3)(redux@5.0.1)
+        version: 0.8.0(@types/react@19.2.2)(@wso2/oxygen-ui@0.8.0(patch_hash=3d5383ca025056f8f624da4bbc8ca85bd6bf8c44bbbc6e6fe34ff9539ea92b64)(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react-is@19.2.4)(react@19.2.3)(redux@5.0.1)
       '@wso2/oxygen-ui-icons-react':
         specifier: ^0.9.1
         version: 0.9.1(react@19.2.3)
@@ -6338,7 +6349,7 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
-  '@wso2/cell-diagram@0.2.0(@types/react@19.2.2)(pathfinding@0.4.18)(paths-js@0.4.11)(resize-observer-polyfill@1.5.1)':
+  '@wso2/cell-diagram@0.2.0(patch_hash=9c04121b3e3acba24df1aef9973e599659ddec80258cbec631dd427c7d5a7b4a)(@types/react@19.2.2)(pathfinding@0.4.18)(paths-js@0.4.11)(resize-observer-polyfill@1.5.1)':
     dependencies:
       '@emotion/react': 11.14.0(@types/react@19.2.2)(react@18.3.1)
       '@emotion/styled': 11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@18.3.1)
@@ -6366,9 +6377,9 @@ snapshots:
       - resize-observer-polyfill
       - supports-color
 
-  '@wso2/oxygen-ui-charts-react@0.8.0(@types/react@19.2.2)(@wso2/oxygen-ui@0.8.0(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react-is@19.2.4)(react@19.2.3)(redux@5.0.1)':
+  '@wso2/oxygen-ui-charts-react@0.8.0(@types/react@19.2.2)(@wso2/oxygen-ui@0.8.0(patch_hash=3d5383ca025056f8f624da4bbc8ca85bd6bf8c44bbbc6e6fe34ff9539ea92b64)(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react-is@19.2.4)(react@19.2.3)(redux@5.0.1)':
     dependencies:
-      '@wso2/oxygen-ui': 0.8.0(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@wso2/oxygen-ui': 0.8.0(patch_hash=3d5383ca025056f8f624da4bbc8ca85bd6bf8c44bbbc6e6fe34ff9539ea92b64)(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
       react-is: 19.2.4
@@ -6379,10 +6390,10 @@ snapshots:
 
   '@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3)':
     dependencies:
-      lucide-react: 0.545.0(react@19.2.3)
+      lucide-react: 0.545.0(patch_hash=1a047ba4cfdf0225fdcfcc1d4ecb3f45a73d5588d8f5045248e2eb46a2b91677)(react@19.2.3)
       react: 19.2.3
 
-  '@wso2/oxygen-ui@0.8.0(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+  '@wso2/oxygen-ui@0.8.0(patch_hash=3d5383ca025056f8f624da4bbc8ca85bd6bf8c44bbbc6e6fe34ff9539ea92b64)(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
       '@emotion/react': 11.14.0(@types/react@19.2.2)(react@19.2.3)
       '@emotion/styled': 11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3)
@@ -7820,7 +7831,7 @@ snapshots:
 
   lru-cache@10.4.3: {}
 
-  lucide-react@0.545.0(react@19.2.3):
+  lucide-react@0.545.0(patch_hash=1a047ba4cfdf0225fdcfcc1d4ecb3f45a73d5588d8f5045248e2eb46a2b91677)(react@19.2.3):
     dependencies:
       react: 19.2.3
 
