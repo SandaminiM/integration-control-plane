@@ -96,7 +96,6 @@ const LOGICAL_TYPE_TO_DISPLAY_TYPE: Record<string, { bi: string; mi: string }> =
   service: { bi: 'ballerinaService', mi: 'miApiService' },
   automation: { bi: 'scheduledTask', mi: 'miCronjob' },
   eventIntegration: { bi: 'ballerinaEventHandler', mi: 'miEventHandler' },
-  aiAgent: { bi: 'aiAgent', mi: 'aiAgent' },
   proxy: { bi: 'proxy', mi: 'proxy' },
 };
 
@@ -112,19 +111,24 @@ function withFrontendDisplayType<T extends Component>(c: T): T {
   if (c.componentType === 'fileIntegration') {
     return { ...c, displayType: isMI ? 'miApiService' : 'ballerinaService', componentSubType: isMI ? 'miFileIntegration' : 'ballerinaFileIntegration' };
   }
+  if (c.componentType === 'aiAgent') {
+    return { ...c, displayType: isMI ? 'miApiService' : 'ballerinaService', componentSubType: 'aiAgent' };
+  }
+  if (c.componentType === 'mcpServer') {
+    return { ...c, displayType: isMI ? 'miApiService' : 'ballerinaService', componentSubType: 'MCP' };
+  }
   const entry = LOGICAL_TYPE_TO_DISPLAY_TYPE[c.componentType ?? ''];
   if (!entry) return c;
   return { ...c, displayType: isMI ? entry.mi : entry.bi };
 }
 
-// File integrations reuse the BI/MI service build runtime, so they arrive with
-// displayType ballerinaService/miApiService — the builder is already correct
-// from that lookup; only the OpenChoreo ComponentType differs (the
-// file-integration CR name, workloadType deployment).
 function resolveCreateMapping(input: CreateComponentInput): { componentType: string; workflow: string } {
   const mapping = DISPLAY_TYPE_MAP[input.displayType] ?? DISPLAY_TYPE_MAP.ballerinaService;
   const isFileIntegration = input.componentSubType === 'ballerinaFileIntegration' || input.componentSubType === 'miFileIntegration';
-  return isFileIntegration ? { ...mapping, componentType: 'deployment/file-integration' } : mapping;
+  if (isFileIntegration) return { ...mapping, componentType: 'deployment/file-integration' };
+  if (input.componentSubType === 'aiAgent') return { ...mapping, componentType: 'deployment/ai-agent' };
+  if (input.componentSubType === 'MCP') return { ...mapping, componentType: 'deployment/mcp-server' };
+  return mapping;
 }
 
 // Reshape the flat CreateComponentInput into the K8s-style { metadata, spec }
