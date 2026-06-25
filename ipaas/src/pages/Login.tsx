@@ -66,7 +66,7 @@ export default function Login(): JSX.Element {
     setLoading(true);
     setProvider(fidp);
     try {
-      await loginWithOIDC(fidp || undefined);
+      await loginWithOIDC(fidp);
     } catch (err) {
       setError(friendlyError(err));
       setLoading(false);
@@ -170,7 +170,7 @@ export default function Login(): JSX.Element {
                 variant="contained"
                 color="secondary"
                 startIcon={loading && provider === 'LOCAL' ? <CircularProgress size={20} color="inherit" /> : <Mail size={20} />}
-                onClick={() => handleSignIn('')}
+                onClick={() => handleSignIn('LOCAL')}
                 disabled={loading}
                 sx={{ borderRadius: '28px', py: 1.25 }}>
                 {loading && provider === 'LOCAL' ? 'Redirecting...' : 'Sign in with Email'}
