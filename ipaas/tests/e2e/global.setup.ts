@@ -18,8 +18,8 @@ setup('authenticate', async ({ page }) => {
   const username = process.env.E2E_USERNAME;
   const password = process.env.E2E_PASSWORD;
 
-  if (!username || !password) {
-    throw new Error('E2E_USERNAME and E2E_PASSWORD must be set');
+  if (!username) {
+    throw new Error('E2E_USERNAME must be set');
   }
 
   await page.goto('/login', { waitUntil: 'domcontentloaded', timeout: 120_000 });
