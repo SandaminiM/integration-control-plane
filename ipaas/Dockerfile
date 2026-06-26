@@ -14,6 +14,9 @@ RUN corepack enable pnpm && corepack install -g pnpm@10
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# patchedDependencies in package.json reference these files; pnpm reads them
+# during install, so they must be present before `pnpm install` runs.
+COPY patches/ ./patches/
 
 # Cache mount: pnpm's content-addressable store persists across builds.
 # First build still does the cold download; subsequent installs just re-link.
