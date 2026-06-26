@@ -41,7 +41,34 @@ export interface DeploymentTrack {
   autoDeployEnabled?: boolean;
   branch?: string;
   apiVersion?: string;
+  description?: string;
   latest?: boolean;
+  componentId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  versionStrategy?: string;
+}
+
+export interface CreateDeploymentTrackInput {
+  orgUuid: string;
+  componentId: string;
+  apiVersion: string;
+  branch: string;
+  description?: string;
+}
+
+/** Result of `deleteDeploymentTrack` (also used for proxy versions, which share the mutation). */
+export interface DeleteTrackResult {
+  status: string;
+  canDelete: boolean;
+  message: string;
+  encodedData?: string;
+}
+
+/** Result of `checkDeploymentTrackDeletable`. */
+export interface CheckDeletableResult {
+  canDelete: boolean;
+  message: string;
 }
 
 export interface ApiVersion {

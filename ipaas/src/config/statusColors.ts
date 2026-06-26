@@ -23,6 +23,10 @@ export const STATUS_COLORS: Record<string, 'success' | 'warning' | 'default' | '
   disconnected: 'error',
   draft: 'warning',
   archived: 'default',
+  // URL-mapping approval statuses
+  approved: 'success',
+  pending: 'warning',
+  rejected: 'error',
 };
 
 export const getStatusColor = (status: string) => STATUS_COLORS[status] || 'default';

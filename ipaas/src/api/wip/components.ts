@@ -17,7 +17,7 @@
  */
 
 import { gql } from './graphql';
-import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, DisplayType, DeleteComponentResult } from '../../types/component';
+import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, DisplayType, DeleteComponentResult, DeploymentTrack, CreateDeploymentTrackInput, DeleteTrackResult, CheckDeletableResult } from '../../types/component';
 import type { ComponentNameAvailability } from '../../types/component';
 import type { CreateMcpProxyComponentInput } from '../../types/mcpProxy';
 
@@ -319,6 +319,61 @@ export async function updateAutoDeployEnabled(input: UpdateAutoDeployInput): Pro
     description: input.description ?? '',
     enableAutoDeploy: input.enableAutoDeploy,
   }).then((d) => d.updateDeploymentTrack);
+}
+
+const CREATE_DEPLOYMENT_TRACK = `
+  mutation CreateDeploymentTrack($orgUuid: String!, $componentId: String!, $apiVersion: String!, $branch: String!, $description: String!) {
+    createDeploymentTrack(input: {
+      orgUuid: $orgUuid,
+      componentId: $componentId,
+      apiVersion: $apiVersion,
+      branch: $branch,
+      description: $description
+    }) {
+      id, createdAt, updatedAt, apiVersion, branch, description, componentId, latest, versionStrategy
+    }
+  }`;
+
+const DELETE_DEPLOYMENT_TRACK = `
+  mutation DeleteDeploymentTrack($orgHandler: String!, $componentId: String!, $projectId: String!, $deploymentTrackId: String!) {
+    deleteDeploymentTrack(input: {
+      orgHandler: $orgHandler,
+      componentId: $componentId,
+      projectId: $projectId,
+      deploymentTrackId: $deploymentTrackId
+    }) {
+      status, canDelete, message, encodedData
+    }
+  }`;
+
+const CHECK_DEPLOYMENT_TRACK_DELETABLE = `
+  mutation CheckDeploymentTrackDeletable($orgHandler: String!, $componentId: String!, $projectId: String!, $deploymentTrackId: String!) {
+    checkDeploymentTrackDeletable(input: {
+      orgHandler: $orgHandler,
+      componentId: $componentId,
+      projectId: $projectId,
+      deploymentTrackId: $deploymentTrackId
+    }) {
+      canDelete, message
+    }
+  }`;
+
+export async function createDeploymentTrack(input: CreateDeploymentTrackInput): Promise<DeploymentTrack> {
+  return gql<{ createDeploymentTrack: DeploymentTrack }>(CREATE_DEPLOYMENT_TRACK, {
+    orgUuid: input.orgUuid,
+    componentId: input.componentId,
+    apiVersion: input.apiVersion,
+    branch: input.branch,
+    description: input.description ?? '',
+  }).then((d) => d.createDeploymentTrack);
+}
+
+export async function deleteDeploymentTrack(input: { orgHandler: string; componentId: string; projectId: string; deploymentTrackId: string }): Promise<DeleteTrackResult> {
+  return gql<{ deleteDeploymentTrack: DeleteTrackResult }>(DELETE_DEPLOYMENT_TRACK, input).then((d) => d.deleteDeploymentTrack);
+}
+
+export async function checkDeploymentTrackDeletable(input: { orgHandler: string; componentId: string; projectId: string; deploymentTrackId: string }): Promise<CheckDeletableResult> {
+  return gql<{ checkDeploymentTrackDeletable: CheckDeletableResult }>(CHECK_DEPLOYMENT_TRACK_DELETABLE, input).then((d) => d.checkDeploymentTrackDeletable);
 }
 
 export async function updateComponent(input: UpdateComponentInput): Promise<Component> {

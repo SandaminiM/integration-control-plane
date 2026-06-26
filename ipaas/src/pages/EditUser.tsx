@@ -27,8 +27,8 @@ import { Permissions } from '../constants/permissions';
 import { useUsers, useGroups, useUpdateUserGroups, useRemoveUserFromGroup } from '../hooks/useAuth';
 import type { User, Group } from '../types/auth';
 import { orgAccessControlUrl } from '../paths';
-import { FormDialog } from './access-control/shared';
-import { useFiltered, getUserInitial } from './access-control/utils';
+import { FormDialog } from '../components/Settings/AccessControl/shared';
+import { useFiltered, getUserInitial } from '../components/Settings/AccessControl/utils';
 
 function AssignGroupsDialog({ orgHandler, user, onClose, onAssigned }: { orgHandler: string; user: User; onClose: () => void; onAssigned?: () => void }) {
   const { data: allGroups = [] } = useGroups(orgHandler);
@@ -44,7 +44,8 @@ function AssignGroupsDialog({ orgHandler, user, onClose, onAssigned }: { orgHand
       primaryDisabled={selected.length === 0 || mutation.isPending}
       onPrimary={() =>
         mutation.mutate(
-          { userId: user.userId, groupIds: [...user.groups.map((g) => g.groupId), ...selected.map((g) => g.groupId)] },
+          // The user-side groups body is keyed by group UUID (full replacement set).
+          { userId: user.userId, groupIds: [...user.groups.map((g) => g.uuid), ...selected.map((g) => g.uuid)].filter((id): id is string => !!id) },
           {
             onSuccess: () => {
               onAssigned?.();

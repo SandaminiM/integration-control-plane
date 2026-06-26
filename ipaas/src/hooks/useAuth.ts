@@ -30,6 +30,9 @@ import {
   updateUser,
   updateUserGroups,
   deleteUser,
+  fetchPendingInvitations,
+  inviteUsers,
+  deleteInvitation,
   fetchRoles,
   fetchRoleDetail,
   fetchAllPermissions,
@@ -143,6 +146,30 @@ export function useDeleteUser(orgHandler: string) {
   return useMutation({
     mutationFn: (userId: string) => deleteUser(orgHandler, userId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users', orgHandler] }),
+  });
+}
+
+export function usePendingInvitations(orgHandler: string) {
+  return useQuery({
+    queryKey: ['invitations', orgHandler],
+    queryFn: () => fetchPendingInvitations(orgHandler),
+    enabled: !!orgHandler,
+  });
+}
+
+export function useInviteUsers(orgHandler: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { emails: string[]; groups: string[] }) => inviteUsers(orgHandler, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['invitations', orgHandler] }),
+  });
+}
+
+export function useDeleteInvitation(orgHandler: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (invitationId: string) => deleteInvitation(orgHandler, invitationId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['invitations', orgHandler] }),
   });
 }
 

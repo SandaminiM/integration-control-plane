@@ -73,8 +73,12 @@ export function createHttpClient(getBaseUrl: () => string, clientOptions?: HttpC
 
 // HTTP Clients
 
-// Auth service — users, roles, groups, permissions
+// Local IS — credential login/session + credential-account operations (reset password,
+// unlock, force-change, per-user permission resolution). Points at VITE_AUTH_BASE_URL.
 export const authClient = createHttpClient(() => window.API_CONFIG.authBaseUrl);
+
+// Shared gateway user-mgt service — org member/role/group data (same backend as Devant).
+export const userMgtClient = createHttpClient(() => `${window.API_CONFIG.choreoBaseApiUrl}/user-mgt/1.0.0`);
 
 // System APIs — task execution logs, build logs, observability
 export const systemClient = createHttpClient(() => {
@@ -95,6 +99,13 @@ export const obsClient = createHttpClient(() => {
 
 // Choreo Platform API — single client for all choreoBaseApiUrl services
 export const choreoClient = createHttpClient(() => window.API_CONFIG.choreoBaseApiUrl);
+
+// Choreo URL-manager — custom domains + URL mappings (custom domain feature).
+export const urlManagerClient = createHttpClient(() => {
+  const base = window.API_CONFIG?.urlManagerUrl;
+  if (!base) throw new Error('URL manager base URL is not configured');
+  return base;
+});
 
 // Subscriptions service
 export const subscriptionsClient = createHttpClient(() => window.API_CONFIG.subscriptionsApiUrl);

@@ -16,27 +16,19 @@
  * under the License.
  */
 
-import { Alert, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, ListingTable, TablePagination, Tooltip } from '@wso2/oxygen-ui';
+import { Alert, Button, Chip, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, ListingTable, Stack, TablePagination, Tooltip } from '@wso2/oxygen-ui';
 import { Pencil, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, useEffect, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import SearchField from '../../components/SearchField';
-import { useAccessControl } from '../../contexts/AccessControlContext';
-import { Permissions } from '../../constants/permissions';
-import { orgRoleDetailUrl, projectRoleDetailUrl, componentRoleDetailUrl, newOrgRoleUrl } from '../../paths';
-import { useRoles, useDeleteRole, useRoleGroups, useUsers } from '../../hooks/useAuth';
-import { useComponentByHandler } from '../../hooks/useComponents';
-import type { Role } from '../../types/auth';
+import SearchField from '../../SearchField';
+import { useAccessControl } from '../../../contexts/AccessControlContext';
+import { Permissions } from '../../../constants/permissions';
+import { orgRoleDetailUrl, projectRoleDetailUrl, componentRoleDetailUrl, newOrgRoleUrl } from '../../../paths';
+import { useRoles, useDeleteRole } from '../../../hooks/useAuth';
+import { useComponentByHandler } from '../../../hooks/useComponents';
+import type { Role } from '../../../types/auth';
 import { Loading } from './shared';
 import { useFiltered } from './utils';
-
-function RoleUserCount({ orgHandler, roleId, projectId, componentId }: { orgHandler: string; roleId: string; projectId?: string; componentId?: string }) {
-  const { data: roleGroups = [], isLoading: loadingGroups } = useRoleGroups(orgHandler, roleId, projectId, componentId);
-  const { data: users = [], isLoading: loadingUsers } = useUsers(orgHandler);
-  if (loadingGroups || loadingUsers) return <>—</>;
-  const roleGroupIds = new Set(roleGroups.map((g) => g.groupId));
-  return <>{users.filter((u) => u.groups.some((g) => roleGroupIds.has(g.groupId))).length}</>;
-}
 
 export function RolesTab({ orgHandler, projectId, projectHandler, componentHandler, readOnly }: { orgHandler: string; projectId?: string; projectHandler?: string; componentHandler?: string; readOnly?: boolean }): JSX.Element {
   const navigate = useNavigate();
@@ -50,7 +42,7 @@ export function RolesTab({ orgHandler, projectId, projectHandler, componentHandl
   const deleteMutation = useDeleteRole(orgHandler);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
   const [deletingRole, setDeletingRole] = useState<Role | null>(null);
   const [tableAlert, setTableAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const filtered = useFiltered(roles ?? [], search, (r) => `${r.roleName} ${r.description}`);
@@ -94,10 +86,12 @@ export function RolesTab({ orgHandler, projectId, projectHandler, componentHandl
         <ListingTable>
           <ListingTable.Head>
             <ListingTable.Row>
-              <ListingTable.Cell>Role Name</ListingTable.Cell>
-              <ListingTable.Cell>Description</ListingTable.Cell>
-              <ListingTable.Cell>Assigned Users</ListingTable.Cell>
-              <ListingTable.Cell align="right">Action</ListingTable.Cell>
+              <ListingTable.Cell sx={{ width: '22%' }}>Role Name</ListingTable.Cell>
+              <ListingTable.Cell sx={{ width: '38%' }}>Description</ListingTable.Cell>
+              <ListingTable.Cell sx={{ width: '25%' }}>Tags</ListingTable.Cell>
+              <ListingTable.Cell align="right" sx={{ width: '15%' }}>
+                Action
+              </ListingTable.Cell>
             </ListingTable.Row>
           </ListingTable.Head>
           <ListingTable.Body>
@@ -123,10 +117,8 @@ export function RolesTab({ orgHandler, projectId, projectHandler, componentHandl
                     }
                   }}>
                   <ListingTable.Cell>{r.roleName}</ListingTable.Cell>
-                  <ListingTable.Cell>{r.description}</ListingTable.Cell>
-                  <ListingTable.Cell>
-                    <RoleUserCount orgHandler={orgHandler} roleId={r.roleId} projectId={projectId} componentId={componentId} />
-                  </ListingTable.Cell>
+                  <ListingTable.Cell sx={{ maxWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.description}</ListingTable.Cell>
+                  <ListingTable.Cell>{r.tags?.length ? <Stack direction="row" gap={0.5} flexWrap="wrap">{r.tags.map((t) => <Chip key={t} label={t} size="small" />)}</Stack> : <>—</>}</ListingTable.Cell>
                   <ListingTable.Cell align="right">
                     <Tooltip title="Edit">
                       <IconButton

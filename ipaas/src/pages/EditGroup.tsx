@@ -54,8 +54,8 @@ import { useGroups, useGroupRoles, useGroupUsers, useAddRolesToGroup, useRemoveR
 import { useAllEnvironments } from '../hooks/useEnvironments';
 import type { Group, Role } from '../types/auth';
 import { orgAccessControlUrl } from '../paths';
-import { FormDialog } from './access-control/shared';
-import { useFiltered, mappingLevel, envLabel, getUserInitial } from './access-control/utils';
+import { FormDialog } from '../components/Settings/AccessControl/shared';
+import { useFiltered, mappingLevel, envLabel, getUserInitial } from '../components/Settings/AccessControl/utils';
 
 function AddRolesToGroupDialog({ orgHandler, groupId, existingRoleIds, onClose, onAdded }: { orgHandler: string; groupId: string; existingRoleIds: string[]; onClose: () => void; onAdded?: () => void }) {
   const { data: allRoles = [] } = useRoles(orgHandler);

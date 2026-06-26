@@ -55,7 +55,22 @@ const McpPolicies = lazy(() => import('../pages/McpPolicies'));
 const McpTest = lazy(() => import('../pages/McpTest'));
 const OrgCdPipelines = lazy(() => import('../pages/OrgCdPipelines'));
 const ProjectCdPipelines = lazy(() => import('../pages/ProjectCdPipelines'));
+const ProjectSettings = lazy(() => import('../pages/ProjectSettings'));
+const ProjectOverview = lazy(() => import('../pages/ProjectOverview'));
+const ProjectEgressControl = lazy(() => import('../pages/ProjectEgressControl'));
+const ProjectApplicationSecurity = lazy(() => import('../pages/ProjectApplicationSecurity'));
+const ProjectVpnConfiguration = lazy(() => import('../pages/ProjectVpnConfiguration'));
+const ComponentSettings = lazy(() => import('../pages/ComponentSettings'));
+const ComponentDeploymentTracks = lazy(() => import('../pages/ComponentDeploymentTracks'));
+const ComponentProxyVersions = lazy(() => import('../pages/ComponentProxyVersions'));
+const ComponentUrlSettings = lazy(() => import('../pages/ComponentUrlSettings'));
 const CdPipelineEditor = lazy(() => import('../pages/CdPipelineEditor'));
+const OrgSettings = lazy(() => import('../pages/OrgSettings'));
+const OnPremKeys = lazy(() => import('../pages/OnPremKeys'));
+const EgressControl = lazy(() => import('../pages/EgressControl'));
+const Workflows = lazy(() => import('../pages/Workflows'));
+const ApplicationSecurity = lazy(() => import('../pages/ApplicationSecurity'));
+const Credentials = lazy(() => import('../pages/Credentials'));
 const BrowseSamples = lazy(() => import('../pages/BrowseSamples'));
 const BrowsePrebuiltIntegrations = lazy(() => import('../pages/BrowsePrebuiltIntegrations'));
 const PrebuiltIntegrationSetup = lazy(() => import('../pages/PrebuiltIntegrationSetup'));
@@ -161,7 +176,12 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/admin/audit-logs', element: <ComingSoon title="Coming Soon" description="Audit Logs are currently under development." /> },
               { path: 'organizations/:orgHandler/admin/approvals', element: <ComingSoon title="Coming Soon" description="Approvals management is currently under development." /> },
               { path: 'organizations/:orgHandler/admin/certificates', element: <ComingSoon title="Coming Soon" description="Certificates management is currently under development." /> },
-              { path: 'organizations/:orgHandler/settings', element: <ComingSoon title="Coming Soon" description="Settings are currently under development." /> },
+              { path: 'organizations/:orgHandler/settings', element: createElement(withScope(OrgSettings, ['organizations'])) },
+              { path: 'organizations/:orgHandler/settings/egress-control', element: createElement(withScope(EgressControl, ['organizations'])) },
+              { path: 'organizations/:orgHandler/settings/workflows', element: createElement(withScope(Workflows, ['organizations'])) },
+              { path: 'organizations/:orgHandler/settings/credentials', element: createElement(withScope(Credentials, ['organizations'])) },
+              { path: 'organizations/:orgHandler/settings/on-prem-keys', element: createElement(withScope(OnPremKeys, ['organizations'])) },
+              { path: 'organizations/:orgHandler/settings/application-security/:tab', element: createElement(withScope(ApplicationSecurity, ['organizations'])) },
               ...generateMatrixRoutes(MATRIX),
               { path: 'organizations/:orgHandler/projects/:projectHandler/develop', element: <ComingSoon title="Coming Soon" description="Development tools are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/deploy', element: <ComingSoon title="Coming Soon" description="Deployment management is currently under development." /> },
@@ -178,8 +198,11 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/gen-ai-services', element: <ComingSoon title="Coming Soon" description="GenAI Services management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/cd-pipelines', element: createElement(withScope(ProjectCdPipelines, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/devops/environments', element: createElement(withScope(Environments, ['projects'])) },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/settings', element: <ComingSoon title="Coming Soon" description="Settings are currently under development." /> },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/settings/project-overview', element: <ComingSoon title="Coming Soon" description="Project settings are currently under development." /> },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/settings', element: createElement(withScope(ProjectSettings, ['projects'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/settings/project-overview', element: createElement(withScope(ProjectOverview, ['projects'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/settings/egress-control', element: createElement(withScope(ProjectEgressControl, ['projects'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/settings/application-security', element: createElement(withScope(ProjectApplicationSecurity, ['projects'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/settings/vpn-configuration', element: createElement(withScope(ProjectVpnConfiguration, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/redirect', element: <ProjectsRedirect /> },
               { path: 'organizations/:orgHandler/home', element: createElement(withScope(OrgHome, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/home', element: createElement(withScope(Project, ['projects'])) },
@@ -305,7 +328,19 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings',
-                element: <ComingSoon title="Coming Soon" description="Settings are currently under development." />,
+                element: createElement(withScope(ComponentSettings, ['components'])),
+              },
+              {
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings/deployment-tracks',
+                element: createElement(withScope(ComponentDeploymentTracks, ['components'])),
+              },
+              {
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings/proxy-versions',
+                element: createElement(withScope(ComponentProxyVersions, ['components'])),
+              },
+              {
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings/url-settings',
+                element: createElement(withScope(ComponentUrlSettings, ['components'])),
               },
             ],
           },

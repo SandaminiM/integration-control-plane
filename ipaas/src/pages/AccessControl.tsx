@@ -25,10 +25,13 @@ import { componentAccessControlUrl } from '../paths';
 import { useProjectByHandler } from '../hooks/useProjects';
 import { useComponentByHandler } from '../hooks/useComponents';
 import type { ComponentScope } from '../nav';
-import { Loading } from './access-control/shared';
-import { UsersTab } from './access-control/UsersTab';
-import { RolesTab } from './access-control/RolesTab';
-import { GroupsTab } from './access-control/GroupsTab';
+import OrgSettingsTabs from '../components/Settings/OrgSettingsTabs';
+import ProjectSettingsTabs from '../components/Settings/ProjectSettingsTabs';
+import OrgInfoHeader from '../components/Settings/AccessControl/OrgInfoHeader';
+import { Loading } from '../components/Settings/AccessControl/shared';
+import { UsersTab } from '../components/Settings/AccessControl/UsersTab';
+import { RolesTab } from '../components/Settings/AccessControl/RolesTab';
+import { GroupsTab } from '../components/Settings/AccessControl/GroupsTab';
 
 const ORG_TABS = ['users', 'roles', 'groups'] as const;
 const PROJECT_TABS = ['roles', 'groups'] as const;
@@ -88,9 +91,8 @@ export function OrgAccessControl({ org }: { org: string }): JSX.Element {
   const safeIndex = tabIndex < 0 ? 0 : tabIndex;
   return (
     <PageContent>
-      <PageTitle>
-        <PageTitle.Header>Access Control</PageTitle.Header>
-      </PageTitle>
+      <OrgSettingsTabs active="access-control" />
+      <OrgInfoHeader orgHandler={org} />
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={safeIndex} onChange={(_, v) => navigate(`/organizations/${org}/settings/access-control/${ORG_TABS[v] ?? 'users'}`)}>
           <Tab label="Users" />
@@ -133,9 +135,7 @@ export function ProjectAccessControl({ org, project }: { org: string; project: s
 
   return (
     <PageContent>
-      <PageTitle>
-        <PageTitle.Header>Access Control</PageTitle.Header>
-      </PageTitle>
+      <ProjectSettingsTabs active="access-control" />
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={safeIndex} onChange={(_, v) => navigate(`/organizations/${org}/projects/${project}/settings/access-control/${PROJECT_TABS[v] ?? 'roles'}`)}>
           <Tab label="Roles" />

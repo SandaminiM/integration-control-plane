@@ -18,8 +18,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { UUID_RE } from '../utils/string';
-import { fetchProjects, fetchProject, fetchProjectContributors, fetchProjectComponentLabels, fetchProjectHandlerAvailability, createProject, createMonoRepoProject } from '#api/projects';
-import type { CreateProjectInput, CreateMonoRepoProjectInput } from '../types/project';
+import { fetchProjects, fetchProject, fetchProjectContributors, fetchProjectComponentLabels, fetchProjectHandlerAvailability, createProject, createMonoRepoProject, updateProject, deleteProject } from '#api/projects';
+import type { CreateProjectInput, CreateMonoRepoProjectInput, UpdateProjectInput } from '../types/project';
 import { useOrgs } from './useOrg';
 import { IS_CLOUD } from '../features';
 
@@ -102,6 +102,25 @@ export function useCreateProject() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateProjectInput) => createProject(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
+  });
+}
+
+export function useUpdateProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateProjectInput) => updateProject(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['projects'] });
+      qc.invalidateQueries({ queryKey: ['project'] });
+    },
+  });
+}
+
+export function useDeleteProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (projectId: string) => deleteProject(projectId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
   });
 }

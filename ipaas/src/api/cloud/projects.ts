@@ -18,7 +18,7 @@
 
 /** Cloud (OpenChoreo) project API. Calls the ipaas-service BFF. */
 
-import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput } from '../../types/project';
+import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput, UpdateProjectInput } from '../../types/project';
 import { bff, items, q, seg, type ListResponse } from './_client';
 
 // _orgId is kept on the signatures for devant contract parity; cloud derives
@@ -87,5 +87,9 @@ const toBffCreateMonoRepoProjectBody = async (input: CreateMonoRepoProjectInput)
 });
 
 export const createProject = async (input: CreateProjectInput): Promise<Project> => bff.post<Project>('/projects', await toBffCreateProjectBody(input));
+
+export const updateProject = (input: UpdateProjectInput): Promise<Project> => bff.put<Project>(`/projects/${seg(input.id)}`, { name: input.name, description: input.description });
+
+export const deleteProject = (projectId: string): Promise<void> => bff.delete<void>(`/projects/${seg(projectId)}`);
 
 export const createMonoRepoProject = async (input: CreateMonoRepoProjectInput): Promise<Project> => bff.post<Project>('/projects', await toBffCreateMonoRepoProjectBody(input));

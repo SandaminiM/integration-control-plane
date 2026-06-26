@@ -18,7 +18,7 @@
 
 // TODO: implement using ICP local REST APIs
 
-import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput } from '../../types/project';
+import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput, UpdateProjectInput } from '../../types/project';
 
 const ni = (name: string): never => {
   throw new Error(`[icp] projects.${name}: not implemented`);
@@ -32,3 +32,5 @@ export const fetchProjectComponentLabels = (_orgId: number, _projectId: string):
 export const fetchProjectHandlerAvailability = (_orgId: number, _candidate: string): Promise<ProjectHandlerAvailability> => ni('fetchProjectHandlerAvailability');
 export const createProject = (_input: CreateProjectInput): Promise<Project> => ni('createProject');
 export const createMonoRepoProject = (_input: CreateMonoRepoProjectInput): Promise<Project> => ni('createMonoRepoProject');
+export const updateProject = (_input: UpdateProjectInput): Promise<Project> => ni('updateProject');
+export const deleteProject = (_projectId: string): Promise<void> => ni('deleteProject');

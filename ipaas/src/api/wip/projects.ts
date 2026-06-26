@@ -17,7 +17,7 @@
  */
 
 import { gql } from './graphql';
-import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput } from '../../types/project';
+import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput, UpdateProjectInput } from '../../types/project';
 
 const PROJECT_FIELDS = 'id, orgId, name, handler, description, version, createdDate, updatedAt, region, type, defaultDeploymentPipelineId';
 
@@ -141,6 +141,34 @@ export async function createProject(input: CreateProjectInput): Promise<Project>
     orgHandler: input.orgHandler,
     orgId,
   }).then((d) => d.createProject);
+}
+
+const UPDATE_PROJECT = `
+  mutation UpdateProject($id: String!, $name: String!, $description: String!, $orgId: Int!, $version: String!) {
+    updateProject(project: { id: $id, name: $name, description: $description, orgId: $orgId, version: $version }) {
+      id, orgId, name, version, createdDate, handler, region,
+      description, defaultDeploymentPipelineId, deploymentPipelineIds,
+      type, updatedAt
+    }
+  }`;
+
+const DELETE_PROJECT = `
+  mutation DeleteProject($orgId: Int!, $projectId: String!) {
+    deleteProject(orgId: $orgId, projectId: $projectId) { status }
+  }`;
+
+function orgNumericId(): number {
+  const orgId = window.API_CONFIG.asgardeoOrgNumericId;
+  if (orgId === undefined || !Number.isFinite(orgId)) throw new Error('API_CONFIG.asgardeoOrgNumericId is missing or invalid.');
+  return orgId;
+}
+
+export async function updateProject(input: UpdateProjectInput): Promise<Project> {
+  return gql<{ updateProject: Project }>(UPDATE_PROJECT, { id: input.id, name: input.name, description: input.description, version: input.version, orgId: orgNumericId() }).then((d) => d.updateProject);
+}
+
+export async function deleteProject(projectId: string): Promise<void> {
+  await gql<{ deleteProject: { status: string } }>(DELETE_PROJECT, { orgId: orgNumericId(), projectId });
 }
 
 export async function createMonoRepoProject(input: CreateMonoRepoProjectInput): Promise<Project> {

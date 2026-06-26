@@ -50,6 +50,14 @@ export interface CreateProjectInput {
   orgHandler: string;
 }
 
+export interface UpdateProjectInput {
+  id: string;
+  name: string;
+  description: string;
+  /** The project's current version (optimistic concurrency). */
+  version: string;
+}
+
 export interface CreateMonoRepoProjectInput extends CreateProjectInput {
   repository: string;
   gitOrganization: string;
