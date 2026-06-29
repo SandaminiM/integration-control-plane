@@ -39,43 +39,8 @@ export interface TailscalePortMapping {
   targetPort: number;
 }
 
-// ── devops wire shapes ──────────────────────────────────────────────────────
-
-export interface DevopsSecret {
-  ID: string;
-  name: string;
-  environment_id: string;
-  app_environment_id: string;
-  keys: string[];
-  version: number;
-  config_type: string;
-  secret_type: string;
-}
-
-export interface DevopsConfigMap {
-  ID: string;
-  name: string;
-  environment_id: string;
-  app_environment_id: string;
-  version: number;
-  config_type: string;
-}
-
-export interface DevopsConfigMapDetails extends DevopsConfigMap {
-  data: Record<string, string>;
-}
-
-export interface DevopsConfigMount {
-  ID: string;
-  configmap_id: string | null;
-  secret_id: string | null;
-  container_id: string;
-  app_environment_id: string;
-  mount_path: string;
-  config_key: string;
-  mount_type: string;
-  mount_permissions: string | null;
-}
+// Generic devops config primitives (Secret/ConfigMap/ConfigMount/Release) now
+// live in `types/devopsConfigs.ts` — shared with the Configs & Secrets surface.
 
 export interface DevopsVolume {
   ID: string;
@@ -87,24 +52,6 @@ export interface DevopsVolumeMount {
   app_volume_id: string;
   mountPath: string;
   readOnly: boolean;
-}
-
-export interface ReleaseContainer {
-  ID: string;
-  name: string;
-  type?: string;
-}
-
-export interface ReleaseNamespace {
-  ID: string;
-  name: string;
-}
-
-/** Subset of the devops release (app-environment) record we consume. */
-export interface ReleaseDetails {
-  ID: string;
-  containers: ReleaseContainer[];
-  environment?: { namespaces?: ReleaseNamespace[] };
 }
 
 /** BYOI endpoints file payload (base64 YAML under `endpointYaml.data`). */
@@ -133,45 +80,6 @@ export interface CreateByoiComponentResult {
   id: string;
   projectId: string;
   handle: string;
-}
-
-export interface SecretWriteData {
-  name: string;
-  metadata: Record<string, unknown>;
-  environment_id: string;
-  organization_id: string;
-  project_id: string;
-  app_environment_id?: string;
-  isBase64: boolean;
-  save_type: string;
-  secret_type: string;
-  config_type: string;
-  data: Record<string, string>;
-  version?: number;
-}
-
-export interface ConfigMapWriteData {
-  name: string;
-  metadata: Record<string, unknown>;
-  environment_id: string;
-  organization_id: string;
-  project_id: string;
-  app_environment_id?: string;
-  config_type: string;
-  isBase64: boolean;
-  data: Record<string, string>;
-}
-
-export interface ConfigMountWriteData {
-  app_environment_id: string;
-  container_id: string;
-  configmap_id: string | null;
-  secret_id: string | null;
-  mount_path?: string;
-  config_key?: string;
-  mount_type: string;
-  mount_permissions: string;
-  deploy_changes?: boolean;
 }
 
 export interface VolumeWriteData {

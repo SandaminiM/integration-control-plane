@@ -64,6 +64,7 @@ const ComponentSettings = lazy(() => import('../pages/ComponentSettings'));
 const ComponentDeploymentTracks = lazy(() => import('../pages/ComponentDeploymentTracks'));
 const ComponentProxyVersions = lazy(() => import('../pages/ComponentProxyVersions'));
 const ComponentUrlSettings = lazy(() => import('../pages/ComponentUrlSettings'));
+const ComponentConfigs = lazy(() => import('../pages/ComponentConfigs'));
 const CdPipelineEditor = lazy(() => import('../pages/CdPipelineEditor'));
 const OrgSettings = lazy(() => import('../pages/OrgSettings'));
 const OnPremKeys = lazy(() => import('../pages/OnPremKeys'));
@@ -312,7 +313,7 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/configs',
-                element: <ComingSoon title="Coming Soon" description="Configs & Secrets management is currently under development." />,
+                element: createElement(withScope(ComponentConfigs, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/health-checks',

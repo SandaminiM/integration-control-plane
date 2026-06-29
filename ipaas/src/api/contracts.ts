@@ -74,7 +74,8 @@ import type { CreateDeploymentPipelineRequest, DeploymentPipeline, EnvTemplate, 
 import type { OnPremKey, OnPremKeySubscription } from '../types/onPremKey';
 import type { EgressPolicy, EgressPolicyRequest } from '../types/egressPolicy';
 import type { AuthzRole, CreateAuthzRoleInput, UpdateAuthzRoleInput } from '../types/projectAuthz';
-import type { ByoiEndpointFileContents, ConfigMapWriteData, ConfigMountWriteData, CreateByoiComponentInput, CreateByoiComponentResult, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsVolume, DevopsVolumeMount, ReleaseDetails, SecretWriteData, VolumeMountWriteData, VolumeWriteData } from '../types/tailscale';
+import type { ByoiEndpointFileContents, CreateByoiComponentInput, CreateByoiComponentResult, DevopsVolume, DevopsVolumeMount, VolumeMountWriteData, VolumeWriteData } from '../types/tailscale';
+import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseDetails, SecretWriteData } from '../types/devopsConfigs';
 import type { CreateUrlMappingInput, CustomDomain, CustomDomainType, CustomUrlMapping } from '../types/customDomain';
 import type { OrgWorkflowConfig, WorkflowConfigRequest, WorkflowDefinition } from '../types/workflow';
 import type { Dataplane, IdentityProvider, IdentityProviderRequest, RoleGroupMappingResponse } from '../types/appSecurity';
@@ -375,21 +376,32 @@ export interface TailscaleApi {
   getSampleRegistryId(orgUuid: string): Promise<string>;
   createByoiComponent(input: CreateByoiComponentInput): Promise<CreateByoiComponentResult>;
   deployByoiImage(componentId: string, releaseId: string, imageUrl: string): Promise<{ message: string; success: boolean }>;
-  getReleaseById(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<ReleaseDetails>;
-  getSecrets(orgUuid: string, projectId: string, environmentId: string): Promise<DevopsSecret[]>;
-  createSecret(orgUuid: string, projectId: string, data: SecretWriteData): Promise<DevopsSecret>;
-  updateSecret(orgUuid: string, projectId: string, secretId: string, data: SecretWriteData): Promise<DevopsSecret>;
-  getConfigMaps(orgUuid: string, projectId: string, environmentId: string): Promise<DevopsConfigMap[]>;
-  getConfigMapDetails(orgUuid: string, projectId: string, environmentId: string, configMapId: string): Promise<DevopsConfigMapDetails>;
-  createConfigMap(orgUuid: string, projectId: string, data: ConfigMapWriteData): Promise<DevopsConfigMap>;
-  updateConfigMapData(orgUuid: string, projectId: string, configMapId: string, data: ConfigMapWriteData): Promise<DevopsConfigMapDetails>;
-  getContainerConfigMounts(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string): Promise<DevopsConfigMount[]>;
-  mountConfig(orgUuid: string, projectId: string, componentId: string, data: ConfigMountWriteData): Promise<DevopsConfigMount>;
-  updateConfigMount(orgUuid: string, projectId: string, path: { componentId: string; releaseId: string; containerId: string; mountId: string }, data: Record<string, unknown>): Promise<DevopsConfigMount>;
   createVolume(orgUuid: string, projectId: string, data: VolumeWriteData): Promise<DevopsVolume>;
   mountVolume(orgUuid: string, projectId: string, path: { appId: string; appEnvId: string; containerId: string }, data: VolumeMountWriteData): Promise<DevopsVolumeMount>;
   getByoiEndpointsYaml(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<ByoiEndpointFileContents>;
   updateByoiEndpointsYaml(orgUuid: string, projectId: string, componentId: string, releaseId: string, endpointsYaml: string): Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
+// Devops configs — ConfigMaps, Secrets, and container config-mounts
+// ---------------------------------------------------------------------------
+
+export interface DevopsConfigsApi {
+  getReleaseById(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<ReleaseDetails>;
+  getSecrets(orgUuid: string, projectId: string, environmentId: string): Promise<DevopsSecret[]>;
+  getSecretDetails(orgUuid: string, projectId: string, environmentId: string, secretId: string): Promise<DevopsSecretDetails>;
+  createSecret(orgUuid: string, projectId: string, data: SecretWriteData): Promise<DevopsSecret>;
+  updateSecret(orgUuid: string, projectId: string, secretId: string, data: SecretWriteData): Promise<DevopsSecret>;
+  deleteSecret(orgUuid: string, projectId: string, environmentId: string, secretId: string): Promise<void>;
+  getConfigMaps(orgUuid: string, projectId: string, environmentId: string): Promise<DevopsConfigMap[]>;
+  getConfigMapDetails(orgUuid: string, projectId: string, environmentId: string, configMapId: string): Promise<DevopsConfigMapDetails>;
+  createConfigMap(orgUuid: string, projectId: string, data: ConfigMapWriteData): Promise<DevopsConfigMap>;
+  updateConfigMapData(orgUuid: string, projectId: string, configMapId: string, data: ConfigMapWriteData): Promise<DevopsConfigMapDetails>;
+  deleteConfigMap(orgUuid: string, projectId: string, environmentId: string, configMapId: string): Promise<void>;
+  getContainerConfigMounts(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string): Promise<DevopsConfigMount[]>;
+  mountConfig(orgUuid: string, projectId: string, componentId: string, data: ConfigMountWriteData): Promise<DevopsConfigMount>;
+  updateConfigMount(orgUuid: string, projectId: string, path: ConfigMountPath, data: Record<string, unknown>): Promise<DevopsConfigMount>;
+  removeConfigMount(orgUuid: string, projectId: string, path: ConfigMountPath): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -561,6 +573,7 @@ export interface AppApi {
   projects: ProjectsApi;
   projectAuthz: ProjectAuthzApi;
   tailscale: TailscaleApi;
+  devopsConfigs: DevopsConfigsApi;
   customDomains: CustomDomainsApi;
   repository: RepositoryApi;
   samples: SamplesApi;
