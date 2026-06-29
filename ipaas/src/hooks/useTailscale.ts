@@ -236,13 +236,18 @@ export function useSaveAndDeployTailscale(projectId: string) {
       // 5. Deploy the proxy image.
       return runStep('Deploying the proxy', () => deployByoiImage(componentId, releaseId, TAILSCALE_IMAGE));
     },
-    onSuccess: (_data, input) => {
+    // The secret/configmap/endpoint writes (steps 1–3) land before the deploy (step 5),
+    // so a failed deploy can leave those caches stale. Invalidate them in onSettled so
+    // they refresh whether or not the overall mutation succeeds.
+    onSettled: (_data, _error, input) => {
       qc.invalidateQueries({ queryKey: [ROOT, 'secrets', orgUuid, projectId, input.envId] });
       qc.invalidateQueries({ queryKey: [ROOT, 'configmaps', orgUuid, projectId, input.envId] });
       qc.invalidateQueries({ queryKey: [ROOT, 'byoiEndpoints', orgUuid, projectId, input.componentId, input.releaseId] });
       // The secret/configmap writes go through #api/devopsConfigs — refresh the shared
       // Configs & Secrets surface, which keys its queries under 'devopsConfigs'.
       qc.invalidateQueries({ queryKey: ['devopsConfigs'] });
+    },
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['componentDeployment'] });
     },
   });
