@@ -17,18 +17,7 @@
  */
 
 import { choreoClient } from './httpClients';
-import type {
-  ConfigMapWriteData,
-  ConfigMountPath,
-  ConfigMountWriteData,
-  DevopsConfigMap,
-  DevopsConfigMapDetails,
-  DevopsConfigMount,
-  DevopsSecret,
-  DevopsSecretDetails,
-  ReleaseDetails,
-  SecretWriteData,
-} from '../../types/devopsConfigs';
+import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseDetails, SecretWriteData } from '../../types/devopsConfigs';
 
 // ConfigMaps, Secrets, and their container config-mounts live on the devops
 // service (via choreoClient). REST calls take `organization_id` + `project_id`
@@ -103,22 +92,32 @@ export async function deleteConfigMap(orgUuid: string, projectId: string, enviro
 // ── container config mounts ──────────────────────────────────────────────────
 
 export async function getContainerConfigMounts(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string): Promise<DevopsConfigMount[]> {
-  const res = await choreoClient.get<Wrapped<DevopsConfigMount[] | DevopsConfigMount>>(`${BASE}/components/${encodeURIComponent(componentId)}/release/${encodeURIComponent(releaseId)}/container/${encodeURIComponent(containerId)}/config-mount?${dq(orgUuid, projectId)}`);
+  const res = await choreoClient.get<Wrapped<DevopsConfigMount[] | DevopsConfigMount>>(
+    `${BASE}/components/${encodeURIComponent(componentId)}/release/${encodeURIComponent(releaseId)}/container/${encodeURIComponent(containerId)}/config-mount?${dq(orgUuid, projectId)}`,
+  );
   const mounts = res.data;
   return Array.isArray(mounts) ? mounts : mounts ? [mounts] : [];
 }
 
 export async function mountConfig(orgUuid: string, projectId: string, componentId: string, data: ConfigMountWriteData): Promise<DevopsConfigMount> {
   const body = { mount_path: '', config_key: '', deploy_changes: true, ...data };
-  const res = await choreoClient.post<Wrapped<DevopsConfigMount>>(`${BASE}/components/${encodeURIComponent(componentId)}/release/${encodeURIComponent(data.app_environment_id)}/container/${encodeURIComponent(data.container_id)}/config-mount?${dq(orgUuid, projectId)}`, body);
+  const res = await choreoClient.post<Wrapped<DevopsConfigMount>>(
+    `${BASE}/components/${encodeURIComponent(componentId)}/release/${encodeURIComponent(data.app_environment_id)}/container/${encodeURIComponent(data.container_id)}/config-mount?${dq(orgUuid, projectId)}`,
+    body,
+  );
   return res.data;
 }
 
 export async function updateConfigMount(orgUuid: string, projectId: string, path: ConfigMountPath, data: Record<string, unknown>): Promise<DevopsConfigMount> {
-  const res = await choreoClient.put<Wrapped<DevopsConfigMount>>(`${BASE}/components/${encodeURIComponent(path.componentId)}/release/${encodeURIComponent(path.releaseId)}/container/${encodeURIComponent(path.containerId)}/config-mount/${encodeURIComponent(path.mountId)}?${dq(orgUuid, projectId)}`, { ...data, deploy_changes: true });
+  const res = await choreoClient.put<Wrapped<DevopsConfigMount>>(
+    `${BASE}/components/${encodeURIComponent(path.componentId)}/release/${encodeURIComponent(path.releaseId)}/container/${encodeURIComponent(path.containerId)}/config-mount/${encodeURIComponent(path.mountId)}?${dq(orgUuid, projectId)}`,
+    { ...data, deploy_changes: true },
+  );
   return res.data;
 }
 
 export async function removeConfigMount(orgUuid: string, projectId: string, path: ConfigMountPath): Promise<void> {
-  await choreoClient.delete<void>(`${BASE}/components/${encodeURIComponent(path.componentId)}/release/${encodeURIComponent(path.releaseId)}/container/${encodeURIComponent(path.containerId)}/config-mount/${encodeURIComponent(path.mountId)}?${dq(orgUuid, projectId)}`);
+  await choreoClient.delete<void>(
+    `${BASE}/components/${encodeURIComponent(path.componentId)}/release/${encodeURIComponent(path.releaseId)}/container/${encodeURIComponent(path.containerId)}/config-mount/${encodeURIComponent(path.mountId)}?${dq(orgUuid, projectId)}`,
+  );
 }

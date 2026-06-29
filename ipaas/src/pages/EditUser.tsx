@@ -56,13 +56,7 @@ function AssignGroupsDialog({ orgHandler, user, onClose, onAssigned }: { orgHand
     );
   };
   return (
-    <FormDialog
-      open
-      onClose={onClose}
-      primaryLabel="Assign"
-      primaryDisabled={selected.length === 0 || mutation.isPending}
-      onPrimary={handleAssign}
-      title="Assign Groups">
+    <FormDialog open onClose={onClose} primaryLabel="Assign" primaryDisabled={selected.length === 0 || mutation.isPending} onPrimary={handleAssign} title="Assign Groups">
       {error && (
         <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
           {error}

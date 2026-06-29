@@ -67,7 +67,22 @@ import type {
 } from '../types/auth';
 import type { BuildRunLogs, DeployComponentInput, UpdateBuildpackConfigsInput } from '../types/build';
 import type { ContainerRegistry } from '../types/cloudEditor';
-import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability, DeleteComponentResult, DeploymentTrack, CreateDeploymentTrackInput, DeleteTrackResult, CheckDeletableResult } from '../types/component';
+import type {
+  Component,
+  ComponentDetail,
+  Endpoint,
+  EnvEndpoint,
+  CreateComponentInput,
+  UpdateComponentInput,
+  UpdateAutoDeployInput,
+  GenerateComponentEndpointsInput,
+  ComponentNameAvailability,
+  DeleteComponentResult,
+  DeploymentTrack,
+  CreateDeploymentTrackInput,
+  DeleteTrackResult,
+  CheckDeletableResult,
+} from '../types/component';
 import type { CertGroup, CertMapping, SchemaConfigData, ConfigMgtData, SchemaConfigItem, SaveSchemaConfigInput, PostConfigMgtInput } from '../types/configuration';
 import type { ComponentDeployment, BuildRun, ReleaseMgtDeployment, DeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../types/deployment';
 import type { CreateDeploymentPipelineRequest, DeploymentPipeline, EnvTemplate, PipelineDeletionEligibility } from '../types/deploymentPipeline';

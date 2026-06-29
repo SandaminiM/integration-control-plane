@@ -76,14 +76,7 @@ function RoleDialog({ projectId, scopeOptions, role, existingNames, onClose, onD
         <Stack gap={2} sx={{ mt: 1 }}>
           <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} error={!!nameError && !!name} helperText={(!!name && nameError) || ' '} fullWidth autoFocus disabled={!!role} />
           <TextField label="Description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline minRows={2} />
-          <Autocomplete
-            multiple
-            freeSolo
-            options={scopeOptions}
-            value={selected}
-            onChange={(_, v) => setSelected(v as string[])}
-            renderInput={(params) => <TextField {...params} label="API Scopes" placeholder="Type a scope and press Enter" />}
-          />
+          <Autocomplete multiple freeSolo options={scopeOptions} value={selected} onChange={(_, v) => setSelected(v as string[])} renderInput={(params) => <TextField {...params} label="API Scopes" placeholder="Type a scope and press Enter" />} />
         </Stack>
       </DialogContent>
       <DialogActions>
@@ -208,7 +201,19 @@ function ApplicationSecurityBody({ projectId }: { projectId: string }): JSX.Elem
         </ListingTable.Container>
       )}
 
-      {dialog && <RoleDialog projectId={projectId} scopeOptions={scopeOptions} role={dialog.role} existingNames={existingNames} onClose={() => setDialog(null)} onDone={(message) => { setDialog(null); setAlert({ type: 'success', message }); }} />}
+      {dialog && (
+        <RoleDialog
+          projectId={projectId}
+          scopeOptions={scopeOptions}
+          role={dialog.role}
+          existingNames={existingNames}
+          onClose={() => setDialog(null)}
+          onDone={(message) => {
+            setDialog(null);
+            setAlert({ type: 'success', message });
+          }}
+        />
+      )}
 
       {deleting && (
         <Dialog open onClose={() => setDeleting(null)} maxWidth="xs" fullWidth>

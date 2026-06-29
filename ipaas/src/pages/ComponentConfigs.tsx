@@ -44,7 +44,7 @@ export default function ComponentConfigs({ org, project, component }: ComponentS
   const tracks = useMemo(() => comp?.deploymentTracks ?? [], [comp?.deploymentTracks]);
   const [trackId, setTrackId] = useState('');
   useEffect(() => {
-    if (tracks.length) setTrackId((prev) => (prev && tracks.some((t) => t.id === prev) ? prev : tracks.find((t) => t.latest)?.id ?? tracks[0].id));
+    if (tracks.length) setTrackId((prev) => (prev && tracks.some((t) => t.id === prev) ? prev : (tracks.find((t) => t.latest)?.id ?? tracks[0].id)));
   }, [tracks]);
 
   const { data: environments = [] } = useEnvironments(org, projectId);
@@ -79,14 +79,25 @@ export default function ComponentConfigs({ org, project, component }: ComponentS
     del.mutate(
       { componentId: comp.id, releaseId, containerId, mountId: deleting.mount.ID },
       {
-        onSuccess: () => { setDeleting(null); setAlert({ type: 'success', message: 'Configuration removed.' }); },
-        onError: (e) => { setDeleting(null); setAlert({ type: 'error', message: e instanceof Error ? e.message : 'Failed to remove the configuration.' }); },
+        onSuccess: () => {
+          setDeleting(null);
+          setAlert({ type: 'success', message: 'Configuration removed.' });
+        },
+        onError: (e) => {
+          setDeleting(null);
+          setAlert({ type: 'error', message: e instanceof Error ? e.message : 'Failed to remove the configuration.' });
+        },
       },
     );
   };
 
   const envSelect = (
-    <Select size="small" value={environments.some((e) => e.id === envId) ? envId : ''} onChange={(e) => setEnvId(e.target.value as string)} inputProps={{ 'aria-label': 'Environment' }} sx={{ fontSize: '0.8125rem', '& .MuiSelect-select': { py: 0.5, px: 1.5 }, minWidth: 140 }}>
+    <Select
+      size="small"
+      value={environments.some((e) => e.id === envId) ? envId : ''}
+      onChange={(e) => setEnvId(e.target.value as string)}
+      inputProps={{ 'aria-label': 'Environment' }}
+      sx={{ fontSize: '0.8125rem', '& .MuiSelect-select': { py: 0.5, px: 1.5 }, minWidth: 140 }}>
       {environments.map((e) => (
         <MenuItem key={e.id} value={e.id}>
           {e.name}
@@ -96,7 +107,10 @@ export default function ComponentConfigs({ org, project, component }: ComponentS
   );
 
   const ctx: EditorContext = { projectId, componentId: comp?.id ?? '', releaseId, containerId, envId };
-  const onEditorDone = (message: string) => { setView({ kind: 'list' }); setAlert({ type: 'success', message }); };
+  const onEditorDone = (message: string) => {
+    setView({ kind: 'list' });
+    setAlert({ type: 'success', message });
+  };
 
   return (
     <>

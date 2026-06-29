@@ -54,14 +54,7 @@ export default function MapGroupsDialog({ roleId, roleName, currentGroups, onClo
       <DialogTitle>Map groups to &lsquo;{roleName}&rsquo;</DialogTitle>
       <DialogContent>
         <DialogContentText sx={{ mb: 2 }}>Members of these identity-provider groups are granted this role.</DialogContentText>
-        <Autocomplete
-          multiple
-          freeSolo
-          options={[]}
-          value={groups}
-          onChange={(_, v) => setGroups(v as string[])}
-          renderInput={(params) => <TextField {...params} label="Groups" placeholder="Type a group name and press Enter" />}
-        />
+        <Autocomplete multiple freeSolo options={[]} value={groups} onChange={(_, v) => setGroups(v as string[])} renderInput={(params) => <TextField {...params} label="Groups" placeholder="Type a group name and press Enter" />} />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={update.isPending}>

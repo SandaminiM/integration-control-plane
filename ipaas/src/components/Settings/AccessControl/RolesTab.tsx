@@ -118,7 +118,17 @@ export function RolesTab({ orgHandler, projectId, projectHandler, componentHandl
                   }}>
                   <ListingTable.Cell>{r.roleName}</ListingTable.Cell>
                   <ListingTable.Cell sx={{ maxWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.description}</ListingTable.Cell>
-                  <ListingTable.Cell>{r.tags?.length ? <Stack direction="row" gap={0.5} flexWrap="wrap">{r.tags.map((t) => <Chip key={t} label={t} size="small" />)}</Stack> : <>—</>}</ListingTable.Cell>
+                  <ListingTable.Cell>
+                    {r.tags?.length ? (
+                      <Stack direction="row" gap={0.5} flexWrap="wrap">
+                        {r.tags.map((t) => (
+                          <Chip key={t} label={t} size="small" />
+                        ))}
+                      </Stack>
+                    ) : (
+                      <>—</>
+                    )}
+                  </ListingTable.Cell>
                   <ListingTable.Cell align="right">
                     <Tooltip title="Edit">
                       <IconButton

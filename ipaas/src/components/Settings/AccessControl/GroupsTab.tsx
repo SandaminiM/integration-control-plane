@@ -118,7 +118,9 @@ export function GroupsTab({ orgHandler, projectId, projectHandler, componentHand
                   }}>
                   <ListingTable.Cell>{g.groupName}</ListingTable.Cell>
                   <ListingTable.Cell sx={{ maxWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.description}</ListingTable.Cell>
-                  <ListingTable.Cell>{g.roleCount ?? '—'} {g.roleCount === 1 ? 'role' : g.roleCount ? 'roles' : ''}</ListingTable.Cell>
+                  <ListingTable.Cell>
+                    {g.roleCount ?? '—'} {g.roleCount === 1 ? 'role' : g.roleCount ? 'roles' : ''}
+                  </ListingTable.Cell>
                   <ListingTable.Cell align="right">
                     <Tooltip title="Edit">
                       <IconButton

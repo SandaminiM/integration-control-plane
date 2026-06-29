@@ -64,7 +64,13 @@ export default function InviteUsersDialog({ orgHandler, onClose, onInvited }: { 
             value={emails}
             onChange={(_, v) => setEmails((v as string[]).map((s) => s.trim()).filter(Boolean))}
             renderInput={(params) => (
-              <TextField {...params} label="Emails" placeholder="Type an email and press Enter" error={invalidEmails.length > 0} helperText={invalidEmails.length > 0 ? `Invalid email(s): ${invalidEmails.join(', ')}` : 'Press Enter to add each email address.'} />
+              <TextField
+                {...params}
+                label="Emails"
+                placeholder="Type an email and press Enter"
+                error={invalidEmails.length > 0}
+                helperText={invalidEmails.length > 0 ? `Invalid email(s): ${invalidEmails.join(', ')}` : 'Press Enter to add each email address.'}
+              />
             )}
           />
           <Autocomplete

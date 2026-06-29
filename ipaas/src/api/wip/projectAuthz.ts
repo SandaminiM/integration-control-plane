@@ -42,7 +42,7 @@ interface RawAuthzRole {
   scopes?: Array<string | RawScopeRef>;
 }
 
-const scopeName = (s: string | RawScopeRef): string => (typeof s === 'string' ? s : s.name ?? s.scope ?? '');
+const scopeName = (s: string | RawScopeRef): string => (typeof s === 'string' ? s : (s.name ?? s.scope ?? ''));
 
 const toAuthzRole = (r: RawAuthzRole, projectId: string): AuthzRole => ({
   id: r.id,
@@ -55,7 +55,7 @@ const toAuthzRole = (r: RawAuthzRole, projectId: string): AuthzRole => ({
 export async function fetchAuthzRoles(projectId: string): Promise<AuthzRole[]> {
   const qs = new URLSearchParams({ filter: `projectId eq ${projectId}` }).toString();
   const res = await choreoClient.get<{ list?: RawAuthzRole[] } | RawAuthzRole[]>(`${AUTHZ}/roles?${qs}`);
-  const list = Array.isArray(res) ? res : res.list ?? [];
+  const list = Array.isArray(res) ? res : (res.list ?? []);
   return list.map((r) => toAuthzRole(r, projectId));
 }
 

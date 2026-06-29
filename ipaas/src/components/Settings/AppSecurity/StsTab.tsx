@@ -66,10 +66,7 @@ export default function StsTab({ orgHandler }: { orgHandler: string }): JSX.Elem
 
   if (!envTemplates?.length) return <EmptyListing icon={<KeyRound size={48} />} title="No environments" description="There are no environments to show security token service endpoints for." />;
 
-  if (!stsDomain || !orgUuid)
-    return (
-      <Alert severity="info">Security token service endpoints are unavailable — no data-plane STS domain is configured for this organization.</Alert>
-    );
+  if (!stsDomain || !orgUuid) return <Alert severity="info">Security token service endpoints are unavailable — no data-plane STS domain is configured for this organization.</Alert>;
 
   return (
     <Stack gap={3}>

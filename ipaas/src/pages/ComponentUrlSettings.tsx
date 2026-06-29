@@ -85,9 +85,7 @@ function ConfigureDialog({ componentId, domains, onClose, onDone }: { componentI
             )}
           </TextField>
           <TextField label="Path" value={customPath} onChange={(e) => setCustomPath(e.target.value)} fullWidth slotProps={{ input: { startAdornment: <InputAdornment position="start">/</InputAdornment> } }} />
-          {preview && (
-            <TextField label="Custom URL" value={preview} fullWidth slotProps={{ input: { readOnly: true } }} />
-          )}
+          {preview && <TextField label="Custom URL" value={preview} fullWidth slotProps={{ input: { readOnly: true } }} />}
         </Stack>
       </DialogContent>
       <DialogActions>
@@ -180,7 +178,17 @@ function UrlSettingsBody({ componentId }: { componentId: string }): JSX.Element 
         </ListingTable.Container>
       )}
 
-      {configuring && <ConfigureDialog componentId={componentId} domains={domains} onClose={() => setConfiguring(false)} onDone={(msg) => { setConfiguring(false); setAlert({ type: 'success', message: msg }); }} />}
+      {configuring && (
+        <ConfigureDialog
+          componentId={componentId}
+          domains={domains}
+          onClose={() => setConfiguring(false)}
+          onDone={(msg) => {
+            setConfiguring(false);
+            setAlert({ type: 'success', message: msg });
+          }}
+        />
+      )}
 
       {deleting && (
         <Dialog open onClose={() => setDeleting(null)} maxWidth="xs" fullWidth>

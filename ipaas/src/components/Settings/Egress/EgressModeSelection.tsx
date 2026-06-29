@@ -38,9 +38,7 @@ export default function EgressModeSelection({ value, onChange, locked }: EgressM
     <Tooltip title={locked ? 'The policy mode cannot be changed after creation. Delete the policy and create a new one to switch.' : ''} placement="top-start">
       <RadioGroup row value={value} onChange={(e) => onChange(e.target.value as EgressMode)} sx={{ gap: 1.5, mb: 3, flexWrap: 'nowrap' }}>
         {OPTIONS.map((o) => (
-          <Box
-            key={o.value}
-            sx={{ width: 260, border: '1px solid', borderColor: value === o.value ? 'primary.main' : 'divider', borderRadius: 1, px: 1.5, py: 1, opacity: locked && value !== o.value ? 0.6 : 1 }}>
+          <Box key={o.value} sx={{ width: 260, border: '1px solid', borderColor: value === o.value ? 'primary.main' : 'divider', borderRadius: 1, px: 1.5, py: 1, opacity: locked && value !== o.value ? 0.6 : 1 }}>
             <FormControlLabel
               value={o.value}
               disabled={locked}

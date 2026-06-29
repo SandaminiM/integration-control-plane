@@ -92,7 +92,16 @@ function CreateProxyForm({ projectId, onCancel, onCreated }: { projectId: string
       <Stack gap={2}>
         <Stack direction="row" gap={2} alignItems="flex-start">
           <TextField label="Name" value={displayName} onChange={(e) => onNameChange(e.target.value)} fullWidth required error={!!displayName && !!nameError} helperText={(!!displayName && nameError) || ' '} autoFocus sx={{ flex: 1 }} />
-          <TextField label="Handle" value={handle} onChange={(e) => onHandleChange(e.target.value)} fullWidth required error={(!!handle || handleTouched) && !!handleError} helperText={((!!handle || handleTouched) && handleError) || 'Unique project handle for this proxy.'} sx={{ flex: 1 }} />
+          <TextField
+            label="Handle"
+            value={handle}
+            onChange={(e) => onHandleChange(e.target.value)}
+            fullWidth
+            required
+            error={(!!handle || handleTouched) && !!handleError}
+            helperText={((!!handle || handleTouched) && handleError) || 'Unique project handle for this proxy.'}
+            sx={{ flex: 1 }}
+          />
         </Stack>
         <TextField label="Description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline minRows={2} />
         <Box>
@@ -114,7 +123,13 @@ function ConfigView({ orgHandler, projectId, handler, canManage, onBack }: { org
       <Button size="small" startIcon={<ArrowLeft size={14} />} onClick={onBack} sx={{ mb: 2 }}>
         Back to list
       </Button>
-      {isLoading ? <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} /> : !detail ? <Typography>Proxy not found</Typography> : <TailscaleOverview orgHandler={orgHandler} projectId={projectId} component={detail} environments={environments} canManage={canManage} />}
+      {isLoading ? (
+        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+      ) : !detail ? (
+        <Typography>Proxy not found</Typography>
+      ) : (
+        <TailscaleOverview orgHandler={orgHandler} projectId={projectId} component={detail} environments={environments} canManage={canManage} />
+      )}
     </Box>
   );
 }
@@ -199,7 +214,14 @@ export default function ProjectVpnConfiguration({ org, project }: ProjectScope):
                     <ListingTable.Cell align="right">
                       <Authorized permissions={Permissions.PROJECT_MANAGE}>
                         <Tooltip title="Delete proxy">
-                          <IconButton size="small" color="error" aria-label={`Delete ${p.displayName || p.handler}`} onClick={(e) => { e.stopPropagation(); setDeleting(p); }}>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            aria-label={`Delete ${p.displayName || p.handler}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleting(p);
+                            }}>
                             <Trash2 size={16} />
                           </IconButton>
                         </Tooltip>

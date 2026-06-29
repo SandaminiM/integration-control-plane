@@ -58,7 +58,8 @@ function HowToModal({ open, onClose }: { open: boolean; onClose: () => void }): 
             <Box component="ul" sx={{ pl: 3, mt: 1, '& li': { mb: 0.75 } }}>
               <li>
                 <Typography variant="body2" component="span">
-                  These mappings define how the <strong>Tailscale VPN in WSO2 Integration Platform forwards traffic.</strong> Each mapping specifies <strong>which incoming port on the proxy</strong> should be directed to a <strong>specific device and port</strong> within your private Tailscale network.
+                  These mappings define how the <strong>Tailscale VPN in WSO2 Integration Platform forwards traffic.</strong> Each mapping specifies <strong>which incoming port on the proxy</strong> should be directed to a{' '}
+                  <strong>specific device and port</strong> within your private Tailscale network.
                 </Typography>
               </li>
               <li>
@@ -115,9 +116,7 @@ export default function TailscaleComponentInfo({ component }: { component: Compo
   return (
     <>
       <Stack direction="row" alignItems="flex-start" gap={2} sx={{ mb: 3 }}>
-        <Avatar sx={{ width: 56, height: 56, fontSize: 24, bgcolor: 'text.primary', color: 'background.paper' }}>
-          {(component.displayName || component.handler || 'T').charAt(0).toUpperCase()}
-        </Avatar>
+        <Avatar sx={{ width: 56, height: 56, fontSize: 24, bgcolor: 'text.primary', color: 'background.paper' }}>{(component.displayName || component.handler || 'T').charAt(0).toUpperCase()}</Avatar>
         <Box sx={{ flex: 1 }}>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             {component.displayName || component.handler}

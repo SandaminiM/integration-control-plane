@@ -17,20 +17,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  createConfigMap,
-  createSecret,
-  getConfigMapDetails,
-  getConfigMaps,
-  getContainerConfigMounts,
-  getReleaseById,
-  getSecrets,
-  mountConfig,
-  removeConfigMount,
-  updateConfigMapData,
-  updateConfigMount,
-  updateSecret,
-} from '#api/devopsConfigs';
+import { createConfigMap, createSecret, getConfigMapDetails, getConfigMaps, getContainerConfigMounts, getReleaseById, getSecrets, mountConfig, removeConfigMount, updateConfigMapData, updateConfigMount, updateSecret } from '#api/devopsConfigs';
 import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, ReleaseDetails, SaveConfigInput, SecretWriteData } from '../types/devopsConfigs';
 import { useOrgUuid } from './useOrgUuid';
 
@@ -133,10 +120,30 @@ export function useSaveConfig(projectId: string) {
         const mount: ConfigMountWriteData =
           kind === 'envVars'
             ? { app_environment_id: releaseId, container_id: containerId, configmap_id: isSecret ? null : configId, secret_id: isSecret ? configId : null, mount_type: 'ENVFile', mount_permissions: '0000', mount_path: '', config_key: '', deploy_changes: true }
-            : { app_environment_id: releaseId, container_id: containerId, configmap_id: isSecret ? null : configId, secret_id: isSecret ? configId : null, mount_type: 'File', mount_permissions: '0644', mount_path: mountPath ?? '', config_key: 'data', deploy_changes: true };
+            : {
+                app_environment_id: releaseId,
+                container_id: containerId,
+                configmap_id: isSecret ? null : configId,
+                secret_id: isSecret ? configId : null,
+                mount_type: 'File',
+                mount_permissions: '0644',
+                mount_path: mountPath ?? '',
+                config_key: 'data',
+                deploy_changes: true,
+              };
         await mountConfig(orgUuid, projectId, componentId, mount);
       } else if (kind === 'fileMount') {
-        const mount: ConfigMountWriteData = { app_environment_id: releaseId, container_id: containerId, configmap_id: isSecret ? null : configId, secret_id: isSecret ? configId : null, mount_type: 'File', mount_permissions: '0644', mount_path: mountPath ?? '', config_key: 'data', deploy_changes: true };
+        const mount: ConfigMountWriteData = {
+          app_environment_id: releaseId,
+          container_id: containerId,
+          configmap_id: isSecret ? null : configId,
+          secret_id: isSecret ? configId : null,
+          mount_type: 'File',
+          mount_permissions: '0644',
+          mount_path: mountPath ?? '',
+          config_key: 'data',
+          deploy_changes: true,
+        };
         await updateConfigMount(orgUuid, projectId, { componentId, releaseId, containerId, mountId: existing.mountId }, mount);
       }
       return configId;

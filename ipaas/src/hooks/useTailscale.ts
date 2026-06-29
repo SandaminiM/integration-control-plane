@@ -219,7 +219,16 @@ export function useSaveAndDeployTailscale(projectId: string) {
             await mountConfig(orgUuid, projectId, componentId, { app_environment_id: releaseId, container_id: container.ID, secret_id: newSecretId, configmap_id: null, mount_type: 'ENVFile', mount_permissions: '0000', mount_path: '', config_key: '' });
           }
           if (newConfigMapId) {
-            await mountConfig(orgUuid, projectId, componentId, { app_environment_id: releaseId, container_id: container.ID, configmap_id: newConfigMapId, secret_id: null, mount_type: 'File', mount_path: '/config.yaml', config_key: 'config.yaml', mount_permissions: '0644' });
+            await mountConfig(orgUuid, projectId, componentId, {
+              app_environment_id: releaseId,
+              container_id: container.ID,
+              configmap_id: newConfigMapId,
+              secret_id: null,
+              mount_type: 'File',
+              mount_path: '/config.yaml',
+              config_key: 'config.yaml',
+              mount_permissions: '0644',
+            });
           }
         });
       }

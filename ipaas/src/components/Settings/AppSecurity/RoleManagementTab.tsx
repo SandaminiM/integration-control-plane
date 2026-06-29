@@ -71,7 +71,17 @@ export default function RoleManagementTab(): JSX.Element {
               {mappings.map((m) => (
                 <ListingTable.Row key={m.role.id}>
                   <ListingTable.Cell>{m.role.name}</ListingTable.Cell>
-                  <ListingTable.Cell>{m.groups.length > 0 ? <Stack direction="row" gap={0.5} flexWrap="wrap">{m.groups.map((g) => <Chip key={g} label={g} size="small" />)}</Stack> : '—'}</ListingTable.Cell>
+                  <ListingTable.Cell>
+                    {m.groups.length > 0 ? (
+                      <Stack direction="row" gap={0.5} flexWrap="wrap">
+                        {m.groups.map((g) => (
+                          <Chip key={g} label={g} size="small" />
+                        ))}
+                      </Stack>
+                    ) : (
+                      '—'
+                    )}
+                  </ListingTable.Cell>
                   <ListingTable.Cell align="right">
                     <Authorized permissions={Permissions.USER_MANAGE_ROLES}>
                       <Button size="small" variant="outlined" onClick={() => setMapping(m)} sx={{ textTransform: 'none' }}>

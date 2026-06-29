@@ -56,8 +56,16 @@ function TypeCard({ title, description, selected, disabled, onSelect }: { title:
         e.preventDefault();
         onSelect();
       }}
-      sx={{ flex: 1, p: 2, textAlign: 'left', cursor: disabled ? 'default' : 'pointer', borderColor: selected ? 'primary.main' : 'divider', borderWidth: selected ? 2 : 1, opacity: disabled && !selected ? 0.5 : 1, '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 } }}
-    >
+      sx={{
+        flex: 1,
+        p: 2,
+        textAlign: 'left',
+        cursor: disabled ? 'default' : 'pointer',
+        borderColor: selected ? 'primary.main' : 'divider',
+        borderWidth: selected ? 2 : 1,
+        opacity: disabled && !selected ? 0.5 : 1,
+        '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
+      }}>
       <Typography sx={{ fontWeight: 600 }}>{title}</Typography>
       <Typography variant="body2" color="text.secondary">
         {description}
@@ -139,7 +147,18 @@ export default function ConfigEditor({ ctx, existing, onBack, onSaved, onError }
     if (!canSave) return;
     const data = kind === 'envVars' ? Object.fromEntries(rows.map((r) => [r.key, r.value])) : { data: fileContent };
     save.mutate(
-      { componentId: ctx.componentId, releaseId: ctx.releaseId, containerId: ctx.containerId, envId: ctx.envId, isSecret, kind, name: name.trim(), data, mountPath: kind === 'fileMount' ? mountPath.trim() : undefined, existing: existing ? { configId, mountId: existing.mount.ID } : undefined },
+      {
+        componentId: ctx.componentId,
+        releaseId: ctx.releaseId,
+        containerId: ctx.containerId,
+        envId: ctx.envId,
+        isSecret,
+        kind,
+        name: name.trim(),
+        data,
+        mountPath: kind === 'fileMount' ? mountPath.trim() : undefined,
+        existing: existing ? { configId, mountId: existing.mount.ID } : undefined,
+      },
       { onSuccess: () => onSaved(isEdit ? 'Configuration updated.' : 'Configuration created.'), onError: (e) => onError(e instanceof Error ? e.message : 'Failed to save the configuration.') },
     );
   };
@@ -173,14 +192,33 @@ export default function ConfigEditor({ ctx, existing, onBack, onSaved, onError }
             <Button size="small" variant="outlined" startIcon={<Upload size={14} />} onClick={() => envImportRef.current?.click()}>
               Import from .env file
             </Button>
-            <input ref={envImportRef} type="file" accept=".env,text/plain" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) importEnvFile(f); e.target.value = ''; }} />
+            <input
+              ref={envImportRef}
+              type="file"
+              accept=".env,text/plain"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) importEnvFile(f);
+                e.target.value = '';
+              }}
+            />
           </Stack>
           {rows.length > 0 && (
             <Stack gap={1} sx={{ mb: 1 }}>
               {rows.map((r, i) => (
                 <Stack key={`${r.key}-${i}`} direction="row" gap={1} alignItems="center">
                   <TextField size="small" value={r.key} disabled fullWidth sx={{ flex: 1 }} />
-                  <TextField size="small" type={isSecret ? 'password' : 'text'} value={r.value} placeholder={isSecret ? 'Re-enter value' : ''} error={isSecret && r.value === ''} onChange={(e) => setRows((prev) => prev.map((row, idx) => (idx === i ? { ...row, value: e.target.value } : row)))} fullWidth sx={{ flex: 1 }} />
+                  <TextField
+                    size="small"
+                    type={isSecret ? 'password' : 'text'}
+                    value={r.value}
+                    placeholder={isSecret ? 'Re-enter value' : ''}
+                    error={isSecret && r.value === ''}
+                    onChange={(e) => setRows((prev) => prev.map((row, idx) => (idx === i ? { ...row, value: e.target.value } : row)))}
+                    fullWidth
+                    sx={{ flex: 1 }}
+                  />
                   <IconButton size="small" color="error" aria-label={`Remove ${r.key}`} onClick={() => setRows((prev) => prev.filter((_, idx) => idx !== i))}>
                     <Trash2 size={16} />
                   </IconButton>
@@ -212,9 +250,29 @@ export default function ConfigEditor({ ctx, existing, onBack, onSaved, onError }
             <Button variant="outlined" startIcon={<Upload size={16} />} onClick={() => fileUploadRef.current?.click()}>
               Upload File
             </Button>
-            <input ref={fileUploadRef} type="file" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.target.value = ''; }} />
+            <input
+              ref={fileUploadRef}
+              type="file"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) uploadFile(f);
+                e.target.value = '';
+              }}
+            />
           </Box>
-          <TextField label="File Content" value={fileContent} onChange={(e) => setFileContent(e.target.value)} fullWidth multiline minRows={8} required helperText=" " placeholder={isEdit && isSecret ? 'Re-enter the secret file content' : 'Upload a file or type the content here'} sx={{ '& textarea': { fontFamily: 'monospace', fontSize: '0.8125rem' } }} />
+          <TextField
+            label="File Content"
+            value={fileContent}
+            onChange={(e) => setFileContent(e.target.value)}
+            fullWidth
+            multiline
+            minRows={8}
+            required
+            helperText=" "
+            placeholder={isEdit && isSecret ? 'Re-enter the secret file content' : 'Upload a file or type the content here'}
+            sx={{ '& textarea': { fontFamily: 'monospace', fontSize: '0.8125rem' } }}
+          />
         </Stack>
       )}
 

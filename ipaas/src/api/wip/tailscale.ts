@@ -89,7 +89,10 @@ export async function createVolume(orgUuid: string, projectId: string, data: Vol
 }
 
 export async function mountVolume(orgUuid: string, projectId: string, path: { appId: string; appEnvId: string; containerId: string }, data: VolumeMountWriteData): Promise<DevopsVolumeMount> {
-  const res = await choreoClient.post<Wrapped<DevopsVolumeMount>>(`${BASE}/components/${encodeURIComponent(path.appId)}/release/${encodeURIComponent(path.appEnvId)}/container/${encodeURIComponent(path.containerId)}/volume-mount?${dq(orgUuid, projectId)}`, data);
+  const res = await choreoClient.post<Wrapped<DevopsVolumeMount>>(
+    `${BASE}/components/${encodeURIComponent(path.appId)}/release/${encodeURIComponent(path.appEnvId)}/container/${encodeURIComponent(path.containerId)}/volume-mount?${dq(orgUuid, projectId)}`,
+    data,
+  );
   return res.data;
 }
 
