@@ -18,7 +18,7 @@
 
 // TODO: implement using ICP local REST APIs
 
-import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability, DeleteComponentResult } from '../../types/component';
+import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability, DeleteComponentResult, DeploymentTrack, CreateDeploymentTrackInput, DeleteTrackResult, CheckDeletableResult } from '../../types/component';
 import type { CreateMcpProxyComponentInput } from '../../types/mcpProxy';
 
 const ni = (name: string): never => {
@@ -36,3 +36,6 @@ export const generateComponentEndpoints = (_input: GenerateComponentEndpointsInp
 export const fetchComponentNameAvailability = (_projectId: string, _candidate: string): Promise<ComponentNameAvailability> => ni('fetchComponentNameAvailability');
 export const fetchComponentEndpointSpec = (_componentId: string, _versionId: string, _endpointId: string): Promise<string | null> => ni('fetchComponentEndpointSpec');
 export const createMcpProxyComponent = (_input: CreateMcpProxyComponentInput): Promise<Component> => ni('createMcpProxyComponent');
+export const createDeploymentTrack = (_input: CreateDeploymentTrackInput): Promise<DeploymentTrack> => ni('createDeploymentTrack');
+export const deleteDeploymentTrack = (_input: { orgHandler: string; componentId: string; projectId: string; deploymentTrackId: string }): Promise<DeleteTrackResult> => ni('deleteDeploymentTrack');
+export const checkDeploymentTrackDeletable = (_input: { orgHandler: string; componentId: string; projectId: string; deploymentTrackId: string }): Promise<CheckDeletableResult> => ni('checkDeploymentTrackDeletable');

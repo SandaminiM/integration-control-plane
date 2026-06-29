@@ -49,6 +49,6 @@ export const integrationModuleLoaders: Record<IntegrationType, ModuleLoader> = {
   // page shows a Build card (proxy/converted = no source repo → no build).
   'mcp-server': () => import('./mcp-server'),
   'mcp-proxy': () => import('./mcp-server'),
-  'tailscale-vpn': () => import('./_shared/UnsupportedFallback'),
+  'tailscale-vpn': () => import('./tailscale-vpn'),
   unsupported: () => import('./_shared/UnsupportedFallback'),
 };

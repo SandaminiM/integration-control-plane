@@ -116,7 +116,8 @@ import { identifyIntegration } from '../utils/identifyIntegration';
 import { useOrgPermissions } from '../hooks/useAuth';
 import { switchOrgToken } from '../auth/tokenManager';
 import { mockNotifications } from '../mock-data/mockNotifications';
-import { useScope, useResource, resourceUrl, broaden, narrow, newProjectUrl, newComponentUrl, hasProject, hasComponent, type Resource } from '../nav';
+import { useScope, useResource, resourceUrl, broaden, narrow, newProjectUrl, newComponentUrl, hasProject, hasComponent, settingsCrossScopeUrl, type Resource, type Scope } from '../nav';
+import { isSettingsSectionVisible, type SettingsSectionDef } from '../constants/orgSettingsSections';
 import { componentOverviewUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, projectHomeUrl, termsOfUseUrl } from '../paths';
 import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
@@ -294,7 +295,7 @@ function AppLayoutInner(): JSX.Element {
     if (rest.startsWith('admin/health-checks')) return 'health-checks';
     if (rest.startsWith('admin/scaling')) return 'scaling';
     if (rest.startsWith('admin/storage')) return 'storage';
-    if (rest.startsWith('settings/access-control')) return 'component-settings';
+    if (rest.startsWith('settings')) return 'component-settings';
     return 'overview';
   }, [pathname, scope]);
 
@@ -431,6 +432,17 @@ function AppLayoutInner(): JSX.Element {
     }
   };
 
+  /**
+   * When switching scope from a Settings page, returns the equivalent Settings
+   * URL in the target scope (same section if available, else that scope's first
+   * section), or `null` if the current page isn't Settings — letting the caller
+   * fall back to its normal resource routing.
+   */
+  const settingsSwitchUrl = (targetScope: Scope, targetProjectId: string | undefined = projectId || undefined, targetComponentId: string | undefined = componentId): string | null => {
+    const canSee = (s: SettingsSectionDef) => isSettingsSectionVisible(s, (perms) => hasAnyPermission(perms, targetProjectId, targetComponentId));
+    return settingsCrossScopeUrl(pathname, scope, targetScope, canSee);
+  };
+
   const accessControlPerms: string[] = [...ALL_USER_MGT_PERMISSIONS];
   if (hasProject(scope)) {
     accessControlPerms.push(Permissions.PROJECT_EDIT, Permissions.PROJECT_MANAGE);
@@ -472,7 +484,7 @@ function AppLayoutInner(): JSX.Element {
       'org-audit-logs': `${orgBase}/admin/audit-logs`,
       'org-approvals': `${orgBase}/admin/approvals`,
       'org-certificates': `${orgBase}/admin/certificates`,
-      'org-settings': `${orgBase}/settings/access-control/users`,
+      'org-settings': `${orgBase}/settings`,
     };
     const url = urlMap[id];
     if (url) navigate(url);
@@ -495,7 +507,7 @@ function AppLayoutInner(): JSX.Element {
       'proj-genai-services': `${projBase}/admin/gen-ai-services`,
       'proj-cd-pipelines': `${projBase}/admin/cd-pipelines`,
       'proj-environments': `${projBase}/devops/environments`,
-      'proj-settings': `${projBase}/settings/project-overview`,
+      'proj-settings': `${projBase}/settings`,
     };
     const url = urlMap[id];
     if (url) navigate(url);
@@ -527,7 +539,7 @@ function AppLayoutInner(): JSX.Element {
       'health-checks': `${compBase}/admin/health-checks`,
       scaling: `${compBase}/admin/scaling`,
       storage: `${compBase}/admin/storage`,
-      'component-settings': `${compBase}/settings/access-control/roles`,
+      'component-settings': `${compBase}/settings`,
     };
     const url = urlMap[id];
     if (url) navigate(url);
@@ -735,8 +747,12 @@ function AppLayoutInner(): JSX.Element {
                         setProjectMenuAnchor(null);
                         setProjectSearch('');
                         const newScope = narrow({ level: 'organizations', org: scope.org }, p.handler);
-                        const target = resource ?? 'overview';
-                        const resolvedTarget = canAccessResource(newScope, target, p.id, undefined);
+                        const settingsUrl = settingsSwitchUrl(newScope, p.id, undefined);
+                        if (settingsUrl) {
+                          navigate(settingsUrl);
+                          return;
+                        }
+                        const resolvedTarget = canAccessResource(newScope, resource ?? 'overview', p.id, undefined);
                         navigate(resolvedTarget === 'overview' ? projectHomeUrl(scope.org, p.handler) : resourceUrl(newScope, resolvedTarget));
                       }}>
                       {p.name}
@@ -811,8 +827,12 @@ function AppLayoutInner(): JSX.Element {
                     onClick={(e) => {
                       e.stopPropagation();
                       const orgScope = { level: 'organizations' as const, org: scope.org };
-                      const target = resource ?? 'overview';
-                      const resolvedOrgTarget = canAccessResource(orgScope, target);
+                      const settingsUrl = settingsSwitchUrl(orgScope, undefined, undefined);
+                      if (settingsUrl) {
+                        navigate(settingsUrl);
+                        return;
+                      }
+                      const resolvedOrgTarget = canAccessResource(orgScope, resource ?? 'overview');
                       navigate(resolvedOrgTarget === 'overview' ? orgHomeUrl(scope.org) : resourceUrl(orgScope, resolvedOrgTarget));
                     }}>
                     <X size={16} />
@@ -972,8 +992,12 @@ function AppLayoutInner(): JSX.Element {
                   onClick={(e) => {
                     e.stopPropagation();
                     const projectScope = broaden(scope)!;
-                    const target = resource ?? 'overview';
-                    navigate(resourceUrl(projectScope, canAccessResource(projectScope, target)));
+                    const settingsUrl = settingsSwitchUrl(projectScope, projectId || undefined, undefined);
+                    if (settingsUrl) {
+                      navigate(settingsUrl);
+                      return;
+                    }
+                    navigate(resourceUrl(projectScope, canAccessResource(projectScope, resource ?? 'overview')));
                   }}>
                   <X size={16} />
                 </IconButton>

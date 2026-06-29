@@ -75,6 +75,10 @@ export interface ApiConfig {
   asgardeoSignupUrl: string;
   aiCopilotUrlSuffix: string;
   aiCopilotDatacollectorBaseUrl: string;
+  /** Choreo URL-manager service base (custom domains + URL mappings). Optional — when unset, the URL Settings section stays hidden. */
+  urlManagerUrl?: string;
+  /** Feature flag mirroring Devant's ENABLE_CUSTOM_URL_MAPPINGS_FEATURE. */
+  enableCustomUrlMappings?: boolean;
 }
 
 // Extend window interface
@@ -162,6 +166,8 @@ export async function loadConfig(): Promise<void> {
       asgardeoSignupUrl: config.ASGARDEO_SIGNUP_URL || DEFAULT_CONFIG.asgardeoSignupUrl,
       aiCopilotUrlSuffix: config.AI_COPILOT_URL_SUFFIX || DEFAULT_CONFIG.aiCopilotUrlSuffix,
       aiCopilotDatacollectorBaseUrl: trim(config.AI_COPILOT_DATACOLLECTOR_BASE_URL || DEFAULT_CONFIG.aiCopilotDatacollectorBaseUrl),
+      urlManagerUrl: config.CHOREO_URL_MANAGER_URL ? trim(config.CHOREO_URL_MANAGER_URL) : undefined,
+      enableCustomUrlMappings: config.ENABLE_CUSTOM_URL_MAPPINGS_FEATURE === 'true' || config.ENABLE_CUSTOM_URL_MAPPINGS_FEATURE === true,
     };
 
     console.info('✓ Runtime configuration loaded from config.json');

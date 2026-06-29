@@ -19,6 +19,9 @@
 import { createContext, createElement, useContext, type FC, type JSX } from 'react';
 import { Outlet, useParams, useLocation } from 'react-router';
 import { capitalize } from './utils/string';
+import { SETTINGS_SECTIONS, type SettingsSectionDef } from './constants/orgSettingsSections';
+import { PROJECT_SETTINGS_SECTIONS } from './constants/projectSettingsSections';
+import { COMPONENT_SETTINGS_SECTIONS } from './constants/componentSettingsSections';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -113,6 +116,39 @@ export function resourceUrl(scope: Scope, resource: Resource): string {
   return seg ? `${prefix}/${seg}` : prefix;
 }
 
+// The Settings sections available at each level. Component scope only exposes
+// Access Control (handled by the resource matrix), so it has no section list here.
+function settingsSectionsForLevel(level: Level): readonly SettingsSectionDef[] {
+  if (level === 'organizations') return SETTINGS_SECTIONS;
+  if (level === 'projects') return PROJECT_SETTINGS_SECTIONS;
+  return COMPONENT_SETTINGS_SECTIONS;
+}
+
+/**
+ * Cross-scope Settings navigation. When the user switches scope (org ⇄ project)
+ * while on a Settings page, keep them on the same Settings *section* if the
+ * target scope has it and they can see it; otherwise land on the target scope's
+ * first available section. Returns `null` when the current path is not a Settings
+ * page, or the target scope has no matching/visible section — the caller then
+ * falls back to its normal resource routing.
+ *
+ * The section id is the first path segment after `/settings/`, which is stable
+ * across scopes (e.g. `application-security`, `egress-control`, `access-control`).
+ */
+export function settingsCrossScopeUrl(pathname: string, currentScope: Scope, targetScope: Scope, canSee: (section: SettingsSectionDef) => boolean): string | null {
+  const rest = pathname.slice(scopePrefix(currentScope).length).replace(/^\//, '');
+  if (!/^settings(\/|$)/.test(rest)) return null;
+  const sectionId = rest.split('/')[1];
+  const sections = settingsSectionsForLevel(targetScope.level);
+  const base = `${scopePrefix(targetScope)}/settings`;
+  if (sectionId) {
+    const match = sections.find((s) => s.id === sectionId && canSee(s));
+    if (match) return `${base}/${match.path}`;
+  }
+  const first = sections.find((s) => canSee(s));
+  return first ? `${base}/${first.path}` : null;
+}
+
 export function broaden(scope: Scope): Scope | null {
   if (scope.level === 'components') return { level: 'projects', org: scope.org, project: scope.project };
   if (scope.level === 'projects') return { level: 'organizations', org: scope.org };
@@ -150,6 +186,36 @@ export function newEnvironmentUrl(scope: { org: string }): string {
 
 export function orgCdPipelinesUrl(scope: { org: string }): string {
   return `/organizations/${scope.org}/admin/cd-pipelines`;
+}
+
+/** The org Settings landing route — redirects to the first section the user can access. */
+export function orgSettingsUrl(scope: { org: string }): string {
+  return `/organizations/${scope.org}/settings`;
+}
+
+/** A specific org Settings section. `sectionPath` is the suffix after `/settings/` (may include a sub-tab, e.g. `access-control/users`). */
+export function orgSettingsSectionUrl(scope: { org: string }, sectionPath: string): string {
+  return `/organizations/${scope.org}/settings/${sectionPath}`;
+}
+
+/** The project Settings landing route — redirects to the first section the user can access. */
+export function projectSettingsUrl(scope: { org: string; project: string }): string {
+  return `/organizations/${scope.org}/projects/${scope.project}/settings`;
+}
+
+/** A specific project Settings section. `sectionPath` is the suffix after `/settings/` (may include a sub-tab). */
+export function projectSettingsSectionUrl(scope: { org: string; project: string }, sectionPath: string): string {
+  return `/organizations/${scope.org}/projects/${scope.project}/settings/${sectionPath}`;
+}
+
+/** The integration (component) Settings landing route — redirects to the first accessible section. */
+export function componentSettingsUrl(scope: { org: string; project: string; component: string }): string {
+  return `/organizations/${scope.org}/projects/${scope.project}/components/${scope.component}/settings`;
+}
+
+/** A specific integration Settings section (suffix after `/settings/`, may include a sub-tab). */
+export function componentSettingsSectionUrl(scope: { org: string; project: string; component: string }, sectionPath: string): string {
+  return `/organizations/${scope.org}/projects/${scope.project}/components/${scope.component}/settings/${sectionPath}`;
 }
 
 /** The org-level CD pipeline create/edit flow (edit when a `pipelineId` is given). */

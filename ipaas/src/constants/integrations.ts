@@ -72,6 +72,8 @@ export function getDisplayLabel(displayType: string, componentSubType: string | 
       return 'AI Agent';
     case 'MCP':
       return 'MCP Server';
+    case 'tailscale':
+      return 'Tailscale VPN';
   }
   switch (displayType) {
     case 'ballerinaService':

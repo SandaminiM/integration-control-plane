@@ -22,7 +22,8 @@ export interface User {
   displayName: string;
   isSuperAdmin: boolean;
   isOidcUser: boolean;
-  groups: { groupId: string; groupName: string; groupDescription: string }[];
+  pictureUrl?: string;
+  groups: { groupId: string; uuid?: string; groupName: string; groupDescription: string }[];
   groupCount: number;
 }
 
@@ -31,6 +32,8 @@ export interface Role {
   roleName: string;
   description: string;
   orgId: number;
+  /** Tag handles attached to the role (e.g. `admin`). */
+  tags?: string[];
 }
 
 export interface Permission {
@@ -52,9 +55,14 @@ export interface RoleDetail extends Role {
 }
 
 export interface Group {
+  /** The group handle — used to address the group in `/groups/v2/{handle}` paths. */
   groupId: string;
+  /** The group UUID — used in user-side bodies (`groupUUIDs`). */
+  uuid?: string;
   groupName: string;
   description: string;
+  /** Number of roles assigned to this group (the "Assigned to" count). */
+  roleCount?: number;
 }
 
 export interface GroupRoleMapping {
@@ -92,6 +100,19 @@ export interface UserPermissionsResponse {
   scope: { orgUuid: string; projectUuid?: string; integrationUuid?: string; envUuid?: string };
   permissions: { permissionId: number; permissionName: string; permissionDomain: string; description: string }[];
   permissionNames: string[];
+}
+
+/** A pending org invitation. */
+export interface PendingInvitation {
+  id: string;
+  email: string;
+  groups: string[];
+}
+
+export interface InviteUsersInput {
+  emails: string[];
+  /** Group handles to add the invitees to. */
+  groups: string[];
 }
 
 // ── Auth mutation input types ──

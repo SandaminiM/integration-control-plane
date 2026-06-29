@@ -27,8 +27,8 @@ import { Permissions } from '../constants/permissions';
 import { useUsers, useGroups, useUpdateUserGroups, useRemoveUserFromGroup } from '../hooks/useAuth';
 import type { User, Group } from '../types/auth';
 import { orgAccessControlUrl } from '../paths';
-import { FormDialog } from './access-control/shared';
-import { useFiltered, getUserInitial } from './access-control/utils';
+import { FormDialog } from '../components/Settings/AccessControl/shared';
+import { useFiltered, getUserInitial } from '../components/Settings/AccessControl/utils';
 
 function AssignGroupsDialog({ orgHandler, user, onClose, onAssigned }: { orgHandler: string; user: User; onClose: () => void; onAssigned?: () => void }) {
   const { data: allGroups = [] } = useGroups(orgHandler);
@@ -36,24 +36,32 @@ function AssignGroupsDialog({ orgHandler, user, onClose, onAssigned }: { orgHand
   const [selected, setSelected] = useState<Group[]>([]);
   const [error, setError] = useState<string | null>(null);
   const available = allGroups.filter((g) => !user.groups.some((ug) => ug.groupId === g.groupId));
+  // The user-side groups body is keyed by group UUID (full replacement set). A
+  // missing uuid would silently drop that membership, so fail fast instead.
+  const handleAssign = () => {
+    const groupIds = [...user.groups, ...selected].map((g) => g.uuid);
+    if (groupIds.some((id) => !id)) {
+      setError('One or more groups are missing an identifier. Please reload and try again.');
+      return;
+    }
+    mutation.mutate(
+      { userId: user.userId, groupIds: groupIds as string[] },
+      {
+        onSuccess: () => {
+          onAssigned?.();
+          onClose();
+        },
+        onError: (errorObj) => setError(errorObj?.message ?? 'Failed to assign groups. Please try again.'),
+      },
+    );
+  };
   return (
     <FormDialog
       open
       onClose={onClose}
       primaryLabel="Assign"
       primaryDisabled={selected.length === 0 || mutation.isPending}
-      onPrimary={() =>
-        mutation.mutate(
-          { userId: user.userId, groupIds: [...user.groups.map((g) => g.groupId), ...selected.map((g) => g.groupId)] },
-          {
-            onSuccess: () => {
-              onAssigned?.();
-              onClose();
-            },
-            onError: (errorObj) => setError(errorObj?.message ?? 'Failed to assign groups. Please try again.'),
-          },
-        )
-      }
+      onPrimary={handleAssign}
       title="Assign Groups">
       {error && (
         <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>

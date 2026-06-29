@@ -30,8 +30,11 @@ import {
   updateComponent,
   updateEndpoint,
   generateComponentEndpoints,
+  createDeploymentTrack,
+  deleteDeploymentTrack,
+  checkDeploymentTrackDeletable,
 } from '#api/components';
-import type { CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput } from '../types/component';
+import type { CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, CreateDeploymentTrackInput } from '../types/component';
 
 export function useComponents(orgHandler: string, projectId: string) {
   return useQuery({
@@ -105,6 +108,29 @@ export function useUpdateComponent() {
       qc.invalidateQueries({ queryKey: ['component', input.projectId, input.handler] });
       qc.invalidateQueries({ queryKey: ['components'] });
     },
+  });
+}
+
+export function useCreateDeploymentTrack() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateDeploymentTrackInput) => createDeploymentTrack(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['component'] }),
+  });
+}
+
+export function useDeleteDeploymentTrack() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { orgHandler: string; componentId: string; projectId: string; deploymentTrackId: string }) => deleteDeploymentTrack(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['component'] }),
+  });
+}
+
+/** Pre-flight check (mutation, not a query) for whether a track/version can be deleted. */
+export function useCheckDeploymentTrackDeletable() {
+  return useMutation({
+    mutationFn: (input: { orgHandler: string; componentId: string; projectId: string; deploymentTrackId: string }) => checkDeploymentTrackDeletable(input),
   });
 }
 

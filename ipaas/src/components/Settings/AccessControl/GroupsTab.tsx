@@ -20,27 +20,15 @@ import { Alert, Button, Dialog, DialogActions, DialogContent, DialogContentText,
 import { Pencil, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import SearchField from '../../components/SearchField';
-import { useAccessControl } from '../../contexts/AccessControlContext';
-import { Permissions } from '../../constants/permissions';
-import { useGroups, useDeleteGroup, useGroupRoles, useGroupUsers } from '../../hooks/useAuth';
-import { useComponentByHandler } from '../../hooks/useComponents';
-import type { Group } from '../../types/auth';
-import { newOrgGroupUrl, editOrgGroupUrl, projectGroupDetailUrl, componentGroupDetailUrl } from '../../paths';
+import SearchField from '../../SearchField';
+import { useAccessControl } from '../../../contexts/AccessControlContext';
+import { Permissions } from '../../../constants/permissions';
+import { useGroups, useDeleteGroup } from '../../../hooks/useAuth';
+import { useComponentByHandler } from '../../../hooks/useComponents';
+import type { Group } from '../../../types/auth';
+import { newOrgGroupUrl, editOrgGroupUrl, projectGroupDetailUrl, componentGroupDetailUrl } from '../../../paths';
 import { Loading } from './shared';
 import { useFiltered } from './utils';
-
-function GroupUserCount({ orgHandler, groupId }: { orgHandler: string; groupId: string }) {
-  const { data: users = [], isLoading } = useGroupUsers(orgHandler, groupId);
-  if (isLoading) return <>—</>;
-  return <>{users.length}</>;
-}
-
-function GroupRoleCount({ orgHandler, groupId, projectId, componentId }: { orgHandler: string; groupId: string; projectId?: string; componentId?: string }) {
-  const { data: roles = [], isLoading } = useGroupRoles(orgHandler, groupId, projectId, componentId);
-  if (isLoading) return <>—</>;
-  return <>{roles.length}</>;
-}
 
 export function GroupsTab({ orgHandler, projectId, projectHandler, componentHandler, readOnly }: { orgHandler: string; projectId?: string; projectHandler?: string; componentHandler?: string; readOnly?: boolean }): JSX.Element {
   const navigate = useNavigate();
@@ -54,7 +42,7 @@ export function GroupsTab({ orgHandler, projectId, projectHandler, componentHand
   const deleteMutation = useDeleteGroup(orgHandler);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
   const [deletingGroup, setDeletingGroup] = useState<Group | null>(null);
   const [tableAlert, setTableAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const filtered = useFiltered(groups ?? [], search, (g) => `${g.groupName} ${g.description ?? ''}`);
@@ -98,17 +86,18 @@ export function GroupsTab({ orgHandler, projectId, projectHandler, componentHand
         <ListingTable>
           <ListingTable.Head>
             <ListingTable.Row>
-              <ListingTable.Cell>Name</ListingTable.Cell>
-              <ListingTable.Cell>Description</ListingTable.Cell>
-              <ListingTable.Cell>Users</ListingTable.Cell>
-              <ListingTable.Cell>Roles</ListingTable.Cell>
-              <ListingTable.Cell align="right">Action</ListingTable.Cell>
+              <ListingTable.Cell sx={{ width: '25%' }}>Name</ListingTable.Cell>
+              <ListingTable.Cell sx={{ width: '42%' }}>Description</ListingTable.Cell>
+              <ListingTable.Cell sx={{ width: '18%' }}>Assigned to</ListingTable.Cell>
+              <ListingTable.Cell align="right" sx={{ width: '15%' }}>
+                Action
+              </ListingTable.Cell>
             </ListingTable.Row>
           </ListingTable.Head>
           <ListingTable.Body>
             {filtered.length === 0 ? (
               <ListingTable.Row>
-                <ListingTable.Cell colSpan={5} align="center">
+                <ListingTable.Cell colSpan={4} align="center">
                   No records to display
                 </ListingTable.Cell>
               </ListingTable.Row>
@@ -128,13 +117,8 @@ export function GroupsTab({ orgHandler, projectId, projectHandler, componentHand
                     }
                   }}>
                   <ListingTable.Cell>{g.groupName}</ListingTable.Cell>
-                  <ListingTable.Cell>{g.description}</ListingTable.Cell>
-                  <ListingTable.Cell>
-                    <GroupUserCount orgHandler={orgHandler} groupId={g.groupId} />
-                  </ListingTable.Cell>
-                  <ListingTable.Cell>
-                    <GroupRoleCount orgHandler={orgHandler} groupId={g.groupId} projectId={projectId} componentId={componentId} />
-                  </ListingTable.Cell>
+                  <ListingTable.Cell sx={{ maxWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.description}</ListingTable.Cell>
+                  <ListingTable.Cell>{g.roleCount ?? '—'} {g.roleCount === 1 ? 'role' : g.roleCount ? 'roles' : ''}</ListingTable.Cell>
                   <ListingTable.Cell align="right">
                     <Tooltip title="Edit">
                       <IconButton

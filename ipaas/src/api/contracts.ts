@@ -62,13 +62,23 @@ import type {
   RemoveUserFromGroupInput,
   MessageResult,
   ResetPasswordResult,
+  PendingInvitation,
+  InviteUsersInput,
 } from '../types/auth';
 import type { BuildRunLogs, DeployComponentInput, UpdateBuildpackConfigsInput } from '../types/build';
 import type { ContainerRegistry } from '../types/cloudEditor';
-import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability, DeleteComponentResult } from '../types/component';
+import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability, DeleteComponentResult, DeploymentTrack, CreateDeploymentTrackInput, DeleteTrackResult, CheckDeletableResult } from '../types/component';
 import type { CertGroup, CertMapping, SchemaConfigData, ConfigMgtData, SchemaConfigItem, SaveSchemaConfigInput, PostConfigMgtInput } from '../types/configuration';
 import type { ComponentDeployment, BuildRun, ReleaseMgtDeployment, DeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../types/deployment';
 import type { CreateDeploymentPipelineRequest, DeploymentPipeline, EnvTemplate, PipelineDeletionEligibility } from '../types/deploymentPipeline';
+import type { OnPremKey, OnPremKeySubscription } from '../types/onPremKey';
+import type { EgressPolicy, EgressPolicyRequest } from '../types/egressPolicy';
+import type { AuthzRole, CreateAuthzRoleInput, UpdateAuthzRoleInput } from '../types/projectAuthz';
+import type { ByoiEndpointFileContents, ConfigMapWriteData, ConfigMountWriteData, CreateByoiComponentInput, CreateByoiComponentResult, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsVolume, DevopsVolumeMount, ReleaseDetails, SecretWriteData, VolumeMountWriteData, VolumeWriteData } from '../types/tailscale';
+import type { CreateUrlMappingInput, CustomDomain, CustomDomainType, CustomUrlMapping } from '../types/customDomain';
+import type { OrgWorkflowConfig, WorkflowConfigRequest, WorkflowDefinition } from '../types/workflow';
+import type { Dataplane, IdentityProvider, IdentityProviderRequest, RoleGroupMappingResponse } from '../types/appSecurity';
+import type { CreateGitCredentialInput, CredentialDeleteEligibility, GitCredential } from '../types/credentials';
 import type { Environment, CloudDataPlane, EnvironmentInput } from '../types/environment';
 import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput } from '../types/executions';
 import type { InsightsEnvironment, ComponentInsights } from '../types/insights';
@@ -77,7 +87,7 @@ import type { ApiDocument, RuleAdherenceResponse, ThrottlingPolicy } from '../ty
 import type { CreateMcpApiInput, CreatedMcpApi, McpFeatureOperation, McpProxyMetadata, CreateMcpProxyComponentInput } from '../types/mcpProxy';
 import type { OrgEntry, OrgComponentLimits, OrgSubscription, RegisterUserResponse } from '../types/org';
 import type { PrebuiltIntegrationsData, PrebuiltComponentRef, PrebuiltEnvironmentRef } from '../types/prebuilt';
-import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput } from '../types/project';
+import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput, UpdateProjectInput } from '../types/project';
 import type { Repository, Commit, UserRepo, RepoBranch, RepoMetadata, RepoTreeNode, ChoreoSampleImageEntry } from '../types/repository';
 import type { Sample } from '../types/samples';
 
@@ -152,6 +162,9 @@ export interface AuthApi {
   updateUser(orgHandler: string, input: UpdateUserInput): Promise<unknown>;
   updateUserGroups(orgHandler: string, input: UpdateUserGroupsInput): Promise<unknown>;
   deleteUser(orgHandler: string, userId: string): Promise<unknown>;
+  fetchPendingInvitations(orgHandler: string): Promise<PendingInvitation[]>;
+  inviteUsers(orgHandler: string, input: InviteUsersInput): Promise<unknown>;
+  deleteInvitation(orgHandler: string, invitationId: string): Promise<unknown>;
   fetchRoles(orgHandler: string, projectId?: string, integrationId?: string): Promise<Role[]>;
   fetchRoleDetail(orgHandler: string, roleId: string, projectId?: string, integrationId?: string): Promise<RoleDetail>;
   fetchAllPermissions(): Promise<PermissionsResponse>;
@@ -205,6 +218,9 @@ export interface ComponentsApi {
   fetchComponentNameAvailability(projectId: string, componentNameCandidate: string): Promise<ComponentNameAvailability>;
   fetchComponentEndpointSpec(componentId: string, versionId: string, endpointId: string): Promise<string | null>;
   createMcpProxyComponent(input: CreateMcpProxyComponentInput): Promise<Component>;
+  createDeploymentTrack(input: CreateDeploymentTrackInput): Promise<DeploymentTrack>;
+  deleteDeploymentTrack(input: { orgHandler: string; componentId: string; projectId: string; deploymentTrackId: string }): Promise<DeleteTrackResult>;
+  checkDeploymentTrackDeletable(input: { orgHandler: string; componentId: string; projectId: string; deploymentTrackId: string }): Promise<CheckDeletableResult>;
 }
 
 // ---------------------------------------------------------------------------
@@ -265,6 +281,115 @@ export interface DeploymentPipelinesApi {
   fetchPipelineDeletionEligibility(orgUuid: string, pipelineId: string): Promise<PipelineDeletionEligibility>;
   updateProjectDeploymentPipelines(orgUuid: string, projectId: string, deploymentPipelineIds: string[]): Promise<string[]>;
   setDefaultProjectDeploymentPipeline(orgUuid: string, projectId: string, defaultDeploymentPipelineId: string): Promise<string>;
+}
+
+// ---------------------------------------------------------------------------
+// On-prem keys
+// ---------------------------------------------------------------------------
+
+export interface OnPremKeysApi {
+  fetchOnPremKeys(orgHandle: string): Promise<OnPremKey[]>;
+  fetchOnPremKeySubscription(orgHandle: string): Promise<OnPremKeySubscription>;
+  generateOnPremKey(orgHandle: string, displayName: string): Promise<OnPremKey>;
+  regenerateOnPremKey(orgHandle: string, handle: string): Promise<OnPremKey>;
+  renameOnPremKey(orgHandle: string, handle: string, displayName: string): Promise<OnPremKey>;
+  revokeOnPremKey(orgHandle: string, handle: string): Promise<OnPremKey>;
+}
+
+// ---------------------------------------------------------------------------
+// Application security (identity providers, role-group mappings, data planes)
+// ---------------------------------------------------------------------------
+
+export interface AppSecurityApi {
+  fetchIdentityProviders(): Promise<IdentityProvider[]>;
+  fetchIdentityProvider(id: string): Promise<IdentityProvider>;
+  createIdentityProvider(input: IdentityProviderRequest): Promise<IdentityProvider>;
+  updateIdentityProvider(id: string, input: IdentityProviderRequest): Promise<IdentityProvider>;
+  deleteIdentityProvider(id: string): Promise<void>;
+  fetchRoleGroupMappings(): Promise<RoleGroupMappingResponse>;
+  updateRoleGroupMapping(roleId: string, groups: string[]): Promise<void>;
+  fetchDataplanes(): Promise<Dataplane[]>;
+}
+
+// ---------------------------------------------------------------------------
+// Credentials (git)
+// ---------------------------------------------------------------------------
+
+export interface CredentialsApi {
+  fetchGitCredentials(): Promise<GitCredential[]>;
+  createGitCredential(input: CreateGitCredentialInput): Promise<GitCredential>;
+  checkGitCredentialDeletion(credentialId: string): Promise<CredentialDeleteEligibility>;
+  deleteGitCredential(credentialId: string): Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
+// Approval workflows
+// ---------------------------------------------------------------------------
+
+export interface WorkflowsApi {
+  fetchWorkflowDefinitions(): Promise<WorkflowDefinition[]>;
+  fetchWorkflowConfigs(): Promise<OrgWorkflowConfig[]>;
+  createWorkflowConfig(input: WorkflowConfigRequest): Promise<OrgWorkflowConfig>;
+  updateWorkflowConfig(configId: string, input: WorkflowConfigRequest): Promise<OrgWorkflowConfig>;
+}
+
+// ---------------------------------------------------------------------------
+// Egress control
+// ---------------------------------------------------------------------------
+
+export interface EgressControlApi {
+  fetchEgressPolicy(orgUuid: string, projectId?: string): Promise<EgressPolicy | null>;
+  createEgressPolicy(orgUuid: string, input: EgressPolicyRequest, projectId?: string): Promise<EgressPolicy>;
+  updateEgressPolicy(orgUuid: string, policyId: string, input: EgressPolicyRequest, projectId?: string): Promise<EgressPolicy>;
+  deleteEgressPolicy(orgUuid: string, policyId: string, projectId?: string): Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
+// Project authorization (Application Security)
+// ---------------------------------------------------------------------------
+
+export interface ProjectAuthzApi {
+  fetchAuthzRoles(projectId: string): Promise<AuthzRole[]>;
+  createAuthzRole(projectId: string, input: CreateAuthzRoleInput): Promise<AuthzRole>;
+  updateAuthzRole(projectId: string, input: UpdateAuthzRoleInput): Promise<AuthzRole>;
+  deleteAuthzRole(roleId: string): Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
+// Custom domains / URL mappings (URL Settings)
+// ---------------------------------------------------------------------------
+
+export interface CustomDomainsApi {
+  fetchCustomDomains(type?: CustomDomainType): Promise<CustomDomain[]>;
+  fetchComponentUrlMappings(componentId: string): Promise<CustomUrlMapping[]>;
+  createUrlMapping(input: CreateUrlMappingInput): Promise<CustomUrlMapping>;
+  updateUrlMapping(urlId: string, input: CreateUrlMappingInput): Promise<CustomUrlMapping>;
+  deleteUrlMapping(urlId: string): Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
+// Tailscale VPN (BYOI proxy create/config/deploy)
+// ---------------------------------------------------------------------------
+
+export interface TailscaleApi {
+  getSampleRegistryId(orgUuid: string): Promise<string>;
+  createByoiComponent(input: CreateByoiComponentInput): Promise<CreateByoiComponentResult>;
+  deployByoiImage(componentId: string, releaseId: string, imageUrl: string): Promise<{ message: string; success: boolean }>;
+  getReleaseById(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<ReleaseDetails>;
+  getSecrets(orgUuid: string, projectId: string, environmentId: string): Promise<DevopsSecret[]>;
+  createSecret(orgUuid: string, projectId: string, data: SecretWriteData): Promise<DevopsSecret>;
+  updateSecret(orgUuid: string, projectId: string, secretId: string, data: SecretWriteData): Promise<DevopsSecret>;
+  getConfigMaps(orgUuid: string, projectId: string, environmentId: string): Promise<DevopsConfigMap[]>;
+  getConfigMapDetails(orgUuid: string, projectId: string, environmentId: string, configMapId: string): Promise<DevopsConfigMapDetails>;
+  createConfigMap(orgUuid: string, projectId: string, data: ConfigMapWriteData): Promise<DevopsConfigMap>;
+  updateConfigMapData(orgUuid: string, projectId: string, configMapId: string, data: ConfigMapWriteData): Promise<DevopsConfigMapDetails>;
+  getContainerConfigMounts(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string): Promise<DevopsConfigMount[]>;
+  mountConfig(orgUuid: string, projectId: string, componentId: string, data: ConfigMountWriteData): Promise<DevopsConfigMount>;
+  updateConfigMount(orgUuid: string, projectId: string, path: { componentId: string; releaseId: string; containerId: string; mountId: string }, data: Record<string, unknown>): Promise<DevopsConfigMount>;
+  createVolume(orgUuid: string, projectId: string, data: VolumeWriteData): Promise<DevopsVolume>;
+  mountVolume(orgUuid: string, projectId: string, path: { appId: string; appEnvId: string; containerId: string }, data: VolumeMountWriteData): Promise<DevopsVolumeMount>;
+  getByoiEndpointsYaml(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<ByoiEndpointFileContents>;
+  updateByoiEndpointsYaml(orgUuid: string, projectId: string, componentId: string, releaseId: string, endpointsYaml: string): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -375,6 +500,8 @@ export interface ProjectsApi {
   fetchProjectHandlerAvailability(orgId: number, candidate: string): Promise<ProjectHandlerAvailability>;
   createProject(input: CreateProjectInput): Promise<Project>;
   createMonoRepoProject(input: CreateMonoRepoProjectInput): Promise<Project>;
+  updateProject(input: UpdateProjectInput): Promise<Project>;
+  deleteProject(projectId: string): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -418,6 +545,11 @@ export interface AppApi {
   copilot: CopilotApi;
   deployments: DeploymentsApi;
   deploymentPipelines: DeploymentPipelinesApi;
+  onPremKeys: OnPremKeysApi;
+  appSecurity: AppSecurityApi;
+  credentials: CredentialsApi;
+  workflows: WorkflowsApi;
+  egressControl: EgressControlApi;
   environments: EnvironmentsApi;
   executions: ExecutionsApi;
   insights: InsightsApi;
@@ -427,6 +559,9 @@ export interface AppApi {
   org: OrgApi;
   prebuilt: PrebuiltApi;
   projects: ProjectsApi;
+  projectAuthz: ProjectAuthzApi;
+  tailscale: TailscaleApi;
+  customDomains: CustomDomainsApi;
   repository: RepositoryApi;
   samples: SamplesApi;
 }

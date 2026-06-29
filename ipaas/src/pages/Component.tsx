@@ -50,7 +50,14 @@ import { UUID_RE } from '../utils/string';
  * type uses the new dispatch and the legacy `<Environment>` is deleted.
  * See [[icp-integration-migration]] and [[icp-phase4-commitment]] in memory.
  */
-const MIGRATED_INTEGRATION_TYPES = new Set<IntegrationType>(['automation', 'integration-as-api', 'file-integration', 'event-integration', 'ai-agent', 'mcp-server', 'mcp-proxy']);
+const MIGRATED_INTEGRATION_TYPES = new Set<IntegrationType>(['automation', 'integration-as-api', 'file-integration', 'event-integration', 'ai-agent', 'mcp-server', 'mcp-proxy', 'tailscale-vpn']);
+
+/**
+ * Types whose module provides a `CustomOverview` that owns the WHOLE surface
+ * (its own identity header + body) — so the page skips the generic HeaderShell,
+ * Build card, track bar, and BusinessInfo. Tailscale is the only one today.
+ */
+const CUSTOM_OVERVIEW_TYPES = new Set<IntegrationType>(['tailscale-vpn']);
 
 export default function Component(scope: ComponentScope): JSX.Element {
   // Support both UUID and handler in the URL — only one query will be enabled at a time
@@ -128,6 +135,9 @@ export default function Component(scope: ComponentScope): JSX.Element {
   // module can delegate to existing chrome. This set goes away in Phase 4
   // when every type uses the new dispatch unconditionally.
   const useIntegrationsModule = identity ? MIGRATED_INTEGRATION_TYPES.has(identity.type) : false;
+  // Full-surface types (e.g. Tailscale) render only their CustomOverview — no
+  // generic header / build card / track bar / business info around it.
+  const hasCustomOverview = identity ? CUSTOM_OVERVIEW_TYPES.has(identity.type) : false;
 
   // "No source" capability: proxy/converted integrations (e.g. an MCP proxy
   // built from an existing HTTP API) have no git repo. Drives the header's
@@ -148,26 +158,28 @@ export default function Component(scope: ComponentScope): JSX.Element {
       </style>
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
         {/* Deployment track bar */}
-        {tracks.length > 0 && <DeploymentTrackBar tracks={tracks} selectedId={versionId} onChange={setSelectedTrackId} orgHandler={scope.org} projectHandler={project?.handler ?? ''} componentHandler={component.handler} />}
+        {!hasCustomOverview && tracks.length > 0 && <DeploymentTrackBar tracks={tracks} selectedId={versionId} onChange={setSelectedTrackId} orgHandler={scope.org} projectHandler={project?.handler ?? ''} componentHandler={component.handler} />}
 
         {/* <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}> */}
         <PageContent>
           {/* Component header */}
-          <HeaderShell
-            component={component}
-            project={project}
-            repository={repository}
-            latestCommit={latestCommit}
-            orgHandler={scope.org}
-            projectId={projectId}
-            projectHandler={project?.handler ?? scope.project}
-            apimId={apimId}
-            module={overviewModule}
-            hasSource={hasSource}
-          />
+          {!hasCustomOverview && (
+            <HeaderShell
+              component={component}
+              project={project}
+              repository={repository}
+              latestCommit={latestCommit}
+              orgHandler={scope.org}
+              projectId={projectId}
+              projectHandler={project?.handler ?? scope.project}
+              apimId={apimId}
+              module={overviewModule}
+              hasSource={hasSource}
+            />
+          )}
 
-          {/* Latest build card — hidden for prebuilt + no-source-repo (MCP proxy) */}
-          {showBuildCard && (
+          {/* Latest build card — hidden for prebuilt + no-source-repo (MCP proxy) + full-surface types */}
+          {!hasCustomOverview && showBuildCard && (
             <>
               <BuildCard componentId={component.id} versionId={versionId} orgHandler={scope.org} projectId={projectId} latestCommit={latestCommit} />
               <Divider sx={{ mb: 3 }} />
@@ -220,7 +232,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
           )}
 
           {/* Subscription Plans, Documents, and Compliance cards — devant only (requires APIM) */}
-          {IS_WIP && apimId && (
+          {!hasCustomOverview && IS_WIP && apimId && (
             <BusinessInfo
               projectId={projectId}
               componentId={component.id}

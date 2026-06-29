@@ -31,6 +31,9 @@ import type {
   DisplayType,
   DeploymentTrack,
   ApiVersion,
+  CreateDeploymentTrackInput,
+  DeleteTrackResult,
+  CheckDeletableResult,
 } from '../../types/component';
 import type { CreateMcpProxyComponentInput } from '../../types/mcpProxy';
 import { bff, items, q, seg, type ListResponse } from './_client';
@@ -239,4 +242,16 @@ export const updateEndpoint = (input: { componentId: string; versionId: string; 
 // MCP proxy (convert from an existing HTTP API) is a wip/APIM-only flow.
 export const createMcpProxyComponent = (_input: CreateMcpProxyComponentInput): Promise<Component> => {
   throw new Error('[cloud] components.createMcpProxyComponent: not implemented');
+};
+
+export const createDeploymentTrack = (_input: CreateDeploymentTrackInput): Promise<DeploymentTrack> => {
+  throw new Error('[cloud] components.createDeploymentTrack: not implemented');
+};
+
+export const deleteDeploymentTrack = (_input: { orgHandler: string; componentId: string; projectId: string; deploymentTrackId: string }): Promise<DeleteTrackResult> => {
+  throw new Error('[cloud] components.deleteDeploymentTrack: not implemented');
+};
+
+export const checkDeploymentTrackDeletable = (_input: { orgHandler: string; componentId: string; projectId: string; deploymentTrackId: string }): Promise<CheckDeletableResult> => {
+  throw new Error('[cloud] components.checkDeploymentTrackDeletable: not implemented');
 };
