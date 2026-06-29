@@ -104,10 +104,8 @@ export default function RegisterIdpDialog({ type, existing, onClose, onSaved, on
         onClose();
         onSaved(input.name);
       },
-      onError: (e: Error) => {
-        onClose();
-        onError(e.message || 'Failed to save the identity provider.');
-      },
+      // Keep the dialog open on failure so the user can correct and retry.
+      onError: (e: Error) => onError(e.message || 'Failed to save the identity provider.'),
     };
     if (existing) update.mutate({ id: existing.id, input }, handlers);
     else create.mutate(input, handlers);

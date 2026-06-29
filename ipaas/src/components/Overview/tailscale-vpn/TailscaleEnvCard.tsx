@@ -90,8 +90,11 @@ export default function TailscaleEnvCard({ orgHandler, projectId, component, ver
   const namespace = release?.environment?.namespaces?.[0]?.name ?? '';
   const [protocol, setProtocol] = useState<'http' | 'https'>('http');
   const [selectedPort, setSelectedPort] = useState<number | ''>('');
+  // Keep the selected endpoint pointing at a port that still exists; reset to the
+  // first mapping (or none) when the current selection is removed or unset.
   useEffect(() => {
-    if (selectedPort === '' && mappings[0]) setSelectedPort(mappings[0].port);
+    const valid = selectedPort !== '' && mappings.some((m) => m.port === selectedPort);
+    if (!valid) setSelectedPort(mappings[0]?.port ?? '');
   }, [mappings, selectedPort]);
   const tailscaleUrl = hostName && namespace ? `${protocol}://${hostName}.${namespace}.svc.cluster.local${selectedPort ? `:${selectedPort}` : ''}` : '';
 
@@ -130,7 +133,9 @@ export default function TailscaleEnvCard({ orgHandler, projectId, component, ver
     );
   };
 
-  const copyUrl = () => void navigator.clipboard.writeText(tailscaleUrl);
+  const copyUrl = () => {
+    navigator.clipboard.writeText(tailscaleUrl).catch(() => setAlert({ type: 'error', message: 'Failed to copy the URL to the clipboard.' }));
+  };
 
   return (
     <Card variant="outlined" sx={{ mb: 3 }}>
@@ -162,8 +167,8 @@ export default function TailscaleEnvCard({ orgHandler, projectId, component, ver
               </TextField>
               {mappings.length > 0 && (
                 <TextField select size="small" label="Endpoint" value={selectedPort === '' ? '' : String(selectedPort)} onChange={(e) => setSelectedPort(Number(e.target.value))} sx={{ minWidth: 200 }}>
-                  {mappings.map((m) => (
-                    <MenuItem key={m.port} value={String(m.port)}>
+                  {mappings.map((m, idx) => (
+                    <MenuItem key={`${m.port}-${idx}`} value={String(m.port)}>
                       {m.name} (:{m.port})
                     </MenuItem>
                   ))}

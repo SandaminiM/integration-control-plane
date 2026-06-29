@@ -208,7 +208,7 @@ export function updateUser(orgHandler: string, input: UpdateUserInput): Promise<
 }
 
 export function updateUserGroups(orgHandler: string, input: UpdateUserGroupsInput): Promise<unknown> {
-  return umPut(`/orgs/${orgHandler}/users/${input.userId}/groups`, { groupUUIDs: input.groupIds });
+  return umPut(`/orgs/${orgHandler}/users/${encodeURIComponent(input.userId)}/groups`, { groupUUIDs: input.groupIds });
 }
 
 export function deleteUser(orgHandler: string, userId: string): Promise<unknown> {
@@ -301,7 +301,7 @@ export function createGroup(orgHandler: string, input: CreateGroupInput): Promis
 }
 
 export function updateGroup(orgHandler: string, input: UpdateGroupInput): Promise<unknown> {
-  return authPut(`/orgs/${orgHandler}/groups/${input.groupId}`, { groupName: input.groupName, description: input.description });
+  return umPut(`/orgs/${orgHandler}/groups/v2/${encodeURIComponent(input.groupId)}`, { displayName: input.groupName, description: input.description });
 }
 
 export function deleteGroup(orgHandler: string, groupId: string): Promise<unknown> {
@@ -344,7 +344,7 @@ export function removeRoleFromGroup(orgHandler: string, input: RemoveRoleFromGro
 }
 
 export function addUsersToGroup(orgHandler: string, input: AddUsersToGroupInput): Promise<unknown> {
-  return umPost(`/orgs/${orgHandler}/groups/v2/${input.groupId}/members`, { userIds: input.userIds });
+  return umPost(`/orgs/${orgHandler}/groups/v2/${encodeURIComponent(input.groupId)}/members`, { userIds: input.userIds });
 }
 
 export function removeUserFromGroup(orgHandler: string, input: RemoveUserFromGroupInput): Promise<unknown> {

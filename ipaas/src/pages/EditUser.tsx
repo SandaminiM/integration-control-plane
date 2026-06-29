@@ -36,25 +36,32 @@ function AssignGroupsDialog({ orgHandler, user, onClose, onAssigned }: { orgHand
   const [selected, setSelected] = useState<Group[]>([]);
   const [error, setError] = useState<string | null>(null);
   const available = allGroups.filter((g) => !user.groups.some((ug) => ug.groupId === g.groupId));
+  // The user-side groups body is keyed by group UUID (full replacement set). A
+  // missing uuid would silently drop that membership, so fail fast instead.
+  const handleAssign = () => {
+    const groupIds = [...user.groups, ...selected].map((g) => g.uuid);
+    if (groupIds.some((id) => !id)) {
+      setError('One or more groups are missing an identifier. Please reload and try again.');
+      return;
+    }
+    mutation.mutate(
+      { userId: user.userId, groupIds: groupIds as string[] },
+      {
+        onSuccess: () => {
+          onAssigned?.();
+          onClose();
+        },
+        onError: (errorObj) => setError(errorObj?.message ?? 'Failed to assign groups. Please try again.'),
+      },
+    );
+  };
   return (
     <FormDialog
       open
       onClose={onClose}
       primaryLabel="Assign"
       primaryDisabled={selected.length === 0 || mutation.isPending}
-      onPrimary={() =>
-        mutation.mutate(
-          // The user-side groups body is keyed by group UUID (full replacement set).
-          { userId: user.userId, groupIds: [...user.groups.map((g) => g.uuid), ...selected.map((g) => g.uuid)].filter((id): id is string => !!id) },
-          {
-            onSuccess: () => {
-              onAssigned?.();
-              onClose();
-            },
-            onError: (errorObj) => setError(errorObj?.message ?? 'Failed to assign groups. Please try again.'),
-          },
-        )
-      }
+      onPrimary={handleAssign}
       title="Assign Groups">
       {error && (
         <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>

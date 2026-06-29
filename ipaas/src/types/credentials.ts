@@ -46,12 +46,14 @@ export interface CredentialDeleteEligibility {
   components: CredentialComponentRef[];
 }
 
-/** Create input — exactly one provider config is supplied. */
-export interface CreateGitCredentialInput {
-  name: string;
-  type: GitProvider;
-  bitbucketCredential?: { userName: string; appPassword: string };
-  bitbucketServerConfig?: { serverUrl: string; serverToken: string };
-  gitLabServerConfig?: { serverUrl: string; pat: string };
-  azureDevOpsConfig?: { organizationName: string; pat: string };
-}
+/**
+ * Create input — a discriminated union keyed by `type` so each provider supplies
+ * exactly its own config block and forbids the others (no ambiguous payloads).
+ * GitHub uses an app/OAuth flow and carries no inline config.
+ */
+export type CreateGitCredentialInput =
+  | { name: string; type: GitProvider.GITHUB }
+  | { name: string; type: GitProvider.BITBUCKET_CLOUD; bitbucketCredential: { userName: string; appPassword: string } }
+  | { name: string; type: GitProvider.BITBUCKET_SERVER; bitbucketServerConfig: { serverUrl: string; serverToken: string } }
+  | { name: string; type: GitProvider.GITLAB_SELF_MANAGED; gitLabServerConfig: { serverUrl: string; pat: string } }
+  | { name: string; type: GitProvider.AZURE_DEVOPS; azureDevOpsConfig: { organizationName: string; pat: string } };

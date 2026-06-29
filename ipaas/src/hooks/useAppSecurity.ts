@@ -58,7 +58,10 @@ export function useUpdateIdentityProvider() {
   const qc = useQueryClient();
   return useMutation<IdentityProvider, Error, { id: string; input: IdentityProviderRequest }>({
     mutationFn: ({ id, input }) => updateIdentityProvider(id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'idps'] }),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: [ROOT_KEY, 'idps'] });
+      qc.invalidateQueries({ queryKey: [ROOT_KEY, 'idp', id] });
+    },
   });
 }
 
@@ -66,7 +69,10 @@ export function useDeleteIdentityProvider() {
   const qc = useQueryClient();
   return useMutation<void, Error, string>({
     mutationFn: (id) => deleteIdentityProvider(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'idps'] }),
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: [ROOT_KEY, 'idps'] });
+      qc.removeQueries({ queryKey: [ROOT_KEY, 'idp', id] });
+    },
   });
 }
 
@@ -79,7 +85,10 @@ export function useToggleIdentityProvider() {
       const { id: _id, ...rest } = detail;
       return updateIdentityProvider(id, { ...rest, enabled });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'idps'] }),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: [ROOT_KEY, 'idps'] });
+      qc.invalidateQueries({ queryKey: [ROOT_KEY, 'idp', id] });
+    },
   });
 }
 

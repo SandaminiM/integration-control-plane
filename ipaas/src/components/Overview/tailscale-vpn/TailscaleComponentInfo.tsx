@@ -115,7 +115,7 @@ export default function TailscaleComponentInfo({ component }: { component: Compo
   return (
     <>
       <Stack direction="row" alignItems="flex-start" gap={2} sx={{ mb: 3 }}>
-        <Avatar variant="rounded" sx={{ width: 56, height: 56, fontSize: 24, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
+        <Avatar sx={{ width: 56, height: 56, fontSize: 24, bgcolor: 'text.primary', color: 'background.paper' }}>
           {(component.displayName || component.handler || 'T').charAt(0).toUpperCase()}
         </Avatar>
         <Box sx={{ flex: 1 }}>

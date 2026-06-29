@@ -88,7 +88,7 @@ const toBffCreateMonoRepoProjectBody = async (input: CreateMonoRepoProjectInput)
 
 export const createProject = async (input: CreateProjectInput): Promise<Project> => bff.post<Project>('/projects', await toBffCreateProjectBody(input));
 
-export const updateProject = (input: UpdateProjectInput): Promise<Project> => bff.put<Project>(`/projects/${seg(input.id)}`, { name: input.name, description: input.description });
+export const updateProject = (input: UpdateProjectInput): Promise<Project> => bff.put<Project>(`/projects/${seg(input.id)}`, { name: input.name, description: input.description, version: input.version });
 
 export const deleteProject = (projectId: string): Promise<void> => bff.delete<void>(`/projects/${seg(projectId)}`);
 

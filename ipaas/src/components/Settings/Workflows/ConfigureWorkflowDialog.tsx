@@ -17,7 +17,7 @@
  */
 
 import { Autocomplete, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Stack, TextField, Typography } from '@wso2/oxygen-ui';
-import { useState, type JSX } from 'react';
+import { useEffect, useRef, useState, type JSX } from 'react';
 import { useRoles, useUsers } from '../../../hooks/useAuth';
 import { useCreateWorkflowConfig, useUpdateWorkflowConfig } from '../../../hooks/useWorkflows';
 import type { Role, User } from '../../../types/auth';
@@ -46,8 +46,21 @@ export default function ConfigureWorkflowDialog({ orgHandler, definition, existi
   const update = useUpdateWorkflowConfig();
 
   const selectableRoles = roles.filter((r) => r.roleName !== ADMIN_ROLE);
-  const [selectedRoles, setSelectedRoles] = useState<Role[]>(() => roles.filter((r) => r.roleName !== ADMIN_ROLE && (existingConfig?.assigneeRoles ?? []).includes(r.roleName)));
-  const [selectedUsers, setSelectedUsers] = useState<User[]>(() => users.filter((u) => (existingConfig?.assignees ?? []).includes(u.userId)));
+  const [selectedRoles, setSelectedRoles] = useState<Role[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
+
+  // Seed edit-mode selections once the roles/users queries resolve (they are
+  // empty on first render). A ref guards against re-seeding on refetch, which
+  // would clobber the user's edits.
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (seededRef.current || loadingRoles || loadingUsers) return;
+    if (existingConfig) {
+      setSelectedRoles(roles.filter((r) => r.roleName !== ADMIN_ROLE && (existingConfig.assigneeRoles ?? []).includes(r.roleName)));
+      setSelectedUsers(users.filter((u) => (existingConfig.assignees ?? []).includes(u.userId)));
+    }
+    seededRef.current = true;
+  }, [roles, users, existingConfig, loadingRoles, loadingUsers]);
 
   const saving = create.isPending || update.isPending;
 

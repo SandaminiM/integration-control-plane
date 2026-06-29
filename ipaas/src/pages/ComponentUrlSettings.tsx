@@ -84,9 +84,9 @@ function ConfigureDialog({ componentId, domains, onClose, onDone }: { componentI
               ))
             )}
           </TextField>
-          <TextField label="Path" value={customPath} onChange={(e) => setCustomPath(e.target.value)} fullWidth InputProps={{ startAdornment: <InputAdornment position="start">/</InputAdornment> }} />
+          <TextField label="Path" value={customPath} onChange={(e) => setCustomPath(e.target.value)} fullWidth slotProps={{ input: { startAdornment: <InputAdornment position="start">/</InputAdornment> } }} />
           {preview && (
-            <TextField label="Custom URL" value={preview} fullWidth InputProps={{ readOnly: true }} />
+            <TextField label="Custom URL" value={preview} fullWidth slotProps={{ input: { readOnly: true } }} />
           )}
         </Stack>
       </DialogContent>

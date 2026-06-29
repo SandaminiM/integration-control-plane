@@ -43,6 +43,20 @@ import { useOrgUuid } from './useOrgUuid';
 const ROOT = 'tailscale';
 const MAIN_CONTAINER_TYPES = new Set(['MAIN', 'main']);
 
+/**
+ * Run one save-and-deploy step, rethrowing with which step failed + retry
+ * guidance. The steps are sequential and individually idempotent (each re-fetches
+ * existing state), so re-running Save & Deploy safely resumes after a failure.
+ */
+async function runStep<T>(label: string, fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e);
+    throw new Error(`${label} failed: ${detail}. Any earlier changes were saved — fix the issue and Save & Deploy again to retry.`);
+  }
+}
+
 /** All Tailscale proxy components in a project (`componentSubType: 'tailscale'`). */
 export function useTailscaleComponents(orgHandler: string, projectId: string) {
   return useQuery<Component[]>({
@@ -160,11 +174,10 @@ export function useSaveAndDeployTailscale(projectId: string) {
       const configMapName = tailscaleConfigMapName(handle, envName);
 
       // 1. Auth Secret — upsert only when a new credential was entered.
-      const existingSecrets = await getSecrets(orgUuid, projectId, envId);
-      const existingSecret = existingSecrets.find((s) => s.name === secretName);
-      const credential = authMethod === 'authKey' ? authKey.trim() : clientSecret.trim();
-      let newSecretId: string | null = null;
-      if (credential) {
+      const newSecretId = await runStep('Saving the authentication secret', async () => {
+        const credential = authMethod === 'authKey' ? authKey.trim() : clientSecret.trim();
+        if (!credential) return null;
+        const existingSecret = (await getSecrets(orgUuid, projectId, envId)).find((s) => s.name === secretName);
         const data = authMethod === 'authKey' ? { [TS_AUTH_KEY]: credential } : { [OAUTH_CLIENT_SECRET]: credential };
         const base = {
           name: secretName,
@@ -179,47 +192,54 @@ export function useSaveAndDeployTailscale(projectId: string) {
           config_type: 'VariableList',
           data,
         };
-        if (existingSecret) await updateSecret(orgUuid, projectId, existingSecret.ID, { ...base, version: existingSecret.version });
-        else newSecretId = (await createSecret(orgUuid, projectId, base)).ID;
-      }
+        if (existingSecret) {
+          await updateSecret(orgUuid, projectId, existingSecret.ID, { ...base, version: existingSecret.version });
+          return null;
+        }
+        return (await createSecret(orgUuid, projectId, base)).ID;
+      });
 
       // 2. Port-mappings ConfigMap — upsert.
-      const existingConfigMaps = await getConfigMaps(orgUuid, projectId, envId);
-      const existingConfigMap = existingConfigMaps.find((c) => c.name === configMapName);
-      const configData = {
-        name: configMapName,
-        metadata: { isDefaultConfig: true },
-        environment_id: envId,
-        organization_id: orgUuid,
-        project_id: projectId,
-        app_environment_id: releaseId,
-        config_type: 'File',
-        isBase64: false,
-        data: { 'config.yaml': buildPortMappingsYaml(mappings) },
-      };
-      let newConfigMapId: string | null = null;
-      if (existingConfigMap) await updateConfigMapData(orgUuid, projectId, existingConfigMap.ID, configData);
-      else newConfigMapId = (await createConfigMap(orgUuid, projectId, configData)).ID;
+      const newConfigMapId = await runStep('Saving the port-mapping configuration', async () => {
+        const existingConfigMap = (await getConfigMaps(orgUuid, projectId, envId)).find((c) => c.name === configMapName);
+        const configData = {
+          name: configMapName,
+          metadata: { isDefaultConfig: true },
+          environment_id: envId,
+          organization_id: orgUuid,
+          project_id: projectId,
+          app_environment_id: releaseId,
+          config_type: 'File',
+          isBase64: false,
+          data: { 'config.yaml': buildPortMappingsYaml(mappings) },
+        };
+        if (existingConfigMap) {
+          await updateConfigMapData(orgUuid, projectId, existingConfigMap.ID, configData);
+          return null;
+        }
+        return (await createConfigMap(orgUuid, projectId, configData)).ID;
+      });
 
       // 3. BYOI endpoints YAML.
-      await updateByoiEndpointsYaml(orgUuid, projectId, componentId, releaseId, buildEndpointsYaml(mappings));
+      await runStep('Updating the proxy endpoints', () => updateByoiEndpointsYaml(orgUuid, projectId, componentId, releaseId, buildEndpointsYaml(mappings)));
 
       // 4. Mount any newly-created Secret/ConfigMap onto the proxy's main container.
       if (newSecretId || newConfigMapId) {
-        const release = await getReleaseById(orgUuid, projectId, componentId, releaseId);
-        const container = release.containers.find((c) => MAIN_CONTAINER_TYPES.has(c.type ?? '')) ?? release.containers[0];
-        if (container) {
+        await runStep('Mounting the configuration onto the proxy', async () => {
+          const release = await getReleaseById(orgUuid, projectId, componentId, releaseId);
+          const container = release.containers.find((c) => MAIN_CONTAINER_TYPES.has(c.type ?? '')) ?? release.containers[0];
+          if (!container) return;
           if (newSecretId) {
             await mountConfig(orgUuid, projectId, componentId, { app_environment_id: releaseId, container_id: container.ID, secret_id: newSecretId, configmap_id: null, mount_type: 'ENVFile', mount_permissions: '0000', mount_path: '', config_key: '' });
           }
           if (newConfigMapId) {
             await mountConfig(orgUuid, projectId, componentId, { app_environment_id: releaseId, container_id: container.ID, configmap_id: newConfigMapId, secret_id: null, mount_type: 'File', mount_path: '/config.yaml', config_key: 'config.yaml', mount_permissions: '0644' });
           }
-        }
+        });
       }
 
       // 5. Deploy the proxy image.
-      return deployByoiImage(componentId, releaseId, TAILSCALE_IMAGE);
+      return runStep('Deploying the proxy', () => deployByoiImage(componentId, releaseId, TAILSCALE_IMAGE));
     },
     onSuccess: (_data, input) => {
       qc.invalidateQueries({ queryKey: [ROOT, 'secrets', orgUuid, projectId, input.envId] });
