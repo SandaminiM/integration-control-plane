@@ -28,6 +28,7 @@ import {
   mountConfig,
   removeConfigMount,
   updateConfigMapData,
+  updateConfigMount,
   updateSecret,
 } from '#api/devopsConfigs';
 import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, ReleaseDetails, SaveConfigInput, SecretWriteData } from '../types/devopsConfigs';
@@ -125,13 +126,18 @@ export function useSaveConfig(projectId: string) {
         return (await createConfigMap(orgUuid, projectId, body)).ID;
       })();
 
-      // 2. On create, mount the config onto the container (edits keep the mount).
+      // 2. On create, mount the config onto the container. On edit, env-var mounts
+      // never change, but a file mount's `mount_path` is editable — push it to the
+      // existing mount so the change actually takes effect (the same payload as create).
       if (!existing) {
         const mount: ConfigMountWriteData =
           kind === 'envVars'
             ? { app_environment_id: releaseId, container_id: containerId, configmap_id: isSecret ? null : configId, secret_id: isSecret ? configId : null, mount_type: 'ENVFile', mount_permissions: '0000', mount_path: '', config_key: '', deploy_changes: true }
             : { app_environment_id: releaseId, container_id: containerId, configmap_id: isSecret ? null : configId, secret_id: isSecret ? configId : null, mount_type: 'File', mount_permissions: '0644', mount_path: mountPath ?? '', config_key: 'data', deploy_changes: true };
         await mountConfig(orgUuid, projectId, componentId, mount);
+      } else if (kind === 'fileMount') {
+        const mount: ConfigMountWriteData = { app_environment_id: releaseId, container_id: containerId, configmap_id: isSecret ? null : configId, secret_id: isSecret ? configId : null, mount_type: 'File', mount_permissions: '0644', mount_path: mountPath ?? '', config_key: 'data', deploy_changes: true };
+        await updateConfigMount(orgUuid, projectId, { componentId, releaseId, containerId, mountId: existing.mountId }, mount);
       }
       return configId;
     },

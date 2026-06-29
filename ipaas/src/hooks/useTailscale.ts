@@ -231,6 +231,9 @@ export function useSaveAndDeployTailscale(projectId: string) {
       qc.invalidateQueries({ queryKey: [ROOT, 'secrets', orgUuid, projectId, input.envId] });
       qc.invalidateQueries({ queryKey: [ROOT, 'configmaps', orgUuid, projectId, input.envId] });
       qc.invalidateQueries({ queryKey: [ROOT, 'byoiEndpoints', orgUuid, projectId, input.componentId, input.releaseId] });
+      // The secret/configmap writes go through #api/devopsConfigs — refresh the shared
+      // Configs & Secrets surface, which keys its queries under 'devopsConfigs'.
+      qc.invalidateQueries({ queryKey: ['devopsConfigs'] });
       qc.invalidateQueries({ queryKey: ['componentDeployment'] });
     },
   });

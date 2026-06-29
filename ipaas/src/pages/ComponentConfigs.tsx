@@ -68,6 +68,12 @@ export default function ComponentConfigs({ org, project, component }: ComponentS
   const [deleting, setDeleting] = useState<ConfigRow | null>(null);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  // Switching track/environment changes the editor's context (release/container/env);
+  // drop any open create/edit view so ConfigEditor can't operate on a stale row.
+  useEffect(() => {
+    setView({ kind: 'list' });
+  }, [trackId, envId]);
+
   const handleDelete = () => {
     if (!deleting || !comp) return;
     del.mutate(
@@ -106,12 +112,12 @@ export default function ComponentConfigs({ org, project, component }: ComponentS
           <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
         ) : !comp ? (
           <Typography>Integration not found</Typography>
+        ) : !releaseId || !containerId ? (
+          <Alert severity="info">Deploy this integration to the selected environment to manage its configs and secrets.</Alert>
         ) : view.kind === 'create' ? (
           <ConfigEditor ctx={ctx} onBack={() => setView({ kind: 'list' })} onSaved={onEditorDone} onError={(message) => setAlert({ type: 'error', message })} />
         ) : view.kind === 'edit' ? (
           <ConfigEditor ctx={ctx} existing={view.row} onBack={() => setView({ kind: 'list' })} onSaved={onEditorDone} onError={(message) => setAlert({ type: 'error', message })} />
-        ) : !releaseId || !containerId ? (
-          <Alert severity="info">Deploy this integration to the selected environment to manage its configs and secrets.</Alert>
         ) : (
           <>
             <PageTitle>

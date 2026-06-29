@@ -44,7 +44,20 @@ interface ConfigEditorProps {
 /** Selectable type card (Environment Variables vs File Mount). */
 function TypeCard({ title, description, selected, disabled, onSelect }: { title: string; description: string; selected: boolean; disabled: boolean; onSelect: () => void }): JSX.Element {
   return (
-    <Paper variant="outlined" onClick={() => !disabled && onSelect()} sx={{ flex: 1, p: 2, cursor: disabled ? 'default' : 'pointer', borderColor: selected ? 'primary.main' : 'divider', borderWidth: selected ? 2 : 1, opacity: disabled && !selected ? 0.5 : 1 }}>
+    <Paper
+      variant="outlined"
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-pressed={selected}
+      aria-disabled={disabled}
+      onClick={() => !disabled && onSelect()}
+      onKeyDown={(e) => {
+        if (disabled || (e.key !== 'Enter' && e.key !== ' ')) return;
+        e.preventDefault();
+        onSelect();
+      }}
+      sx={{ flex: 1, p: 2, textAlign: 'left', cursor: disabled ? 'default' : 'pointer', borderColor: selected ? 'primary.main' : 'divider', borderWidth: selected ? 2 : 1, opacity: disabled && !selected ? 0.5 : 1, '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 } }}
+    >
       <Typography sx={{ fontWeight: 600 }}>{title}</Typography>
       <Typography variant="body2" color="text.secondary">
         {description}
@@ -83,7 +96,10 @@ export default function ConfigEditor({ ctx, existing, onBack, onSaved, onError }
   const nameErr = validateDisplayName(name);
   const draftKeyErr = draftKey ? validateConfigKey(draftKey) : '';
   const pathErr = validateMountPath(mountPath);
-  const canSave = !save.isPending && !nameErr && (kind === 'envVars' ? rows.length > 0 : !pathErr && fileContent.trim().length > 0);
+  // Secret values are write-only, so existing-secret rows load blank and must be
+  // re-entered — never persist a secret env var with an empty value.
+  const hasEmptySecretValue = isSecret && kind === 'envVars' && rows.some((r) => r.value === '');
+  const canSave = !save.isPending && !nameErr && !hasEmptySecretValue && (kind === 'envVars' ? rows.length > 0 : !pathErr && fileContent.trim().length > 0);
 
   const addRow = () => {
     const keyErr = validateConfigKey(draftKey);
@@ -164,7 +180,7 @@ export default function ConfigEditor({ ctx, existing, onBack, onSaved, onError }
               {rows.map((r, i) => (
                 <Stack key={`${r.key}-${i}`} direction="row" gap={1} alignItems="center">
                   <TextField size="small" value={r.key} disabled fullWidth sx={{ flex: 1 }} />
-                  <TextField size="small" type={isSecret ? 'password' : 'text'} value={r.value} placeholder={isSecret ? 'Enter value' : ''} onChange={(e) => setRows((prev) => prev.map((row, idx) => (idx === i ? { ...row, value: e.target.value } : row)))} fullWidth sx={{ flex: 1 }} />
+                  <TextField size="small" type={isSecret ? 'password' : 'text'} value={r.value} placeholder={isSecret ? 'Re-enter value' : ''} error={isSecret && r.value === ''} onChange={(e) => setRows((prev) => prev.map((row, idx) => (idx === i ? { ...row, value: e.target.value } : row)))} fullWidth sx={{ flex: 1 }} />
                   <IconButton size="small" color="error" aria-label={`Remove ${r.key}`} onClick={() => setRows((prev) => prev.filter((_, idx) => idx !== i))}>
                     <Trash2 size={16} />
                   </IconButton>
