@@ -149,7 +149,7 @@ export async function loadConfig(): Promise<void> {
       systemApisBaseUrl: systemApisBase || DEFAULT_CONFIG.systemApisBaseUrl,
       asgardeoOrgNumericId: (() => {
         if (config.ASGARDEO_ORG_NUMERIC_ID) return parseInt(config.ASGARDEO_ORG_NUMERIC_ID, 10);
-        const stored = localStorage.getItem('icp_org_numeric_id');
+        const stored = localStorage.getItem('org_numeric_id');
         return stored ? parseInt(stored, 10) : undefined;
       })(),
       sysApiPrefix: config.SYS_API_PREFIX || DEFAULT_CONFIG.sysApiPrefix,

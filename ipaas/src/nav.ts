@@ -221,8 +221,12 @@ function resolveResource(pathname: string, scope: Scope): Resource | null {
 }
 
 export function ScopeResolver(): JSX.Element {
-  const { orgHandler = 'default', projectHandler, componentHandler } = useParams();
+  const { orgHandler: urlOrgHandler, projectHandler, componentHandler } = useParams();
   const { pathname } = useLocation();
+  // When not inside an org route (e.g. /profile), fall back to the stored handle so the
+  // nav shows the correct org rather than a synthetic 'default' that would produce bad URLs.
+  const stored = localStorage.getItem('org_handle');
+  const orgHandler = urlOrgHandler ?? (stored && stored !== 'default' ? stored : '');
   const scope = resolveScope(orgHandler, projectHandler, componentHandler);
   const resource = resolveResource(pathname, scope);
   return createElement(NavContext.Provider, { value: { scope, resource } }, createElement(Outlet));

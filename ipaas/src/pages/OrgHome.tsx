@@ -29,8 +29,8 @@ import { projectHomeUrl } from '../paths';
 import { IS_CLOUD } from '../features';
 import Projects from './Projects';
 
-const PERSONA_KEY = 'icp_persona';
-const REGION_KEY = 'icp_region';
+const PERSONA_KEY = 'persona';
+const REGION_KEY = 'region';
 
 const PERSONAS = [
   {
@@ -94,9 +94,9 @@ export default function OrgHome(): JSX.Element {
 
   // Derived on every render so the effect below re-fires once AppLayout's async
   // ID-recovery sets window.API_CONFIG.asgardeoOrgNumericId and triggers a re-render.
-  const orgNumericId = window.API_CONFIG.asgardeoOrgNumericId || parseInt(localStorage.getItem('icp_org_numeric_id') || '0', 10);
+  const orgNumericId = window.API_CONFIG.asgardeoOrgNumericId || parseInt(localStorage.getItem('org_numeric_id') || '0', 10);
 
-  // For users without icp_persona set, check if they already have projects (existing user).
+  // For users without persona set, check if they already have projects (existing user).
   // If yes, skip onboarding and go directly to the projects list.
   // The effect waits (returns early) until orgNumericId is non-zero so it does not
   // prematurely fall through to the persona step before the ID has been recovered.
@@ -154,7 +154,7 @@ export default function OrgHome(): JSX.Element {
       setSubmitError(null);
       try {
         const orgUuid = orgUuidFromToken;
-        const orgNumericId = window.API_CONFIG.asgardeoOrgNumericId ?? parseInt(localStorage.getItem('icp_org_numeric_id') ?? '0', 10);
+        const orgNumericId = window.API_CONFIG.asgardeoOrgNumericId ?? parseInt(localStorage.getItem('org_numeric_id') ?? '0', 10);
         const handle = orgHandler!;
 
         // Step 1: Init default environments for the org

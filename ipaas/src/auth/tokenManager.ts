@@ -19,14 +19,14 @@
 import { refreshTokenApiUrl, revokeTokenApiUrl } from '../config/runtimeConfig';
 import { IS_CLOUD } from '../features';
 
-const ACCESS_TOKEN_KEY = 'icp_auth_token';
-const REFRESH_TOKEN_KEY = 'icp_refresh_token';
-const TOKEN_EXPIRES_AT_KEY = 'icp_token_expires_at';
-const REFRESH_TOKEN_EXPIRES_AT_KEY = 'icp_refresh_token_expires_at';
-const REDIRECT_URL_KEY = 'icp_redirect_url';
-const OIDC_STATE_KEY = 'icp_oidc_state';
-const OIDC_AUTH_MODE_KEY = 'icp_auth_mode';
-const OIDC_ORG_HANDLE_KEY = 'icp_org_handle';
+const ACCESS_TOKEN_KEY = 'auth_token';
+const REFRESH_TOKEN_KEY = 'refresh_token';
+const TOKEN_EXPIRES_AT_KEY = 'token_expires_at';
+const REFRESH_TOKEN_EXPIRES_AT_KEY = 'refresh_token_expires_at';
+const REDIRECT_URL_KEY = 'redirect_url';
+const OIDC_STATE_KEY = 'oidc_state';
+const OIDC_AUTH_MODE_KEY = 'auth_mode';
+const OIDC_ORG_HANDLE_KEY = 'org_handle';
 
 const EXPIRY_BUFFER_MS = 30_000;
 
@@ -281,7 +281,7 @@ export async function refreshAccessToken(): Promise<void> {
     // clearTokens() being called when the backend correctly rejects the WSO2 Identity Platform token.
     let isOidcSession = false;
     try {
-      const stored = localStorage.getItem('icp_user');
+      const stored = localStorage.getItem('user');
       if (stored) isOidcSession = JSON.parse(stored).isOidcUser === true;
     } catch {
       /* ignore */
@@ -299,13 +299,13 @@ export async function refreshAccessToken(): Promise<void> {
         if (res.ok) {
           const data: TokenData & { username: string; displayName: string; permissions: string[] } = await res.json();
           saveTokens(data);
-          const userInfo = localStorage.getItem('icp_user');
+          const userInfo = localStorage.getItem('user');
           if (userInfo) {
             try {
               const existing = JSON.parse(userInfo);
-              localStorage.setItem('icp_user', JSON.stringify({ ...existing, username: data.username, displayName: data.displayName, permissions: data.permissions }));
+              localStorage.setItem('user', JSON.stringify({ ...existing, username: data.username, displayName: data.displayName, permissions: data.permissions }));
             } catch {
-              localStorage.removeItem('icp_user');
+              localStorage.removeItem('user');
             }
           }
           return;
@@ -380,7 +380,7 @@ export async function switchOrgToken(orgHandle: string): Promise<void> {
   if (!res.ok) throw new Error(`Org token exchange failed (${res.status})`);
 
   const data: { access_token: string; expires_in?: number } = await res.json();
-  localStorage.setItem('icp_org_handle', orgHandle);
+  localStorage.setItem('org_handle', orgHandle);
   saveTokens({
     token: data.access_token,
     expiresIn: data.expires_in ?? 3600,
@@ -398,7 +398,7 @@ export async function revokeToken(): Promise<void> {
     // OIDC sessions don't use the local backend — skip to avoid ERR_CONNECTION_REFUSED
     let isOidcSession = false;
     try {
-      const stored = localStorage.getItem('icp_user');
+      const stored = localStorage.getItem('user');
       if (stored) isOidcSession = JSON.parse(stored).isOidcUser === true;
     } catch {
       /* ignore */
@@ -416,6 +416,14 @@ export async function revokeToken(): Promise<void> {
 }
 
 export function saveRedirectUrl(url: string): void {
+  // Never persist a redirect to the synthetic 'default' org — it isn't real and
+  // would loop back there on every subsequent login.
+  try {
+    const pathname = new URL(url).pathname;
+    if (pathname.startsWith('/organizations/default/') || pathname === '/organizations/default') return;
+  } catch {
+    /* ignore malformed URLs */
+  }
   localStorage.setItem(REDIRECT_URL_KEY, url);
 }
 
@@ -438,7 +446,7 @@ export function validateAndClearOIDCState(state: string): boolean {
 }
 
 // GitHub OAuth CSRF state — sessionStorage so it's scoped to the initiating tab
-const GITHUB_OAUTH_STATE_KEY = 'icp_github_oauth_state';
+const GITHUB_OAUTH_STATE_KEY = 'github_oauth_state';
 
 export function generateAndSaveGitHubState(): string {
   const state = crypto.randomUUID();
@@ -456,7 +464,7 @@ export function validateAndClearGitHubState(state: string): boolean {
 // PKCE helpers
 // ---------------------------------------------------------------------------
 
-const CODE_VERIFIER_KEY = 'icp_pkce_verifier';
+const CODE_VERIFIER_KEY = 'pkce_verifier';
 
 export async function generatePKCE(): Promise<{ verifier: string; challenge: string }> {
   const array = new Uint8Array(32);

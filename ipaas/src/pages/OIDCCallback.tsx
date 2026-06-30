@@ -77,28 +77,32 @@ export default function OIDCCallback(): JSX.Element {
 
         // Determine where to navigate post-login
         const savedUrl = getAndClearRedirectUrl();
-        const isLoginPage = savedUrl ? new URL(savedUrl).pathname === loginUrl() : true;
+        const savedPathname = savedUrl ? (() => { try { return new URL(savedUrl).pathname; } catch { return ''; } })() : '';
+        const isLoginPage = !savedPathname || savedPathname === loginUrl();
+        const isDefaultOrg = savedPathname.startsWith('/organizations/default/') || savedPathname === '/organizations/default';
 
-        if (savedUrl && !isLoginPage) {
+        if (savedUrl && !isLoginPage && !isDefaultOrg) {
           // User was trying to access a specific page — go back there
           window.location.href = savedUrl;
         } else {
-          const orgHandle = localStorage.getItem('icp_org_handle');
+          const rawOrgHandle = localStorage.getItem('org_handle');
+          // 'default' is a placeholder — never treat it as a real org handle
+          const orgHandle = rawOrgHandle && rawOrgHandle !== 'default' ? rawOrgHandle : null;
 
           // Try to navigate to the last visited project (for existing users)
           let navigatedToLastProject = false;
           try {
-            const stored = localStorage.getItem('icp_user');
+            const stored = localStorage.getItem('user');
             const userId: string | undefined = stored ? (JSON.parse(stored) as { userId?: string })?.userId : undefined;
 
             if (userId && orgHandle) {
               // 1. Try the last-visited project stored by AppLayout
-              const lastProjectRaw = localStorage.getItem(`icp_last_project:${userId}`);
+              const lastProjectRaw = localStorage.getItem(`last_project:${userId}`);
               if (lastProjectRaw) {
                 const { org, project } = JSON.parse(lastProjectRaw) as { org: string; project: string };
                 if (org === orgHandle && project) {
                   // Mark ToS accepted — this user has already been through onboarding
-                  localStorage.setItem(`icp_tos_accepted:${userId}:${orgHandle}`, 'true');
+                  localStorage.setItem(`tos_accepted:${userId}:${orgHandle}`, 'true');
                   navigate(projectHomeUrl(orgHandle, project), { replace: true });
                   navigatedToLastProject = true;
                 }
@@ -108,12 +112,12 @@ export default function OIDCCallback(): JSX.Element {
               // In cloud the numericId concept doesn't exist (Thunder doesn't issue one); fall
               // back to the JWT-scoped fetchProjects which ignores the orgId argument.
               if (!navigatedToLastProject) {
-                const numericId = window.API_CONFIG.asgardeoOrgNumericId ?? parseInt(localStorage.getItem('icp_org_numeric_id') ?? '0', 10);
+                const numericId = window.API_CONFIG.asgardeoOrgNumericId ?? parseInt(localStorage.getItem('org_numeric_id') ?? '0', 10);
                 const projects = IS_CLOUD ? (await fetchProjectsApi(0)).filter((p) => p.handler) : numericId > 0 ? (await fetchProjects(numericId)).filter((p) => p.handler) : [];
                 if (projects.length > 0) {
                   const recent = projects.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
                   // Mark ToS accepted — this user already has projects, they've been through onboarding
-                  localStorage.setItem(`icp_tos_accepted:${userId}:${orgHandle}`, 'true');
+                  localStorage.setItem(`tos_accepted:${userId}:${orgHandle}`, 'true');
                   navigate(projectHomeUrl(orgHandle, recent.handler), { replace: true });
                   navigatedToLastProject = true;
                 }
