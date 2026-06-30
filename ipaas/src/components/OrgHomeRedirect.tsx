@@ -22,6 +22,6 @@ import { loginUrl } from '../paths';
 
 export default function OrgHomeRedirect(): JSX.Element {
   const { orgHandler } = useParams();
-  if (!orgHandler) return <Navigate to={loginUrl()} replace />;
+  if (!orgHandler || orgHandler === 'default') return <Navigate to={loginUrl()} replace />;
   return <Navigate to={`/organizations/${orgHandler}/home`} replace />;
 }

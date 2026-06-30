@@ -226,7 +226,8 @@ export function ScopeResolver(): JSX.Element {
   // When not inside an org route (e.g. /profile), fall back to the stored handle so the
   // nav shows the correct org rather than a synthetic 'default' that would produce bad URLs.
   const stored = localStorage.getItem('org_handle');
-  const orgHandler = urlOrgHandler ?? (stored && stored !== 'default' ? stored : '');
+  const validUrl = urlOrgHandler && urlOrgHandler !== 'default' ? urlOrgHandler : null;
+  const orgHandler = validUrl ?? (stored && stored !== 'default' ? stored : '');
   const scope = resolveScope(orgHandler, projectHandler, componentHandler);
   const resource = resolveResource(pathname, scope);
   return createElement(NavContext.Provider, { value: { scope, resource } }, createElement(Outlet));
