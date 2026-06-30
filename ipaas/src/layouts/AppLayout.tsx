@@ -376,7 +376,7 @@ function AppLayoutInner(): JSX.Element {
   // Persist last visited project so post-login can navigate back to it
   useEffect(() => {
     if (userId && hasProject(scope)) {
-      localStorage.setItem(`icp_last_project:${userId}`, JSON.stringify({ org: scope.org, project: scope.project }));
+      localStorage.setItem(`last_project:${userId}`, JSON.stringify({ org: scope.org, project: scope.project }));
     }
   }, [userId, scope]);
 
@@ -399,7 +399,7 @@ function AppLayoutInner(): JSX.Element {
     const match = orgsData.find((o) => o.handle === scope.org);
     if (match && match.numericId > 0 && window.API_CONFIG.asgardeoOrgNumericId !== match.numericId) {
       window.API_CONFIG.asgardeoOrgNumericId = match.numericId;
-      localStorage.setItem('icp_org_numeric_id', String(match.numericId));
+      localStorage.setItem('org_numeric_id', String(match.numericId));
       setOrgIdVersion((v) => v + 1); // trigger re-render so queries re-evaluate orgId()
     }
   }, [isOidcUser, userId, scope.org, orgsData]);
@@ -662,7 +662,7 @@ function AppLayoutInner(): JSX.Element {
                         .then(() => {
                           if (o.numericId > 0) {
                             window.API_CONFIG.asgardeoOrgNumericId = o.numericId;
-                            localStorage.setItem('icp_org_numeric_id', String(o.numericId));
+                            localStorage.setItem('org_numeric_id', String(o.numericId));
                           }
                           queryClient.clear();
                           navigate(orgHomeUrl(o.handle));

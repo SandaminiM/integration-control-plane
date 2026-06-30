@@ -66,7 +66,7 @@ export function useMcpTools({ baseUrl, apiKey, enabled }: UseMcpToolsParams): Us
         const transport = new StreamableHTTPClientTransport(new URL(`${baseUrl.replace(/\/+$/, '')}/mcp?transportType=streamable-http`), {
           requestInit: { headers: { 'test-key': apiKey } },
         });
-        client = new Client({ name: 'icp', version: '1.0.0' }, { capabilities: {} });
+        client = new Client({ name: 'wip', version: '1.0.0' }, { capabilities: {} });
         await client.connect(transport);
         if (!client.getServerCapabilities()?.tools) throw new Error('MCP server does not support the tools capability');
         const response = await client.listTools();

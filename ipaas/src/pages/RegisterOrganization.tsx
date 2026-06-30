@@ -122,7 +122,7 @@ export default function RegisterOrganization(): JSX.Element {
       if (numericId) {
         const parsed = typeof numericId === 'string' ? parseInt(numericId, 10) : numericId;
         window.API_CONFIG.asgardeoOrgNumericId = parsed;
-        localStorage.setItem('icp_org_numeric_id', String(parsed));
+        localStorage.setItem('org_numeric_id', String(parsed));
       }
 
       // Exchange for org-scoped STS token

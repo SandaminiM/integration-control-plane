@@ -30,7 +30,7 @@ const FeaturePreviewContext = createContext<FeaturePreviewContextValue>({
   updateFeatures: () => {},
 });
 
-const STORAGE_KEY = 'icp_feature_preview';
+const STORAGE_KEY = 'feature_preview';
 
 function loadFromStorage(): FeatureMap {
   try {

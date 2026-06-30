@@ -45,7 +45,7 @@ Scoped `clear*` methods (`clearPermissions`, `clearProjectPermissions`, `clearCo
 
 ### Purpose
 
-This context exposes a **feature-flag map** that controls which preview features are visible to the current user. Flags are toggled at runtime (e.g. from a developer settings panel) and persist across page refreshes via `localStorage` under the key `icp_feature_preview`.
+This context exposes a **feature-flag map** that controls which preview features are visible to the current user. Flags are toggled at runtime (e.g. from a developer settings panel) and persist across page refreshes via `localStorage` under the key `feature_preview`.
 
 State held:
 

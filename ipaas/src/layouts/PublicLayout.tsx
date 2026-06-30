@@ -20,13 +20,31 @@ import { Navigate, Outlet } from 'react-router';
 import { Box, ColorSchemeToggle, Layout, ParticleBackground, Stack } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
 import { useAuth } from '../auth/AuthContext';
-import { orgUrl } from '../paths';
+import { orgHomeUrl, projectHomeUrl, registerOrgUrl } from '../paths';
 
 export default function PublicLayout(): JSX.Element {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userId } = useAuth();
 
   if (isAuthenticated) {
-    return <Navigate to={orgUrl('default')} replace />;
+    const storedOrg = localStorage.getItem('org_handle');
+    const org = storedOrg && storedOrg !== 'default' ? storedOrg : null;
+
+    // Restore the last visited project if it matches the stored org
+    if (org && userId) {
+      try {
+        const lastProjectRaw = localStorage.getItem(`last_project:${userId}`);
+        if (lastProjectRaw) {
+          const { org: lastOrg, project } = JSON.parse(lastProjectRaw) as { org: string; project: string };
+          if (lastOrg === org && project) {
+            return <Navigate to={projectHomeUrl(org, project)} replace />;
+          }
+        }
+      } catch {
+        /* ignore malformed data */
+      }
+    }
+
+    return <Navigate to={org ? orgHomeUrl(org) : registerOrgUrl()} replace />;
   }
 
   return (
