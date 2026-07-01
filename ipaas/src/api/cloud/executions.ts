@@ -99,16 +99,41 @@ export const fetchExecutionConfigs = (componentId: string, _releaseId: string, e
     .catch(() => null);
 };
 
-// GET /components/{name}/environments/{envId}/resource-tree/executions — the
-// CronJob's job runs (newest-first), keyed by component + env.
+// GET /components/{name}/environments/{envId}/executions/history — the CronJob's
+// job runs (newest-first), keyed by component + env (+ project).
 //
-// Sourced from OpenChoreo's rendered resource tree (control-plane API)
-export const fetchTaskExecutions = (_releaseId: string, componentId = '', envId = '', _projectId = ''): Promise<TaskExecution[]> => {
-  if (!componentId || !envId) return Promise.resolve([]);
-  return bff
-    .get<{ items?: BffExecution[] }>(`/components/${seg(componentId)}/environments/${seg(envId)}/resource-tree/executions`)
-    .then((r) => (r?.items ?? []).map(toTaskExecution))
-    .catch(() => []);
+// Reconstructed from OpenChoreo Observer Kubernetes event logs (~30 days),
+// replacing the resource-tree source which only saw the Jobs still live
+// in-cluster (effectively the last few runs). The endpoint is cursor-paginated
+// (capped per page); we follow `nextCursor` to accumulate history, bounded by
+// HISTORY_MAX_PAGES so a high-frequency schedule can't pull an unbounded list
+// into the table. The server already clamps the window to ~30 days, so normal
+// cadences (hourly/daily) page to exhaustion well within the cap.
+const HISTORY_PAGE_LIMIT = 100; // BFF caps the page size at 100
+const HISTORY_MAX_PAGES = 10; // up to ~1000 most-recent runs
+
+interface BffExecutionHistoryPage {
+  items?: BffExecution[];
+  nextCursor?: string;
+}
+
+export const fetchTaskExecutions = async (_releaseId: string, componentId = '', envId = '', projectId = ''): Promise<TaskExecution[]> => {
+  if (!componentId || !envId) return [];
+  const base = `/components/${seg(componentId)}/environments/${seg(envId)}/executions/history`;
+
+  const all: TaskExecution[] = [];
+  let before: string | undefined;
+  try {
+    for (let page = 0; page < HISTORY_MAX_PAGES; page++) {
+      const res = await bff.get<BffExecutionHistoryPage>(`${base}${q({ projectName: projectId, limit: HISTORY_PAGE_LIMIT, before })}`);
+      all.push(...(res?.items ?? []).map(toTaskExecution));
+      before = res?.nextCursor || undefined;
+      if (!before) break;
+    }
+  } catch {
+    // Degrade gracefully: return whatever pages were gathered before the failure.
+  }
+  return all;
 };
 
 export const fetchExecutionArguments = (runId: string, componentId: string, _releaseId: string): Promise<ExecutionArgument[]> =>

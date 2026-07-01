@@ -89,11 +89,13 @@ export function useExecutionLogs(componentId: string, deploymentTrackId: string,
   });
 }
 
-export function useTaskExecutionCount(releaseId: string, componentId = '', envId = '', projectId = '') {
+// `enabled` lets a caller skip the count fetch entirely — the cloud overview
+// derives its count from the already-fetched executions list, so it disables this.
+export function useTaskExecutionCount(releaseId: string, componentId = '', envId = '', projectId = '', enabled = true) {
   const baseUrl = window.API_CONFIG?.systemApisBaseUrl ?? '';
   const wiring = IS_CLOUD
-    ? { queryKey: ['taskExecutionCount', releaseId, componentId, envId, projectId], queryFn: () => fetchTaskExecutionCountScoped(releaseId, componentId, envId, projectId), enabled: !!componentId && !!envId }
-    : { queryKey: ['taskExecutionCount', releaseId, baseUrl], queryFn: () => fetchTaskExecutionCount(releaseId), enabled: !!baseUrl && !!releaseId };
+    ? { queryKey: ['taskExecutionCount', releaseId, componentId, envId, projectId], queryFn: () => fetchTaskExecutionCountScoped(releaseId, componentId, envId, projectId), enabled: enabled && !!componentId && !!envId }
+    : { queryKey: ['taskExecutionCount', releaseId, baseUrl], queryFn: () => fetchTaskExecutionCount(releaseId), enabled: enabled && !!baseUrl && !!releaseId };
   return useQuery({ ...wiring, retry: false, staleTime: 30_000, refetchInterval: 30_000 });
 }
 

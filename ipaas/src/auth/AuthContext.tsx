@@ -41,7 +41,7 @@ import {
   clearOidcAuthMetadata,
 } from './tokenManager';
 
-const USER_KEY = 'icp_user';
+const USER_KEY = 'user';
 
 interface UserInfo {
   userId: string;
@@ -205,11 +205,11 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     // and no STS exchange to perform — read the org handle from the JWT
     // (root-level ouHandle, or nested organization.handle) and persist it.
     if (IS_CLOUD) {
-      // cloud: post-login routing keys off icp_org_handle. Drop any stale org
+      // cloud: post-login routing keys off org_handle. Drop any stale org
       // state up front so a failed/incomplete sign-in can't reuse it, and require
       // a fresh handle from this token before completing the callback.
-      localStorage.removeItem('icp_org_handle');
-      localStorage.removeItem('icp_org_numeric_id');
+      localStorage.removeItem('org_handle');
+      localStorage.removeItem('org_numeric_id');
       let cloudOrgHandle: string | undefined;
       try {
         // base64url → base64 with padding restored so atob accepts the segment.
@@ -224,7 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       if (!cloudOrgHandle) {
         throw new Error('Missing organization context after sign-in. Please try logging in again.');
       }
-      localStorage.setItem('icp_org_handle', cloudOrgHandle);
+      localStorage.setItem('org_handle', cloudOrgHandle);
       saveTokens({ token: asgardeoToken, expiresIn: tokenData.expires_in ?? 3600, refreshToken: tokenData.refresh_token ?? '', refreshTokenExpiresIn: 86400 });
       saveOidcAuthMetadata(cloudOrgHandle);
       const user: UserInfo = { userId, username, displayName, pictureUrl, isOidcUser: true, requirePasswordChange: false };
@@ -254,20 +254,20 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
           const org = (validateData.organizations ?? []).find((o) => o.handle && o.handle !== ASGARDEO_SUPER_TENANT);
           if (org?.handle) {
             orgHandle = org.handle;
-            localStorage.setItem('icp_org_handle', orgHandle);
+            localStorage.setItem('org_handle', orgHandle);
             if (org.id) {
               const numId = parseInt(org.id, 10);
               if (!isNaN(numId)) {
                 window.API_CONFIG.asgardeoOrgNumericId = numId;
-                localStorage.setItem('icp_org_numeric_id', String(numId));
+                localStorage.setItem('org_numeric_id', String(numId));
               }
             }
           }
           // For new signups, clear onboarding state so ToS / persona / region dialogs always show
           if (validateData.isNewUserSignup) {
-            localStorage.removeItem('icp_tos_accepted');
-            localStorage.removeItem('icp_persona');
-            localStorage.removeItem('icp_region');
+            localStorage.removeItem('tos_accepted');
+            localStorage.removeItem('persona');
+            localStorage.removeItem('region');
           }
           // org === undefined means new user (empty organizations list)
         }
@@ -373,10 +373,10 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
           }
           if (orgResult && orgResult !== 'empty') {
             orgHandle = orgResult.handle;
-            localStorage.setItem('icp_org_handle', orgHandle);
+            localStorage.setItem('org_handle', orgHandle);
             if (orgResult.numericId) {
               window.API_CONFIG.asgardeoOrgNumericId = orgResult.numericId;
-              localStorage.setItem('icp_org_numeric_id', String(orgResult.numericId));
+              localStorage.setItem('org_numeric_id', String(orgResult.numericId));
             }
           }
           if (!orgHandle) {
@@ -394,10 +394,10 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
           const orgResult = await fetchOrgHandle(asgardeoToken);
           if (orgResult && orgResult !== 'empty') {
             orgHandle = orgResult.handle;
-            localStorage.setItem('icp_org_handle', orgHandle);
+            localStorage.setItem('org_handle', orgHandle);
             if (orgResult.numericId) {
               window.API_CONFIG.asgardeoOrgNumericId = orgResult.numericId;
-              localStorage.setItem('icp_org_numeric_id', String(orgResult.numericId));
+              localStorage.setItem('org_numeric_id', String(orgResult.numericId));
             }
           } else if (orgResult === 'empty') {
             saveTokens({ token: asgardeoToken, expiresIn: finalExpiresIn, refreshToken: tokenData.refresh_token ?? '', refreshTokenExpiresIn: 86400 });
@@ -479,7 +479,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
 
     const existingRefreshToken = getRefreshToken() ?? '';
     saveTokens({ token: finalToken, expiresIn: finalExpiresIn, refreshToken: existingRefreshToken, refreshTokenExpiresIn: 86400 });
-    localStorage.setItem('icp_org_handle', orgHandle);
+    localStorage.setItem('org_handle', orgHandle);
     saveOidcAuthMetadata(orgHandle);
   }, []);
 

@@ -31,7 +31,7 @@ export default function ProjectsRedirect(): JSX.Element {
   const { logout, userId } = useAuth();
   const [open, setOpen] = useState(false);
 
-  const tosKey = `icp_tos_accepted:${userId}:${orgHandler}`;
+  const tosKey = `tos_accepted:${userId}:${orgHandler}`;
 
   useEffect(() => {
     if (localStorage.getItem(tosKey) === 'true') {
