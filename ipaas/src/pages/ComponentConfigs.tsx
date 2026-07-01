@@ -138,7 +138,7 @@ export default function ComponentConfigs({ org, project, component }: ComponentS
                 </Authorized>
               </PageTitle.Actions>
             </PageTitle>
-                    
+
             {alert && (
               <Alert severity={alert.type} onClose={() => setAlert(null)} sx={{ mb: 2 }}>
                 {alert.message}

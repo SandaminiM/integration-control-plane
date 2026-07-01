@@ -27,7 +27,7 @@
  */
 
 import { bff, q, seg } from './_client';
-import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, UpdateJobConfigsInput, TriggerComponentInput } from '../../types/executions';
+import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../../types/executions';
 import type { TriggerTaskInput } from '../../types/artifact';
 
 interface ExecutionArgument {
@@ -119,6 +119,8 @@ export const fetchExecutionArguments = (runId: string, componentId: string, _rel
 
 // awaits: BFF execution-log plumbing (pod logs via resource-tree).
 export const fetchExecutionLogs = (_componentId: string, _deploymentTrackId: string, _executionId: string, _environmentId: string): Promise<ExecutionLogEntry[]> => Promise.resolve([]);
+// OpenChoreo does not expose a runtime-arguments schema yet; degrade to a trigger-only form.
+export const fetchRuntimeArguments = (_componentId: string, _deploymentTrackId: string, _commitHash: string): Promise<RuntimeArgument[]> => Promise.resolve([]);
 
 // No dedicated count endpoint; approximate from the listed job runs.
 export const fetchTaskExecutionCount = (releaseId: string, componentId = '', envId = '', projectId = ''): Promise<number | null> =>
@@ -134,7 +136,10 @@ export const triggerTask = (_input: TriggerTaskInput): Promise<{ status: string;
 
 // POST /components/{name}/releases/{releaseId}/executions — BFF resolves the env.
 // The BFF takes positional string args; map the name/value pairs to their values.
-export const triggerComponentRun = (input: TriggerComponentInput): Promise<unknown> =>
-  bff.post(`/components/${seg(input.componentId)}/releases/${seg(input.releaseId)}/executions`, {
-    args: (input.args ?? []).map((a) => a.argument_value),
-  });
+// OpenChoreo does not return a run id from this endpoint, so runId is null.
+export const triggerComponentRun = (input: TriggerComponentInput): Promise<TriggerRunResult> =>
+  bff
+    .post(`/components/${seg(input.componentId)}/releases/${seg(input.releaseId)}/executions`, {
+      args: (input.args ?? []).map((a) => a.argument_value),
+    })
+    .then(() => ({ runId: null }));

@@ -52,7 +52,7 @@ const CreateIntegrationOptions = lazy(() => import('../pages/CreateIntegrationOp
 const ImportIntegration = lazy(() => import('../pages/ImportIntegration'));
 const McpProxyFromApi = lazy(() => import('../pages/McpProxyFromApi'));
 const McpPolicies = lazy(() => import('../pages/McpPolicies'));
-const McpTest = lazy(() => import('../pages/McpTest'));
+const ComponentTest = lazy(() => import('../pages/ComponentTest'));
 const OrgCdPipelines = lazy(() => import('../pages/OrgCdPipelines'));
 const ProjectCdPipelines = lazy(() => import('../pages/ProjectCdPipelines'));
 const ProjectSettings = lazy(() => import('../pages/ProjectSettings'));
@@ -249,7 +249,7 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test',
-                element: createElement(withScope(McpTest, ['components'])),
+                element: createElement(withScope(ComponentTest, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test/console',

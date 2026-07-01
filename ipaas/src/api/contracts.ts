@@ -96,7 +96,7 @@ import type { OrgWorkflowConfig, WorkflowConfigRequest, WorkflowDefinition } fro
 import type { Dataplane, IdentityProvider, IdentityProviderRequest, RoleGroupMappingResponse } from '../types/appSecurity';
 import type { CreateGitCredentialInput, CredentialDeleteEligibility, GitCredential } from '../types/credentials';
 import type { Environment, CloudDataPlane, EnvironmentInput } from '../types/environment';
-import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput } from '../types/executions';
+import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../types/executions';
 import type { InsightsEnvironment, ComponentInsights } from '../types/insights';
 import type { LogsRequest, ComponentLogsRequest, LogRow } from '../types/logs';
 import type { ApiDocument, RuleAdherenceResponse, ThrottlingPolicy } from '../types/marketplace';
@@ -439,12 +439,13 @@ export interface EnvironmentsApi {
 export interface ExecutionsApi {
   fetchExecutionConfigs(componentId: string, releaseId: string): Promise<ExecutionConfigs | null>;
   fetchTaskExecutions(releaseId: string): Promise<TaskExecution[]>;
+  fetchRuntimeArguments(componentId: string, deploymentTrackId: string, commitHash: string): Promise<RuntimeArgument[]>;
   fetchExecutionArguments(runId: string, componentId: string, releaseId: string): Promise<ExecutionArgument[]>;
   fetchExecutionLogs(componentId: string, deploymentTrackId: string, executionId: string, environmentId: string): Promise<ExecutionLogEntry[]>;
   fetchTaskExecutionCount(releaseId: string): Promise<number | null>;
   updateJobConfigs(input: UpdateJobConfigsInput): Promise<boolean>;
   triggerTask(input: TriggerTaskInput): Promise<{ status: string; message: string; successCount: number; failedCount: number; details: string[] }>;
-  triggerComponentRun(input: TriggerComponentInput): Promise<unknown>;
+  triggerComponentRun(input: TriggerComponentInput): Promise<TriggerRunResult>;
 }
 
 // ---------------------------------------------------------------------------

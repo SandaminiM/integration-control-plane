@@ -181,7 +181,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
           {/* Latest build card — hidden for prebuilt + no-source-repo (MCP proxy) + full-surface types */}
           {!hasCustomOverview && showBuildCard && (
             <>
-              <BuildCard componentId={component.id} versionId={versionId} orgHandler={scope.org} projectId={projectId} latestCommit={latestCommit} />
+              <BuildCard componentId={component.id} versionId={versionId} latestCommit={latestCommit} />
               <Divider sx={{ mb: 3 }} />
             </>
           )}

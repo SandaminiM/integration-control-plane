@@ -16,20 +16,18 @@
  * under the License.
  */
 
-import { Box, Button, CircularProgress, Collapse, Divider, IconButton, Stack, Step, StepLabel, Stepper, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, CircularProgress, Collapse, Divider, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronUp, GitCommit, List } from '@wso2/oxygen-ui-icons-react';
-import { InProgressIcon, SuccessIcon, QueuedIcon, FailedIcon } from './StatusIcons';
-import React, { useEffect, useRef, useState } from 'react';
+import HorizontalStepper, { type Step, type StepStatus } from './HorizontalStepper';
+import { useEffect, useRef, useState } from 'react';
 import type { BuildRunLogs } from '../types/build';
 import { useDeploymentStatus } from '../hooks/useDeployments';
-import { useBuildRunLogs } from '../hooks/useBuilds';
+import { useBuildLogs } from '../hooks/useBuilds';
 import type { Commit } from '../types/repository';
 
 interface BuildCardProps {
   componentId: string;
   versionId: string;
-  orgHandler: string;
-  projectId: string;
   latestCommit?: Commit | null;
 }
 
@@ -71,6 +69,18 @@ function activeStepIndex(logs: BuildRunLogs | null | undefined, conclusion?: str
   if (init === 'success' && build === 'success') return 3;
   if (init === 'success') return 1;
   return 0;
+}
+
+// Map the build-stage status vocabulary onto the shared stepper's StepStatus.
+const STEP_STATUS_MAP: Record<'success' | 'error' | 'active' | 'pending', StepStatus> = {
+  success: 'success',
+  error: 'failed',
+  active: 'inProgress',
+  pending: 'pending',
+};
+
+function buildSteps(logs: BuildRunLogs | null | undefined, conclusion?: string): Step[] {
+  return STAGES.map(({ key, label }) => ({ id: key, label, status: STEP_STATUS_MAP[getStepStatus(logs, key, conclusion)] }));
 }
 
 function safeAtob(encoded: string): string {
@@ -123,7 +133,7 @@ function buildLogText(logs: BuildRunLogs | null | undefined): string | null {
   return lines.join('\n') || '';
 }
 
-export default function BuildCard({ componentId, versionId, orgHandler, projectId, latestCommit }: BuildCardProps) {
+export default function BuildCard({ componentId, versionId, latestCommit }: BuildCardProps) {
   const { data: deployments = [] } = useDeploymentStatus(componentId, versionId);
   const lastBuild = deployments[0] ?? null;
 
@@ -147,11 +157,11 @@ export default function BuildCard({ componentId, versionId, orgHandler, projectI
     setShowLogs(false);
   }, [lastBuild?.id]);
 
-  const runId = lastBuild?.buildRef ?? String(lastBuild?.id ?? '');
+  const workflowName = lastBuild?.buildRef ?? String(lastBuild?.id ?? '');
   const isInProgress = lastBuild?.status === 'in_progress';
 
   // Fetch logs when expanded (for stepper + log view), poll every 5s while in progress
-  const { data: logs, isLoading: queryLoading } = useBuildRunLogs(orgHandler, projectId, componentId, runId, expanded, isInProgress);
+  const { data: logs, isLoading: queryLoading } = useBuildLogs(componentId, versionId, workflowName, isInProgress, expanded);
   const logsLoading = showLogs && logs === undefined && queryLoading;
 
   // Scroll logs to bottom on update
@@ -264,24 +274,10 @@ export default function BuildCard({ componentId, versionId, orgHandler, projectI
       <Collapse in={expanded}>
         <Divider sx={{ mb: 2 }} />
 
-        {/* Horizontal stepper */}
-        <Stepper activeStep={activeStepIndex(logs, conclusion)} alternativeLabel nonLinear sx={{ mb: showLogs ? 2 : 0 }}>
-          {STAGES.map(({ key, label }) => {
-            const stepStatus = getStepStatus(logs, key, conclusion);
-            let icon: React.ReactNode;
-            if (stepStatus === 'active') icon = <InProgressIcon size={24} />;
-            else if (stepStatus === 'success') icon = <SuccessIcon size={24} />;
-            else if (stepStatus === 'error') icon = <FailedIcon size={24} />;
-            else icon = <QueuedIcon size={24} />;
-            return (
-              <Step key={key} active={stepStatus === 'active'} completed={stepStatus === 'success'}>
-                <StepLabel error={stepStatus === 'error'} icon={icon}>
-                  {label}
-                </StepLabel>
-              </Step>
-            );
-          })}
-        </Stepper>
+        {/* Horizontal stepper (shared resizable component) */}
+        <Box sx={{ mb: showLogs ? 2 : 0 }}>
+          <HorizontalStepper steps={buildSteps(logs, conclusion)} currentStepIndex={activeStepIndex(logs, conclusion)} size="s" />
+        </Box>
 
         {/* Log viewer */}
         {showLogs && (

@@ -174,7 +174,7 @@ export default function AutomationExecutions({
 
   if (allExecutions.length === 0) {
     return (
-      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
         No execution data available. Click &apos;{envCritical ? 'Run' : 'Test'}&apos; or use &apos;Schedule&apos; to trigger an execution.
       </Typography>
     );

@@ -18,7 +18,7 @@
 
 import { choreoClient, systemClient, withScopeRetry } from './httpClients';
 import { gql } from './graphql';
-import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, UpdateJobConfigsInput, TriggerComponentInput, ExecutionArgument } from '../../types/executions';
+import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, ExecutionArgument, RuntimeArgument } from '../../types/executions';
 import type { TriggerTaskInput } from '../../types/artifact';
 
 const EXECUTION_CONFIGS_QUERY = `
@@ -32,6 +32,13 @@ const EXECUTION_ARGUMENTS_QUERY = `
   query GetExecutionArguments($id: String!, $componentId: String!, $releaseId: String!) {
     execution(input: { id: $id, componentId: $componentId, releaseId: $releaseId }) {
       arguments { argumentName, argumentValue }
+    }
+  }`;
+
+const RUNTIME_ARGUMENTS_QUERY = `
+  query GetRuntimeArguments($componentId: String!, $deploymentTrackId: String!, $commitHash: String!) {
+    runtimeArguments(componentId: $componentId, deploymentTrackId: $deploymentTrackId, commitHash: $commitHash) {
+      name, type, prefix, displayName, description, delimiter, values, repeat, required
     }
   }`;
 
@@ -55,6 +62,15 @@ export async function fetchExecutionConfigs(componentId: string, releaseId: stri
 
 export async function fetchTaskExecutions(releaseId: string): Promise<TaskExecution[]> {
   return systemClient.get<TaskExecution[]>(`/systemapis/choreoobsapi/0.3.0/tasks/executions?releaseId=${encodeURIComponent(releaseId)}&limit=10&verbose=true`);
+}
+
+/**
+ * The automation's declared runtime arguments (entrypoint signature for Ballerina,
+ * user-declared CLI args for image components). Drives the Test form. Resolves to
+ * `[]` when none are declared — the caller then renders a trigger-only form.
+ */
+export async function fetchRuntimeArguments(componentId: string, deploymentTrackId: string, commitHash: string): Promise<RuntimeArgument[]> {
+  return gql<{ runtimeArguments: RuntimeArgument[] }>(RUNTIME_ARGUMENTS_QUERY, { componentId, deploymentTrackId, commitHash }).then((d) => d.runtimeArguments ?? []);
 }
 
 export async function fetchExecutionArguments(runId: string, componentId: string, releaseId: string): Promise<ExecutionArgument[]> {
@@ -93,7 +109,8 @@ export async function triggerTask(input: TriggerTaskInput): Promise<{ status: st
   }).then((d) => d.triggerArtifact);
 }
 
-export async function triggerComponentRun(input: TriggerComponentInput): Promise<unknown> {
+export async function triggerComponentRun(input: TriggerComponentInput): Promise<TriggerRunResult> {
   const path = `/component-mgt/1.0.0/orgs/${input.orgHandler}/projects/${input.projectId}/components/${input.componentId}/releases/${input.releaseId}/run-pod`;
-  return withScopeRetry(() => choreoClient.post(path, { args: input.args ?? [] }));
+  const res = await withScopeRetry(() => choreoClient.post<{ data?: { runId?: string } }>(path, { args: input.args ?? [] }));
+  return { runId: res?.data?.runId ?? null };
 }

@@ -17,8 +17,8 @@
  */
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchExecutionConfigs, fetchTaskExecutions, fetchExecutionArguments, fetchExecutionLogs, fetchTaskExecutionCount, updateJobConfigs, triggerTask, triggerComponentRun } from '#api/executions';
-import type { ExecutionConfigs, TaskExecution, UpdateJobConfigsInput, TriggerComponentInput } from '../types/executions';
+import { fetchExecutionConfigs, fetchTaskExecutions, fetchRuntimeArguments, fetchExecutionArguments, fetchExecutionLogs, fetchTaskExecutionCount, updateJobConfigs, triggerTask, triggerComponentRun } from '#api/executions';
+import type { ExecutionConfigs, TaskExecution, UpdateJobConfigsInput, TriggerComponentInput, RuntimeArgument } from '../types/executions';
 import type { TriggerTaskInput } from '../types/artifact';
 import { IS_CLOUD } from '../features';
 
@@ -44,12 +44,28 @@ export function useExecutionConfigs(componentId: string, releaseId: string, envI
   return useQuery({ ...wiring, retry: false });
 }
 
-export function useTaskExecutions(releaseId: string, componentId = '', envId = '', projectId = '') {
+export function useTaskExecutions(releaseId: string, componentId = '', envId = '', projectId = '', refetchInterval: number | false = false) {
   const baseUrl = window.API_CONFIG?.systemApisBaseUrl ?? '';
   const wiring = IS_CLOUD
     ? { queryKey: ['taskExecutions', releaseId, componentId, envId, projectId], queryFn: () => fetchTaskExecutionsScoped(releaseId, componentId, envId, projectId), enabled: !!componentId && !!envId }
     : { queryKey: ['taskExecutions', releaseId, baseUrl], queryFn: () => fetchTaskExecutions(releaseId), enabled: !!baseUrl && !!releaseId };
-  return useQuery({ ...wiring, retry: false, staleTime: 0, placeholderData: keepPreviousData });
+  return useQuery({ ...wiring, retry: false, staleTime: 0, placeholderData: keepPreviousData, refetchInterval });
+}
+
+/**
+ * The automation's runtime-argument schema, keyed by the deployed commit. An empty
+ * array means "no declared args" — the Test page then shows a trigger-only form.
+ * `retry: false` so a 404 (no schema for this component) surfaces promptly to the
+ * caller, which treats it the same as an empty schema.
+ */
+export function useRuntimeArguments(componentId: string, deploymentTrackId: string, commitHash: string, enabled = true) {
+  return useQuery<RuntimeArgument[]>({
+    queryKey: ['runtimeArguments', componentId, deploymentTrackId, commitHash],
+    queryFn: () => fetchRuntimeArguments(componentId, deploymentTrackId, commitHash),
+    enabled: enabled && !!componentId && !!deploymentTrackId && !!commitHash,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
 }
 
 export function useExecutionArguments(runId: string, componentId: string, releaseId: string, enabled: boolean) {

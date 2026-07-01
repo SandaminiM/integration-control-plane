@@ -64,3 +64,57 @@ export interface TriggerComponentInput {
   releaseId: string;
   args?: { argument_name: string; argument_value: string }[];
 }
+
+/** Result of triggering a run — the new execution's id (null if the backend returned none). */
+export interface TriggerRunResult {
+  runId: string | null;
+}
+
+// runtime arguments (Automation "Test" form)
+// Mirrors Devant's runtime-args schema + dynamic-form model. The backend derives
+// `RuntimeArgument[]` from the automation's entrypoint signature (Ballerina `main`
+// params) or, for image-based components, from user-declared CLI args.
+
+/** One declared runtime argument, as returned by the `runtimeArguments` query. */
+export interface RuntimeArgument {
+  name: string;
+  type: string;
+  prefix?: string;
+  displayName?: string;
+  description?: string;
+  delimiter?: string;
+  values?: string[];
+  repeat?: boolean;
+  required?: boolean;
+}
+
+/** Input widget chosen for a field, derived from a `RuntimeArgument`'s type/repeat. */
+export type FormInputType = 'text' | 'number' | 'dropdown' | 'radio' | 'checkbox' | 'multi-text';
+
+export interface FormTileOption {
+  id: string;
+  label: string;
+  value: string;
+}
+
+/** A `RuntimeArgument` resolved into everything the form needs to render one field. */
+export interface FormField {
+  id: string;
+  label: string;
+  description: string;
+  required: boolean;
+  runtimeType?: string;
+  inputType: FormInputType;
+  options: FormTileOption[];
+  placeholder: string;
+}
+
+export type DynamicFormFieldValue = string | string[] | boolean;
+export type DynamicFormData = Record<string, DynamicFormFieldValue>;
+export type DynamicFormValidationErrors = Record<string, string>;
+
+/** Serialized run-pod argument (snake_case wire shape used by the trigger payload). */
+export interface TriggerArgument {
+  argument_name: string;
+  argument_value: string;
+}
