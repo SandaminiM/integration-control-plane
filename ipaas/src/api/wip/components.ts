@@ -17,7 +17,22 @@
  */
 
 import { gql } from './graphql';
-import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, DisplayType, DeleteComponentResult, DeploymentTrack, CreateDeploymentTrackInput, DeleteTrackResult, CheckDeletableResult } from '../../types/component';
+import type {
+  Component,
+  ComponentDetail,
+  Endpoint,
+  EnvEndpoint,
+  CreateComponentInput,
+  UpdateComponentInput,
+  UpdateAutoDeployInput,
+  GenerateComponentEndpointsInput,
+  DisplayType,
+  DeleteComponentResult,
+  DeploymentTrack,
+  CreateDeploymentTrackInput,
+  DeleteTrackResult,
+  CheckDeletableResult,
+} from '../../types/component';
 import type { ComponentNameAvailability } from '../../types/component';
 import type { CreateMcpProxyComponentInput } from '../../types/mcpProxy';
 

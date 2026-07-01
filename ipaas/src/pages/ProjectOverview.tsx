@@ -49,9 +49,7 @@ function ProjectOverviewForm({ org, project }: { org: string; project: Project }
   };
 
   const saveField = (patch: { name?: string; description?: string }) =>
-    update.mutateAsync(
-      { id: project.id, name: patch.name ?? project.name, description: patch.description ?? project.description ?? '', version: project.version },
-    ).then(
+    update.mutateAsync({ id: project.id, name: patch.name ?? project.name, description: patch.description ?? project.description ?? '', version: project.version }).then(
       () => setAlert({ type: 'success', message: 'Project updated.' }),
       (e) => {
         setAlert({ type: 'error', message: e instanceof Error ? e.message : 'Failed to update the project.' });

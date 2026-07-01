@@ -56,9 +56,7 @@ export async function createGitCredential(input: CreateGitCredentialInput): Prom
 }
 
 export async function checkGitCredentialDeletion(credentialId: string): Promise<CredentialDeleteEligibility> {
-  const d = await gql<{ checkDeleteCommonCredentialV2: CredentialDeleteEligibility }>(
-    `query { checkDeleteCommonCredentialV2(orgUuid: "${esc(orgUuid())}", credentialId: "${esc(credentialId)}") { canDelete components { projectName componentNames } } }`,
-  );
+  const d = await gql<{ checkDeleteCommonCredentialV2: CredentialDeleteEligibility }>(`query { checkDeleteCommonCredentialV2(orgUuid: "${esc(orgUuid())}", credentialId: "${esc(credentialId)}") { canDelete components { projectName componentNames } } }`);
   return d.checkDeleteCommonCredentialV2;
 }
 

@@ -16,7 +16,32 @@
  * under the License.
  */
 
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Divider, FormControl, FormControlLabel, FormLabel, Grid, IconButton, InputAdornment, MenuItem, Radio, RadioGroup, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Divider,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
+  Grid,
+  IconButton,
+  InputAdornment,
+  MenuItem,
+  Radio,
+  RadioGroup,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@wso2/oxygen-ui';
 import { ArrowRight, ChevronDown, Copy, Eye, EyeOff, Pencil, Plus, RefreshCw, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import StatusDot from '../_shared/StatusDot';
@@ -144,7 +169,13 @@ export default function TailscaleEnvCard({ orgHandler, projectId, component, ver
           <Typography variant="h6">{env.name}</Typography>
           <StatusDot status={status} />
           {canManage && releaseId && (
-            <Button sx={{ ml: 'auto' }} size="small" variant="outlined" startIcon={redeploy.isPending ? <CircularProgress size={14} color="inherit" /> : <RefreshCw size={14} />} disabled={redeploy.isPending} onClick={() => redeploy.mutate({ componentId: component.id, releaseId }, { onError: (e) => setAlert({ type: 'error', message: e instanceof Error ? e.message : 'Re-deploy failed.' }) })}>
+            <Button
+              sx={{ ml: 'auto' }}
+              size="small"
+              variant="outlined"
+              startIcon={redeploy.isPending ? <CircularProgress size={14} color="inherit" /> : <RefreshCw size={14} />}
+              disabled={redeploy.isPending}
+              onClick={() => redeploy.mutate({ componentId: component.id, releaseId }, { onError: (e) => setAlert({ type: 'error', message: e instanceof Error ? e.message : 'Re-deploy failed.' }) })}>
               {redeploy.isPending ? 'Deploying…' : 'Re-deploy'}
             </Button>
           )}
@@ -174,7 +205,25 @@ export default function TailscaleEnvCard({ orgHandler, projectId, component, ver
                   ))}
                 </TextField>
               )}
-              <TextField size="small" label="Tailscale URL" value={tailscaleUrl} fullWidth sx={{ flex: 1, minWidth: 240 }} InputProps={{ readOnly: true, endAdornment: <InputAdornment position="end"><Tooltip title="Copy"><IconButton size="small" onClick={copyUrl}><Copy size={14} /></IconButton></Tooltip></InputAdornment> }} />
+              <TextField
+                size="small"
+                label="Tailscale URL"
+                value={tailscaleUrl}
+                fullWidth
+                sx={{ flex: 1, minWidth: 240 }}
+                InputProps={{
+                  readOnly: true,
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <Tooltip title="Copy">
+                        <IconButton size="small" onClick={copyUrl}>
+                          <Copy size={14} />
+                        </IconButton>
+                      </Tooltip>
+                    </InputAdornment>
+                  ),
+                }}
+              />
             </Stack>
             <Divider sx={{ mt: 2 }} />
           </Box>
@@ -191,7 +240,15 @@ export default function TailscaleEnvCard({ orgHandler, projectId, component, ver
           <AccordionDetails>
             <FormControl disabled={!canManage}>
               <FormLabel>Authentication Method</FormLabel>
-              <RadioGroup row value={authMethod} onChange={(e) => { const m = e.target.value as TailscaleAuthMethod; setAuthMethod(m); if (m === 'authKey') setClientSecret(''); else setAuthKey(''); }}>
+              <RadioGroup
+                row
+                value={authMethod}
+                onChange={(e) => {
+                  const m = e.target.value as TailscaleAuthMethod;
+                  setAuthMethod(m);
+                  if (m === 'authKey') setClientSecret('');
+                  else setAuthKey('');
+                }}>
                 <FormControlLabel value="authKey" control={<Radio size="small" />} label="Tailscale Auth Key" />
                 <FormControlLabel value="clientSecret" control={<Radio size="small" />} label="OAuth Client Secret" />
               </RadioGroup>
@@ -211,7 +268,15 @@ export default function TailscaleEnvCard({ orgHandler, projectId, component, ver
               placeholder={existingSecret ? `Enter a new ${authMethod === 'authKey' ? 'auth key' : 'client secret'} to update` : `Add ${authMethod === 'authKey' ? 'auth key' : 'client secret'}`}
               value={authMethod === 'authKey' ? authKey : clientSecret}
               onChange={(e) => (authMethod === 'authKey' ? setAuthKey(e.target.value) : setClientSecret(e.target.value))}
-              InputProps={{ endAdornment: <InputAdornment position="end"><IconButton size="small" onClick={() => setShowSecret((s) => !s)}>{showSecret ? <EyeOff size={14} /> : <Eye size={14} />}</IconButton></InputAdornment> }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setShowSecret((s) => !s)}>
+                      {showSecret ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
           </AccordionDetails>
         </Accordion>
@@ -232,25 +297,57 @@ export default function TailscaleEnvCard({ orgHandler, projectId, component, ver
             ) : (
               <Stack divider={<Divider />} sx={{ mb: 1 }}>
                 <Grid container sx={{ py: 0.5, fontWeight: 600 }}>
-                  <Grid item xs={3}><Typography variant="caption">Name</Typography></Grid>
-                  <Grid item xs={2}><Typography variant="caption">Port</Typography></Grid>
+                  <Grid item xs={3}>
+                    <Typography variant="caption">Name</Typography>
+                  </Grid>
+                  <Grid item xs={2}>
+                    <Typography variant="caption">Port</Typography>
+                  </Grid>
                   <Grid item xs={1} />
-                  <Grid item xs={3}><Typography variant="caption">Device IP</Typography></Grid>
-                  <Grid item xs={2}><Typography variant="caption">Device Port</Typography></Grid>
+                  <Grid item xs={3}>
+                    <Typography variant="caption">Device IP</Typography>
+                  </Grid>
+                  <Grid item xs={2}>
+                    <Typography variant="caption">Device Port</Typography>
+                  </Grid>
                   <Grid item xs={1} />
                 </Grid>
                 {mappings.map((m, idx) => (
                   <Grid container alignItems="center" key={`${m.port}-${idx}`} sx={{ py: 0.5 }}>
-                    <Grid item xs={3}><Typography variant="body2">{m.name}</Typography></Grid>
-                    <Grid item xs={2}><Typography variant="body2">{m.port}</Typography></Grid>
-                    <Grid item xs={1}><ArrowRight size={14} /></Grid>
-                    <Grid item xs={3}><Typography variant="body2" color={m.ip ? 'text.primary' : 'error'}>{m.ip || 'Missing'}</Typography></Grid>
-                    <Grid item xs={2}><Typography variant="body2" color={m.targetPort ? 'text.primary' : 'error'}>{m.targetPort || 'Missing'}</Typography></Grid>
+                    <Grid item xs={3}>
+                      <Typography variant="body2">{m.name}</Typography>
+                    </Grid>
+                    <Grid item xs={2}>
+                      <Typography variant="body2">{m.port}</Typography>
+                    </Grid>
+                    <Grid item xs={1}>
+                      <ArrowRight size={14} />
+                    </Grid>
+                    <Grid item xs={3}>
+                      <Typography variant="body2" color={m.ip ? 'text.primary' : 'error'}>
+                        {m.ip || 'Missing'}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={2}>
+                      <Typography variant="body2" color={m.targetPort ? 'text.primary' : 'error'}>
+                        {m.targetPort || 'Missing'}
+                      </Typography>
+                    </Grid>
                     <Grid item xs={1}>
                       {canManage && (
                         <Stack direction="row">
-                          <IconButton size="small" aria-label={`Edit ${m.name}`} onClick={() => { setForm(m); setEditingIndex(idx); }}><Pencil size={14} /></IconButton>
-                          <IconButton size="small" color="error" aria-label={`Remove ${m.name}`} onClick={() => setMappings((prev) => prev.filter((_, i) => i !== idx))}><Trash2 size={14} /></IconButton>
+                          <IconButton
+                            size="small"
+                            aria-label={`Edit ${m.name}`}
+                            onClick={() => {
+                              setForm(m);
+                              setEditingIndex(idx);
+                            }}>
+                            <Pencil size={14} />
+                          </IconButton>
+                          <IconButton size="small" color="error" aria-label={`Remove ${m.name}`} onClick={() => setMappings((prev) => prev.filter((_, i) => i !== idx))}>
+                            <Trash2 size={14} />
+                          </IconButton>
                         </Stack>
                       )}
                     </Grid>
@@ -265,11 +362,21 @@ export default function TailscaleEnvCard({ orgHandler, projectId, component, ver
                   {editingIndex !== null ? 'Edit endpoint' : 'Add endpoint'}
                 </Typography>
                 <Grid container spacing={1} alignItems="center">
-                  <Grid item xs={3}><TextField size="small" fullWidth label="Name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} /></Grid>
-                  <Grid item xs={2}><TextField size="small" fullWidth type="number" label="Port" value={form.port || ''} onChange={(e) => setForm((f) => ({ ...f, port: Number(e.target.value) }))} /></Grid>
-                  <Grid item xs={1} sx={{ textAlign: 'center' }}><ArrowRight size={16} /></Grid>
-                  <Grid item xs={3}><TextField size="small" fullWidth label="Device IP" placeholder="100.108.78.93" value={form.ip} onChange={(e) => setForm((f) => ({ ...f, ip: e.target.value }))} /></Grid>
-                  <Grid item xs={2}><TextField size="small" fullWidth type="number" label="Device Port" value={form.targetPort || ''} onChange={(e) => setForm((f) => ({ ...f, targetPort: Number(e.target.value) }))} /></Grid>
+                  <Grid item xs={3}>
+                    <TextField size="small" fullWidth label="Name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField size="small" fullWidth type="number" label="Port" value={form.port || ''} onChange={(e) => setForm((f) => ({ ...f, port: Number(e.target.value) }))} />
+                  </Grid>
+                  <Grid item xs={1} sx={{ textAlign: 'center' }}>
+                    <ArrowRight size={16} />
+                  </Grid>
+                  <Grid item xs={3}>
+                    <TextField size="small" fullWidth label="Device IP" placeholder="100.108.78.93" value={form.ip} onChange={(e) => setForm((f) => ({ ...f, ip: e.target.value }))} />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField size="small" fullWidth type="number" label="Device Port" value={form.targetPort || ''} onChange={(e) => setForm((f) => ({ ...f, targetPort: Number(e.target.value) }))} />
+                  </Grid>
                   <Grid item xs={1}>
                     <Stack direction="row">
                       <Tooltip title={editingIndex !== null ? 'Update' : 'Add'}>
@@ -280,7 +387,9 @@ export default function TailscaleEnvCard({ orgHandler, projectId, component, ver
                         </span>
                       </Tooltip>
                       {editingIndex !== null && (
-                        <Button size="small" onClick={resetForm}>Cancel</Button>
+                        <Button size="small" onClick={resetForm}>
+                          Cancel
+                        </Button>
                       )}
                     </Stack>
                   </Grid>

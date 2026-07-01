@@ -132,7 +132,11 @@ function TracksBody({ orgHandler, projectId, componentId, tracks }: { orgHandler
                         disabled={onlyTrack}
                         disabledTooltip="Cannot delete the last deployment track"
                         confirmTitle="Delete deployment track?"
-                        confirmBody={<>This permanently deletes the <strong>{t.branch || t.apiVersion}</strong> deployment track. All associated deployments will be lost.</>}
+                        confirmBody={
+                          <>
+                            This permanently deletes the <strong>{t.branch || t.apiVersion}</strong> deployment track. All associated deployments will be lost.
+                          </>
+                        }
                         onResult={setAlert}
                       />
                     </Authorized>
@@ -144,7 +148,17 @@ function TracksBody({ orgHandler, projectId, componentId, tracks }: { orgHandler
         </ListingTable.Container>
       )}
 
-      {creating && orgUuid && <CreateTrackDialog orgUuid={orgUuid} componentId={componentId} onClose={() => setCreating(false)} onDone={(msg) => { setCreating(false); setAlert({ type: 'success', message: msg }); }} />}
+      {creating && orgUuid && (
+        <CreateTrackDialog
+          orgUuid={orgUuid}
+          componentId={componentId}
+          onClose={() => setCreating(false)}
+          onDone={(msg) => {
+            setCreating(false);
+            setAlert({ type: 'success', message: msg });
+          }}
+        />
+      )}
     </>
   );
 }

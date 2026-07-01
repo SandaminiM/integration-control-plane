@@ -54,11 +54,7 @@ export default function IdentityProvidersTab({ orgHandler }: { orgHandler: strin
   const builtIn = useMemo(() => (idps ?? []).find((i) => i.type === 'default'), [idps]);
   const external = useMemo(() => (idps ?? []).filter((i) => !HIDDEN_TYPES.has(i.type)), [idps]);
 
-  const handleToggle = (idp: IdentityProvider, enabled: boolean) =>
-    toggle.mutate(
-      { id: idp.id, enabled },
-      { onError: (e) => setAlert({ type: 'error', message: e.message || 'Failed to update the identity provider.' }) },
-    );
+  const handleToggle = (idp: IdentityProvider, enabled: boolean) => toggle.mutate({ id: idp.id, enabled }, { onError: (e) => setAlert({ type: 'error', message: e.message || 'Failed to update the identity provider.' }) });
 
   const handleDelete = () => {
     if (!deleting) return;
@@ -162,13 +158,7 @@ export default function IdentityProvidersTab({ orgHandler }: { orgHandler: strin
                         <ListingTable.Cell>{idp.type}</ListingTable.Cell>
                         <ListingTable.Cell>
                           <Authorized permissions={Permissions.USER_MANAGE_ROLES} fallback={<Chip label={idp.enabled ? 'Enabled' : 'Disabled'} size="small" color={idp.enabled ? 'success' : 'default'} variant="outlined" />}>
-                            <Switch
-                              checked={idp.enabled}
-                              onClick={(e) => e.stopPropagation()}
-                              onChange={(e) => handleToggle(idp, e.target.checked)}
-                              disabled={toggle.isPending || readOnly}
-                              inputProps={{ 'aria-label': `Toggle ${displayName(idp)}` }}
-                            />
+                            <Switch checked={idp.enabled} onClick={(e) => e.stopPropagation()} onChange={(e) => handleToggle(idp, e.target.checked)} disabled={toggle.isPending || readOnly} inputProps={{ 'aria-label': `Toggle ${displayName(idp)}` }} />
                           </Authorized>
                         </ListingTable.Cell>
                         <ListingTable.Cell align="right">

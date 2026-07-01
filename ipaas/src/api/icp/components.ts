@@ -18,7 +18,22 @@
 
 // TODO: implement using ICP local REST APIs
 
-import type { Component, ComponentDetail, Endpoint, EnvEndpoint, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, ComponentNameAvailability, DeleteComponentResult, DeploymentTrack, CreateDeploymentTrackInput, DeleteTrackResult, CheckDeletableResult } from '../../types/component';
+import type {
+  Component,
+  ComponentDetail,
+  Endpoint,
+  EnvEndpoint,
+  CreateComponentInput,
+  UpdateComponentInput,
+  UpdateAutoDeployInput,
+  GenerateComponentEndpointsInput,
+  ComponentNameAvailability,
+  DeleteComponentResult,
+  DeploymentTrack,
+  CreateDeploymentTrackInput,
+  DeleteTrackResult,
+  CheckDeletableResult,
+} from '../../types/component';
 import type { CreateMcpProxyComponentInput } from '../../types/mcpProxy';
 
 const ni = (name: string): never => {

@@ -16,23 +16,7 @@
  * under the License.
  */
 
-import type {
-  ByoiEndpointFileContents,
-  ConfigMapWriteData,
-  ConfigMountWriteData,
-  CreateByoiComponentInput,
-  CreateByoiComponentResult,
-  DevopsConfigMap,
-  DevopsConfigMapDetails,
-  DevopsConfigMount,
-  DevopsSecret,
-  DevopsVolume,
-  DevopsVolumeMount,
-  ReleaseDetails,
-  SecretWriteData,
-  VolumeMountWriteData,
-  VolumeWriteData,
-} from '../../types/tailscale';
+import type { ByoiEndpointFileContents, CreateByoiComponentInput, CreateByoiComponentResult, DevopsVolume, DevopsVolumeMount, VolumeMountWriteData, VolumeWriteData } from '../../types/tailscale';
 
 // Intentionally a stub (the standard icp-stub contract — see src/api/AGENTS.md).
 const ni = (name: string): never => {
@@ -42,17 +26,6 @@ const ni = (name: string): never => {
 export const getSampleRegistryId = (_orgUuid: string): Promise<string> => ni('getSampleRegistryId');
 export const createByoiComponent = (_input: CreateByoiComponentInput): Promise<CreateByoiComponentResult> => ni('createByoiComponent');
 export const deployByoiImage = (_componentId: string, _releaseId: string, _imageUrl: string): Promise<{ message: string; success: boolean }> => ni('deployByoiImage');
-export const getReleaseById = (_orgUuid: string, _projectId: string, _componentId: string, _releaseId: string): Promise<ReleaseDetails> => ni('getReleaseById');
-export const getSecrets = (_orgUuid: string, _projectId: string, _environmentId: string): Promise<DevopsSecret[]> => ni('getSecrets');
-export const createSecret = (_orgUuid: string, _projectId: string, _data: SecretWriteData): Promise<DevopsSecret> => ni('createSecret');
-export const updateSecret = (_orgUuid: string, _projectId: string, _secretId: string, _data: SecretWriteData): Promise<DevopsSecret> => ni('updateSecret');
-export const getConfigMaps = (_orgUuid: string, _projectId: string, _environmentId: string): Promise<DevopsConfigMap[]> => ni('getConfigMaps');
-export const getConfigMapDetails = (_orgUuid: string, _projectId: string, _environmentId: string, _configMapId: string): Promise<DevopsConfigMapDetails> => ni('getConfigMapDetails');
-export const createConfigMap = (_orgUuid: string, _projectId: string, _data: ConfigMapWriteData): Promise<DevopsConfigMap> => ni('createConfigMap');
-export const updateConfigMapData = (_orgUuid: string, _projectId: string, _configMapId: string, _data: ConfigMapWriteData): Promise<DevopsConfigMapDetails> => ni('updateConfigMapData');
-export const getContainerConfigMounts = (_orgUuid: string, _projectId: string, _componentId: string, _releaseId: string, _containerId: string): Promise<DevopsConfigMount[]> => ni('getContainerConfigMounts');
-export const mountConfig = (_orgUuid: string, _projectId: string, _componentId: string, _data: ConfigMountWriteData): Promise<DevopsConfigMount> => ni('mountConfig');
-export const updateConfigMount = (_orgUuid: string, _projectId: string, _path: { componentId: string; releaseId: string; containerId: string; mountId: string }, _data: Record<string, unknown>): Promise<DevopsConfigMount> => ni('updateConfigMount');
 export const createVolume = (_orgUuid: string, _projectId: string, _data: VolumeWriteData): Promise<DevopsVolume> => ni('createVolume');
 export const mountVolume = (_orgUuid: string, _projectId: string, _path: { appId: string; appEnvId: string; containerId: string }, _data: VolumeMountWriteData): Promise<DevopsVolumeMount> => ni('mountVolume');
 export const getByoiEndpointsYaml = (_orgUuid: string, _projectId: string, _componentId: string, _releaseId: string): Promise<ByoiEndpointFileContents> => ni('getByoiEndpointsYaml');

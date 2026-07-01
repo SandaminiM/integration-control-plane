@@ -17,31 +17,17 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  createByoiComponent,
-  createConfigMap,
-  createSecret,
-  deployByoiImage,
-  getByoiEndpointsYaml,
-  getConfigMapDetails,
-  getConfigMaps,
-  getReleaseById,
-  getSampleRegistryId,
-  getSecrets,
-  mountConfig,
-  updateByoiEndpointsYaml,
-  updateConfigMapData,
-  updateSecret,
-} from '#api/tailscale';
+import { createByoiComponent, deployByoiImage, getByoiEndpointsYaml, getSampleRegistryId, updateByoiEndpointsYaml } from '#api/tailscale';
+import { createConfigMap, createSecret, getConfigMapDetails, getConfigMaps, getReleaseById, getSecrets, mountConfig, updateConfigMapData, updateSecret } from '#api/devopsConfigs';
 import { fetchComponents } from '#api/components';
 import type { Component } from '../types/component';
 import { OAUTH_CLIENT_SECRET, TAILSCALE_COMPONENT_SUBTYPE, TAILSCALE_COMPONENT_TYPE, TAILSCALE_IMAGE, TS_AUTH_KEY } from '../constants/tailscale';
 import type { TailscaleAuthMethod, TailscalePortMapping } from '../types/tailscale';
 import { buildEndpointsYaml, buildPortMappingsYaml, tailscaleConfigMapName, tailscaleSecretName } from '../utils/tailscale';
+import { mainContainer } from '../utils/devopsConfigs';
 import { useOrgUuid } from './useOrgUuid';
 
 const ROOT = 'tailscale';
-const MAIN_CONTAINER_TYPES = new Set(['MAIN', 'main']);
 
 /**
  * Run one save-and-deploy step, rethrowing with which step failed + retry
@@ -178,7 +164,7 @@ export function useSaveAndDeployTailscale(projectId: string) {
         const credential = authMethod === 'authKey' ? authKey.trim() : clientSecret.trim();
         if (!credential) return null;
         const existingSecret = (await getSecrets(orgUuid, projectId, envId)).find((s) => s.name === secretName);
-        const data = authMethod === 'authKey' ? { [TS_AUTH_KEY]: credential } : { [OAUTH_CLIENT_SECRET]: credential };
+        const data: Record<string, string> = { [authMethod === 'authKey' ? TS_AUTH_KEY : OAUTH_CLIENT_SECRET]: credential };
         const base = {
           name: secretName,
           metadata: { isDefaultConfig: true },
@@ -227,13 +213,22 @@ export function useSaveAndDeployTailscale(projectId: string) {
       if (newSecretId || newConfigMapId) {
         await runStep('Mounting the configuration onto the proxy', async () => {
           const release = await getReleaseById(orgUuid, projectId, componentId, releaseId);
-          const container = release.containers.find((c) => MAIN_CONTAINER_TYPES.has(c.type ?? '')) ?? release.containers[0];
+          const container = mainContainer(release.containers);
           if (!container) return;
           if (newSecretId) {
             await mountConfig(orgUuid, projectId, componentId, { app_environment_id: releaseId, container_id: container.ID, secret_id: newSecretId, configmap_id: null, mount_type: 'ENVFile', mount_permissions: '0000', mount_path: '', config_key: '' });
           }
           if (newConfigMapId) {
-            await mountConfig(orgUuid, projectId, componentId, { app_environment_id: releaseId, container_id: container.ID, configmap_id: newConfigMapId, secret_id: null, mount_type: 'File', mount_path: '/config.yaml', config_key: 'config.yaml', mount_permissions: '0644' });
+            await mountConfig(orgUuid, projectId, componentId, {
+              app_environment_id: releaseId,
+              container_id: container.ID,
+              configmap_id: newConfigMapId,
+              secret_id: null,
+              mount_type: 'File',
+              mount_path: '/config.yaml',
+              config_key: 'config.yaml',
+              mount_permissions: '0644',
+            });
           }
         });
       }
@@ -241,10 +236,18 @@ export function useSaveAndDeployTailscale(projectId: string) {
       // 5. Deploy the proxy image.
       return runStep('Deploying the proxy', () => deployByoiImage(componentId, releaseId, TAILSCALE_IMAGE));
     },
-    onSuccess: (_data, input) => {
+    // The secret/configmap/endpoint writes (steps 1–3) land before the deploy (step 5),
+    // so a failed deploy can leave those caches stale. Invalidate them in onSettled so
+    // they refresh whether or not the overall mutation succeeds.
+    onSettled: (_data, _error, input) => {
       qc.invalidateQueries({ queryKey: [ROOT, 'secrets', orgUuid, projectId, input.envId] });
       qc.invalidateQueries({ queryKey: [ROOT, 'configmaps', orgUuid, projectId, input.envId] });
       qc.invalidateQueries({ queryKey: [ROOT, 'byoiEndpoints', orgUuid, projectId, input.componentId, input.releaseId] });
+      // The secret/configmap writes go through #api/devopsConfigs — refresh the shared
+      // Configs & Secrets surface, which keys its queries under 'devopsConfigs'.
+      qc.invalidateQueries({ queryKey: ['devopsConfigs'] });
+    },
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['componentDeployment'] });
     },
   });

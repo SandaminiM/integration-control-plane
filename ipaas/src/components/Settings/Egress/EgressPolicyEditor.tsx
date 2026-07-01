@@ -137,16 +137,13 @@ export default function EgressPolicyEditor({ projectId }: EgressPolicyEditorProp
           <Authorized permissions={Permissions.ENVIRONMENT_MANAGE}>
             <Stack direction="row" gap={1} alignItems="flex-start" sx={{ mb: 3 }}>
               <TextField label="Rule name" value={ruleName} onChange={(e) => setRuleName(e.target.value)} size="small" sx={{ flex: 1 }} />
-              <TextField
-                label={mode === 'allow-all' ? 'CIDR' : 'CIDR or domain'}
-                value={ruleValue}
-                onChange={(e) => setRuleValue(e.target.value)}
-                size="small"
-                sx={{ flex: 1 }}
-                error={!!valueError || !!formError}
-                helperText={valueError || formError || ' '}
-              />
-              <Button variant="contained" startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <Plus size={16} />} onClick={handleAddRule} disabled={!ruleName.trim() || !ruleValue.trim() || !!valueError || saving} sx={{ mt: 0.5, whiteSpace: 'nowrap' }}>
+              <TextField label={mode === 'allow-all' ? 'CIDR' : 'CIDR or domain'} value={ruleValue} onChange={(e) => setRuleValue(e.target.value)} size="small" sx={{ flex: 1 }} error={!!valueError || !!formError} helperText={valueError || formError || ' '} />
+              <Button
+                variant="contained"
+                startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <Plus size={16} />}
+                onClick={handleAddRule}
+                disabled={!ruleName.trim() || !ruleValue.trim() || !!valueError || saving}
+                sx={{ mt: 0.5, whiteSpace: 'nowrap' }}>
                 Add rule
               </Button>
             </Stack>
@@ -197,9 +194,7 @@ export default function EgressPolicyEditor({ projectId }: EgressPolicyEditorProp
         <Dialog open onClose={() => setDeletingRule(null)} maxWidth="xs" fullWidth>
           <DialogTitle>Delete rule &lsquo;{deletingRule.name}&rsquo;?</DialogTitle>
           <DialogContent>
-            <DialogContentText>
-              {rules.length === 1 ? 'This is the last rule — removing it deletes the egress policy entirely.' : 'This removes the rule from the egress policy.'}
-            </DialogContentText>
+            <DialogContentText>{rules.length === 1 ? 'This is the last rule — removing it deletes the egress policy entirely.' : 'This removes the rule from the egress policy.'}</DialogContentText>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setDeletingRule(null)} disabled={saving || remove.isPending}>
