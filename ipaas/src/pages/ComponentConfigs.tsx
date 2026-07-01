@@ -116,12 +116,6 @@ export default function ComponentConfigs({ org, project, component }: ComponentS
     <>
       {tracks.length > 0 && <DeploymentTrackBar tracks={tracks} selectedId={trackId} onChange={setTrackId} orgHandler={org} projectHandler={project} componentHandler={component} extra={envSelect} />}
       <PageContent>
-        {alert && (
-          <Alert severity={alert.type} onClose={() => setAlert(null)} sx={{ mb: 2 }}>
-            {alert.message}
-          </Alert>
-        )}
-
         {isLoading ? (
           <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
         ) : !comp ? (
@@ -144,6 +138,12 @@ export default function ComponentConfigs({ org, project, component }: ComponentS
                 </Authorized>
               </PageTitle.Actions>
             </PageTitle>
+                    
+            {alert && (
+              <Alert severity={alert.type} onClose={() => setAlert(null)} sx={{ mb: 2 }}>
+                {alert.message}
+              </Alert>
+            )}
 
             {loadingMounts ? (
               <CircularProgress sx={{ display: 'block', mx: 'auto', py: 6 }} />
