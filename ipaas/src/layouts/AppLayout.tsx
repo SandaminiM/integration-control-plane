@@ -16,7 +16,6 @@
  * under the License.
  */
 
-import { useContext } from 'react';
 import {
   AppShell,
   Badge,
@@ -121,11 +120,12 @@ import { isSettingsSectionVisible, type SettingsSectionDef } from '../constants/
 import { componentOverviewUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, projectHomeUrl, termsOfUseUrl } from '../paths';
 import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
-import { CopilotContext, CopilotProvider } from '../contexts/CopilotContext';
+import { CopilotProvider } from '../contexts/CopilotContext';
 import CopilotDrawer from '../components/AiCopilot/CopilotDrawer';
-import { useFeaturePreview } from '../contexts/FeaturePreviewContext';
+import CopilotButton from '../components/CopilotButton';
+import UpgradeButton from '../components/UpgradeButton';
+import { useOrgUuid } from '../hooks/useOrgUuid';
 import { IS_WIP, IS_CLOUD } from '../features';
-import AIIcon from '../assets/icons/ai/AIIcon';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions';
 import { UUID_RE } from '../utils/string';
 
@@ -195,7 +195,6 @@ const COMPONENT_PARENT_MAP: Record<string, string> = {
 };
 
 function AppLayoutInner(): JSX.Element {
-  const { setShowCopilot } = useContext(CopilotContext);
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const scope = useScope();
@@ -313,7 +312,7 @@ function AppLayoutInner(): JSX.Element {
   const [tabIndex, setTabIndex] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [featurePreviewOpen, setFeaturePreviewOpen] = useState(false);
-  const { features } = useFeaturePreview();
+  const orgUuid = useOrgUuid();
   const orgCardRef = useRef<HTMLDivElement>(null);
   const projectCardRef = useRef<HTMLDivElement>(null);
   const integrationCardRef = useRef<HTMLDivElement>(null);
@@ -1021,23 +1020,8 @@ function AppLayoutInner(): JSX.Element {
                 </Badge>
               </IconButton>
             </Tooltip>
-            {IS_WIP && features['Copilot'] && (
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<AIIcon width={16} height={16} />}
-                onClick={() => setShowCopilot(true)}
-                sx={{
-                  borderColor: 'primary.main',
-                  color: 'primary.main',
-                  pl: 1.5,
-                  py: 0.5,
-                  mx: 1,
-                  '&:hover': { bgcolor: 'action.hover' },
-                }}>
-                Copilot
-              </Button>
-            )}
+            {IS_WIP && <CopilotButton />}
+            {IS_WIP && <UpgradeButton orgUuid={orgUuid ?? ''} />}
             <Divider orientation="vertical" flexItem sx={{ mx: 1, display: { xs: 'none', sm: 'block' } }} />
             <UserMenu>
               <UserMenu.Trigger name={displayName || username || 'User'} avatar={pictureUrl} />
