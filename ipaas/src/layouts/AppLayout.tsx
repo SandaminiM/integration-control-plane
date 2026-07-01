@@ -123,6 +123,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { CopilotContext, CopilotProvider } from '../contexts/CopilotContext';
 import CopilotDrawer from '../components/AiCopilot/CopilotDrawer';
+import { useFeaturePreview } from '../contexts/FeaturePreviewContext';
 import { IS_WIP, IS_CLOUD } from '../features';
 import AIIcon from '../assets/icons/ai/AIIcon';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions';
@@ -312,6 +313,7 @@ function AppLayoutInner(): JSX.Element {
   const [tabIndex, setTabIndex] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [featurePreviewOpen, setFeaturePreviewOpen] = useState(false);
+  const { features } = useFeaturePreview();
   const orgCardRef = useRef<HTMLDivElement>(null);
   const projectCardRef = useRef<HTMLDivElement>(null);
   const integrationCardRef = useRef<HTMLDivElement>(null);
@@ -1019,7 +1021,7 @@ function AppLayoutInner(): JSX.Element {
                 </Badge>
               </IconButton>
             </Tooltip>
-            {IS_WIP && (
+            {IS_WIP && features['Copilot'] && (
               <Button
                 variant="outlined"
                 size="small"
