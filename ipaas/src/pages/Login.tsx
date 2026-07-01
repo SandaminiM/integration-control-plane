@@ -69,11 +69,7 @@ export default function Login(): JSX.Element {
     setLoading(true);
     setProvider(fidp);
     try {
-      // 'email' is an internal label — don't forward it to Asgardeo as fidp.
-      // Calling loginWithOIDC() without fidp lets Asgardeo use its standard
-      // login page (email OTP), which works for all account types including
-      // those created via the email signup flow that have no password credential.
-      await loginWithOIDC(fidp === 'email' ? undefined : fidp);
+      await loginWithOIDC(fidp);
     } catch (err) {
       setError(friendlyError(err));
       setLoading(false);
@@ -176,11 +172,11 @@ export default function Login(): JSX.Element {
                 fullWidth
                 variant="contained"
                 color="secondary"
-                startIcon={loading && provider === 'email' ? <CircularProgress size={20} color="inherit" /> : <Mail size={20} />}
-                onClick={() => handleSignIn('email')}
+                startIcon={loading && provider === 'LOCAL' ? <CircularProgress size={20} color="inherit" /> : <Mail size={20} />}
+                onClick={() => handleSignIn('LOCAL')}
                 disabled={loading}
                 sx={{ borderRadius: '28px', py: 1.25 }}>
-                {loading && provider === 'email' ? 'Redirecting...' : 'Sign in with Email'}
+                {loading && provider === 'LOCAL' ? 'Redirecting...' : 'Sign in with Email'}
               </Button>
             </Stack>
 
