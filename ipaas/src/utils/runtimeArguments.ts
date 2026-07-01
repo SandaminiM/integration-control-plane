@@ -123,16 +123,13 @@ export function validateRequiredFields(formFields: FormField[], formData: Dynami
   formFields.forEach((field) => {
     if (!field.required) return;
     const value = formData[field.id];
-    if (value === undefined || value === null) {
-      errors[field.id] = REQUIRED_FIELD_ERROR;
+    // Multi-text fields always use the multi-value message, whether empty or absent.
+    if (field.inputType === 'multi-text') {
+      if (!Array.isArray(value) || !hasNonEmptyValue(value)) errors[field.id] = REQUIRED_MULTI_VALUE_ERROR;
       return;
     }
-    if (typeof value === 'string' && value.trim() === '') {
+    if (value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) {
       errors[field.id] = REQUIRED_FIELD_ERROR;
-      return;
-    }
-    if (Array.isArray(value) && !hasNonEmptyValue(value)) {
-      errors[field.id] = REQUIRED_MULTI_VALUE_ERROR;
     }
   });
   return errors;
