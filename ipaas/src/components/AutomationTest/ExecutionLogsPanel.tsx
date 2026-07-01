@@ -17,7 +17,7 @@
  */
 
 import { Accordion, AccordionDetails, AccordionSummary, Box, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
-import { ChevronDown, Inbox } from '@wso2/oxygen-ui-icons-react';
+import { AlertTriangle, ChevronDown, Inbox } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
 import { useExecutionLogs } from '../../hooks/useExecutions';
 
@@ -34,8 +34,18 @@ interface ExecutionLogsPanelProps {
 }
 
 function LogLines({ componentId, deploymentTrackId, environmentId, executionId }: Pick<ExecutionLogsPanelProps, 'componentId' | 'deploymentTrackId' | 'environmentId' | 'executionId'>): JSX.Element {
-  const { data: logs = [], isLoading } = useExecutionLogs(componentId, deploymentTrackId, executionId, environmentId, true);
+  const { data: logs = [], isLoading, isError } = useExecutionLogs(componentId, deploymentTrackId, executionId, environmentId, true);
   if (isLoading) return <CircularProgress size={20} sx={{ display: 'block', mx: 'auto' }} />;
+  if (isError) {
+    return (
+      <Stack alignItems="center" gap={1} sx={{ py: 3, color: 'error.main' }}>
+        <AlertTriangle size={28} />
+        <Typography variant="body2" color="error.main">
+          Failed to load logs.
+        </Typography>
+      </Stack>
+    );
+  }
   if (logs.length === 0) return <NoLogs />;
   return (
     <Box component="pre" sx={{ m: 0, fontFamily: 'monospace', fontSize: '0.75rem', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>

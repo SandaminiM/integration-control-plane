@@ -144,8 +144,13 @@ export const fetchExecutionArguments = (runId: string, componentId: string, _rel
 
 // awaits: BFF execution-log plumbing (pod logs via resource-tree).
 export const fetchExecutionLogs = (_componentId: string, _deploymentTrackId: string, _executionId: string, _environmentId: string): Promise<ExecutionLogEntry[]> => Promise.resolve([]);
-// OpenChoreo does not expose a runtime-arguments schema yet; degrade to a trigger-only form.
-export const fetchRuntimeArguments = (_componentId: string, _deploymentTrackId: string, _commitHash: string): Promise<RuntimeArgument[]> => Promise.resolve([]);
+
+// The runtime-arguments schema is a wip-only feature; OpenChoreo has no equivalent
+// endpoint, so surface it as unsupported rather than fabricating an empty schema.
+const ni = (name: string): never => {
+  throw new Error(`[cloud] executions.${name}: not implemented`);
+};
+export const fetchRuntimeArguments = (_componentId: string, _deploymentTrackId: string, _commitHash: string): Promise<RuntimeArgument[]> => ni('fetchRuntimeArguments');
 
 // No dedicated count endpoint; approximate from the listed job runs.
 export const fetchTaskExecutionCount = (releaseId: string, componentId = '', envId = '', projectId = ''): Promise<number | null> =>

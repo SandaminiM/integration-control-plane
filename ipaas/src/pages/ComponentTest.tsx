@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { CircularProgress, PageContent } from '@wso2/oxygen-ui';
+import { CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
 import AutomationTest from './AutomationTest';
 import ComingSoon from './ComingSoon';
@@ -40,6 +40,15 @@ export default function ComponentTest(scope: ComponentScope): JSX.Element {
     return (
       <PageContent>
         <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+      </PageContent>
+    );
+  }
+
+  // Not-found is distinct from an unsupported type — surface it rather than "Coming Soon".
+  if (!comp) {
+    return (
+      <PageContent>
+        <Typography>Integration not found</Typography>
       </PageContent>
     );
   }

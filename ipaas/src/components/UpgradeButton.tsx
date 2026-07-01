@@ -54,23 +54,26 @@ export default function UpgradeButton({ orgUuid }: UpgradeButtonProps): JSX.Elem
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
 
-  const { data: subscriptions, isLoading: subscriptionsLoading } = useSubscriptions(orgUuid);
-  const { data: limits, isLoading: limitsLoading } = useComponentLimits(orgUuid);
-
   const enableBilling = !!window.API_CONFIG?.enableBillingFeature;
   const billingConsoleUrl = window.API_CONFIG?.billingConsoleUrl;
   const saasOfferUrl = window.API_CONFIG?.choreoSaasOfferUrl;
+
+  // Don't fetch until billing can actually be shown — no config or no org means no requests.
+  const canQuery = enableBilling && !!billingConsoleUrl && !!orgUuid;
+  const { data: subscriptions, isLoading: subscriptionsLoading, isError: subscriptionsError } = useSubscriptions(orgUuid, canQuery);
+  const { data: limits, isLoading: limitsLoading, isError: limitsError } = useComponentLimits(orgUuid, canQuery);
 
   const isSubscribed = (subscriptions?.list ?? []).some((s) => s.subscriptionType === PAID_SUBSCRIPTION_TYPE);
   const billable = limits?.billableComponentCount ?? 0;
   const warningThreshold = billable >= FREE_COMPONENT_LIMIT * 0.6;
   const fullQuotaThreshold = billable >= FREE_COMPONENT_LIMIT;
 
-  // Show only for free-tier orgs, once state is known, and only if there's somewhere to upgrade.
-  if (!enableBilling || !billingConsoleUrl || !orgUuid || subscriptionsLoading || limitsLoading || isSubscribed) return null;
+  // Show only for free-tier orgs, once state is known, and only if there's somewhere to
+  // upgrade. On a failed subscription/limits fetch, hide rather than fabricate free-tier.
+  if (!enableBilling || !billingConsoleUrl || !orgUuid || subscriptionsLoading || limitsLoading || subscriptionsError || limitsError || isSubscribed) return null;
 
   const color: QuotaColor = fullQuotaThreshold ? 'error' : warningThreshold ? 'warning' : 'primary';
-  const openUpgrade = () => window.open(`${billingConsoleUrl}/cloud/devant/upgrade?orgId=${orgUuid}`, '_blank', 'noopener,noreferrer');
+  const openUpgrade = () => window.open(`${billingConsoleUrl}/cloud/devant/upgrade?orgId=${encodeURIComponent(orgUuid)}`, '_blank', 'noopener,noreferrer');
   const openAzure = () => {
     setOpen(false);
     if (saasOfferUrl) window.open(saasOfferUrl, '_blank', 'noopener,noreferrer');

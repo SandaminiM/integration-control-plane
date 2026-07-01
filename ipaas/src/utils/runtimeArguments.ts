@@ -115,6 +115,9 @@ export const parseRuntimeArgumentsToFormFields = (runtimeArguments: RuntimeArgum
 function hasNonEmptyValue(value: unknown): boolean {
   if (typeof value === 'string') return value.trim() !== '';
   if (Array.isArray(value)) return value.some((item) => item && String(item).trim() !== '');
+  // A checkbox only counts as input when checked — unchecked (false) is "no value",
+  // matching what buildExecutionArgumentsFromForm emits.
+  if (typeof value === 'boolean') return value;
   return value !== undefined && value !== null;
 }
 
@@ -128,7 +131,8 @@ export function validateRequiredFields(formFields: FormField[], formData: Dynami
       if (!Array.isArray(value) || !hasNonEmptyValue(value)) errors[field.id] = REQUIRED_MULTI_VALUE_ERROR;
       return;
     }
-    if (value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) {
+    // An unchecked (false) required checkbox counts as missing, like a blank string.
+    if (value === undefined || value === null || value === false || (typeof value === 'string' && value.trim() === '')) {
       errors[field.id] = REQUIRED_FIELD_ERROR;
     }
   });
@@ -153,22 +157,26 @@ function pushArgument(out: TriggerArgument[], arg: RuntimeArgument, stringValue:
 }
 
 /**
- * Serialize the dynamic-form state into the run-pod `args` payload. Booleans emit
- * their prefix only when checked; repeated args emit one entry per non-empty value;
- * everything else follows the prefix/delimiter rules above. Empty values are skipped.
+ * Serialize the dynamic-form state into the run-pod `args` payload. A checked boolean
+ * emits its prefix (flag) or, with no prefix, its literal value; an unchecked one emits
+ * nothing. Repeated args emit one entry per non-empty value; everything else follows the
+ * prefix/delimiter rules above. Empty values are skipped.
  */
 export function buildExecutionArgumentsFromForm(runtimeArguments: RuntimeArgument[], formData: DynamicFormData): TriggerArgument[] {
   const structured: TriggerArgument[] = [];
   runtimeArguments.forEach((arg) => {
     const value = formData[arg.name];
 
-    if (!arg.repeat) {
-      if (arg.type === 'boolean') {
-        if ((value === true || value === 'true') && arg.prefix) {
-          structured.push({ argument_name: arg.name, argument_value: arg.prefix });
-        }
-        return;
+    // Booleans render as a single checkbox regardless of `repeat`, so handle them here
+    // before the repeat-array path (which would otherwise silently drop the value).
+    if (arg.type === 'boolean') {
+      if (value === true || value === 'true') {
+        structured.push({ argument_name: arg.name, argument_value: arg.prefix ? arg.prefix : 'true' });
       }
+      return;
+    }
+
+    if (!arg.repeat) {
       if (value === undefined || value === null || value === '') return;
       pushArgument(structured, arg, String(value));
       return;
@@ -251,7 +259,8 @@ export function normalizeFormData(data: DynamicFormData): DynamicFormData {
     } else if (Array.isArray(value)) {
       const items = value.filter((item) => item && item.trim());
       if (items.length > 0) normalized[key] = items;
-    } else {
+    } else if (value) {
+      // boolean: keep only when checked (true); unchecked reads as no input
       normalized[key] = value;
     }
   }

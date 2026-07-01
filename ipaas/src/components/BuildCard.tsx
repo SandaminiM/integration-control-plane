@@ -38,9 +38,9 @@ const STAGES = [
 ];
 
 function getStepStatus(logs: BuildRunLogs | null | undefined, key: 'init' | 'build' | 'deploy', conclusion?: string): 'success' | 'error' | 'active' | 'pending' {
-  if (logs === undefined) return 'pending';
-  if (logs === null) {
-    // Logs unavailable (expired/error) — infer from overall build conclusion
+  if (logs === undefined || logs === null) {
+    // Logs not loaded yet, or unavailable (expired/error) — infer from the overall
+    // build conclusion so a finished build never briefly reads as pending.
     if (conclusion === 'success') return 'success';
     if (conclusion === 'failure' || conclusion === 'failed') return 'error';
     return 'pending';
@@ -56,9 +56,9 @@ function getStepStatus(logs: BuildRunLogs | null | undefined, key: 'init' | 'bui
 }
 
 function activeStepIndex(logs: BuildRunLogs | null | undefined, conclusion?: string): number {
-  if (logs === undefined) return 0;
-  if (logs === null) {
-    if (conclusion === 'success') return 3;
+  if (logs === undefined || logs === null) {
+    // A finished successful build has no in-progress step; STAGES.length signals "done".
+    if (conclusion === 'success') return STAGES.length;
     return 0;
   }
   const init = getStepStatus(logs, 'init');
@@ -191,6 +191,11 @@ export default function BuildCard({ componentId, versionId, latestCommit }: Buil
   const status = lastBuild.status;
   const conclusion = lastBuild.conclusion ?? '';
 
+  // A finished build resolves past the last step; clamp that to -1 so the shared
+  // stepper highlights nothing (it only supports indices 0..steps-1 or -1).
+  const rawStepIndex = activeStepIndex(logs, conclusion);
+  const currentStepIndex = rawStepIndex >= STAGES.length ? -1 : rawStepIndex;
+
   let statusLabel = 'Unknown';
   let statusDotColor = 'text.disabled';
   if (status === 'queued') {
@@ -276,7 +281,7 @@ export default function BuildCard({ componentId, versionId, latestCommit }: Buil
 
         {/* Horizontal stepper (shared resizable component) */}
         <Box sx={{ mb: showLogs ? 2 : 0 }}>
-          <HorizontalStepper steps={buildSteps(logs, conclusion)} currentStepIndex={activeStepIndex(logs, conclusion)} size="s" />
+          <HorizontalStepper steps={buildSteps(logs, conclusion)} currentStepIndex={currentStepIndex} size="s" />
         </Box>
 
         {/* Log viewer */}
