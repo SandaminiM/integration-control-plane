@@ -98,6 +98,7 @@ import type { CreateGitCredentialInput, CredentialDeleteEligibility, GitCredenti
 import type { Environment, CloudDataPlane, EnvironmentInput } from '../types/environment';
 import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../types/executions';
 import type { SubscriptionList, ComponentLimits } from '../types/subscription';
+import type { AuditLogEntry, AuditLogsRequest } from '../types/auditLogs';
 import type { InsightsEnvironment, ComponentInsights } from '../types/insights';
 import type { LogsRequest, ComponentLogsRequest, LogRow } from '../types/logs';
 import type { ApiDocument, RuleAdherenceResponse, ThrottlingPolicy } from '../types/marketplace';
@@ -562,6 +563,11 @@ export interface SubscriptionsApi {
   getComponentLimits(orgUuid: string): Promise<ComponentLimits>;
 }
 
+// Org audit logs (admin "Audit Logs"). wip-only for now; cloud/icp stubs throw.
+export interface AuditLogsApi {
+  fetchAuditLogs(orgUuid: string, request: AuditLogsRequest): Promise<AuditLogEntry[]>;
+}
+
 // ---------------------------------------------------------------------------
 // Aggregate — the full API surface consumed by the app
 // ---------------------------------------------------------------------------
@@ -600,4 +606,5 @@ export interface AppApi {
   repository: RepositoryApi;
   samples: SamplesApi;
   subscriptions: SubscriptionsApi;
+  auditLogs: AuditLogsApi;
 }
