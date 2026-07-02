@@ -79,7 +79,10 @@ const treeToPromotionPaths = (tree: PromotionTreeNode | null | undefined): BffPr
       walk(node.children);
     }
   };
-  walk(tree?.children);
+  // Walk from the root itself: the synthetic wrapper (name:'Root', no env) is
+  // skipped by the source guard above, while a genuine root environment — if the
+  // tree ever carries one — still contributes its outgoing edge.
+  walk(tree ? [tree] : []);
   return paths;
 };
 
@@ -139,15 +142,13 @@ export const fetchEnvTemplates = (_orgNumericId: number): Promise<EnvTemplate[]>
 export const fetchOrgDeploymentPipelines = (_orgUuid: string): Promise<DeploymentPipeline[]> => bff.get<ListResponse<BffDeploymentPipeline>>('/deploymentpipelines').then((r) => items(r).map(toDeploymentPipeline));
 
 // A project references at most one pipeline; return it as a single-item list.
+// Read errors propagate: an unavailable BFF must not be reported to the UI as
+// "no pipeline configured", which is what a swallowed error would look like.
 export const fetchProjectDeploymentPipelines = async (_orgUuid: string, projectId: string): Promise<DeploymentPipeline[]> => {
-  try {
-    const project = await bff.get<BffProject>(`/projects/${seg(projectId)}`);
-    if (!project?.deploymentPipeline) return [];
-    const pipeline = await bff.get<BffDeploymentPipeline>(`/deploymentpipelines/${seg(project.deploymentPipeline)}`);
-    return [{ ...toDeploymentPipeline(pipeline), is_project_default: true }];
-  } catch {
-    return [];
-  }
+  const project = await bff.get<BffProject>(`/projects/${seg(projectId)}`);
+  if (!project?.deploymentPipeline) return [];
+  const pipeline = await bff.get<BffDeploymentPipeline>(`/deploymentpipelines/${seg(project.deploymentPipeline)}`);
+  return [{ ...toDeploymentPipeline(pipeline), is_project_default: true }];
 };
 
 // is_default is dropped: OpenChoreo has no default flag, and the required K8s
@@ -172,12 +173,15 @@ export const fetchPipelineDeletionEligibility = async (_orgUuid: string, pipelin
 };
 
 // A project holds a single pipeline ref. The multi-select UI sends a full
-// replacement list; the last entry is the one just added, so it wins.
+// replacement list; the last entry (the just-added one) wins. Return only what
+// was actually persisted so callers aren't misled into thinking several
+// pipelines stuck. An empty list is a no-op — the BFF's omitempty project update
+// cannot unset the ref, so there is nothing to persist.
 export const updateProjectDeploymentPipelines = async (_orgUuid: string, projectId: string, deploymentPipelineIds: string[]): Promise<string[]> => {
-  if (deploymentPipelineIds.length > 0) {
-    await bff.put(`/projects/${seg(projectId)}`, { deploymentPipeline: deploymentPipelineIds[deploymentPipelineIds.length - 1] });
-  }
-  return deploymentPipelineIds;
+  const deploymentPipeline = deploymentPipelineIds[deploymentPipelineIds.length - 1];
+  if (!deploymentPipeline) return [];
+  await bff.put(`/projects/${seg(projectId)}`, { deploymentPipeline });
+  return [deploymentPipeline];
 };
 
 export const setDefaultProjectDeploymentPipeline = async (_orgUuid: string, projectId: string, defaultDeploymentPipelineId: string): Promise<string> => {
