@@ -57,6 +57,7 @@ import * as devopsConfigs from './devopsConfigs';
 import * as customDomains from './customDomains';
 import * as repository from './repository';
 import * as samples from './samples';
+import * as subscriptions from './subscriptions';
 
 const _alerts: Contracts.AlertsApi = alerts;
 const _apim: Contracts.ApimApi = apim;
@@ -90,6 +91,7 @@ const _devopsConfigs: Contracts.DevopsConfigsApi = devopsConfigs;
 const _customDomains: Contracts.CustomDomainsApi = customDomains;
 const _repository: Contracts.RepositoryApi = repository;
 const _samples: Contracts.SamplesApi = samples;
+const _subscriptions: Contracts.SubscriptionsApi = subscriptions;
 
 void _alerts;
 void _apim;
@@ -123,3 +125,4 @@ void _devopsConfigs;
 void _customDomains;
 void _repository;
 void _samples;
+void _subscriptions;

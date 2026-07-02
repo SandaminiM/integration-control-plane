@@ -10,5 +10,9 @@
   {
     "title": "Enable Runtime Arguments Schema",
     "description": "Enable runtime arguments schema configuration for integrations"
+  },
+  {
+    "title": "Copilot",
+    "description": "Show the Copilot assistant button in the top navigation bar"
   }
 ]

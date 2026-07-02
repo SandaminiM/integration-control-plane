@@ -23,6 +23,7 @@ const ni = (name: string): never => {
 
 export const fetchExecutionConfigs = (..._args: unknown[]): never => ni('fetchExecutionConfigs');
 export const fetchTaskExecutions = (..._args: unknown[]): never => ni('fetchTaskExecutions');
+export const fetchRuntimeArguments = (..._args: unknown[]): never => ni('fetchRuntimeArguments');
 export const fetchExecutionArguments = (..._args: unknown[]): never => ni('fetchExecutionArguments');
 export const fetchExecutionLogs = (..._args: unknown[]): never => ni('fetchExecutionLogs');
 export const fetchTaskExecutionCount = (..._args: unknown[]): never => ni('fetchTaskExecutionCount');

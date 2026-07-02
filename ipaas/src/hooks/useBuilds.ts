@@ -19,15 +19,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchBuildLogs, fetchBuildRunLogs } from '#api/builds';
 
-export function useBuildLogs(componentId: string, versionId: string, workflowName: string, isInProgress: boolean) {
+export function useBuildLogs(componentId: string, versionId: string, workflowName: string, isInProgress: boolean, enabled = true) {
   return useQuery({
     queryKey: ['buildLogs', componentId, versionId, workflowName],
     queryFn: () => fetchBuildLogs(componentId, versionId, workflowName),
-    enabled: !!componentId && !!versionId && !!workflowName,
+    enabled: enabled && !!componentId && !!versionId && !!workflowName,
     refetchInterval: isInProgress ? 5000 : false,
   });
 }
 
+// Not used
 export function useBuildRunLogs(orgHandler: string, projectId: string, componentId: string, runId: string, enabled: boolean, isInProgress: boolean) {
   return useQuery({
     queryKey: ['buildRunLogs', orgHandler, projectId, componentId, runId],

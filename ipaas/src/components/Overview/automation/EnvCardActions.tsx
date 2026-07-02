@@ -16,30 +16,44 @@
  * under the License.
  */
 
-import { Stack, Typography } from '@wso2/oxygen-ui';
-import { Clock } from '@wso2/oxygen-ui-icons-react';
+import { Button, Stack, Typography } from '@wso2/oxygen-ui';
+import { Clock, Play } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { useExecutionConfigs, useTriggerComponent } from '../../../hooks/useExecutions';
+import { useExecutionConfigs } from '../../../hooks/useExecutions';
 import { useSchemaConfig } from '../../../hooks/useConfiguration';
 import { formatTimeUntil, nextCronRunMs } from '../../../utils/cronUtils';
 import type { EnvCardActionsProps } from '../../../types/integration';
 import ScheduleButton from './ScheduleButton';
-import RunButton from './RunButton';
-import RunWithArgsDialog from './RunWithArgsDialog';
 import { hasMissingRequiredConfigs } from '../_shared/configStatus';
 
 /**
  * Automation's right-header slot: the next-run label (with cron auto-fire
- * detection), Schedule controls, and Run / Run-with-args. Owns the trigger
- * mutation + schedule config; reports outcomes via `onNotify` and records
- * optimistic runs via `onTrigger` (the shell relays those to the body's table).
+ * detection), Schedule controls, and a Test button that navigates to the
+ * dedicated Test page. Owns the schedule config; reports schedule outcomes via
+ * `onNotify` and records optimistic cron auto-fires via `onTrigger` (the shell
+ * relays those to the body's table).
  */
-export default function EnvCardActions({ component, env, projectId, versionId, orgHandler, releaseId, deploymentPipelineId, envTemplateId, deployedCommitSha, isBuildInProgress, onNotify, onTrigger }: EnvCardActionsProps): ReactNode {
+export default function EnvCardActions({
+  component,
+  env,
+  projectId,
+  versionId,
+  orgHandler,
+  projectHandler,
+  componentHandler,
+  releaseId,
+  deploymentPipelineId,
+  envTemplateId,
+  deployedCommitSha,
+  isBuildInProgress,
+  onNotify,
+  onTrigger,
+}: EnvCardActionsProps): ReactNode {
   const queryClient = useQueryClient();
-  const trigger = useTriggerComponent();
-  const [runWithArgsOpen, setRunWithArgsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const { data: scheduleConfig } = useExecutionConfigs(component.id, releaseId, env.id, projectId);
   const { data: schemaConfig } = useSchemaConfig(projectId, component.id, envTemplateId, versionId, deployedCommitSha);
@@ -77,19 +91,8 @@ export default function EnvCardActions({ component, env, projectId, versionId, o
     return () => clearInterval(timer);
   }, [updateNextRun]);
 
-  const handleRun = () => {
-    trigger.mutate(
-      { orgHandler, projectId, componentId: component.id, releaseId, args: [] },
-      {
-        onSuccess: () => {
-          onNotify({ text: 'Execution triggered successfully', severity: 'success' });
-          onTrigger(Date.now());
-          queryClient.invalidateQueries({ queryKey: ['taskExecutions'] });
-        },
-        onError: (err) => onNotify({ text: err instanceof Error ? err.message : 'Failed to trigger execution', severity: 'error' }),
-      },
-    );
-  };
+  // Testing now lives on the dedicated Test page; this just navigates there.
+  const goToTestPage = () => navigate(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/test`);
 
   return (
     <>
@@ -115,21 +118,9 @@ export default function EnvCardActions({ component, env, projectId, versionId, o
         onSaveError={() => onNotify({ text: 'Failed to save schedule. Please try again.', severity: 'error' })}
         onStopSuccess={() => onNotify({ text: 'Schedule stopped successfully', severity: 'success' })}
       />
-      <RunButton envCritical={env.critical} disabled={missingConfigs || buildDisabled} pending={trigger.isPending} onRun={handleRun} onRunWithArgs={() => setRunWithArgsOpen(true)} />
-      <RunWithArgsDialog
-        open={runWithArgsOpen}
-        onClose={() => setRunWithArgsOpen(false)}
-        onRunSuccess={(args) => {
-          onNotify({ text: 'Execution triggered successfully', severity: 'success' });
-          onTrigger(Date.now(), args);
-          queryClient.invalidateQueries({ queryKey: ['taskExecutions'] });
-        }}
-        envCritical={env.critical}
-        orgHandler={orgHandler}
-        projectId={projectId}
-        componentId={component.id}
-        releaseId={releaseId}
-      />
+      <Button variant="contained" size="small" startIcon={<Play size={14} />} disabled={missingConfigs || buildDisabled} onClick={goToTestPage}>
+        Test
+      </Button>
     </>
   );
 }
