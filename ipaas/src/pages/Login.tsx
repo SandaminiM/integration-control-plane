@@ -24,6 +24,7 @@ import { Link as NavLink, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { privacyPolicyUrl, signupUrl } from '../paths';
 import AuthMarketingPanel from '../components/AuthMarketingPanel';
+import { IS_CLOUD } from '../features';
 
 function MicrosoftIcon() {
   return (
@@ -51,11 +52,15 @@ export default function Login(): JSX.Element {
   const [provider, setProvider] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // After email signup, Asgardeo redirects here with method=basic. Auto-trigger
+  // Cloud variant: the branded split-screen sign-in is hosted by Thunder (the IdP),
+  // so we don't render our own marketing + provider page. Hand off immediately to
+  // Thunder's authorize endpoint with no fidp, which renders its choose-auth screen.
+  //
+  // Non-cloud: after email signup, Asgardeo redirects here with method=basic. Auto-trigger
   // login without fidp so Asgardeo reuses the active session from org creation
   // rather than requiring LOCAL (password) auth which new accounts don't have.
   useEffect(() => {
-    if (searchParams.get('method') === 'basic') {
+    if (IS_CLOUD || searchParams.get('method') === 'basic') {
       setLoading(true);
       loginWithOIDC().catch((err) => {
         setLoading(false);
@@ -76,6 +81,23 @@ export default function Login(): JSX.Element {
       setProvider(null);
     }
   };
+
+  // Cloud variant renders no in-app sign-in UI — just a spinner while redirecting
+  // to Thunder's hosted branded split-screen page.
+  if (IS_CLOUD) {
+    return (
+      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+        {error ? (
+          <Alert severity="error">{error}</Alert>
+        ) : (
+          <>
+            <CircularProgress />
+            <Typography variant="body1" color="text.secondary">Redirecting to sign in…</Typography>
+          </>
+        )}
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ height: '100vh', display: 'flex' }}>

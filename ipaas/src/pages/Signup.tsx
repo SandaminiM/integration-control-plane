@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { JSX } from 'react';
 import { Alert, Box, Button, CircularProgress, ColorSchemeImage, Divider, Grid, Link, Stack, Typography } from '@wso2/oxygen-ui';
 import { GitHub, Google, Mail } from '@wso2/oxygen-ui-icons-react';
@@ -24,6 +24,7 @@ import { Link as NavLink } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { loginUrl, privacyPolicyUrl } from '../paths';
 import AuthMarketingPanel from '../components/AuthMarketingPanel';
+import { IS_CLOUD } from '../features';
 
 function MicrosoftIcon() {
   return (
@@ -50,6 +51,16 @@ export default function Signup(): JSX.Element {
   const [provider, setProvider] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Cloud variant: sign-up is handled on Thunder's hosted branded split-screen page.
+  // Hand off immediately to Thunder's authorize endpoint (no fidp) instead of
+  // rendering our own marketing + provider page.
+  useEffect(() => {
+    if (IS_CLOUD) {
+      setLoading(true);
+      loginWithOIDC().catch((err) => { setLoading(false); setError(friendlyError(err)); });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleEmailSignup = () => {
     const origin = window.location.origin;
     const postRegisterCallback = `${origin}/login?method=basic&returnToUrl=%2F`;
@@ -75,6 +86,23 @@ export default function Signup(): JSX.Element {
       setProvider(null);
     }
   };
+
+  // Cloud variant renders no in-app sign-up UI — just a spinner while redirecting
+  // to Thunder's hosted branded split-screen page.
+  if (IS_CLOUD) {
+    return (
+      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+        {error ? (
+          <Alert severity="error">{error}</Alert>
+        ) : (
+          <>
+            <CircularProgress />
+            <Typography variant="body1" color="text.secondary">Redirecting to sign in…</Typography>
+          </>
+        )}
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ height: '100vh', display: 'flex' }}>
