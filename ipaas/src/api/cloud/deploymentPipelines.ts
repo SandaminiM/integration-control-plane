@@ -16,22 +16,171 @@
  * under the License.
  */
 
-import type { CreateDeploymentPipelineRequest, DeploymentPipeline, EnvTemplate, PipelineDeletionEligibility } from '../../types/deploymentPipeline';
+/**
+ * Cloud (OpenChoreo) deployment-pipeline API. Calls the ipaas-service BFF.
+ *
+ * Wired endpoints:
+ *   GET/POST         /deploymentpipelines
+ *   GET/PUT/DELETE   /deploymentpipelines/{name}
+ *   GET              /environments                (source for synthesized env templates)
+ *   GET/PUT          /projects/{name}             (single per-project pipeline ref)
+ *
+ * Two contract functions have no OpenChoreo equivalent and are adapted here:
+ *   - fetchEnvTemplates: OpenChoreo has no environment-template concept; the
+ *     promotion chain is built directly over environments, so each environment
+ *     is projected into an EnvTemplate.
+ *   - fetchPipelineDeletionEligibility: no BFF route; usage is derived from the
+ *     project pipeline refs (a project can only reference one pipeline).
+ *
+ * A project references exactly one pipeline (OpenChoreo ProjectSpec.deploymentPipelineRef),
+ * whereas the devant UI models many-per-project plus a default. The project
+ * association writes below collapse that onto the single deploymentPipeline field.
+ */
 
-// These throw by design (the standard cloud-stub contract — see src/api/AGENTS.md).
-// Returning benign defaults (empty arrays / fabricated objects) would silently mask
-// an unimplemented endpoint and feed bogus data into the UI; a loud failure is correct
-// until cloud has a real implementation.
-const ni = (name: string): never => {
-  throw new Error(`[cloud] deploymentPipelines.${name}: not implemented`);
+import type { CreateDeploymentPipelineRequest, DeploymentPipeline, EnvTemplate, PipelineDeletionEligibility, PromotionTreeNode } from '../../types/deploymentPipeline';
+import { toHandler } from '../../utils/string';
+import { bff, items, seg, type ListResponse } from './_client';
+
+// _orgUuid / _orgNumericId are kept for devant contract parity; cloud derives
+// the org from the access token instead of taking an id from the caller.
+
+// OpenChoreo promotion refs are environment names. The BFF flattens each path to
+// { sourceEnvironment, targetEnvironments[] }, while the frontend models a
+// recursive promotion tree whose nodes key on env_template_id (also the env name,
+// see fetchEnvTemplates). These two mappers translate between the shapes.
+interface BffPromotionPath {
+  sourceEnvironment: string;
+  targetEnvironments: string[];
+}
+
+interface BffDeploymentPipeline {
+  uid?: string;
+  name: string;
+  displayName?: string;
+  description?: string;
+  promotionPaths?: BffPromotionPath[];
+  createdAt?: string;
+}
+
+interface BffProject {
+  name: string;
+  displayName?: string;
+  deploymentPipeline?: string;
+}
+
+/** Walk the promotion tree, emitting a path per node that has children. */
+const treeToPromotionPaths = (tree: PromotionTreeNode | null | undefined): BffPromotionPath[] => {
+  const paths: BffPromotionPath[] = [];
+  const walk = (nodes: PromotionTreeNode[] | undefined): void => {
+    for (const node of nodes ?? []) {
+      const source = node.env_template_id ?? node.env_name;
+      const targets = (node.children ?? []).map((c) => c.env_template_id ?? c.env_name).filter((n): n is string => !!n);
+      if (source && targets.length > 0) paths.push({ sourceEnvironment: source, targetEnvironments: targets });
+      walk(node.children);
+    }
+  };
+  walk(tree?.children);
+  return paths;
 };
 
-export const fetchEnvTemplates = (_orgNumericId: number): Promise<EnvTemplate[]> => ni('fetchEnvTemplates');
-export const fetchOrgDeploymentPipelines = (_orgUuid: string): Promise<DeploymentPipeline[]> => ni('fetchOrgDeploymentPipelines');
-export const fetchProjectDeploymentPipelines = (_orgUuid: string, _projectId: string): Promise<DeploymentPipeline[]> => ni('fetchProjectDeploymentPipelines');
-export const createDeploymentPipeline = (_orgUuid: string, _input: CreateDeploymentPipelineRequest): Promise<DeploymentPipeline> => ni('createDeploymentPipeline');
-export const updateDeploymentPipeline = (_orgUuid: string, _pipelineId: string, _input: CreateDeploymentPipelineRequest): Promise<DeploymentPipeline> => ni('updateDeploymentPipeline');
-export const deleteDeploymentPipeline = (_orgUuid: string, _pipelineId: string): Promise<void> => ni('deleteDeploymentPipeline');
-export const fetchPipelineDeletionEligibility = (_orgUuid: string, _pipelineId: string): Promise<PipelineDeletionEligibility> => ni('fetchPipelineDeletionEligibility');
-export const updateProjectDeploymentPipelines = (_orgUuid: string, _projectId: string, _deploymentPipelineIds: string[]): Promise<string[]> => ni('updateProjectDeploymentPipelines');
-export const setDefaultProjectDeploymentPipeline = (_orgUuid: string, _projectId: string, _defaultDeploymentPipelineId: string): Promise<string> => ni('setDefaultProjectDeploymentPipeline');
+/** Rebuild a promotion tree from the BFF's flat paths (root = source that is never a target). */
+const promotionPathsToTree = (paths: BffPromotionPath[]): PromotionTreeNode => {
+  const targetsOf = new Map<string, string[]>();
+  const allTargets = new Set<string>();
+  for (const p of paths) {
+    targetsOf.set(p.sourceEnvironment, p.targetEnvironments);
+    for (const t of p.targetEnvironments) allTargets.add(t);
+  }
+  const build = (name: string, seen: Set<string>): PromotionTreeNode => {
+    // env_name mirrors the name; consumers re-derive the display label from the
+    // env-template list by id, so the value here only needs to round-trip.
+    const node: PromotionTreeNode = { env_template_id: name, env_name: name };
+    if (seen.has(name)) return node; // guard against a cyclic promotion path
+    const next = new Set(seen).add(name);
+    const children = (targetsOf.get(name) ?? []).map((t) => build(t, next));
+    if (children.length > 0) node.children = children;
+    return node;
+  };
+  const roots = [...targetsOf.keys()].filter((s) => !allTargets.has(s));
+  return { name: 'Root', children: roots.map((r) => build(r, new Set())) };
+};
+
+const toDeploymentPipeline = (p: BffDeploymentPipeline): DeploymentPipeline => ({
+  id: p.name,
+  created_at: p.createdAt ?? '',
+  organization_uuid: '',
+  name: p.displayName || p.name,
+  promotion_tree: promotionPathsToTree(p.promotionPaths ?? []),
+  // OpenChoreo has no default flag; the well-known "default" pipeline stands in.
+  is_default: p.name === 'default',
+});
+
+// OpenChoreo models no environment templates — the promotion chain is built over
+// environments directly, so each environment is projected into an EnvTemplate.
+interface BffEnvironmentTemplateSource {
+  name: string;
+  displayName?: string;
+  isProduction?: boolean;
+}
+
+export const fetchEnvTemplates = (_orgNumericId: number): Promise<EnvTemplate[]> =>
+  bff.get<ListResponse<BffEnvironmentTemplateSource>>('/environments').then((r) =>
+    items(r).map((e) => ({
+      id: e.name,
+      env_name: e.displayName || e.name,
+      critical: e.isProduction ?? false,
+      region: '',
+      choreo_env: '',
+      cluster_id: '',
+      dns_prefix: '',
+    })),
+  );
+
+export const fetchOrgDeploymentPipelines = (_orgUuid: string): Promise<DeploymentPipeline[]> => bff.get<ListResponse<BffDeploymentPipeline>>('/deploymentpipelines').then((r) => items(r).map(toDeploymentPipeline));
+
+// A project references at most one pipeline; return it as a single-item list.
+export const fetchProjectDeploymentPipelines = async (_orgUuid: string, projectId: string): Promise<DeploymentPipeline[]> => {
+  try {
+    const project = await bff.get<BffProject>(`/projects/${seg(projectId)}`);
+    if (!project?.deploymentPipeline) return [];
+    const pipeline = await bff.get<BffDeploymentPipeline>(`/deploymentpipelines/${seg(project.deploymentPipeline)}`);
+    return [{ ...toDeploymentPipeline(pipeline), is_project_default: true }];
+  } catch {
+    return [];
+  }
+};
+
+// is_default is dropped: OpenChoreo has no default flag, and the required K8s
+// name is slugged from the label (which rides along as displayName).
+export const createDeploymentPipeline = (_orgUuid: string, input: CreateDeploymentPipelineRequest): Promise<DeploymentPipeline> =>
+  bff.post<BffDeploymentPipeline>('/deploymentpipelines', { name: toHandler(input.name), displayName: input.name, promotionPaths: treeToPromotionPaths(input.promotion_tree) }).then(toDeploymentPipeline);
+
+export const updateDeploymentPipeline = (_orgUuid: string, pipelineId: string, input: CreateDeploymentPipelineRequest): Promise<DeploymentPipeline> =>
+  bff.put<BffDeploymentPipeline>(`/deploymentpipelines/${seg(pipelineId)}`, { displayName: input.name, promotionPaths: treeToPromotionPaths(input.promotion_tree) }).then(toDeploymentPipeline);
+
+export const deleteDeploymentPipeline = (_orgUuid: string, pipelineId: string): Promise<void> => bff.delete<void>(`/deploymentpipelines/${seg(pipelineId)}`).then(() => undefined);
+
+// derives: no BFF deletion-eligibility route — infer usage from project pipeline refs.
+export const fetchPipelineDeletionEligibility = async (_orgUuid: string, pipelineId: string): Promise<PipelineDeletionEligibility> => {
+  const used = items(await bff.get<ListResponse<BffProject>>('/projects')).filter((p) => p.deploymentPipeline === pipelineId);
+  return {
+    id: pipelineId,
+    name: pipelineId,
+    isDeletable: used.length === 0,
+    usedProjects: used.map((p) => ({ id: p.name, name: p.displayName || p.name, handler: p.name })),
+  };
+};
+
+// A project holds a single pipeline ref. The multi-select UI sends a full
+// replacement list; the last entry is the one just added, so it wins.
+export const updateProjectDeploymentPipelines = async (_orgUuid: string, projectId: string, deploymentPipelineIds: string[]): Promise<string[]> => {
+  if (deploymentPipelineIds.length > 0) {
+    await bff.put(`/projects/${seg(projectId)}`, { deploymentPipeline: deploymentPipelineIds[deploymentPipelineIds.length - 1] });
+  }
+  return deploymentPipelineIds;
+};
+
+export const setDefaultProjectDeploymentPipeline = async (_orgUuid: string, projectId: string, defaultDeploymentPipelineId: string): Promise<string> => {
+  await bff.put(`/projects/${seg(projectId)}`, { deploymentPipeline: defaultDeploymentPipelineId });
+  return defaultDeploymentPipelineId;
+};
