@@ -19,19 +19,12 @@
 import { Chip, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronRight, Copy } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import { formatAuditTimestamp } from '../../utils/auditLogs';
+import { formatAuditTimestamp, outcomeColor } from '../../utils/auditLogs';
 import type { AuditLogEntry } from '../../types/auditLogs';
-
-const OUTCOME_COLORS: Record<string, { bg: string; text: string }> = {
-  succeeded: { bg: '#e6f4ea', text: '#1e7e34' },
-  failed: { bg: '#fdecea', text: '#c62828' },
-};
 
 /** One audit event, styled like a log line: monospace summary row that expands to full detail. */
 export default function AuditLogRow({ entry, expanded, onToggle }: { entry: AuditLogEntry; expanded: boolean; onToggle: () => void }): JSX.Element {
   const infoEntries = Object.entries(entry.info ?? {});
-  const outcome = entry.outcome ?? '';
-  const outcomeColor = OUTCOME_COLORS[outcome];
   const actor = entry.info?.email ?? entry.userIdpId;
   const summary = entry.action ?? entry.message ?? '—';
 
@@ -53,9 +46,7 @@ export default function AuditLogRow({ entry, expanded, onToggle }: { entry: Audi
         <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, color: 'text.secondary', whiteSpace: 'nowrap', mr: 1 }}>
           {formatAuditTimestamp(entry)}
         </Typography>
-        {outcome ? (
-          <Chip label={outcome} size="small" sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, textTransform: 'capitalize', fontWeight: 700, bgcolor: outcomeColor?.bg ?? 'action.selected', color: outcomeColor?.text ?? 'text.secondary' }} />
-        ) : null}
+        {entry.outcome ? <Chip label={entry.outcome} size="small" variant="outlined" color={outcomeColor(entry.outcome)} sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, textTransform: 'capitalize', fontWeight: 700 }} /> : null}
         {actor ? (
           <Tooltip title="Performed by">
             <Chip label={actor} size="small" sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, bgcolor: 'action.selected', color: 'text.secondary', fontWeight: 600 }} />
