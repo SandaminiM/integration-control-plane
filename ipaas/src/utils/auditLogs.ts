@@ -47,6 +47,8 @@ export function downloadAuditLogs(entries: AuditLogEntry[]): void {
   const a = document.createElement('a');
   a.href = url;
   a.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
   a.click();
+  a.remove();
   URL.revokeObjectURL(url);
 }

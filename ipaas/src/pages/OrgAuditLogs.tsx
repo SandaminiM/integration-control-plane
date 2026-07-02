@@ -47,7 +47,7 @@ export default function OrgAuditLogs(): JSX.Element {
 
   // Resolve the look-back window to concrete ISO bounds; recomputed on preset change or refresh.
   const range = useMemo(() => {
-    const preset = AUDIT_TIME_PRESETS.find((p) => p.id === presetId) ?? AUDIT_TIME_PRESETS[2];
+    const preset = AUDIT_TIME_PRESETS.find((p) => p.id === presetId) ?? AUDIT_TIME_PRESETS.find((p) => p.id === DEFAULT_AUDIT_TIME_PRESET) ?? AUDIT_TIME_PRESETS[0];
     return rangeFromPreset(preset.ms, Date.now());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presetId, refreshKey]);

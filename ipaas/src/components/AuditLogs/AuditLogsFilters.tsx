@@ -50,9 +50,9 @@ export default function AuditLogsFilters(props: AuditLogsFiltersProps): JSX.Elem
       <Select
         multiple
         value={outcomes}
-        onChange={(e) => setOutcomes(e.target.value as AuditLogOutcome[])}
+        onChange={(e) => setOutcomes(typeof e.target.value === 'string' ? (e.target.value.split(',') as AuditLogOutcome[]) : (e.target.value as AuditLogOutcome[]))}
         displayEmpty
-        renderValue={(sel) => ((sel as string[]).length === 0 ? 'All outcomes' : (sel as string[]).map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(', '))}
+        renderValue={(sel) => ((sel as string[]).length === 0 ? 'All outcomes' : (sel as string[]).map((v) => AUDIT_LOG_OUTCOMES.find((o) => o.value === v)?.label ?? v).join(', '))}
         size="small"
         sx={{ minWidth: 150 }}
         inputProps={{ 'aria-label': 'Outcome' }}>
