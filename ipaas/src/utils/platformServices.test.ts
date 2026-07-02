@@ -1,0 +1,99 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { describe, expect, it } from 'vitest';
+import { deriveProviders, deriveRegions, isPlanAvailableInRegion, planRegionSpec, plansForProviderRegion } from './platformServices';
+import type { ServicePlan } from '../types/platformServices';
+
+const region = (cloud_provider: ServicePlan['regions'][number]['cloud_provider'], cloud_region: ServicePlan['regions'][number]['cloud_region'], extra: Partial<ServicePlan['regions'][number]> = {}) => ({
+  cloud_provider,
+  cloud_region,
+  node_cpu_count: 1,
+  node_ram_gb: 1,
+  storage_gb: 8,
+  monthly_price_usd: '11.68',
+  hourly_price_usd: '0.02',
+  ...extra,
+});
+
+const hobbyist: ServicePlan = {
+  id: 'hobbyist',
+  name: 'Hobbyist',
+  description: 'Hobbyist plan',
+  type: 'postgres',
+  node_count: 1,
+  backup_retention_days: 0,
+  backup_interval_hours: 24,
+  free_trial_available: true,
+  regions: [region('digitalocean', 'eu'), region('digitalocean', 'us'), region('gcp', 'eu')],
+};
+
+const startup: ServicePlan = {
+  id: 'startup',
+  name: 'Startup 4',
+  description: 'Startup plan',
+  type: 'postgres',
+  node_count: 1,
+  backup_retention_days: 3,
+  backup_interval_hours: 24,
+  free_trial_available: false,
+  regions: [region('aws', 'us', { hourly_price_usd: '0.14' }), region('digitalocean', 'eu', { hourly_price_usd: '0.10' })],
+};
+
+describe('deriveProviders', () => {
+  it('returns offered providers in canonical display order (digitalocean, gcp, aws)', () => {
+    expect(deriveProviders([hobbyist, startup])).toEqual(['digitalocean', 'gcp', 'aws']);
+  });
+
+  it('returns an empty list when no plans are given', () => {
+    expect(deriveProviders([])).toEqual([]);
+  });
+});
+
+describe('deriveRegions', () => {
+  it('returns offered regions in canonical order (us before eu)', () => {
+    expect(deriveRegions([hobbyist, startup])).toEqual(['us', 'eu']);
+  });
+});
+
+describe('isPlanAvailableInRegion', () => {
+  it('is true only for an offered provider+region pair', () => {
+    expect(isPlanAvailableInRegion(hobbyist, 'digitalocean', 'eu')).toBe(true);
+    expect(isPlanAvailableInRegion(hobbyist, 'digitalocean', 'aus')).toBe(false);
+    expect(isPlanAvailableInRegion(hobbyist, 'aws', 'eu')).toBe(false);
+  });
+});
+
+describe('plansForProviderRegion', () => {
+  it('keeps only plans offered for the selected provider+region', () => {
+    expect(plansForProviderRegion([hobbyist, startup], 'digitalocean', 'eu').map((p) => p.id)).toEqual(['hobbyist', 'startup']);
+    expect(plansForProviderRegion([hobbyist, startup], 'aws', 'us').map((p) => p.id)).toEqual(['startup']);
+    expect(plansForProviderRegion([hobbyist, startup], 'gcp', 'us')).toEqual([]);
+  });
+});
+
+describe('planRegionSpec', () => {
+  it('returns the provider+region-specific spec/pricing row', () => {
+    expect(planRegionSpec(startup, 'aws', 'us')?.hourly_price_usd).toBe('0.14');
+    expect(planRegionSpec(startup, 'digitalocean', 'eu')?.hourly_price_usd).toBe('0.10');
+  });
+
+  it('returns undefined for an unavailable combination', () => {
+    expect(planRegionSpec(hobbyist, 'aws', 'us')).toBeUndefined();
+  });
+});

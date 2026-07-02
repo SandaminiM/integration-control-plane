@@ -111,6 +111,13 @@ export const urlManagerClient = createHttpClient(() => {
 // Subscriptions service
 export const subscriptionsClient = createHttpClient(() => window.API_CONFIG.subscriptionsApiUrl);
 
+// Platform services — managed databases (admin "Databases" feature).
+export const platformServicesClient = createHttpClient(() => {
+  const base = window.API_CONFIG?.platformServicesApiBaseUrl;
+  if (!base) throw new Error('Platform services base URL is not configured');
+  return base;
+});
+
 // Choreo Insights — GraphQL-like query endpoint on a separate host
 export const insightsClient = createHttpClient(() => `${window.API_CONFIG.insightsBaseUrl}/insights/1.0.0`);
 

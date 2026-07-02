@@ -47,6 +47,8 @@ interface RuntimeConfig {
   ASGARDEO_SIGNUP_URL?: string;
   AI_COPILOT_URL_SUFFIX?: string;
   AI_COPILOT_DATACOLLECTOR_BASE_URL?: string;
+  PLATFORM_SERVICES_API_BASE_URL?: string;
+  ENABLE_PLATFORM_SERVICES_FEATURE?: string | boolean;
 }
 
 export interface ApiConfig {
@@ -88,6 +90,10 @@ export interface ApiConfig {
   urlManagerUrl?: string;
   /** Feature flag mirroring Devant's ENABLE_CUSTOM_URL_MAPPINGS_FEATURE. */
   enableCustomUrlMappings?: boolean;
+  /** Platform-services (managed databases) base URL. When unset, the admin Databases page stays disabled. */
+  platformServicesApiBaseUrl?: string;
+  /** Gates the admin Databases feature (mirrors Devant's ENABLE_PLATFORM_SERVICES_FEATURE). */
+  enablePlatformServicesFeature?: boolean;
 }
 
 // Extend window interface
@@ -180,6 +186,8 @@ export async function loadConfig(): Promise<void> {
       billingConsoleUrl: config.BILLING_CONSOLE_URL ? trim(config.BILLING_CONSOLE_URL) : undefined,
       choreoSaasOfferUrl: config.CHOREO_SAAS_OFFER_URL || undefined,
       enableBillingFeature: config.ENABLE_BILLING_FEATURE === 'true' || config.ENABLE_BILLING_FEATURE === true,
+      platformServicesApiBaseUrl: config.PLATFORM_SERVICES_API_BASE_URL ? trim(config.PLATFORM_SERVICES_API_BASE_URL) : undefined,
+      enablePlatformServicesFeature: config.ENABLE_PLATFORM_SERVICES_FEATURE === 'true' || config.ENABLE_PLATFORM_SERVICES_FEATURE === true,
     };
 
     console.info('✓ Runtime configuration loaded from config.json');

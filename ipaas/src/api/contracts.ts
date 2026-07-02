@@ -100,6 +100,7 @@ import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgum
 import type { SubscriptionList, ComponentLimits } from '../types/subscription';
 import type { ConfigGroup, ConfigGroupNameAvailability, ConfigGroupUsage, CreateConfigGroupRequest, EditConfigGroupRequest } from '../types/configGroups';
 import type { AuditLogEntry, AuditLogsRequest } from '../types/auditLogs';
+import type { DatabaseServer, OrgServiceAvailability, ServicePlan, ServiceType, CreateServerPayload } from '../types/platformServices';
 import type { InsightsEnvironment, ComponentInsights } from '../types/insights';
 import type { LogsRequest, ComponentLogsRequest, LogRow } from '../types/logs';
 import type { ApiDocument, RuleAdherenceResponse, ThrottlingPolicy } from '../types/marketplace';
@@ -580,6 +581,16 @@ export interface AuditLogsApi {
   fetchAuditLogs(orgUuid: string, request: AuditLogsRequest): Promise<AuditLogEntry[]>;
 }
 
+// Managed databases (admin "Databases"). wip-only; cloud/icp stubs throw. Grown per phase.
+export interface PlatformServicesApi {
+  getAvailability(orgUuid: string): Promise<OrgServiceAvailability>;
+  listServers(orgUuid: string): Promise<DatabaseServer[]>;
+  getServer(serverId: string): Promise<DatabaseServer>;
+  deleteServer(serverId: string): Promise<void>;
+  getServicePlans(type: ServiceType): Promise<ServicePlan[]>;
+  createServer(payload: CreateServerPayload): Promise<DatabaseServer>;
+}
+
 // ---------------------------------------------------------------------------
 // Aggregate — the full API surface consumed by the app
 // ---------------------------------------------------------------------------
@@ -620,4 +631,5 @@ export interface AppApi {
   subscriptions: SubscriptionsApi;
   configGroups: ConfigGroupsApi;
   auditLogs: AuditLogsApi;
+  platformServices: PlatformServicesApi;
 }
