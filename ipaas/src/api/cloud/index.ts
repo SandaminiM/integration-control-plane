@@ -19,6 +19,7 @@
 export * as components from './components';
 export * as projects from './projects';
 export * as deployments from './deployments';
+export * as deploymentPipelines from './deploymentPipelines';
 export * as environments from './environments';
 export * as org from './org';
 export * as builds from './builds';
