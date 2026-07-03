@@ -47,7 +47,11 @@ export default function EditConfigGroup(scope: OrgScope): JSX.Element {
 
   const onSubmit = (values: ConfigGroupSubmitValues) => {
     setError(null);
-    update.mutate(buildEditPayload(orgUuid ?? '', configGroupUuid, values.handle, values.displayName, values.description, values.configurations), {
+    if (!orgUuid) {
+      setError("Couldn't determine your organization. Please reload and try again.");
+      return;
+    }
+    update.mutate(buildEditPayload(orgUuid, configGroupUuid, values.handle, values.displayName, values.description, values.configurations), {
       onSuccess: () => navigate(base),
       onError: () => setError("Couldn't save changes to the configuration group. Please try again."),
     });

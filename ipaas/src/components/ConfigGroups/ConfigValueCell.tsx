@@ -40,12 +40,17 @@ export default function ConfigValueCell({ type, value, onChange, onError, ariaLa
       const file = e.target.files?.[0];
       e.target.value = ''; // allow re-selecting the same file
       if (!file) return;
-      if (file.size > CONFIG_FILE_MAX_KB * 1024) {
-        onError(`File exceeds the ${CONFIG_FILE_MAX_KB} KB limit.`);
-        return;
-      }
       const reader = new FileReader();
-      reader.onload = () => onChange((String(reader.result).split(',')[1] ?? '').trim());
+      reader.onload = () => {
+        // The stored value is the base64 payload (~33% larger than the raw file),
+        // so enforce the limit against the encoded string that actually gets sent.
+        const encoded = (String(reader.result).split(',')[1] ?? '').trim();
+        if (encoded.length > CONFIG_FILE_MAX_KB * 1024) {
+          onError(`File exceeds the ${CONFIG_FILE_MAX_KB} KB limit.`);
+          return;
+        }
+        onChange(encoded);
+      };
       reader.onerror = () => onError('Could not read the selected file.');
       reader.readAsDataURL(file);
     };

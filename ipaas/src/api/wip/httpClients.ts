@@ -17,6 +17,7 @@
  */
 
 import { authenticatedFetch, getOrgUuidFromToken, refreshAccessToken } from '../../auth/tokenManager';
+import { HttpError } from '../../types/http';
 
 export interface HttpClient {
   get: <T>(path: string) => Promise<T>;
@@ -56,7 +57,7 @@ export function createHttpClient(getBaseUrl: () => string, clientOptions?: HttpC
 
     if (!res.ok) {
       const body = await res.text().catch(() => '');
-      throw new Error(`HTTP ${res.status}: ${body || res.statusText}`);
+      throw new HttpError(res.status, `HTTP ${res.status}: ${body || res.statusText}`);
     }
     const text = await res.text().catch(() => '');
     return (text ? (JSON.parse(text) as T) : undefined) as T;

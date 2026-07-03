@@ -85,6 +85,14 @@ export default function ConfigGroupForm({ mode, orgHandle, initial, submitting, 
 
   // --- key editing (step 1) ---
   const patchKey = (id: number, patch: Partial<KeyRow>) => setKeys((r) => r.map((k) => (k.id === id ? { ...k, ...patch } : k)));
+  // Switching text ↔ file changes how the value is stored (raw vs base64), so drop any
+  // previously entered value for this key across every value-set to avoid stale content.
+  const changeKeyType = (id: number, isFile: boolean) => {
+    patchKey(id, { isFile });
+    const name = keys.find((k) => k.id === id)?.key.trim();
+    if (!name) return;
+    setValueSets((s) => s.map((v) => (name in v.values ? { ...v, values: Object.fromEntries(Object.entries(v.values).filter(([key]) => key !== name)) } : v)));
+  };
   const duplicateKeys = useMemo(() => {
     const seen = new Set<string>();
     const dup = new Set<string>();
@@ -211,7 +219,7 @@ export default function ConfigGroupForm({ mode, orgHandle, initial, submitting, 
                         />
                       </TableCell>
                       <TableCell sx={{ verticalAlign: 'top' }}>
-                        <Select size="small" fullWidth value={k.isFile ? 'file' : 'text'} onChange={(e) => patchKey(k.id, { isFile: e.target.value === 'file' })} inputProps={{ 'aria-label': 'Value type' }}>
+                        <Select size="small" fullWidth value={k.isFile ? 'file' : 'text'} onChange={(e) => changeKeyType(k.id, e.target.value === 'file')} inputProps={{ 'aria-label': 'Value type' }}>
                           {KEY_TYPE_OPTIONS.map((o) => (
                             <MenuItem key={o.value} value={o.value}>
                               {o.label}

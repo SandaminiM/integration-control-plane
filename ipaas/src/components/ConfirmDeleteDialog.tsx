@@ -42,7 +42,7 @@ interface ConfirmDeleteDialogProps {
  */
 export default function ConfirmDeleteDialog({ title, children, onConfirm, onClose, isPending, confirmDisabled = false, confirmLabel = 'Delete', pendingLabel = 'Deleting…', maxWidth = 'sm' }: ConfirmDeleteDialogProps): JSX.Element {
   return (
-    <Dialog open onClose={onClose} maxWidth={maxWidth} fullWidth>
+    <Dialog open onClose={isPending ? undefined : onClose} maxWidth={maxWidth} fullWidth>
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>{children}</DialogContent>
       <DialogActions>

@@ -106,7 +106,20 @@ export default function OrgConfigGroups(scope: OrgScope): JSX.Element {
                 </ListingTable.Row>
               ) : (
                 filtered.map((g) => (
-                  <ListingTable.Row key={g.groupUuid} hover sx={{ cursor: 'pointer' }} onClick={() => goEdit(g.groupUuid)}>
+                  <ListingTable.Row
+                    key={g.groupUuid}
+                    hover
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Edit ${g.groupDisplayName || g.groupName}`}
+                    sx={{ cursor: 'pointer' }}
+                    onClick={() => goEdit(g.groupUuid)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        goEdit(g.groupUuid);
+                      }
+                    }}>
                     <ListingTable.Cell>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
                         {g.groupDisplayName || g.groupName}

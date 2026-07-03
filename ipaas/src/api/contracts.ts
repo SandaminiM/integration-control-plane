@@ -573,6 +573,8 @@ export interface ConfigGroupsApi {
   updateConfigGroup(request: EditConfigGroupRequest): Promise<ConfigGroup>;
   deleteConfigGroup(groupUuid: string): Promise<void>;
   getConfigGroupUsage(configGroupId: string): Promise<ConfigGroupUsage>;
+}
+
 // Org audit logs (admin "Audit Logs"). wip-only for now; cloud/icp stubs throw.
 export interface AuditLogsApi {
   fetchAuditLogs(orgUuid: string, request: AuditLogsRequest): Promise<AuditLogEntry[]>;

@@ -16,11 +16,11 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
-import { AlertTriangle } from '@wso2/oxygen-ui-icons-react';
+import { Typography } from '@wso2/oxygen-ui';
 import type { ReactNode } from 'react';
 import { useDeleteDeploymentPipeline, usePipelineDeletionEligibility } from '../../hooks/useDeploymentPipelines';
 import ConfirmDeleteDialog from '../ConfirmDeleteDialog';
+import DeletionEligibilityContent from '../DeletionEligibilityContent';
 import type { DeploymentPipeline } from '../../types/deploymentPipeline';
 
 interface DeletePipelineDialogProps {
@@ -62,35 +62,14 @@ export default function DeletePipelineDialog({ pipeline, onClose, onDeleted, onE
       onClose={onClose}
       isPending={del.isPending}
       confirmDisabled={!eligibility?.isDeletable}>
-      {isLoading ? (
-        <Stack direction="row" alignItems="center" gap={1.5} sx={{ py: 2 }}>
-          <CircularProgress size={18} />
-          <Typography variant="body2" color="text.secondary">
-            Checking whether this pipeline can be deleted…
-          </Typography>
-        </Stack>
-      ) : isError || !eligibility ? (
-        <Alert
-          severity="error"
-          action={
-            <Button color="inherit" size="small" onClick={() => refetch()}>
-              Retry
-            </Button>
-          }>
-          Couldn&apos;t check deletion eligibility.
-        </Alert>
-      ) : eligibility.isDeletable ? (
-        <Typography variant="body2" color="text.secondary">
-          This permanently removes the pipeline. This action can&apos;t be undone.
-        </Typography>
-      ) : (
-        <Alert severity="warning" icon={<AlertTriangle size={20} />}>
-          <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-            This pipeline is in use and can&apos;t be deleted.
-          </Typography>
-          <Typography variant="body2">Used by: {eligibility.usedProjects.map((p) => p.name).join(', ')}</Typography>
-        </Alert>
-      )}
+      <DeletionEligibilityContent
+        entityLabel="pipeline"
+        isLoading={isLoading}
+        isError={isError || !eligibility}
+        canDelete={!!eligibility?.isDeletable}
+        onRetry={() => refetch()}
+        blockedDetails={<Typography variant="body2">Used by: {eligibility?.usedProjects.map((p) => p.name).join(', ')}</Typography>}
+      />
     </ConfirmDeleteDialog>
   );
 }

@@ -83,6 +83,11 @@ describe('buildCreatePayload', () => {
   it('prefers an explicit handle over the derived slug', () => {
     expect(buildCreatePayload('o', 'custom-handle', 'My Group', '', []).groupName).toBe('custom-handle');
   });
+
+  it('throws when the org scope is missing or blank', () => {
+    expect(() => buildCreatePayload('', 'h', 'My Group', '', [])).toThrow();
+    expect(() => buildCreatePayload('   ', 'h', 'My Group', '', [])).toThrow();
+  });
 });
 
 describe('keyToValueType', () => {

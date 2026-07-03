@@ -42,12 +42,11 @@ export function deleteConfigGroup(groupUuid: string): Promise<void> {
   return withScopeRetry(() => choreoClient.delete(`${BASE}/${encodeURIComponent(groupUuid)}`));
 }
 
-const USAGE_QUERY = (id: string): string =>
-  `query ConfigGroupUsage { configGroupUsage(configGroupId: "${id}") { configGroupId usageInProjects { projectId projectName projectHandler usageInComponents { componentId componentName componentHandler usageInReleases { envTemplateId envTemplateName } } } } }`;
+const USAGE_QUERY = `query ConfigGroupUsage($configGroupId: String!) { configGroupUsage(configGroupId: $configGroupId) { configGroupId usageInProjects { projectId projectName projectHandler usageInComponents { componentId componentName componentHandler usageInReleases { envTemplateId envTemplateName } } } } }`;
 
 /** Where a config group is referenced (projects → components → releases). GraphQL. */
 export async function getConfigGroupUsage(configGroupId: string): Promise<ConfigGroupUsage> {
-  const data = await gql<{ configGroupUsage: ConfigGroupUsage }>(USAGE_QUERY(configGroupId));
+  const data = await gql<{ configGroupUsage: ConfigGroupUsage }>(USAGE_QUERY, { configGroupId });
   return data.configGroupUsage;
 }
 

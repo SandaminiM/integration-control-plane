@@ -16,11 +16,11 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
-import { AlertTriangle } from '@wso2/oxygen-ui-icons-react';
+import { Typography } from '@wso2/oxygen-ui';
 import type { ReactNode } from 'react';
 import { useCredentialDeleteEligibility, useDeleteGitCredential } from '../../../hooks/useCredentials';
 import ConfirmDeleteDialog from '../../ConfirmDeleteDialog';
+import DeletionEligibilityContent from '../../DeletionEligibilityContent';
 import type { GitCredential } from '../../../types/credentials';
 
 /**
@@ -54,39 +54,18 @@ export default function DeleteCredentialDialog({ credential, onClose, onDeleted,
       onClose={onClose}
       isPending={del.isPending}
       confirmDisabled={!eligibility?.canDelete}>
-      {isLoading ? (
-        <Stack direction="row" alignItems="center" gap={1.5} sx={{ py: 2 }}>
-          <CircularProgress size={18} />
-          <Typography variant="body2" color="text.secondary">
-            Checking whether this credential can be deleted…
+      <DeletionEligibilityContent
+        entityLabel="credential"
+        isLoading={isLoading}
+        isError={isError || !eligibility}
+        canDelete={!!eligibility?.canDelete}
+        onRetry={() => refetch()}
+        blockedDetails={(eligibility?.components ?? []).map((c) => (
+          <Typography key={c.projectName} variant="body2">
+            {c.projectName}: {c.componentNames.join(', ')}
           </Typography>
-        </Stack>
-      ) : isError || !eligibility ? (
-        <Alert
-          severity="error"
-          action={
-            <Button color="inherit" size="small" onClick={() => refetch()}>
-              Retry
-            </Button>
-          }>
-          Couldn&apos;t check deletion eligibility.
-        </Alert>
-      ) : eligibility.canDelete ? (
-        <Typography variant="body2" color="text.secondary">
-          This permanently removes the credential. This action can&apos;t be undone.
-        </Typography>
-      ) : (
-        <Alert severity="warning" icon={<AlertTriangle size={20} />}>
-          <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-            This credential is in use and can&apos;t be deleted.
-          </Typography>
-          {eligibility.components.map((c) => (
-            <Typography key={c.projectName} variant="body2">
-              {c.projectName}: {c.componentNames.join(', ')}
-            </Typography>
-          ))}
-        </Alert>
-      )}
+        ))}
+      />
     </ConfirmDeleteDialog>
   );
 }

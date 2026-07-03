@@ -68,11 +68,14 @@ export function buildConfigurations(keys: KeyDefinition[], valueSets: ValueSetDr
 
 /** Build the `POST /configs/groups` body. `scopes` (the org) is required by the backend. */
 export function buildCreatePayload(orgUuid: string, handle: string, displayName: string, description: string, configurations: Configuration[]): CreateConfigGroupRequest {
+  if (!orgUuid.trim()) {
+    throw new Error('Cannot build a configuration group payload without an organization scope.');
+  }
   return {
     groupName: handle.trim() || slugifyGroupName(displayName),
     groupDisplayName: displayName.trim(),
     description: description.trim(),
-    scopes: orgUuid ? [{ organizationUuid: orgUuid }] : [],
+    scopes: [{ organizationUuid: orgUuid }],
     configurations,
   };
 }

@@ -25,6 +25,7 @@ import { useOrgUuid } from '../hooks/useOrgUuid';
 import { buildCreatePayload } from '../utils/configGroups';
 import ComingSoon from './ComingSoon';
 import ConfigGroupForm from '../components/ConfigGroups/ConfigGroupForm';
+import { HttpError } from '../types/http';
 import type { ConfigGroupSubmitValues } from '../types/configGroups';
 import type { OrgScope } from '../nav';
 
@@ -41,9 +42,13 @@ export default function CreateConfigGroup(scope: OrgScope): JSX.Element {
 
   const onSubmit = (values: ConfigGroupSubmitValues) => {
     setError(null);
-    create.mutate(buildCreatePayload(orgUuid ?? '', values.handle, values.displayName, values.description, values.configurations), {
+    if (!orgUuid) {
+      setError("Couldn't determine your organization. Please reload and try again.");
+      return;
+    }
+    create.mutate(buildCreatePayload(orgUuid, values.handle, values.displayName, values.description, values.configurations), {
       onSuccess: () => navigate(base),
-      onError: (e) => setError(e instanceof Error && /HTTP 409/.test(e.message) ? 'A configuration group with this handle already exists.' : "Couldn't create the configuration group. Please try again."),
+      onError: (e) => setError(e instanceof HttpError && e.status === 409 ? 'A configuration group with this handle already exists.' : "Couldn't create the configuration group. Please try again."),
     });
   };
 
