@@ -163,6 +163,18 @@ See `src/product/README.md` for the full guide.
 
 ---
 
+## Styling with `sx`
+
+Use the `sx` prop for styling `@wso2/oxygen-ui` (MUI) components. Keep it readable and avoid needless re-allocation:
+
+1. **Inline `sx` is for small, one-off styling** — a few properties on a component that isn't repeated.
+2. **Hoist static `sx` to module scope.** A `sx={{ ... }}` literal is re-created on every render; for anything non-trivial — especially components rendered in a list/loop (table rows, cards) — define the object once at module scope as a named `as const` constant.
+3. **Extract to a co-located `*.styles.ts` past the threshold.** When a component file has **more than 5 `sx` usages**, OR any single `sx` object has **more than 6 properties**, OR the same style repeats, move the styles into a co-located `<name>.styles.ts` exporting named `as const` objects — **each object formatted multi-line, one property per line** (not a single-line literal). Reference: `src/constants/styles.ts` (shared) and `src/components/Overview/_shared/bodies/styles.ts` (co-located, incl. `(args) => ({ ... }) as const` factories for dynamic styles).
+4. **Keep dynamic styles parameterized, not inlined.** Prop/state-driven styling belongs in a `(args) => ({ ... }) as const` factory in the styles file, or inline only when it's a single computed value.
+5. **Use `styled()`** for reusable structural wrappers, not one-off tweaks. Prefer theme tokens (`'primary.main'`, `'text.secondary'`, `'divider'`, `'action.hover'`) over hardcoded hex so styling stays theme-aware.
+
+---
+
 ## Directory reference
 
 ```text

@@ -99,6 +99,7 @@ import type { Environment, CloudDataPlane, EnvironmentInput } from '../types/env
 import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../types/executions';
 import type { SubscriptionList, ComponentLimits } from '../types/subscription';
 import type { ConfigGroup, ConfigGroupNameAvailability, ConfigGroupUsage, CreateConfigGroupRequest, EditConfigGroupRequest } from '../types/configGroups';
+import type { AuditLogEntry, AuditLogsRequest } from '../types/auditLogs';
 import type { InsightsEnvironment, ComponentInsights } from '../types/insights';
 import type { LogsRequest, ComponentLogsRequest, LogRow } from '../types/logs';
 import type { ApiDocument, RuleAdherenceResponse, ThrottlingPolicy } from '../types/marketplace';
@@ -572,6 +573,9 @@ export interface ConfigGroupsApi {
   updateConfigGroup(request: EditConfigGroupRequest): Promise<ConfigGroup>;
   deleteConfigGroup(groupUuid: string): Promise<void>;
   getConfigGroupUsage(configGroupId: string): Promise<ConfigGroupUsage>;
+// Org audit logs (admin "Audit Logs"). wip-only for now; cloud/icp stubs throw.
+export interface AuditLogsApi {
+  fetchAuditLogs(orgUuid: string, request: AuditLogsRequest): Promise<AuditLogEntry[]>;
 }
 
 // ---------------------------------------------------------------------------
@@ -613,4 +617,5 @@ export interface AppApi {
   samples: SamplesApi;
   subscriptions: SubscriptionsApi;
   configGroups: ConfigGroupsApi;
+  auditLogs: AuditLogsApi;
 }

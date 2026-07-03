@@ -17,31 +17,58 @@
  */
 
 import { Button, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
-import { RefreshCw, ScrollText } from '@wso2/oxygen-ui-icons-react';
-import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
-import type { LogRow } from '../../types/logs';
-import LogEntry from './LogEntry';
+import { AlertTriangle, RefreshCw, ScrollText } from '@wso2/oxygen-ui-icons-react';
+import { Fragment, useCallback, useEffect, useRef, useState, type JSX, type ReactNode } from 'react';
 
-interface LogsPanelProps {
+interface LogsPanelProps<T> {
   isLoading: boolean;
   error: unknown;
-  logs: LogRow[];
-  hasNextPage?: boolean;
-  isFetchingNextPage: boolean;
+  /** Rows to render. */
+  items: T[];
+  /** Stable key per row (also used to track which rows are expanded). */
+  getKey: (item: T, index: number) => string;
+  /** Renders a single row; `toggle` flips its expanded state, `expanded` reflects it. */
+  renderRow: (item: T, expanded: boolean, toggle: () => void) => ReactNode;
   /** Called when the user clicks Retry (on error) or Refresh (on empty). */
   onRefetch: () => void;
-  /** Called when the scroll sentinel enters the viewport to load the next page. */
-  onFetchNextPage: () => void;
-  /** Called when the user clicks "Clear filters" on the empty state. */
-  onClearFilters: () => void;
-  /** Optional environment name shown on each log row. */
-  envName?: string;
+  /** Infinite-scroll pagination — omit `onFetchNextPage` for a single-shot (non-paginated) panel. */
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  onFetchNextPage?: () => void;
+  /** Shows a "Clear filters" action on the empty state when provided. */
+  onClearFilters?: () => void;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  /** Friendly error copy shown instead of the raw backend error. */
+  errorTitle?: string;
+  errorDescription?: string;
 }
 
-export default function LogsPanel({ isLoading, error, logs, hasNextPage, isFetchingNextPage, onRefetch, onFetchNextPage, onClearFilters, envName }: LogsPanelProps): JSX.Element {
+/**
+ * The shared infinite log panel: loading / error / empty states, an auto-loading scroll
+ * container, and per-row expand tracking. Row rendering is delegated via `renderRow`, so it
+ * serves runtime logs (LogEntry), audit logs (AuditLogRow), and any future log-like list.
+ */
+export default function LogsPanel<T>({
+  isLoading,
+  error,
+  items,
+  getKey,
+  renderRow,
+  onRefetch,
+  hasNextPage,
+  isFetchingNextPage,
+  onFetchNextPage,
+  onClearFilters,
+  emptyTitle = 'No logs found',
+  emptyDescription = 'No log entries matched your current filters for the selected time range. Try widening the time range, clearing some filters, or refreshing.',
+  errorTitle = "Couldn't load logs",
+  errorDescription = 'The logging service is temporarily unavailable. Please try again in a moment.',
+}: LogsPanelProps<T>): JSX.Element {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const sentinelRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const paginated = !!onFetchNextPage;
 
   const toggle = (key: string) =>
     setExpanded((prev) => {
@@ -52,7 +79,7 @@ export default function LogsPanel({ isLoading, error, logs, hasNextPage, isFetch
     });
 
   const handleScroll = useCallback(() => {
-    if (!hasNextPage || isFetchingNextPage) return;
+    if (!hasNextPage || isFetchingNextPage || !onFetchNextPage) return;
     const el = sentinelRef.current;
     if (!el) return;
     if (el.getBoundingClientRect().top < window.innerHeight + 200) onFetchNextPage();
@@ -60,10 +87,10 @@ export default function LogsPanel({ isLoading, error, logs, hasNextPage, isFetch
 
   useEffect(() => {
     const container = scrollContainerRef.current;
-    if (!container) return;
+    if (!container || !paginated) return;
     container.addEventListener('scroll', handleScroll, { passive: true });
     return () => container.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
+  }, [handleScroll, paginated]);
 
   if (isLoading) {
     return <CircularProgress size={28} sx={{ display: 'block', mx: 'auto', my: 6 }} />;
@@ -71,34 +98,40 @@ export default function LogsPanel({ isLoading, error, logs, hasNextPage, isFetch
 
   if (error) {
     return (
-      <Stack alignItems="center" gap={2} sx={{ py: 6 }}>
-        <Typography color="error" textAlign="center">
-          Failed to fetch logs: {(error as Error).message ?? 'Service unavailable'}
+      <Stack alignItems="center" gap={1.5} sx={{ py: 8 }}>
+        <AlertTriangle size={48} style={{ opacity: 0.35 }} />
+        <Typography variant="h3" textAlign="center">
+          {errorTitle}
         </Typography>
-        <Button variant="contained" startIcon={<RefreshCw size={16} />} onClick={onRefetch}>
+        <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ maxWidth: 420 }}>
+          {errorDescription}
+        </Typography>
+        <Button variant="outlined" size="small" startIcon={<RefreshCw size={14} />} onClick={onRefetch} sx={{ mt: 0.5 }}>
           Retry
         </Button>
       </Stack>
     );
   }
 
-  if (logs.length === 0) {
+  if (items.length === 0) {
     return (
       <Stack alignItems="center" gap={2} sx={{ py: 8 }}>
         <ScrollText size={48} style={{ opacity: 0.3 }} />
         <Typography variant="h3" textAlign="center">
-          No logs found
+          {emptyTitle}
         </Typography>
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ maxWidth: 420 }}>
-          No log entries matched your current filters for the selected time range. Try widening the time range, clearing some filters, or refreshing.
+          {emptyDescription}
         </Typography>
         <Stack direction="row" gap={1}>
           <Button variant="outlined" size="small" startIcon={<RefreshCw size={14} />} onClick={onRefetch}>
             Refresh
           </Button>
-          <Button variant="text" size="small" onClick={onClearFilters}>
-            Clear filters
-          </Button>
+          {onClearFilters && (
+            <Button variant="text" size="small" onClick={onClearFilters}>
+              Clear filters
+            </Button>
+          )}
         </Stack>
       </Stack>
     );
@@ -116,16 +149,20 @@ export default function LogsPanel({ isLoading, error, logs, hasNextPage, isFetch
         maxHeight: 'calc(100vh - 300px)',
         padding: '16px',
       }}>
-      {logs.map((log, index) => {
-        const key = `${index}-${log.timestamp}-${log.logLine.slice(0, 50)}`;
-        return <LogEntry key={key} log={log} expanded={expanded.has(key)} onToggle={() => toggle(key)} envName={envName} />;
+      {items.map((item, index) => {
+        const key = getKey(item, index);
+        return <Fragment key={key}>{renderRow(item, expanded.has(key), () => toggle(key))}</Fragment>;
       })}
-      <div ref={sentinelRef} />
-      {isFetchingNextPage && <CircularProgress size={20} sx={{ display: 'block', mx: 'auto', my: 1 }} />}
-      {!hasNextPage && (
-        <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 1 }}>
-          End of logs
-        </Typography>
+      {paginated && (
+        <>
+          <div ref={sentinelRef} />
+          {isFetchingNextPage && <CircularProgress size={20} sx={{ display: 'block', mx: 'auto', my: 1 }} />}
+          {!hasNextPage && (
+            <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 1 }}>
+              End of logs
+            </Typography>
+          )}
+        </>
       )}
     </Stack>
   );
