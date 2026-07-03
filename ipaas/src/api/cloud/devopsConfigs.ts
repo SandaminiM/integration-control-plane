@@ -87,9 +87,34 @@ const componentDeferred = (env: string) => {
   return d;
 };
 const setComponentForEnv = (env: string, componentId: string): void => componentDeferred(env).resolve(componentId);
-const componentForEnv = (env: string): Promise<string> => componentDeferred(env).promise;
+
+// Bound the wait: an env whose component is never deployed never resolves the
+// deferred, so cap it and yield '' (→ empty list) instead of a query that pends
+// forever. Per-call and non-poisoning — the deferred stays unresolved, so a later
+// call still sees the real component once the release read runs.
+const COMPONENT_WAIT_MS = 8000;
+const componentForEnv = (env: string): Promise<string> =>
+  Promise.race([componentDeferred(env).promise, new Promise<string>((resolve) => setTimeout(() => resolve(''), COMPONENT_WAIT_MS))]);
 
 const filesBase = (componentId: string, env: string): string => `/components/${seg(componentId)}/environments/${seg(env)}`;
+
+// Coalesce the concurrent env-group reads a page load fires (getContainerConfig-
+// Mounts + getConfigMaps + getSecrets all read the same list): share the in-flight
+// request per (component, env). Dropped on settle, so a refetch after a mutation
+// reloads fresh. Errors degrade to [] (matches the file-mount read).
+const inflightEnvGroups = new Map<string, Promise<BffEnvGroup[]>>();
+const fetchEnvGroups = (componentId: string, projectId: string, env: string): Promise<BffEnvGroup[]> => {
+  const key = `${componentId} ${env}`;
+  const existing = inflightEnvGroups.get(key);
+  if (existing) return existing;
+  const promise = bff
+    .get<{ groups?: BffEnvGroup[] }>(`${filesBase(componentId, env)}/env-groups${q({ projectName: projectId })}`)
+    .then((r) => r?.groups ?? [])
+    .catch(() => [] as BffEnvGroup[])
+    .finally(() => inflightEnvGroups.delete(key));
+  inflightEnvGroups.set(key, promise);
+  return promise;
+};
 
 // File mount → config-mount. GET /files returns content-free metadata.
 const toFileMount = (f: BffFileMount, env: string, releaseId: string): DevopsConfigMount => ({
@@ -165,8 +190,7 @@ const putEnvGroup = async (projectId: string, env: string, name: string, sensiti
 const listEnvGroups = async (projectId: string, env: string): Promise<BffEnvGroup[]> => {
   const componentId = await componentForEnv(env);
   if (!componentId) return [];
-  const r = await bff.get<{ groups?: BffEnvGroup[] }>(`${filesBase(componentId, env)}/env-groups${q({ projectName: projectId })}`).catch(() => null);
-  return r?.groups ?? [];
+  return fetchEnvGroups(componentId, projectId, env);
 };
 
 // ── release (synthetic container carrying the resolved env) ────────────────────
@@ -252,11 +276,11 @@ export const getContainerConfigMounts = async (_orgUuid: string, projectId: stri
   const env = containerId; // carried through from getReleaseById
   if (!env) return [];
   setComponentForEnv(env, componentId);
-  const [filesR, groupsR] = await Promise.all([
+  const [filesR, groups] = await Promise.all([
     bff.get<{ files?: BffFileMount[] }>(`${filesBase(componentId, env)}/files${q({ projectName: projectId })}`).catch(() => null),
-    bff.get<{ groups?: BffEnvGroup[] }>(`${filesBase(componentId, env)}/env-groups${q({ projectName: projectId })}`).catch(() => null),
+    fetchEnvGroups(componentId, projectId, env),
   ]);
-  return [...(filesR?.files ?? []).map((f) => toFileMount(f, env, releaseId)), ...(groupsR?.groups ?? []).map((g) => toEnvMount(g, env, releaseId))];
+  return [...(filesR?.files ?? []).map((f) => toFileMount(f, env, releaseId)), ...groups.map((g) => toEnvMount(g, env, releaseId))];
 };
 
 // On create, the hook mounts the config after creating it. Env-var groups are
