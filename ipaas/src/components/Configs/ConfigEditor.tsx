@@ -22,7 +22,6 @@ import { useEffect, useRef, useState, type JSX } from 'react';
 import { useConfigMapDetails, useSaveConfig } from '../../hooks/useDevopsConfigs';
 import { parseDotEnv, validateConfigKey, validateDisplayName, validateMountPath } from '../../utils/devopsConfigs';
 import type { ConfigKind, ConfigRow } from '../../types/devopsConfigs';
-import { IS_CLOUD } from '../../features';
 
 /** The component/release/env target a config is created against. */
 export interface EditorContext {
@@ -83,8 +82,7 @@ export default function ConfigEditor({ ctx, existing, onBack, onSaved, onError }
   // Prefill values for an existing ConfigMap (secret values are write-only, so re-entered).
   const { data: details } = useConfigMapDetails(ctx.projectId, existing && !existing.isSecret ? ctx.envId : undefined, existing && !existing.isSecret ? configId : undefined);
 
-  // cloud: OpenChoreo backs file mounts only; env-var configs have no BFF route.
-  const [kind, setKind] = useState<ConfigKind>(existing?.kind ?? (IS_CLOUD ? 'fileMount' : 'envVars'));
+  const [kind, setKind] = useState<ConfigKind>(existing?.kind ?? 'envVars');
   const [isSecret, setIsSecret] = useState(existing?.isSecret ?? false);
   const [name, setName] = useState(existing?.name ?? '');
   const [rows, setRows] = useState<Array<{ key: string; value: string }>>(existing ? existing.keys.map((k) => ({ key: k, value: '' })) : []);
@@ -180,7 +178,7 @@ export default function ConfigEditor({ ctx, existing, onBack, onSaved, onError }
       )}
 
       <Stack direction="row" gap={2} sx={{ mb: 2 }}>
-        <TypeCard title="Environment Variables" description="Inject a set of environment variables into the container" selected={kind === 'envVars'} disabled={isEdit || IS_CLOUD} onSelect={() => setKind('envVars')} />
+        <TypeCard title="Environment Variables" description="Inject a set of environment variables into the container" selected={kind === 'envVars'} disabled={isEdit} onSelect={() => setKind('envVars')} />
         <TypeCard title="File Mount" description="Mount a file at a specified path in the container" selected={kind === 'fileMount'} disabled={isEdit} onSelect={() => setKind('fileMount')} />
       </Stack>
 
