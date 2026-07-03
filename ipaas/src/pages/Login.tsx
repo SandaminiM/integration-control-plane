@@ -92,7 +92,9 @@ export default function Login(): JSX.Element {
         ) : (
           <>
             <CircularProgress />
-            <Typography variant="body1" color="text.secondary">Redirecting to sign in…</Typography>
+            <Typography variant="body1" color="text.secondary">
+              Redirecting to sign in…
+            </Typography>
           </>
         )}
       </Box>

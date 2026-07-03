@@ -57,7 +57,10 @@ export default function Signup(): JSX.Element {
   useEffect(() => {
     if (IS_CLOUD) {
       setLoading(true);
-      loginWithOIDC().catch((err) => { setLoading(false); setError(friendlyError(err)); });
+      loginWithOIDC().catch((err) => {
+        setLoading(false);
+        setError(friendlyError(err));
+      });
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -97,7 +100,9 @@ export default function Signup(): JSX.Element {
         ) : (
           <>
             <CircularProgress />
-            <Typography variant="body1" color="text.secondary">Redirecting to sign in…</Typography>
+            <Typography variant="body1" color="text.secondary">
+              Redirecting to sign in…
+            </Typography>
           </>
         )}
       </Box>
