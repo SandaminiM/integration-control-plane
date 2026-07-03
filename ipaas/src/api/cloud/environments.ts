@@ -49,7 +49,7 @@ interface BffEnvironment {
 // immutable ReleaseBinding `spec.environment` — NOT the display label, or deploys
 // mismatch the binding (e.g. label "Development" vs slug "development").
 const toEnvironment = (e: BffEnvironment): Environment => ({
-  id: e.id ?? e.name,
+  id: e.id || e.name,
   name: e.displayName || e.name,
   critical: e.critical ?? e.isProduction ?? false,
   description: e.description,

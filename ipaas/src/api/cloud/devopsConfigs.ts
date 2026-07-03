@@ -69,32 +69,39 @@ interface BffEnvGroup {
   data?: Record<string, string>;
 }
 
-// Per-env promise of the component id, resolved by the release/mounts reads (the
-// only reads carrying the component). Env-scoped reads await it. It only ever
-// resolves once per env; not-deployed envs never render the list, so a pending
-// promise there is benign (no network, data defaults to []).
-const componentPromises = new Map<string, { promise: Promise<string>; resolve: (id: string) => void }>();
-const componentDeferred = (env: string) => {
-  let d = componentPromises.get(env);
-  if (!d) {
-    let resolve!: (id: string) => void;
-    const promise = new Promise<string>((r) => {
-      resolve = r;
-    });
-    d = { promise, resolve };
-    componentPromises.set(env, d);
+// The env-scoped reads (getConfigMaps/getSecrets/getConfigMapDetails) receive an
+// env + name but not the component, while the endpoints are component-scoped. The
+// release/mounts reads (which DO carry the component) publish the latest component
+// per env here; the env-scoped reads read it. It is a LATEST-WINS value, not a
+// one-shot promise, so navigating between components that share an environment
+// re-points to the current component instead of pinning the first one seen.
+const componentByEnv = new Map<string, string>();
+const componentWaiters = new Map<string, Array<(id: string) => void>>();
+const setComponentForEnv = (env: string, componentId: string): void => {
+  if (!componentId) return;
+  componentByEnv.set(env, componentId);
+  const waiters = componentWaiters.get(env);
+  if (waiters) {
+    componentWaiters.delete(env);
+    waiters.forEach((w) => w(componentId));
   }
-  return d;
 };
-const setComponentForEnv = (env: string, componentId: string): void => componentDeferred(env).resolve(componentId);
 
-// Bound the wait: an env whose component is never deployed never resolves the
-// deferred, so cap it and yield '' (→ empty list) instead of a query that pends
-// forever. Per-call and non-poisoning — the deferred stays unresolved, so a later
-// call still sees the real component once the release read runs.
+// Resolve the current component for an env. Returns the latest known value
+// immediately; otherwise waits for the first publish, bounded by COMPONENT_WAIT_MS
+// so an env whose component is never deployed yields '' (→ empty list) rather than
+// a query that pends forever.
 const COMPONENT_WAIT_MS = 8000;
-const componentForEnv = (env: string): Promise<string> =>
-  Promise.race([componentDeferred(env).promise, new Promise<string>((resolve) => setTimeout(() => resolve(''), COMPONENT_WAIT_MS))]);
+const componentForEnv = (env: string): Promise<string> => {
+  const known = componentByEnv.get(env);
+  if (known) return Promise.resolve(known);
+  return new Promise<string>((resolve) => {
+    const waiters = componentWaiters.get(env) ?? [];
+    waiters.push(resolve);
+    componentWaiters.set(env, waiters);
+    setTimeout(() => resolve(componentByEnv.get(env) ?? ''), COMPONENT_WAIT_MS);
+  });
+};
 
 const filesBase = (componentId: string, env: string): string => `/components/${seg(componentId)}/environments/${seg(env)}`;
 
