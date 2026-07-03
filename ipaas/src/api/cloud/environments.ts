@@ -30,22 +30,31 @@ import { bff, items, q, seg, type ListResponse, type MessageResponse } from './_
 // Environment carries `id` (slug) and `name` (label) and expresses "production"
 // as `critical`, so we translate between the two shapes at the boundary.
 interface BffEnvironment {
+  // The BFF serves the RFC 1123 slug as `id` and the human label as `name`, and
+  // flags production via `critical` with the dataplane in `dpId`. The
+  // slug/displayName/isProduction/dataPlaneRef aliases are tolerated as fallbacks.
+  id?: string;
   uid?: string;
   name: string;
   displayName?: string;
   description?: string;
   dataPlaneRef?: string;
+  dpId?: string;
   isProduction?: boolean;
+  critical?: boolean;
   createdAt?: string;
 }
 
+// `id` must be the slug used in every path (`/environments/{name}`) and in the
+// immutable ReleaseBinding `spec.environment` — NOT the display label, or deploys
+// mismatch the binding (e.g. label "Development" vs slug "development").
 const toEnvironment = (e: BffEnvironment): Environment => ({
-  id: e.name,
+  id: e.id || e.name,
   name: e.displayName || e.name,
-  critical: e.isProduction ?? false,
+  critical: e.critical ?? e.isProduction ?? false,
   description: e.description,
   createdAt: e.createdAt,
-  dpId: e.dataPlaneRef,
+  dpId: e.dpId ?? e.dataPlaneRef,
 });
 
 export const fetchEnvironments = (_orgUuid: string, projectId: string): Promise<Environment[]> => bff.get<ListResponse<BffEnvironment>>(`/environments${q({ project: projectId })}`).then((r) => items(r).map(toEnvironment));
