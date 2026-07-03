@@ -25,3 +25,4 @@ export * as org from './org';
 export * as builds from './builds';
 export * as repository from './repository';
 export * as billing from './billing';
+export * as devopsConfigs from './devopsConfigs';
