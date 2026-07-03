@@ -192,7 +192,7 @@ export default function ConfigGroupForm({ mode, orgHandle, initial, submitting, 
           </Typography>
 
           <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, maxWidth: 720 }}>
-            <Table size="small">
+            <Table size="small" sx={{ '& tbody tr:last-of-type td': { borderBottom: 0 } }}>
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600 }}>Key</TableCell>
@@ -227,10 +227,10 @@ export default function ConfigGroupForm({ mode, orgHandle, initial, submitting, 
                           ))}
                         </Select>
                       </TableCell>
-                      <TableCell sx={{ verticalAlign: 'top' }} align="right">
+                      <TableCell sx={{ verticalAlign: 'center' }} align="right">
                         <Tooltip title={k.isSensitive ? 'Unmark as secret' : 'Mark as secret'}>
-                          <IconButton size="small" aria-label="Mark as secret" color={k.isSensitive ? 'primary' : 'default'} onClick={() => patchKey(k.id, { isSensitive: !k.isSensitive })}>
-                            <Lock size={16} />
+                          <IconButton size="small" aria-label="Mark as secret" onClick={() => patchKey(k.id, { isSensitive: !k.isSensitive })}>
+                            <Lock size={16} fill={k.isSensitive ? 'currentColor' : 'none'} fillOpacity={0.35}/>
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Remove key">
@@ -326,7 +326,7 @@ export default function ConfigGroupForm({ mode, orgHandle, initial, submitting, 
                   ))}
                 </Select>
 
-                <Table size="small">
+                <Table size="small" sx={{ '& tbody tr:last-of-type td': { borderBottom: 0 } }}>
                   <TableHead>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 600, width: '35%' }}>Key</TableCell>
@@ -340,7 +340,7 @@ export default function ConfigGroupForm({ mode, orgHandle, initial, submitting, 
                         <TableRow key={k.id}>
                           <TableCell sx={{ verticalAlign: 'top' }}>
                             <Stack direction="row" alignItems="center" gap={0.5}>
-                              {k.isSensitive && <Lock size={12} style={{ opacity: 0.6 }} />}
+                              {k.isSensitive && <Lock size={12} fill="currentColor" style={{ opacity: 0.6 }} />}
                               <Typography variant="body2">{name || '—'}</Typography>
                             </Stack>
                           </TableCell>
