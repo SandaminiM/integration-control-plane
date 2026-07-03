@@ -58,6 +58,7 @@ import * as customDomains from './customDomains';
 import * as repository from './repository';
 import * as samples from './samples';
 import * as subscriptions from './subscriptions';
+import * as configGroups from './configGroups';
 import * as auditLogs from './auditLogs';
 
 const _alerts: Contracts.AlertsApi = alerts;
@@ -93,6 +94,7 @@ const _customDomains: Contracts.CustomDomainsApi = customDomains;
 const _repository: Contracts.RepositoryApi = repository;
 const _samples: Contracts.SamplesApi = samples;
 const _subscriptions: Contracts.SubscriptionsApi = subscriptions;
+const _configGroups: Contracts.ConfigGroupsApi = configGroups;
 const _auditLogs: Contracts.AuditLogsApi = auditLogs;
 
 void _alerts;
@@ -128,4 +130,5 @@ void _customDomains;
 void _repository;
 void _samples;
 void _subscriptions;
+void _configGroups;
 void _auditLogs;

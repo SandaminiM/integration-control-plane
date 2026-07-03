@@ -28,6 +28,7 @@ const PrebuiltIntegrationConfigProvider = lazy(() => import('../contexts/Prebuil
 import PublicLayout from '../layouts/PublicLayout';
 import Login from '../pages/Login';
 import Signup from '../pages/Signup';
+import RouteErrorBoundary from '../components/RouteErrorBoundary';
 
 // Lazy — authenticated app shell and all pages
 const AppLayout = lazy(() => import('../layouts/AppLayout'));
@@ -54,6 +55,9 @@ const McpProxyFromApi = lazy(() => import('../pages/McpProxyFromApi'));
 const McpPolicies = lazy(() => import('../pages/McpPolicies'));
 const ComponentTest = lazy(() => import('../pages/ComponentTest'));
 const OrgCdPipelines = lazy(() => import('../pages/OrgCdPipelines'));
+const OrgConfigGroups = lazy(() => import('../pages/OrgConfigGroups'));
+const CreateConfigGroup = lazy(() => import('../pages/CreateConfigGroup'));
+const EditConfigGroup = lazy(() => import('../pages/EditConfigGroup'));
 const OrgAuditLogs = lazy(() => import('../pages/OrgAuditLogs'));
 const ProjectCdPipelines = lazy(() => import('../pages/ProjectCdPipelines'));
 const ProjectSettings = lazy(() => import('../pages/ProjectSettings'));
@@ -169,7 +173,9 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/admin/message-brokers', element: <ComingSoon title="Coming Soon" description="Message Brokers management is currently under development." /> },
               { path: 'organizations/:orgHandler/admin/third-party', element: <ComingSoon title="Coming Soon" description="Third Party Services management is currently under development." /> },
               { path: 'organizations/:orgHandler/admin/genai-services', element: <ComingSoon title="Coming Soon" description="GenAI Services management is currently under development." /> },
-              { path: 'organizations/:orgHandler/admin/config-groups', element: <ComingSoon title="Coming Soon" description="Config Groups management is currently under development." /> },
+              { path: 'organizations/:orgHandler/admin/config-groups', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgConfigGroups, ['organizations']))) },
+              { path: 'organizations/:orgHandler/admin/config-groups/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(CreateConfigGroup, ['organizations']))) },
+              { path: 'organizations/:orgHandler/admin/config-groups/:configGroupUuid', element: createElement(RouteErrorBoundary, null, createElement(withScope(EditConfigGroup, ['organizations']))) },
               { path: 'organizations/:orgHandler/admin/governance', element: <ComingSoon title="Coming Soon" description="Governance management is currently under development." /> },
               { path: 'organizations/:orgHandler/admin/cd-pipelines', element: createElement(withScope(OrgCdPipelines, ['organizations'])) },
               { path: 'organizations/:orgHandler/admin/cd-pipelines/new', element: <CdPipelineEditor /> },
