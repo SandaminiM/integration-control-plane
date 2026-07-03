@@ -77,7 +77,15 @@ export default function OIDCCallback(): JSX.Element {
 
         // Determine where to navigate post-login
         const savedUrl = getAndClearRedirectUrl();
-        const savedPathname = savedUrl ? (() => { try { return new URL(savedUrl).pathname; } catch { return ''; } })() : '';
+        const savedPathname = savedUrl
+          ? (() => {
+              try {
+                return new URL(savedUrl).pathname;
+              } catch {
+                return '';
+              }
+            })()
+          : '';
         const isLoginPage = !savedPathname || savedPathname === loginUrl();
         const isDefaultOrg = savedPathname.startsWith('/organizations/default/') || savedPathname === '/organizations/default';
 

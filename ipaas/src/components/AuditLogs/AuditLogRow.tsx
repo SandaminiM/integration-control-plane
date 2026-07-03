@@ -21,8 +21,8 @@ import { ChevronDown, ChevronRight, Copy } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
 import { formatAuditTimestamp, outcomeColor } from '../../utils/auditLogs';
 import type { AuditLogEntry } from '../../types/auditLogs';
+import { actionsSx, actorChipSx, detailBlockSx, detailKeySx, detailRowSx, detailValueSx, expandBtnSx, outcomeChipSx, rowSx, summarySx, timestampSx } from './auditLogRow.styles';
 
-/** One audit event, styled like a log line: monospace summary row that expands to full detail. */
 export default function AuditLogRow({ entry, expanded, onToggle }: { entry: AuditLogEntry; expanded: boolean; onToggle: () => void }): JSX.Element {
   const infoEntries = Object.entries(entry.info ?? {});
   const actor = entry.info?.email ?? entry.userIdpId;
@@ -35,27 +35,23 @@ export default function AuditLogRow({ entry, expanded, onToggle }: { entry: Audi
 
   return (
     <>
-      <Stack
-        direction="row"
-        alignItems="center"
-        onClick={onToggle}
-        sx={{ fontFamily: 'monospace', fontSize: 12, px: 0.5, py: 0.25, cursor: 'pointer', borderRadius: 1, minHeight: 32, '&:hover': { bgcolor: 'action.hover' }, '&:hover .audit-actions': { visibility: 'visible' } }}>
-        <IconButton size="small" aria-label={expanded ? 'Collapse audit entry' : 'Expand audit entry'} sx={{ p: 0, mr: 0.5 }}>
+      <Stack direction="row" alignItems="center" onClick={onToggle} sx={rowSx}>
+        <IconButton size="small" aria-label={expanded ? 'Collapse audit entry' : 'Expand audit entry'} sx={expandBtnSx}>
           {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </IconButton>
-        <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, color: 'text.secondary', whiteSpace: 'nowrap', mr: 1 }}>
+        <Typography component="span" sx={timestampSx}>
           {formatAuditTimestamp(entry)}
         </Typography>
-        {entry.outcome ? <Chip label={entry.outcome} size="small" variant="outlined" color={outcomeColor(entry.outcome)} sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, textTransform: 'capitalize', fontWeight: 700 }} /> : null}
+        {entry.outcome ? <Chip label={entry.outcome} size="small" variant="outlined" color={outcomeColor(entry.outcome)} sx={outcomeChipSx} /> : null}
         {actor ? (
           <Tooltip title="Performed by">
-            <Chip label={actor} size="small" sx={{ fontFamily: 'monospace', fontSize: 10, height: 18, mr: 1, bgcolor: 'action.selected', color: 'text.secondary', fontWeight: 600 }} />
+            <Chip label={actor} size="small" sx={actorChipSx} />
           </Tooltip>
         ) : null}
-        <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
+        <Typography component="span" sx={summarySx}>
           {summary}
         </Typography>
-        <Stack direction="row" className="audit-actions" sx={{ visibility: 'hidden', ml: 1, flexShrink: 0 }}>
+        <Stack direction="row" className="audit-actions" sx={actionsSx}>
           <Tooltip title="Copy">
             <IconButton
               size="small"
@@ -69,13 +65,13 @@ export default function AuditLogRow({ entry, expanded, onToggle }: { entry: Audi
         </Stack>
       </Stack>
       {expanded && detailRows.length > 0 && (
-        <Stack sx={{ pl: 5, pb: 1, fontFamily: 'monospace', fontSize: 12, bgcolor: 'background.default', borderRadius: 1, mx: 0.5, mb: 0.5 }}>
+        <Stack sx={detailBlockSx}>
           {detailRows.map(([key, value]) => (
-            <Stack key={key} direction="row" sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 0.5, gap: 2 }}>
-              <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, minWidth: 160, flexShrink: 0 }}>
+            <Stack key={key} direction="row" sx={detailRowSx}>
+              <Typography component="span" sx={detailKeySx}>
                 {key}
               </Typography>
-              <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+              <Typography component="span" sx={detailValueSx}>
                 {value}
               </Typography>
             </Stack>
