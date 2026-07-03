@@ -16,10 +16,11 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@wso2/oxygen-ui';
+import { Alert, Button, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
 import { AlertTriangle } from '@wso2/oxygen-ui-icons-react';
 import type { ReactNode } from 'react';
 import { useDeleteDeploymentPipeline, usePipelineDeletionEligibility } from '../../hooks/useDeploymentPipelines';
+import ConfirmDeleteDialog from '../ConfirmDeleteDialog';
 import type { DeploymentPipeline } from '../../types/deploymentPipeline';
 
 interface DeletePipelineDialogProps {
@@ -51,45 +52,45 @@ export default function DeletePipelineDialog({ pipeline, onClose, onDeleted, onE
     });
 
   return (
-    <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Delete &lsquo;{pipeline.name}&rsquo;?</DialogTitle>
-      <DialogContent>
-        {isLoading ? (
-          <Stack direction="row" alignItems="center" gap={1.5} sx={{ py: 2 }}>
-            <CircularProgress size={18} />
-            <Typography variant="body2" color="text.secondary">
-              Checking whether this pipeline can be deleted…
-            </Typography>
-          </Stack>
-        ) : isError || !eligibility ? (
-          <Alert
-            severity="error"
-            action={
-              <Button color="inherit" size="small" onClick={() => refetch()}>
-                Retry
-              </Button>
-            }>
-            Couldn&apos;t check deletion eligibility.
-          </Alert>
-        ) : eligibility.isDeletable ? (
+    <ConfirmDeleteDialog
+      title={
+        <>
+          Delete <strong>&lsquo;{pipeline.name}&rsquo;</strong>?
+        </>
+      }
+      onConfirm={doDelete}
+      onClose={onClose}
+      isPending={del.isPending}
+      confirmDisabled={!eligibility?.isDeletable}>
+      {isLoading ? (
+        <Stack direction="row" alignItems="center" gap={1.5} sx={{ py: 2 }}>
+          <CircularProgress size={18} />
           <Typography variant="body2" color="text.secondary">
-            This permanently removes the pipeline. This action can&apos;t be undone.
+            Checking whether this pipeline can be deleted…
           </Typography>
-        ) : (
-          <Alert severity="warning" icon={<AlertTriangle size={20} />}>
-            <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-              This pipeline is in use and can&apos;t be deleted.
-            </Typography>
-            <Typography variant="body2">Used by: {eligibility.usedProjects.map((p) => p.name).join(', ')}</Typography>
-          </Alert>
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" color="error" onClick={doDelete} disabled={!eligibility?.isDeletable || del.isPending} startIcon={del.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}>
-          {del.isPending ? 'Deleting…' : 'Delete'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+        </Stack>
+      ) : isError || !eligibility ? (
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={() => refetch()}>
+              Retry
+            </Button>
+          }>
+          Couldn&apos;t check deletion eligibility.
+        </Alert>
+      ) : eligibility.isDeletable ? (
+        <Typography variant="body2" color="text.secondary">
+          This permanently removes the pipeline. This action can&apos;t be undone.
+        </Typography>
+      ) : (
+        <Alert severity="warning" icon={<AlertTriangle size={20} />}>
+          <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+            This pipeline is in use and can&apos;t be deleted.
+          </Typography>
+          <Typography variant="body2">Used by: {eligibility.usedProjects.map((p) => p.name).join(', ')}</Typography>
+        </Alert>
+      )}
+    </ConfirmDeleteDialog>
   );
 }

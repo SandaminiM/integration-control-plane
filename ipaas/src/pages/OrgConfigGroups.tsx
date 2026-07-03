@@ -30,7 +30,7 @@ import type { OrgScope } from '../nav';
 
 export default function OrgConfigGroups(scope: OrgScope): JSX.Element {
   const navigate = useNavigate();
-  const { data: groups, isLoading, isError, refetch } = useConfigGroups();
+  const { data: groups, isLoading, isFetching, isError, refetch } = useConfigGroups();
   const [search, setSearch] = useState('');
   const [toDelete, setToDelete] = useState<ConfigGroup | null>(null);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -71,7 +71,7 @@ export default function OrgConfigGroups(scope: OrgScope): JSX.Element {
         </Alert>
       )}
 
-      {isLoading ? (
+      {isLoading || (isFetching && !groups?.length) ? (
         <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
       ) : isError ? (
         <Alert

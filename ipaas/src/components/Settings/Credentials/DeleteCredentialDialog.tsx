@@ -16,10 +16,11 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@wso2/oxygen-ui';
+import { Alert, Button, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
 import { AlertTriangle } from '@wso2/oxygen-ui-icons-react';
 import type { ReactNode } from 'react';
 import { useCredentialDeleteEligibility, useDeleteGitCredential } from '../../../hooks/useCredentials';
+import ConfirmDeleteDialog from '../../ConfirmDeleteDialog';
 import type { GitCredential } from '../../../types/credentials';
 
 /**
@@ -43,49 +44,49 @@ export default function DeleteCredentialDialog({ credential, onClose, onDeleted,
     });
 
   return (
-    <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Delete &lsquo;{credential.name}&rsquo;?</DialogTitle>
-      <DialogContent>
-        {isLoading ? (
-          <Stack direction="row" alignItems="center" gap={1.5} sx={{ py: 2 }}>
-            <CircularProgress size={18} />
-            <Typography variant="body2" color="text.secondary">
-              Checking whether this credential can be deleted…
-            </Typography>
-          </Stack>
-        ) : isError || !eligibility ? (
-          <Alert
-            severity="error"
-            action={
-              <Button color="inherit" size="small" onClick={() => refetch()}>
-                Retry
-              </Button>
-            }>
-            Couldn&apos;t check deletion eligibility.
-          </Alert>
-        ) : eligibility.canDelete ? (
+    <ConfirmDeleteDialog
+      title={
+        <>
+          Delete <strong>&lsquo;{credential.name}&rsquo;</strong>?
+        </>
+      }
+      onConfirm={doDelete}
+      onClose={onClose}
+      isPending={del.isPending}
+      confirmDisabled={!eligibility?.canDelete}>
+      {isLoading ? (
+        <Stack direction="row" alignItems="center" gap={1.5} sx={{ py: 2 }}>
+          <CircularProgress size={18} />
           <Typography variant="body2" color="text.secondary">
-            This permanently removes the credential. This action can&apos;t be undone.
+            Checking whether this credential can be deleted…
           </Typography>
-        ) : (
-          <Alert severity="warning" icon={<AlertTriangle size={20} />}>
-            <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-              This credential is in use and can&apos;t be deleted.
+        </Stack>
+      ) : isError || !eligibility ? (
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={() => refetch()}>
+              Retry
+            </Button>
+          }>
+          Couldn&apos;t check deletion eligibility.
+        </Alert>
+      ) : eligibility.canDelete ? (
+        <Typography variant="body2" color="text.secondary">
+          This permanently removes the credential. This action can&apos;t be undone.
+        </Typography>
+      ) : (
+        <Alert severity="warning" icon={<AlertTriangle size={20} />}>
+          <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+            This credential is in use and can&apos;t be deleted.
+          </Typography>
+          {eligibility.components.map((c) => (
+            <Typography key={c.projectName} variant="body2">
+              {c.projectName}: {c.componentNames.join(', ')}
             </Typography>
-            {eligibility.components.map((c) => (
-              <Typography key={c.projectName} variant="body2">
-                {c.projectName}: {c.componentNames.join(', ')}
-              </Typography>
-            ))}
-          </Alert>
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" color="error" onClick={doDelete} disabled={!eligibility?.canDelete || del.isPending} startIcon={del.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}>
-          {del.isPending ? 'Deleting…' : 'Delete'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          ))}
+        </Alert>
+      )}
+    </ConfirmDeleteDialog>
   );
 }

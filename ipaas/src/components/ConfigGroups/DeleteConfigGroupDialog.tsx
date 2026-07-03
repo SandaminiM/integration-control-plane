@@ -16,9 +16,10 @@
  * under the License.
  */
 
-import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography } from '@wso2/oxygen-ui';
+import { Box, TextField, Typography } from '@wso2/oxygen-ui';
 import { useState, type JSX } from 'react';
 import { useDeleteConfigGroup } from '../../hooks/useConfigGroups';
+import ConfirmDeleteDialog from '../ConfirmDeleteDialog';
 import type { ConfigGroup } from '../../types/configGroups';
 
 interface DeleteConfigGroupDialogProps {
@@ -55,37 +56,34 @@ export default function DeleteConfigGroupDialog({ group, onClose, onDeleted, onE
   };
 
   return (
-    <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        Are you sure you want to remove the {SOURCE} &lsquo;{name}&rsquo;?
-      </DialogTitle>
-      <DialogContent>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          This action is irreversible and all related details will be lost. Integrations still referencing this group may fail to resolve its configurations. Please type the {SOURCE} name below to confirm.
-        </Typography>
-        <Box>
-          <TextField
-            autoFocus
-            fullWidth
-            size="small"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') doDelete();
-            }}
-            placeholder={`Enter ${SOURCE} name to confirm`}
-            inputProps={{ 'aria-label': 'Confirm name' }}
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={del.isPending}>
-          Cancel
-        </Button>
-        <Button variant="contained" color="error" onClick={doDelete} disabled={!confirmed || del.isPending} startIcon={del.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}>
-          {del.isPending ? 'Removing…' : 'Delete'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <ConfirmDeleteDialog
+      title={
+        <>
+          Are you sure you want to remove the {SOURCE} <strong>&lsquo;{name}&rsquo;</strong>?
+        </>
+      }
+      onConfirm={doDelete}
+      onClose={onClose}
+      isPending={del.isPending}
+      confirmDisabled={!confirmed}
+      pendingLabel="Removing…">
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        This action is irreversible and all related details will be lost. Integrations still referencing this group may fail to resolve its configurations. Please type the {SOURCE} name below to confirm.
+      </Typography>
+      <Box>
+        <TextField
+          autoFocus
+          fullWidth
+          size="small"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') doDelete();
+          }}
+          placeholder={`Enter ${SOURCE} name to confirm`}
+          inputProps={{ 'aria-label': 'Confirm name' }}
+        />
+      </Box>
+    </ConfirmDeleteDialog>
   );
 }

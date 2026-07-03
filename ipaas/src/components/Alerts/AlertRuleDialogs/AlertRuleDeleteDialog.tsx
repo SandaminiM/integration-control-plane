@@ -16,8 +16,9 @@
  * under the License.
  */
 
-import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@wso2/oxygen-ui';
+import { Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
+import ConfirmDeleteDialog from '../../ConfirmDeleteDialog';
 
 interface AlertRuleDeleteDialogProps {
   isOpen: boolean;
@@ -27,26 +28,17 @@ interface AlertRuleDeleteDialogProps {
   isLoading: boolean;
 }
 
-export default function AlertRuleDeleteDialog(props: AlertRuleDeleteDialogProps): JSX.Element {
+export default function AlertRuleDeleteDialog(props: AlertRuleDeleteDialogProps): JSX.Element | null {
   const { isOpen, alertType, isLoading, handleClose, handleConfirm } = props;
 
+  if (!isOpen) return null;
+
   return (
-    <Dialog open={isOpen} fullWidth maxWidth="sm">
-      <DialogTitle>Delete Alert Rule</DialogTitle>
-      <DialogContent>
-        <Typography variant="body1" gutterBottom>
-          Are you sure you want to delete the <strong>{alertType}</strong> type alert rule?
-        </Typography>
-        <Typography variant="body2">This action is irreversible. All associated alerts will be lost.</Typography>
-      </DialogContent>
-      <DialogActions>
-        <Button variant="outlined" onClick={handleClose} disabled={isLoading}>
-          Cancel
-        </Button>
-        <Button variant="contained" color="error" onClick={handleConfirm} disabled={isLoading} startIcon={isLoading ? <CircularProgress size={14} color="inherit" /> : undefined} autoFocus>
-          {isLoading ? 'Deleting' : 'Delete'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <ConfirmDeleteDialog title="Delete Alert Rule" onConfirm={handleConfirm} onClose={handleClose} isPending={isLoading}>
+      <Typography variant="body1" gutterBottom>
+        Are you sure you want to delete the <strong>{alertType}</strong> type alert rule?
+      </Typography>
+      <Typography variant="body2">This action is irreversible. All associated alerts will be lost.</Typography>
+    </ConfirmDeleteDialog>
   );
 }
