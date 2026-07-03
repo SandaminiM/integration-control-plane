@@ -26,6 +26,7 @@ import { useLogsFilters } from '../../../hooks/useLogsFilters';
 import { AUTO_FETCH_INTERVAL, DEFAULT_DP_REGION, LOG_LEVELS, PAGE_SIZE, TIME_PRESETS, downloadLogs } from '../../../utils/logs';
 import SearchField from '../../SearchField';
 import LogsPanel from '../../Logs/LogsPanel';
+import LogEntry from '../../Logs/LogEntry';
 
 function formatLocalDatetime(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -189,7 +190,18 @@ export default function ServiceLogsDrawer({ open, onClose, componentId, environm
 
       {/* Log content */}
       <Box sx={{ flex: 1, overflow: 'hidden', px: 2, pb: 2 }}>
-        <LogsPanel isLoading={isLoading} error={error} logs={logs} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} onRefetch={refetch} onFetchNextPage={fetchNextPage} onClearFilters={clearFilters} envName={envName} />
+        <LogsPanel
+          items={logs}
+          getKey={(l, i) => `${i}-${l.timestamp}-${l.logLine.slice(0, 50)}`}
+          renderRow={(l, ex, tg) => <LogEntry log={l} expanded={ex} onToggle={tg} envName={envName} />}
+          isLoading={isLoading}
+          error={error}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onRefetch={refetch}
+          onFetchNextPage={fetchNextPage}
+          onClearFilters={clearFilters}
+        />
       </Box>
     </Drawer>
   );

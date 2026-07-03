@@ -31,6 +31,7 @@ import { AUTO_FETCH_INTERVAL, DEFAULT_DP_REGION, PAGE_SIZE } from '../utils/logs
 import LogsFilters from '../components/Logs/LogsFilters';
 import LogsPageLayout from '../components/Logs/LogsPageLayout';
 import LogsPanel from '../components/Logs/LogsPanel';
+import LogEntry from '../components/Logs/LogEntry';
 import EmptyListing from '../components/EmptyListing';
 import { useLogsFilters } from '../hooks/useLogsFilters';
 import type { ProjectScope } from '../nav';
@@ -138,7 +139,20 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
       title="Runtime Logs"
       headerAction={integrationSelect}
       filtersElement={<LogsFilters filters={filters} environments={environments} logs={logs} logsRequest={logsRequest} onRefetch={refetch} />}
-      logPanelElement={<LogsPanel isLoading={isLoading} error={error} logs={logs} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} onRefetch={refetch} onFetchNextPage={fetchNextPage} onClearFilters={filters.clearFilters} />}
+      logPanelElement={
+        <LogsPanel
+          items={logs}
+          getKey={(l, i) => `${i}-${l.timestamp}-${l.logLine.slice(0, 50)}`}
+          renderRow={(l, ex, tg) => <LogEntry log={l} expanded={ex} onToggle={tg} />}
+          isLoading={isLoading}
+          error={error}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onRefetch={refetch}
+          onFetchNextPage={fetchNextPage}
+          onClearFilters={filters.clearFilters}
+        />
+      }
     />
   );
 }

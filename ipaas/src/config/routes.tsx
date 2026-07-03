@@ -54,6 +54,7 @@ const McpProxyFromApi = lazy(() => import('../pages/McpProxyFromApi'));
 const McpPolicies = lazy(() => import('../pages/McpPolicies'));
 const ComponentTest = lazy(() => import('../pages/ComponentTest'));
 const OrgCdPipelines = lazy(() => import('../pages/OrgCdPipelines'));
+const OrgAuditLogs = lazy(() => import('../pages/OrgAuditLogs'));
 const ProjectCdPipelines = lazy(() => import('../pages/ProjectCdPipelines'));
 const ProjectSettings = lazy(() => import('../pages/ProjectSettings'));
 const ProjectOverview = lazy(() => import('../pages/ProjectOverview'));
@@ -174,7 +175,7 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/admin/cd-pipelines/new', element: <CdPipelineEditor /> },
               { path: 'organizations/:orgHandler/admin/cd-pipelines/:pipelineId/edit', element: <CdPipelineEditor /> },
               { path: 'organizations/:orgHandler/admin/data-planes', element: <ComingSoon title="Coming Soon" description="Data Planes management is currently under development." /> },
-              { path: 'organizations/:orgHandler/admin/audit-logs', element: <ComingSoon title="Coming Soon" description="Audit Logs are currently under development." /> },
+              { path: 'organizations/:orgHandler/admin/audit-logs', element: <OrgAuditLogs /> },
               { path: 'organizations/:orgHandler/admin/approvals', element: <ComingSoon title="Coming Soon" description="Approvals management is currently under development." /> },
               { path: 'organizations/:orgHandler/admin/certificates', element: <ComingSoon title="Coming Soon" description="Certificates management is currently under development." /> },
               { path: 'organizations/:orgHandler/settings', element: createElement(withScope(OrgSettings, ['organizations'])) },
