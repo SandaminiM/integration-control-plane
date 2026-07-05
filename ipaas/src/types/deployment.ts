@@ -16,6 +16,8 @@
  * under the License.
  */
 
+import type { SchemaConfigItem } from './configuration';
+
 export const DeploymentStatus = {
   Active: 'Active',
   InProgress: 'InProgress',
@@ -142,4 +144,8 @@ export interface DeployPrebuiltImageInput {
   componentId: string;
   imageUrl: string;
   appBranch: string;
+  // Config values collected during setup. The cloud BFF bakes these onto the
+  // Workload container at creation; devant ignores this field (it persists config
+  // separately). Optional so existing callers are unaffected.
+  configurations?: SchemaConfigItem[];
 }

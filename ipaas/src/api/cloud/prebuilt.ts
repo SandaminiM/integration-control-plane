@@ -70,14 +70,21 @@ export async function fetchFirstEnvironment(orgUuid: string, projectId: string):
   const environments = await fetchEnvironments(orgUuid, projectId);
   const env = environments[0];
   if (!env) throw new Error('No environments found for this project');
-  return { id: env.id, templateId: env.templateId };
+  // Devant keys config on a per-environment templateId; OpenChoreo has no such
+  // concept, so the environment slug (env.id) is the identity used everywhere —
+  // it is both the config-schema path segment and the ReleaseBinding
+  // spec.environment the deploy binds to, keeping saved config on the right env.
+  return { id: env.id, templateId: env.id };
 }
 
 export async function fetchLatestCommitSha(componentId: string, branch: string): Promise<string> {
+  // The commit SHA is optional metadata for the saved config. A freshly created
+  // prebuilt component often has no resolvable commit history yet, so return an
+  // empty string rather than throwing — otherwise the caller's config save (which
+  // shares a try/catch with this call) would be skipped entirely.
   const commits = await fetchCommitHistory(componentId, branch);
   const latest = commits.find((c) => c.isLatest) ?? commits[0];
-  if (!latest) throw new Error('No commits found');
-  return latest.sha;
+  return latest?.sha ?? '';
 }
 
 export async function savePrebuiltConfig(projectId: string, componentId: string, envId: string, deploymentTrackId: string, configurations: SchemaConfigItem[], commitHash: string): Promise<void> {

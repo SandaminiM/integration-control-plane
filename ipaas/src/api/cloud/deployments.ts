@@ -25,8 +25,8 @@
  *          GET  /releases/{releaseId}/endpoints       (workload endpoints + spec),
  *          POST /deployments, POST /deployments/promote,
  *          PUT  /deployments/stop, POST /deployments/redeploy (see redeploy note),
- *          POST /builds, GET /builds/{name}/logs
- *   stub – POST /deploy-prebuilt                      (acknowledges; no-op)
+ *          POST /builds, GET /builds/{name}/logs,
+ *          POST /deploy-prebuilt                      (create workload from image + bind)
  *
  * OpenChoreo model notes:
  *   - "Images" (GET /releases) are the component's successful builds, not
@@ -225,7 +225,8 @@ export const stopDeployment = (input: StopDeploymentInput): Promise<string> => b
 export const redeployDeployment = (input: { orgHandler: string; componentId: string; releaseId: string; type: string; releaseMgtReleaseId?: string; releaseMgtDeploymentId?: string }): Promise<string> =>
   bff.post<MessageResponse>(`/components/${seg(input.componentId)}/releases/${seg(input.releaseId)}/redeploy`, {}).then((r) => r?.message ?? '');
 
-// BFF stub: returns `{message: "prebuilt deploy accepted"}` without actually
-// deploying. Until the route is wired the Deploy flow will show a success
-// toast for a no-op.
+// Deploys the prebuilt image: the BFF creates a Workload from imageUrl (baking any
+// supplied config values onto spec.container), snapshots it via generate-release,
+// and binds it to the project's first environment. `input` already carries
+// componentId/imageUrl/appBranch/configurations, so it is posted as-is.
 export const deployPrebuiltImage = (input: DeployPrebuiltImageInput): Promise<string> => bff.post<MessageResponse>(`/components/${seg(input.componentId)}/deploy-prebuilt`, input).then((r) => r?.message ?? '');

@@ -20,7 +20,7 @@ import { lazy } from 'react';
 import { type RouteProps, Navigate, Outlet } from 'react-router';
 import { cookiePolicyUrl, loginUrl, orgRoleDetailUrl, projectRoleDetailUrl, componentRoleDetailUrl, projectGroupDetailUrl, componentGroupDetailUrl, signupUrl, registerOrgUrl } from '../paths';
 import { ScopeResolver, generateMatrixRoutes, withScope, type Matrix } from '../nav';
-import { IS_WIP } from '../features';
+import { IS_WIP, IS_CLOUD } from '../features';
 import { createElement } from 'react';
 const PrebuiltIntegrationConfigProvider = lazy(() => import('../contexts/PrebuiltIntegrationConfigContext').then((m) => ({ default: m.PrebuiltIntegrationConfigProvider })));
 
@@ -234,7 +234,9 @@ const routes: AppRoute[] = [
               { path: projectGroupDetailUrl(':orgHandler', ':projectHandler', ':groupId'), element: <ProjectGroupDetail /> },
               { path: componentGroupDetailUrl(':orgHandler', ':projectHandler', ':componentHandler', ':groupId'), element: <ComponentGroupDetail /> },
               { path: '/profile', element: <Profile /> },
-              ...(IS_WIP
+              // cloud: prebuilt integrations are supported on OpenChoreo, so the
+              // routes are enabled for cloud as well as wip (icp is stubs-only).
+              ...(IS_WIP || IS_CLOUD
                 ? [
                     { path: 'organizations/:orgHandler/projects/:projectHandler/prebuilt-integrations', element: createElement(withScope(BrowsePrebuiltIntegrations, ['projects'])) },
                     {
