@@ -57,6 +57,10 @@ export async function callCreateCodeServer(params: {
 }): Promise<string> {
   const { userId, projectId, componentId, imageUrl, sourceCommitHash } = params;
 
+  // organizationId/orgHandle are accepted for signature parity with the wip
+  // implementation but deliberately not forwarded: the BFF's CreateCodeServerInput
+  // has no org fields — it resolves the org (namespace) from the bearer token's
+  // claims, and the editor identity is keyed on (user, project, component) only.
   const created = await bff.post<CodeServerResponse>('/code-server', {
     userId,
     projectId,

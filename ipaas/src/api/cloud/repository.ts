@@ -131,7 +131,9 @@ export async function fetchRepoMetadata(org: string, repo: string, branch: strin
 export async function fetchChoreoSampleImages(_orgUuid: string, _projectId: string): Promise<ChoreoSampleImageEntry[]> {
   try {
     return items(await bff.get<ListResponse<ChoreoSampleImageEntry>>('/samples/images'));
-  } catch {
+  } catch (err) {
+    // Log so a failing BFF is distinguishable from a deliberately disabled feature.
+    console.error('[cloud] fetchChoreoSampleImages failed, hiding sample images:', err);
     return [];
   }
 }
