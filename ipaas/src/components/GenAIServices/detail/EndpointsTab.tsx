@@ -175,6 +175,8 @@ export default function EndpointsTab({ service, orgHandle, canEdit }: { service:
                         {card.params.map((param, idx) => {
                           const revealKey = `${card.id}:${param.key}`;
                           const isRevealed = revealed.has(revealKey);
+                          // Params map to connection-schema entries; required (non-optional) ones must stay.
+                          const isOptional = entries.find((e) => e.name === param.key)?.isOptional ?? false;
                           return (
                             <Stack key={param.key} direction="row" alignItems="center" gap={1.5}>
                               <TextField size="small" value={param.key} disabled sx={{ flex: '0 0 30%' }} />
@@ -200,7 +202,7 @@ export default function EndpointsTab({ service, orgHandle, canEdit }: { service:
                                 }
                               />
                               {param.isSensitive && <Chip label="Secret" size="small" variant="outlined" color="primary" />}
-                              {canEdit && (
+                              {canEdit && isOptional && (
                                 <Tooltip title="Remove parameter">
                                   <IconButton size="small" color="error" aria-label={`Remove ${param.key}`} onClick={() => patchCard(card.id, { params: card.params.filter((_, i) => i !== idx) })}>
                                     <Trash2 size={16} />

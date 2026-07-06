@@ -18,7 +18,7 @@
 
 import { Alert, Box, Button, Checkbox, Chip, CircularProgress, IconButton, InputAdornment, ListItemText, MenuItem, Select, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Eye, EyeOff, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
-import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useProviderTemplate, useProviderTemplates } from '../../hooks/useGenaiServices';
 import { useEnvTemplates } from '../../hooks/useDeploymentPipelines';
 import { GENAI_LOGO_BASE, GENAI_PROVIDER_META, SERVICE_URL_FIELD } from '../../constants/genaiServices';
@@ -51,7 +51,7 @@ export default function GenAIServiceWizard({ orgHandle, submitting, submitError,
 
   // Step-2 details.
   const [name, setName] = useState('');
-  const [version, setVersion] = useState('v1');
+  const [version, setVersion] = useState('');
   const [summary, setSummary] = useState('');
   const [serviceUrl, setServiceUrl] = useState('');
 
@@ -96,7 +96,8 @@ export default function GenAIServiceWizard({ orgHandle, submitting, submitError,
 
   const step0Valid = !!selectedTemplateId;
   const step1Valid = name.trim() !== '' && serviceUrl.trim() !== '';
-  const canRegister = useMemo(() => endpoints.length > 0 && endpoints.some((e) => e.name.trim() !== '' && e.environmentIds.length > 0 && connectionEntries.every((entry) => (e.values[entry.name] ?? '').trim() !== '')), [endpoints, connectionEntries]);
+  const isEndpointComplete = useCallback((e: EndpointRow) => e.name.trim() !== '' && e.environmentIds.length > 0 && connectionEntries.every((entry) => (e.values[entry.name] ?? '').trim() !== ''), [connectionEntries]);
+  const canRegister = useMemo(() => endpoints.some(isEndpointComplete), [endpoints, isEndpointComplete]);
 
   const goNext = () => {
     if (step === 1 && endpoints.length === 0) setEndpoints([newEndpoint()]);
@@ -105,9 +106,11 @@ export default function GenAIServiceWizard({ orgHandle, submitting, submitError,
 
   const register = () => {
     if (!canRegister || submitting) return;
+    // Only send fully-populated rows — canRegister passes as long as at least one row is complete.
+    const completeEndpoints = endpoints.filter(isEndpointComplete);
     onSubmit({
       draft: { name, version, summary, serviceUrl, serviceUrlLocked, serviceDefContent, connectionEntries },
-      endpoints: endpoints.map(({ name: epName, environmentIds, values }) => ({ name: epName, environmentIds, values })),
+      endpoints: completeEndpoints.map(({ name: epName, environmentIds, values }) => ({ name: epName, environmentIds, values })),
     });
   };
 

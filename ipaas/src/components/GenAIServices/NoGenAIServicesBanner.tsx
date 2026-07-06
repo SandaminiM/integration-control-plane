@@ -31,7 +31,7 @@ export default function NoGenAIServicesBanner({ onCreate }: { onCreate: () => vo
           Bring your own AI models
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Register GenAI services from providers like Open AI, Azure Open AI, Mistral AI, and Anthropic AI, then share their connections across your integrations.
+          Register GenAI services from providers like OpenAI, Azure OpenAI, Mistral AI, and Anthropic AI, then share their connections across your integrations.
         </Typography>
         <Box>
           <Button variant="contained" startIcon={<Plus size={20} />} onClick={onCreate} sx={{ mt: 1 }}>

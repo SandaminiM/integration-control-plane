@@ -50,8 +50,8 @@ export default function OrgGenAIServices(scope: OrgScope | ProjectScope): JSX.El
     return () => clearTimeout(t);
   }, [search]);
 
-  // Project scope waits for the resolved project id so we never fetch org-wide first.
-  const { data, isLoading, isFetching, isError, refetch } = useGenaiServices({ query: debouncedSearch, offset: page * rowsPerPage, limit: rowsPerPage, projectId: projectHandle ? projectId : undefined }, !resolvingProject);
+  // Project scope waits for a resolved (non-empty) project id so we never fall back to org-wide data.
+  const { data, isLoading, isFetching, isError, refetch } = useGenaiServices({ query: debouncedSearch, offset: page * rowsPerPage, limit: rowsPerPage, projectId: projectHandle ? projectId : undefined }, !resolvingProject && (!projectHandle || !!projectId));
   const del = useDeleteGenaiService();
 
   const services = data?.data ?? [];

@@ -45,6 +45,7 @@ import type {
   ConnectionSchemaEntry,
   CreateServiceRequest,
   EndpointConfigDraft,
+  GenAiProviderTemplateDetail,
   GenAiService,
   GenAiServiceDraft,
   GenAiServiceEdit,

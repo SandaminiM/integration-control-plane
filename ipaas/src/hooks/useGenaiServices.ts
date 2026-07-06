@@ -83,13 +83,19 @@ export function useCreateGenaiService(projectId?: string) {
     mutationFn: async ({ draft, endpoints }) => {
       if (!orgUuid) throw new Error('Organization is not available.');
       const created = await createGenaiService(buildCreateServiceRequest(orgUuid, draft, projectId));
-      const service = await getGenaiService(created.id);
-      const schemaId = service.connectionSchemas?.[0]?.id;
-      if (schemaId) {
-        await addConnectionConfig(created.id, schemaId, buildConnectionConfigPayload(endpoints));
+      try {
+        const service = await getGenaiService(created.id);
+        const schemaId = service.connectionSchemas?.[0]?.id;
+        if (schemaId) {
+          await addConnectionConfig(created.id, schemaId, buildConnectionConfigPayload(endpoints));
+        }
+        await setGenaiServiceStatus(created.id, 'CREATED');
+        return created.id;
+      } catch (err) {
+        // A step after creation failed — roll back the partial service so it isn't left orphaned.
+        await deleteGenaiService(created.id).catch(() => undefined);
+        throw err;
       }
-      await setGenaiServiceStatus(created.id, 'CREATED');
-      return created.id;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'list'] }),
   });

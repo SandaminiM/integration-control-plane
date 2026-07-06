@@ -31,16 +31,20 @@ import type { CreateGenAiServiceArgs } from '../types/genaiServices';
 export default function RegisterGenAIService(scope: OrgScope | ProjectScope): JSX.Element {
   const navigate = useNavigate();
   const projectHandle = hasProject(scope) ? scope.project : undefined;
-  const { projectId } = useProjectId(projectHandle ?? '');
+  const { projectId, isLoading: resolvingProject } = useProjectId(projectHandle ?? '');
   const base = genaiServicesBase(scope);
   const create = useCreateGenaiService(projectHandle ? projectId || undefined : undefined);
   const [error, setError] = useState<string | null>(null);
+
+  // In project scope, never submit until the project id has resolved, or the service would be created without project context.
+  const projectNotReady = !!projectHandle && (resolvingProject || !projectId);
 
   if (!isGenaiServicesEnabled()) {
     return <ComingSoon title="Coming Soon" description="GenAI Services management is currently under development." />;
   }
 
   const onSubmit = (args: CreateGenAiServiceArgs) => {
+    if (projectNotReady) return;
     setError(null);
     create.mutate(args, {
       onSuccess: () => navigate(base),
@@ -50,7 +54,7 @@ export default function RegisterGenAIService(scope: OrgScope | ProjectScope): JS
 
   return (
     <PageContent>
-      <GenAIServiceWizard orgHandle={scope.org} submitting={create.isPending} submitError={error} onSubmit={onSubmit} onCancel={() => navigate(base)} />
+      <GenAIServiceWizard orgHandle={scope.org} submitting={create.isPending || projectNotReady} submitError={error} onSubmit={onSubmit} onCancel={() => navigate(base)} />
     </PageContent>
   );
 }
