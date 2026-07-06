@@ -230,7 +230,7 @@ export default function ConfigGroupForm({ mode, orgHandle, initial, submitting, 
                       <TableCell sx={{ verticalAlign: 'center' }} align="right">
                         <Tooltip title={k.isSensitive ? 'Unmark as secret' : 'Mark as secret'}>
                           <IconButton size="small" aria-label="Mark as secret" onClick={() => patchKey(k.id, { isSensitive: !k.isSensitive })}>
-                            <Lock size={16} fill={k.isSensitive ? 'currentColor' : 'none'} fillOpacity={0.35}/>
+                            <Lock size={16} fill={k.isSensitive ? 'currentColor' : 'none'} fillOpacity={0.35} />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Remove key">
