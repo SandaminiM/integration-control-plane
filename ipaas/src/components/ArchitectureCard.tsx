@@ -20,9 +20,15 @@ import { Card, CardContent, CircularProgress, IconButton, Stack, Tooltip, Typogr
 import { GitBranch, RefreshCw } from '@wso2/oxygen-ui-icons-react';
 import { CellDiagram, ComponentType, DiagramLayer } from '@wso2/cell-diagram';
 import type { Project as DiagramProject, Component as DiagramComponent, Services } from '@wso2/cell-diagram';
-import { useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import type { Component } from '../types/component';
 import type { JSX } from 'react';
+
+const EMPTY_MENU: never[] = [];
+
+const CellDiagramPreview = memo(function CellDiagramPreview({ project, refreshKey: _ }: { project: DiagramProject; refreshKey: number }) {
+  return <CellDiagram project={project} componentMenu={EMPTY_MENU} defaultDiagramLayer={DiagramLayer.ARCHITECTURE} previewMode />;
+});
 
 function getComponentType(displayType: string, componentSubType: string | null): ComponentType | null {
   if (componentSubType === 'ballerinaFileIntegration' || componentSubType === 'miFileIntegration') {
@@ -172,6 +178,12 @@ function buildProjectModel(projectId: string, components: Component[]): DiagramP
 
 export default function ArchitectureCard({ projectId, components, isLoading, isRefreshing, onRefresh }: { projectId: string; components: Component[]; isLoading: boolean; isRefreshing: boolean; onRefresh: () => void }): JSX.Element {
   const project = useMemo(() => buildProjectModel(projectId, components), [projectId, components]);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleRefresh = () => {
+    onRefresh();
+    setRefreshKey((k) => k + 1);
+  };
 
   return (
     <Card variant="outlined">
@@ -185,7 +197,7 @@ export default function ArchitectureCard({ projectId, components, isLoading, isR
             <IconButton
               size="small"
               aria-label="Refresh architecture"
-              onClick={onRefresh}
+              onClick={handleRefresh}
               disabled={isRefreshing}
               sx={
                 isRefreshing
@@ -212,7 +224,7 @@ export default function ArchitectureCard({ projectId, components, isLoading, isR
               </Typography>
             </div>
           ) : (
-            <CellDiagram project={project} componentMenu={[]} defaultDiagramLayer={DiagramLayer.ARCHITECTURE} previewMode />
+            <CellDiagramPreview project={project} refreshKey={refreshKey} />
           )}
         </div>
       </CardContent>

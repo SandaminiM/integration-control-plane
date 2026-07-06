@@ -168,7 +168,7 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
   }
 
   return (
-    <PageContent sx={{ pt: 5, containerType: 'inline-size' }}>
+    <PageContent sx={{ pt: 5 }}>
       <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(resourceUrl(scope, 'overview'))} sx={{ mb: 3 }}>
         Back to Project Home
       </Button>
@@ -184,10 +184,7 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
           display: 'grid',
           gap: 3,
           alignItems: 'stretch',
-          gridTemplateColumns: '1fr',
-          '@container (min-width: 900px)': {
-            gridTemplateColumns: '6fr 4fr',
-          },
+          gridTemplateColumns: { xs: '1fr', md: '6fr 4fr' },
         }}>
         {/* Left column: Cloud Editor + Import */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>

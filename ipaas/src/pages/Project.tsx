@@ -242,10 +242,7 @@ function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId
           display: 'grid',
           gap: 3,
           alignItems: 'stretch',
-          gridTemplateColumns: '1fr',
-          '@container (min-width: 900px)': {
-            gridTemplateColumns: '6fr 4fr',
-          },
+          gridTemplateColumns: { xs: '1fr', md: '6fr 4fr' },
         }}>
         {/* Left column: Cloud Editor + Import */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
@@ -725,7 +722,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
   const isEmpty = !loadingComponents && components.length === 0;
 
   return (
-    <PageContent sx={{ containerType: 'inline-size' }}>
+    <PageContent>
       <Stack component="header" direction="row" alignItems="center" gap={2} sx={{ mb: isEmpty ? 3 : 4 }}>
         <Avatar sx={{ width: 56, height: 56, fontSize: 24, bgcolor: 'text.primary', color: 'background.paper' }}>{project?.name?.[0]?.toUpperCase() ?? 'P'}</Avatar>
         <div>
@@ -748,10 +745,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
           sx={{
             display: 'grid',
             gap: 3,
-            gridTemplateColumns: '1fr',
-            '@container (min-width: 900px)': {
-              gridTemplateColumns: '2fr 1fr',
-            },
+            gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' },
           }}>
           <Box>
             <IntegrationsTable
