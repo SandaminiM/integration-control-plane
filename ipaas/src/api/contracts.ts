@@ -100,7 +100,7 @@ import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgum
 import type { SubscriptionList, ComponentLimits } from '../types/subscription';
 import type { ConfigGroup, ConfigGroupNameAvailability, ConfigGroupUsage, CreateConfigGroupRequest, EditConfigGroupRequest } from '../types/configGroups';
 import type { AuditLogEntry, AuditLogsRequest } from '../types/auditLogs';
-import type { DatabaseServer, OrgServiceAvailability, ServicePlan, ServiceType, CreateServerPayload } from '../types/platformServices';
+import type { AdminUser, CaCertificate, DatabaseServer, DatabaseServerDetail, MetricPeriod, OrgServiceAvailability, ServerMetricsResponse, ServicePlan, ServiceType, CreateServerPayload } from '../types/platformServices';
 import type { InsightsEnvironment, ComponentInsights } from '../types/insights';
 import type { LogsRequest, ComponentLogsRequest, LogRow } from '../types/logs';
 import type { ApiDocument, RuleAdherenceResponse, ThrottlingPolicy } from '../types/marketplace';
@@ -585,10 +585,14 @@ export interface AuditLogsApi {
 export interface PlatformServicesApi {
   getAvailability(orgUuid: string): Promise<OrgServiceAvailability>;
   listServers(orgUuid: string): Promise<DatabaseServer[]>;
-  getServer(serverId: string): Promise<DatabaseServer>;
+  getServer(serverId: string): Promise<DatabaseServerDetail>;
   deleteServer(serverId: string): Promise<void>;
   getServicePlans(type: ServiceType): Promise<ServicePlan[]>;
   createServer(payload: CreateServerPayload): Promise<DatabaseServer>;
+  setServerPoweredState(serverId: string, powered: boolean): Promise<void>;
+  getServerAdminUser(serverId: string): Promise<AdminUser>;
+  getServerCaCertificate(serverId: string): Promise<CaCertificate>;
+  getServerMetrics(serverId: string, period: MetricPeriod): Promise<ServerMetricsResponse>;
 }
 
 // ---------------------------------------------------------------------------

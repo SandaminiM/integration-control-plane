@@ -127,6 +127,7 @@ import UpgradeButton from '../components/UpgradeButton';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { IS_WIP, IS_CLOUD } from '../features';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions';
+import { DB_TRADEMARK_NOTICE } from '../constants/platformServices';
 import { UUID_RE } from '../utils/string';
 
 // Maps each org-scope leaf nav ID to its expandable parent group ID
@@ -1643,6 +1644,11 @@ function AppLayoutInner(): JSX.Element {
       </AppShell.Main>
 
       <AppShell.Footer>
+        {pathname.includes('/admin/databases') && (
+          <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', fontStyle: 'italic', color: 'text.disabled', px: 2, pb: 1 }}>
+            {DB_TRADEMARK_NOTICE}
+          </Typography>
+        )}
         <Footer>
           <Footer.Link href={termsOfUseUrl()} target="_blank" rel="noopener noreferrer">
             Terms of Use

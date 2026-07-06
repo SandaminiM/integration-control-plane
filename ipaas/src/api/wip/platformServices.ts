@@ -17,7 +17,9 @@
  */
 
 import { platformServicesClient } from './httpClients';
-import type { CreateServerPayload, DatabaseServer, OrgServiceAvailability, ServicePlan, ServiceType } from '../../types/platformServices';
+import type { AdminUser, CaCertificate, CreateServerPayload, DatabaseServer, DatabaseServerDetail, MetricPeriod, OrgServiceAvailability, PowerAction, ServerMetricsResponse, ServicePlan, ServiceType } from '../../types/platformServices';
+
+const server = (id: string): string => `/db-servers/${encodeURIComponent(id)}`;
 
 /** Whether the org may provision another managed service, plus its service-count limit. */
 export function getAvailability(orgUuid: string): Promise<OrgServiceAvailability> {
@@ -29,13 +31,34 @@ export function listServers(orgUuid: string): Promise<DatabaseServer[]> {
   return platformServicesClient.get<DatabaseServer[]>(`/db-servers?organization_id=${encodeURIComponent(orgUuid)}`);
 }
 
-/** A single server's details. */
-export function getServer(serverId: string): Promise<DatabaseServer> {
-  return platformServicesClient.get<DatabaseServer>(`/db-servers/${encodeURIComponent(serverId)}`);
+/** A single server's full details (connection params, plan, nodes, maintenance). */
+export function getServer(serverId: string): Promise<DatabaseServerDetail> {
+  return platformServicesClient.get<DatabaseServerDetail>(server(serverId));
 }
 
 export function deleteServer(serverId: string): Promise<void> {
-  return platformServicesClient.delete(`/db-servers/${encodeURIComponent(serverId)}`);
+  return platformServicesClient.delete(server(serverId));
+}
+
+/** Power the service on or off. */
+export function setServerPoweredState(serverId: string, powered: boolean): Promise<void> {
+  const action: PowerAction = powered ? 'power_on' : 'power_off';
+  return platformServicesClient.put(`${server(serverId)}/power`, { action });
+}
+
+/** The default admin user and its current password (revealed on demand). */
+export function getServerAdminUser(serverId: string): Promise<AdminUser> {
+  return platformServicesClient.get<AdminUser>(`${server(serverId)}/admin-user`);
+}
+
+/** The server's CA certificate (for download). */
+export function getServerCaCertificate(serverId: string): Promise<CaCertificate> {
+  return platformServicesClient.get<CaCertificate>(`${server(serverId)}/ca-certificate`);
+}
+
+/** Time-series metrics (CPU, memory, disk, …) for the given period. */
+export function getServerMetrics(serverId: string, period: MetricPeriod): Promise<ServerMetricsResponse> {
+  return platformServicesClient.post<ServerMetricsResponse>(`${server(serverId)}/metrics`, { period });
 }
 
 /** Service plans (with per-region pricing) offered for a database engine. */

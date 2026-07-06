@@ -106,3 +106,79 @@ export interface ServiceError {
   description: string;
   correlation_id: string;
 }
+
+// ---------------------------------------------------------------------------
+// Server detail (management page)
+// ---------------------------------------------------------------------------
+
+export interface ConnectionParams {
+  host: string;
+  port: string;
+  user: string;
+  database: string;
+  ssl_required?: boolean;
+  password_reset?: boolean;
+}
+
+export interface ServerNode {
+  name: string;
+  role: string;
+  state: string;
+}
+
+export interface MaintenanceWindow {
+  day: string;
+  time: string;
+}
+
+/** Plan block on the detail response — the list summary plus backup cadence. */
+export interface ServicePlanDetailInfo extends ServicePlanInfo {
+  backup_interval_hours: number;
+  backup_retention_days: number;
+}
+
+/** Full server as returned by `GET /db-servers/{id}` (superset of the list row). */
+export interface DatabaseServerDetail extends DatabaseServer {
+  connection_params: ConnectionParams;
+  service_plan: ServicePlanDetailInfo;
+  nodes: ServerNode[];
+  maintenance?: MaintenanceWindow;
+  service_version?: string;
+  allowed_ips?: { mode: string; allow_list?: { cidr: string; description?: string }[] };
+}
+
+/** `PUT /db-servers/{id}/power` — powers the service on or off. */
+export type PowerAction = 'power_on' | 'power_off';
+
+/** `GET /db-servers/{id}/admin-user` — the default user + its current password. */
+export interface AdminUser {
+  username: string;
+  password: string;
+}
+
+/** `GET /db-servers/{id}/ca-certificate`. */
+export interface CaCertificate {
+  certificate: string;
+}
+
+// --- Metrics (POST /db-servers/{id}/metrics) — Google-Charts-style datatable per metric ---
+
+export type MetricPeriod = 'hour' | 'day' | 'week' | 'month';
+
+export interface MetricColumn {
+  label: string;
+  type: string;
+}
+
+export interface MetricRow {
+  date: string;
+  values: number[];
+}
+
+export interface MetricSeries {
+  data: { cols: MetricColumn[]; rows: MetricRow[] };
+}
+
+export interface ServerMetricsResponse {
+  metrics: Record<string, MetricSeries>;
+}

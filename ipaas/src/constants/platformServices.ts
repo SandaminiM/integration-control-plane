@@ -28,31 +28,41 @@ export const ENABLE_REDIS_CREATION = false;
 /** Cloud providers a free (non-subscribed) org may NOT select — only DigitalOcean is free-tier. */
 export const FREE_TIER_DISABLED_PROVIDERS: CloudProvider[] = ['aws', 'azure', 'gcp'];
 
+/** Trademark disclaimer shown in the layout footer while on the Databases pages. */
+export const DB_TRADEMARK_NOTICE = 'PostgreSQL, MySQL, and Redis are trademarks and property of their respective owners. All product and service names used in this platform are for identification purposes only.';
+
+/** Public path prefixes for the provider logos (shipped from Devant). */
+const DB_LOGO_BASE = 'assets/images/databases/';
+const CLOUD_LOGO_BASE = 'assets/images/cloud-providers/';
+
 export interface ServiceTypeOption {
   id: ServiceType;
   name: string;
   description: string;
+  /** Logo path under {@link DB_LOGO_BASE}, resolved against the app base URL by the UI. */
+  logo: string;
   disabled?: boolean;
 }
 
 /** Selectable database engines (Step 1). Redis shown but disabled while unavailable. */
 export const SERVICE_TYPES: ServiceTypeOption[] = [
-  { id: 'postgres', name: 'PostgreSQL', description: 'A highly performant, fully-managed object-relational database management system' },
-  { id: 'mysql', name: 'MySQL', description: "A fully-managed offering of the world's most popular relational database management system" },
+  { id: 'postgres', name: 'PostgreSQL', description: 'A highly performant, fully-managed object-relational database management system', logo: `${DB_LOGO_BASE}postgresql.svg` },
+  { id: 'mysql', name: 'MySQL', description: "A fully-managed offering of the world's most popular relational database management system", logo: `${DB_LOGO_BASE}mysql.svg` },
   {
     id: 'redis',
     name: 'Choreo Cache',
     description: ENABLE_REDIS_CREATION ? 'A managed in-memory NoSQL database compatible with legacy Redis® OSS' : 'Choreo Caches are currently unavailable. Please select another service.',
+    logo: `${DB_LOGO_BASE}redis.svg`,
     disabled: !ENABLE_REDIS_CREATION,
   },
 ];
 
 /** Cloud providers in display order — DigitalOcean & GCP first (they carry the hobbyist plans). */
-export const CLOUD_PROVIDERS: { id: CloudProvider; name: string }[] = [
-  { id: 'digitalocean', name: 'DigitalOcean' },
-  { id: 'gcp', name: 'GCP' },
-  { id: 'aws', name: 'AWS' },
-  { id: 'azure', name: 'Azure' },
+export const CLOUD_PROVIDERS: { id: CloudProvider; name: string; logo: string }[] = [
+  { id: 'digitalocean', name: 'DigitalOcean', logo: `${CLOUD_LOGO_BASE}digitalocean.svg` },
+  { id: 'gcp', name: 'GCP', logo: `${CLOUD_LOGO_BASE}gcp.svg` },
+  { id: 'aws', name: 'AWS', logo: `${CLOUD_LOGO_BASE}aws.svg` },
+  { id: 'azure', name: 'Azure', logo: `${CLOUD_LOGO_BASE}azure.svg` },
 ];
 
 export const CLOUD_REGIONS: { id: CloudRegion; name: string }[] = [

@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Card, CardActionArea, CircularProgress, Divider, Grid, PageContent, Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { ArrowLeft, Check } from '@wso2/oxygen-ui-icons-react';
+import { Alert, Box, Button, Card, CardActionArea, CircularProgress, Divider, Grid, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
 import { isPlatformServicesEnabled, useCreateServer, useDatabaseServers, useServicePlans } from '../hooks/usePlatformServices';
@@ -27,8 +27,14 @@ import { PAID_SUBSCRIPTION_TYPE } from '../constants/subscription';
 import { CLOUD_PROVIDERS, FREE_TIER_DISABLED_PROVIDERS, regionLabel, SERVICE_NAME_ERROR, SERVICE_NAME_REGEX, SERVICE_TYPES } from '../constants/platformServices';
 import { planRegionSpec, plansForProviderRegion } from '../utils/platformServices';
 import ComingSoon from './ComingSoon';
+import VerticalStepper from '../components/VerticalStepper';
 import type { OrgScope } from '../nav';
 import type { CloudProvider, CloudRegion, ServicePlan, ServiceType } from '../types/platformServices';
+
+const requiredSx = { '& .MuiFormLabel-asterisk': { color: 'error.main' } };
+const assetUrl = (path: string): string => `${import.meta.env.BASE_URL}${path}`;
+/** Section sub-headings, deliberately smaller than the "Create Database Server" title. */
+const sectionHeadingSx = { fontWeight: 600, mb: 1.5 } as const;
 
 interface CreateError {
   title: string;
@@ -55,15 +61,18 @@ function toCreateError(err: unknown): CreateError {
 interface SelectableCardProps {
   title: string;
   description?: string;
+  /** Optional provider logo (full URL). */
+  logo?: string;
   selected: boolean;
   disabled?: boolean;
   onSelect: () => void;
 }
 
-function SelectableCard({ title, description, selected, disabled, onSelect }: SelectableCardProps): JSX.Element {
+function SelectableCard({ title, description, logo, selected, disabled, onSelect }: SelectableCardProps): JSX.Element {
   return (
     <Card variant="outlined" sx={{ height: '100%', borderColor: selected ? 'primary.main' : 'divider', borderWidth: selected ? 2 : 1, opacity: disabled ? 0.5 : 1 }}>
       <CardActionArea disabled={disabled} onClick={onSelect} sx={{ height: '100%', p: 2, alignItems: 'flex-start', justifyContent: 'flex-start' }}>
+        {logo && <Box component="img" src={logo} alt="" sx={{ height: 28, mb: 1, display: 'block' }} />}
         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: description ? 0.5 : 0 }}>
           {title}
         </Typography>
@@ -94,7 +103,7 @@ function PlanCard({ plan, provider, region, selected, disabled, onSelect }: { pl
           {plan.backup_retention_days > 0 ? `Backups every ${plan.backup_interval_hours} hours. Retained for ${plan.backup_retention_days} days.` : 'No automated backups. For development use only.'}
         </Typography>
         <Divider sx={{ my: 1.5 }} />
-        <Typography variant="subtitle1" color="secondary">
+        <Typography variant="subtitle1" sx={{ color: 'primary.main', fontWeight: 600 }}>
           ${spec.hourly_price_usd}
           <Typography component="span" variant="caption" color="text.secondary">
             {' '}
@@ -180,37 +189,12 @@ export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
 
       <Stack direction="row" gap={4} alignItems="flex-start">
         {/* Left step rail */}
-        <Stack gap={2} sx={{ minWidth: 200, pt: 1 }}>
-          {['Select Database Type', 'Select service plan'].map((label, i) => (
-            <Stack key={label} direction="row" alignItems="center" gap={1.5}>
-              <Box
-                sx={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  bgcolor: activeStep === i ? 'primary.main' : activeStep > i ? 'success.main' : 'action.disabledBackground',
-                  color: activeStep >= i ? 'primary.contrastText' : 'text.secondary',
-                  fontSize: 14,
-                }}>
-                {activeStep > i ? <Check size={16} /> : i + 1}
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  STEP {i + 1}
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: activeStep === i ? 600 : 400 }}>
-                  {label}
-                </Typography>
-              </Box>
-            </Stack>
-          ))}
-        </Stack>
+        <Box sx={{ width: { xs: '100%', md: 220 }, flexShrink: 0, pt: 1 }}>
+          <VerticalStepper activeStep={activeStep} steps={['Select Database Type', 'Select service plan']} />
+        </Box>
 
         {/* Step content */}
-        <Box sx={{ flex: 1, maxWidth: 900 }}>
+        <Box sx={{ flex: 1, maxWidth: 900, mt: 2 }}>
           <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
             Create Database Server
           </Typography>
@@ -239,17 +223,17 @@ export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
             <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
           ) : activeStep === 0 ? (
             <>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
+              <Typography variant="subtitle2" sx={sectionHeadingSx}>
                 Select Cloud Storage
               </Typography>
               <Grid container spacing={2} sx={{ mb: 3 }}>
                 {SERVICE_TYPES.map((t) => (
                   <Grid key={t.id} size={{ xs: 12, sm: 4 }}>
-                    <SelectableCard title={t.name} description={t.description} selected={storageType === t.id} disabled={t.disabled} onSelect={() => setStorageType(t.id)} />
+                    <SelectableCard title={t.name} description={t.description} logo={assetUrl(t.logo)} selected={storageType === t.id} disabled={t.disabled} onSelect={() => setStorageType(t.id)} />
                   </Grid>
                 ))}
               </Grid>
-              <TextField label="Service Name" fullWidth value={serviceName} onChange={(e) => setServiceName(e.target.value)} error={!!nameError} helperText={nameError} placeholder="Enter service name" sx={{ maxWidth: 480 }} />
+              <TextField label="Service Name" required fullWidth value={serviceName} onChange={(e) => setServiceName(e.target.value)} error={!!nameError} helperText={nameError} placeholder="Enter service name" sx={{ maxWidth: 480, ...requiredSx }} />
             </>
           ) : (
             <>
@@ -262,14 +246,14 @@ export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
                 </Alert>
               )}
 
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
+              <Typography variant="subtitle2" sx={sectionHeadingSx}>
                 Select Cloud Provider
               </Typography>
               <Grid container spacing={2} sx={{ mb: 3 }}>
                 {(plansQuery.data?.providers ?? []).map((p) => {
                   const info = CLOUD_PROVIDERS.find((c) => c.id === p);
                   const disabled = disabledProviders.includes(p);
-                  const card = <SelectableCard title={info?.name ?? p} selected={provider === p} disabled={disabled} onSelect={() => setProvider(p)} />;
+                  const card = <SelectableCard title={info?.name ?? p} logo={info ? assetUrl(info.logo) : undefined} selected={provider === p} disabled={disabled} onSelect={() => setProvider(p)} />;
                   return (
                     <Grid key={p} size={{ xs: 6, sm: 3 }}>
                       {disabled ? <Tooltip title="Upgrade your subscription to select this cloud provider.">{<span>{card}</span>}</Tooltip> : card}
@@ -278,18 +262,18 @@ export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
                 })}
               </Grid>
 
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
+              <Typography variant="subtitle2" sx={sectionHeadingSx}>
                 Select Region
               </Typography>
-              <ToggleButtonGroup exclusive value={region} onChange={(_, v) => v && setRegion(v)} sx={{ mb: 3, flexWrap: 'wrap' }}>
+              <Grid container spacing={2} sx={{ mb: 3 }}>
                 {(plansQuery.data?.regions ?? []).map((r) => (
-                  <ToggleButton key={r} value={r} sx={{ textTransform: 'none' }}>
-                    {regionLabel(r)}
-                  </ToggleButton>
+                  <Grid key={r} size={{ xs: 6, sm: 3 }}>
+                    <SelectableCard title={regionLabel(r)} selected={region === r} onSelect={() => setRegion(r)} />
+                  </Grid>
                 ))}
-              </ToggleButtonGroup>
+              </Grid>
 
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
+              <Typography variant="subtitle2" sx={sectionHeadingSx}>
                 Select Service Plan
               </Typography>
               <Stack direction="row" gap={2} flexWrap="wrap">

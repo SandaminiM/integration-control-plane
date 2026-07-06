@@ -23,7 +23,7 @@
  */
 
 import { CLOUD_PROVIDERS, CLOUD_REGIONS } from '../constants/platformServices';
-import type { CloudProvider, CloudRegion, ServicePlan, ServicePlanRegion } from '../types/platformServices';
+import type { CloudProvider, CloudRegion, MetricSeries, ServicePlan, ServicePlanRegion } from '../types/platformServices';
 
 /** Providers offered across all plans, in the canonical display order. */
 export function deriveProviders(plans: ServicePlan[]): CloudProvider[] {
@@ -52,4 +52,55 @@ export function plansForProviderRegion(plans: ServicePlan[], provider: CloudProv
 /** The provider+region-specific spec/pricing row for a plan, if the combination exists. */
 export function planRegionSpec(plan: ServicePlan, provider: CloudProvider, region: CloudRegion): ServicePlanRegion | undefined {
   return plan.regions?.find((r) => r.cloud_provider === provider && r.cloud_region === region);
+}
+
+/** Human title for a metric key returned by the metrics endpoint (fallback: prettified key). */
+export const METRIC_TITLES: Record<string, string> = {
+  cpu_usage: 'CPU Usage (%)',
+  mem_usage: 'Memory Usage (%)',
+  mem_available: 'Memory Available (%)',
+  disk_usage: 'Disk Usage (%)',
+  load_average: 'Load Average',
+  diskio_read: 'Disk Read (bytes/s)',
+  diskio_writes: 'Disk Write (bytes/s)',
+  net_receive: 'Network Received (bytes/s)',
+  net_send: 'Network Sent (bytes/s)',
+};
+
+export function metricTitle(key: string): string {
+  return METRIC_TITLES[key] ?? key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export interface MetricChart {
+  /** One row per time point: `{ time, [seriesName]: value }` — the recharts data shape. */
+  data: Record<string, string | number | null>[];
+  /** One line per node column (cols after the leading time column). */
+  lines: { dataKey: string; name: string }[];
+}
+
+/**
+ * Convert a metric's Google-Charts-style `{cols, rows}` datatable into the recharts
+ * `LineChart` shape: `data` rows keyed by series name + a `time` label, and one line
+ * per node column. The first column is always the time axis.
+ */
+export function metricsToChart(series: MetricSeries): MetricChart {
+  const cols = series?.data?.cols ?? [];
+  const rows = series?.data?.rows ?? [];
+  const seriesCols = cols.slice(1); // drop the leading time column
+  const lines = seriesCols.map((c) => ({ dataKey: c.label, name: c.label }));
+  const data = rows.map((r) => {
+    const point: Record<string, string | number | null> = { time: formatMetricTime(r.date) };
+    seriesCols.forEach((c, i) => {
+      point[c.label] = r.values[i] ?? null;
+    });
+    return point;
+  });
+  return { data, lines };
+}
+
+/** Short axis label for a metric timestamp (HH:MM). */
+export function formatMetricTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 }

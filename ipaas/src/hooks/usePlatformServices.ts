@@ -17,11 +17,11 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createServer, deleteServer, getAvailability, getServer, getServicePlans, listServers } from '#api/platformServices';
+import { createServer, deleteServer, getAvailability, getServer, getServerAdminUser, getServerCaCertificate, getServerMetrics, getServicePlans, listServers, setServerPoweredState } from '#api/platformServices';
 import { IS_WIP } from '../features';
 import { useOrgUuid } from './useOrgUuid';
 import { deriveProviders, deriveRegions } from '../utils/platformServices';
-import type { CloudProvider, CloudRegion, CreateServerPayload, DatabaseServer, ServicePlan, ServiceType } from '../types/platformServices';
+import type { CloudProvider, CloudRegion, CreateServerPayload, DatabaseServer, MetricPeriod, ServicePlan, ServiceType } from '../types/platformServices';
 
 const ROOT_KEY = 'platformServices';
 
@@ -103,5 +103,42 @@ export function useDeleteServer() {
       qc.invalidateQueries({ queryKey: [ROOT_KEY, 'servers', orgUuid] });
       qc.invalidateQueries({ queryKey: [ROOT_KEY, 'availability', orgUuid] });
     },
+  });
+}
+
+// --- server detail (management page) ---
+
+/** Power a server on/off; refreshes the server detail on success. */
+export function useSetServerPoweredState(serverId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (powered: boolean) => setServerPoweredState(serverId, powered),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'server', serverId] }),
+  });
+}
+
+/** Reveal the admin user's password on demand (query is disabled until `enabled`). */
+export function useServerAdminUser(serverId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [ROOT_KEY, 'adminUser', serverId],
+    queryFn: () => getServerAdminUser(serverId),
+    enabled: isPlatformServicesEnabled() && !!serverId && enabled,
+    retry: false,
+  });
+}
+
+/** Lazy imperative fetch of the CA certificate (for the Download button). */
+export function useFetchServerCaCertificate(serverId: string) {
+  const qc = useQueryClient();
+  return () => qc.fetchQuery({ queryKey: [ROOT_KEY, 'caCert', serverId], queryFn: () => getServerCaCertificate(serverId) });
+}
+
+/** Time-series metrics for the given period. */
+export function useServerMetrics(serverId: string, period: MetricPeriod) {
+  return useQuery({
+    queryKey: [ROOT_KEY, 'metrics', serverId, period],
+    queryFn: () => getServerMetrics(serverId, period),
+    enabled: isPlatformServicesEnabled() && !!serverId,
+    retry: false,
   });
 }

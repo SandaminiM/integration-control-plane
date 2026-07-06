@@ -18,7 +18,7 @@
 
 // Managed databases are a wip-only feature (IS_WIP-gated). Signatures mirror
 // Contracts.PlatformServicesApi so _check.ts catches any drift.
-import type { CreateServerPayload, DatabaseServer, OrgServiceAvailability, ServicePlan, ServiceType } from '../../types/platformServices';
+import type { AdminUser, CaCertificate, CreateServerPayload, DatabaseServer, DatabaseServerDetail, MetricPeriod, OrgServiceAvailability, ServerMetricsResponse, ServicePlan, ServiceType } from '../../types/platformServices';
 
 const ni = (name: string): never => {
   throw new Error(`[cloud] platformServices.${name}: not implemented`);
@@ -26,7 +26,11 @@ const ni = (name: string): never => {
 
 export const getAvailability = (_orgUuid: string): Promise<OrgServiceAvailability> => ni('getAvailability');
 export const listServers = (_orgUuid: string): Promise<DatabaseServer[]> => ni('listServers');
-export const getServer = (_serverId: string): Promise<DatabaseServer> => ni('getServer');
+export const getServer = (_serverId: string): Promise<DatabaseServerDetail> => ni('getServer');
 export const deleteServer = (_serverId: string): Promise<void> => ni('deleteServer');
 export const getServicePlans = (_type: ServiceType): Promise<ServicePlan[]> => ni('getServicePlans');
 export const createServer = (_payload: CreateServerPayload): Promise<DatabaseServer> => ni('createServer');
+export const setServerPoweredState = (_serverId: string, _powered: boolean): Promise<void> => ni('setServerPoweredState');
+export const getServerAdminUser = (_serverId: string): Promise<AdminUser> => ni('getServerAdminUser');
+export const getServerCaCertificate = (_serverId: string): Promise<CaCertificate> => ni('getServerCaCertificate');
+export const getServerMetrics = (_serverId: string, _period: MetricPeriod): Promise<ServerMetricsResponse> => ni('getServerMetrics');

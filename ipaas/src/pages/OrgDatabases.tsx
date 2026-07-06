@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, CircularProgress, IconButton, PageContent, PageTitle, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Button, CircularProgress, IconButton, PageContent, PageTitle, Stack, Tooltip } from '@wso2/oxygen-ui';
 import { Plus, RefreshCw } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
@@ -29,8 +29,6 @@ import ComingSoon from './ComingSoon';
 import DatabaseServersTable from '../components/Databases/DatabaseServersTable';
 import NoDatabaseServersBanner from '../components/Databases/NoDatabaseServersBanner';
 import type { DatabaseServer } from '../types/platformServices';
-
-const TRADEMARK_NOTICE = 'PostgreSQL, MySQL, and Redis are trademarks and property of their respective owners. All product and service names used in this platform are for identification purposes only.';
 
 export default function OrgDatabases(scope: OrgScope): JSX.Element {
   const navigate = useNavigate();
@@ -64,62 +62,53 @@ export default function OrgDatabases(scope: OrgScope): JSX.Element {
 
   return (
     <PageContent>
-      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100%', pb: 2 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-          <PageTitle>
-            <PageTitle.Header>Databases</PageTitle.Header>
-          </PageTitle>
-          {!!regularServers.length && (
-            <Stack direction="row" alignItems="center" gap={1}>
-              <Tooltip title="Refresh">
-                <IconButton size="small" aria-label="Refresh database servers" onClick={() => servers.refetch()} disabled={servers.isFetching}>
-                  <RefreshCw size={16} />
-                </IconButton>
-              </Tooltip>
-              {createButton}
-            </Stack>
-          )}
-        </Stack>
-
-        {alert && (
-          <Alert severity={alert.type} onClose={() => setAlert(null)} sx={{ mb: 2 }}>
-            {alert.message}
-          </Alert>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+        <PageTitle>
+          <PageTitle.Header>Databases</PageTitle.Header>
+        </PageTitle>
+        {!!regularServers.length && (
+          <Stack direction="row" alignItems="center" gap={1}>
+            <Tooltip title="Refresh">
+              <IconButton size="small" aria-label="Refresh database servers" onClick={() => servers.refetch()} disabled={servers.isFetching}>
+                <RefreshCw size={16} />
+              </IconButton>
+            </Tooltip>
+            {createButton}
+          </Stack>
         )}
+      </Stack>
 
-        {/* Main content grows to fill the page, pushing the trademark notice to the bottom. */}
-        <Box sx={{ flex: 1 }}>
-          {servers.isLoading || availability.isLoading ? (
-            <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
-          ) : notAllowlisted ? (
-            <Alert severity="info">This feature is only available for selected organizations in this environment.</Alert>
-          ) : servers.isError || availability.isError ? (
-            <Alert
-              severity="error"
-              action={
-                <Button color="inherit" size="small" onClick={() => (servers.refetch(), availability.refetch())}>
-                  Retry
-                </Button>
-              }>
-              Failed to list available database services.
-            </Alert>
-          ) : regularServers.length === 0 ? (
-            <NoDatabaseServersBanner createAllowed={createAllowed} upgradeRequired={upgradeRequired} onCreate={() => navigate(`${base}/new`)} />
-          ) : (
-            <DatabaseServersTable
-              servers={regularServers}
-              isSubscribed={isSubscribed}
-              onOpenServer={openServer}
-              onDeleted={(name) => setAlert({ type: 'success', message: `Database server '${name}' deleted.` })}
-              onError={(message) => setAlert({ type: 'error', message })}
-            />
-          )}
-        </Box>
+      {alert && (
+        <Alert severity={alert.type} onClose={() => setAlert(null)} sx={{ mb: 2 }}>
+          {alert.message}
+        </Alert>
+      )}
 
-        <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', fontStyle: 'italic', color: 'text.disabled', pt: 4 }}>
-          {TRADEMARK_NOTICE}
-        </Typography>
-      </Box>
+      {servers.isLoading || availability.isLoading ? (
+        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+      ) : notAllowlisted ? (
+        <Alert severity="info">This feature is only available for selected organizations in this environment.</Alert>
+      ) : servers.isError || availability.isError ? (
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={() => (servers.refetch(), availability.refetch())}>
+              Retry
+            </Button>
+          }>
+          Failed to list available database services.
+        </Alert>
+      ) : regularServers.length === 0 ? (
+        <NoDatabaseServersBanner createAllowed={createAllowed} upgradeRequired={upgradeRequired} onCreate={() => navigate(`${base}/new`)} />
+      ) : (
+        <DatabaseServersTable
+          servers={regularServers}
+          isSubscribed={isSubscribed}
+          onOpenServer={openServer}
+          onDeleted={(name) => setAlert({ type: 'success', message: `Database server '${name}' deleted.` })}
+          onError={(message) => setAlert({ type: 'error', message })}
+        />
+      )}
     </PageContent>
   );
 }

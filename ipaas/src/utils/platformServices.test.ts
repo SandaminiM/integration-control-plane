@@ -17,8 +17,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { deriveProviders, deriveRegions, isPlanAvailableInRegion, planRegionSpec, plansForProviderRegion } from './platformServices';
-import type { ServicePlan } from '../types/platformServices';
+import { deriveProviders, deriveRegions, isPlanAvailableInRegion, metricsToChart, metricTitle, planRegionSpec, plansForProviderRegion } from './platformServices';
+import type { MetricSeries, ServicePlan } from '../types/platformServices';
 
 const region = (cloud_provider: ServicePlan['regions'][number]['cloud_provider'], cloud_region: ServicePlan['regions'][number]['cloud_region'], extra: Partial<ServicePlan['regions'][number]> = {}) => ({
   cloud_provider,
@@ -95,5 +95,38 @@ describe('planRegionSpec', () => {
 
   it('returns undefined for an unavailable combination', () => {
     expect(planRegionSpec(hobbyist, 'aws', 'us')).toBeUndefined();
+  });
+});
+
+describe('metricTitle', () => {
+  it('maps known metric keys and prettifies unknown ones', () => {
+    expect(metricTitle('cpu_usage')).toBe('CPU Usage (%)');
+    expect(metricTitle('some_new_metric')).toBe('Some New Metric');
+  });
+});
+
+describe('metricsToChart', () => {
+  it('splits the time column out and builds one line per node column', () => {
+    const series: MetricSeries = {
+      data: {
+        cols: [
+          { label: 'time', type: 'date' },
+          { label: 'node-1 (master)', type: 'number' },
+        ],
+        rows: [
+          { date: '2026-07-06T11:00:30Z', values: [95.4] },
+          { date: '2026-07-06T11:01:00Z', values: [27.2] },
+        ],
+      },
+    };
+    const chart = metricsToChart(series);
+    expect(chart.lines).toEqual([{ dataKey: 'node-1 (master)', name: 'node-1 (master)' }]);
+    expect(chart.data).toHaveLength(2);
+    expect(chart.data[0]['node-1 (master)']).toBe(95.4);
+    expect(typeof chart.data[0].time).toBe('string');
+  });
+
+  it('is safe on empty/missing data', () => {
+    expect(metricsToChart({ data: { cols: [], rows: [] } })).toEqual({ data: [], lines: [] });
   });
 });
