@@ -54,7 +54,8 @@ export async function getOrCreateSampleRegistry(orgUuid: string): Promise<Contai
 
 export async function callCreateCodeServer(params: { userId: string; organizationId: string; projectId: string; componentId: string; orgHandle: string; imageUrl: string; registryId: string; sourceCommitHash?: string }): Promise<string> {
   const { userId, organizationId, projectId, componentId, orgHandle, imageUrl, registryId, sourceCommitHash } = params;
-  const result = await gql<{ createCodeServer: string }>(
+  // `createCodeServer` returns an object; a selection set is required and the URL is on `.url`.
+  const result = await gql<{ createCodeServer: { url: string; clusterId: string; releaseId: string; namespace: string } }>(
     `mutation{ createCodeServer(codeServer: {
       userId: "${userId}",
       organizationId: "${organizationId}",
@@ -64,8 +65,9 @@ export async function callCreateCodeServer(params: { userId: string; organizatio
       imageUrl: "${imageUrl}",
       registryId: "${registryId}",
       ${sourceCommitHash ? `sourceCommitHash: "${sourceCommitHash}",` : ''}
-    })}`,
+    }){ url clusterId releaseId namespace }}`,
   );
-  if (!result.createCodeServer) throw new Error('No editor URL returned from server');
-  return result.createCodeServer;
+  const url = result.createCodeServer?.url;
+  if (!url) throw new Error('No editor URL returned from server');
+  return url;
 }
