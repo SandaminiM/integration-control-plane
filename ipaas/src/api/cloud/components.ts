@@ -65,6 +65,10 @@ interface BffDeploymentTrack {
 // on create or the component round-trips with an empty name/description.
 const ANN_DISPLAY_NAME = 'openchoreo.dev/display-name';
 const ANN_DESCRIPTION = 'openchoreo.dev/description';
+// OpenChoreo has no first-class "prebuilt" component flag, so a prebuilt
+// integration is marked with this annotation; the BFF reads it back to report
+// component.isPrebuilt and to deploy the supplied image instead of building.
+const ANN_PREBUILT = 'openchoreo.dev/prebuilt';
 
 // Frontend DisplayType -> OpenChoreo ComponentType reference + ClusterWorkflow
 // (buildpack builder). `componentType` is the {workloadType}/{componentTypeName}
@@ -147,13 +151,18 @@ function toBffCreateComponentBody(input: CreateComponentInput) {
       annotations: {
         [ANN_DISPLAY_NAME]: input.displayName,
         [ANN_DESCRIPTION]: input.description ?? '',
+        // Marked prebuilt so the BFF reports isPrebuilt and the deploy path uses
+        // the supplied image; the annotation is omitted for normal components.
+        ...(input.isPrebuilt ? { [ANN_PREBUILT]: 'true' } : {}),
       },
     },
     spec: {
       owner: { projectName: input.projectId },
       componentType: { kind: 'ComponentType', name: mapping.componentType },
       autoDeploy: input.enableAutoDeploy ?? true,
-      autoBuild: true,
+      // Prebuilt integrations deploy a ready-made image and must not trigger a
+      // git build on create; everything else builds from source.
+      autoBuild: !input.isPrebuilt,
       workflow: {
         kind: 'ClusterWorkflow',
         name: mapping.workflow,

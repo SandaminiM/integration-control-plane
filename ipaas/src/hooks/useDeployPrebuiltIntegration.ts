@@ -103,10 +103,16 @@ export function useDeployPrebuiltIntegration() {
         componentId: detail.id,
         imageUrl: integration.imageUrl,
         appBranch: integration.branch ?? 'main',
+        // Carry the config values so the cloud BFF can bake them onto the Workload
+        // at creation (config saved above is also kept for the Configure form).
+        configurations: configValues,
       });
 
       setState((s) => ({ ...s, progress: 100, stepLabel: 'Deployed!', error: null, isDeploying: false, isSuccess: true, componentHandler: component.handler }));
-    } catch {
+    } catch (err) {
+      // Log the primary failure before rolling back — otherwise the actual cause
+      // (name check, create, deploy, …) is lost and only the generic toast remains.
+      console.error('Prebuilt integration deploy failed', { orgHandler, projectId, createdComponentId }, err);
       if (createdComponentId) {
         try {
           await deleteComponentRef.current.mutateAsync({ orgHandler, componentId: createdComponentId, projectId });
