@@ -16,10 +16,66 @@
  * under the License.
  */
 
-// TODO: implement using cloud APIs
-const ni = (name: string): never => {
-  throw new Error(`[cloud] cloudEditor.${name}: not implemented`);
-};
+/**
+ * Cloud Editor via the BFF: POST /code-server is an idempotent get-or-create
+ * of the caller's editor instance (a hidden OpenChoreo component running the
+ * editor image) and returns its URL. First-time provisioning can outlast the
+ * BFF's request window, in which case the response reports "provisioning" and
+ * the URL is obtained by polling GET /code-server.
+ *
+ * OpenChoreo has no container-registry concept — the BFF resolves the editor
+ * image from its own config — so getOrCreateSampleRegistry returns a synthetic
+ * registry to keep the shared editor flow (which threads a registryId through)
+ * unchanged.
+ */
 
-export const getOrCreateSampleRegistry = (..._args: unknown[]): never => ni('getOrCreateSampleRegistry');
-export const callCreateCodeServer = (..._args: unknown[]): never => ni('callCreateCodeServer');
+import { bff, q } from './_client';
+import type { ContainerRegistry } from '../../types/cloudEditor';
+
+interface CodeServerResponse {
+  editorUrl?: string;
+  componentName: string;
+  status: 'created' | 'resumed' | 'provisioning';
+}
+
+const POLL_INTERVAL_MS = 3_000;
+const POLL_TIMEOUT_MS = 90_000;
+
+export async function getOrCreateSampleRegistry(_orgUuid: string): Promise<ContainerRegistry> {
+  return { id: 'openchoreo-default', host: '', name: 'OpenChoreo Registry' };
+}
+
+export async function callCreateCodeServer(params: {
+  userId: string;
+  organizationId: string;
+  projectId: string;
+  componentId: string;
+  orgHandle: string;
+  imageUrl: string;
+  registryId: string;
+  sourceCommitHash?: string;
+}): Promise<string> {
+  const { userId, projectId, componentId, imageUrl, sourceCommitHash } = params;
+
+  // organizationId/orgHandle are accepted for signature parity with the wip
+  // implementation but deliberately not forwarded: the BFF's CreateCodeServerInput
+  // has no org fields — it resolves the org (namespace) from the bearer token's
+  // claims, and the editor identity is keyed on (user, project, component) only.
+  const created = await bff.post<CodeServerResponse>('/code-server', {
+    userId,
+    projectId,
+    componentId,
+    imageUrl,
+    sourceCommitHash,
+  });
+  if (created.editorUrl) return created.editorUrl;
+
+  // First-time provisioning: poll until the editor's gateway route is live.
+  const deadline = Date.now() + POLL_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+    const current = await bff.get<CodeServerResponse>(`/code-server${q({ userId, projectId, componentId })}`);
+    if (current.editorUrl) return current.editorUrl;
+  }
+  throw new Error('Timed out waiting for the Cloud Editor to become ready');
+}
