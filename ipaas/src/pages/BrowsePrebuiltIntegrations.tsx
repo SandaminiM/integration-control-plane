@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, Button, CircularProgress, IconButton, PageContent, Stack, Step, StepLabel, Stepper, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, CircularProgress, IconButton, PageContent, Stack, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, ArrowRight, Plus, X } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useEffect, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router';
@@ -26,6 +26,7 @@ import DirectionArrow from '../components/DirectionArrow';
 import PrebuiltIntegrationCard from '../components/PrebuiltIntegrationCard';
 import IntegrationFlowChart from '../components/IntegrationFlowChart';
 import SearchField from '../components/SearchField';
+import VerticalStepper from '../components/VerticalStepper';
 import { usePrebuiltIntegrations, usePrebuiltDiagram } from '../hooks/usePrebuiltIntegrations';
 import type { ProjectScope } from '../nav';
 import { prebuiltIntegrationSetupUrl } from '../paths';
@@ -423,29 +424,7 @@ export default function BrowsePrebuiltIntegrations(scope: ProjectScope): JSX.Ele
           {backLabel}
         </Button>
 
-        <Stepper activeStep={wizardStep} orientation="vertical" sx={{ '& .MuiStepConnector-line': { minHeight: 30 } }}>
-          <Step completed={wizardStep > 0}>
-            <StepLabel>
-              <Typography variant="body2" color={wizardStep === 0 ? 'text.primary' : 'text.secondary'} sx={{ fontWeight: wizardStep === 0 ? 600 : 400, lineHeight: 1.4 }}>
-                Choose your first application
-              </Typography>
-            </StepLabel>
-          </Step>
-          <Step completed={wizardStep > 1}>
-            <StepLabel>
-              <Typography variant="body2" color={wizardStep === 1 ? 'text.primary' : 'text.secondary'} sx={{ fontWeight: wizardStep === 1 ? 600 : 400, lineHeight: 1.4 }}>
-                Select a second application to integrate with
-              </Typography>
-            </StepLabel>
-          </Step>
-          <Step completed={wizardStep > 2}>
-            <StepLabel>
-              <Typography variant="body2" color={wizardStep >= 2 ? 'text.primary' : 'text.secondary'} sx={{ fontWeight: wizardStep >= 2 ? 600 : 400, lineHeight: 1.4 }}>
-                Pick a prebuilt integration and configure
-              </Typography>
-            </StepLabel>
-          </Step>
-        </Stepper>
+        <VerticalStepper activeStep={wizardStep} steps={['Choose your first application', 'Select a second application to integrate with', 'Pick a prebuilt integration and configure']} />
       </Box>
 
       <Box

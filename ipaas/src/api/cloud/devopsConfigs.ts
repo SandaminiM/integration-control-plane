@@ -217,11 +217,9 @@ export const getReleaseById = async (_orgUuid: string, _projectId: string, compo
 const toConfigMap = (g: BffEnvGroup, environmentId: string): DevopsConfigMap => ({ ID: g.name, name: g.name, environment_id: environmentId, app_environment_id: '', version: 1, config_type: 'VariableList', keys: g.keys ?? [] });
 const toSecret = (g: BffEnvGroup, environmentId: string): DevopsSecret => ({ ID: g.name, name: g.name, environment_id: environmentId, app_environment_id: '', keys: g.keys ?? [], version: 1, config_type: 'VariableList', secret_type: 'Opaque' });
 
-export const getConfigMaps = async (_orgUuid: string, projectId: string, environmentId: string): Promise<DevopsConfigMap[]> =>
-  (await listEnvGroups(projectId, environmentId)).filter((g) => !g.sensitive).map((g) => toConfigMap(g, environmentId));
+export const getConfigMaps = async (_orgUuid: string, projectId: string, environmentId: string): Promise<DevopsConfigMap[]> => (await listEnvGroups(projectId, environmentId)).filter((g) => !g.sensitive).map((g) => toConfigMap(g, environmentId));
 
-export const getSecrets = async (_orgUuid: string, projectId: string, environmentId: string): Promise<DevopsSecret[]> =>
-  (await listEnvGroups(projectId, environmentId)).filter((g) => g.sensitive).map((g) => toSecret(g, environmentId));
+export const getSecrets = async (_orgUuid: string, projectId: string, environmentId: string): Promise<DevopsSecret[]> => (await listEnvGroups(projectId, environmentId)).filter((g) => g.sensitive).map((g) => toSecret(g, environmentId));
 
 // Secret values are write-only; the page never reads secret details (the editor
 // re-enters them from the row's keys), so a benign redacted default suffices.
@@ -283,10 +281,7 @@ export const getContainerConfigMounts = async (_orgUuid: string, projectId: stri
   const env = containerId; // carried through from getReleaseById
   if (!env) return [];
   setComponentForEnv(env, componentId);
-  const [filesR, groups] = await Promise.all([
-    bff.get<{ files?: BffFileMount[] }>(`${filesBase(componentId, env)}/files${q({ projectName: projectId })}`).catch(() => null),
-    fetchEnvGroups(componentId, projectId, env),
-  ]);
+  const [filesR, groups] = await Promise.all([bff.get<{ files?: BffFileMount[] }>(`${filesBase(componentId, env)}/files${q({ projectName: projectId })}`).catch(() => null), fetchEnvGroups(componentId, projectId, env)]);
   return [...(filesR?.files ?? []).map((f) => toFileMount(f, env, releaseId)), ...groups.map((g) => toEnvMount(g, env, releaseId))];
 };
 
@@ -296,11 +291,31 @@ export const getContainerConfigMounts = async (_orgUuid: string, projectId: stri
 export const mountConfig = async (_orgUuid: string, projectId: string, componentId: string, data: ConfigMountWriteData): Promise<DevopsConfigMount> => {
   const id = data.configmap_id ?? data.secret_id ?? '';
   if (data.mount_type !== 'File') {
-    return { ID: id, configmap_id: data.configmap_id, secret_id: data.secret_id, container_id: data.container_id, app_environment_id: data.app_environment_id, mount_path: '', config_key: '', mount_type: data.mount_type, mount_permissions: data.mount_permissions };
+    return {
+      ID: id,
+      configmap_id: data.configmap_id,
+      secret_id: data.secret_id,
+      container_id: data.container_id,
+      app_environment_id: data.app_environment_id,
+      mount_path: '',
+      config_key: '',
+      mount_type: data.mount_type,
+      mount_permissions: data.mount_permissions,
+    };
   }
   const mountPath = data.mount_path ?? '';
   await putFile(componentId, projectId, data.container_id, id, mountPath, !!data.secret_id);
-  return { ID: id, configmap_id: data.configmap_id, secret_id: data.secret_id, container_id: data.container_id, app_environment_id: data.app_environment_id, mount_path: mountPath, config_key: data.config_key ?? 'data', mount_type: 'File', mount_permissions: data.mount_permissions };
+  return {
+    ID: id,
+    configmap_id: data.configmap_id,
+    secret_id: data.secret_id,
+    container_id: data.container_id,
+    app_environment_id: data.app_environment_id,
+    mount_path: mountPath,
+    config_key: data.config_key ?? 'data',
+    mount_type: 'File',
+    mount_permissions: data.mount_permissions,
+  };
 };
 
 // The hook only updates a mount for file-mount edits (mount path is editable);
@@ -311,7 +326,17 @@ export const updateConfigMount = async (_orgUuid: string, projectId: string, pat
   const mountPath = (data.mount_path as string) ?? '';
   const secretId = (data.secret_id as string | null) ?? null;
   await putFile(path.componentId, projectId, env, fileName, mountPath, !!secretId);
-  return { ID: fileName, configmap_id: (data.configmap_id as string | null) ?? null, secret_id: secretId, container_id: env, app_environment_id: env, mount_path: mountPath, config_key: 'data', mount_type: 'File', mount_permissions: (data.mount_permissions as string | null) ?? '0644' };
+  return {
+    ID: fileName,
+    configmap_id: (data.configmap_id as string | null) ?? null,
+    secret_id: secretId,
+    container_id: env,
+    app_environment_id: env,
+    mount_path: mountPath,
+    config_key: 'data',
+    mount_type: 'File',
+    mount_permissions: (data.mount_permissions as string | null) ?? '0644',
+  };
 };
 
 // Unmount = delete. The id is an env-var group or a file mount; delete the group
