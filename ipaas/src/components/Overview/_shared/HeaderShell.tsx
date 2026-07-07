@@ -31,6 +31,7 @@ import { useAuth } from '../../../auth/AuthContext';
 import { useOrgUuid } from '../../../hooks/useOrgUuid';
 import { getDisplayLabel } from '../../../constants/integrations';
 import type { IntegrationModule } from '../../../types/integration';
+import { IS_CLOUD } from '../../../features';
 
 function buildRepoUrl(repo: Repository): string {
   const { gitProvider, organizationApp, nameApp, branch, appSubPath, bitbucketServerUrl, serverUrl, projectApp } = repo;
@@ -193,7 +194,13 @@ export default function ComponentHeader({ component, project, repository, latest
   const HeaderActions = module?.OverviewHeaderActions;
   // Open-in-Cloud/VS Code editor entry: only for components with a source repo
   // and types that don't opt out of it (e.g. MCP sets `hideOpenInEditor`).
-  const showOpenInEditor = hasSource && !module?.hideOpenInEditor;
+  // cloud: opening an existing component in an editor is not wired yet — the
+  // BFF injects no git credentials into the cloud editor (it would open an
+  // empty workspace) and the VS Code extension deep-link has no cloud support.
+  // Only the new-integration editor flow (Project/CreateIntegrationOptions) is
+  // available. 
+  // TODO: Remove the gate once the BFF injects GIT_* for source components.
+  const showOpenInEditor = hasSource && !module?.hideOpenInEditor && !IS_CLOUD;
 
   const repoUrl = repository ? buildRepoUrl(repository) : null;
   const ProviderIcon = getGitProviderIcon(repository?.gitProvider);

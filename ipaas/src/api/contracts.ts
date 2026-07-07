@@ -120,6 +120,19 @@ import type {
   ServiceType,
   CreateServerPayload,
 } from '../types/platformServices';
+import type {
+  ConnectionConfigRequest,
+  ConnectionConfigResponse,
+  CreateServiceRequest,
+  CreateServiceResponse,
+  GenAiProviderTemplate,
+  GenAiProviderTemplateDetail,
+  GenAiService,
+  GenAiServiceListResponse,
+  GenAiServiceStatus,
+  ServiceIdl,
+  UpdateServiceRequest,
+} from '../types/genaiServices';
 import type { InsightsEnvironment, ComponentInsights } from '../types/insights';
 import type { LogsRequest, ComponentLogsRequest, LogRow } from '../types/logs';
 import type { ApiDocument, RuleAdherenceResponse, ThrottlingPolicy } from '../types/marketplace';
@@ -626,6 +639,23 @@ export interface PlatformServicesApi {
   updateAllowedIps(serverId: string, payload: AllowedIpsPayload): Promise<void>;
 }
 
+// Org admin GenAI Services (internal-marketplace). wip-only for now; cloud/icp stubs throw.
+export interface GenaiServicesApi {
+  listGenaiServices(params: { query?: string; offset: number; limit: number; projectId?: string }): Promise<GenAiServiceListResponse>;
+  listProviderTemplates(): Promise<GenAiProviderTemplate[]>;
+  getProviderTemplate(templateId: string): Promise<GenAiProviderTemplateDetail>;
+  createGenaiService(request: CreateServiceRequest): Promise<CreateServiceResponse>;
+  getGenaiService(serviceId: string): Promise<GenAiService>;
+  updateGenaiService(serviceId: string, request: UpdateServiceRequest): Promise<GenAiService>;
+  getGenaiServiceIdl(serviceId: string): Promise<ServiceIdl>;
+  updateGenaiServiceIdl(serviceId: string, content: string): Promise<void>;
+  getConnectionConfig(serviceId: string, schemaId: string): Promise<ConnectionConfigResponse>;
+  updateConnectionConfig(serviceId: string, schemaId: string, request: ConnectionConfigRequest): Promise<void>;
+  addConnectionConfig(serviceId: string, schemaId: string, request: ConnectionConfigRequest): Promise<void>;
+  setGenaiServiceStatus(serviceId: string, status: GenAiServiceStatus): Promise<void>;
+  deleteGenaiService(serviceId: string): Promise<void>;
+}
+
 // ---------------------------------------------------------------------------
 // Aggregate — the full API surface consumed by the app
 // ---------------------------------------------------------------------------
@@ -667,4 +697,5 @@ export interface AppApi {
   configGroups: ConfigGroupsApi;
   auditLogs: AuditLogsApi;
   platformServices: PlatformServicesApi;
+  genaiServices: GenaiServicesApi;
 }

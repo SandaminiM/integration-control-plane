@@ -124,9 +124,18 @@ export async function fetchRepoMetadata(org: string, repo: string, branch: strin
   }
 }
 
-// awaits: GET /samples/images.
+// The BFF advertises the deployable sample images; today that is only the
+// Cloud Editor ("Code Server") image, resolved from server config. An empty
+// list keeps the editor entry points hidden, so failures degrade the same way
+// as an unconfigured environment.
 export async function fetchChoreoSampleImages(_orgUuid: string, _projectId: string): Promise<ChoreoSampleImageEntry[]> {
-  return [];
+  try {
+    return items(await bff.get<ListResponse<ChoreoSampleImageEntry>>('/samples/images'));
+  } catch (err) {
+    // Log so a failing BFF is distinguishable from a deliberately disabled feature.
+    console.error('[cloud] fetchChoreoSampleImages failed, hiding sample images:', err);
+    return [];
+  }
 }
 
 // awaits: PUT /components/{name}/buildpack-config.

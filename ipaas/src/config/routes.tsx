@@ -57,6 +57,9 @@ const ComponentTest = lazy(() => import('../pages/ComponentTest'));
 const OrgCdPipelines = lazy(() => import('../pages/OrgCdPipelines'));
 const OrgConfigGroups = lazy(() => import('../pages/OrgConfigGroups'));
 const CreateConfigGroup = lazy(() => import('../pages/CreateConfigGroup'));
+const OrgGenAIServices = lazy(() => import('../pages/OrgGenAIServices'));
+const RegisterGenAIService = lazy(() => import('../pages/RegisterGenAIService'));
+const GenAIServiceDetail = lazy(() => import('../pages/GenAIServiceDetail'));
 const EditConfigGroup = lazy(() => import('../pages/EditConfigGroup'));
 const OrgAuditLogs = lazy(() => import('../pages/OrgAuditLogs'));
 const ProjectCdPipelines = lazy(() => import('../pages/ProjectCdPipelines'));
@@ -177,7 +180,9 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/admin/vector-databases', element: <ComingSoon title="Coming Soon" description="Vector Databases management is currently under development." /> },
               { path: 'organizations/:orgHandler/admin/message-brokers', element: <ComingSoon title="Coming Soon" description="Message Brokers management is currently under development." /> },
               { path: 'organizations/:orgHandler/admin/third-party', element: <ComingSoon title="Coming Soon" description="Third Party Services management is currently under development." /> },
-              { path: 'organizations/:orgHandler/admin/genai-services', element: <ComingSoon title="Coming Soon" description="GenAI Services management is currently under development." /> },
+              { path: 'organizations/:orgHandler/admin/genai-services', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgGenAIServices, ['organizations']))) },
+              { path: 'organizations/:orgHandler/admin/genai-services/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(RegisterGenAIService, ['organizations']))) },
+              { path: 'organizations/:orgHandler/admin/genai-services/:serviceId', element: createElement(RouteErrorBoundary, null, createElement(withScope(GenAIServiceDetail, ['organizations']))) },
               { path: 'organizations/:orgHandler/admin/config-groups', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgConfigGroups, ['organizations']))) },
               { path: 'organizations/:orgHandler/admin/config-groups/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(CreateConfigGroup, ['organizations']))) },
               { path: 'organizations/:orgHandler/admin/config-groups/:configGroupUuid', element: createElement(RouteErrorBoundary, null, createElement(withScope(EditConfigGroup, ['organizations']))) },
@@ -208,7 +213,9 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/projects/:projectHandler/observe/metrics', element: <ComingSoon title="Coming Soon" description="Metrics are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections', element: <ComingSoon title="Coming Soon" description="Connections management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/third-party-services', element: <ComingSoon title="Coming Soon" description="Third Party Services management is currently under development." /> },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/gen-ai-services', element: <ComingSoon title="Coming Soon" description="GenAI Services management is currently under development." /> },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/gen-ai-services', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgGenAIServices, ['projects']))) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/gen-ai-services/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(RegisterGenAIService, ['projects']))) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/gen-ai-services/:serviceId', element: createElement(RouteErrorBoundary, null, createElement(withScope(GenAIServiceDetail, ['projects']))) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/cd-pipelines', element: createElement(withScope(ProjectCdPipelines, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/devops/environments', element: createElement(withScope(Environments, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/settings', element: createElement(withScope(ProjectSettings, ['projects'])) },
