@@ -78,7 +78,8 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
   const [authHeader, setAuthHeader] = useState('Authorization');
   const [apiKeyHeader, setApiKeyHeader] = useState('api-key');
   const [backendJwt, setBackendJwt] = useState(false);
-  const [selectedEndpointIdx, setSelectedEndpointIdx] = useState(0);
+  const [userSelectedIdx, setUserSelectedIdx] = useState<number | null>(null);
+  const [wasOpen, setWasOpen] = useState(false);
   const [operationSearch, setOperationSearch] = useState('');
   const [page, setPage] = useState(1);
   const [expandedOps, setExpandedOps] = useState<Set<string>>(new Set());
@@ -98,16 +99,21 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
     });
   }, [endpoints]);
 
-  // The selected endpoint drives which API is loaded/configured; fall back to the prop.
+  // Each open defaults the selection to the endpoint matching the requested API (reset during render).
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setUserSelectedIdx(null);
+  }
+
+  // The active endpoint drives which API is loaded/configured; derived synchronously so the
+  // drawer opens with the correct API id in the first render (no stale fetch, no correcting effect).
+  const matchedIdx = useMemo(() => {
+    const i = uniqueEndpoints.findIndex((ep) => ep.apimId === apimId);
+    return i >= 0 ? i : 0;
+  }, [uniqueEndpoints, apimId]);
+  const selectedEndpointIdx = userSelectedIdx ?? matchedIdx;
   const effectiveApimId = uniqueEndpoints[selectedEndpointIdx]?.apimId ?? apimId;
   const { data: api = null, isLoading: loading } = useApimApi(open ? effectiveApimId : null);
-
-  // On open (and once endpoints load), select the endpoint matching the requested API.
-  useEffect(() => {
-    if (!open) return;
-    const idx = uniqueEndpoints.findIndex((ep) => ep.apimId === apimId);
-    setSelectedEndpointIdx(idx >= 0 ? idx : 0);
-  }, [open, apimId, uniqueEndpoints]);
 
   useEffect(() => {
     if (!open) return;
@@ -212,7 +218,7 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
                     Endpoints:
                   </Typography>
                   {uniqueEndpoints.length > 1 ? (
-                    <Select size="small" value={selectedEndpointIdx} onChange={(e) => setSelectedEndpointIdx(Number(e.target.value))} sx={{ minWidth: 200 }}>
+                    <Select size="small" value={selectedEndpointIdx} onChange={(e) => setUserSelectedIdx(Number(e.target.value))} sx={{ minWidth: 200 }}>
                       {uniqueEndpoints.map((ep, i) => (
                         <MenuItem key={ep.apimId ?? ep.displayName} value={i}>
                           {ep.displayName}
