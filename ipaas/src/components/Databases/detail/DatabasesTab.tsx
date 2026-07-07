@@ -62,16 +62,20 @@ export default function DatabasesTab({ service, orgHandle }: { service: Database
   }, [databases, credentialsByDb, filters, search]);
 
   if (databasesQuery.isLoading || credentialsQuery.isLoading) return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 6 }} />;
-  if (databasesQuery.isError) {
+  if (databasesQuery.isError || credentialsQuery.isError) {
+    const retry = () => {
+      if (databasesQuery.isError) databasesQuery.refetch();
+      if (credentialsQuery.isError) credentialsQuery.refetch();
+    };
     return (
       <Alert
         severity="error"
         action={
-          <Button color="inherit" size="small" onClick={() => databasesQuery.refetch()}>
+          <Button color="inherit" size="small" onClick={retry}>
             Retry
           </Button>
         }>
-        Failed to load databases.
+        {databasesQuery.isError ? 'Failed to load databases.' : 'Failed to load database credentials.'}
       </Alert>
     );
   }

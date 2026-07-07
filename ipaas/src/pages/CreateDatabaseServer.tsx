@@ -147,11 +147,20 @@ export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
                 Select Cloud Storage
               </Typography>
               <Grid container spacing={2} sx={{ mb: 3 }}>
-                {SERVICE_TYPES.map((t) => (
-                  <Grid key={t.id} size={{ xs: 12, sm: 4 }}>
-                    <SelectableCard title={t.name} description={t.description} logo={assetUrl(t.logo)} selected={storageType === t.id} disabled={t.disabled} onSelect={() => setStorageType(t.id)} />
-                  </Grid>
-                ))}
+                {SERVICE_TYPES.map((t) => {
+                  const card = <SelectableCard title={t.name} description={t.description} logo={assetUrl(t.logo)} selected={storageType === t.id} disabled={t.disabled} onSelect={() => setStorageType(t.id)} />;
+                  return (
+                    <Grid key={t.id} size={{ xs: 12, sm: 4 }}>
+                      {t.disabled ? (
+                        <Tooltip title="This database type is currently unavailable.">
+                          <span>{card}</span>
+                        </Tooltip>
+                      ) : (
+                        card
+                      )}
+                    </Grid>
+                  );
+                })}
               </Grid>
               <TextField label="Service Name" required fullWidth value={serviceName} onChange={(e) => setServiceName(e.target.value)} error={!!nameError} helperText={nameError} placeholder="Enter service name" sx={{ maxWidth: 480, ...REQUIRED_FIELD_SX }} />
             </>

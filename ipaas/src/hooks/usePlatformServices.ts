@@ -148,6 +148,8 @@ export function useServerAdminUser(serverId: string, enabled: boolean) {
     queryFn: () => getServerAdminUser(serverId),
     enabled: isPlatformServicesEnabled() && !!serverId && enabled,
     retry: false,
+    // Sensitive: don't leave the password resident in the cache after the view unmounts.
+    gcTime: 0,
   });
 }
 
@@ -212,12 +214,18 @@ export function useDbCredential(serverId: string, credentialId: string | null) {
     queryFn: () => getDbCredential(serverId, credentialId!),
     enabled: isPlatformServicesEnabled() && !!serverId && !!credentialId,
     retry: false,
+    // Sensitive: don't leave the credential resident in the cache after the dialog closes.
+    gcTime: 0,
   });
 }
 
 function useInvalidateCredentials(serverId: string) {
   const qc = useQueryClient();
-  return () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'credentials', serverId] });
+  return () => {
+    qc.invalidateQueries({ queryKey: [ROOT_KEY, 'credentials', serverId] });
+    // Also clear the per-credential caches so a reused credential id refetches fresh data.
+    qc.invalidateQueries({ queryKey: [ROOT_KEY, 'credential', serverId] });
+  };
 }
 
 export function useCreateDbCredential(serverId: string) {

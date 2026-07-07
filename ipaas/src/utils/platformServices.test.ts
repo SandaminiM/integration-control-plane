@@ -17,7 +17,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { deriveProviders, deriveRegions, envLabel, isPlanAvailableInRegion, logOffsetNs, matchesDatabaseFilter, metricsToChart, metricTitle, planRegionSpec, plansForProviderRegion, toCreateError } from './platformServices';
+import { deriveProviders, deriveRegions, envLabel, isPlanAvailableInRegion, isValidCidr, logOffsetNs, matchesDatabaseFilter, metricsToChart, metricTitle, planRegionSpec, plansForProviderRegion, toCreateError } from './platformServices';
 import type { DatabaseInfo, MetricSeries, ServicePlan } from '../types/platformServices';
 import type { EnvTemplate } from '../types/deploymentPipeline';
 
@@ -163,6 +163,21 @@ describe('matchesDatabaseFilter', () => {
   it('OR-combines selected filters and excludes when none match', () => {
     expect(matchesDatabaseFilter(db(true), 0, ['Available in Marketplace', 'No Credentials'])).toBe(true);
     expect(matchesDatabaseFilter(db(false), 1, ['Available in Marketplace', 'No Credentials'])).toBe(false);
+  });
+});
+
+describe('isValidCidr', () => {
+  it('accepts valid IPv4 CIDR blocks', () => {
+    expect(isValidCidr('10.0.0.0/24')).toBe(true);
+    expect(isValidCidr('192.168.1.1/32')).toBe(true);
+    expect(isValidCidr(' 0.0.0.0/0 ')).toBe(true);
+  });
+  it('rejects malformed or out-of-range values', () => {
+    expect(isValidCidr('10.0.0.0')).toBe(false);
+    expect(isValidCidr('256.0.0.0/24')).toBe(false);
+    expect(isValidCidr('10.0.0.0/33')).toBe(false);
+    expect(isValidCidr('not-a-cidr')).toBe(false);
+    expect(isValidCidr('')).toBe(false);
   });
 });
 

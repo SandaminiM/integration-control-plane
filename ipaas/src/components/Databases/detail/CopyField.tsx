@@ -46,7 +46,7 @@ export default function CopyField({ value, 'aria-label': ariaLabel, password, en
           <InputAdornment position="end">
             {endAction}
             <Tooltip title="Copy">
-              <IconButton size="small" aria-label={`Copy ${ariaLabel}`} onClick={() => navigator.clipboard?.writeText(value)} edge="end">
+              <IconButton size="small" aria-label={`Copy ${ariaLabel}`} onClick={() => void navigator.clipboard?.writeText(value).catch(() => undefined)} edge="end">
                 <Copy size={15} />
               </IconButton>
             </Tooltip>

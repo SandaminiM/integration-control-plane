@@ -17,7 +17,7 @@
  */
 
 import { Box, MenuItem, Stack, TextField } from '@wso2/oxygen-ui';
-import { useCallback, useEffect, useState, type JSX } from 'react';
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { useFetchServerLogs } from '../../../hooks/usePlatformServices';
 import { LOG_TIME_RANGES } from '../../../constants/platformServices';
 import { logOffsetNs } from '../../../utils/platformServices';
@@ -38,12 +38,15 @@ export default function LogsTab({ serverId }: { serverId: string }): JSX.Element
   const [loading, setLoading] = useState(true);
   const [fetchingMore, setFetchingMore] = useState(false);
   const [error, setError] = useState(false);
+  // Guards against a stale fetch (e.g. a slow previous range) overwriting newer state.
+  const reqIdRef = useRef(0);
 
   // A full page whose older cursor is still within the window (BigInt: offsets exceed MAX_SAFE_INTEGER).
   const stillMore = (batch: LogEntry[], within: LogEntry[], nextOffset: string, floor: string) => batch.length === PAGE_SIZE && within.length === batch.length && BigInt(nextOffset) > BigInt(floor);
 
   const loadWindow = useCallback(
     async (minutes: number) => {
+      const token = ++reqIdRef.current;
       setLoading(true);
       setError(false);
       const now = Date.now();
@@ -53,14 +56,15 @@ export default function LogsTab({ serverId }: { serverId: string }): JSX.Element
       setFloorNs(floor);
       try {
         const res = await fetchLogs({ offset: logOffsetNs(now), limit: PAGE_SIZE, sort_order: 'desc' });
+        if (token !== reqIdRef.current) return;
         const within = res.logs.filter((l) => new Date(l.time).getTime() >= start);
         setLogs(within);
         setCursor(res.offset);
         setHasMore(stillMore(res.logs, within, res.offset, floor));
       } catch {
-        setError(true);
+        if (token === reqIdRef.current) setError(true);
       } finally {
-        setLoading(false);
+        if (token === reqIdRef.current) setLoading(false);
       }
     },
     [fetchLogs],
@@ -68,18 +72,20 @@ export default function LogsTab({ serverId }: { serverId: string }): JSX.Element
 
   const loadOlder = useCallback(async () => {
     if (!cursor) return;
+    const token = reqIdRef.current;
     setFetchingMore(true);
     setError(false);
     try {
       const res = await fetchLogs({ offset: cursor, limit: PAGE_SIZE, sort_order: 'desc' });
+      if (token !== reqIdRef.current) return;
       const within = res.logs.filter((l) => new Date(l.time).getTime() >= startMs);
       setLogs((prev) => [...prev, ...within]);
       setCursor(res.offset);
       setHasMore(stillMore(res.logs, within, res.offset, floorNs));
     } catch {
-      setError(true);
+      if (token === reqIdRef.current) setError(true);
     } finally {
-      setFetchingMore(false);
+      if (token === reqIdRef.current) setFetchingMore(false);
     }
   }, [fetchLogs, cursor, startMs, floorNs]);
 

@@ -105,7 +105,7 @@ export default function CredentialDialog({ serverId, orgHandle, dbName, defaultU
         ) : (
           <Stack gap={2.5} sx={{ mt: 1 }}>
             {!isEdit && (
-              <Stack direction={{ xs: 'column', sm: 'row' }} gap={2}>
+              <Stack role="radiogroup" aria-label="Credential type" direction={{ xs: 'column', sm: 'row' }} gap={2}>
                 <SelectableChoiceCard selected={!form.isSuperAdmin} title="Use Created Credentials" description="Provide the username, password, and privilege level of the created credential." onSelect={() => patch({ isSuperAdmin: false })} />
                 <SelectableChoiceCard selected={form.isSuperAdmin} title="Use Super Admin Credentials" description="Proceed with the default super admin credential." onSelect={() => patch({ isSuperAdmin: true })} />
               </Stack>

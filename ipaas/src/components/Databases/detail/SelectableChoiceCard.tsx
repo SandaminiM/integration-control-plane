@@ -31,7 +31,7 @@ export default function SelectableChoiceCard({ selected, title, description, onS
   return (
     <Box
       role="radio"
-      tabIndex={0}
+      tabIndex={selected ? 0 : -1}
       aria-checked={selected}
       onClick={onSelect}
       onKeyDown={(e) => {

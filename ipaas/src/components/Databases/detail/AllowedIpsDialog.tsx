@@ -20,6 +20,7 @@ import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogT
 import { Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useUpdateAllowedIps } from '../../../hooks/usePlatformServices';
+import { isValidCidr } from '../../../utils/platformServices';
 import SelectableChoiceCard from './SelectableChoiceCard';
 import type { AllowedIpsPayload, DatabaseServerDetail } from '../../../types/platformServices';
 
@@ -46,7 +47,8 @@ export default function AllowedIpsDialog({ serverId, current, onClose, onResult 
   const removeRow = (i: number) => setRows((prev) => prev.filter((_, idx) => idx !== i));
 
   const restrictedRows = rows.filter((r) => r.cidr.trim() !== '');
-  const canSave = !update.isPending && (mode === 'allow_all' || restrictedRows.length > 0);
+  const hasInvalidCidr = restrictedRows.some((r) => !isValidCidr(r.cidr));
+  const canSave = !update.isPending && (mode === 'allow_all' || (restrictedRows.length > 0 && !hasInvalidCidr));
 
   const save = () => {
     if (!canSave) return;
@@ -64,7 +66,7 @@ export default function AllowedIpsDialog({ serverId, current, onClose, onResult 
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Allowed IP Addresses</DialogTitle>
       <DialogContent>
-        <Stack direction={{ xs: 'column', sm: 'row' }} gap={2} sx={{ mt: 1, mb: mode === 'restricted' ? 2 : 0 }}>
+        <Stack role="radiogroup" aria-label="Access mode" direction={{ xs: 'column', sm: 'row' }} gap={2} sx={{ mt: 1, mb: mode === 'restricted' ? 2 : 0 }}>
           <SelectableChoiceCard selected={mode === 'allow_all'} title="Allow All" description="Accept connections from any IP address." onSelect={() => setMode('allow_all')} />
           <SelectableChoiceCard selected={mode === 'restricted'} title="Restricted Access" description="Only accept connections from the CIDR blocks below." onSelect={() => setMode('restricted')} />
         </Stack>
@@ -73,7 +75,16 @@ export default function AllowedIpsDialog({ serverId, current, onClose, onResult 
           <Stack gap={1.5}>
             {rows.map((row, i) => (
               <Stack key={i} direction="row" gap={1} alignItems="flex-start">
-                <TextField size="small" label="CIDR Block" placeholder="e.g. 10.0.0.0/24" value={row.cidr} onChange={(e) => patchRow(i, { cidr: e.target.value })} sx={{ flex: '0 0 40%' }} />
+                <TextField
+                  size="small"
+                  label="CIDR Block"
+                  placeholder="e.g. 10.0.0.0/24"
+                  value={row.cidr}
+                  onChange={(e) => patchRow(i, { cidr: e.target.value })}
+                  error={row.cidr.trim() !== '' && !isValidCidr(row.cidr)}
+                  helperText={row.cidr.trim() !== '' && !isValidCidr(row.cidr) ? 'Enter a valid CIDR (e.g. 10.0.0.0/24).' : ' '}
+                  sx={{ flex: '0 0 40%' }}
+                />
                 <TextField size="small" label="Description" placeholder="Optional" value={row.description} onChange={(e) => patchRow(i, { description: e.target.value })} fullWidth />
                 <Tooltip title="Remove">
                   <span>

@@ -124,6 +124,15 @@ export function logOffsetNs(ms: number): string {
   return `${ms}000000`;
 }
 
+/** Validate an IPv4 CIDR block (e.g. `10.0.0.0/24`). */
+export function isValidCidr(value: string): boolean {
+  const match = value.trim().match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d{1,2})$/);
+  if (!match) return false;
+  const octets = [match[1], match[2], match[3], match[4]].map(Number);
+  const prefix = Number(match[5]);
+  return octets.every((o) => o <= 255) && prefix <= 32;
+}
+
 /** Map a thrown create-server error to a titled, user-facing message (recognising entitlement codes). */
 export function toCreateError(err: unknown): CreateError {
   const raw = err instanceof Error ? err.message : String(err);

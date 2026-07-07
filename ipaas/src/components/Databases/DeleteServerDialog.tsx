@@ -38,7 +38,7 @@ export default function DeleteServerDialog({ server, isSubscribed, onClose, onDe
   const confirmed = input === server.name;
 
   const doDelete = () => {
-    if (!confirmed) return;
+    if (!confirmed || del.isPending) return;
     del.mutate(server.id, {
       onSuccess: () => {
         onClose();

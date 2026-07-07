@@ -150,7 +150,7 @@ export interface DatabaseServerDetail extends DatabaseServer {
   nodes: ServerNode[];
   maintenance?: MaintenanceWindow;
   service_version?: string;
-  allowed_ips?: { mode: string; allow_list?: { cidr: string; description?: string }[] };
+  allowed_ips?: AllowedIpsPayload;
 }
 
 /** `PUT /db-servers/{id}/power` — powers the service on or off. */

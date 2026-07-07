@@ -103,7 +103,7 @@ export default function MarketplaceToggleButton({ serverId, database, isCredsAva
               variant="contained"
               color={listed ? 'error' : 'primary'}
               onClick={confirm}
-              disabled={setMarketplace.isPending || database.status !== DB_STATUS.READY}
+              disabled={setMarketplace.isPending || (!listed && database.status !== DB_STATUS.READY)}
               startIcon={setMarketplace.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}>
               Yes
             </Button>

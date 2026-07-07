@@ -68,6 +68,7 @@ export const CLOUD_PROVIDERS: { id: CloudProvider; name: string; logo: string }[
 export const CLOUD_REGIONS: { id: CloudRegion; name: string }[] = [
   { id: 'us', name: 'United States' },
   { id: 'eu', name: 'Europe' },
+  { id: 'africa', name: 'Africa' },
   { id: 'aus', name: 'Australia' },
 ];
 
