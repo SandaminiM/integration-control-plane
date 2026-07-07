@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Card, CardActionArea, CircularProgress, Divider, Grid, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, Grid, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
@@ -25,95 +25,18 @@ import { useSubscriptions } from '../hooks/useSubscription';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { PAID_SUBSCRIPTION_TYPE } from '../constants/subscription';
 import { CLOUD_PROVIDERS, FREE_TIER_DISABLED_PROVIDERS, regionLabel, SERVICE_NAME_ERROR, SERVICE_NAME_REGEX, SERVICE_TYPES } from '../constants/platformServices';
-import { planRegionSpec, plansForProviderRegion } from '../utils/platformServices';
+import { REQUIRED_FIELD_SX } from '../constants/styles';
+import { plansForProviderRegion, toCreateError } from '../utils/platformServices';
 import ComingSoon from './ComingSoon';
 import VerticalStepper from '../components/VerticalStepper';
+import SelectableCard from '../components/Databases/create/SelectableCard';
+import PlanCard from '../components/Databases/create/PlanCard';
 import type { OrgScope } from '../nav';
-import type { CloudProvider, CloudRegion, ServicePlan, ServiceType } from '../types/platformServices';
+import type { CloudProvider, CloudRegion, CreateError, ServicePlan, ServiceType } from '../types/platformServices';
 
-const requiredSx = { '& .MuiFormLabel-asterisk': { color: 'error.main' } };
 const assetUrl = (path: string): string => `${import.meta.env.BASE_URL}${path}`;
 /** Section sub-headings, deliberately smaller than the "Create Database Server" title. */
 const sectionHeadingSx = { fontWeight: 600, mb: 1.5 } as const;
-
-interface CreateError {
-  title: string;
-  message: string;
-  /** Entitlement failure — surface an Upgrade action when a billing console is configured. */
-  upgrade?: boolean;
-}
-
-/** Turns a thrown create error into a titled, user-facing error, recognising entitlement codes. */
-function toCreateError(err: unknown): CreateError {
-  const raw = err instanceof Error ? err.message : String(err);
-  if (raw.includes('FREE_TRIAL_EXPIRED') || raw.includes('FREE_SUB_MAX_COUNT_EXCEEDED')) {
-    return { title: 'Upgrade required', message: 'Please upgrade your WSO2 Integration Platform subscription to create more database services.', upgrade: true };
-  }
-  if (raw.includes('RATE_LIMIT')) {
-    return { title: 'Too many requests', message: 'Please retry after some time. If the issue persists, contact support.' };
-  }
-  if (raw.includes('HTTP 409')) {
-    return { title: 'Name already in use', message: 'A database server with this name already exists. Choose a different service name.' };
-  }
-  return { title: "Couldn't create database server", message: 'Something went wrong while provisioning the server. Please try again.' };
-}
-
-interface SelectableCardProps {
-  title: string;
-  description?: string;
-  /** Optional provider logo (full URL). */
-  logo?: string;
-  selected: boolean;
-  disabled?: boolean;
-  onSelect: () => void;
-}
-
-function SelectableCard({ title, description, logo, selected, disabled, onSelect }: SelectableCardProps): JSX.Element {
-  return (
-    <Card variant="outlined" sx={{ height: '100%', borderColor: selected ? 'primary.main' : 'divider', borderWidth: selected ? 2 : 1, opacity: disabled ? 0.5 : 1 }}>
-      <CardActionArea disabled={disabled} onClick={onSelect} sx={{ height: '100%', p: 2, alignItems: 'flex-start', justifyContent: 'flex-start' }}>
-        {logo && <Box component="img" src={logo} alt="" sx={{ height: 28, mb: 1, display: 'block' }} />}
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: description ? 0.5 : 0 }}>
-          {title}
-        </Typography>
-        {description && (
-          <Typography variant="caption" color="text.secondary">
-            {description}
-          </Typography>
-        )}
-      </CardActionArea>
-    </Card>
-  );
-}
-
-function PlanCard({ plan, provider, region, selected, disabled, onSelect }: { plan: ServicePlan; provider: CloudProvider; region: CloudRegion; selected: boolean; disabled: boolean; onSelect: () => void }): JSX.Element | null {
-  const spec = planRegionSpec(plan, provider, region);
-  if (!spec) return null;
-  return (
-    <Card variant="outlined" sx={{ width: 240, borderColor: selected ? 'primary.main' : 'divider', borderWidth: selected ? 2 : 1, opacity: disabled ? 0.5 : 1 }}>
-      <CardActionArea disabled={disabled} onClick={onSelect} sx={{ p: 2, alignItems: 'flex-start' }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-          {plan.name}
-        </Typography>
-        <Typography variant="body2">Nodes: {plan.node_count}</Typography>
-        <Typography variant="body2">RAM: {spec.node_ram_gb} GB</Typography>
-        <Typography variant="body2">CPU: {spec.node_cpu_count} vCPU</Typography>
-        {plan.type !== 'redis' && <Typography variant="body2">Storage: {spec.storage_gb} GB</Typography>}
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>
-          {plan.backup_retention_days > 0 ? `Backups every ${plan.backup_interval_hours} hours. Retained for ${plan.backup_retention_days} days.` : 'No automated backups. For development use only.'}
-        </Typography>
-        <Divider sx={{ my: 1.5 }} />
-        <Typography variant="subtitle1" sx={{ color: 'primary.main', fontWeight: 600 }}>
-          ${spec.hourly_price_usd}
-          <Typography component="span" variant="caption" color="text.secondary">
-            {' '}
-            / hour
-          </Typography>
-        </Typography>
-      </CardActionArea>
-    </Card>
-  );
-}
 
 export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
   const navigate = useNavigate();
@@ -188,12 +111,9 @@ export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
       </Button>
 
       <Stack direction="row" gap={4} alignItems="flex-start">
-        {/* Left step rail */}
         <Box sx={{ width: { xs: '100%', md: 220 }, flexShrink: 0, pt: 1 }}>
           <VerticalStepper activeStep={activeStep} steps={['Select Database Type', 'Select service plan']} />
         </Box>
-
-        {/* Step content */}
         <Box sx={{ flex: 1, maxWidth: 900, mt: 2 }}>
           <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
             Create Database Server
@@ -233,7 +153,7 @@ export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
                   </Grid>
                 ))}
               </Grid>
-              <TextField label="Service Name" required fullWidth value={serviceName} onChange={(e) => setServiceName(e.target.value)} error={!!nameError} helperText={nameError} placeholder="Enter service name" sx={{ maxWidth: 480, ...requiredSx }} />
+              <TextField label="Service Name" required fullWidth value={serviceName} onChange={(e) => setServiceName(e.target.value)} error={!!nameError} helperText={nameError} placeholder="Enter service name" sx={{ maxWidth: 480, ...REQUIRED_FIELD_SX }} />
             </>
           ) : (
             <>
@@ -256,7 +176,13 @@ export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
                   const card = <SelectableCard title={info?.name ?? p} logo={info ? assetUrl(info.logo) : undefined} selected={provider === p} disabled={disabled} onSelect={() => setProvider(p)} />;
                   return (
                     <Grid key={p} size={{ xs: 6, sm: 3 }}>
-                      {disabled ? <Tooltip title="Upgrade your subscription to select this cloud provider.">{<span>{card}</span>}</Tooltip> : card}
+                      {disabled ? (
+                        <Tooltip title="Upgrade your subscription to select this cloud provider.">
+                          <span>{card}</span>
+                        </Tooltip>
+                      ) : (
+                        card
+                      )}
                     </Grid>
                   );
                 })}
@@ -286,8 +212,6 @@ export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
               </Stack>
             </>
           )}
-
-          {/* Actions */}
           <Stack direction="row" gap={1.5} sx={{ mt: 4 }}>
             <Button variant="outlined" disabled={activeStep === 0} onClick={() => setActiveStep((s) => Math.max(0, s - 1))}>
               Back

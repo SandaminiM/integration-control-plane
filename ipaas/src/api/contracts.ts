@@ -100,7 +100,26 @@ import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgum
 import type { SubscriptionList, ComponentLimits } from '../types/subscription';
 import type { ConfigGroup, ConfigGroupNameAvailability, ConfigGroupUsage, CreateConfigGroupRequest, EditConfigGroupRequest } from '../types/configGroups';
 import type { AuditLogEntry, AuditLogsRequest } from '../types/auditLogs';
-import type { AdminUser, CaCertificate, DatabaseServer, DatabaseServerDetail, MetricPeriod, OrgServiceAvailability, ServerMetricsResponse, ServicePlan, ServiceType, CreateServerPayload } from '../types/platformServices';
+import type {
+  AdminUser,
+  AllowedIpsPayload,
+  BackupsResponse,
+  CaCertificate,
+  CredentialPayload,
+  DatabaseInfo,
+  DatabaseServer,
+  DatabaseServerDetail,
+  DbCredential,
+  LogsRequest as ServerLogsRequest,
+  LogsResponse as ServerLogsResponse,
+  MaintenanceWindow,
+  MetricPeriod,
+  OrgServiceAvailability,
+  ServerMetricsResponse,
+  ServicePlan,
+  ServiceType,
+  CreateServerPayload,
+} from '../types/platformServices';
 import type { InsightsEnvironment, ComponentInsights } from '../types/insights';
 import type { LogsRequest, ComponentLogsRequest, LogRow } from '../types/logs';
 import type { ApiDocument, RuleAdherenceResponse, ThrottlingPolicy } from '../types/marketplace';
@@ -593,6 +612,18 @@ export interface PlatformServicesApi {
   getServerAdminUser(serverId: string): Promise<AdminUser>;
   getServerCaCertificate(serverId: string): Promise<CaCertificate>;
   getServerMetrics(serverId: string, period: MetricPeriod): Promise<ServerMetricsResponse>;
+  listServerDatabases(serverId: string): Promise<DatabaseInfo[]>;
+  getServerLogs(serverId: string, request: ServerLogsRequest): Promise<ServerLogsResponse>;
+  listServerBackups(serverId: string): Promise<BackupsResponse>;
+  createDatabase(serverId: string, name: string): Promise<DatabaseInfo>;
+  setDatabaseMarketplace(serverId: string, name: string, displayOnMarketplace: boolean): Promise<void>;
+  listDbCredentials(serverId: string, dbName?: string): Promise<DbCredential[]>;
+  getDbCredential(serverId: string, credentialId: string): Promise<DbCredential>;
+  createDbCredential(serverId: string, payload: CredentialPayload): Promise<DbCredential>;
+  updateDbCredential(serverId: string, credentialId: string, payload: CredentialPayload): Promise<DbCredential>;
+  deleteDbCredential(serverId: string, credentialId: string): Promise<void>;
+  updateMaintenanceWindow(serverId: string, payload: MaintenanceWindow): Promise<void>;
+  updateAllowedIps(serverId: string, payload: AllowedIpsPayload): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------

@@ -131,6 +131,12 @@ export interface MaintenanceWindow {
   time: string;
 }
 
+/** `PUT /db-servers/{id}/allowed-ips` — either open access or a restricted CIDR list. */
+export interface AllowedIpsPayload {
+  mode: 'allow_all' | 'restricted';
+  allow_list?: { cidr: string; description?: string }[];
+}
+
 /** Plan block on the detail response — the list summary plus backup cadence. */
 export interface ServicePlanDetailInfo extends ServicePlanInfo {
   backup_interval_hours: number;
@@ -181,4 +187,91 @@ export interface MetricSeries {
 
 export interface ServerMetricsResponse {
   metrics: Record<string, MetricSeries>;
+}
+
+// --- Databases (GET /db-servers/{id}/databases) ---
+
+/** A single logical database hosted on the server. `status` is `READY` or `NOT_FOUND_IN_SERVER`. */
+export interface DatabaseInfo {
+  name: string;
+  status: string;
+  display_on_marketplace: boolean;
+}
+
+// --- Database credentials (GET/POST/PUT/DELETE /db-servers/{id}/credentials) ---
+
+/** A registered database credential. `username` is only returned by the by-id fetch. */
+export interface DbCredential {
+  id: string;
+  database_name: string;
+  display_name: string;
+  is_super_admin: boolean;
+  privilege_levels: string[];
+  applicable_environments: string[];
+  username?: string;
+}
+
+/** Request body for registering/updating a credential (super-admin omits username/password/privileges). */
+export interface CredentialPayload {
+  database: string;
+  display_name: string;
+  applicable_environments: string[];
+  is_super_admin?: boolean;
+  username?: string;
+  password?: string;
+  privilege_levels?: string[];
+}
+
+/** A titled, user-facing create-server error (with an optional upgrade affordance). */
+export interface CreateError {
+  title: string;
+  message: string;
+  /** Entitlement failure — surface an Upgrade action when a billing console is configured. */
+  upgrade?: boolean;
+}
+
+/** Editable form model behind the credential dialog (flattened into a CredentialPayload on submit). */
+export interface CredentialFormValues {
+  displayName: string;
+  username: string;
+  password: string;
+  privileges: string[];
+  environments: string[];
+  isSuperAdmin: boolean;
+}
+
+// --- Logs (POST /db-servers/{id}/logs) ---
+
+/** Cursor-paginated log query. Omit `offset` for the most recent page. */
+export interface LogsRequest {
+  offset?: string;
+  limit: number;
+  sort_order: 'asc' | 'desc';
+}
+
+export interface LogEntry {
+  time: string;
+  hostname: string;
+  unit: string;
+  msg: string;
+}
+
+export interface LogsResponse {
+  logs: LogEntry[];
+  /** Cursor for the next (older) page. */
+  offset: string;
+  /** Offset of the oldest log available — paging is exhausted once reached. */
+  first_log_offset: string;
+}
+
+// --- Backups (GET /db-servers/{id}/backups) ---
+
+export interface BackupInfo {
+  backup_name: string;
+  backup_time: string;
+  data_size: number;
+}
+
+export interface BackupsResponse {
+  backups: BackupInfo[];
 }

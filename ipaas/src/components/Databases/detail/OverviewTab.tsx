@@ -16,48 +16,14 @@
  * under the License.
  */
 
-import { Box, Button, Chip, CircularProgress, IconButton, InputAdornment, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { Archive, Cloud, Copy, Cpu, Download, Eye, EyeOff, HardDrive, MemoryStick, Power, RefreshCw, Server } from '@wso2/oxygen-ui-icons-react';
+import { Box, Button, Chip, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Archive, Cloud, Cpu, Download, Eye, EyeOff, HardDrive, MemoryStick, Power, RefreshCw, Server } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX, type ReactNode } from 'react';
 import { useFetchServerCaCertificate, useServerAdminUser, useSetServerPoweredState } from '../../../hooks/usePlatformServices';
-import { providerLabel, regionLabel, STATUS_COLORS, statusLabel } from '../../../constants/platformServices';
+import { providerLabel, regionLabel, STATUS_COLORS, statusLabel, TRANSITIONAL_STATUSES } from '../../../constants/platformServices';
+import CopyField from './CopyField';
+import DetailRow from './DetailRow';
 import type { DatabaseServerDetail } from '../../../types/platformServices';
-
-const TRANSITIONAL = ['CREATING', 'RESUMING', 'DELETING'];
-
-function Row({ label, children }: { label: string; children: ReactNode }): JSX.Element {
-  return (
-    <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ sm: 'center' }} gap={{ xs: 0.5, sm: 2 }} sx={{ px: 3, py: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
-      <Typography variant="body2" color="text.secondary" sx={{ width: 150, flexShrink: 0 }}>
-        {label}
-      </Typography>
-      <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>{children}</Box>
-    </Stack>
-  );
-}
-
-function CopyField({ value, 'aria-label': ariaLabel }: { value: string; 'aria-label': string }): JSX.Element {
-  return (
-    <TextField
-      size="small"
-      fullWidth
-      value={value}
-      InputProps={{
-        readOnly: true,
-        sx: { bgcolor: 'action.hover', fontFamily: 'monospace', fontSize: 13 },
-        endAdornment: (
-          <InputAdornment position="end">
-            <Tooltip title="Copy">
-              <IconButton size="small" aria-label={`Copy ${ariaLabel}`} onClick={() => navigator.clipboard?.writeText(value)} edge="end">
-                <Copy size={15} />
-              </IconButton>
-            </Tooltip>
-          </InputAdornment>
-        ),
-      }}
-    />
-  );
-}
 
 function PlanStat({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }): JSX.Element {
   return (
@@ -78,7 +44,7 @@ export default function OverviewTab({ service, serverId, onRefresh, isRefreshing
   const plan = service.service_plan;
   const showDefaultDb = service.type === 'postgres' || service.type === 'mysql';
   const isActive = service.status === 'ACTIVE';
-  const transitioning = TRANSITIONAL.includes(service.status);
+  const transitioning = TRANSITIONAL_STATUSES.includes(service.status);
 
   const power = useSetServerPoweredState(serverId);
   const [reveal, setReveal] = useState(false);
@@ -86,8 +52,7 @@ export default function OverviewTab({ service, serverId, onRefresh, isRefreshing
   const fetchCa = useFetchServerCaCertificate(serverId);
   const [caError, setCaError] = useState(false);
 
-  const nodeCount = plan.node_count;
-  const nodeDesc = nodeCount > 1 ? `${nodeCount}x node high-availability set` : '1x node (not highly available)';
+  const nodeDesc = plan.node_count > 1 ? `${plan.node_count}x node high-availability set` : '1x node (not highly available)';
 
   const downloadCa = () => {
     setCaError(false);
@@ -105,8 +70,7 @@ export default function OverviewTab({ service, serverId, onRefresh, isRefreshing
   };
 
   return (
-    <Box sx={{ maxWidth: 900 }}>
-      {/* Connection details card */}
+    <Box>
       <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
         <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} gap={1} sx={{ px: 3, py: 1.5 }}>
           <Stack direction="row" alignItems="center" gap={2}>
@@ -127,48 +91,34 @@ export default function OverviewTab({ service, serverId, onRefresh, isRefreshing
           </Stack>
         </Stack>
 
-        <Row label="Host:">
+        <DetailRow label="Host:" labelWidth={150}>
           <CopyField value={cp.host} aria-label="host" />
-        </Row>
-        <Row label="Port:">
+        </DetailRow>
+        <DetailRow label="Port:" labelWidth={150}>
           <CopyField value={cp.port} aria-label="port" />
-        </Row>
-        <Row label="Default User:">
+        </DetailRow>
+        <DetailRow label="Default User:" labelWidth={150}>
           <CopyField value={cp.user} aria-label="default user" />
-        </Row>
+        </DetailRow>
         {showDefaultDb && (
-          <Row label="Default Database:">
+          <DetailRow label="Default Database:" labelWidth={150}>
             <CopyField value={cp.database} aria-label="default database" />
-          </Row>
+          </DetailRow>
         )}
-        <Row label="Password:">
+        <DetailRow label="Password:" labelWidth={150}>
           {reveal ? (
             admin.isLoading ? (
               <CircularProgress size={18} />
             ) : admin.data ? (
-              <Stack direction="row" alignItems="center" gap={1}>
-                <TextField
-                  size="small"
-                  fullWidth
-                  value={admin.data.password}
-                  InputProps={{
-                    readOnly: true,
-                    sx: { bgcolor: 'action.hover', fontFamily: 'monospace', fontSize: 13 },
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <Tooltip title="Copy">
-                          <IconButton size="small" aria-label="Copy password" onClick={() => navigator.clipboard?.writeText(admin.data!.password)} edge="end">
-                            <Copy size={15} />
-                          </IconButton>
-                        </Tooltip>
-                        <IconButton size="small" aria-label="Hide password" onClick={() => setReveal(false)} edge="end">
-                          <EyeOff size={15} />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Stack>
+              <CopyField
+                value={admin.data.password}
+                aria-label="password"
+                endAction={
+                  <IconButton size="small" aria-label="Hide password" onClick={() => setReveal(false)} edge="end">
+                    <EyeOff size={15} />
+                  </IconButton>
+                }
+              />
             ) : (
               <Typography variant="body2" color="error">
                 Couldn&apos;t load the password.
@@ -179,8 +129,8 @@ export default function OverviewTab({ service, serverId, onRefresh, isRefreshing
               View Password
             </Button>
           )}
-        </Row>
-        <Row label="CA Certificate:">
+        </DetailRow>
+        <DetailRow label="CA Certificate:" labelWidth={150}>
           <Stack gap={0.5}>
             <Box>
               <Button variant="outlined" size="small" startIcon={<Download size={16} />} onClick={downloadCa}>
@@ -193,15 +143,14 @@ export default function OverviewTab({ service, serverId, onRefresh, isRefreshing
               </Typography>
             )}
           </Stack>
-        </Row>
+        </DetailRow>
       </Box>
 
-      {/* Current service plan */}
       <Typography variant="subtitle1" sx={{ fontWeight: 600, mt: 4, mb: 1.5 }}>
         Current Service Plan
       </Typography>
       <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 3 }}>
-        <Stack direction="row" flexWrap="wrap" gap={5} alignItems="flex-start">
+        <Stack direction="row" flexWrap="wrap" gap={7} alignItems="flex-start">
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
               {plan.name}

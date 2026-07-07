@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import type { CloudProvider, CloudRegion, ServerStatus, ServiceType } from '../types/platformServices';
+import type { CloudProvider, CloudRegion, MetricPeriod, ServerStatus, ServiceType } from '../types/platformServices';
 
 /** Service name: starts with a letter, alphanumeric + hyphens, max 64 chars. Mirrors Devant. */
 export const SERVICE_NAME_REGEX = /^[a-zA-Z][a-zA-Z0-9-]{0,63}$/;
@@ -102,3 +102,57 @@ export const statusLabel = (status: ServerStatus): string => STATUS_LABELS[statu
 
 /** Whether a server row is clickable — terminal/erroring servers have no detail page. */
 export const isServerAccessible = (status: ServerStatus): boolean => !['ERROR', 'DELETED', 'DELETING'].includes(status);
+
+/** Statuses where power/edit actions are disabled while the server transitions. */
+export const TRANSITIONAL_STATUSES: ServerStatus[] = ['CREATING', 'RESUMING', 'DELETING'];
+
+/** `DatabaseInfo.status` values (distinct from the server-level `ServerStatus`). */
+export const DB_STATUS = { READY: 'READY', NOT_FOUND_IN_SERVER: 'NOT_FOUND_IN_SERVER' } as const;
+
+// --- Detail-view option lists ---
+
+/** Privilege levels selectable for a custom (non-super-admin) database credential. */
+export const CREDENTIAL_PRIVILEGES = ['Read', 'Write', 'Admin'];
+
+/** Placeholder shown for a super-admin credential's password (never the real value). */
+export const MASKED_PASSWORD = '******************';
+
+/** Line colors for the metric charts, one per node series. */
+export const METRIC_CHART_COLORS = ['#4C82F7', '#2E9E83', '#8E44AD', '#F2994A', '#C0392B'];
+
+/** Metric time-window options (maps to the `period` query param). */
+export const METRIC_PERIODS: { value: MetricPeriod; label: string }[] = [
+  { value: 'hour', label: 'Last hour' },
+  { value: 'day', label: 'Last 24 hours' },
+  { value: 'week', label: 'Last 7 days' },
+  { value: 'month', label: 'Last 30 days' },
+];
+
+/** Log time-range filter options (the window paged back from "now"). */
+export const LOG_TIME_RANGES: { label: string; minutes: number }[] = [
+  { label: 'Past 10 minutes', minutes: 10 },
+  { label: 'Past 1 hour', minutes: 60 },
+  { label: 'Past 24 hours', minutes: 24 * 60 },
+  { label: 'Past 7 days', minutes: 7 * 24 * 60 },
+];
+
+/** Maintenance-window day options (`value` is the API day key). */
+export const MAINTENANCE_DAYS: { value: string; label: string }[] = [
+  { value: 'monday', label: 'Monday' },
+  { value: 'tuesday', label: 'Tuesday' },
+  { value: 'wednesday', label: 'Wednesday' },
+  { value: 'thursday', label: 'Thursday' },
+  { value: 'friday', label: 'Friday' },
+  { value: 'saturday', label: 'Saturday' },
+  { value: 'sunday', label: 'Sunday' },
+];
+
+/** Hourly maintenance-window time options (`00:00` … `23:00`). */
+export const MAINTENANCE_TIMES: string[] = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}:00`);
+
+/** Marketplace/credential filters for the Databases tab (OR-combined). */
+export const DB_MARKETPLACE_FILTERS = ['Available in Marketplace', 'Not Available in Marketplace', 'Credentials Added', 'No Credentials'] as const;
+export type DbMarketplaceFilter = (typeof DB_MARKETPLACE_FILTERS)[number];
+
+/** Human label for a maintenance day key (e.g. `monday` → `Monday`). */
+export const maintenanceDayLabel = (day: string): string => MAINTENANCE_DAYS.find((d) => d.value === day)?.label ?? day;

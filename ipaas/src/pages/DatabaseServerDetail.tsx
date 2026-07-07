@@ -18,13 +18,20 @@
 
 import { Alert, Box, Button, CircularProgress, PageContent, Stack, Tab, Tabs, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
-import type { JSX } from 'react';
+import { useState, type JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { isPlatformServicesEnabled, useDatabaseServer } from '../hooks/usePlatformServices';
+import { useSubscriptions } from '../hooks/useSubscription';
+import { useOrgUuid } from '../hooks/useOrgUuid';
+import { PAID_SUBSCRIPTION_TYPE } from '../constants/subscription';
 import { SERVICE_TYPES, serviceTypeLabel } from '../constants/platformServices';
 import ComingSoon from './ComingSoon';
 import OverviewTab from '../components/Databases/detail/OverviewTab';
 import MetricsTab from '../components/Databases/detail/MetricsTab';
+import DatabasesTab from '../components/Databases/detail/DatabasesTab';
+import LogsTab from '../components/Databases/detail/LogsTab';
+import BackupsTab from '../components/Databases/detail/BackupsTab';
+import AdvancedSettingsTab from '../components/Databases/detail/AdvancedSettingsTab';
 import type { OrgScope } from '../nav';
 
 type DetailTab = 'overview' | 'databases' | 'logs' | 'metrics' | 'backups' | 'advanced';
@@ -44,7 +51,11 @@ export default function DatabaseServerDetail(scope: OrgScope): JSX.Element {
   const navigate = useNavigate();
   const { dbServerId = '', tab = 'overview' } = useParams();
   const base = `/organizations/${scope.org}/admin/databases`;
+  const orgUuid = useOrgUuid();
   const { data: service, isLoading, isError, refetch, isFetching } = useDatabaseServer(dbServerId);
+  const { data: subscriptions } = useSubscriptions(orgUuid ?? '');
+  const isSubscribed = (subscriptions?.list ?? []).some((s) => s.subscriptionType === PAID_SUBSCRIPTION_TYPE);
+  const [notice, setNotice] = useState<string | null>(null);
 
   if (!isPlatformServicesEnabled()) {
     return <ComingSoon title="Coming Soon" description="Databases management is currently under development." />;
@@ -58,6 +69,12 @@ export default function DatabaseServerDetail(scope: OrgScope): JSX.Element {
       <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(base)} sx={{ mb: 2 }}>
         Back to Database List
       </Button>
+
+      {notice && (
+        <Alert severity="error" onClose={() => setNotice(null)} sx={{ mb: 2 }}>
+          {notice}
+        </Alert>
+      )}
 
       {isLoading ? (
         <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
@@ -95,9 +112,22 @@ export default function DatabaseServerDetail(scope: OrgScope): JSX.Element {
             ))}
           </Tabs>
 
-          {activeTab === 'overview' && <OverviewTab service={service} serverId={dbServerId} onRefresh={() => refetch()} isRefreshing={isFetching} />}
-          {activeTab === 'metrics' && <MetricsTab serverId={dbServerId} />}
-          {activeTab !== 'overview' && activeTab !== 'metrics' && <Alert severity="info">This section is coming soon.</Alert>}
+          {service.status === 'CREATING' ? (
+            <Alert severity="info">
+              This service is being created. Please wait.
+              <br />
+              Some features and settings will be disabled until this service is active.
+            </Alert>
+          ) : (
+            <>
+              {activeTab === 'overview' && <OverviewTab service={service} serverId={dbServerId} onRefresh={() => refetch()} isRefreshing={isFetching} />}
+              {activeTab === 'databases' && <DatabasesTab service={service} orgHandle={scope.org} />}
+              {activeTab === 'logs' && <LogsTab serverId={dbServerId} />}
+              {activeTab === 'metrics' && <MetricsTab serverId={dbServerId} />}
+              {activeTab === 'backups' && <BackupsTab serverId={dbServerId} />}
+              {activeTab === 'advanced' && <AdvancedSettingsTab service={service} isSubscribed={isSubscribed} onDeleted={() => navigate(base)} onError={setNotice} />}
+            </>
+          )}
         </>
       )}
     </PageContent>

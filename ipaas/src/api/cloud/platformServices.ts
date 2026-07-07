@@ -18,7 +18,26 @@
 
 // Managed databases are a wip-only feature (IS_WIP-gated). Signatures mirror
 // Contracts.PlatformServicesApi so _check.ts catches any drift.
-import type { AdminUser, CaCertificate, CreateServerPayload, DatabaseServer, DatabaseServerDetail, MetricPeriod, OrgServiceAvailability, ServerMetricsResponse, ServicePlan, ServiceType } from '../../types/platformServices';
+import type {
+  AdminUser,
+  AllowedIpsPayload,
+  BackupsResponse,
+  CaCertificate,
+  CreateServerPayload,
+  CredentialPayload,
+  DatabaseInfo,
+  DatabaseServer,
+  DatabaseServerDetail,
+  DbCredential,
+  LogsRequest,
+  LogsResponse,
+  MaintenanceWindow,
+  MetricPeriod,
+  OrgServiceAvailability,
+  ServerMetricsResponse,
+  ServicePlan,
+  ServiceType,
+} from '../../types/platformServices';
 
 const ni = (name: string): never => {
   throw new Error(`[cloud] platformServices.${name}: not implemented`);
@@ -34,3 +53,15 @@ export const setServerPoweredState = (_serverId: string, _powered: boolean): Pro
 export const getServerAdminUser = (_serverId: string): Promise<AdminUser> => ni('getServerAdminUser');
 export const getServerCaCertificate = (_serverId: string): Promise<CaCertificate> => ni('getServerCaCertificate');
 export const getServerMetrics = (_serverId: string, _period: MetricPeriod): Promise<ServerMetricsResponse> => ni('getServerMetrics');
+export const listServerDatabases = (_serverId: string): Promise<DatabaseInfo[]> => ni('listServerDatabases');
+export const getServerLogs = (_serverId: string, _request: LogsRequest): Promise<LogsResponse> => ni('getServerLogs');
+export const listServerBackups = (_serverId: string): Promise<BackupsResponse> => ni('listServerBackups');
+export const createDatabase = (_serverId: string, _name: string): Promise<DatabaseInfo> => ni('createDatabase');
+export const setDatabaseMarketplace = (_serverId: string, _name: string, _displayOnMarketplace: boolean): Promise<void> => ni('setDatabaseMarketplace');
+export const listDbCredentials = (_serverId: string, _dbName?: string): Promise<DbCredential[]> => ni('listDbCredentials');
+export const getDbCredential = (_serverId: string, _credentialId: string): Promise<DbCredential> => ni('getDbCredential');
+export const createDbCredential = (_serverId: string, _payload: CredentialPayload): Promise<DbCredential> => ni('createDbCredential');
+export const updateDbCredential = (_serverId: string, _credentialId: string, _payload: CredentialPayload): Promise<DbCredential> => ni('updateDbCredential');
+export const deleteDbCredential = (_serverId: string, _credentialId: string): Promise<void> => ni('deleteDbCredential');
+export const updateMaintenanceWindow = (_serverId: string, _payload: MaintenanceWindow): Promise<void> => ni('updateMaintenanceWindow');
+export const updateAllowedIps = (_serverId: string, _payload: AllowedIpsPayload): Promise<void> => ni('updateAllowedIps');

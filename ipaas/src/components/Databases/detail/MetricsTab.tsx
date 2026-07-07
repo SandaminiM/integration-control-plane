@@ -20,18 +20,9 @@ import { Alert, Box, Button, CircularProgress, Grid, MenuItem, Stack, TextField,
 import { LineChart } from '@wso2/oxygen-ui-charts-react';
 import { useState, type JSX } from 'react';
 import { useServerMetrics } from '../../../hooks/usePlatformServices';
+import { METRIC_CHART_COLORS, METRIC_PERIODS } from '../../../constants/platformServices';
 import { metricsToChart, metricTitle } from '../../../utils/platformServices';
 import type { MetricPeriod } from '../../../types/platformServices';
-
-const PERIODS: { value: MetricPeriod; label: string }[] = [
-  { value: 'hour', label: 'Last hour' },
-  { value: 'day', label: 'Last 24 hours' },
-  { value: 'week', label: 'Last 7 days' },
-  { value: 'month', label: 'Last 30 days' },
-];
-
-/** Blue-led palette for the per-node areas (soft, high-contrast, easy on the eyes). */
-const CHART_COLORS = ['#4C82F7', '#2E9E83', '#8E44AD', '#F2994A', '#C0392B'];
 
 export default function MetricsTab({ serverId }: { serverId: string }): JSX.Element {
   const [period, setPeriod] = useState<MetricPeriod>('hour');
@@ -43,7 +34,7 @@ export default function MetricsTab({ serverId }: { serverId: string }): JSX.Elem
     <Box>
       <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
         <TextField select size="small" label="Period" value={period} onChange={(e) => setPeriod(e.target.value as MetricPeriod)} sx={{ minWidth: 180 }}>
-          {PERIODS.map((p) => (
+          {METRIC_PERIODS.map((p) => (
             <MenuItem key={p.value} value={p.value}>
               {p.label}
             </MenuItem>
@@ -78,10 +69,10 @@ export default function MetricsTab({ serverId }: { serverId: string }): JSX.Elem
                   {chart.data.length > 0 ? (
                     <LineChart
                       data={chart.data}
-                      lines={chart.lines.map((l, i) => ({ ...l, type: 'monotone' as const, stroke: CHART_COLORS[i % CHART_COLORS.length], dot: true }))}
+                      lines={chart.lines.map((l, i) => ({ ...l, type: 'monotone' as const, stroke: METRIC_CHART_COLORS[i % METRIC_CHART_COLORS.length], dot: false }))}
                       xAxisDataKey="time"
                       height={260}
-                      colors={CHART_COLORS}
+                      colors={METRIC_CHART_COLORS}
                       legend={{ show: chart.lines.length > 1 }}
                       tooltip={{ show: true }}
                     />

@@ -17,8 +17,9 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { deriveProviders, deriveRegions, isPlanAvailableInRegion, metricsToChart, metricTitle, planRegionSpec, plansForProviderRegion } from './platformServices';
-import type { MetricSeries, ServicePlan } from '../types/platformServices';
+import { deriveProviders, deriveRegions, envLabel, isPlanAvailableInRegion, logOffsetNs, matchesDatabaseFilter, metricsToChart, metricTitle, planRegionSpec, plansForProviderRegion, toCreateError } from './platformServices';
+import type { DatabaseInfo, MetricSeries, ServicePlan } from '../types/platformServices';
+import type { EnvTemplate } from '../types/deploymentPipeline';
 
 const region = (cloud_provider: ServicePlan['regions'][number]['cloud_provider'], cloud_region: ServicePlan['regions'][number]['cloud_region'], extra: Partial<ServicePlan['regions'][number]> = {}) => ({
   cloud_provider,
@@ -128,5 +129,55 @@ describe('metricsToChart', () => {
 
   it('is safe on empty/missing data', () => {
     expect(metricsToChart({ data: { cols: [], rows: [] } })).toEqual({ data: [], lines: [] });
+  });
+});
+
+describe('envLabel', () => {
+  const envs = [{ id: 'e1', env_name: 'Production', region: 'US' }] as EnvTemplate[];
+  it('formats a known environment', () => {
+    expect(envLabel(envs, 'e1')).toBe('Production ( US )');
+  });
+  it('falls back to the raw id when unknown', () => {
+    expect(envLabel(envs, 'missing')).toBe('missing');
+  });
+});
+
+describe('logOffsetNs', () => {
+  it('appends six zeros to convert ms → ns without precision loss', () => {
+    expect(logOffsetNs(1783401839011)).toBe('1783401839011000000');
+  });
+});
+
+describe('matchesDatabaseFilter', () => {
+  const db = (display_on_marketplace: boolean): DatabaseInfo => ({ name: 'db', status: 'READY', display_on_marketplace });
+  it('matches marketplace availability', () => {
+    expect(matchesDatabaseFilter(db(true), 0, ['Available in Marketplace'])).toBe(true);
+    expect(matchesDatabaseFilter(db(false), 0, ['Available in Marketplace'])).toBe(false);
+    expect(matchesDatabaseFilter(db(false), 0, ['Not Available in Marketplace'])).toBe(true);
+  });
+  it('matches credential presence', () => {
+    expect(matchesDatabaseFilter(db(false), 2, ['Credentials Added'])).toBe(true);
+    expect(matchesDatabaseFilter(db(false), 0, ['Credentials Added'])).toBe(false);
+    expect(matchesDatabaseFilter(db(false), 0, ['No Credentials'])).toBe(true);
+  });
+  it('OR-combines selected filters and excludes when none match', () => {
+    expect(matchesDatabaseFilter(db(true), 0, ['Available in Marketplace', 'No Credentials'])).toBe(true);
+    expect(matchesDatabaseFilter(db(false), 1, ['Available in Marketplace', 'No Credentials'])).toBe(false);
+  });
+});
+
+describe('toCreateError', () => {
+  it('flags entitlement failures with an upgrade action', () => {
+    expect(toCreateError(new Error('... FREE_TRIAL_EXPIRED ...'))).toMatchObject({ title: 'Upgrade required', upgrade: true });
+    expect(toCreateError(new Error('FREE_SUB_MAX_COUNT_EXCEEDED')).upgrade).toBe(true);
+  });
+  it('recognises rate-limit and name-conflict errors', () => {
+    expect(toCreateError(new Error('RATE_LIMIT')).title).toBe('Too many requests');
+    expect(toCreateError(new Error('HTTP 409')).title).toBe('Name already in use');
+  });
+  it('falls back to a generic message and never sets upgrade', () => {
+    const generic = toCreateError('boom');
+    expect(generic.title).toBe("Couldn't create database server");
+    expect(generic.upgrade).toBeUndefined();
   });
 });

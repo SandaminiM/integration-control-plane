@@ -22,8 +22,9 @@
  * selected provider+region. No React, no I/O. Mirrors Devant's convertPlatformSvcPlans.
  */
 
-import { CLOUD_PROVIDERS, CLOUD_REGIONS } from '../constants/platformServices';
-import type { CloudProvider, CloudRegion, MetricSeries, ServicePlan, ServicePlanRegion } from '../types/platformServices';
+import { CLOUD_PROVIDERS, CLOUD_REGIONS, type DbMarketplaceFilter } from '../constants/platformServices';
+import type { CloudProvider, CloudRegion, CreateError, CredentialFormValues, CredentialPayload, DatabaseInfo, MetricSeries, ServicePlan, ServicePlanRegion } from '../types/platformServices';
+import type { EnvTemplate } from '../types/deploymentPipeline';
 
 /** Providers offered across all plans, in the canonical display order. */
 export function deriveProviders(plans: ServicePlan[]): CloudProvider[] {
@@ -103,4 +104,74 @@ export function formatMetricTime(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+}
+
+/** Full local date-time for a log/backup timestamp (falls back to the raw string). */
+export function formatServerDateTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString();
+}
+
+/** Display label for an environment id: `env_name ( region )`, or the raw id if unknown. */
+export function envLabel(environments: EnvTemplate[], id: string): string {
+  const env = environments.find((e) => e.id === id);
+  return env ? `${env.env_name} ( ${env.region} )` : id;
+}
+
+/** Milliseconds → the logs endpoint's nanosecond cursor (string, no precision loss). */
+export function logOffsetNs(ms: number): string {
+  return `${ms}000000`;
+}
+
+/** Map a thrown create-server error to a titled, user-facing message (recognising entitlement codes). */
+export function toCreateError(err: unknown): CreateError {
+  const raw = err instanceof Error ? err.message : String(err);
+  if (raw.includes('FREE_TRIAL_EXPIRED') || raw.includes('FREE_SUB_MAX_COUNT_EXCEEDED')) {
+    return { title: 'Upgrade required', message: 'Please upgrade your WSO2 Integration Platform subscription to create more database services.', upgrade: true };
+  }
+  if (raw.includes('RATE_LIMIT')) {
+    return { title: 'Too many requests', message: 'Please retry after some time. If the issue persists, contact support.' };
+  }
+  if (raw.includes('HTTP 409')) {
+    return { title: 'Name already in use', message: 'A database server with this name already exists. Choose a different service name.' };
+  }
+  return { title: "Couldn't create database server", message: 'Something went wrong while provisioning the server. Please try again.' };
+}
+
+/** OR-combine the selected Databases-tab marketplace/credential filters. */
+export function matchesDatabaseFilter(db: DatabaseInfo, credentialCount: number, selected: DbMarketplaceFilter[]): boolean {
+  return selected.some((filter) => {
+    if (filter === 'Available in Marketplace') return db.display_on_marketplace;
+    if (filter === 'Not Available in Marketplace') return !db.display_on_marketplace;
+    if (filter === 'Credentials Added') return credentialCount > 0;
+    return credentialCount === 0;
+  });
+}
+
+/** Human-readable byte size (e.g. 33792215 → "32.2 MB"). */
+export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / 1024 ** i;
+  return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+}
+
+/**
+ * Flatten the credential form into the API request body. A super-admin credential
+ * carries only the display name + environments; a custom one adds username/password/privileges.
+ */
+export function buildCredentialPayload(dbName: string, form: CredentialFormValues): CredentialPayload {
+  if (form.isSuperAdmin) {
+    return { database: dbName, display_name: form.displayName.trim(), is_super_admin: true, applicable_environments: form.environments };
+  }
+  return {
+    database: dbName,
+    username: form.username.trim(),
+    password: form.password,
+    display_name: form.displayName.trim(),
+    privilege_levels: form.privileges,
+    applicable_environments: form.environments,
+  };
 }

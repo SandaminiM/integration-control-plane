@@ -17,11 +17,35 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createServer, deleteServer, getAvailability, getServer, getServerAdminUser, getServerCaCertificate, getServerMetrics, getServicePlans, listServers, setServerPoweredState } from '#api/platformServices';
+import { useCallback } from 'react';
+import {
+  createDatabase,
+  createDbCredential,
+  createServer,
+  deleteDbCredential,
+  deleteServer,
+  getAvailability,
+  getDbCredential,
+  getServer,
+  getServerAdminUser,
+  getServerCaCertificate,
+  getServerLogs,
+  getServerMetrics,
+  getServicePlans,
+  listDbCredentials,
+  listServerBackups,
+  listServerDatabases,
+  listServers,
+  setDatabaseMarketplace,
+  setServerPoweredState,
+  updateAllowedIps,
+  updateDbCredential,
+  updateMaintenanceWindow,
+} from '#api/platformServices';
 import { IS_WIP } from '../features';
 import { useOrgUuid } from './useOrgUuid';
 import { deriveProviders, deriveRegions } from '../utils/platformServices';
-import type { CloudProvider, CloudRegion, CreateServerPayload, DatabaseServer, MetricPeriod, ServicePlan, ServiceType } from '../types/platformServices';
+import type { AllowedIpsPayload, CloudProvider, CloudRegion, CreateServerPayload, CredentialPayload, DatabaseServer, LogsRequest, MaintenanceWindow, MetricPeriod, ServicePlan, ServiceType } from '../types/platformServices';
 
 const ROOT_KEY = 'platformServices';
 
@@ -141,4 +165,114 @@ export function useServerMetrics(serverId: string, period: MetricPeriod) {
     enabled: isPlatformServicesEnabled() && !!serverId,
     retry: false,
   });
+}
+
+/** The logical databases hosted on the server. */
+export function useServerDatabases(serverId: string) {
+  return useQuery({
+    queryKey: [ROOT_KEY, 'databases', serverId],
+    queryFn: () => listServerDatabases(serverId),
+    enabled: isPlatformServicesEnabled() && !!serverId,
+    retry: false,
+  });
+}
+
+/** Create a logical database, then refresh the database list. */
+export function useCreateDatabase(serverId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => createDatabase(serverId, name),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'databases', serverId] }),
+  });
+}
+
+/** Add/remove a database from the Marketplace, then refresh the database list. */
+export function useSetDatabaseMarketplace(serverId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ name, display }: { name: string; display: boolean }) => setDatabaseMarketplace(serverId, name, display),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'databases', serverId] }),
+  });
+}
+
+/** All credentials registered on the server (grouped by database in the UI). */
+export function useDbCredentials(serverId: string) {
+  return useQuery({
+    queryKey: [ROOT_KEY, 'credentials', serverId],
+    queryFn: () => listDbCredentials(serverId),
+    enabled: isPlatformServicesEnabled() && !!serverId,
+    retry: false,
+  });
+}
+
+/** A single credential (with username), for prefilling the edit dialog. */
+export function useDbCredential(serverId: string, credentialId: string | null) {
+  return useQuery({
+    queryKey: [ROOT_KEY, 'credential', serverId, credentialId],
+    queryFn: () => getDbCredential(serverId, credentialId!),
+    enabled: isPlatformServicesEnabled() && !!serverId && !!credentialId,
+    retry: false,
+  });
+}
+
+function useInvalidateCredentials(serverId: string) {
+  const qc = useQueryClient();
+  return () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'credentials', serverId] });
+}
+
+export function useCreateDbCredential(serverId: string) {
+  const invalidate = useInvalidateCredentials(serverId);
+  return useMutation({
+    mutationFn: (payload: CredentialPayload) => createDbCredential(serverId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateDbCredential(serverId: string) {
+  const invalidate = useInvalidateCredentials(serverId);
+  return useMutation({
+    mutationFn: ({ credentialId, payload }: { credentialId: string; payload: CredentialPayload }) => updateDbCredential(serverId, credentialId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteDbCredential(serverId: string) {
+  const invalidate = useInvalidateCredentials(serverId);
+  return useMutation({
+    mutationFn: (credentialId: string) => deleteDbCredential(serverId, credentialId),
+    onSuccess: invalidate,
+  });
+}
+
+/** Update the maintenance window, then refresh the server detail. */
+export function useUpdateMaintenanceWindow(serverId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: MaintenanceWindow) => updateMaintenanceWindow(serverId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'server', serverId] }),
+  });
+}
+
+/** Update the allowed-IP policy, then refresh the server detail. */
+export function useUpdateAllowedIps(serverId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: AllowedIpsPayload) => updateAllowedIps(serverId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'server', serverId] }),
+  });
+}
+
+/** The server's automatic backups. */
+export function useServerBackups(serverId: string) {
+  return useQuery({
+    queryKey: [ROOT_KEY, 'backups', serverId],
+    queryFn: () => listServerBackups(serverId),
+    enabled: isPlatformServicesEnabled() && !!serverId,
+    retry: false,
+  });
+}
+
+/** Imperative log fetch — the Logs tab manages cursor paging + accumulation itself. */
+export function useFetchServerLogs(serverId: string) {
+  return useCallback((request: LogsRequest) => getServerLogs(serverId, request), [serverId]);
 }

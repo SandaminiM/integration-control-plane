@@ -92,7 +92,13 @@ export default function OrgDatabases(scope: OrgScope): JSX.Element {
         <Alert
           severity="error"
           action={
-            <Button color="inherit" size="small" onClick={() => (servers.refetch(), availability.refetch())}>
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => {
+                servers.refetch();
+                availability.refetch();
+              }}>
               Retry
             </Button>
           }>

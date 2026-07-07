@@ -16,9 +16,10 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@wso2/oxygen-ui';
-import type { JSX } from 'react';
+import { Alert, TextField, Typography } from '@wso2/oxygen-ui';
+import { useState, type JSX } from 'react';
 import { useDeleteServer } from '../../hooks/usePlatformServices';
+import ConfirmDeleteDialog from '../ConfirmDeleteDialog';
 import type { DatabaseServer } from '../../types/platformServices';
 
 interface DeleteServerDialogProps {
@@ -30,11 +31,14 @@ interface DeleteServerDialogProps {
   onError: (message: string) => void;
 }
 
-/** Confirms deleting a database server. Warns free-tier orgs that the quota won't reset. */
+/** Type-to-confirm delete for a database server: the user must type the server name to enable delete. */
 export default function DeleteServerDialog({ server, isSubscribed, onClose, onDeleted, onError }: DeleteServerDialogProps): JSX.Element {
   const del = useDeleteServer();
+  const [input, setInput] = useState('');
+  const confirmed = input === server.name;
 
-  const doDelete = () =>
+  const doDelete = () => {
+    if (!confirmed) return;
     del.mutate(server.id, {
       onSuccess: () => {
         onClose();
@@ -45,26 +49,39 @@ export default function DeleteServerDialog({ server, isSubscribed, onClose, onDe
         onError(e instanceof Error ? e.message : 'Failed to delete database server.');
       },
     });
+  };
 
   return (
-    <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Delete &lsquo;{server.name}&rsquo;?</DialogTitle>
-      <DialogContent>
-        <Typography variant="body2" color="text.secondary">
-          This permanently removes the database server. This action can&apos;t be undone.
-        </Typography>
-        {!isSubscribed && (
-          <Alert severity="warning" sx={{ mt: 2 }}>
-            Deleting this resource will not reset your free-tier limit. You&apos;ll need to upgrade your subscription to create additional cloud resources.
-          </Alert>
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" color="error" onClick={doDelete} disabled={del.isPending} startIcon={del.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}>
-          {del.isPending ? 'Deleting…' : 'Delete'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <ConfirmDeleteDialog
+      title={
+        <>
+          Are you sure you want to delete &lsquo;<strong>{server.name}</strong>&rsquo;?
+        </>
+      }
+      onConfirm={doDelete}
+      onClose={onClose}
+      isPending={del.isPending}
+      confirmDisabled={!confirmed}>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        This permanently removes the database server and all its data. This action can&apos;t be undone. Please type the server name <strong>{server.name}</strong> below to confirm.
+      </Typography>
+      <TextField
+        autoFocus
+        fullWidth
+        size="small"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') doDelete();
+        }}
+        placeholder="Enter server name to confirm"
+        inputProps={{ 'aria-label': 'Confirm server name' }}
+      />
+      {!isSubscribed && (
+        <Alert severity="warning" sx={{ mt: 2 }}>
+          Deleting this resource will not reset your free-tier limit. You&apos;ll need to upgrade your subscription to create additional cloud resources.
+        </Alert>
+      )}
+    </ConfirmDeleteDialog>
   );
 }

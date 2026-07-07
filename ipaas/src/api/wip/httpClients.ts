@@ -60,7 +60,13 @@ export function createHttpClient(getBaseUrl: () => string, clientOptions?: HttpC
       throw new HttpError(res.status, `HTTP ${res.status}: ${body || res.statusText}`);
     }
     const text = await res.text().catch(() => '');
-    return (text ? (JSON.parse(text) as T) : undefined) as T;
+    if (!text) return undefined as T;
+    // Most endpoints return JSON, but some (e.g. DELETE) reply with a plain "OK" — fall back to the raw text.
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      return text as unknown as T;
+    }
   }
 
   return {
