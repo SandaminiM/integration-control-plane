@@ -198,7 +198,7 @@ export default function ComponentHeader({ component, project, repository, latest
   // BFF injects no git credentials into the cloud editor (it would open an
   // empty workspace) and the VS Code extension deep-link has no cloud support.
   // Only the new-integration editor flow (Project/CreateIntegrationOptions) is
-  // available. 
+  // available.
   // TODO: Remove the gate once the BFF injects GIT_* for source components.
   const showOpenInEditor = hasSource && !module?.hideOpenInEditor && !IS_CLOUD;
 
