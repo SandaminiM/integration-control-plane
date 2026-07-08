@@ -18,7 +18,7 @@
 
 import { Box, MenuItem, Select, Typography } from '@wso2/oxygen-ui';
 import { useMemo } from 'react';
-import type { JSX, SelectChangeEvent } from 'react';
+import type { JSX } from 'react';
 
 const FLAG_EMOJI: Record<string, string> = {
   US: '🇺🇸',
@@ -54,8 +54,8 @@ export default function RegionSelector({ currentPage }: RegionSelectorProps): JS
 
   if (regionDomainMap.size < 2) return null;
 
-  const handleChange = (e: SelectChangeEvent<unknown>) => {
-    const region = e.target.value as string;
+  const handleChange = (e: { target: { value: string } }) => {
+    const region = e.target.value;
     const domain = regionDomainMap.get(region);
     if (!domain) return;
 
@@ -71,12 +71,7 @@ export default function RegionSelector({ currentPage }: RegionSelectorProps): JS
   };
 
   return (
-    <Select
-      value={selectedRegion}
-      onChange={handleChange}
-      size="small"
-      variant="outlined"
-      sx={{ minWidth: 110, borderRadius: '8px', fontSize: '0.875rem' }}>
+    <Select value={selectedRegion} onChange={handleChange} size="small" variant="outlined" inputProps={{ 'aria-label': 'Select region' }} sx={{ minWidth: 110, borderRadius: '8px', fontSize: '0.875rem' }}>
       {Array.from(regionDomainMap.keys()).map((region) => (
         <MenuItem key={region} value={region}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
