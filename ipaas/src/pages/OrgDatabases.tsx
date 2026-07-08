@@ -24,13 +24,19 @@ import { isPlatformServicesEnabled, useDatabaseServers, useServiceAvailability }
 import { useSubscriptions } from '../hooks/useSubscription';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { PAID_SUBSCRIPTION_TYPE } from '../constants/subscription';
+import { DATABASE_KIND, type DbServerKind } from '../constants/platformServices';
 import type { OrgScope } from '../nav';
 import ComingSoon from './ComingSoon';
 import DatabaseServersTable from '../components/Databases/DatabaseServersTable';
 import NoDatabaseServersBanner from '../components/Databases/NoDatabaseServersBanner';
 import type { DatabaseServer } from '../types/platformServices';
 
-export default function OrgDatabases(scope: OrgScope): JSX.Element {
+/**
+ * Shared list view for both the Databases and Vector Databases pages. The `kind`
+ * descriptor supplies the title, routing segment, empty-state copy and the
+ * `is_vector_enabled` filter — see {@link DbServerKind}.
+ */
+export function DatabaseServersListView({ scope, kind }: { scope: OrgScope; kind: DbServerKind }): JSX.Element {
   const navigate = useNavigate();
   const orgUuid = useOrgUuid();
   const availability = useServiceAvailability();
@@ -39,17 +45,17 @@ export default function OrgDatabases(scope: OrgScope): JSX.Element {
   const isSubscribed = (subscriptions?.list ?? []).some((s) => s.subscriptionType === PAID_SUBSCRIPTION_TYPE);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const base = `/organizations/${scope.org}/admin/databases`;
+  const base = `/organizations/${scope.org}/admin/${kind.segment}`;
 
-  // Only the regular (non-vector) servers belong on this page; vector DBs have their own.
-  const regularServers = useMemo(() => (servers.data ?? []).filter((s) => !s.is_vector_enabled), [servers.data]);
+  // The server list is shared org-wide; each page shows only its own flavour.
+  const kindServers = useMemo(() => (servers.data ?? []).filter((s) => (kind.isVector ? s.is_vector_enabled : !s.is_vector_enabled)), [servers.data, kind.isVector]);
 
   if (!isPlatformServicesEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Databases management is currently under development." />;
+    return <ComingSoon title="Coming Soon" description={`${kind.listTitle} management is currently under development.`} />;
   }
 
   const notAllowlisted = availability.data?.reason === 'ORGANIZATION_NOT_IN_ALLOW_LIST';
-  const createAllowed = !!availability.data?.is_available && regularServers.length < (availability.data?.service_count_limit ?? 0);
+  const createAllowed = !!availability.data?.is_available && kindServers.length < (availability.data?.service_count_limit ?? 0);
   const upgradeRequired = availability.data?.reason === 'FREE_SUB_MAX_COUNT_EXCEEDED' || availability.data?.reason === 'FREE_TRIAL_EXPIRED';
 
   const openServer = (server: DatabaseServer) => navigate(`${base}/${server.id}/overview`);
@@ -64,12 +70,12 @@ export default function OrgDatabases(scope: OrgScope): JSX.Element {
     <PageContent>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
         <PageTitle>
-          <PageTitle.Header>Databases</PageTitle.Header>
+          <PageTitle.Header>{kind.listTitle}</PageTitle.Header>
         </PageTitle>
-        {!!regularServers.length && (
+        {!!kindServers.length && (
           <Stack direction="row" alignItems="center" gap={1}>
             <Tooltip title="Refresh">
-              <IconButton size="small" aria-label="Refresh database servers" onClick={() => servers.refetch()} disabled={servers.isFetching}>
+              <IconButton size="small" aria-label={`Refresh ${kind.listTitle}`} onClick={() => servers.refetch()} disabled={servers.isFetching}>
                 <RefreshCw size={16} />
               </IconButton>
             </Tooltip>
@@ -104,11 +110,11 @@ export default function OrgDatabases(scope: OrgScope): JSX.Element {
           }>
           Failed to list available database services.
         </Alert>
-      ) : regularServers.length === 0 ? (
-        <NoDatabaseServersBanner createAllowed={createAllowed} upgradeRequired={upgradeRequired} onCreate={() => navigate(`${base}/new`)} />
+      ) : kindServers.length === 0 ? (
+        <NoDatabaseServersBanner createAllowed={createAllowed} upgradeRequired={upgradeRequired} headline={kind.emptyHeadline} onCreate={() => navigate(`${base}/new`)} />
       ) : (
         <DatabaseServersTable
-          servers={regularServers}
+          servers={kindServers}
           isSubscribed={isSubscribed}
           onOpenServer={openServer}
           onDeleted={(name) => setAlert({ type: 'success', message: `Database server '${name}' deleted.` })}
@@ -117,4 +123,8 @@ export default function OrgDatabases(scope: OrgScope): JSX.Element {
       )}
     </PageContent>
   );
+}
+
+export default function OrgDatabases(scope: OrgScope): JSX.Element {
+  return <DatabaseServersListView scope={scope} kind={DATABASE_KIND} />;
 }

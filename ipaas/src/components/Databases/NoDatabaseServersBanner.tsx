@@ -23,6 +23,8 @@ import type { JSX } from 'react';
 interface NoDatabaseServersBannerProps {
   createAllowed: boolean;
   upgradeRequired: boolean;
+  /** Headline copy — differs between the Databases and Vector Databases pages. */
+  headline: string;
   onCreate: () => void;
 }
 
@@ -30,14 +32,14 @@ interface NoDatabaseServersBannerProps {
  * Empty state for the Databases page — a centered marketing banner. Mirrors Devant's
  * NoCloudStorageServicesBanner (generic DB icon in place of the engine logos).
  */
-export default function NoDatabaseServersBanner({ createAllowed, upgradeRequired, onCreate }: NoDatabaseServersBannerProps): JSX.Element {
+export default function NoDatabaseServersBanner({ createAllowed, upgradeRequired, headline, onCreate }: NoDatabaseServersBannerProps): JSX.Element {
   return (
     <Stack alignItems="center" textAlign="center" sx={{ maxWidth: 720, mx: 'auto', pb: 6 }}>
       <Box sx={{ width: 96, height: 96, borderRadius: '50%', bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3, color: 'text.secondary' }}>
         <Database size={44} />
       </Box>
       <Typography variant="h6" sx={{ fontWeight: 700, mb: upgradeRequired ? 2 : 1 }}>
-        Create fully-managed PostgreSQL, MySQL databases and WSO2 Integration Platform-Managed Caches (compatible with legacy Redis® OSS)
+        {headline}
       </Typography>
       {upgradeRequired ? (
         <Alert severity="warning" sx={{ textAlign: 'left' }}>

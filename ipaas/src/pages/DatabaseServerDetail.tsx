@@ -24,7 +24,7 @@ import { isPlatformServicesEnabled, useDatabaseServer } from '../hooks/usePlatfo
 import { useSubscriptions } from '../hooks/useSubscription';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { PAID_SUBSCRIPTION_TYPE } from '../constants/subscription';
-import { SERVICE_TYPES, serviceTypeLabel } from '../constants/platformServices';
+import { DATABASE_KIND, SERVICE_TYPES, serviceTypeLabel, type DbServerKind } from '../constants/platformServices';
 import ComingSoon from './ComingSoon';
 import OverviewTab from '../components/Databases/detail/OverviewTab';
 import MetricsTab from '../components/Databases/detail/MetricsTab';
@@ -47,10 +47,11 @@ const TABS: { value: DetailTab; label: string }[] = [
 
 const logoFor = (type: string): string | undefined => SERVICE_TYPES.find((t) => t.id === type)?.logo;
 
-export default function DatabaseServerDetail(scope: OrgScope): JSX.Element {
+/** Shared detail/management view for both Databases and Vector Databases. */
+export function DatabaseServerDetailView({ scope, kind }: { scope: OrgScope; kind: DbServerKind }): JSX.Element {
   const navigate = useNavigate();
   const { dbServerId = '', tab = 'overview' } = useParams();
-  const base = `/organizations/${scope.org}/admin/databases`;
+  const base = `/organizations/${scope.org}/admin/${kind.segment}`;
   const orgUuid = useOrgUuid();
   const { data: service, isLoading, isError, refetch, isFetching } = useDatabaseServer(dbServerId);
   const { data: subscriptions } = useSubscriptions(orgUuid ?? '');
@@ -58,7 +59,7 @@ export default function DatabaseServerDetail(scope: OrgScope): JSX.Element {
   const [notice, setNotice] = useState<string | null>(null);
 
   if (!isPlatformServicesEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Databases management is currently under development." />;
+    return <ComingSoon title="Coming Soon" description={`${kind.listTitle} management is currently under development.`} />;
   }
 
   const activeTab = (TABS.some((t) => t.value === tab) ? tab : 'overview') as DetailTab;
@@ -67,7 +68,7 @@ export default function DatabaseServerDetail(scope: OrgScope): JSX.Element {
   return (
     <PageContent>
       <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(base)} sx={{ mb: 2 }}>
-        Back to Database List
+        {kind.backToDetailLabel}
       </Button>
 
       {notice && (
@@ -132,4 +133,8 @@ export default function DatabaseServerDetail(scope: OrgScope): JSX.Element {
       )}
     </PageContent>
   );
+}
+
+export default function DatabaseServerDetail(scope: OrgScope): JSX.Element {
+  return <DatabaseServerDetailView scope={scope} kind={DATABASE_KIND} />;
 }

@@ -24,7 +24,7 @@ import { isPlatformServicesEnabled, useCreateServer, useDatabaseServers, useServ
 import { useSubscriptions } from '../hooks/useSubscription';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { PAID_SUBSCRIPTION_TYPE } from '../constants/subscription';
-import { CLOUD_PROVIDERS, FREE_TIER_DISABLED_PROVIDERS, regionLabel, SERVICE_NAME_ERROR, SERVICE_NAME_REGEX, SERVICE_TYPES } from '../constants/platformServices';
+import { CLOUD_PROVIDERS, DATABASE_KIND, FREE_TIER_DISABLED_PROVIDERS, regionLabel, SERVICE_NAME_ERROR, SERVICE_NAME_REGEX, type DbServerKind } from '../constants/platformServices';
 import { REQUIRED_FIELD_SX } from '../constants/styles';
 import { plansForProviderRegion, toCreateError } from '../utils/platformServices';
 import ComingSoon from './ComingSoon';
@@ -35,13 +35,18 @@ import type { OrgScope } from '../nav';
 import type { CloudProvider, CloudRegion, CreateError, ServicePlan, ServiceType } from '../types/platformServices';
 
 const assetUrl = (path: string): string => `${import.meta.env.BASE_URL}${path}`;
-/** Section sub-headings, deliberately smaller than the "Create Database Server" title. */
+/** Section sub-headings, deliberately smaller than the page title. */
 const sectionHeadingSx = { fontWeight: 600, mb: 1.5 } as const;
 
-export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
+/**
+ * Shared create wizard for both Databases and Vector Databases. The `kind`
+ * descriptor supplies the offered engines, the `is_vector_enabled` payload flag,
+ * the routing segment and the title/label copy — see {@link DbServerKind}.
+ */
+export function CreateDatabaseServerView({ scope, kind }: { scope: OrgScope; kind: DbServerKind }): JSX.Element {
   const navigate = useNavigate();
   const orgUuid = useOrgUuid();
-  const base = `/organizations/${scope.org}/admin/databases`;
+  const base = `/organizations/${scope.org}/admin/${kind.segment}`;
 
   const { data: subscriptions } = useSubscriptions(orgUuid ?? '');
   const isSubscribed = (subscriptions?.list ?? []).some((s) => s.subscriptionType === PAID_SUBSCRIPTION_TYPE);
@@ -89,14 +94,14 @@ export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
   const step1Valid = hasPlans && serviceName !== '' && !nameInUse && !nameInvalid;
 
   if (!isPlatformServicesEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Databases management is currently under development." />;
+    return <ComingSoon title="Coming Soon" description={`${kind.listTitle} management is currently under development.`} />;
   }
 
   const submit = () => {
     if (!provider || !region || !planId) return;
     setError(null);
     create.mutate(
-      { name: serviceName, cloud_provider: provider, cloud_region: region, service_plan_id: planId, is_vector_enabled: false },
+      { name: serviceName, cloud_provider: provider, cloud_region: region, service_plan_id: planId, is_vector_enabled: kind.isVector },
       {
         onSuccess: (server) => navigate(`${base}/${server.id}/overview`),
         onError: (e) => setError(toCreateError(e)),
@@ -107,7 +112,7 @@ export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
   return (
     <PageContent>
       <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(base)} sx={{ mb: 2 }}>
-        Back to database server list
+        {kind.backToListLabel}
       </Button>
 
       <Stack direction="row" gap={4} alignItems="flex-start">
@@ -116,7 +121,7 @@ export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
         </Box>
         <Box sx={{ flex: 1, maxWidth: 900, mt: 2 }}>
           <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
-            Create Database Server
+            {kind.createTitle}
           </Typography>
 
           {error && (
@@ -143,11 +148,13 @@ export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
             <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
           ) : activeStep === 0 ? (
             <>
-              <Typography variant="subtitle2" sx={sectionHeadingSx}>
-                Select Cloud Storage
-              </Typography>
+              {!kind.isVector && (
+                <Typography variant="subtitle2" sx={sectionHeadingSx}>
+                  Select Cloud Storage
+                </Typography>
+              )}
               <Grid container spacing={2} sx={{ mb: 3 }}>
-                {SERVICE_TYPES.map((t) => {
+                {kind.serviceTypes.map((t) => {
                   const card = <SelectableCard title={t.name} description={t.description} logo={assetUrl(t.logo)} selected={storageType === t.id} disabled={t.disabled} onSelect={() => setStorageType(t.id)} />;
                   return (
                     <Grid key={t.id} size={{ xs: 12, sm: 4 }}>
@@ -239,4 +246,8 @@ export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
       </Stack>
     </PageContent>
   );
+}
+
+export default function CreateDatabaseServer(scope: OrgScope): JSX.Element {
+  return <CreateDatabaseServerView scope={scope} kind={DATABASE_KIND} />;
 }

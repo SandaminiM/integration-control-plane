@@ -57,6 +57,62 @@ export const SERVICE_TYPES: ServiceTypeOption[] = [
   },
 ];
 
+/**
+ * Selectable engines for a Vector Database — only PostgreSQL (pgvector) is offered.
+ * Mirrors Devant, which filters the type picker to `postgres` and swaps in a
+ * vector-specific description in vector mode.
+ */
+export const VECTOR_SERVICE_TYPES: ServiceTypeOption[] = [
+  { id: 'postgres', name: 'PostgreSQL', description: 'A high-performance, fully-managed object-relational database management system, optimized for vector similarity search.', logo: `${DB_LOGO_BASE}postgresql.svg` },
+];
+
+/**
+ * Describes one flavour of the managed-database feature. Both the regular
+ * Databases pages and the Vector Databases pages are the same components driven
+ * by one of these descriptors — the only real data difference is the
+ * `is_vector_enabled` flag on the server object and the create payload.
+ */
+export interface DbServerKind {
+  /** Value sent as `is_vector_enabled` on create and used to filter the server list. */
+  isVector: boolean;
+  /** URL segment under `/admin` (`databases` or `vector-databases`). */
+  segment: 'databases' | 'vector-databases';
+  /** List-page heading. */
+  listTitle: string;
+  /** Create-page heading. */
+  createTitle: string;
+  /** Create-page "back to list" button label. */
+  backToListLabel: string;
+  /** Detail-page "back to list" button label. */
+  backToDetailLabel: string;
+  /** Empty-state banner headline. */
+  emptyHeadline: string;
+  /** Engines offered in the create wizard's type picker. */
+  serviceTypes: ServiceTypeOption[];
+}
+
+export const DATABASE_KIND: DbServerKind = {
+  isVector: false,
+  segment: 'databases',
+  listTitle: 'Databases',
+  createTitle: 'Create Database Server',
+  backToListLabel: 'Back to database server list',
+  backToDetailLabel: 'Back to Database List',
+  emptyHeadline: 'Create fully-managed PostgreSQL, MySQL databases and WSO2 Integration Platform-Managed Caches (compatible with legacy Redis® OSS)',
+  serviceTypes: SERVICE_TYPES,
+};
+
+export const VECTOR_DATABASE_KIND: DbServerKind = {
+  isVector: true,
+  segment: 'vector-databases',
+  listTitle: 'Vector Databases',
+  createTitle: 'Create Vector Database Server',
+  backToListLabel: 'Back to vector database server list',
+  backToDetailLabel: 'Back to Vector Database List',
+  emptyHeadline: 'Create fully-managed vector databases (PostgreSQL)',
+  serviceTypes: VECTOR_SERVICE_TYPES,
+};
+
 /** Cloud providers in display order — DigitalOcean & GCP first (they carry the hobbyist plans). */
 export const CLOUD_PROVIDERS: { id: CloudProvider; name: string; logo: string }[] = [
   { id: 'digitalocean', name: 'DigitalOcean', logo: `${CLOUD_LOGO_BASE}digitalocean.svg` },
