@@ -62,8 +62,9 @@ export default function FileEventHeader({
   const redeployMutation = useRedeployDeployment();
   const isActionPending = stopMutation.isPending || redeployMutation.isPending;
 
-  const canStop = deploymentStatusV2 === 'ACTIVE' || deploymentStatusV2 === 'ERROR';
+  const canStop = deploymentStatusV2 === 'ACTIVE';
   const canStart = deploymentStatusV2 === 'SUSPENDED';
+  const hasError = deploymentStatusV2 === 'ERROR';
   const isInProgress = deploymentStatusV2 === 'IN_PROGRESS';
 
   // Switch the Configure button to "Configure to Continue" when the schema has
@@ -164,6 +165,15 @@ export default function FileEventHeader({
             <span>
               <Button variant="outlined" size="small" color="success" startIcon={<RotateCw size={14} />} onClick={handleRedeploy} disabled={isActionPending}>
                 Start
+              </Button>
+            </span>
+          </Tooltip>
+        )}
+        {hasError && (
+          <Tooltip title="Redeploy">
+            <span>
+              <Button variant="outlined" size="small" color="error" startIcon={<RotateCw size={14} />} onClick={handleRedeploy} disabled={isActionPending}>
+                Redeploy
               </Button>
             </span>
           </Tooltip>

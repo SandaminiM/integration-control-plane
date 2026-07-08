@@ -16,16 +16,10 @@
  * under the License.
  */
 
-import { Box, MenuItem, Select, Stack, Typography } from '@wso2/oxygen-ui';
-import { FlaskConical } from '@wso2/oxygen-ui-icons-react';
+import { Alert, Box, MenuItem, PageContent, Select } from '@wso2/oxygen-ui';
 import { useEffect, useMemo, useState, type JSX } from 'react';
-// The MCP playground UI ships in the optional `@wso2-org/mcp-playground` package.
-// It's commented out so the app builds without the dependency installed. To enable:
-//   1. npm install @wso2-org/mcp-playground
-//   2. uncomment the import below and the <MCPInspector /> usage further down
-//   3. set isPlaygroundEnabled = true in McpTest.tsx
-// import MCPInspector from '@wso2-org/mcp-playground';
 import ComingSoon from './ComingSoon';
+import McpPlayground from '../components/McpPlayground/McpPlayground';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import { useGenerateTestKey } from '../hooks/useApim';
 import { useComponentByHandler } from '../hooks/useComponents';
@@ -34,18 +28,21 @@ import { useEnvironments } from '../hooks/useEnvironments';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useProjectId } from '../hooks/useProjects';
 import type { ComponentScope } from '../nav';
+import type { EnvEndpoint } from '../types/component';
 
 const TEST_KEY_HEADER = 'test-key';
 
+/** Network-visibility URL resolvers (mirrors the endpoint URLs panel). */
+const VISIBILITY_OPTIONS: { value: string; label: string; getUrl: (ep: EnvEndpoint) => string }[] = [
+  { value: 'public', label: 'Public', getUrl: (ep) => ep.publicUrl || ep.defaultPublicUrl || ep.invokeUrl || '' },
+  { value: 'organization', label: 'Organization', getUrl: (ep) => ep.organizationUrl || ep.defaultOrganizationUrl || '' },
+  { value: 'project', label: 'Project', getUrl: (ep) => ep.projectUrl || '' },
+];
+
 /**
- * The actual MCP playground — embeds `@wso2-org/mcp-playground`'s `MCPInspector`
- * (the component devant uses) pointed at the deployed MCP endpoint for the
- * selected environment, with a freshly minted `test-key`.
- *
- * This file statically imports the optional `@wso2-org/mcp-playground` package,
- * so it is **only** loaded (via `React.lazy`) when `isPlaygroundEnabled` is true
- * in {@link McpTest} — keeping the package out of the build graph while the
- * feature is disabled / the dependency isn't installed.
+ * Resolves the deployed MCP endpoint + a freshly minted `test-key` for the selected
+ * environment/track, then hands them to the in-house {@link McpPlayground} (the interactive
+ * connect / list-tools / invoke / ping surface).
  */
 export default function McpPlaygroundInspector({ scope }: { scope: ComponentScope }): JSX.Element {
   const orgUuid = useOrgUuid() ?? '';
@@ -76,16 +73,30 @@ export default function McpPlaygroundInspector({ scope }: { scope: ComponentScop
   const releaseId = deployment?.releaseId ?? '';
   const { data: endpoints = [] } = useEnvEndpoints(component?.id ?? '', selectedTrackId, releaseId);
 
-  // The MCP endpoint: first reachable one with an APIM id (tools live at `${publicUrl}/mcp`).
-  const mcpEndpoint = useMemo(() => endpoints.find((e) => e.publicUrl && e.apimId) ?? null, [endpoints]);
-  const baseUrl = mcpEndpoint?.publicUrl ?? '';
+  // Testable endpoints (those with an APIM id). The user picks the endpoint + visibility.
+  const testableEndpoints = useMemo(() => endpoints.filter((e) => e.apimId), [endpoints]);
+  const [selectedEndpointId, setSelectedEndpointId] = useState('');
+  const [selectedVisibility, setSelectedVisibility] = useState('');
+
+  const activeEndpointId = testableEndpoints.some((e) => e.id === selectedEndpointId) ? selectedEndpointId : (testableEndpoints[0]?.id ?? '');
+  const activeEndpoint = testableEndpoints.find((e) => e.id === activeEndpointId) ?? null;
+
+  const visibilityOptions = useMemo(() => (activeEndpoint ? VISIBILITY_OPTIONS.filter((v) => v.getUrl(activeEndpoint) && (!activeEndpoint.networkVisibilities?.length || activeEndpoint.networkVisibilities.includes(v.label))) : []), [activeEndpoint]);
+  const activeVisibility = visibilityOptions.some((v) => v.value === selectedVisibility) ? selectedVisibility : (visibilityOptions[0]?.value ?? '');
+
+  const baseUrl = visibilityOptions.find((v) => v.value === activeVisibility)?.getUrl(activeEndpoint!) ?? '';
   const mcpUrl = baseUrl ? `${baseUrl}/mcp` : '';
-  const apimId = mcpEndpoint?.apimId ?? null;
+  const apimId = activeEndpoint?.apimId ?? null;
+  const isDeploymentInProgress = deployment?.deploymentStatusV2 === 'IN_PROGRESS';
+
+  const endpointSwitcher = { options: testableEndpoints.map((e) => ({ label: e.displayName, value: e.id })), value: activeEndpointId, onChange: setSelectedEndpointId };
+  const visibilitySwitcher = { options: visibilityOptions.map((v) => ({ label: v.label, value: v.value })), value: activeVisibility, onChange: setSelectedVisibility };
 
   // Mint a test key for the selected environment (sent as the `test-key` header).
   const generateKey = useGenerateTestKey();
   const [token, setToken] = useState('');
   const [tokenFetching, setTokenFetching] = useState(false);
+  const [regenNonce, setRegenNonce] = useState(0);
   useEffect(() => {
     if (!apimId) {
       setToken('');
@@ -107,9 +118,9 @@ export default function McpPlaygroundInspector({ scope }: { scope: ComponentScop
     return () => {
       cancelled = true;
     };
-    // generateKey is a stable mutation; apimId/env drive identity
+    // generateKey is a stable mutation; apimId/env/regen drive identity
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apimId, selectedEnv?.critical]);
+  }, [apimId, selectedEnv?.critical, regenNonce]);
 
   // Non-MCP components keep this route's previous Coming Soon behaviour.
   if (component && !isMcp) {
@@ -132,35 +143,18 @@ export default function McpPlaygroundInspector({ scope }: { scope: ComponentScop
   );
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       {tracks.length > 0 && <DeploymentTrackBar tracks={tracks} selectedId={selectedTrackId} onChange={setSelectedTrackId} orgHandler={scope.org} projectHandler={project?.handler ?? scope.project} componentHandler={scope.component} extra={envSelector} />}
 
-      <Box sx={{ flex: 1, minHeight: 0 }}>
-        {mcpUrl ? (
-          // Live playground — enable by installing @wso2-org/mcp-playground and
-          // replacing the placeholder below with this usage:
-          // <MCPInspector url={mcpUrl} token={token} headerName={TEST_KEY_HEADER} isTokenFetching={tokenFetching} shouldSetHeaderNameExternally={false} />
-          <Stack alignItems="center" justifyContent="center" gap={1} sx={{ height: '100%', px: 3 }}>
-            <FlaskConical size={28} style={{ opacity: 0.4 }} />
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-              MCP playground endpoint is ready ({tokenFetching ? 'fetching key…' : token ? 'key ready' : 'no key'}, header <code>{TEST_KEY_HEADER}</code>).
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', fontFamily: 'monospace', wordBreak: 'break-all' }}>
-              {mcpUrl}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
-              Install <code>@wso2-org/mcp-playground</code> to render the interactive inspector here.
-            </Typography>
-          </Stack>
+      <PageContent sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        {isDeploymentInProgress ? (
+          <Alert severity="info">Integration deployment is still in progress. You can start testing when the deployment is complete.</Alert>
+        ) : mcpUrl ? (
+          <McpPlayground url={mcpUrl} token={token || null} headerName={TEST_KEY_HEADER} isTokenFetching={tokenFetching} onTokenRegenerate={() => setRegenNonce((n) => n + 1)} endpointSwitcher={endpointSwitcher} visibilitySwitcher={visibilitySwitcher} />
         ) : (
-          <Stack alignItems="center" justifyContent="center" gap={1.5} sx={{ height: '100%', px: 3 }}>
-            <FlaskConical size={28} style={{ opacity: 0.4 }} />
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-              Deploy this MCP server to {environments.length > 1 ? 'the selected environment' : 'an environment'} to test its tools here.
-            </Typography>
-          </Stack>
+          <Alert severity="warning">The integration is still not deployed. You must deploy the integration to test it.</Alert>
         )}
-      </Box>
+      </PageContent>
     </Box>
   );
 }

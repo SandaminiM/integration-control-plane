@@ -17,27 +17,44 @@
  */
 
 import { Button, Tooltip } from '@wso2/oxygen-ui';
-import { List, RotateCw, Square } from '@wso2/oxygen-ui-icons-react';
+import { FlaskConical, List, RotateCw, Square } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { useNavigate } from 'react-router';
 import { useRedeployDeployment, useStopDeployment } from '../../../hooks/useDeployments';
 import { IS_CLOUD } from '../../../features';
 import type { EnvCardActionsProps } from '../../../types/integration';
 import ServiceLogsDrawer from '../integration-as-api/ServiceLogsDrawer';
 
 /**
- * MCP Server's right-header slot: View Logs + Stop/Start — gated on deployment
- * status. No Test button for now (the MCP playground is deferred; the Test tab
- * shows Coming Soon). Stop/Start poll via `requestPoll` and report via `onNotify`.
+ * MCP Server's right-header slot: Test (opens the MCP playground), View Logs, and
+ * Stop / Start / Redeploy — gated on deployment status. Actions poll via
+ * `requestPoll` so the status settles, and report outcomes via `onNotify`.
  */
-export default function EnvCardActions({ component, env, versionId, releaseId, orgHandler, hasDeployment, deploymentStatusV2, releaseMgtReleaseId, releaseMgtDeploymentId, onNotify, requestPoll }: EnvCardActionsProps): ReactNode {
+export default function EnvCardActions({
+  component,
+  env,
+  versionId,
+  releaseId,
+  orgHandler,
+  projectHandler,
+  componentHandler,
+  hasDeployment,
+  deploymentStatusV2,
+  releaseMgtReleaseId,
+  releaseMgtDeploymentId,
+  onNotify,
+  requestPoll,
+}: EnvCardActionsProps): ReactNode {
+  const navigate = useNavigate();
   const [logsOpen, setLogsOpen] = useState(false);
   const stopMutation = useStopDeployment();
   const redeployMutation = useRedeployDeployment();
   const isActionPending = stopMutation.isPending || redeployMutation.isPending;
 
-  const canStop = deploymentStatusV2 === 'ACTIVE' || deploymentStatusV2 === 'ERROR';
+  const canStop = deploymentStatusV2 === 'ACTIVE';
   const canStart = deploymentStatusV2 === 'SUSPENDED';
+  const hasError = deploymentStatusV2 === 'ERROR';
   const isInProgress = deploymentStatusV2 === 'IN_PROGRESS';
 
   const handleStop = () => {
@@ -70,6 +87,21 @@ export default function EnvCardActions({ component, env, versionId, releaseId, o
   return (
     <>
       {hasDeployment && (
+        <Tooltip title={isInProgress ? 'Available once the deployment completes' : ''}>
+          <span>
+            <Button
+              variant="text"
+              size="small"
+              startIcon={<FlaskConical size={14} />}
+              disabled={isInProgress}
+              onClick={() => navigate(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/test`)}
+              sx={{ textTransform: 'none' }}>
+              Test
+            </Button>
+          </span>
+        </Tooltip>
+      )}
+      {hasDeployment && (
         <Button variant="text" size="small" startIcon={<List size={14} />} onClick={() => setLogsOpen(true)} sx={{ textTransform: 'none' }}>
           View Logs
         </Button>
@@ -88,6 +120,15 @@ export default function EnvCardActions({ component, env, versionId, releaseId, o
           <span>
             <Button variant="outlined" size="small" color="success" startIcon={<RotateCw size={14} />} onClick={handleRedeploy} disabled={isActionPending}>
               Start
+            </Button>
+          </span>
+        </Tooltip>
+      )}
+      {hasError && (
+        <Tooltip title="Redeploy">
+          <span>
+            <Button variant="outlined" size="small" color="error" startIcon={<RotateCw size={14} />} onClick={handleRedeploy} disabled={isActionPending}>
+              Redeploy
             </Button>
           </span>
         </Tooltip>

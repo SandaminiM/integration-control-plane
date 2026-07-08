@@ -35,7 +35,10 @@ import McpToolTile from './McpToolTile';
  * MCP overview, which replaces the swagger/operations view with a tools list.
  * Shared by both MCP flavors (server-from-source and proxy) via the registry.
  */
-export default function EnvCardBody({ component, env, versionId, releaseId, hasDeployment, loadingDeployment }: EnvCardBodyProps): ReactNode {
+export default function EnvCardBody({ component, env, versionId, releaseId, hasDeployment, loadingDeployment, deploymentStatusV2 }: EnvCardBodyProps): ReactNode {
+  // Tools can only be listed once the server is actually deployed and running — an
+  // in-progress deployment has no reachable `/mcp` endpoint yet.
+  const isDeploymentReady = hasDeployment && deploymentStatusV2 !== 'IN_PROGRESS';
   const { data: endpoints = [] } = useEnvEndpoints(component.id, versionId, releaseId);
 
   // Default to the MCP-capable endpoint (one with a public URL + APIM id — the
@@ -55,7 +58,7 @@ export default function EnvCardBody({ component, env, versionId, releaseId, hasD
   const generateKey = useGenerateTestKey();
   const [apiKey, setApiKey] = useState<string | null>(null);
   useEffect(() => {
-    if (!apimId) return undefined;
+    if (!apimId || !isDeploymentReady) return undefined;
     let cancelled = false;
     generateKey
       .mutateAsync({ apimId, keyType: env.critical ? 'Production' : 'Development' })
@@ -68,11 +71,11 @@ export default function EnvCardBody({ component, env, versionId, releaseId, hasD
     return () => {
       cancelled = true;
     };
-    // generateKey is a stable mutation; apimId/env drive identity
+    // generateKey is a stable mutation; apimId/env/readiness drive identity
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apimId, env.critical]);
+  }, [apimId, env.critical, isDeploymentReady]);
 
-  const { tools, isLoading, error, isForbidden, refetch } = useMcpTools({ baseUrl, apiKey, enabled: hasDeployment && !!baseUrl });
+  const { tools, isLoading, error, isForbidden, refetch } = useMcpTools({ baseUrl, apiKey, enabled: isDeploymentReady && !!baseUrl });
 
   if (loadingDeployment) return <EnvCardSkeleton />;
 
@@ -98,38 +101,46 @@ export default function EnvCardBody({ component, env, versionId, releaseId, hasD
 
       {showEndpointPanel && <EndpointUrlsPanel endpoints={endpoints} selectedIdx={activeIdx} onSelect={setSelectedEpIdx} componentId={component.id} deploymentTrackId={versionId} />}
 
-      {isLoading && (
-        <Stack alignItems="center" sx={{ py: 3 }}>
-          <CircularProgress size={20} />
-        </Stack>
-      )}
-
-      {!isLoading && error && (
-        <Alert
-          severity={isForbidden ? 'warning' : 'error'}
-          action={
-            isForbidden ? undefined : (
-              <Button color="inherit" size="small" onClick={refetch}>
-                Retry
-              </Button>
-            )
-          }>
-          {isForbidden ? "You don't have permission to view this MCP server's tools." : 'Failed to fetch MCP tools.'}
+      {!isDeploymentReady ? (
+        <Alert severity="info" sx={{ mt: 1.5 }}>
+          Deploy to view MCP tools.
         </Alert>
-      )}
+      ) : (
+        <>
+          {isLoading && (
+            <Stack alignItems="center" sx={{ py: 3 }}>
+              <CircularProgress size={20} />
+            </Stack>
+          )}
 
-      {!isLoading && !error && tools.length === 0 && (
-        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-          No tools available.
-        </Typography>
-      )}
+          {!isLoading && error && (
+            <Alert
+              severity={isForbidden ? 'warning' : 'error'}
+              action={
+                isForbidden ? undefined : (
+                  <Button color="inherit" size="small" onClick={refetch}>
+                    Retry
+                  </Button>
+                )
+              }>
+              {isForbidden ? "You don't have permission to view this MCP server's tools." : 'Failed to fetch MCP tools.'}
+            </Alert>
+          )}
 
-      {!isLoading && !error && tools.length > 0 && (
-        <Box sx={{ mt: 1.5 }}>
-          {tools.map((tool) => (
-            <McpToolTile key={tool.name} tool={tool} />
-          ))}
-        </Box>
+          {!isLoading && !error && tools.length === 0 && (
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+              No tools available.
+            </Typography>
+          )}
+
+          {!isLoading && !error && tools.length > 0 && (
+            <Box sx={{ mt: 1.5 }}>
+              {tools.map((tool) => (
+                <McpToolTile key={tool.name} tool={tool} />
+              ))}
+            </Box>
+          )}
+        </>
       )}
     </>
   );

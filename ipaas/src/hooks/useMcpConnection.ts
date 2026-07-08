@@ -1,0 +1,169 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { useCallback, useRef, useState } from 'react';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport, StreamableHTTPError } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import type { ServerCapabilities } from '@modelcontextprotocol/sdk/types.js';
+import { formatMcpError, formatToolResult } from '../utils/mcp';
+import type { JsonValue, McpConnectionStatus, McpHistoryEvent, McpHistoryEventType, McpTool, McpToolResult } from '../types/mcp';
+
+/** Per-request timeout, matching the playground library. */
+const REQUEST_TIMEOUT_MS = 60_000;
+
+interface UseMcpConnectionParams {
+  /** The MCP endpoint (e.g. `${publicUrl}/mcp`). */
+  url: string;
+  /** Auth token sent in the `headerName` header. */
+  token: string | null;
+  /** Header carrying the token (e.g. `test-key`). */
+  headerName: string;
+}
+
+/** Latency + outcome of a `ping()`. */
+export interface McpPingResult {
+  success: boolean;
+  latencyMs: number;
+  error?: string;
+}
+
+export interface UseMcpConnectionResult {
+  status: McpConnectionStatus;
+  error: string | null;
+  /** 401/403 on connect — a permissions issue, not a transient failure. */
+  isForbidden: boolean;
+  serverCapabilities: ServerCapabilities | null;
+  history: McpHistoryEvent[];
+  connect: () => Promise<void>;
+  disconnect: () => Promise<void>;
+  listTools: () => Promise<McpTool[]>;
+  callTool: (name: string, args: Record<string, JsonValue>) => Promise<McpToolResult>;
+  ping: () => Promise<McpPingResult>;
+  clearHistory: () => void;
+}
+
+const isForbiddenError = (err: unknown): boolean => {
+  if (err instanceof StreamableHTTPError) return err.code === 401 || err.code === 403;
+  return /\b(401|403)\b|forbidden|unauthor/i.test(err instanceof Error ? err.message : String(err));
+};
+
+/**
+ * A persistent MCP session over the SDK's StreamableHTTP transport: connect/disconnect,
+ * list + invoke tools, ping, and an activity history — the data layer behind the MCP
+ * playground. The connection targets the deployed data-plane endpoint (an external system),
+ * so it lives in a hook that the playground drives imperatively rather than a React Query cache.
+ */
+export function useMcpConnection({ url, token, headerName }: UseMcpConnectionParams): UseMcpConnectionResult {
+  const [status, setStatus] = useState<McpConnectionStatus>('disconnected');
+  const [error, setError] = useState<string | null>(null);
+  const [isForbidden, setIsForbidden] = useState(false);
+  const [serverCapabilities, setServerCapabilities] = useState<ServerCapabilities | null>(null);
+  const [history, setHistory] = useState<McpHistoryEvent[]>([]);
+  const clientRef = useRef<Client | null>(null);
+
+  const addHistoryEvent = useCallback((type: McpHistoryEventType, source: string, message: string, details?: unknown) => {
+    setHistory((prev) => [{ type, timestamp: new Date().toISOString(), source, message, details }, ...prev]);
+  }, []);
+
+  const clearHistory = useCallback(() => setHistory([]), []);
+
+  const disconnect = useCallback(async () => {
+    const client = clientRef.current;
+    clientRef.current = null;
+    setStatus('disconnected');
+    setServerCapabilities(null);
+    if (client) {
+      await client.close().catch(() => undefined);
+      addHistoryEvent('info', 'disconnect', 'Disconnected from MCP server');
+    }
+  }, [addHistoryEvent]);
+
+  const connect = useCallback(async () => {
+    if (!url || !token) return;
+    await clientRef.current?.close().catch(() => undefined);
+    clientRef.current = null;
+    setStatus('connecting');
+    setError(null);
+    setIsForbidden(false);
+    try {
+      const endpoint = new URL(url);
+      if (!endpoint.searchParams.has('transportType')) endpoint.searchParams.set('transportType', 'streamable-http');
+      const transport = new StreamableHTTPClientTransport(endpoint, { requestInit: { headers: { [headerName]: token } } });
+      const client = new Client({ name: 'wip-mcp-playground', version: '1.0.0' }, { capabilities: {} });
+      await client.connect(transport);
+      clientRef.current = client;
+      setServerCapabilities(client.getServerCapabilities() ?? null);
+      setStatus('connected');
+      addHistoryEvent('info', 'connect', 'Connected to MCP server', { url });
+    } catch (err) {
+      const message = formatMcpError(err);
+      setStatus('error');
+      setError(message);
+      setIsForbidden(isForbiddenError(err));
+      addHistoryEvent('error', 'connect', message);
+    }
+  }, [url, token, headerName, addHistoryEvent]);
+
+  const listTools = useCallback(async (): Promise<McpTool[]> => {
+    const client = clientRef.current;
+    if (!client) throw new Error('MCP client is not connected');
+    addHistoryEvent('request', 'listTools', 'Listing tools');
+    const response = await client.listTools(undefined, { timeout: REQUEST_TIMEOUT_MS });
+    const tools = Array.isArray(response.tools) ? (response.tools as McpTool[]) : [];
+    addHistoryEvent('response', 'listTools', `Received ${tools.length} tool(s)`);
+    return tools;
+  }, [addHistoryEvent]);
+
+  const callTool = useCallback(
+    async (name: string, args: Record<string, JsonValue>): Promise<McpToolResult> => {
+      const client = clientRef.current;
+      if (!client) throw new Error('MCP client is not connected');
+      addHistoryEvent('request', name, `Calling tool "${name}"`, args);
+      try {
+        const raw = await client.callTool({ name, arguments: args }, undefined, { timeout: REQUEST_TIMEOUT_MS });
+        const result = formatToolResult(raw);
+        addHistoryEvent(result.isError ? 'error' : 'response', name, result.isError ? `Tool "${name}" returned an error` : `Tool "${name}" succeeded`, result);
+        return result;
+      } catch (err) {
+        const message = formatMcpError(err);
+        addHistoryEvent('error', name, message);
+        return { content: [{ type: 'text', text: message }], isError: true };
+      }
+    },
+    [addHistoryEvent],
+  );
+
+  const ping = useCallback(async (): Promise<McpPingResult> => {
+    const client = clientRef.current;
+    if (!client) throw new Error('MCP client is not connected');
+    const start = Date.now();
+    addHistoryEvent('request', 'ping', 'Pinging server');
+    try {
+      await client.ping({ timeout: REQUEST_TIMEOUT_MS });
+      const latencyMs = Date.now() - start;
+      addHistoryEvent('response', 'ping', `Pong in ${latencyMs}ms`);
+      return { success: true, latencyMs };
+    } catch (err) {
+      const message = formatMcpError(err);
+      addHistoryEvent('error', 'ping', message);
+      return { success: false, latencyMs: Date.now() - start, error: message };
+    }
+  }, [addHistoryEvent]);
+
+  return { status, error, isForbidden, serverCapabilities, history, connect, disconnect, listTools, callTool, ping, clearHistory };
+}

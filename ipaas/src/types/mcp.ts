@@ -38,3 +38,57 @@ export interface McpToolParameter {
   description: string;
   required: boolean;
 }
+
+// --- Playground: connection, history, tool results, and JSON-schema form values ---
+
+export type McpConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+
+export type McpHistoryEventType = 'request' | 'response' | 'error' | 'info';
+
+/** A single entry in the playground's activity log. */
+export interface McpHistoryEvent {
+  type: McpHistoryEventType;
+  /** ISO timestamp. */
+  timestamp: string;
+  /** Where the event originated (e.g. the tool name or `connect`). */
+  source: string;
+  message: string;
+  details?: unknown;
+}
+
+/** One content block of a tool-call result (text, or any other MCP content kind). */
+export type McpToolContent = { type: 'text'; text: string } | { type: string; [key: string]: unknown };
+
+/** Normalized result of a tool invocation. */
+export interface McpToolResult {
+  content: McpToolContent[];
+  isError?: boolean;
+}
+
+/** Any JSON value — the shape a tool's arguments take. */
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
+/** A (subset of) JSON Schema, as it appears in a tool's `inputSchema`. */
+export interface JsonSchemaType {
+  type?: string;
+  description?: string;
+  properties?: Record<string, JsonSchemaType>;
+  items?: JsonSchemaType;
+  required?: string[];
+  enum?: unknown[];
+  default?: JsonValue;
+}
+
+/** Latency + outcome of a playground `ping()`. */
+export interface McpPingResult {
+  success: boolean;
+  latencyMs: number;
+  error?: string;
+}
+
+/** A labelled single-select the playground sidebar renders (endpoint, visibility). */
+export interface McpSwitcher {
+  options: { label: string; value: string }[];
+  value: string;
+  onChange: (value: string) => void;
+}

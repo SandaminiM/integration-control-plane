@@ -16,11 +16,9 @@
  * under the License.
  */
 
-import type { JSX } from 'react';
-import McpPlaygroundInspector from './McpPlaygroundInspector';
-import type { ComponentScope } from '../nav';
-
-/** MCP Server "Test" page — the in-house MCP playground for the deployed server. */
-export default function McpTest(scope: ComponentScope): JSX.Element {
-  return <McpPlaygroundInspector scope={scope} />;
+/** A labelled single-select the playground sidebar renders (endpoint, visibility). */
+export interface McpSwitcher {
+  options: { label: string; value: string }[];
+  value: string;
+  onChange: (value: string) => void;
 }
