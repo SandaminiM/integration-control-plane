@@ -24,13 +24,15 @@ import ConnectionSidebar from './ConnectionSidebar';
 import HistoryPanel from './HistoryPanel';
 import PingTab from './PingTab';
 import ToolsTab from './ToolsTab';
-import type { McpTool } from '../../types/mcp';
-import type { McpSwitcher } from './types';
+import type { McpSwitcher, McpTool } from '../../types/mcp';
 
 type PlaygroundTab = 'tools' | 'ping';
 
 const MIN_HISTORY_HEIGHT = 120;
 const MAX_HISTORY_HEIGHT = 480;
+
+const mainPanelSx = { flex: 1, minWidth: 0, minHeight: 0, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' } as const;
+const resizeHandleSx = { height: 6, flexShrink: 0, cursor: 'row-resize', bgcolor: 'divider', '&:hover': { bgcolor: 'primary.main' }, transition: 'background-color 0.15s' } as const;
 
 interface McpPlaygroundProps {
   /** The MCP endpoint (e.g. `${publicUrl}/mcp`). */
@@ -116,7 +118,7 @@ export default function McpPlayground({ url, token, headerName = 'test-key', isT
         onGetTestKey={onTokenRegenerate}
       />
 
-      <Stack sx={{ flex: 1, minWidth: 0, minHeight: 0, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+      <Stack sx={mainPanelSx}>
         {status !== 'connected' ? (
           <Stack alignItems="center" justifyContent="center" gap={1.5} sx={{ flex: 1, p: 3 }}>
             <Plug size={36} style={{ opacity: 0.3 }} />
@@ -131,9 +133,9 @@ export default function McpPlayground({ url, token, headerName = 'test-key', isT
               <Tab value="ping" label="Ping" sx={{ minHeight: 40 }} />
             </Tabs>
 
-            <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>{tab === 'tools' ? <ToolsTab tools={tools} loading={toolsLoading} connected callTool={conn.callTool} onRefresh={refreshTools} /> : <PingTab connected ping={conn.ping} />}</Box>
+            <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>{tab === 'tools' ? <ToolsTab tools={tools} loading={toolsLoading} callTool={conn.callTool} onRefresh={refreshTools} /> : <PingTab ping={conn.ping} />}</Box>
 
-            <Box role="separator" aria-label="Resize activity history" onMouseDown={startResize} sx={{ height: 6, flexShrink: 0, cursor: 'row-resize', bgcolor: 'divider', '&:hover': { bgcolor: 'primary.main' }, transition: 'background-color 0.15s' }} />
+            <Box role="separator" aria-label="Resize activity history" onMouseDown={startResize} sx={resizeHandleSx} />
             <Box sx={{ height: historyHeight, flexShrink: 0 }}>
               <HistoryPanel history={conn.history} onClear={conn.clearHistory} />
             </Box>

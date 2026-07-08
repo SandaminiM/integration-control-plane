@@ -24,19 +24,6 @@ type ModuleLoader = () => Promise<{ default: IntegrationModule }>;
  * Maps each `IntegrationType` to the dynamic import that produces its module.
  * Each entry becomes its own bundle chunk — a user viewing an Automation
  * never downloads the AI Agent / MCP / Tailscale code.
- *
- * Phase 0: every entry points to `UnsupportedFallback` so the dispatcher is
- * safe to wire in without breaking any existing render. Each subsequent
- * phase replaces a single entry with the real module:
- *
- *   - Phase 1 ✅ 'automation'         → './automation'
- *   - Phase 2 ✅ 'integration-as-api' → './integration-as-api'
- *   - Phase 3 ✅ 'file-integration'   → './file-integration'
- *   - ...     etc.
- *
- * Using a `Record<IntegrationType, ModuleLoader>` (not `Partial<>`) means
- * the compiler enforces an entry for every type — adding a new type to the
- * union and forgetting to register it here is a build error.
  */
 export const integrationModuleLoaders: Record<IntegrationType, ModuleLoader> = {
   'integration-as-api': () => import('./integration-as-api'),
@@ -45,8 +32,6 @@ export const integrationModuleLoaders: Record<IntegrationType, ModuleLoader> = {
   'file-integration': () => import('./file-integration'),
   'event-integration': () => import('./event-integration'),
   'ai-agent': () => import('./ai-agent'),
-  // Both MCP flavors share one Overview module; they differ only in whether the
-  // page shows a Build card (proxy/converted = no source repo → no build).
   'mcp-server': () => import('./mcp-server'),
   'mcp-proxy': () => import('./mcp-server'),
   'tailscale-vpn': () => import('./tailscale-vpn'),

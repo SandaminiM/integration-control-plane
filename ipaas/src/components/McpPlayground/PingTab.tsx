@@ -19,15 +19,14 @@
 import { Box, Button, Chip, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
 import { Radio } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import type { McpPingResult } from '../../hooks/useMcpConnection';
+import type { McpPingResult } from '../../types/mcp';
 
 interface PingTabProps {
-  connected: boolean;
   ping: () => Promise<McpPingResult>;
 }
 
 /** A simple connectivity check — pings the connected server and reports latency. */
-export default function PingTab({ connected, ping }: PingTabProps): JSX.Element {
+export default function PingTab({ ping }: PingTabProps): JSX.Element {
   const [result, setResult] = useState<McpPingResult | null>(null);
   const [pinging, setPinging] = useState(false);
 
@@ -39,14 +38,6 @@ export default function PingTab({ connected, ping }: PingTabProps): JSX.Element 
       setPinging(false);
     }
   };
-
-  if (!connected) {
-    return (
-      <Typography variant="body2" color="text.secondary" sx={{ p: 3 }}>
-        Connect to the MCP server to ping it.
-      </Typography>
-    );
-  }
 
   return (
     <Stack gap={2} sx={{ p: 2.5 }}>

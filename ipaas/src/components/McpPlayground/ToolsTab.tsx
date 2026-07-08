@@ -27,7 +27,6 @@ import type { JsonValue, McpTool, McpToolResult } from '../../types/mcp';
 interface ToolsTabProps {
   tools: McpTool[];
   loading: boolean;
-  connected: boolean;
   callTool: (name: string, args: Record<string, JsonValue>) => Promise<McpToolResult>;
   onRefresh: () => void;
 }
@@ -74,18 +73,10 @@ function ToolPanel({ tool, callTool }: { tool: McpTool; callTool: ToolsTabProps[
 }
 
 /** The Tools tab: a list of the server's tools on the left, the selected tool's runner on the right. */
-export default function ToolsTab({ tools, loading, connected, callTool, onRefresh }: ToolsTabProps): JSX.Element {
+export default function ToolsTab({ tools, loading, callTool, onRefresh }: ToolsTabProps): JSX.Element {
   const [selected, setSelected] = useState<string | null>(null);
   const activeName = selected && tools.some((t) => t.name === selected) ? selected : (tools[0]?.name ?? null);
   const activeTool = tools.find((t) => t.name === activeName) ?? null;
-
-  if (!connected) {
-    return (
-      <Typography variant="body2" color="text.secondary" sx={{ p: 3 }}>
-        Connect to the MCP server to list its tools.
-      </Typography>
-    );
-  }
 
   return (
     <Stack direction={{ xs: 'column', md: 'row' }} sx={{ height: '100%', minHeight: 0 }}>

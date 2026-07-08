@@ -19,8 +19,7 @@
 import { Alert, Box, Button, CircularProgress, IconButton, InputAdornment, MenuItem, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Copy, Eye, EyeOff, Plug, RefreshCw } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import type { McpConnectionStatus } from '../../types/mcp';
-import type { McpSwitcher } from './types';
+import type { McpConnectionStatus, McpSwitcher } from '../../types/mcp';
 
 interface ConnectionSidebarProps {
   url: string;

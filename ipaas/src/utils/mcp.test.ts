@@ -116,3 +116,16 @@ describe('formatMcpError', () => {
     expect(formatMcpError('')).toBe('Something went wrong while contacting the MCP server.');
   });
 });
+
+describe('isMcpForbiddenError', () => {
+  it('uses the transport error status code when available', () => {
+    expect(isMcpForbiddenError(new StreamableHTTPError(403, 'nope'))).toBe(true);
+    expect(isMcpForbiddenError(new StreamableHTTPError(401, 'nope'))).toBe(true);
+    expect(isMcpForbiddenError(new StreamableHTTPError(500, 'boom'))).toBe(false);
+  });
+  it('falls back to message matching for untyped errors', () => {
+    expect(isMcpForbiddenError(new Error('HTTP 403 forbidden'))).toBe(true);
+    expect(isMcpForbiddenError('unauthorized')).toBe(true);
+    expect(isMcpForbiddenError(new Error('connection refused'))).toBe(false);
+  });
+});

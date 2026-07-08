@@ -18,7 +18,7 @@
 
 import { Box, Button, Chip, Collapse, Stack, Typography } from '@wso2/oxygen-ui';
 import { Trash2 } from '@wso2/oxygen-ui-icons-react';
-import { useState, type JSX } from 'react';
+import { useState, type JSX, type KeyboardEvent } from 'react';
 import type { McpHistoryEvent, McpHistoryEventType } from '../../types/mcp';
 
 const TYPE_COLOR: Record<McpHistoryEventType, 'info' | 'success' | 'error' | 'default'> = {
@@ -46,9 +46,25 @@ const detailSx = {
 function HistoryRow({ event }: { event: McpHistoryEvent }): JSX.Element {
   const [open, setOpen] = useState(false);
   const hasDetails = event.details !== undefined;
+  const toggle = () => setOpen((o) => !o);
+  // Only expandable rows are interactive — mouse and keyboard toggle the same state.
+  const interactiveProps = hasDetails
+    ? {
+        role: 'button' as const,
+        tabIndex: 0,
+        'aria-expanded': open,
+        onClick: toggle,
+        onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggle();
+          }
+        },
+      }
+    : {};
   return (
     <Box sx={{ borderTop: '1px solid', borderColor: 'divider', px: 1.5, py: 0.75 }}>
-      <Stack direction="row" alignItems="center" gap={1} sx={{ cursor: hasDetails ? 'pointer' : 'default' }} onClick={() => hasDetails && setOpen((o) => !o)}>
+      <Stack direction="row" alignItems="center" gap={1} sx={{ cursor: hasDetails ? 'pointer' : 'default' }} {...interactiveProps}>
         <Chip label={event.type} size="small" color={TYPE_COLOR[event.type]} variant="outlined" sx={{ height: 18, fontSize: 10, textTransform: 'uppercase' }} />
         <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace', flexShrink: 0 }}>
           {new Date(event.timestamp).toLocaleTimeString()}

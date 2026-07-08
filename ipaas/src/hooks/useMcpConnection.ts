@@ -16,12 +16,12 @@
  * under the License.
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StreamableHTTPClientTransport, StreamableHTTPError } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import type { ServerCapabilities } from '@modelcontextprotocol/sdk/types.js';
-import { formatMcpError, formatToolResult } from '../utils/mcp';
-import type { JsonValue, McpConnectionStatus, McpHistoryEvent, McpHistoryEventType, McpTool, McpToolResult } from '../types/mcp';
+import { formatMcpError, formatToolResult, isMcpForbiddenError } from '../utils/mcp';
+import type { JsonValue, McpConnectionStatus, McpHistoryEvent, McpHistoryEventType, McpPingResult, McpTool, McpToolResult } from '../types/mcp';
 
 /** Per-request timeout, matching the playground library. */
 const REQUEST_TIMEOUT_MS = 60_000;
@@ -33,13 +33,6 @@ interface UseMcpConnectionParams {
   token: string | null;
   /** Header carrying the token (e.g. `test-key`). */
   headerName: string;
-}
-
-/** Latency + outcome of a `ping()`. */
-export interface McpPingResult {
-  success: boolean;
-  latencyMs: number;
-  error?: string;
 }
 
 export interface UseMcpConnectionResult {
@@ -56,11 +49,6 @@ export interface UseMcpConnectionResult {
   ping: () => Promise<McpPingResult>;
   clearHistory: () => void;
 }
-
-const isForbiddenError = (err: unknown): boolean => {
-  if (err instanceof StreamableHTTPError) return err.code === 401 || err.code === 403;
-  return /\b(401|403)\b|forbidden|unauthor/i.test(err instanceof Error ? err.message : String(err));
-};
 
 /**
  * A persistent MCP session over the SDK's StreamableHTTP transport: connect/disconnect,
@@ -114,7 +102,7 @@ export function useMcpConnection({ url, token, headerName }: UseMcpConnectionPar
       const message = formatMcpError(err);
       setStatus('error');
       setError(message);
-      setIsForbidden(isForbiddenError(err));
+      setIsForbidden(isMcpForbiddenError(err));
       addHistoryEvent('error', 'connect', message);
     }
   }, [url, token, headerName, addHistoryEvent]);
@@ -164,6 +152,16 @@ export function useMcpConnection({ url, token, headerName }: UseMcpConnectionPar
       return { success: false, latencyMs: Date.now() - start, error: message };
     }
   }, [addHistoryEvent]);
+
+  // Close the live client if the hook unmounts while still connected, so the
+  // transport doesn't leak. Runs on unmount only — no state changes here.
+  useEffect(
+    () => () => {
+      void clientRef.current?.close().catch(() => undefined);
+      clientRef.current = null;
+    },
+    [],
+  );
 
   return { status, error, isForbidden, serverCapabilities, history, connect, disconnect, listTools, callTool, ping, clearHistory };
 }
