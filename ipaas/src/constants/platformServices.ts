@@ -87,6 +87,8 @@ export interface DbServerKind {
   backToDetailLabel: string;
   /** Empty-state banner headline. */
   emptyHeadline: string;
+  /** Empty-state banner body (shown when nothing has been created yet). */
+  emptyBody: string;
   /** Engines offered in the create wizard's type picker. */
   serviceTypes: ServiceTypeOption[];
 }
@@ -99,6 +101,7 @@ export const DATABASE_KIND: DbServerKind = {
   backToListLabel: 'Back to database server list',
   backToDetailLabel: 'Back to Database List',
   emptyHeadline: 'Create fully-managed PostgreSQL, MySQL databases and WSO2 Integration Platform-Managed Caches (compatible with legacy Redis® OSS)',
+  emptyBody: 'No database services have been created yet.',
   serviceTypes: SERVICE_TYPES,
 };
 
@@ -110,6 +113,7 @@ export const VECTOR_DATABASE_KIND: DbServerKind = {
   backToListLabel: 'Back to vector database server list',
   backToDetailLabel: 'Back to Vector Database List',
   emptyHeadline: 'Create fully-managed vector databases (PostgreSQL)',
+  emptyBody: 'No vector database services have been created yet.',
   serviceTypes: VECTOR_SERVICE_TYPES,
 };
 

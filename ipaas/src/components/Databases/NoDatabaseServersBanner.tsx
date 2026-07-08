@@ -25,6 +25,8 @@ interface NoDatabaseServersBannerProps {
   upgradeRequired: boolean;
   /** Headline copy — differs between the Databases and Vector Databases pages. */
   headline: string;
+  /** Body copy shown when nothing has been created yet — differs per page. */
+  body: string;
   onCreate: () => void;
 }
 
@@ -32,7 +34,7 @@ interface NoDatabaseServersBannerProps {
  * Empty state for the Databases page — a centered marketing banner. Mirrors Devant's
  * NoCloudStorageServicesBanner (generic DB icon in place of the engine logos).
  */
-export default function NoDatabaseServersBanner({ createAllowed, upgradeRequired, headline, onCreate }: NoDatabaseServersBannerProps): JSX.Element {
+export default function NoDatabaseServersBanner({ createAllowed, upgradeRequired, headline, body, onCreate }: NoDatabaseServersBannerProps): JSX.Element {
   return (
     <Stack alignItems="center" textAlign="center" sx={{ maxWidth: 720, mx: 'auto', pb: 6 }}>
       <Box sx={{ width: 96, height: 96, borderRadius: '50%', bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3, color: 'text.secondary' }}>
@@ -47,7 +49,7 @@ export default function NoDatabaseServersBanner({ createAllowed, upgradeRequired
         </Alert>
       ) : (
         <Typography variant="body2" color="text.secondary">
-          No database services have been created yet.
+          {body}
         </Typography>
       )}
       {createAllowed && (

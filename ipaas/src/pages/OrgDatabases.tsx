@@ -111,7 +111,7 @@ export function DatabaseServersListView({ scope, kind }: { scope: OrgScope; kind
           Failed to list available database services.
         </Alert>
       ) : kindServers.length === 0 ? (
-        <NoDatabaseServersBanner createAllowed={createAllowed} upgradeRequired={upgradeRequired} headline={kind.emptyHeadline} onCreate={() => navigate(`${base}/new`)} />
+        <NoDatabaseServersBanner createAllowed={createAllowed} upgradeRequired={upgradeRequired} headline={kind.emptyHeadline} body={kind.emptyBody} onCreate={() => navigate(`${base}/new`)} />
       ) : (
         <DatabaseServersTable
           servers={kindServers}
