@@ -102,6 +102,7 @@ export function useGeneratedTestKey({ apimId, critical, enabled = true }: { apim
   useEffect(() => {
     if (!apimId || !enabled) {
       setToken('');
+      setIsFetching(false);
       return undefined;
     }
     let cancelled = false;
