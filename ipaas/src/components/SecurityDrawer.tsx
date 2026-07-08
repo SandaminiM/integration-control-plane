@@ -70,7 +70,6 @@ interface SecurityDrawerProps {
 }
 
 export default function SecurityDrawer({ open, onClose, apimId, componentId, versionId }: SecurityDrawerProps) {
-  const { data: api = null, isLoading: loading } = useApimApi(open ? apimId : null);
   const updateMutation = useUpdateApimApi();
   const saving = updateMutation.isPending;
   const [error, setError] = useState<string | null>(null);
@@ -79,13 +78,42 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
   const [authHeader, setAuthHeader] = useState('Authorization');
   const [apiKeyHeader, setApiKeyHeader] = useState('api-key');
   const [backendJwt, setBackendJwt] = useState(false);
-  const [selectedEndpointIdx, setSelectedEndpointIdx] = useState(0);
+  const [userSelectedIdx, setUserSelectedIdx] = useState<number | null>(null);
+  const [wasOpen, setWasOpen] = useState(false);
   const [operationSearch, setOperationSearch] = useState('');
   const [page, setPage] = useState(1);
   const [expandedOps, setExpandedOps] = useState<Set<string>>(new Set());
   const [operationAuthTypes, setOperationAuthTypes] = useState<Record<string, string>>({});
 
   const { data: endpoints = [] } = useComponentEndpoints(componentId ?? '', versionId ?? '');
+
+  // The backend returns one entry per network visibility, so a single endpoint appears
+  // multiple times with the same apimId — collapse to one entry per API for the dropdown.
+  const uniqueEndpoints = useMemo(() => {
+    const seen = new Set<string>();
+    return endpoints.filter((ep) => {
+      const key = ep.apimId ?? ep.displayName;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [endpoints]);
+
+  // Each open defaults the selection to the endpoint matching the requested API (reset during render).
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setUserSelectedIdx(null);
+  }
+
+  // The active endpoint drives which API is loaded/configured; derived synchronously so the
+  // drawer opens with the correct API id in the first render (no stale fetch, no correcting effect).
+  const matchedIdx = useMemo(() => {
+    const i = uniqueEndpoints.findIndex((ep) => ep.apimId === apimId);
+    return i >= 0 ? i : 0;
+  }, [uniqueEndpoints, apimId]);
+  const selectedEndpointIdx = userSelectedIdx ?? matchedIdx;
+  const effectiveApimId = uniqueEndpoints[selectedEndpointIdx]?.apimId ?? apimId;
+  const { data: api = null, isLoading: loading } = useApimApi(open ? effectiveApimId : null);
 
   useEffect(() => {
     if (!open) return;
@@ -108,14 +136,14 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
     } else {
       setOperationAuthTypes({});
     }
-  }, [open, apimId, api]);
+  }, [open, effectiveApimId, api]);
 
   const toggleScheme = (scheme: string) => {
     setSecurityScheme((prev) => (prev.includes(scheme) ? prev.filter((s) => s !== scheme) : [...prev, scheme]));
   };
 
   const handleApply = async () => {
-    if (!apimId || !api) return;
+    if (!effectiveApimId || !api) return;
     setError(null);
     const updatedOperations = (api.operations ?? []).map((op) => {
       const key = `${op.verb.toUpperCase()}-${op.target}`;
@@ -123,7 +151,7 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
     });
     try {
       await updateMutation.mutateAsync({
-        apimId,
+        apimId: effectiveApimId,
         body: { ...api, securityScheme, authorizationHeader: authHeader, apiKeyHeader, enableBackendJWT: backendJwt, operations: updatedOperations },
       });
       onClose();
@@ -172,7 +200,7 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
             <Box sx={{ display: 'flex', justifyContent: 'center', pt: 6 }}>
               <CircularProgress />
             </Box>
-          ) : !apimId ? (
+          ) : !effectiveApimId ? (
             <Alert severity="info">No API associated with this component.</Alert>
           ) : (
             <Stack gap={2.5}>
@@ -184,18 +212,22 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
               </Typography>
 
               {/* Endpoints dropdown */}
-              {endpoints.length > 0 && (
+              {uniqueEndpoints.length > 0 && (
                 <Stack direction="row" alignItems="center" gap={2}>
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     Endpoints:
                   </Typography>
-                  <Select size="small" value={selectedEndpointIdx} onChange={(e) => setSelectedEndpointIdx(Number(e.target.value))} sx={{ minWidth: 200 }}>
-                    {endpoints.map((ep, i) => (
-                      <MenuItem key={i} value={i}>
-                        {ep.displayName}
-                      </MenuItem>
-                    ))}
-                  </Select>
+                  {uniqueEndpoints.length > 1 ? (
+                    <Select size="small" value={selectedEndpointIdx} onChange={(e) => setUserSelectedIdx(Number(e.target.value))} sx={{ minWidth: 200 }}>
+                      {uniqueEndpoints.map((ep, i) => (
+                        <MenuItem key={ep.apimId ?? ep.displayName} value={i}>
+                          {ep.displayName}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  ) : (
+                    <Box sx={{ minWidth: 200, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider', borderRadius: 0.5, px: 1.5, py: 0.75, fontSize: 13, fontWeight: 500 }}>{uniqueEndpoints[0].displayName}</Box>
+                  )}
                 </Stack>
               )}
 
@@ -400,7 +432,7 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
           <Button variant="outlined" onClick={handleCancel} disabled={saving}>
             Cancel
           </Button>
-          <Button variant="contained" onClick={() => void handleApply()} disabled={saving || loading || !apimId}>
+          <Button variant="contained" onClick={() => void handleApply()} disabled={saving || loading || !effectiveApimId}>
             {saving ? <CircularProgress size={16} color="inherit" /> : 'Apply'}
           </Button>
         </Box>
