@@ -49,6 +49,8 @@ interface RuntimeConfig {
   AI_COPILOT_DATACOLLECTOR_BASE_URL?: string;
   PLATFORM_SERVICES_API_BASE_URL?: string;
   ENABLE_PLATFORM_SERVICES_FEATURE?: string | boolean;
+  /** Comma-separated list of "REGION::https://domain" entries, e.g. "US::https://console.us.devant.dev,EU::https://console.eu.devant.dev". When set, a region selector is shown on login/signup. */
+  AVAILABLE_LOGIN_REGIONS?: string;
 }
 
 export interface ApiConfig {
@@ -86,6 +88,8 @@ export interface ApiConfig {
   asgardeoSignupUrl: string;
   aiCopilotUrlSuffix: string;
   aiCopilotDatacollectorBaseUrl: string;
+  /** Comma-separated "REGION::https://domain" entries. Present only when multi-region is configured. */
+  availableLoginRegions?: string;
   /** Choreo URL-manager service base (custom domains + URL mappings). Optional — when unset, the URL Settings section stays hidden. */
   urlManagerUrl?: string;
   /** Feature flag mirroring Devant's ENABLE_CUSTOM_URL_MAPPINGS_FEATURE. */
@@ -130,6 +134,7 @@ const DEFAULT_CONFIG: ApiConfig = {
   asgardeoSignupUrl: 'https://dev.asgardeo.io/signup',
   aiCopilotUrlSuffix: '',
   aiCopilotDatacollectorBaseUrl: '',
+  availableLoginRegions: undefined,
 };
 
 /**
@@ -188,6 +193,7 @@ export async function loadConfig(): Promise<void> {
       enableBillingFeature: config.ENABLE_BILLING_FEATURE === 'true' || config.ENABLE_BILLING_FEATURE === true,
       platformServicesApiBaseUrl: config.PLATFORM_SERVICES_API_BASE_URL ? trim(config.PLATFORM_SERVICES_API_BASE_URL) : undefined,
       enablePlatformServicesFeature: config.ENABLE_PLATFORM_SERVICES_FEATURE === 'true' || config.ENABLE_PLATFORM_SERVICES_FEATURE === true,
+      availableLoginRegions: config.AVAILABLE_LOGIN_REGIONS || undefined,
     };
 
     console.info('✓ Runtime configuration loaded from config.json');

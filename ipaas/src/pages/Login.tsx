@@ -24,6 +24,7 @@ import { Link as NavLink, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { privacyPolicyUrl, signupUrl } from '../paths';
 import AuthMarketingPanel from '../components/AuthMarketingPanel';
+import RegionSelector from '../components/RegionSelector';
 import { IS_CLOUD } from '../features';
 
 function MicrosoftIcon() {
@@ -129,9 +130,10 @@ export default function Login(): JSX.Element {
 
           {/* Main form area */}
           <Box sx={{ width: '100%', maxWidth: 360, mx: 'auto', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <Typography variant="h2" sx={{ mb: 0.5 }}>
-              Sign In
-            </Typography>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.5 }}>
+              <Typography variant="h2">Sign In</Typography>
+              <RegionSelector currentPage="login" />
+            </Stack>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
               Don&apos;t have an account?{' '}
               <Link component={NavLink} to={signupUrl()} underline="hover" color="primary">

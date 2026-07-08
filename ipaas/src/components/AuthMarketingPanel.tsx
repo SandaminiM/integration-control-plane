@@ -47,7 +47,7 @@ export default function AuthMarketingPanel(): JSX.Element {
           src={{ light: `${base}assets/images/logo/WSO2-Integration-Platform-Black.svg`, dark: `${base}assets/images/logo/WSO2-Integration-Platform-White.svg` }}
           alt={{ light: 'WSO2 Integration Platform Logo', dark: 'WSO2 Integration Platform Logo' }}
           height={60}
-          width={240}
+          width={300}
           style={{ alignSelf: 'flex-start' }}
         />
         <Typography variant="h1" sx={{ textAlign: 'left', width: '100%' }}>
