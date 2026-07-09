@@ -968,7 +968,16 @@ export default function Project(scope: ProjectScope): JSX.Element {
 
   const isEmpty = !loadingComponents && components.length === 0;
   const isWorkspace = project.type === 'MONO_REPO';
-  const openInCloudComponent = components.find((c) => isSupportedIntegration(c.displayType, c.componentSubType)) ?? null;
+  const openInCloudComponent =
+    components.find((c) => {
+      if (!isSupportedIntegration(c.displayType, c.componentSubType)) return false;
+      if (!project.gitOrganization || !project.repository) return true;
+      if (!c.repository?.organizationApp || !c.repository?.nameApp) return true;
+      return (
+        c.repository.organizationApp.toLowerCase() === project.gitOrganization.toLowerCase() &&
+        c.repository.nameApp.toLowerCase() === project.repository.toLowerCase()
+      );
+    }) ?? null;
   const projectRepoUrl = buildProjectRepoUrl(project.gitProvider, project.gitOrganization, project.repository, project.branch);
 
   const externalComponents =

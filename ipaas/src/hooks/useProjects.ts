@@ -137,11 +137,13 @@ export function useGitHubReadme(gitOrganization?: string, repository?: string) {
   return useQuery({
     queryKey: ['githubReadme', gitOrganization, repository],
     queryFn: async () => {
-      const res = await fetch(`https://api.github.com/repos/${gitOrganization}/${repository}/readme`);
+      const res = await fetch(`https://api.github.com/repos/${encodeURIComponent(gitOrganization!)}/${encodeURIComponent(repository!)}/readme`);
       if (!res.ok) return null;
       const data = (await res.json()) as { content: string; encoding: string };
       if (data.encoding !== 'base64') return null;
-      return atob(data.content.replace(/\n/g, ''));
+      const binary = atob(data.content.replace(/\n/g, ''));
+      const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+      return new TextDecoder().decode(bytes);
     },
     enabled: !!gitOrganization && !!repository,
     staleTime: 5 * 60 * 1000,
