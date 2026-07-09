@@ -23,5 +23,6 @@
   "AI_COPILOT_DATACOLLECTOR_BASE_URL": "https://apis.preview-dv.choreo.dev/copilotfeedbackcollector/v1.0",
   "AI_COPILOT_BLOG_URL": "https://wso2.com/library/blogs/introducing-choreo-copilot/",
   "GITHUB_APP_CLIENT_ID": "Iv1.f6cf2cd585148ee7",
-  "GITHUB_APP_AUTH_REDIRECTION_URL": ""
+  "GITHUB_APP_AUTH_REDIRECTION_URL": "",
+  "AVAILABLE_LOGIN_REGIONS": "US::https://localhost:3000,EU::https://console.dv.eu.devant.dev"
 }

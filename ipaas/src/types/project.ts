@@ -28,6 +28,10 @@ export interface Project {
   region: string;
   type: string;
   defaultDeploymentPipelineId: string;
+  gitOrganization?: string;
+  repository?: string;
+  branch?: string;
+  gitProvider?: string;
 }
 
 export interface ProjectContributor {

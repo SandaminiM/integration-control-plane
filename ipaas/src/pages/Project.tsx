@@ -21,32 +21,43 @@ import {
   Avatar,
   Box,
   Button,
+  ButtonGroup,
+  InputBase,
   Card,
   CardContent,
+  Checkbox,
   Chip,
   CircularProgress,
+  ClickAwayListener,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
   Divider,
+  Grow,
   IconButton,
+  InputAdornment,
   Link,
   ListingTable,
+  Menu,
+  MenuItem,
+  MenuList,
   PageContent,
+  Paper,
+  Popper,
   Stack,
   TablePagination,
   TextField,
   Tooltip,
   Typography,
 } from '@wso2/oxygen-ui';
-import { ArrowRight, Bitbucket, GitHub, GitLab, Link2, Plus, PlugZap, RefreshCw, Trash2 } from '@wso2/oxygen-ui-icons-react';
+import { ArrowRight, Bitbucket, ChevronDown, ChevronUp, ExternalLink, FileText, Filter, GitHub, GitBranch, GitLab, Info, Link2, Pencil, Plus, PlugZap, RefreshCw, Search, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import EmptyListing from '../components/EmptyListing';
+import Markdown from '../components/Markdown';
 import IntegrationTypesCard from '../components/IntegrationTypesCard';
 import ArchitectureCard from '../components/ArchitectureCard';
 import ContributorsCard from '../components/ContributorsCard';
-import SearchField from '../components/SearchField';
 import IDEMockup from '../components/IDEMockup/IDEMockup';
 import PillTabs from '../components/PillTabs';
 import PrebuiltCard from '../components/PrebuiltCard';
@@ -54,9 +65,10 @@ import SampleRowCard from '../components/SampleRowCard';
 import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
 import GitIcon from '../assets/icons/GitIcon';
 import AzureIcon from '../assets/icons/AzureIcon';
+import IntegratorIcon from '../assets/icons/IntegratorIcon';
 import { useNavigate } from 'react-router';
-import { useState, type JSX } from 'react';
-import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjects';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import { useProject, useProjectByHandler, useProjects, useUpdateProject, useGitHubReadme } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
 import { useOrgs, useOrgComponentLimits, useOrgSubscriptions } from '../hooks/useOrg';
 import { useChoreoSampleImages } from '../hooks/useRepository';
@@ -70,11 +82,12 @@ import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useAuth } from '../auth/AuthContext';
 import { componentOverviewUrl, importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, importComingSoonUrl, buildGitHubOAuthUrl } from '../paths';
 import { Permissions } from '../constants/permissions';
-import { isSupportedIntegration, getDisplayLabel, displayTypeFromSample } from '../constants/integrations';
+import { isSupportedIntegration, getDisplayLabel, displayTypeFromSample, getNonIntegrationPlatform } from '../constants/integrations';
 import { GITHUB_AUTH } from '../constants/github';
 import { CARD_HOVER_SX, PROVIDER_ICON_SX } from '../constants/styles';
 import Authorized from '../components/Authorized';
 import { useAccessControl } from '../contexts/AccessControlContext';
+import { useFeaturePreview } from '../contexts/FeaturePreviewContext';
 import { useLoadProjectPermissions } from '../hooks/usePermissionLoader';
 import { UUID_RE, toHandler } from '../utils/string';
 import { useSamples } from '../hooks/useSamples';
@@ -516,6 +529,66 @@ function DeleteDialog({ component, scope, projectId, onClose }: { component: Com
   );
 }
 
+const INIT_PROGRESS_MAP: Record<string, { progress: number; text: string }> = {
+  queued: { progress: 60, text: 'Setting up CI/CD pipelines' },
+  pending: { progress: 30, text: 'Initializing component…' },
+  running: { progress: 75, text: 'Configuring repository settings…' },
+  in_progress: { progress: 75, text: 'Configuring repository settings…' },
+};
+
+function isCreatedWithin24Hours(createdAt?: string): boolean {
+  if (!createdAt) return false;
+  return Date.now() - new Date(createdAt).getTime() < 86_400_000;
+}
+
+function getInitProgress(c: Component, isWorkspace: boolean): { progress: number; text: string } | null {
+  if (!c.initStatus?.trim()) return null;
+  if (!isWorkspace && !isCreatedWithin24Hours(c.createdAt)) return null;
+  return INIT_PROGRESS_MAP[c.initStatus.toLowerCase()] ?? null;
+}
+
+function ComponentNameCell({ component: c, isWorkspace, projectGitOrg, projectGitRepo }: { component: Component; isWorkspace: boolean; projectGitOrg?: string; projectGitRepo?: string }) {
+  const init = getInitProgress(c, isWorkspace);
+  const nameLabel = init && c.displayType ? `${c.displayName}: ${c.displayType}` : c.displayName;
+  const isExternalRepo =
+    !!projectGitOrg && !!projectGitRepo && !!c.repository?.organizationApp && !!c.repository?.nameApp && (c.repository.organizationApp.toLowerCase() !== projectGitOrg.toLowerCase() || c.repository.nameApp.toLowerCase() !== projectGitRepo.toLowerCase());
+  return (
+    <Stack direction="row" alignItems="center" gap={1.5}>
+      {init ? (
+        <Box sx={{ position: 'relative', display: 'inline-flex', flexShrink: 0, width: 40, height: 40 }}>
+          <CircularProgress variant="determinate" value={init.progress} size={40} thickness={3} />
+          <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Typography variant="caption" component="div" color="text.secondary" sx={{ fontSize: '0.6rem', fontWeight: 600 }}>
+              {init.progress}%
+            </Typography>
+          </Box>
+        </Box>
+      ) : (
+        <Avatar sx={{ width: 32, height: 32, fontSize: '0.875rem', bgcolor: 'action.selected', color: 'text.primary', flexShrink: 0 }}>{c.displayName.charAt(0).toUpperCase()}</Avatar>
+      )}
+      <Stack direction="row" alignItems="center" gap={0.5}>
+        <Stack gap={0.25}>
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            {nameLabel}
+          </Typography>
+          {init && (
+            <Typography variant="caption" color="text.secondary">
+              {init.text}
+            </Typography>
+          )}
+        </Stack>
+        {isExternalRepo && !init && (
+          <Tooltip title="This is an external integration linked from outside of this project repository.">
+            <Box component="span" sx={{ display: 'inline-flex', color: 'text.secondary', ml: 0.25 }}>
+              <ExternalLink size={13} />
+            </Box>
+          </Tooltip>
+        )}
+      </Stack>
+    </Stack>
+  );
+}
+
 function IntegrationsTable({
   components,
   isLoading,
@@ -524,6 +597,9 @@ function IntegrationsTable({
   scope,
   projectId,
   orgDevantComponentCount,
+  isWorkspace,
+  projectGitOrg,
+  projectGitRepo,
   onSelect,
 }: {
   components: Component[];
@@ -533,6 +609,9 @@ function IntegrationsTable({
   scope: ProjectScope;
   projectId: string;
   orgDevantComponentCount: number;
+  isWorkspace: boolean;
+  projectGitOrg?: string;
+  projectGitRepo?: string;
   onSelect: (handler: string) => void;
 }) {
   const navigate = useNavigate();
@@ -540,23 +619,36 @@ function IntegrationsTable({
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleting, setDeleting] = useState<Component | null>(null);
+  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+  const [labelAnchor, setLabelAnchor] = useState<HTMLElement | null>(null);
   const quotaReached = orgDevantComponentCount >= FREE_COMPONENT_LIMIT;
-  const q = query.trim().toLowerCase();
-  const filtered = components
-    .filter((c) => {
-      if (!q) return true;
-      const label = getDisplayLabel(c.displayType ?? '', c.componentSubType ?? null);
-      return c.displayName.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q) || label.toLowerCase().includes(q);
-    })
-    .sort((a, b) => {
-      const aSupported = isSupportedIntegration(a.displayType ?? '', a.componentSubType ?? null);
-      const bSupported = isSupportedIntegration(b.displayType ?? '', b.componentSubType ?? null);
-      if (aSupported === bSupported) return 0;
-      return aSupported ? -1 : 1;
+
+  const allLabels = useMemo(() => {
+    const s = new Set<string>();
+    components.forEach((c) => {
+      const labels = Array.isArray(c.labels) ? c.labels : c.labels ? [c.labels] : [];
+      labels.forEach((l) => s.add(l));
     });
-  const maxPage = Math.max(0, Math.ceil(filtered.length / rowsPerPage) - 1);
+    return Array.from(s).sort();
+  }, [components]);
+
+  const handleToggleLabel = (label: string) => {
+    setSelectedLabels((prev) => (prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]));
+  };
+
+  const q = query.trim().toLowerCase();
+  const filtered = components.filter((c) => {
+    const typeLabel = getDisplayLabel(c.displayType ?? '', c.componentSubType ?? null);
+    const matchesSearch = !q || c.displayName.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q) || typeLabel.toLowerCase().includes(q);
+    const componentLabels = Array.isArray(c.labels) ? c.labels : c.labels ? [c.labels] : [];
+    const matchesLabels = selectedLabels.length === 0 || componentLabels.some((l) => selectedLabels.includes(l));
+    return matchesSearch && matchesLabels;
+  });
+  const filteredIntegrations = filtered.filter((c) => isSupportedIntegration(c.displayType ?? '', c.componentSubType ?? null));
+  const filteredNonIntegrations = filtered.filter((c) => !isSupportedIntegration(c.displayType ?? '', c.componentSubType ?? null));
+  const maxPage = Math.max(0, Math.ceil(filteredIntegrations.length / rowsPerPage) - 1);
   const safePage = Math.min(page, maxPage);
-  const paginated = filtered.slice(safePage * rowsPerPage, safePage * rowsPerPage + rowsPerPage);
+  const paginated = filteredIntegrations.slice(safePage * rowsPerPage, safePage * rowsPerPage + rowsPerPage);
 
   return (
     <section>
@@ -572,7 +664,61 @@ function IntegrationsTable({
           sx={isRefreshing ? { '@keyframes spin': { from: { transform: 'rotate(0deg)' }, to: { transform: 'rotate(360deg)' } }, '& svg': { animation: 'spin 1s linear infinite' } } : undefined}>
           <RefreshCw size={16} />
         </IconButton>
-        <SearchField value={query} onChange={setQuery} placeholder="Search" sx={{ flex: 1 }} />
+        <TextField
+          size="small"
+          placeholder="Search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          sx={{ flex: 1 }}
+          slotProps={{
+            htmlInput: { 'aria-label': 'Search integrations' },
+            input: {
+              startAdornment: (
+                <>
+                  <InputAdornment position="start">
+                    <Search size={18} />
+                  </InputAdornment>
+                  {selectedLabels.map((label) => (
+                    <Chip key={label} label={label} size="small" onDelete={() => handleToggleLabel(label)} sx={{ mr: 0.5 }} />
+                  ))}
+                </>
+              ),
+              endAdornment:
+                allLabels.length > 0 ? (
+                  <InputAdornment position="end">
+                    <Tooltip title="Filter by label">
+                      <IconButton size="small" aria-label="Filter by label" onClick={(e) => setLabelAnchor(e.currentTarget)} color={selectedLabels.length > 0 ? 'primary' : undefined} edge="end">
+                        <Filter size={16} />
+                      </IconButton>
+                    </Tooltip>
+                  </InputAdornment>
+                ) : undefined,
+            },
+          }}
+        />
+        <Menu anchorEl={labelAnchor} open={Boolean(labelAnchor)} onClose={() => setLabelAnchor(null)} slotProps={{ paper: { sx: { minWidth: 180, maxHeight: 320 } } }}>
+          {allLabels.map((label) => (
+            <MenuItem key={label} onClick={() => handleToggleLabel(label)} dense>
+              <Checkbox size="small" checked={selectedLabels.includes(label)} sx={{ p: 0, mr: 1 }} />
+              <Typography variant="body2">{label}</Typography>
+            </MenuItem>
+          ))}
+          {selectedLabels.length > 0 && (
+            <>
+              <Divider />
+              <MenuItem
+                onClick={() => {
+                  setSelectedLabels([]);
+                  setLabelAnchor(null);
+                }}
+                dense>
+                <Typography variant="body2" color="error">
+                  Clear filter
+                </Typography>
+              </MenuItem>
+            </>
+          )}
+        </Menu>
         <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
           <Tooltip title={quotaReached ? 'You have exceeded the allocated integration quota. Upgrade your subscription.' : ''} placement="top">
             <span>
@@ -587,105 +733,187 @@ function IntegrationsTable({
       {isLoading ? (
         <CircularProgress size={24} color="primary" sx={{ display: 'block', mx: 'auto', py: 4 }} />
       ) : filtered.length === 0 ? (
-        <EmptyListing icon={<PlugZap size={48} />} title="No integrations found" description={query ? 'Try adjusting your search' : 'Create your first integration to get started'} />
+        <EmptyListing icon={<PlugZap size={48} />} title="No integrations found" description={query || selectedLabels.length > 0 ? 'Try adjusting your search or filters' : 'Create your first integration to get started'} />
       ) : (
-        <ListingTable.Container disablePaper>
-          <ListingTable variant="card" density="compact">
-            <ListingTable.Head>
-              <ListingTable.Row>
-                <ListingTable.Cell>Name</ListingTable.Cell>
-                <ListingTable.Cell>Description</ListingTable.Cell>
-                <ListingTable.Cell>Type</ListingTable.Cell>
-                <ListingTable.Cell>Last Updated</ListingTable.Cell>
-                <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
-                  <ListingTable.Cell width={60}>Action</ListingTable.Cell>
-                </Authorized>
-              </ListingTable.Row>
-            </ListingTable.Head>
-            <ListingTable.Body>
-              {paginated.map((c) => {
-                const isSupported = isSupportedIntegration(c.displayType ?? '', c.componentSubType ?? null);
-                return (
-                  <ListingTable.Row
-                    key={c.id}
-                    variant="card"
-                    clickable={isSupported}
-                    hover={isSupported}
-                    tabIndex={isSupported ? 0 : -1}
-                    aria-label={`View details for ${c.displayName}`}
-                    aria-disabled={!isSupported}
-                    onClick={isSupported ? () => onSelect(c.handler) : undefined}
-                    onKeyDown={
-                      isSupported
-                        ? (e) => {
-                            if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-                              if (e.key === ' ') e.preventDefault();
-                              onSelect(c.handler);
-                            }
-                          }
-                        : undefined
-                    }
-                    sx={!isSupported ? { opacity: 0.45, cursor: 'default' } : undefined}>
-                    <ListingTable.Cell>
-                      <Stack direction="row" alignItems="center" gap={1.5}>
-                        <Avatar sx={{ width: 32, height: 32, fontSize: 14, bgcolor: 'action.hover', color: 'text.primary' }}>{c.displayName[0].toUpperCase()}</Avatar>
-                        {c.displayName}
-                      </Stack>
-                    </ListingTable.Cell>
-                    <ListingTable.Cell>
-                      <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 200 }}>
-                        {c.description || ''}
-                      </Typography>
-                    </ListingTable.Cell>
-                    <ListingTable.Cell>{getDisplayLabel(c.displayType ?? '', c.componentSubType ?? null)}</ListingTable.Cell>
-                    <ListingTable.Cell>
-                      <Typography variant="body2" color="text.secondary">
-                        {formatDistanceToNow(c.lastBuildDate)}
-                      </Typography>
-                    </ListingTable.Cell>
+        <>
+          {filteredIntegrations.length > 0 && (
+            <ListingTable.Container disablePaper>
+              <ListingTable variant="card" density="compact">
+                <ListingTable.Head>
+                  <ListingTable.Row>
+                    <ListingTable.Cell>Name</ListingTable.Cell>
+                    <ListingTable.Cell>Description</ListingTable.Cell>
+                    <ListingTable.Cell>Type</ListingTable.Cell>
+                    <ListingTable.Cell>Last Updated</ListingTable.Cell>
                     <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
-                      <ListingTable.Cell>
-                        <Tooltip title="Delete">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            aria-label={`Delete ${c.displayName}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleting(c);
-                            }}>
-                            <Trash2 size={16} />
-                          </IconButton>
-                        </Tooltip>
-                      </ListingTable.Cell>
+                      <ListingTable.Cell width={60}>Action</ListingTable.Cell>
                     </Authorized>
                   </ListingTable.Row>
-                );
-              })}
-            </ListingTable.Body>
-          </ListingTable>
-        </ListingTable.Container>
-      )}
-      {filtered.length > 10 && (
-        <TablePagination
-          component="div"
-          count={filtered.length}
-          page={safePage}
-          onPageChange={(_, p) => setPage(p)}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={(e) => {
-            setRowsPerPage(parseInt(e.target.value, 10));
-            setPage(0);
-          }}
-          rowsPerPageOptions={[10, 20, 50]}
-          sx={{ mt: 1 }}
-          SelectProps={{ inputProps: { 'aria-label': 'rows per page' } }}
-        />
+                </ListingTable.Head>
+                <ListingTable.Body>
+                  {paginated.map((c) => {
+                    const init = getInitProgress(c, isWorkspace);
+                    return (
+                      <ListingTable.Row
+                        key={c.id}
+                        variant="card"
+                        clickable
+                        hover
+                        tabIndex={0}
+                        aria-label={`View details for ${c.displayName}`}
+                        onClick={() => onSelect(c.handler)}
+                        onKeyDown={(e) => {
+                          if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                            if (e.key === ' ') e.preventDefault();
+                            onSelect(c.handler);
+                          }
+                        }}>
+                        <ListingTable.Cell>
+                          <ComponentNameCell component={c} isWorkspace={isWorkspace} projectGitOrg={projectGitOrg} projectGitRepo={projectGitRepo} />
+                        </ListingTable.Cell>
+                        <ListingTable.Cell>
+                          {!init && (
+                            <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 200 }}>
+                              {c.description?.trim() || ''}
+                            </Typography>
+                          )}
+                        </ListingTable.Cell>
+                        <ListingTable.Cell>{!init && <Typography variant="body2">{getDisplayLabel(c.displayType ?? '', c.componentSubType ?? null)}</Typography>}</ListingTable.Cell>
+                        <ListingTable.Cell>
+                          {!init && (
+                            <Typography variant="body2" color="text.secondary">
+                              {formatDistanceToNow(c.lastBuildDate)}
+                            </Typography>
+                          )}
+                        </ListingTable.Cell>
+                        <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
+                          <ListingTable.Cell>
+                            <Tooltip title="Delete">
+                              <IconButton
+                                size="small"
+                                color="error"
+                                aria-label={`Delete ${c.displayName}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleting(c);
+                                }}>
+                                <Trash2 size={16} />
+                              </IconButton>
+                            </Tooltip>
+                          </ListingTable.Cell>
+                        </Authorized>
+                      </ListingTable.Row>
+                    );
+                  })}
+                </ListingTable.Body>
+              </ListingTable>
+            </ListingTable.Container>
+          )}
+          {filteredIntegrations.length > 10 && (
+            <TablePagination
+              component="div"
+              count={filteredIntegrations.length}
+              page={safePage}
+              onPageChange={(_, p) => setPage(p)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={(e) => {
+                setRowsPerPage(parseInt(e.target.value, 10));
+                setPage(0);
+              }}
+              rowsPerPageOptions={[10, 20, 50]}
+              sx={{ mt: 1 }}
+              SelectProps={{ inputProps: { 'aria-label': 'rows per page' } }}
+            />
+          )}
+
+          {filteredNonIntegrations.length > 0 && (
+            <>
+              <Typography variant="h6" component="h3" sx={{ fontWeight: 600, mt: filteredIntegrations.length > 0 ? 4 : 0, mb: 2 }}>
+                Non Integrations
+              </Typography>
+              <ListingTable.Container disablePaper>
+                <ListingTable variant="card" density="compact">
+                  <ListingTable.Head>
+                    <ListingTable.Row>
+                      <ListingTable.Cell>Name</ListingTable.Cell>
+                      <ListingTable.Cell>Description</ListingTable.Cell>
+                      <ListingTable.Cell>Type</ListingTable.Cell>
+                      <ListingTable.Cell>Last Updated</ListingTable.Cell>
+                      <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
+                        <ListingTable.Cell width={60}>Action</ListingTable.Cell>
+                      </Authorized>
+                    </ListingTable.Row>
+                  </ListingTable.Head>
+                  <ListingTable.Body>
+                    {filteredNonIntegrations.map((c) => {
+                      const init = getInitProgress(c, isWorkspace);
+                      return (
+                        <Tooltip key={c.id} followCursor title={`This component is not part of WSO2 Integration Platform. Switch to ${getNonIntegrationPlatform(c.originCloud)} to view and manage it.`}>
+                          <ListingTable.Row variant="card" aria-disabled tabIndex={-1} sx={{ opacity: 0.5, cursor: 'default' }}>
+                            <ListingTable.Cell>
+                              <ComponentNameCell component={c} isWorkspace={isWorkspace} projectGitOrg={projectGitOrg} projectGitRepo={projectGitRepo} />
+                            </ListingTable.Cell>
+                            <ListingTable.Cell>
+                              {!init && (
+                                <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 200 }}>
+                                  {c.description?.trim() || ''}
+                                </Typography>
+                              )}
+                            </ListingTable.Cell>
+                            <ListingTable.Cell>{!init && <Typography variant="body2">{getDisplayLabel(c.displayType ?? '', c.componentSubType ?? null)}</Typography>}</ListingTable.Cell>
+                            <ListingTable.Cell>
+                              {!init && (
+                                <Typography variant="body2" color="text.secondary">
+                                  {formatDistanceToNow(c.lastBuildDate)}
+                                </Typography>
+                              )}
+                            </ListingTable.Cell>
+                            <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
+                              <ListingTable.Cell>
+                                <Tooltip title="Delete">
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    aria-label={`Delete ${c.displayName}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeleting(c);
+                                    }}>
+                                    <Trash2 size={16} />
+                                  </IconButton>
+                                </Tooltip>
+                              </ListingTable.Cell>
+                            </Authorized>
+                          </ListingTable.Row>
+                        </Tooltip>
+                      );
+                    })}
+                  </ListingTable.Body>
+                </ListingTable>
+              </ListingTable.Container>
+            </>
+          )}
+        </>
       )}
 
       {deleting && <DeleteDialog component={deleting} scope={scope} projectId={projectId} onClose={() => setDeleting(null)} />}
     </section>
   );
+}
+
+function buildProjectRepoUrl(gitProvider?: string, gitOrganization?: string, repository?: string, branch?: string): string | null {
+  if (!gitOrganization || !repository) return null;
+  const b = branch || 'main';
+  switch (gitProvider?.toLowerCase()) {
+    case 'github':
+      return `https://github.com/${gitOrganization}/${repository}/tree/${b}`;
+    case 'bitbucket':
+      return `https://bitbucket.org/${gitOrganization}/${repository}/src/HEAD/?at=${b}`;
+    case 'gitlab':
+      return `https://gitlab.com/${gitOrganization}/${repository}`;
+    default:
+      return `https://github.com/${gitOrganization}/${repository}/tree/${b}`;
+  }
 }
 
 export default function Project(scope: ProjectScope): JSX.Element {
@@ -707,6 +935,25 @@ export default function Project(scope: ProjectScope): JSX.Element {
   const isUpgraded = (subscriptions ?? []).some((s) => s.subscriptionType === 'devant-subscription' && s.subscriptionStatus === 'active');
   const orgDevantComponentCount = isUpgraded ? 0 : (orgLimits?.billableComponentCount ?? 0);
   const [linkRepoOpen, setLinkRepoOpen] = useState(false);
+  const [splitOpen, setSplitOpen] = useState(false);
+  const splitButtonRef = useRef<HTMLDivElement>(null);
+  const [descEditing, setDescEditing] = useState(false);
+  const [descHovered, setDescHovered] = useState(false);
+  const [descValue, setDescValue] = useState('');
+  const descInputRef = useRef<HTMLInputElement>(null);
+  const { userId } = useAuth();
+  const { features } = useFeaturePreview();
+  const openInIntegratorEnabled = !!features['Project level Open in local Integrator'];
+  const { data: sampleImages } = useChoreoSampleImages(orgUuid, projectId);
+  const codeServerSample = useMemo(() => (sampleImages ?? []).find((img) => img.name === 'Code Server'), [sampleImages]);
+  const updateProject = useUpdateProject();
+  const { data: readmeContent } = useGitHubReadme(project?.gitOrganization, project?.repository);
+  const [openEditorWarning, setOpenEditorWarning] = useState<'cloud' | 'integrator' | null>(null);
+  const [excludedExpanded, setExcludedExpanded] = useState(true);
+  const [primaryAction, setPrimaryAction] = useState<'cloud' | 'integrator'>('cloud');
+  useEffect(() => {
+    setDescValue(project?.description?.trim() ?? '');
+  }, [project?.description]);
 
   if (loadingProject) {
     return (
@@ -720,20 +967,263 @@ export default function Project(scope: ProjectScope): JSX.Element {
   }
 
   const isEmpty = !loadingComponents && components.length === 0;
+  const isWorkspace = project.type === 'MONO_REPO';
+  const openInCloudComponent =
+    components.find((c) => {
+      if (!isSupportedIntegration(c.displayType, c.componentSubType)) return false;
+      if (!project.gitOrganization || !project.repository) return true;
+      if (!c.repository?.organizationApp || !c.repository?.nameApp) return true;
+      return (
+        c.repository.organizationApp.toLowerCase() === project.gitOrganization.toLowerCase() &&
+        c.repository.nameApp.toLowerCase() === project.repository.toLowerCase()
+      );
+    }) ?? null;
+  const projectRepoUrl = buildProjectRepoUrl(project.gitProvider, project.gitOrganization, project.repository, project.branch);
+
+  const externalComponents =
+    project.gitOrganization && project.repository
+      ? components.filter((c) => !!c.repository?.organizationApp && !!c.repository?.nameApp && (c.repository.organizationApp.toLowerCase() !== project.gitOrganization!.toLowerCase() || c.repository.nameApp.toLowerCase() !== project.repository!.toLowerCase()))
+      : [];
+
+  const doOpenInCloud = () => {
+    if (!codeServerSample || !openInCloudComponent) return;
+    const params = new URLSearchParams({
+      userId: userId ?? '',
+      orgUuid,
+      orgHandle: scope.org,
+      projectId,
+      componentId: openInCloudComponent.id,
+      codeServerSample: JSON.stringify(codeServerSample),
+    });
+    window.open(`${window.location.origin}/editor?${params}`, '_blank', 'noopener,noreferrer');
+    setSplitOpen(false);
+    setOpenEditorWarning(null);
+  };
+
+  const doOpenInIntegrator = () => {
+    if (!openInCloudComponent) return;
+    const isMI = (openInCloudComponent.displayType ?? '').startsWith('mi');
+    const extensionId = isMI ? 'WSO2.micro-integrator' : 'WSO2.ballerina';
+    const params = new URLSearchParams({ project: project.handler, org: scope.org, component: openInCloudComponent.handler });
+    window.open(`vscode://${extensionId}/open?${params}`, '_blank');
+    setSplitOpen(false);
+    setOpenEditorWarning(null);
+  };
+
+  const handleOpenInCloud = () => {
+    if (!codeServerSample || !openInCloudComponent) return;
+    if (externalComponents.length > 0) {
+      setExcludedExpanded(true);
+      setOpenEditorWarning('cloud');
+      setSplitOpen(false);
+      return;
+    }
+    doOpenInCloud();
+  };
+
+  const handleOpenInIntegrator = () => {
+    if (!openInCloudComponent) return;
+    if (externalComponents.length > 0) {
+      setExcludedExpanded(true);
+      setOpenEditorWarning('integrator');
+      setSplitOpen(false);
+      return;
+    }
+    doOpenInIntegrator();
+  };
+
+  const commitDescEdit = () => {
+    const trimmed = descValue.trim();
+    const original = project.description?.trim() ?? '';
+    if (trimmed === original) {
+      setDescEditing(false);
+      return;
+    }
+    updateProject.mutate(
+      { id: project.id, name: project.name, description: trimmed || ' ', version: project.version },
+      {
+        onSuccess: () => setDescEditing(false),
+        onError: () => {
+          setDescValue(original);
+          setDescEditing(false);
+        },
+      },
+    );
+  };
+
+  const cancelDescEdit = () => {
+    setDescValue(project.description?.trim() ?? '');
+    setDescEditing(false);
+  };
 
   return (
     <PageContent>
-      <Stack component="header" direction="row" alignItems="center" gap={2} sx={{ mb: isEmpty ? 3 : 4 }}>
-        <Avatar sx={{ width: 56, height: 56, fontSize: 24, bgcolor: 'text.primary', color: 'background.paper' }}>{project?.name?.[0]?.toUpperCase() ?? 'P'}</Avatar>
-        <div>
-          <Typography variant="h1">{project.name}</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-            {project.description}
-          </Typography>
-          <Button size="small" variant="text" color="primary" startIcon={<Link2 size={14} />} onClick={() => setLinkRepoOpen(true)} sx={{ mt: 0.5, pl: 0, textTransform: 'none', fontSize: '0.8125rem' }}>
-            Link a Repository
-          </Button>
-        </div>
+      <Stack component="header" direction="row" alignItems="flex-start" justifyContent="space-between" gap={2} sx={{ mb: isEmpty ? 3 : 4 }}>
+        <Stack direction="row" alignItems="flex-start" gap={2}>
+          <Avatar sx={{ width: 56, height: 56, fontSize: 24, bgcolor: 'primary.main', color: 'primary.contrastText', flexShrink: 0 }}>{project?.name?.[0]?.toUpperCase() ?? 'P'}</Avatar>
+          <div>
+            <Typography variant="h1">{project.name}</Typography>
+            <Stack direction="row" alignItems="flex-start" gap={1} onMouseEnter={() => setDescHovered(true)} onMouseLeave={() => setDescHovered(false)}>
+              <Box
+                sx={{ position: 'relative', flex: 1, cursor: 'text', mt: 0.25 }}
+                onClick={() => {
+                  if (!descEditing) {
+                    setDescEditing(true);
+                    setTimeout(() => descInputRef.current?.focus(), 0);
+                  }
+                }}>
+                <Typography
+                  variant="body2"
+                  component="div"
+                  sx={{
+                    visibility: descEditing ? 'hidden' : 'visible',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    color: descValue ? 'text.secondary' : 'primary.main',
+                    minHeight: '1.4em',
+                  }}>
+                  {descValue || '+ Add Description'}
+                  {descValue && (
+                    <Box component="span" sx={{ display: 'inline-flex', verticalAlign: 'middle', ml: 0.5 }}>
+                      <Tooltip title="Edit description">
+                        <IconButton
+                          size="small"
+                          sx={{ p: 0.25, opacity: descHovered ? 1 : 0, transition: 'opacity 0.15s' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDescEditing(true);
+                            setTimeout(() => descInputRef.current?.focus(), 0);
+                          }}>
+                          <Pencil size={12} />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  )}
+                </Typography>
+                {descEditing && (
+                  <InputBase
+                    inputRef={descInputRef}
+                    multiline
+                    autoFocus
+                    value={descValue}
+                    onChange={(e) => setDescValue(e.target.value)}
+                    onBlur={commitDescEdit}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        e.preventDefault();
+                        cancelDescEdit();
+                      }
+                    }}
+                    sx={(theme) => ({
+                      position: 'absolute',
+                      inset: '-4px',
+                      padding: '4px',
+                      border: `2px solid ${theme.palette.primary.main}`,
+                      borderRadius: `${theme.shape.borderRadius}px`,
+                      alignItems: 'flex-start',
+                      '& textarea': { ...theme.typography.body2, padding: 0, resize: 'none', border: 'none', outline: 'none', background: 'transparent' },
+                    })}
+                    disabled={updateProject.isPending}
+                    autoComplete="off"
+                  />
+                )}
+              </Box>
+              {updateProject.isPending && <CircularProgress size={12} sx={{ mt: 0.25 }} />}
+            </Stack>
+            {projectRepoUrl ? (
+              <Stack direction="row" alignItems="center" gap={0.5} sx={{ mt: 1 }}>
+                <GitHub size={14} />
+                <Link href={projectRepoUrl} target="_blank" rel="noreferrer" data-testid="project-repo-link-link" underline="hover" sx={{ color: 'primary.main', fontSize: '0.8125rem' }}>
+                  {projectRepoUrl}
+                </Link>
+              </Stack>
+            ) : (
+              <Button size="small" variant="text" color="primary" startIcon={<Link2 size={14} />} onClick={() => setLinkRepoOpen(true)} sx={{ mt: 1, pl: 0, textTransform: 'none', fontSize: '0.8125rem' }}>
+                Link a Repository
+              </Button>
+            )}
+          </div>
+        </Stack>
+        {openInCloudComponent && projectRepoUrl && (
+          <Box sx={{ position: 'relative', flexShrink: 0 }}>
+            {openInIntegratorEnabled ? (
+              <>
+                <ButtonGroup variant="outlined" size="small" ref={splitButtonRef}>
+                  <Button
+                    startIcon={
+                      <Box component="span" sx={{ color: 'text.primary', display: 'flex' }}>
+                        <IntegratorIcon width={16} height={16} />
+                      </Box>
+                    }
+                    onClick={primaryAction === 'cloud' ? handleOpenInCloud : handleOpenInIntegrator}
+                    disabled={primaryAction === 'cloud' ? !codeServerSample : !openInCloudComponent}
+                    sx={{ whiteSpace: 'nowrap' }}>
+                    {primaryAction === 'cloud' ? (
+                      <>
+                        Open in Cloud&nbsp;
+                        <Chip label="Beta" size="small" color="primary" sx={{ height: 16, fontSize: 10, cursor: 'pointer' }} />
+                      </>
+                    ) : (
+                      'Open in Integrator'
+                    )}
+                  </Button>
+                  <Button size="small" sx={{ px: 0.5 }} aria-label="More options" onClick={() => setSplitOpen((prev) => !prev)}>
+                    <ChevronDown size={14} />
+                  </Button>
+                </ButtonGroup>
+                <Popper open={splitOpen} anchorEl={splitButtonRef.current} placement="bottom-end" transition disablePortal style={{ zIndex: 1300 }}>
+                  {({ TransitionProps }) => (
+                    <Grow {...TransitionProps}>
+                      <Paper elevation={3}>
+                        <ClickAwayListener onClickAway={() => setSplitOpen(false)}>
+                          <MenuList dense sx={{ minWidth: 200 }}>
+                            <MenuItem
+                              onClick={() => {
+                                setPrimaryAction('cloud');
+                                handleOpenInCloud();
+                              }}
+                              disabled={!codeServerSample}>
+                              <Stack direction="row" alignItems="center" gap={1}>
+                                <IntegratorIcon width={16} height={16} />
+                                <Typography variant="body2">Open in Cloud</Typography>
+                                <Chip label="Beta" size="small" color="primary" sx={{ height: 16, fontSize: 10 }} />
+                              </Stack>
+                            </MenuItem>
+                            <MenuItem
+                              onClick={() => {
+                                setPrimaryAction('integrator');
+                                handleOpenInIntegrator();
+                              }}>
+                              <Stack direction="row" alignItems="center" gap={1}>
+                                <IntegratorIcon width={16} height={16} />
+                                <Typography variant="body2">Open in Integrator</Typography>
+                              </Stack>
+                            </MenuItem>
+                          </MenuList>
+                        </ClickAwayListener>
+                      </Paper>
+                    </Grow>
+                  )}
+                </Popper>
+              </>
+            ) : (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={
+                  <Box component="span" sx={{ color: 'text.primary', display: 'flex' }}>
+                    <IntegratorIcon width={16} height={16} />
+                  </Box>
+                }
+                onClick={handleOpenInCloud}
+                disabled={!codeServerSample}
+                sx={{ whiteSpace: 'nowrap' }}>
+                Open in Cloud&nbsp;
+                <Chip label="Beta" size="small" color="primary" sx={{ height: 16, fontSize: 10, cursor: 'pointer' }} />
+              </Button>
+            )}
+          </Box>
+        )}
       </Stack>
 
       <LinkRepositoryDialog scope={scope} open={linkRepoOpen} onClose={() => setLinkRepoOpen(false)} />
@@ -756,8 +1246,24 @@ export default function Project(scope: ProjectScope): JSX.Element {
               scope={scope}
               projectId={projectId}
               orgDevantComponentCount={orgDevantComponentCount}
+              isWorkspace={isWorkspace}
+              projectGitOrg={project.gitOrganization}
+              projectGitRepo={project.repository}
               onSelect={(handler) => navigate(componentOverviewUrl(scope.org, project?.handler ?? scope.project, handler))}
             />
+            {readmeContent && (
+              <Card sx={{ mt: 3 }}>
+                <CardContent>
+                  <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2 }}>
+                    <FileText size={16} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      README.md
+                    </Typography>
+                  </Stack>
+                  <Markdown>{readmeContent}</Markdown>
+                </CardContent>
+              </Card>
+            )}
           </Box>
           <Box>
             <Stack gap={3}>
@@ -768,6 +1274,56 @@ export default function Project(scope: ProjectScope): JSX.Element {
           </Box>
         </Box>
       )}
+
+      <Dialog open={!!openEditorWarning} onClose={() => setOpenEditorWarning(null)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, pb: 1 }}>
+          <Info size={22} style={{ flexShrink: 0, marginTop: 2 }} />
+          <Typography variant="h6" component="span" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+            Integrations from external repositories will not be available
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            {openEditorWarning === 'cloud' ? 'The Cloud Editor only opens integrations that belong to the project repository.' : 'The Integrator only opens integrations that belong to the project repository.'}
+          </DialogContentText>
+          {projectRepoUrl && (
+            <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Opening
+              </Typography>
+              <GitBranch size={14} />
+              <Typography variant="body2">{projectRepoUrl}</Typography>
+            </Stack>
+          )}
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" onClick={() => setExcludedExpanded((v) => !v)} sx={{ px: 2, py: 1.5, bgcolor: 'action.hover', cursor: 'pointer', userSelect: 'none' }}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                The following integration{externalComponents.length !== 1 ? 's' : ''} will be excluded:
+              </Typography>
+              {excludedExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </Stack>
+            {excludedExpanded && (
+              <Box sx={{ px: 2, py: 1.5 }}>
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  {externalComponents.map((c) => (
+                    <li key={c.id}>
+                      <Typography variant="body2">{c.displayName}</Typography>
+                    </li>
+                  ))}
+                </ul>
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button variant="outlined" onClick={() => setOpenEditorWarning(null)}>
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={() => (openEditorWarning === 'cloud' ? doOpenInCloud() : doOpenInIntegrator())} disabled={openEditorWarning === 'cloud' ? !codeServerSample : !openInCloudComponent}>
+            Open {openEditorWarning === 'integrator' ? 'integrator' : 'editor'} anyway
+          </Button>
+        </DialogActions>
+      </Dialog>
     </PageContent>
   );
 }

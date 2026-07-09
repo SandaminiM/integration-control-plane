@@ -14,5 +14,9 @@
   {
     "title": "Copilot",
     "description": "Show the Copilot assistant button in the top navigation bar"
+  },
+  {
+    "title": "Project level Open in local Integrator",
+    "description": "Show an 'Open in Integrator' option in the project-level Open in Cloud button"
   }
 ]
