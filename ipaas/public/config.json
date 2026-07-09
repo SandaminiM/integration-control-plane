@@ -14,6 +14,8 @@
   "INSIGHTS_BASE_URL": "https://choreocontrolplane.preview-dv.choreo.dev",
   "ENABLE_BILLING_FEATURE": "true",
   "BILLING_CONSOLE_URL": "https://subscriptions.dv.wso2.com",
+  "PLATFORM_SERVICES_API_BASE_URL": "https://apis.preview-dv.choreo.dev/platform-services/v1.0",
+  "ENABLE_PLATFORM_SERVICES_FEATURE": "true",
   "ASGARDEO_ORG_NUMERIC_ID": "",
   "SYSTEM_APIS_BASE_URL": "https://783c6c4d-8b9b-4190-b70a-e717ab1ee739-systemapis.e1-us-east-azure.preview-dv.choreoapis.dev",
   "SYS_API_PREFIX": "783c6c4d-8b9b-4190-b70a-e717ab1ee739-systemapis",

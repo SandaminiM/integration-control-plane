@@ -16,21 +16,12 @@
  * under the License.
  */
 
-export const CARD_HOVER_SX = {
-  boxShadow: 'none',
-  transition: 'all 0.2s ease-in-out',
-  cursor: 'pointer',
-  '&:hover': {
-    boxShadow: (theme: { palette: { primary: { main: string } } }) => `0px 0px 0px 1.5px ${theme.palette.primary.main}`,
-  },
-} as const;
+import type { JSX } from 'react';
+import { CreateDatabaseServerView } from './CreateDatabaseServer';
+import { VECTOR_DATABASE_KIND } from '../constants/platformServices';
+import type { OrgScope } from '../nav';
 
-export const PROVIDER_ICON_SX = {
-  width: 40,
-  height: 40,
-  color: 'text.secondary',
-  '&:hover': { color: 'primary.main', bgcolor: 'action.hover' },
-} as const;
-
-/** Colors a required TextField's asterisk red. */
-export const REQUIRED_FIELD_SX = { '& .MuiFormLabel-asterisk': { color: 'error.main' } } as const;
+/** Create Vector Database Server — the shared create wizard driven by the vector kind. */
+export default function CreateVectorDatabaseServer(scope: OrgScope): JSX.Element {
+  return <CreateDatabaseServerView scope={scope} kind={VECTOR_DATABASE_KIND} />;
+}

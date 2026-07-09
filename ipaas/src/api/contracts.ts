@@ -101,6 +101,26 @@ import type { SubscriptionList, ComponentLimits } from '../types/subscription';
 import type { ConfigGroup, ConfigGroupNameAvailability, ConfigGroupUsage, CreateConfigGroupRequest, EditConfigGroupRequest } from '../types/configGroups';
 import type { AuditLogEntry, AuditLogsRequest } from '../types/auditLogs';
 import type {
+  AdminUser,
+  AllowedIpsPayload,
+  BackupsResponse,
+  CaCertificate,
+  CredentialPayload,
+  DatabaseInfo,
+  DatabaseServer,
+  DatabaseServerDetail,
+  DbCredential,
+  LogsRequest as ServerLogsRequest,
+  LogsResponse as ServerLogsResponse,
+  MaintenanceWindow,
+  MetricPeriod,
+  OrgServiceAvailability,
+  ServerMetricsResponse,
+  ServicePlan,
+  ServiceType,
+  CreateServerPayload,
+} from '../types/platformServices';
+import type {
   ConnectionConfigRequest,
   ConnectionConfigResponse,
   CreateServiceRequest,
@@ -593,6 +613,32 @@ export interface AuditLogsApi {
   fetchAuditLogs(orgUuid: string, request: AuditLogsRequest): Promise<AuditLogEntry[]>;
 }
 
+// Managed databases (admin "Databases"). wip-only; cloud/icp stubs throw. Grown per phase.
+export interface PlatformServicesApi {
+  getAvailability(orgUuid: string): Promise<OrgServiceAvailability>;
+  listServers(orgUuid: string): Promise<DatabaseServer[]>;
+  getServer(serverId: string): Promise<DatabaseServerDetail>;
+  deleteServer(serverId: string): Promise<void>;
+  getServicePlans(type: ServiceType): Promise<ServicePlan[]>;
+  createServer(payload: CreateServerPayload): Promise<DatabaseServer>;
+  setServerPoweredState(serverId: string, powered: boolean): Promise<void>;
+  getServerAdminUser(serverId: string): Promise<AdminUser>;
+  getServerCaCertificate(serverId: string): Promise<CaCertificate>;
+  getServerMetrics(serverId: string, period: MetricPeriod): Promise<ServerMetricsResponse>;
+  listServerDatabases(serverId: string): Promise<DatabaseInfo[]>;
+  getServerLogs(serverId: string, request: ServerLogsRequest): Promise<ServerLogsResponse>;
+  listServerBackups(serverId: string): Promise<BackupsResponse>;
+  createDatabase(serverId: string, name: string): Promise<DatabaseInfo>;
+  setDatabaseMarketplace(serverId: string, name: string, displayOnMarketplace: boolean): Promise<void>;
+  listDbCredentials(serverId: string, dbName?: string): Promise<DbCredential[]>;
+  getDbCredential(serverId: string, credentialId: string): Promise<DbCredential>;
+  createDbCredential(serverId: string, payload: CredentialPayload): Promise<DbCredential>;
+  updateDbCredential(serverId: string, credentialId: string, payload: CredentialPayload): Promise<DbCredential>;
+  deleteDbCredential(serverId: string, credentialId: string): Promise<void>;
+  updateMaintenanceWindow(serverId: string, payload: MaintenanceWindow): Promise<void>;
+  updateAllowedIps(serverId: string, payload: AllowedIpsPayload): Promise<void>;
+}
+
 // Org admin GenAI Services (internal-marketplace). wip-only for now; cloud/icp stubs throw.
 export interface GenaiServicesApi {
   listGenaiServices(params: { query?: string; offset: number; limit: number; projectId?: string }): Promise<GenAiServiceListResponse>;
@@ -650,5 +696,6 @@ export interface AppApi {
   subscriptions: SubscriptionsApi;
   configGroups: ConfigGroupsApi;
   auditLogs: AuditLogsApi;
+  platformServices: PlatformServicesApi;
   genaiServices: GenaiServicesApi;
 }

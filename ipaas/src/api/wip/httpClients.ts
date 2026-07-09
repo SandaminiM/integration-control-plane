@@ -32,6 +32,9 @@ interface HttpClientOptions {
    * true - retry the original request,
    * false - fall through to the standard error throw */
   on403?: (res: Response) => Promise<boolean>;
+  /** Return the raw text when a 2xx body isn't JSON (e.g. a plain "OK" from DELETE/PUT).
+   * Off by default — unexpected non-JSON bodies throw. */
+  tolerateNonJson?: boolean;
 }
 
 // Factory to create HTTP clients for different services
@@ -60,7 +63,14 @@ export function createHttpClient(getBaseUrl: () => string, clientOptions?: HttpC
       throw new HttpError(res.status, `HTTP ${res.status}: ${body || res.statusText}`);
     }
     const text = await res.text().catch(() => '');
-    return (text ? (JSON.parse(text) as T) : undefined) as T;
+    if (!text) return undefined as T;
+    try {
+      return JSON.parse(text) as T;
+    } catch (err) {
+      // Opt-in clients (e.g. platform services) accept a plain "OK" from DELETE/PUT; others stay strict.
+      if (clientOptions?.tolerateNonJson) return text as unknown as T;
+      throw err instanceof Error ? err : new Error('Expected a JSON response body.');
+    }
   }
 
   return {
@@ -110,6 +120,16 @@ export const urlManagerClient = createHttpClient(() => {
 
 // Subscriptions service
 export const subscriptionsClient = createHttpClient(() => window.API_CONFIG.subscriptionsApiUrl);
+
+// Platform services — managed databases (admin "Databases" feature).
+export const platformServicesClient = createHttpClient(
+  () => {
+    const base = window.API_CONFIG?.platformServicesApiBaseUrl;
+    if (!base) throw new Error('Platform services base URL is not configured');
+    return base;
+  },
+  { tolerateNonJson: true },
+);
 
 // Choreo Insights — GraphQL-like query endpoint on a separate host
 export const insightsClient = createHttpClient(() => `${window.API_CONFIG.insightsBaseUrl}/insights/1.0.0`);

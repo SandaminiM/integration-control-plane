@@ -63,6 +63,12 @@ const GenAIServiceDetail = lazy(() => import('../pages/GenAIServiceDetail'));
 const EditConfigGroup = lazy(() => import('../pages/EditConfigGroup'));
 const OrgAuditLogs = lazy(() => import('../pages/OrgAuditLogs'));
 const ProjectCdPipelines = lazy(() => import('../pages/ProjectCdPipelines'));
+const OrgDatabases = lazy(() => import('../pages/OrgDatabases'));
+const CreateDatabaseServer = lazy(() => import('../pages/CreateDatabaseServer'));
+const DatabaseServerDetail = lazy(() => import('../pages/DatabaseServerDetail'));
+const OrgVectorDatabases = lazy(() => import('../pages/OrgVectorDatabases'));
+const CreateVectorDatabaseServer = lazy(() => import('../pages/CreateVectorDatabaseServer'));
+const VectorDatabaseServerDetail = lazy(() => import('../pages/VectorDatabaseServerDetail'));
 const ProjectSettings = lazy(() => import('../pages/ProjectSettings'));
 const ProjectOverview = lazy(() => import('../pages/ProjectOverview'));
 const ProjectEgressControl = lazy(() => import('../pages/ProjectEgressControl'));
@@ -171,8 +177,12 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/rag/scheduled-ingestion', element: <ComingSoon title="Coming Soon" description="Scheduled ingestion is currently under development." /> },
               { path: 'organizations/:orgHandler/rag/service', element: <ComingSoon title="Coming Soon" description="RAG service management is currently under development." /> },
               { path: 'organizations/:orgHandler/rag/retrieval', element: <ComingSoon title="Coming Soon" description="Retrieval configuration is currently under development." /> },
-              { path: 'organizations/:orgHandler/admin/databases', element: <ComingSoon title="Coming Soon" description="Databases management is currently under development." /> },
-              { path: 'organizations/:orgHandler/admin/vector-databases', element: <ComingSoon title="Coming Soon" description="Vector Databases management is currently under development." /> },
+              { path: 'organizations/:orgHandler/admin/databases', element: createElement(withScope(OrgDatabases, ['organizations'])) },
+              { path: 'organizations/:orgHandler/admin/databases/new', element: createElement(withScope(CreateDatabaseServer, ['organizations'])) },
+              { path: 'organizations/:orgHandler/admin/databases/:dbServerId/:tab', element: createElement(withScope(DatabaseServerDetail, ['organizations'])) },
+              { path: 'organizations/:orgHandler/admin/vector-databases', element: createElement(withScope(OrgVectorDatabases, ['organizations'])) },
+              { path: 'organizations/:orgHandler/admin/vector-databases/new', element: createElement(withScope(CreateVectorDatabaseServer, ['organizations'])) },
+              { path: 'organizations/:orgHandler/admin/vector-databases/:dbServerId/:tab', element: createElement(withScope(VectorDatabaseServerDetail, ['organizations'])) },
               { path: 'organizations/:orgHandler/admin/message-brokers', element: <ComingSoon title="Coming Soon" description="Message Brokers management is currently under development." /> },
               { path: 'organizations/:orgHandler/admin/third-party', element: <ComingSoon title="Coming Soon" description="Third Party Services management is currently under development." /> },
               { path: 'organizations/:orgHandler/admin/genai-services', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgGenAIServices, ['organizations']))) },

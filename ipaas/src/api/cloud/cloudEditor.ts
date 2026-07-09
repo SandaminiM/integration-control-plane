@@ -45,16 +45,7 @@ export async function getOrCreateSampleRegistry(_orgUuid: string): Promise<Conta
   return { id: 'openchoreo-default', host: '', name: 'OpenChoreo Registry' };
 }
 
-export async function callCreateCodeServer(params: {
-  userId: string;
-  organizationId: string;
-  projectId: string;
-  componentId: string;
-  orgHandle: string;
-  imageUrl: string;
-  registryId: string;
-  sourceCommitHash?: string;
-}): Promise<string> {
+export async function callCreateCodeServer(params: { userId: string; organizationId: string; projectId: string; componentId: string; orgHandle: string; imageUrl: string; registryId: string; sourceCommitHash?: string }): Promise<string> {
   const { userId, projectId, componentId, imageUrl, sourceCommitHash } = params;
 
   // organizationId/orgHandle are accepted for signature parity with the wip
