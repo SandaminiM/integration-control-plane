@@ -19,7 +19,7 @@
 import { gql } from './graphql';
 import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput, UpdateProjectInput } from '../../types/project';
 
-const PROJECT_FIELDS = 'id, orgId, name, handler, description, version, createdDate, updatedAt, region, type, defaultDeploymentPipelineId';
+const PROJECT_FIELDS = 'id, orgId, name, handler, description, version, createdDate, updatedAt, region, type, defaultDeploymentPipelineId, gitOrganization, repository, branch, gitProvider';
 
 const PROJECTS_QUERY = `
   query GetProjects($orgId: Int!) {

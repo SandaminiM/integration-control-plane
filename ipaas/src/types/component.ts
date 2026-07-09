@@ -25,12 +25,15 @@ export interface Component {
   displayType: string;
   description: string;
   status: string;
+  initStatus?: string;
+  repository?: { organizationApp?: string; nameApp?: string };
   componentType?: string;
   componentSubType: string | null;
   version: string;
   createdAt: string;
   lastBuildDate: string;
   labels?: string | string[];
+  originCloud?: string;
   apiId?: string;
   serviceAccessMode?: string | null;
   isPrebuilt?: boolean;

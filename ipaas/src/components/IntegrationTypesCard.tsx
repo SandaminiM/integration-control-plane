@@ -20,31 +20,52 @@ import { Card, CardContent, Divider, Stack, Typography } from '@wso2/oxygen-ui';
 import { PlugZap } from '@wso2/oxygen-ui-icons-react';
 import type { Component } from '../types/component';
 import type { JSX } from 'react';
-import { getDisplayLabel } from '../constants/integrations';
+import { getDisplayLabel, isSupportedIntegration } from '../constants/integrations';
 
 export default function IntegrationTypesCard({ components }: { components: Component[] }): JSX.Element {
-  const counts = components.reduce<Record<string, number>>((acc, c) => {
-    const type = getDisplayLabel(c.displayType ?? '', c.componentSubType ?? null);
-    acc[type] = (acc[type] || 0) + 1;
-    return acc;
-  }, {});
+  const hasNonIntegrations = components.some((c) => !isSupportedIntegration(c.displayType ?? '', c.componentSubType ?? null));
+
+  let rows: { label: string; count: number }[];
+  if (hasNonIntegrations) {
+    const integrationCounts: Record<string, number> = {};
+    let nonIntegrationCount = 0;
+    for (const c of components) {
+      if (isSupportedIntegration(c.displayType ?? '', c.componentSubType ?? null)) {
+        const label = getDisplayLabel(c.displayType ?? '', c.componentSubType ?? null);
+        integrationCounts[label] = (integrationCounts[label] || 0) + 1;
+      } else {
+        nonIntegrationCount++;
+      }
+    }
+    rows = [...Object.entries(integrationCounts).map(([label, count]) => ({ label, count })), { label: 'Non Integrations', count: nonIntegrationCount }];
+  } else {
+    const counts = components.reduce<Record<string, number>>((acc, c) => {
+      const label = getDisplayLabel(c.displayType ?? '', c.componentSubType ?? null);
+      acc[label] = (acc[label] || 0) + 1;
+      return acc;
+    }, {});
+    rows = Object.entries(counts).map(([label, count]) => ({ label, count }));
+  }
 
   return (
     <Card variant="outlined">
       <CardContent>
         <Typography variant="h6" component="h2" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
           <PlugZap size={20} aria-hidden="true" />
-          Integration Types
+          {hasNonIntegrations ? 'Component Types' : 'Integration Types'}
         </Typography>
         <Stack>
-          {Object.entries(counts).map(([type, count]) => (
-            <Stack key={type} direction="row" justifyContent="space-between" sx={{ py: 0.5 }}>
-              <Typography variant="body2">{type}</Typography>
-              <Typography variant="body2">{count}</Typography>
+          {rows.map(({ label, count }, i) => (
+            <Stack key={label}>
+              {i > 0 && <Divider />}
+              <Stack direction="row" justifyContent="space-between" sx={{ py: 1 }}>
+                <Typography variant="body2">{label}</Typography>
+                <Typography variant="body2">{count}</Typography>
+              </Stack>
             </Stack>
           ))}
-          <Divider sx={{ my: 0.5 }} />
-          <Stack direction="row" justifyContent="space-between" sx={{ py: 0.5 }}>
+          <Divider />
+          <Stack direction="row" justifyContent="space-between" sx={{ py: 1 }}>
             <Typography variant="body2" sx={{ fontWeight: 600 }}>
               Total
             </Typography>

@@ -184,7 +184,8 @@ function buildCreateMiComponentQuery(input: CreateComponentInput): string {
 const COMPONENTS_QUERY = `
   query GetComponents($orgHandler: String!, $projectId: String!) {
     components(orgHandler: $orgHandler, projectId: $projectId) {
-      projectId, id, name, handler, displayName, displayType, description, status, componentSubType, version, createdAt, lastBuildDate
+      projectId, id, name, handler, displayName, displayType, description, status, initStatus, componentSubType, version, createdAt, lastBuildDate, labels, originCloud
+      repository { organizationApp nameApp }
     }
   }`;
 

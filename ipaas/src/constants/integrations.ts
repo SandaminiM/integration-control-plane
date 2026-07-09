@@ -60,6 +60,10 @@ export function isSupportedIntegration(displayType: string, componentSubType: st
   return SUPPORTED_DISPLAY_TYPES.has(displayType) || componentSubType === 'MCP';
 }
 
+export function getNonIntegrationPlatform(originCloud?: string): string {
+  return originCloud === 'bijira' ? 'WSO2 API Platform' : 'WSO2 Developer Platform';
+}
+
 /**
  * Maps a component's displayType and componentSubType to a human-readable label.
  */

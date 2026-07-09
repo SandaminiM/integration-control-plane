@@ -133,6 +133,22 @@ export function useCreateMonoRepoProject() {
   });
 }
 
+export function useGitHubReadme(gitOrganization?: string, repository?: string) {
+  return useQuery({
+    queryKey: ['githubReadme', gitOrganization, repository],
+    queryFn: async () => {
+      const res = await fetch(`https://api.github.com/repos/${gitOrganization}/${repository}/readme`);
+      if (!res.ok) return null;
+      const data = (await res.json()) as { content: string; encoding: string };
+      if (data.encoding !== 'base64') return null;
+      return atob(data.content.replace(/\n/g, ''));
+    },
+    enabled: !!gitOrganization && !!repository,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
+
 export function useProjectId(projectIdentifier: string) {
   const isProjectUuid = UUID_RE.test(projectIdentifier);
   const { data: projectById, isLoading: loadingById } = useProject(isProjectUuid ? projectIdentifier : '');
