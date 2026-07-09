@@ -53,8 +53,9 @@ export default function EnvCardActions({
   const redeployMutation = useRedeployDeployment();
   const isActionPending = stopMutation.isPending || redeployMutation.isPending;
 
-  const canStop = deploymentStatusV2 === 'ACTIVE' || deploymentStatusV2 === 'ERROR';
+  const canStop = deploymentStatusV2 === 'ACTIVE';
   const canStart = deploymentStatusV2 === 'SUSPENDED';
+  const hasError = deploymentStatusV2 === 'ERROR';
   const isInProgress = deploymentStatusV2 === 'IN_PROGRESS';
   const buildDisabled = !!isBuildInProgress && !hasDeployment;
 
@@ -93,7 +94,7 @@ export default function EnvCardActions({
           size="small"
           startIcon={<FlaskConical size={14} />}
           onClick={() => navigate(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/test/console`)}
-          disabled={buildDisabled}
+          disabled={buildDisabled || isInProgress}
           sx={{ textTransform: 'none' }}>
           Test
         </Button>
@@ -117,6 +118,15 @@ export default function EnvCardActions({
           <span>
             <Button variant="outlined" size="small" color="success" startIcon={<RotateCw size={14} />} onClick={handleRedeploy} disabled={isActionPending}>
               Start
+            </Button>
+          </span>
+        </Tooltip>
+      )}
+      {hasError && (
+        <Tooltip title="Redeploy">
+          <span>
+            <Button variant="outlined" size="small" color="error" startIcon={<RotateCw size={14} />} onClick={handleRedeploy} disabled={isActionPending}>
+              Redeploy
             </Button>
           </span>
         </Tooltip>

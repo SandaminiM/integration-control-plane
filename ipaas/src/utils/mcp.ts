@@ -16,7 +16,14 @@
  * under the License.
  */
 
-import type { McpTool, McpToolParameter } from '../types/mcp';
+import { StreamableHTTPError } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import type { JsonSchemaType, JsonValue, McpTool, McpToolContent, McpToolParameter, McpToolResult } from '../types/mcp';
+
+/** Whether an MCP/transport error is a 401/403 — a permissions issue, not a transient failure. */
+export function isMcpForbiddenError(error: unknown): boolean {
+  if (error instanceof StreamableHTTPError) return error.code === 401 || error.code === 403;
+  return /\b(401|403)\b|forbidden|unauthor/i.test(error instanceof Error ? error.message : String(error));
+}
 
 /** Flatten an MCP tool's input schema into a list of parameters for display. */
 export function getMcpToolParameters(tool: McpTool): McpToolParameter[] {
@@ -29,4 +36,104 @@ export function getMcpToolParameters(tool: McpTool): McpToolParameter[] {
     description: schema.description ?? '',
     required: required.includes(name),
   }));
+}
+
+/** Primitive JSON-schema types that can be rendered as a single form field. */
+const PRIMITIVE_TYPES = ['string', 'number', 'integer', 'boolean', 'null'];
+
+/** Turn a schema property key into a human label (`max_tokens` / `maxTokens` → `Max Tokens`). */
+export function formatFieldLabel(key: string): string {
+  const spaced = key
+    .replace(/[_-]+/g, ' ')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .trim();
+  return spaced.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** Whether a schema is a flat object whose properties are all primitives (so it renders as a form). */
+export function isSimpleObjectSchema(schema: JsonSchemaType): boolean {
+  if (schema.type !== 'object' || !schema.properties) return false;
+  return Object.values(schema.properties).every((prop) => PRIMITIVE_TYPES.includes(prop.type ?? ''));
+}
+
+/** A sensible default value for a schema, used to seed the argument form. */
+export function generateDefaultValue(schema: JsonSchemaType): JsonValue {
+  if (schema.default !== undefined) return schema.default;
+  switch (schema.type) {
+    case 'object': {
+      const obj: { [key: string]: JsonValue } = {};
+      for (const [key, prop] of Object.entries(schema.properties ?? {})) obj[key] = generateDefaultValue(prop);
+      return obj;
+    }
+    case 'array':
+      return [];
+    case 'boolean':
+      return false;
+    case 'string':
+      return '';
+    case 'number':
+    case 'integer':
+      return 0;
+    default:
+      return null;
+  }
+}
+
+/** Coerce a raw form input into the value expected by a schema field type. */
+export function coerceFieldValue(type: string | undefined, raw: string | number | boolean): JsonValue {
+  if (type === 'boolean') return typeof raw === 'boolean' ? raw : raw === 'true';
+  if (type === 'number' || type === 'integer') {
+    const n = typeof raw === 'number' ? raw : Number(raw);
+    if (Number.isNaN(n)) return null;
+    return type === 'integer' ? Math.trunc(n) : n;
+  }
+  return typeof raw === 'string' ? raw : String(raw);
+}
+
+/** Normalize the MCP SDK's tool-call result into the playground's display shape. */
+export function formatToolResult(raw: unknown): McpToolResult {
+  const result = (raw ?? {}) as { content?: unknown; isError?: boolean };
+  const rawContent = Array.isArray(result.content) ? result.content : [];
+  const content: McpToolContent[] = rawContent.map((item) => {
+    if (item && typeof item === 'object') return item as McpToolContent;
+    return { type: 'text', text: String(item) };
+  });
+  return { content, isError: result.isError ?? false };
+}
+
+/** Friendly messages for the standard JSON-RPC error codes an MCP server can return. */
+const RPC_ERROR_MESSAGES: Record<number, string> = {
+  [-32700]: 'The server could not parse the request.',
+  [-32600]: 'The server rejected the request as invalid.',
+  [-32601]: 'The server does not support this operation.',
+  [-32602]: 'One or more arguments are invalid for this operation.',
+  [-32603]: 'The server encountered an internal error.',
+};
+
+/**
+ * Turn a raw MCP/transport error into a user-friendly message: unwraps an embedded
+ * JSON-RPC error (mapping known codes), recognises auth failures, and strips noisy
+ * transport prefixes — falling back to a generic message.
+ */
+export function formatMcpError(error: unknown): string {
+  const raw = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+  const embedded = raw.match(/\{[\s\S]*\}/);
+  if (embedded) {
+    try {
+      const parsed = JSON.parse(embedded[0]) as { error?: { code?: number; message?: string } };
+      const rpc = parsed.error;
+      if (rpc) {
+        if (typeof rpc.code === 'number' && RPC_ERROR_MESSAGES[rpc.code]) return RPC_ERROR_MESSAGES[rpc.code];
+        if (rpc.message) return rpc.message;
+      }
+    } catch {
+      /* not JSON — fall through */
+    }
+  }
+  if (/\b(401|403)\b|unauthor|forbidden/i.test(raw)) return 'Not authorized. Check the token and its permissions.';
+  const cleaned = raw
+    .replace(/^Streamable HTTP error:\s*/i, '')
+    .replace(/Error POSTing to endpoint:\s*/i, '')
+    .trim();
+  return cleaned || 'Something went wrong while contacting the MCP server.';
 }

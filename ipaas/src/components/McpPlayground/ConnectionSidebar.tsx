@@ -1,0 +1,162 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { Alert, Box, Button, CircularProgress, IconButton, InputAdornment, MenuItem, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Copy, Eye, EyeOff, Plug, RefreshCw } from '@wso2/oxygen-ui-icons-react';
+import { useState, type JSX } from 'react';
+import type { McpConnectionStatus, McpSwitcher } from '../../types/mcp';
+
+interface ConnectionSidebarProps {
+  url: string;
+  token: string;
+  status: McpConnectionStatus;
+  error: string | null;
+  isForbidden: boolean;
+  isTokenFetching?: boolean;
+  endpointSwitcher?: McpSwitcher;
+  visibilitySwitcher?: McpSwitcher;
+  onConnect: () => void;
+  onDisconnect: () => void;
+  onReconnect: () => void;
+  onGetTestKey?: () => void;
+}
+
+const STATUS_META: Record<McpConnectionStatus, { label: string; color: string }> = {
+  disconnected: { label: 'Disconnected', color: 'text.disabled' },
+  connecting: { label: 'Connecting…', color: 'info.main' },
+  connected: { label: 'Connected', color: 'success.main' },
+  error: { label: 'Error', color: 'error.main' },
+};
+
+const readOnlyInputSx = { bgcolor: 'action.hover', fontFamily: 'monospace', fontSize: 12.5 } as const;
+
+/** The playground's left panel: endpoint/visibility selectors, the derived URL + test key, and connect controls. */
+export default function ConnectionSidebar({ url, token, status, error, isForbidden, isTokenFetching, endpointSwitcher, visibilitySwitcher, onConnect, onDisconnect, onReconnect, onGetTestKey }: ConnectionSidebarProps): JSX.Element {
+  const [showToken, setShowToken] = useState(false);
+  const connected = status === 'connected';
+  const connecting = status === 'connecting';
+  const meta = STATUS_META[status];
+  const copy = (value: string) => void navigator.clipboard?.writeText(value).catch(() => undefined);
+
+  return (
+    <Stack gap={2} sx={{ width: 300, flexShrink: 0, border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2.5, alignSelf: 'flex-start' }}>
+      {endpointSwitcher && (
+        <Tooltip title={connected || connecting ? 'Disconnect to select a different endpoint.' : ''}>
+          <Box component="span" sx={{ display: 'block' }}>
+            <TextField select label="Endpoint" size="small" fullWidth value={endpointSwitcher.value} onChange={(e) => endpointSwitcher.onChange(e.target.value)} disabled={connected || connecting}>
+              {endpointSwitcher.options.map((o) => (
+                <MenuItem key={o.value} value={o.value}>
+                  {o.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Box>
+        </Tooltip>
+      )}
+
+      {visibilitySwitcher && (
+        <Tooltip title={connected || connecting ? 'Disconnect to change the visibility.' : ''}>
+          <Box component="span" sx={{ display: 'block' }}>
+            <TextField select label="Visibility" size="small" fullWidth value={visibilitySwitcher.value} onChange={(e) => visibilitySwitcher.onChange(e.target.value)} disabled={connected || connecting}>
+              {visibilitySwitcher.options.map((o) => (
+                <MenuItem key={o.value} value={o.value}>
+                  {o.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Box>
+        </Tooltip>
+      )}
+
+      <TextField
+        label="URL"
+        size="small"
+        fullWidth
+        value={url}
+        InputProps={{
+          readOnly: true,
+          sx: readOnlyInputSx,
+          endAdornment: (
+            <InputAdornment position="end">
+              <Tooltip title="Copy URL">
+                <IconButton size="small" aria-label="Copy URL" onClick={() => copy(url)} edge="end">
+                  <Copy size={14} />
+                </IconButton>
+              </Tooltip>
+            </InputAdornment>
+          ),
+        }}
+      />
+
+      <TextField
+        label="Token"
+        size="small"
+        fullWidth
+        type={showToken ? 'text' : 'password'}
+        value={token}
+        InputProps={{
+          readOnly: true,
+          sx: readOnlyInputSx,
+          endAdornment: (
+            <InputAdornment position="end">
+              {isTokenFetching && <CircularProgress size={14} sx={{ mr: 0.5 }} />}
+              <IconButton size="small" aria-label={showToken ? 'Hide token' : 'Show token'} onClick={() => setShowToken((s) => !s)} edge="end">
+                {showToken ? <EyeOff size={14} /> : <Eye size={14} />}
+              </IconButton>
+              <Tooltip title="Copy token">
+                <IconButton size="small" aria-label="Copy token" onClick={() => copy(token)} edge="end">
+                  <Copy size={14} />
+                </IconButton>
+              </Tooltip>
+            </InputAdornment>
+          ),
+        }}
+      />
+
+      {onGetTestKey && (
+        <Button variant="outlined" size="small" onClick={onGetTestKey} disabled={isTokenFetching}>
+          Get Test Key
+        </Button>
+      )}
+
+      {connected ? (
+        <Stack direction="row" gap={1}>
+          <Button variant="outlined" size="small" fullWidth startIcon={<RefreshCw size={14} />} onClick={onReconnect}>
+            Reconnect
+          </Button>
+          <Button variant="outlined" size="small" fullWidth color="error" onClick={onDisconnect}>
+            Disconnect
+          </Button>
+        </Stack>
+      ) : (
+        <Button variant="contained" size="small" startIcon={connecting ? <CircularProgress size={14} color="inherit" /> : <Plug size={14} />} onClick={onConnect} disabled={connecting || !url || !token}>
+          {connecting ? 'Connecting…' : 'Connect'}
+        </Button>
+      )}
+
+      <Stack direction="row" alignItems="center" gap={1}>
+        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: meta.color }} />
+        <Typography variant="caption" color="text.secondary">
+          {meta.label}
+        </Typography>
+      </Stack>
+
+      {error && <Alert severity={isForbidden ? 'warning' : 'error'}>{isForbidden ? 'Not authorized to connect. Check the token and its permissions.' : error}</Alert>}
+    </Stack>
+  );
+}
