@@ -59,6 +59,7 @@ export function useWorkflowInstances() {
   return useQuery<WorkflowInstanceResponse[]>({
     queryKey: [ROOT_KEY, 'instances', 'pending'],
     queryFn: fetchWorkflowInstances,
+    enabled: isApprovalsEnabled(),
     retry: false,
   });
 }
@@ -67,6 +68,7 @@ export function usePastWorkflowInstances() {
   return useQuery<WorkflowInstanceResponse[]>({
     queryKey: [ROOT_KEY, 'instances', 'past'],
     queryFn: fetchPastWorkflowInstances,
+    enabled: isApprovalsEnabled(),
     retry: false,
   });
 }

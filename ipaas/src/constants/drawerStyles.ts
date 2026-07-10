@@ -16,7 +16,9 @@
  * under the License.
  */
 
-import { drawerBody as makeDrawerBody, drawerHeader as sharedDrawerHeader } from '../../constants/drawerStyles';
+/** Shared right-drawer body frame; each drawer passes its own `sm` width. */
+export function drawerBody(smWidth: number) {
+  return { width: { xs: '100vw', sm: smWidth }, p: 3 } as const;
+}
 
-export const drawerBody = makeDrawerBody(460);
-export const drawerHeader = sharedDrawerHeader;
+export const drawerHeader = { mb: 2 } as const;

@@ -44,7 +44,7 @@ export default function ComponentRuntime({ org, project, component }: ComponentS
     if (tracks.length) setTrackId((prev) => (prev && tracks.some((t) => t.id === prev) ? prev : (tracks.find((t) => t.latest)?.id ?? tracks[0].id)));
   }, [tracks]);
 
-  const { data: environments = [], isLoading: loadingEnvironments } = useEnvironments(orgUuid ?? '', projectId);
+  const { data: environments = [], isLoading: loadingEnvironments, isError: environmentsError } = useEnvironments(orgUuid ?? '', projectId);
   const [envId, setEnvId] = useState('');
   useEffect(() => {
     if (environments.length) setEnvId((prev) => (prev && environments.some((e) => e.id === prev) ? prev : environments[0].id));
@@ -85,6 +85,14 @@ export default function ComponentRuntime({ org, project, component }: ComponentS
     return (
       <PageContent>
         <Typography color="error">Integration not found.</Typography>
+      </PageContent>
+    );
+  }
+
+  if (environmentsError) {
+    return (
+      <PageContent>
+        <Typography color="error">Failed to load environments. Please try again.</Typography>
       </PageContent>
     );
   }

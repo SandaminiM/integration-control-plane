@@ -16,14 +16,10 @@
  * under the License.
  */
 
-export const drawerBody = {
-  width: { xs: '100vw', sm: 480 },
-  p: 3,
-} as const;
+import { drawerBody as makeDrawerBody, drawerHeader as sharedDrawerHeader } from '../../constants/drawerStyles';
 
-export const drawerHeader = {
-  mb: 2,
-} as const;
+export const drawerBody = makeDrawerBody(480);
+export const drawerHeader = sharedDrawerHeader;
 
 export const stepIcon = {
   width: 24,

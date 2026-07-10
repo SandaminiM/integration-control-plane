@@ -24,11 +24,19 @@ import { copyValueBox, fieldLabel } from './CopyField.styles';
 /** A labelled, read-only monospace value with a copy-to-clipboard button. */
 export default function CopyField({ label, value }: { label: string; value: string }): JSX.Element {
   const [copied, setCopied] = useState(false);
+  const [failed, setFailed] = useState(false);
   const onCopy = () => {
-    void navigator.clipboard?.writeText(value).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
-    });
+    navigator.clipboard
+      ?.writeText(value)
+      .then(() => {
+        setFailed(false);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1500);
+      })
+      .catch(() => {
+        setFailed(true);
+        window.setTimeout(() => setFailed(false), 2000);
+      });
   };
   return (
     <Grid container alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
@@ -42,7 +50,7 @@ export default function CopyField({ label, value }: { label: string; value: stri
           <Box sx={copyValueBox} title={value}>
             {value || '—'}
           </Box>
-          <Tooltip title={copied ? 'Copied' : 'Copy'}>
+          <Tooltip title={copied ? 'Copied' : failed ? 'Copy failed' : 'Copy'}>
             <span>
               <IconButton size="small" aria-label={`Copy ${label}`} onClick={onCopy} disabled={!value}>
                 {copied ? <Check size={16} /> : <Copy size={16} />}

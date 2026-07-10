@@ -17,7 +17,7 @@
  */
 
 import { Alert, Avatar, Button, CircularProgress, IconButton, PageContent, PageTitle, Stack, ListingTable, TablePagination, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { Clock, Layers, Trash2, AlertTriangle } from '@wso2/oxygen-ui-icons-react';
+import { Clock, Layers, Plus, Trash2, AlertTriangle } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useEffect, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog';
@@ -32,6 +32,14 @@ import { newEnvironmentUrl, type OrgScope, type ProjectScope } from '../nav';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { Permissions } from '../constants/permissions';
 import Authorized from '../components/Authorized';
+
+function formatDeleteError(error: Error): string {
+  const message = (error?.message ?? '').toLowerCase();
+  if (message.includes('deployed') || message.includes('in use') || message.includes('referenced') || message.includes('active')) {
+    return 'This environment cannot be deleted while it has deployed integrations.';
+  }
+  return 'Failed to delete environment. Please try again.';
+}
 
 function DeleteDialog({ template, orgUuid, onClose, onSuccess, onError }: { template: EnvironmentTemplate; orgUuid: string; onClose: () => void; onSuccess: (name: string) => void; onError: (error: Error) => void }) {
   const [confirm, setConfirm] = useState('');
@@ -57,7 +65,7 @@ function DeleteDialog({ template, orgUuid, onClose, onSuccess, onError }: { temp
     );
 
   return (
-    <ConfirmDeleteDialog title={<>Are you sure you want to delete the environment '{template.name}'?</>} onConfirm={doDelete} onClose={onClose} isPending={mutation.isPending} confirmDisabled={confirm !== template.name}>
+    <ConfirmDeleteDialog title={<>Are you sure you want to delete the environment '{template.name}'?</>} onConfirm={doDelete} onClose={onClose} isPending={mutation.isPending} confirmDisabled={confirm !== template.name || eligibility.isLoading || hasDeployments}>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         This action is irreversible and will permanently remove all active integrations from this environment (including other configurations and data associated with this environment).
       </Typography>
@@ -102,7 +110,7 @@ export default function Environments(scope: OrgScope | ProjectScope): JSX.Elemen
   // The environment-templates endpoint is keyed by the numeric org id (e.g. 8740),
   // unlike the uuid-keyed create/delete endpoints.
   const orgId = org?.numericId ? String(org.numericId) : '';
-  const { data: templates, isLoading } = useEnvironmentTemplates(orgId);
+  const { data: templates, isLoading, isError, refetch } = useEnvironmentTemplates(orgId);
 
   const [deleting, setDeleting] = useState<EnvironmentTemplate | null>(null);
   const [search, setSearch] = useState('');
@@ -137,6 +145,10 @@ export default function Environments(scope: OrgScope | ProjectScope): JSX.Elemen
 
       {isLoading ? (
         <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+      ) : isError ? (
+        <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => refetch()}>Retry</Button>}>
+          Failed to load environments.
+        </Alert>
       ) : !templates?.length ? (
         <EmptyListing icon={<Layers size={48} />} title="No environments found" description="Create your first environment to get started" showAction={canManageEnv} actionLabel="Create Environment" onAction={() => navigate(newEnvironmentUrl(scope))} />
       ) : (
@@ -151,7 +163,7 @@ export default function Environments(scope: OrgScope | ProjectScope): JSX.Elemen
               searchSlot={<SearchField value={search} onChange={setSearch} />}
               actions={
                 <Authorized permissions={Permissions.ENVIRONMENT_MANAGE}>
-                  <Button variant="contained" onClick={() => navigate(newEnvironmentUrl(scope))}>
+                  <Button variant="contained" startIcon={<Plus size={20} />} onClick={() => navigate(newEnvironmentUrl(scope))}>
                     Create
                   </Button>
                 </Authorized>
@@ -228,7 +240,7 @@ export default function Environments(scope: OrgScope | ProjectScope): JSX.Elemen
           orgUuid={orgUuid}
           onClose={() => setDeleting(null)}
           onSuccess={(name) => setAlert({ type: 'success', message: `Environment '${name}' deleted successfully.` })}
-          onError={(error) => setAlert({ type: 'error', message: error instanceof Error && error.message ? error.message : 'Failed to delete environment. Please try again.' })}
+          onError={(error) => setAlert({ type: 'error', message: formatDeleteError(error) })}
         />
       )}
     </PageContent>

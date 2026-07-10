@@ -30,7 +30,7 @@ export default function CreateEnvironment(scope: OrgScope): JSX.Element {
   const navigate = useNavigate();
   const orgUuid = useOrgUuid();
   const listUrl = resourceUrl(scope, 'environments');
-  const { data: dataPlanes = [], isLoading: loadingDataPlanes } = useDataPlanes();
+  const { data: dataPlanes = [], isLoading: loadingDataPlanes, isError: dataPlanesError, refetch: refetchDataPlanes } = useDataPlanes();
   const create = useAddEnvironment();
 
   const [name, setName] = useState('My-New-Environment');
@@ -94,6 +94,10 @@ export default function CreateEnvironment(scope: OrgScope): JSX.Element {
           </Typography>
           {loadingDataPlanes ? (
             <CircularProgress size={20} />
+          ) : dataPlanesError ? (
+            <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => refetchDataPlanes()}>Retry</Button>}>
+              Failed to load data planes.
+            </Alert>
           ) : (
             <Select fullWidth size="small" displayEmpty value={dataplaneId} onChange={(e) => setDataplaneId(String(e.target.value))}>
               <MenuItem value="" disabled>

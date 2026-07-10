@@ -37,10 +37,23 @@ function stepStatus(progress: number, index: number): 'done' | 'active' | 'pendi
 }
 
 export default function PdpProgressDrawer({ open, pdpName, onClose }: PdpProgressDrawerProps): JSX.Element | null {
-  const { data: pdps } = usePdps(open);
+  const { data: pdps, isLoading } = usePdps(open);
   const pdp = pdps?.find((p) => p.name === pdpName);
 
-  if (!open || !pdp) return null;
+  if (!open) return null;
+
+  if (!pdp) {
+    if (isLoading) {
+      return (
+        <Drawer anchor="right" open onClose={onClose}>
+          <Box sx={drawerBody}>
+            <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+          </Box>
+        </Drawer>
+      );
+    }
+    return null;
+  }
 
   const progress = displayPdpProgress(pdp.creationProgress);
 
