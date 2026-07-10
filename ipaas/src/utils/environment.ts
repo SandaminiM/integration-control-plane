@@ -16,20 +16,18 @@
  * under the License.
  */
 
-/** The oxygen-ui (MUI) palette color names accepted by Chip/Button `color` props. */
-export type PaletteColor = 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
+/** Thrown by the create flow when an APIM name/vhost pre-flight check fails. */
+export class EnvironmentValidationError extends Error {
+  field: 'name' | 'vhost';
+  constructor(field: 'name' | 'vhost') {
+    super(`${field}_unavailable`);
+    this.name = 'EnvironmentValidationError';
+    this.field = field;
+  }
+}
 
-export const STATUS_COLORS: Record<string, 'success' | 'warning' | 'default' | 'error' | 'info'> = {
-  active: 'success',
-  connected: 'success',
-  inactive: 'default',
-  disconnected: 'error',
-  draft: 'warning',
-  archived: 'default',
-  // URL-mapping approval statuses
-  approved: 'success',
-  pending: 'warning',
-  rejected: 'error',
-};
-
-export const getStatusColor = (status: string) => STATUS_COLORS[status] || 'default';
+/** The APIM hostname an environment resolves to: `{orgUuid}-{dnsPrefix}.{gatewayHost}`. */
+export function buildEnvironmentVhost(orgUuid: string, dnsPrefix: string, gatewayHost?: string): string {
+  const prefix = `${orgUuid}-${dnsPrefix}`;
+  return gatewayHost ? `${prefix}.${gatewayHost}` : prefix;
+}

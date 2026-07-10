@@ -16,20 +16,15 @@
  * under the License.
  */
 
-/** The oxygen-ui (MUI) palette color names accepted by Chip/Button `color` props. */
-export type PaletteColor = 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
+import { Box } from '@wso2/oxygen-ui';
+import { type JSX } from 'react';
 
-export const STATUS_COLORS: Record<string, 'success' | 'warning' | 'default' | 'error' | 'info'> = {
-  active: 'success',
-  connected: 'success',
-  inactive: 'default',
-  disconnected: 'error',
-  draft: 'warning',
-  archived: 'default',
-  // URL-mapping approval statuses
-  approved: 'success',
-  pending: 'warning',
-  rejected: 'error',
-};
-
-export const getStatusColor = (status: string) => STATUS_COLORS[status] || 'default';
+/** A thin horizontal usage bar; `percent` is clamped to 0–100. */
+export default function UsageBar({ percent }: { percent: number }): JSX.Element {
+  const clamped = Math.max(0, Math.min(100, percent));
+  return (
+    <Box sx={{ width: '100%', height: 6, borderRadius: 3, bgcolor: 'action.hover', overflow: 'hidden' }}>
+      <Box sx={{ width: `${clamped}%`, height: '100%', borderRadius: 3, bgcolor: 'primary.main' }} />
+    </Box>
+  );
+}

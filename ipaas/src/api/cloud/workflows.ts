@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import type { OrgWorkflowConfig, WorkflowConfigRequest, WorkflowDefinition } from '../../types/workflow';
+import type { OrgWorkflowConfig, ReviewerDecisionRequest, WorkflowConfigRequest, WorkflowDefinition, WorkflowInstanceResponse, WorkflowReviewData } from '../../types/workflow';
 
 // Intentionally a stub (the standard cloud-stub contract — see src/api/AGENTS.md).
 const ni = (name: string): never => {
@@ -27,3 +27,8 @@ export const fetchWorkflowDefinitions = (): Promise<WorkflowDefinition[]> => ni(
 export const fetchWorkflowConfigs = (): Promise<OrgWorkflowConfig[]> => ni('fetchWorkflowConfigs');
 export const createWorkflowConfig = (_input: WorkflowConfigRequest): Promise<OrgWorkflowConfig> => ni('createWorkflowConfig');
 export const updateWorkflowConfig = (_configId: string, _input: WorkflowConfigRequest): Promise<OrgWorkflowConfig> => ni('updateWorkflowConfig');
+export const fetchWorkflowInstances = (): Promise<WorkflowInstanceResponse[]> => ni('fetchWorkflowInstances');
+export const fetchPastWorkflowInstances = (): Promise<WorkflowInstanceResponse[]> => ni('fetchPastWorkflowInstances');
+export const fetchWorkflowReviewData = (_workflowId: string): Promise<WorkflowReviewData> => ni('fetchWorkflowReviewData');
+export const reviewWorkflowInstance = (_workflowId: string, _input: ReviewerDecisionRequest): Promise<void> => ni('reviewWorkflowInstance');
+export const cancelWorkflowInstance = (_workflowId: string): Promise<void> => ni('cancelWorkflowInstance');

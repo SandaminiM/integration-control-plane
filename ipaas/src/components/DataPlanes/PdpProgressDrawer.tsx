@@ -1,0 +1,87 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { Box, Chip, CircularProgress, Divider, Drawer, IconButton, Stack, Typography } from '@wso2/oxygen-ui';
+import { Check, X } from '@wso2/oxygen-ui-icons-react';
+import { type JSX } from 'react';
+import { PDP_PROVISION_STEPS, displayPdpProgress } from '../../constants/dataPlanes';
+import { usePdps } from '../../hooks/useDataPlanes';
+import { capitalize } from '../../utils/string';
+import { drawerBody, drawerHeader, stepIcon } from './PdpProgressDrawer.styles';
+
+interface PdpProgressDrawerProps {
+  open: boolean;
+  pdpName: string | null;
+  onClose: () => void;
+}
+
+function stepStatus(progress: number, index: number): 'done' | 'active' | 'pending' {
+  if (progress >= PDP_PROVISION_STEPS[index].completedAtProgress) return 'done';
+  const previousDone = index === 0 || progress >= PDP_PROVISION_STEPS[index - 1].completedAtProgress;
+  return previousDone ? 'active' : 'pending';
+}
+
+export default function PdpProgressDrawer({ open, pdpName, onClose }: PdpProgressDrawerProps): JSX.Element | null {
+  const { data: pdps } = usePdps(open);
+  const pdp = pdps?.find((p) => p.name === pdpName);
+
+  if (!open || !pdp) return null;
+
+  const progress = displayPdpProgress(pdp.creationProgress);
+
+  return (
+    <Drawer anchor="right" open={open} onClose={onClose}>
+      <Box sx={drawerBody}>
+        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={drawerHeader}>
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
+              Provisioning your new PDP on {capitalize(pdp.cloud)}
+            </Typography>
+            <Stack direction="row" alignItems="center" gap={1} sx={{ mt: 1 }}>
+              <Chip label={`${progress}% completed`} size="small" color="primary" variant="outlined" />
+              <Typography variant="body2" color="text.secondary">
+                {pdp.name}
+              </Typography>
+            </Stack>
+          </Box>
+          <IconButton size="small" aria-label="Close" onClick={onClose}>
+            <X size={18} />
+          </IconButton>
+        </Stack>
+
+        <Divider sx={{ mb: 1 }} />
+
+        <Stack divider={<Divider />}>
+          {PDP_PROVISION_STEPS.map((step, index) => {
+            const status = stepStatus(pdp.creationProgress, index);
+            return (
+              <Stack key={step.name} direction="row" alignItems="center" gap={1.5} sx={{ py: 1.25 }}>
+                <Box sx={stepIcon} aria-hidden>
+                  {status === 'done' ? <Check size={18} color="var(--oxygen-palette-success-main, #2e7d32)" /> : status === 'active' ? <CircularProgress size={16} /> : <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'action.disabled' }} />}
+                </Box>
+                <Typography variant="body2" color={status === 'pending' ? 'text.secondary' : 'text.primary'}>
+                  {step.name}
+                </Typography>
+              </Stack>
+            );
+          })}
+        </Stack>
+      </Box>
+    </Drawer>
+  );
+}

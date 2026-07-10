@@ -18,9 +18,15 @@
 
 /** Cloud (OpenChoreo) environment / dataplane API. Calls the ipaas-service BFF. */
 
-import type { Environment, CloudDataPlane, EnvironmentInput, Logger, UpdateLogLevelInput } from '../../types/environment';
+import type { CloudDataPlane, CreateEnvironmentData, EnvDeletionEligibility, EnvironmentTemplate, Environment, EnvironmentInput, Logger, UpdateLogLevelInput } from '../../types/environment';
 import { toHandler } from '../../utils/string';
 import { bff, items, q, seg, type ListResponse, type MessageResponse } from './_client';
+
+// The devops REST template/create/delete flow is a wip-only surface; cloud manages
+// environments through the BFF functions above.
+const ni = (name: string): never => {
+  throw new Error(`[cloud] environments.${name}: not implemented`);
+};
 
 // _orgUuid is kept for devant contract parity; cloud derives the org from the token.
 
@@ -103,3 +109,8 @@ export const updateEnvironment = (input: EnvironmentInput & { environmentId: str
   bff.put<BffEnvironment>(`/environments/${seg(input.environmentId)}`, { displayName: input.name, description: input.description, isProduction: input.critical }).then(toEnvironment);
 
 export const deleteEnvironment = (environmentId: string): Promise<string> => bff.delete<MessageResponse>(`/environments/${seg(environmentId)}`).then((r) => r?.message ?? '');
+
+export const fetchEnvironmentTemplates = (_orgId: string): Promise<EnvironmentTemplate[]> => ni('fetchEnvironmentTemplates');
+export const createOrgEnvironment = (_orgUuid: string, _input: CreateEnvironmentData & { vhost: string }): Promise<void> => ni('createOrgEnvironment');
+export const getEnvDeleteEligibility = (_orgUuid: string, _templateId: string): Promise<EnvDeletionEligibility> => ni('getEnvDeleteEligibility');
+export const deleteEnvironmentTemplate = (_orgUuid: string, _templateId: string): Promise<void> => ni('deleteEnvironmentTemplate');

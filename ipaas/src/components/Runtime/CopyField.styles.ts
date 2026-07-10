@@ -16,20 +16,21 @@
  * under the License.
  */
 
-/** The oxygen-ui (MUI) palette color names accepted by Chip/Button `color` props. */
-export type PaletteColor = 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
+export const fieldLabel = {
+  color: 'text.secondary',
+  fontWeight: 500,
+} as const;
 
-export const STATUS_COLORS: Record<string, 'success' | 'warning' | 'default' | 'error' | 'info'> = {
-  active: 'success',
-  connected: 'success',
-  inactive: 'default',
-  disconnected: 'error',
-  draft: 'warning',
-  archived: 'default',
-  // URL-mapping approval statuses
-  approved: 'success',
-  pending: 'warning',
-  rejected: 'error',
-};
-
-export const getStatusColor = (status: string) => STATUS_COLORS[status] || 'default';
+export const copyValueBox = {
+  flex: 1,
+  minWidth: 0,
+  px: 1.5,
+  py: 0.75,
+  bgcolor: 'action.hover',
+  borderRadius: 1,
+  fontFamily: 'monospace',
+  fontSize: 13,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+} as const;

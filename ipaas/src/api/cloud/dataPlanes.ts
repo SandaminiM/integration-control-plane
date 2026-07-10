@@ -16,20 +16,12 @@
  * under the License.
  */
 
-/** The oxygen-ui (MUI) palette color names accepted by Chip/Button `color` props. */
-export type PaletteColor = 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
+// Org admin Data Planes (Runtimes) is a wip-only surface for now. Signatures mirror Contracts.DataPlanesApi.
+import type { Cluster, PdpManagerPdp } from '../../types/dataPlanes';
 
-export const STATUS_COLORS: Record<string, 'success' | 'warning' | 'default' | 'error' | 'info'> = {
-  active: 'success',
-  connected: 'success',
-  inactive: 'default',
-  disconnected: 'error',
-  draft: 'warning',
-  archived: 'default',
-  // URL-mapping approval statuses
-  approved: 'success',
-  pending: 'warning',
-  rejected: 'error',
+const ni = (name: string): never => {
+  throw new Error(`[cloud] dataPlanes.${name}: not implemented`);
 };
 
-export const getStatusColor = (status: string) => STATUS_COLORS[status] || 'default';
+export const listDataPlanes = (): Promise<Cluster[]> => ni('listDataPlanes');
+export const listPdps = (): Promise<PdpManagerPdp[]> => ni('listPdps');

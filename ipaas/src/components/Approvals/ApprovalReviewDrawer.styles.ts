@@ -16,20 +16,11 @@
  * under the License.
  */
 
-/** The oxygen-ui (MUI) palette color names accepted by Chip/Button `color` props. */
-export type PaletteColor = 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
+export const drawerBody = {
+  width: { xs: '100vw', sm: 460 },
+  p: 3,
+} as const;
 
-export const STATUS_COLORS: Record<string, 'success' | 'warning' | 'default' | 'error' | 'info'> = {
-  active: 'success',
-  connected: 'success',
-  inactive: 'default',
-  disconnected: 'error',
-  draft: 'warning',
-  archived: 'default',
-  // URL-mapping approval statuses
-  approved: 'success',
-  pending: 'warning',
-  rejected: 'error',
-};
-
-export const getStatusColor = (status: string) => STATUS_COLORS[status] || 'default';
+export const drawerHeader = {
+  mb: 2,
+} as const;
