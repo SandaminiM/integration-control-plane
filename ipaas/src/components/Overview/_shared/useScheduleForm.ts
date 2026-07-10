@@ -1,0 +1,81 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { useEffect, useState } from 'react';
+import { type IntervalUnit, type CronField, intervalToCron, cronToInterval, parseCronParts, buildCronFromParts, describeCron } from '../../../utils/cronUtils';
+import type { ExecutionConfigs } from '../../../types/executions';
+
+/** The assembled schedule values a caller submits (to `useDeployDeploymentTrack`). */
+export interface ScheduleValues {
+  cron: string;
+  timezone: string;
+  /** Empty string when unset. */
+  timeoutSeconds: string;
+  allowConcurrency: boolean;
+}
+
+export interface ScheduleFormApi extends ScheduleValues {
+  tab: number;
+  setTab: (v: number) => void;
+  intervalCount: number;
+  setIntervalCount: (v: number) => void;
+  intervalUnit: IntervalUnit;
+  setIntervalUnit: (v: IntervalUnit) => void;
+  cronFields: Record<CronField, string>;
+  setCronFields: (fn: (prev: Record<CronField, string>) => Record<CronField, string>) => void;
+  setTimezone: (v: string) => void;
+  setTimeoutSeconds: (v: string) => void;
+  setAllowConcurrency: (v: boolean) => void;
+  description: string;
+}
+
+/**
+ * Owns the schedule form state (interval/cron, timezone, execution behaviour),
+ * seeded from an existing schedule. Shared by the standalone Schedule drawer and
+ * the RAG ingestion Configure drawer's Schedule step — the single source of the
+ * cron editing logic. Pair with the `ScheduleFields` presentational component.
+ */
+export function useScheduleForm(existingConfigs: ExecutionConfigs | null | undefined): ScheduleFormApi {
+  const [tab, setTab] = useState(0);
+  const [intervalCount, setIntervalCount] = useState(1);
+  const [intervalUnit, setIntervalUnit] = useState<IntervalUnit>('Minute');
+  const [cronFields, setCronFields] = useState<Record<CronField, string>>({ minute: '*/1', hour: '*', dom: '*', month: '*', dow: '*' });
+  const [timezone, setTimezone] = useState('UTC');
+  const [timeoutSeconds, setTimeoutSeconds] = useState('');
+  const [allowConcurrency, setAllowConcurrency] = useState(false);
+
+  useEffect(() => {
+    if (!existingConfigs) return;
+    const freq = existingConfigs.cronjobFrequency || '*/1 * * * *';
+    setTimezone(existingConfigs.cronjobTimezone || 'UTC');
+    if (existingConfigs.timeoutSeconds != null) setTimeoutSeconds(String(existingConfigs.timeoutSeconds));
+    if (existingConfigs.cronjobAllowConcurrency != null) setAllowConcurrency(existingConfigs.cronjobAllowConcurrency);
+    const parsed = cronToInterval(freq);
+    if (parsed) {
+      setTab(0);
+      setIntervalCount(parsed.count);
+      setIntervalUnit(parsed.unit);
+    } else {
+      setTab(1);
+      setCronFields(parseCronParts(freq));
+    }
+  }, [existingConfigs]);
+
+  const cron = tab === 0 ? intervalToCron(intervalCount, intervalUnit) : buildCronFromParts(cronFields);
+  return { tab, setTab, intervalCount, setIntervalCount, intervalUnit, setIntervalUnit, cronFields, setCronFields, timezone, setTimezone, timeoutSeconds, setTimeoutSeconds, allowConcurrency, setAllowConcurrency, cron, description: describeCron(cron) };
+}
