@@ -317,6 +317,8 @@ interface ByoiImageResponse {
  */
 export async function fetchByoiImageHistory(orgUuid: string, projectId: string, componentId: string, versionId: string): Promise<ByoiImage[]> {
   const qs = new URLSearchParams({ organization_id: orgUuid, project_id: projectId }).toString();
-  const res = await choreoClient.get<{ data: ByoiImageResponse[] }>(`/devops/1.0.0/api/v1/byoi/components/${encodeURIComponent(componentId)}/versions/${encodeURIComponent(versionId)}/images?${qs}`).catch(() => ({ data: [] as ByoiImageResponse[] }));
+  // Let network/auth/server errors propagate to the consuming query so it can
+  // surface an error state; only an absent `data` field falls back to empty.
+  const res = await choreoClient.get<{ data: ByoiImageResponse[] }>(`/devops/1.0.0/api/v1/byoi/components/${encodeURIComponent(componentId)}/versions/${encodeURIComponent(versionId)}/images?${qs}`);
   return (res.data ?? []).map((i) => ({ id: i.ID, imageName: i.image_name, imageUrl: i.image_name_with_tag, triggerSource: i.trigger_source, updatedAt: i.UpdatedAt }));
 }

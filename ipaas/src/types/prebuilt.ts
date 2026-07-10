@@ -73,6 +73,19 @@ export interface DeployPrebuiltIntegrationState {
   configSaveError: boolean;
 }
 
+/** A component version's release in a single environment. */
+export interface AppEnvVersion {
+  environmentId: string;
+  releaseId: string;
+}
+
+/** One of a component's versions (deployment tracks), with its per-env releases. */
+export interface ApiVersion {
+  id: string;
+  latest: boolean;
+  appEnvVersions: AppEnvVersion[];
+}
+
 export interface PrebuiltComponentRef {
   id: string;
   handler: string;
@@ -82,7 +95,7 @@ export interface PrebuiltComponentRef {
    * provisioned at creation, so this carries the `releaseId` before any deploy —
    * unlike the `componentDeployment` query, which 404s until first deployment.
    */
-  apiVersions?: { id: string; latest: boolean; appEnvVersions: { environmentId: string; releaseId: string }[] }[];
+  apiVersions?: ApiVersion[];
 }
 
 export interface PrebuiltEnvironmentRef {

@@ -21,7 +21,7 @@ import type { JSX } from 'react';
 import { useExecutionConfigs } from '../../../../hooks/useExecutions';
 import { useDeployDeploymentTrack } from '../../../../hooks/useDeployments';
 import ScheduleFields from '../../_shared/ScheduleFields';
-import { useScheduleForm } from '../../_shared/useScheduleForm';
+import { buildScheduleDeployInput, useScheduleForm } from '../../_shared/useScheduleForm';
 
 interface ScheduleStepProps {
   componentId: string;
@@ -45,23 +45,10 @@ export default function ScheduleStep({ componentId, versionId, envId, releaseId,
   const form = useScheduleForm(existingConfigs);
 
   const save = () => {
-    deployTrack.mutate(
-      {
-        componentId,
-        id: versionId,
-        imageId: buildId,
-        environmentId: envId,
-        deploymentPipelineId,
-        cron: form.cron,
-        cronTimezone: form.timezone,
-        ...(form.timeoutSeconds ? { jobTimeoutSeconds: parseInt(form.timeoutSeconds, 10) } : {}),
-        cronJobAllowConcurrency: form.allowConcurrency,
-      },
-      {
-        onSuccess: () => onNotify('Schedule updated.', 'success'),
-        onError: (e) => onNotify(e instanceof Error ? e.message : 'Failed to update the schedule.', 'error'),
-      },
-    );
+    deployTrack.mutate(buildScheduleDeployInput(form, { componentId, versionId, imageId: buildId, envId, deploymentPipelineId }), {
+      onSuccess: () => onNotify('Schedule updated.', 'success'),
+      onError: (e) => onNotify(e instanceof Error ? e.message : 'Failed to update the schedule.', 'error'),
+    });
   };
 
   if (isLoading) return <CircularProgress size={20} sx={{ display: 'block', mx: 'auto', my: 3 }} />;

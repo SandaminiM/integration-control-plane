@@ -65,7 +65,7 @@ export function getComponentTypeFlags(displayType: string, componentSubType?: st
   const isImageBased = isByoi;
   const isDeployable = isCommitBased || isImageBased;
 
-  // Reserved for future sub-type distinctions (e.g. aiAgent, mcpServer).
+  // Reserved for future sub-type distinctions (e.g. aiAgent, MCP).
   void componentSubType;
 
   return { isProxy, isService, isRestApi, isByoi, isAutomation, isCommitBased, isImageBased, isDeployable };

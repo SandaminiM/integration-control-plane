@@ -128,6 +128,10 @@ export function isFormComplete(form: RagIngestionForm): boolean {
  * (see Devant's `buildRAGEnvironmentVariables`). Chunking config is intentionally
  * not emitted here — the image does not read it from env (parity with Devant);
  * it is reserved for the direct setup API.
+ *
+ * The vector store must already have its connection params resolved: a managed
+ * `pgvector-devant` store's host/port/user/password/dbName are resolved from the
+ * platform-services API before calling this.
  */
 export function buildRagEnvVars(form: RagIngestionForm): Record<string, string> {
   const env: Record<string, string> = {};

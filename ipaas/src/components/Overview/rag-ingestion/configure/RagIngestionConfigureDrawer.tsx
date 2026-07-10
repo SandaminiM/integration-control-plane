@@ -18,7 +18,7 @@
 
 import { Alert, Box, Button, CircularProgress, Drawer, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Check, Maximize2, Minimize2, X } from '@wso2/oxygen-ui-icons-react';
-import { useMemo, useState, type JSX } from 'react';
+import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useComponentDeployment } from '../../../../hooks/useDeployments';
 import { useRelease } from '../../../../hooks/useDevopsConfigs';
 import { useOrgUuid } from '../../../../hooks/useOrgUuid';
@@ -72,6 +72,15 @@ export default function RagIngestionConfigureDrawer({ open, onClose, component, 
   const [stepIndex, setStepIndex] = useState(0);
   const [enlarged, setEnlarged] = useState(false);
   const [notice, setNotice] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
+
+  // The drawer stays mounted while closed (gated on hasDeployment upstream), so
+  // reset to the first step and clear any stale notice each time it reopens.
+  useEffect(() => {
+    if (open) {
+      setStepIndex(0);
+      setNotice(null);
+    }
+  }, [open]);
 
   const { data: deployment, isLoading: loadingDeployment } = useComponentDeployment(orgHandler, orgUuid, component.id, versionId, env.id);
   const releaseId = deployment?.releaseId ?? '';

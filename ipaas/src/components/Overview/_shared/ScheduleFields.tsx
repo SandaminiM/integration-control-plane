@@ -45,10 +45,10 @@ export default function ScheduleFields({ form }: { form: ScheduleFormApi }): JSX
               value={intervalCount}
               onChange={(e) => {
                 const raw = e.target.value.replace(/[^0-9]/g, '');
-                setIntervalCount(raw === '' ? ('' as unknown as number) : parseInt(raw, 10));
+                setIntervalCount(raw === '' ? '' : parseInt(raw, 10));
               }}
               onBlur={() => {
-                if (!intervalCount || intervalCount < 1) setIntervalCount(1);
+                if (typeof intervalCount !== 'number' || intervalCount < 1) setIntervalCount(1);
               }}
               sx={{ width: 120 }}
             />

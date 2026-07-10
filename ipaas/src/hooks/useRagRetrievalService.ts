@@ -76,14 +76,22 @@ export function useRagRetrievalService(orgHandler: string, projectId: string, en
   const [authError, setAuthError] = useState(false);
   useEffect(() => {
     if (!apimId) return;
+    let cancelled = false;
     setAuthError(false);
     generateKey
       .mutateAsync({ apimId, keyType: envCritical ? 'Production' : 'Development' })
       .then((result) => {
+        if (cancelled) return;
         setApiKey(result?.apikey ?? null);
         if (!result?.apikey) setAuthError(true);
       })
-      .catch(() => setAuthError(true));
+      .catch(() => {
+        if (!cancelled) setAuthError(true);
+      });
+    // Ignore a stale request that resolves after apimId/envCritical changed.
+    return () => {
+      cancelled = true;
+    };
     // generateKey is a stable mutation object; apimId/envCritical drive identity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apimId, envCritical]);
@@ -92,8 +100,8 @@ export function useRagRetrievalService(orgHandler: string, projectId: string, en
   const canQuery = !!invokeUrl && !!apiKey;
 
   let disabledReason: string | null = null;
-  if (!service) disabledReason = 'No RAG Retrieval Service found in this project. Create a RAG ingestion to provision one.';
-  else if (isResolving) disabledReason = 'Connecting to the retrieval service…';
+  if (isResolving) disabledReason = 'Connecting to the retrieval service…';
+  else if (!service) disabledReason = 'No RAG Retrieval Service found in this project. Create a RAG ingestion to provision one.';
   else if (!deploymentActive) disabledReason = 'The RAG Retrieval Service is not active in this environment yet.';
   else if (!invokeUrl) disabledReason = 'The RAG Retrieval Service has no reachable endpoint yet.';
   else if (authError) disabledReason = 'Could not authenticate with the retrieval service. Check your permissions and try again.';

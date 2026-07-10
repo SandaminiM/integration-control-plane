@@ -23,7 +23,7 @@ import { useExecutionConfigs } from '../../../hooks/useExecutions';
 import { useOrgUuid } from '../../../hooks/useOrgUuid';
 import { useDeployDeploymentTrack } from '../../../hooks/useDeployments';
 import ScheduleFields from './ScheduleFields';
-import { useScheduleForm } from './useScheduleForm';
+import { buildScheduleDeployInput, useScheduleForm } from './useScheduleForm';
 
 interface ScheduleDialogProps {
   open: boolean;
@@ -54,17 +54,7 @@ export default function ScheduleDialog({ open, onClose, onSaveSuccess, onSaveErr
 
   const handleSave = () => {
     deployTrack.mutate(
-      {
-        componentId,
-        id: versionId,
-        imageId: deployment?.build?.buildId ?? '',
-        environmentId: envId,
-        deploymentPipelineId,
-        cron: form.cron,
-        cronTimezone: form.timezone,
-        ...(form.timeoutSeconds ? { jobTimeoutSeconds: parseInt(form.timeoutSeconds, 10) } : {}),
-        cronJobAllowConcurrency: form.allowConcurrency,
-      },
+      buildScheduleDeployInput(form, { componentId, versionId, imageId: deployment?.build?.buildId ?? '', envId, deploymentPipelineId }),
       {
         onSuccess: () => {
           onClose();

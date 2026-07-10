@@ -71,7 +71,7 @@ export default function VectorStoreStep({ value, onChange }: VectorStoreStepProp
   );
 }
 
-function ProviderFields({ value, onChange, managedServers }: { value: VectorStoreConfig; onChange: (v: VectorStoreConfig) => void; managedServers: { id: string; name: string }[] }): JSX.Element {
+function ProviderFields({ value, onChange, managedServers }: { value: VectorStoreConfig; onChange: (v: VectorStoreConfig) => void; managedServers: { id: string; name: string }[] }): JSX.Element | null {
   switch (value.provider) {
     case 'pinecone':
       return (
@@ -180,5 +180,7 @@ function ProviderFields({ value, onChange, managedServers }: { value: VectorStor
           />
         </>
       );
+    default:
+      return null;
   }
 }

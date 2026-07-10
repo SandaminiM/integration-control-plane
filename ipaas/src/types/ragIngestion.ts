@@ -161,6 +161,11 @@ export interface RetrievedChunk {
   source: string;
 }
 
+/**
+ * Response from `POST {ragBackendUrl}/retrieve`. The `query`/`retrieved_chunks`
+ * snake_case is intentional — it mirrors the `devant-rag-backend` image's
+ * response contract verbatim (same as {@link RetrieveRequestBody}).
+ */
 export interface RetrieveResponse {
   query: string;
   retrieved_chunks: RetrievedChunk[];

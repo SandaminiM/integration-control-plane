@@ -19,7 +19,7 @@
 import { useCallback, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createByoiComponent, deployByoiImage, getSampleRegistryId } from '#api/tailscale';
-import { createConfigMap, createSecret, getReleaseById, mountConfig } from '#api/devopsConfigs';
+import { createConfigMap, createSecret, deleteConfigMap, deleteSecret, getReleaseById, mountConfig } from '#api/devopsConfigs';
 import { fetchComponentDetail, fetchFirstEnvironment } from '#api/prebuilt';
 import { deleteComponent, fetchComponents } from '#api/components';
 import { getServer, getServerAdminUser } from '#api/platformServices';
@@ -206,6 +206,11 @@ export function useCreateRagIngestion() {
       const projectId = form.automation.projectId;
       const image = ragIngestionImage();
       let createdComponentId: string | null = null;
+      // Track the env-scoped configs so rollback can delete them too — deleting
+      // the component alone can leave these orphaned.
+      let createdEnvironmentId: string | null = null;
+      let createdSecretId: string | null = null;
+      let createdConfigMapId: string | null = null;
 
       setState({ ...IDLE, isDeploying: true, progress: 5, stepLabel: 'Preparing retrieval service…' });
       try {
@@ -241,6 +246,7 @@ export function useCreateRagIngestion() {
         const versionId = detail.deploymentTracks?.[0]?.id;
         if (!versionId) throw new Error('No deployment track found for the new component.');
         const environment = await fetchFirstEnvironment(orgUuid, projectId);
+        createdEnvironmentId = environment.id;
         const releaseId = await waitForReleaseId(projectId, created.handle, versionId, environment.id);
 
         // 4. Locate the main container to mount configuration onto.
@@ -253,10 +259,12 @@ export function useCreateRagIngestion() {
         const commonBase = { environment_id: environment.id, organization_id: orgUuid, project_id: projectId, app_environment_id: releaseId, isBase64: false, metadata: {} };
         if (Object.keys(secret).length > 0) {
           const createdSecret = await createSecret(orgUuid, projectId, { ...commonBase, name: `${created.handle}-rag-secrets`, save_type: 'Save', secret_type: 'Opaque', config_type: 'VariableList', data: secret });
+          createdSecretId = createdSecret.ID;
           await mountConfig(orgUuid, projectId, created.id, { app_environment_id: releaseId, container_id: container.ID, secret_id: createdSecret.ID, configmap_id: null, mount_type: 'ENVFile', mount_permissions: '0000', mount_path: '', config_key: '' });
         }
         if (Object.keys(plain).length > 0) {
           const createdConfigMap = await createConfigMap(orgUuid, projectId, { ...commonBase, name: `${created.handle}-rag-config`, config_type: 'VariableList', data: plain });
+          createdConfigMapId = createdConfigMap.ID;
           await mountConfig(orgUuid, projectId, created.id, { app_environment_id: releaseId, container_id: container.ID, configmap_id: createdConfigMap.ID, secret_id: null, mount_type: 'ENVFile', mount_permissions: '0000', mount_path: '', config_key: '' });
         }
 
@@ -269,6 +277,22 @@ export function useCreateRagIngestion() {
         setState({ progress: 100, stepLabel: 'Deployed!', error: null, isDeploying: false, isSuccess: true, componentHandler: created.handle });
       } catch (err) {
         console.error('RAG ingestion create/deploy failed', { orgHandler, projectId, createdComponentId }, err);
+        // Best-effort rollback: delete the env-scoped configs first (they don't
+        // reliably cascade with the component), then the component itself.
+        if (createdEnvironmentId && createdConfigMapId) {
+          try {
+            await deleteConfigMap(orgUuid, projectId, createdEnvironmentId, createdConfigMapId);
+          } catch (rollbackErr) {
+            console.error('Failed to roll back RAG ingestion config map', { createdConfigMapId }, rollbackErr);
+          }
+        }
+        if (createdEnvironmentId && createdSecretId) {
+          try {
+            await deleteSecret(orgUuid, projectId, createdEnvironmentId, createdSecretId);
+          } catch (rollbackErr) {
+            console.error('Failed to roll back RAG ingestion secret', { createdSecretId }, rollbackErr);
+          }
+        }
         if (createdComponentId) {
           try {
             await deleteComponent({ orgHandler, componentId: createdComponentId, projectId });

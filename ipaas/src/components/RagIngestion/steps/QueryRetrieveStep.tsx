@@ -17,7 +17,7 @@
  */
 
 import { Box, FormControlLabel, ListingTable, Stack, Switch, TextField, Typography } from '@wso2/oxygen-ui';
-import { type JSX } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 import { MAX_RETRIEVE_CHUNKS } from '../../../constants/ragIngestion';
 import { REQUIRED_FIELD_SX } from '../../../constants/styles';
 import SecretField from '../SecretField';
@@ -40,6 +40,13 @@ const clampNumber = (raw: string, min: number, max: number, fallback: number): n
 };
 
 export default function QueryRetrieveStep({ value, onChange, chunks, hasQueried }: QueryRetrieveStepProps): JSX.Element {
+  // Edit the numeric fields as free text and only clamp/commit on blur, so
+  // clearing a field to retype doesn't immediately snap it to the minimum.
+  const [maxChunksInput, setMaxChunksInput] = useState(String(value.maxChunks));
+  const [minSimilarityInput, setMinSimilarityInput] = useState(String(value.minSimilarity));
+  useEffect(() => setMaxChunksInput(String(value.maxChunks)), [value.maxChunks]);
+  useEffect(() => setMinSimilarityInput(String(value.minSimilarity)), [value.minSimilarity]);
+
   return (
     <>
       <Typography variant="subtitle2" sx={stepHeadingSx}>
@@ -58,14 +65,32 @@ export default function QueryRetrieveStep({ value, onChange, chunks, hasQueried 
           onChange={(e) => onChange({ ...value, userQuery: e.target.value })}
           sx={REQUIRED_FIELD_SX}
         />
-        <TextField label="Max chunks" fullWidth size="small" type="number" value={value.maxChunks} onChange={(e) => onChange({ ...value, maxChunks: clampNumber(e.target.value, 1, MAX_RETRIEVE_CHUNKS, 5) })} helperText={`1–${MAX_RETRIEVE_CHUNKS}`} />
+        <TextField
+          label="Max chunks"
+          fullWidth
+          size="small"
+          type="number"
+          value={maxChunksInput}
+          onChange={(e) => setMaxChunksInput(e.target.value)}
+          onBlur={() => {
+            const clamped = clampNumber(maxChunksInput, 1, MAX_RETRIEVE_CHUNKS, 5);
+            setMaxChunksInput(String(clamped));
+            onChange({ ...value, maxChunks: clamped });
+          }}
+          helperText={`1–${MAX_RETRIEVE_CHUNKS}`}
+        />
         <TextField
           label="Min similarity threshold"
           fullWidth
           size="small"
           type="number"
-          value={value.minSimilarity}
-          onChange={(e) => onChange({ ...value, minSimilarity: clampNumber(e.target.value, 0, 1, 0.7) })}
+          value={minSimilarityInput}
+          onChange={(e) => setMinSimilarityInput(e.target.value)}
+          onBlur={() => {
+            const clamped = clampNumber(minSimilarityInput, 0, 1, 0.7);
+            setMinSimilarityInput(String(clamped));
+            onChange({ ...value, minSimilarity: clamped });
+          }}
           inputProps={{ step: 0.1, min: 0, max: 1 }}
           helperText="0–1"
         />

@@ -74,20 +74,26 @@ export default function RagRetrievalChat({ ingestionComponentId, orgHandler, pro
     body.append('max_retrieve_chunks', String(DEFAULT_RETRIEVAL_QUERY.maxChunks));
     body.append('min_similarity_threshold', String(DEFAULT_RETRIEVAL_QUERY.minSimilarity));
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
     try {
       const response = await fetch(`${target.invokeUrl.replace(/\/$/, '')}/retrieve`, {
         method: 'POST',
         headers: { 'test-key': target.apiKey ?? '', 'Content-Type': 'application/x-www-form-urlencoded' },
         body: body.toString(),
+        signal: controller.signal,
       });
-      const data = (await response.json()) as RetrieveResponse;
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = (await response.json()) as RetrieveResponse;
       const chunks = data.retrieved_chunks ?? [];
       setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, isPending: false, chunks } : m)));
     } catch (err) {
-      const message = err instanceof Error && err.message.includes('Failed to fetch') ? 'The retrieval service is unreachable. Please try again.' : 'Failed to retrieve chunks. Please try again.';
+      let message = 'Failed to retrieve chunks. Please try again.';
+      if (err instanceof DOMException && err.name === 'AbortError') message = 'The retrieval request timed out. Please try again.';
+      else if (err instanceof Error && err.message.includes('Failed to fetch')) message = 'The retrieval service is unreachable. Please try again.';
       setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, isPending: false, error: message } : m)));
     } finally {
+      clearTimeout(timeout);
       setIsRetrieving(false);
     }
   };
@@ -193,6 +199,7 @@ export default function RagRetrievalChat({ ingestionComponentId, orgHandler, pro
           multiline
           maxRows={4}
           placeholder={target.canQuery ? 'Type your query and press Enter…' : 'Retrieval unavailable'}
+          inputProps={{ 'aria-label': 'Query' }}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {

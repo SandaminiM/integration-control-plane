@@ -31,7 +31,6 @@ interface RagUpgradeRequiredProps {
  */
 export default function RagUpgradeRequired({ orgUuid }: RagUpgradeRequiredProps): JSX.Element {
   const billingConsoleUrl = window.API_CONFIG?.billingConsoleUrl;
-  const canUpgrade = !!billingConsoleUrl && !!orgUuid;
   return (
     <Stack alignItems="center" textAlign="center" sx={{ maxWidth: 640, mx: 'auto', py: 8 }}>
       <Box sx={{ width: 88, height: 88, borderRadius: '50%', bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3, color: 'primary.main' }}>
@@ -43,7 +42,7 @@ export default function RagUpgradeRequired({ orgUuid }: RagUpgradeRequiredProps)
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         Please upgrade your WSO2 Integration Platform subscription to access RAG features.
       </Typography>
-      {canUpgrade && (
+      {billingConsoleUrl && orgUuid && (
         <Button variant="contained" onClick={() => window.open(`${billingConsoleUrl}/cloud/devant/upgrade?orgId=${encodeURIComponent(orgUuid)}`, '_blank', 'noopener,noreferrer')}>
           Upgrade
         </Button>

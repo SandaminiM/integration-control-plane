@@ -22,8 +22,11 @@ import {
   buildRetrievePayload,
   chromaCollectionNameError,
   componentNameError,
+  isAutomationValid,
   isChunkingValid,
   isDatasourceValid,
+  isEmbeddingValid,
+  isFormComplete,
   isRetrievalQueryValid,
   isVectorStoreValid,
   pineconeIndexNameError,
@@ -81,6 +84,24 @@ describe('step validity', () => {
     expect(isDatasourceValid({ type: 'gdrive', authType: 'oauth', apiKey: '', clientId: 'c', clientSecret: 's', refreshToken: 'r', folderId: 'f' })).toBe(true);
     expect(isDatasourceValid({ type: 'gdrive', authType: 'oauth', apiKey: '', clientId: 'c', clientSecret: '', refreshToken: '', folderId: 'f' })).toBe(false);
   });
+
+  it('validates embedding config (openai vs azure, missing/null)', () => {
+    expect(isEmbeddingValid({ provider: 'openai', model: 'text-embedding-3-small', apiKey: 'sk', azureApiVersion: '', azureBaseUrl: '' })).toBe(true);
+    expect(isEmbeddingValid(null)).toBe(false);
+    expect(isEmbeddingValid({ provider: 'openai', model: '', apiKey: 'sk', azureApiVersion: '', azureBaseUrl: '' })).toBe(false); // missing model
+    expect(isEmbeddingValid({ provider: 'openai', model: 'm', apiKey: '', azureApiVersion: '', azureBaseUrl: '' })).toBe(false); // missing key
+    expect(isEmbeddingValid({ provider: 'azure_openai', model: 'm', apiKey: 'az', azureApiVersion: '2024-06-01', azureBaseUrl: 'https://x.openai.azure.com' })).toBe(true);
+    expect(isEmbeddingValid({ provider: 'azure_openai', model: 'm', apiKey: 'az', azureApiVersion: '2024-06-01', azureBaseUrl: '' })).toBe(false); // azure needs base url
+    expect(isEmbeddingValid({ provider: 'azure_openai', model: 'm', apiKey: 'az', azureApiVersion: '', azureBaseUrl: 'https://x' })).toBe(false); // azure needs api version
+  });
+
+  it('validates automation config (required fields + name format)', () => {
+    expect(isAutomationValid({ projectId: 'p1', displayName: 'Demo', name: 'demo', description: '' })).toBe(true);
+    expect(isAutomationValid({ projectId: '', displayName: 'Demo', name: 'demo', description: '' })).toBe(false); // missing project
+    expect(isAutomationValid({ projectId: 'p1', displayName: '', name: 'demo', description: '' })).toBe(false); // missing display name
+    expect(isAutomationValid({ projectId: 'p1', displayName: 'Demo', name: '', description: '' })).toBe(false); // missing name
+    expect(isAutomationValid({ projectId: 'p1', displayName: 'Demo', name: 'Bad Name', description: '' })).toBe(false); // malformed name
+  });
 });
 
 const pineconeForm: RagIngestionForm = {
@@ -90,6 +111,14 @@ const pineconeForm: RagIngestionForm = {
   automation: { projectId: 'p1', displayName: 'Demo', name: 'demo', description: '' },
   datasource: { type: 'amazons3', accessKeyId: 'AKIA', secretAccessKey: 'secret', bucketName: 'bucket' },
 };
+
+describe('isFormComplete', () => {
+  it('accepts a fully valid form and rejects missing sections', () => {
+    expect(isFormComplete(pineconeForm)).toBe(true);
+    expect(isFormComplete({ ...pineconeForm, vectorStore: null })).toBe(false);
+    expect(isFormComplete({ ...pineconeForm, embedding: null })).toBe(false);
+  });
+});
 
 describe('buildRagEnvVars + splitRagEnvVars', () => {
   it('maps a pinecone + openai + s3 form to the image env contract', () => {
