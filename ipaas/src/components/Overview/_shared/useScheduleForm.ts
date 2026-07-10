@@ -98,6 +98,7 @@ export interface ScheduleDeployIds {
  * drawer's Schedule step so the deploy schema stays in sync across both.
  */
 export function buildScheduleDeployInput(form: ScheduleValues, ids: ScheduleDeployIds): DeployDeploymentTrackInput {
+  const timeoutSeconds = parseInt(form.timeoutSeconds, 10);
   return {
     componentId: ids.componentId,
     id: ids.versionId,
@@ -106,7 +107,7 @@ export function buildScheduleDeployInput(form: ScheduleValues, ids: ScheduleDepl
     deploymentPipelineId: ids.deploymentPipelineId,
     cron: form.cron,
     cronTimezone: form.timezone,
-    ...(form.timeoutSeconds ? { jobTimeoutSeconds: parseInt(form.timeoutSeconds, 10) } : {}),
+    ...(Number.isFinite(timeoutSeconds) ? { jobTimeoutSeconds: timeoutSeconds } : {}),
     cronJobAllowConcurrency: form.allowConcurrency,
   };
 }
