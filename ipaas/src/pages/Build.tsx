@@ -28,6 +28,7 @@ import ComingSoon from './ComingSoon';
 import type { ComponentScope } from '../nav';
 import { UUID_RE } from '../utils/string';
 import { useProjectId } from '../hooks/useProjects';
+import { RAG_NO_SOURCE_SUBTYPES } from '../constants/ragIngestion';
 
 export default function Build(scope: ComponentScope): JSX.Element {
   const isProjectUuid = UUID_RE.test(scope.project);
@@ -78,6 +79,12 @@ export default function Build(scope: ComponentScope): JSX.Element {
   // have no source repository, so there's nothing to build.
   if (component.displayType === 'proxy' || component.displayType === 'gitProxy') {
     return <ComingSoon title="Build Not Available" description="This integration is created from an existing API and has no source repository to build." />;
+  }
+
+  // RAG-provisioned components (ingestion cronjob, retrieval/API services) are
+  // deployed from a prebuilt image and have no source repository to build.
+  if (RAG_NO_SOURCE_SUBTYPES.has(component.componentSubType ?? '')) {
+    return <ComingSoon title="Build Not Available" description="This integration is deployed from a prebuilt image and has no source repository to build." />;
   }
 
   const envId = environments[0]?.id ?? '';

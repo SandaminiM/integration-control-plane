@@ -49,7 +49,7 @@ export async function checkNameAvailability(projectId: string, candidate: string
 }
 
 export async function fetchComponentDetail(projectId: string, handler: string): Promise<PrebuiltComponentRef> {
-  const data = await gql<{ component: PrebuiltComponentRef }>(`query { component(projectId: "${projectId}", componentHandler: "${handler}") { id handler deploymentTracks { id } } }`);
+  const data = await gql<{ component: PrebuiltComponentRef }>(`query { component(projectId: "${projectId}", componentHandler: "${handler}") { id handler deploymentTracks { id } apiVersions { id latest appEnvVersions { environmentId releaseId } } } }`);
   return data.component;
 }
 

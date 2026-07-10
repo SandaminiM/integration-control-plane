@@ -131,6 +131,13 @@ export const platformServicesClient = createHttpClient(
   { tolerateNonJson: true },
 );
 
+// RAG backend — powers the Retrieval query endpoint.
+export const ragBackendClient = createHttpClient(() => {
+  const base = window.API_CONFIG?.ragBackendUrl;
+  if (!base) throw new Error('RAG backend base URL is not configured');
+  return base;
+});
+
 // Choreo Insights — GraphQL-like query endpoint on a separate host
 export const insightsClient = createHttpClient(() => `${window.API_CONFIG.insightsBaseUrl}/insights/1.0.0`);
 

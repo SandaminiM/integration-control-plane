@@ -140,6 +140,18 @@ export interface StopDeploymentInput {
   clearCron?: boolean;
 }
 
+/**
+ * A single image in a BYOI component's image history (devops REST API). Mirrors
+ * Devant's `ImageInfo`; `imageUrl` is the fully-qualified `name:tag`.
+ */
+export interface ByoiImage {
+  id: string;
+  imageName: string;
+  imageUrl: string;
+  triggerSource: 'MANUAL' | 'EXTERNAL';
+  updatedAt: string;
+}
+
 export interface DeployPrebuiltImageInput {
   componentId: string;
   imageUrl: string;

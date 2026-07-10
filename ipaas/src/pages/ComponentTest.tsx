@@ -53,7 +53,8 @@ export default function ComponentTest(scope: ComponentScope): JSX.Element {
     );
   }
 
-  if (identity?.type === 'automation') return <AutomationTest {...scope} />;
+  // RAG ingestion is a scheduled task — it uses the same Automation test view.
+  if (identity?.type === 'automation' || identity?.type === 'rag-ingestion') return <AutomationTest {...scope} />;
   if (identity?.type === 'mcp-server' || identity?.type === 'mcp-proxy') return <McpTest {...scope} />;
   return <ComingSoon title="Coming Soon" description="Testing tools are currently under development." />;
 }

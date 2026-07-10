@@ -61,6 +61,7 @@ import * as subscriptions from './subscriptions';
 import * as configGroups from './configGroups';
 import * as auditLogs from './auditLogs';
 import * as platformServices from './platformServices';
+import * as ragBackend from './ragBackend';
 import * as genaiServices from './genaiServices';
 
 const _alerts: Contracts.AlertsApi = alerts;
@@ -99,6 +100,7 @@ const _subscriptions: Contracts.SubscriptionsApi = subscriptions;
 const _configGroups: Contracts.ConfigGroupsApi = configGroups;
 const _auditLogs: Contracts.AuditLogsApi = auditLogs;
 const _platformServices: Contracts.PlatformServicesApi = platformServices;
+const _ragBackend: Contracts.RagBackendApi = ragBackend;
 const _genaiServices: Contracts.GenaiServicesApi = genaiServices;
 
 void _alerts;
@@ -137,4 +139,5 @@ void _subscriptions;
 void _configGroups;
 void _auditLogs;
 void _platformServices;
+void _ragBackend;
 void _genaiServices;

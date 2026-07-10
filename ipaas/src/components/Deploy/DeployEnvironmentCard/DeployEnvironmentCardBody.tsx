@@ -87,8 +87,9 @@ export default function DeployEnvironmentCardBody({
   const hasBuildInfo = !!releaseId || !!deployment.build?.buildId;
   const isSuspended = status === DeploymentStatus.Suspended;
 
-  // Label matches Devant's EnvBuildDetails: "Image" for production (critical), "Build" otherwise
-  const buildSectionLabel = envCritical ? 'Image' : 'Build';
+  // Label matches Devant's EnvBuildDetails: "Image" for BYOI (image-based, no
+  // build) and production (critical), "Build" otherwise.
+  const buildSectionLabel = flags.isByoi || envCritical ? 'Image' : 'Build';
 
   return (
     <Stack gap={2}>
@@ -143,6 +144,17 @@ export default function DeployEnvironmentCardBody({
               <Skeleton variant="text" width="65%" sx={{ mb: 0.5 }} />
               <Skeleton variant="text" width="50%" sx={{ mb: 0.5 }} />
               <Skeleton variant="text" width="55%" />
+            </Box>
+          ) : flags.isByoi ? (
+            // BYOI components are deployed from a container image — show the image
+            // reference (there is no source commit / build to display).
+            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+              <Typography variant="caption" color="text.secondary">
+                Container Image
+              </Typography>
+              <Typography variant="body2" sx={{ fontFamily: 'monospace', mt: 0.25, wordBreak: 'break-all' }}>
+                {deployment.imageUrl || '—'}
+              </Typography>
             </Box>
           ) : deployedImage ? (
             <BuildImageCard image={deployedImage} isLatest={false} variant="detail" hideEdit />

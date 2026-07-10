@@ -77,6 +77,12 @@ export interface PrebuiltComponentRef {
   id: string;
   handler: string;
   deploymentTracks: { id: string }[];
+  /**
+   * Per-version environment releases. A component's release (app-environment) is
+   * provisioned at creation, so this carries the `releaseId` before any deploy —
+   * unlike the `componentDeployment` query, which 404s until first deployment.
+   */
+  apiVersions?: { id: string; latest: boolean; appEnvVersions: { environmentId: string; releaseId: string }[] }[];
 }
 
 export interface PrebuiltEnvironmentRef {

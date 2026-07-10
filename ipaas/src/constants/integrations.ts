@@ -17,6 +17,7 @@
  */
 
 import type { DisplayType } from '../types/component';
+import { RAG_NO_SOURCE_SUBTYPES } from './ragIngestion';
 
 /**
  * The set of integration display types that are supported by the ipaas.
@@ -57,7 +58,7 @@ export const SUPPORTED_DISPLAY_TYPES = new Set([
  * (same displayType, no/`HTTP` subtype) stays unsupported.
  */
 export function isSupportedIntegration(displayType: string, componentSubType: string | null): boolean {
-  return SUPPORTED_DISPLAY_TYPES.has(displayType) || componentSubType === 'MCP';
+  return SUPPORTED_DISPLAY_TYPES.has(displayType) || componentSubType === 'MCP' || RAG_NO_SOURCE_SUBTYPES.has(componentSubType ?? '');
 }
 
 export function getNonIntegrationPlatform(originCloud?: string): string {
@@ -78,6 +79,11 @@ export function getDisplayLabel(displayType: string, componentSubType: string | 
       return 'MCP Server';
     case 'tailscale':
       return 'Tailscale VPN';
+    case 'rag-ingestion':
+      return 'RAG Ingestion';
+    case 'rag-retrieval-service':
+    case 'rag-service':
+      return 'Integration as API';
   }
   switch (displayType) {
     case 'ballerinaService':
