@@ -24,6 +24,15 @@ export function formatVersion(version: string): string {
   return `V${version.replace(/^v/i, '')}`;
 }
 
+/** Turn a raw backend/HTTP error into a message a user can act on. */
+export function friendlyConnectionError(raw: string): string {
+  const text = (raw || '').toLowerCase();
+  if (text.includes('empty api id')) return 'This service can’t be connected to yet — it has no published API. Deploy the service to an environment (or choose a different service) and try again.';
+  if (text.includes('already exist') || text.includes('duplicate') || text.includes('name and project')) return 'A connection with this name already exists in the project. Please choose a different name.';
+  if (text.includes('http 5') || text.includes('internal server error')) return 'Something went wrong while creating the connection. Please try again in a moment.';
+  return raw || 'Failed to create the connection.';
+}
+
 /** Access mode a user picks in the form; maps to the visibility list + requesting-service visibility. */
 export type ConnectionAccessMode = 'Public' | 'Organization' | 'Project';
 
@@ -108,7 +117,7 @@ export function buildChoreoConnectionRequest(args: BuildChoreoConnectionArgs): C
     visibilities: buildVisibilities(accessMode, organizationUuid, projectUuid, component),
     requestingServiceVisibility: requestingVisibilityFor(accessMode),
     orgIdInteger,
-    componentType: component ? component.type ?? ConnectionComponentType.SERVICE : ConnectionComponentType.NON_COMPONENT,
+    componentType: component ? (component.type ?? ConnectionComponentType.SERVICE) : ConnectionComponentType.NON_COMPONENT,
     environments: environments.map((e) => ({ id: e.id, isCritical: e.critical, providerEnvId: e.id })),
   };
 }
@@ -156,7 +165,7 @@ export function buildThirdPartyConnectionRequest(args: BuildThirdPartyConnection
     serviceId,
     schemaReference,
     visibilities: buildVisibilities(accessMode, organizationUuid, projectUuid, component),
-    componentType: component ? component.type ?? ConnectionComponentType.SERVICE : ConnectionComponentType.NON_COMPONENT,
+    componentType: component ? (component.type ?? ConnectionComponentType.SERVICE) : ConnectionComponentType.NON_COMPONENT,
     configurations,
     envMapping,
   };

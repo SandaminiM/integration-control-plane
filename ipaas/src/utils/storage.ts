@@ -71,9 +71,7 @@ export function buildVolumeCreatePayload(args: BuildVolumeArgs): VolumeCreateDat
 
 /** Join volumes with the mounts that reference them, keeping volumes owned by or mounted in this release. */
 export function combineVolumesAndMounts(volumes: Volume[], mounts: VolumeMount[], releaseId: string): VolumeRow[] {
-  return volumes
-    .map((volume) => ({ volume, mounts: mounts.filter((m) => m.app_volume_id === volume.ID) }))
-    .filter((row) => row.volume.app_environment_id === releaseId || row.mounts.length > 0);
+  return volumes.map((volume) => ({ volume, mounts: mounts.filter((m) => m.app_volume_id === volume.ID) })).filter((row) => row.volume.app_environment_id === releaseId || row.mounts.length > 0);
 }
 
 export function componentStorageBase(org: string, project: string, component: string): string {

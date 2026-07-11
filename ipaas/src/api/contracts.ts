@@ -101,7 +101,21 @@ import type { Environment, CloudDataPlane, EnvironmentInput } from '../types/env
 import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../types/executions';
 import type { SubscriptionList, ComponentLimits } from '../types/subscription';
 import type { ConfigGroup, ConfigGroupNameAvailability, ConfigGroupUsage, CreateConfigGroupRequest, EditConfigGroupRequest } from '../types/configGroups';
-import type { ChoreoConnectionRequest, Connection, ConnectionCatalogResponse, ConnectionListingRecord, ConnectionRequest, ConnectionServiceIdl, ConnectionUpdatePayload, DeleteConnectionParams, EnvKeyRotationParams, ListCatalogParams, ListConnectionsParams, ResourceConnectionRequest, RotateConnectionKeysByConnectionIdParams } from '../types/connections';
+import type {
+  ChoreoConnectionRequest,
+  Connection,
+  ConnectionCatalogResponse,
+  ConnectionListingRecord,
+  ConnectionRequest,
+  ConnectionServiceIdl,
+  ConnectionUpdatePayload,
+  DeleteConnectionParams,
+  EnvKeyRotationParams,
+  ListCatalogParams,
+  ListConnectionsParams,
+  ResourceConnectionRequest,
+  RotateConnectionKeysByConnectionIdParams,
+} from '../types/connections';
 import type { AuditLogEntry, AuditLogsRequest } from '../types/auditLogs';
 import type {
   AdminUser,

@@ -38,8 +38,16 @@ export function getPodStatus(pod: ClusterPod): { status: string; isRunning: bool
 function podUsage(name: string, metrics: PodMetrics[]): { cpu?: string; memory?: string } {
   const m = metrics.find((x) => x.metadata.name === name);
   if (!m?.containers?.length) return {};
-  const cpu = m.containers.map((c) => c.usage?.cpu).filter(Boolean).join(' + ') || undefined;
-  const memory = m.containers.map((c) => c.usage?.memory).filter(Boolean).join(' + ') || undefined;
+  const cpu =
+    m.containers
+      .map((c) => c.usage?.cpu)
+      .filter(Boolean)
+      .join(' + ') || undefined;
+  const memory =
+    m.containers
+      .map((c) => c.usage?.memory)
+      .filter(Boolean)
+      .join(' + ') || undefined;
   return { cpu, memory };
 }
 

@@ -159,13 +159,7 @@ export default function ComponentStorage({ org, project, component }: ComponentS
       </PageContent>
 
       {deleting && (
-        <DeleteVolumeDialog
-          projectId={projectId}
-          volume={deleting}
-          onClose={() => setDeleting(null)}
-          onDeleted={(name) => setAlert({ type: 'success', message: `Volume mount '${name}' deleted.` })}
-          onError={(message) => setAlert({ type: 'error', message })}
-        />
+        <DeleteVolumeDialog projectId={projectId} volume={deleting} onClose={() => setDeleting(null)} onDeleted={(name) => setAlert({ type: 'success', message: `Volume mount '${name}' deleted.` })} onError={(message) => setAlert({ type: 'error', message })} />
       )}
     </>
   );

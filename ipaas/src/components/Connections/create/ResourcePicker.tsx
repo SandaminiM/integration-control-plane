@@ -156,7 +156,15 @@ export default function ResourcePicker({ org, projectId, componentId, base, isLo
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 sx={{ flex: 1 }}
-                slotProps={{ input: { startAdornment: (<InputAdornment position="start"><Search size={16} /></InputAdornment>) } }}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search size={16} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
               />
               <Select size="small" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)} sx={{ minWidth: 140 }}>
                 <MenuItem value="name-asc">Name (A → Z)</MenuItem>
@@ -168,7 +176,13 @@ export default function ResourcePicker({ org, projectId, componentId, base, isLo
               {catalogLoading ? (
                 <CircularProgress size={24} sx={{ display: 'block', mx: 'auto', my: 6 }} />
               ) : catalogError ? (
-                <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => refetch()}>Retry</Button>}>
+                <Alert
+                  severity="error"
+                  action={
+                    <Button color="inherit" size="small" onClick={() => refetch()}>
+                      Retry
+                    </Button>
+                  }>
                   Failed to load {label.toLowerCase()}.
                 </Alert>
               ) : displayItems.length === 0 ? (

@@ -184,27 +184,11 @@ export default function VolumeWizard({ ctx, existing, onBack, onSaved, onError }
           {step === 0 && (
             <>
               <RequiredLabel>Volume Name</RequiredLabel>
-              <TextField
-                fullWidth
-                size="small"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onBlur={() => setNameTouched(true)}
-                error={nameTouched && !!nameError}
-                helperText={(nameTouched && nameError) || ' '}
-                sx={{ ...requiredSx, mb: 2 }}
-              />
+              <TextField fullWidth size="small" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => setNameTouched(true)} error={nameTouched && !!nameError} helperText={(nameTouched && nameError) || ' '} sx={{ ...requiredSx, mb: 2 }} />
 
               <Stack direction={{ xs: 'column', md: 'row' }} gap={2} sx={{ mb: 3 }}>
                 {VOLUME_TYPE_CARDS.map((card) => (
-                  <VolumeTypeCard
-                    key={card.value}
-                    title={card.title}
-                    description={card.description}
-                    selected={formType === card.value}
-                    disabled={card.pdpOnly && !ctx.isPDP}
-                    onSelect={() => setFormType(card.value)}
-                  />
+                  <VolumeTypeCard key={card.value} title={card.title} description={card.description} selected={formType === card.value} disabled={card.pdpOnly && !ctx.isPDP} onSelect={() => setFormType(card.value)} />
                 ))}
               </Stack>
 

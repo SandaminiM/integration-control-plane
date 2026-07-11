@@ -115,20 +115,12 @@ export default function ConfigureConnectionForm({ projectId, orgUuid, orgIdInteg
         Create a Connection
       </Typography>
 
-      {submitError && (
-        <Alert severity="error" onClose={onDismissError} sx={{ mb: 3 }}>
-          {submitError}
-        </Alert>
-      )}
-
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
         Connecting to
       </Typography>
       <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2, mb: 3, width: '50%' }}>
         <Stack direction="row" gap={1.5} alignItems="flex-start">
-          <Avatar sx={{ width: 40, height: 40, fontSize: '1.05rem', fontWeight: 700, flexShrink: 0, bgcolor: 'grey.300', color: 'text.primary' }}>
-            {(service.name[0] ?? '?').toUpperCase()}
-          </Avatar>
+          <Avatar sx={{ width: 40, height: 40, fontSize: '1.05rem', fontWeight: 700, flexShrink: 0, bgcolor: 'grey.300', color: 'text.primary' }}>{(service.name[0] ?? '?').toUpperCase()}</Avatar>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Stack direction="row" alignItems="center" gap={0.75}>
               <Typography variant="body1" sx={{ fontWeight: 600 }}>
@@ -155,7 +147,10 @@ export default function ConfigureConnectionForm({ projectId, orgUuid, orgIdInteg
       </Box>
 
       <Typography variant="body2" sx={{ mb: 0.5 }}>
-        Name
+        Name{' '}
+        <Box component="span" sx={{ color: 'error.main' }}>
+          *
+        </Box>
       </Typography>
       <TextField required fullWidth size="small" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter Connection Name" sx={{ ...requiredSx, mb: 3 }} />
 
@@ -168,7 +163,10 @@ export default function ConfigureConnectionForm({ projectId, orgUuid, orgIdInteg
       <TextField fullWidth multiline minRows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Enter Description" sx={{ mb: 3 }} />
 
       <Typography variant="body2" sx={{ mb: 1 }}>
-        Access Mode
+        Access Mode{' '}
+        <Box component="span" sx={{ color: 'error.main' }}>
+          *
+        </Box>
       </Typography>
       <Stack direction="row" flexWrap="wrap" gap={1.5} sx={{ mb: 3 }}>
         {availableModes.map((m) => (
@@ -179,7 +177,10 @@ export default function ConfigureConnectionForm({ projectId, orgUuid, orgIdInteg
       {schemas.length > 0 && (
         <>
           <Typography variant="body2" sx={{ mb: 1 }}>
-            Authentication Scheme
+            Authentication Scheme{' '}
+            <Box component="span" sx={{ color: 'error.main' }}>
+              *
+            </Box>
           </Typography>
           <Stack direction="row" flexWrap="wrap" gap={1.5} sx={{ mb: 3 }}>
             {schemas.map((s) => (
@@ -240,7 +241,17 @@ export default function ConfigureConnectionForm({ projectId, orgUuid, orgIdInteg
         </Collapse>
       </Box>
 
-      {environments.length === 0 && !envLoading && <Alert severity="warning" sx={{ mb: 3 }}>No environments found for this project — a connection needs at least one target environment.</Alert>}
+      {environments.length === 0 && !envLoading && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          No environments found for this project — a connection needs at least one target environment.
+        </Alert>
+      )}
+
+      {submitError && (
+        <Alert severity="error" onClose={onDismissError} sx={{ mb: 2 }}>
+          {submitError}
+        </Alert>
+      )}
 
       <Stack direction="row" gap={1.5}>
         <Button variant="outlined" onClick={onCancel} disabled={submitting}>

@@ -41,7 +41,18 @@ describe('getPodStatus', () => {
 describe('derivePodRows', () => {
   it('computes ready/total, restarts and joins metrics by pod name', () => {
     const pods: ClusterPod[] = [
-      pod({ name: 'a', spec: { containers: [{}, {}] }, status: { phase: 'Running', startTime: '2026-01-01', containerStatuses: [{ ready: true, restartCount: 1 }, { ready: false, restartCount: 2 }] } }),
+      pod({
+        name: 'a',
+        spec: { containers: [{}, {}] },
+        status: {
+          phase: 'Running',
+          startTime: '2026-01-01',
+          containerStatuses: [
+            { ready: true, restartCount: 1 },
+            { ready: false, restartCount: 2 },
+          ],
+        },
+      }),
     ];
     const metrics: PodMetrics[] = [{ metadata: { name: 'a' }, containers: [{ usage: { cpu: '10m', memory: '20Mi' } }] }];
     const [row] = derivePodRows(pods, metrics);
@@ -51,11 +62,7 @@ describe('derivePodRows', () => {
 
 describe('runningPodCount', () => {
   it('counts Running/Succeeded as healthy', () => {
-    const pods: ClusterPod[] = [
-      pod({ name: 'a', status: { phase: 'Running' } }),
-      pod({ name: 'b', status: { phase: 'Pending' } }),
-      pod({ name: 'c', status: { phase: 'Succeeded' } }),
-    ];
+    const pods: ClusterPod[] = [pod({ name: 'a', status: { phase: 'Running' } }), pod({ name: 'b', status: { phase: 'Pending' } }), pod({ name: 'c', status: { phase: 'Succeeded' } })];
     expect(runningPodCount(pods)).toEqual({ running: 2, total: 3 });
   });
 });

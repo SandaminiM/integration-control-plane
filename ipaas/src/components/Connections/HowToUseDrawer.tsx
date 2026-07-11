@@ -62,12 +62,7 @@ export default function HowToUseDrawer({ open, onClose, connection }: HowToUseDr
   }, [tab, keys, connection]);
 
   return (
-    <Drawer
-      anchor="right"
-      open={open}
-      onClose={onClose}
-      variant="temporary"
-      sx={{ '& .MuiDrawer-paper': { width: { xs: '100%', md: '52%', lg: '46%' }, maxWidth: 900, top: { xs: '56px', sm: '64px' }, height: 'auto', bottom: 0 } }}>
+    <Drawer anchor="right" open={open} onClose={onClose} variant="temporary" sx={{ '& .MuiDrawer-paper': { width: { xs: '100%', md: '52%', lg: '46%' }, maxWidth: 900, top: { xs: '56px', sm: '64px' }, height: 'auto', bottom: 0 } }}>
       <Stack sx={{ height: '100%' }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>

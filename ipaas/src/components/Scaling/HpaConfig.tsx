@@ -43,7 +43,25 @@ function buildMetric(name: MetricResource, value: number): HpaMetric {
   return { type: 'Resource', rule: { resource: { name, value: String(value), type: 'utilization' } } };
 }
 
-function ThresholdSlider({ label, enabled, value, min, max, onToggle, onChange, disabled }: { label: string; enabled: boolean; value: number; min: number; max: number; onToggle: (v: boolean) => void; onChange: (v: number) => void; disabled: boolean }): JSX.Element {
+function ThresholdSlider({
+  label,
+  enabled,
+  value,
+  min,
+  max,
+  onToggle,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  enabled: boolean;
+  value: number;
+  min: number;
+  max: number;
+  onToggle: (v: boolean) => void;
+  onChange: (v: number) => void;
+  disabled: boolean;
+}): JSX.Element {
   return (
     <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2, flex: 1, minWidth: 260 }}>
       <FormControlLabel control={<Switch checked={enabled} onChange={(e) => onToggle(e.target.checked)} disabled={disabled} />} label={label} />

@@ -106,13 +106,7 @@ export default function ReplicasTable({ projectId, clusterId, releaseId, dataPla
                   <ListingTable.Cell>{row.cpu ?? '—'}</ListingTable.Cell>
                   <ListingTable.Cell>{row.memory ?? '—'}</ListingTable.Cell>
                   <ListingTable.Cell>
-                    <Chip
-                      icon={row.isRunning ? <CircleCheck size={14} /> : <Info size={14} />}
-                      label={row.status}
-                      size="small"
-                      variant="outlined"
-                      color={row.isRunning ? 'success' : 'default'}
-                    />
+                    <Chip icon={row.isRunning ? <CircleCheck size={14} /> : <Info size={14} />} label={row.status} size="small" variant="outlined" color={row.isRunning ? 'success' : 'default'} />
                   </ListingTable.Cell>
                   <ListingTable.Cell>
                     {row.readyContainers} / {row.totalContainers}

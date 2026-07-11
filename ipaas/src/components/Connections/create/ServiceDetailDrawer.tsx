@@ -66,7 +66,14 @@ function ApiDefinition({ serviceId }: { serviceId: string }): JSX.Element {
   if (isLoading) return <Skeleton variant="rounded" height={320} sx={{ mt: 2 }} />;
   if (isError || !spec) {
     return (
-      <Alert severity="error" sx={{ mt: 2 }} action={<Button color="inherit" size="small" onClick={() => refetch()}>Retry</Button>}>
+      <Alert
+        severity="error"
+        sx={{ mt: 2 }}
+        action={
+          <Button color="inherit" size="small" onClick={() => refetch()}>
+            Retry
+          </Button>
+        }>
         Failed to load the API definition.
       </Alert>
     );
@@ -96,12 +103,7 @@ export default function ServiceDetailDrawer({ item, onClose, onSelect }: Service
   useEffect(() => setTab(0), [item?.serviceId]);
 
   return (
-    <Drawer
-      anchor="right"
-      open={!!item}
-      onClose={onClose}
-      variant="temporary"
-      sx={{ '& .MuiDrawer-paper': { width: { xs: '100%', md: '70%', lg: '62%' }, maxWidth: 1180, top: { xs: '56px', sm: '64px' }, height: 'auto', bottom: 0 } }}>
+    <Drawer anchor="right" open={!!item} onClose={onClose} variant="temporary" sx={{ '& .MuiDrawer-paper': { width: { xs: '100%', md: '70%', lg: '62%' }, maxWidth: 1180, top: { xs: '56px', sm: '64px' }, height: 'auto', bottom: 0 } }}>
       {item && (
         <Stack sx={{ height: '100%' }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>

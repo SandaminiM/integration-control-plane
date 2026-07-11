@@ -146,7 +146,13 @@ export default function ConnectionDetail(scope: ProjectScope | ComponentScope): 
       {isLoading ? (
         <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
       ) : isError || !connection ? (
-        <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => refetch()}>Retry</Button>}>
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={() => refetch()}>
+              Retry
+            </Button>
+          }>
           Failed to load connection.
         </Alert>
       ) : (

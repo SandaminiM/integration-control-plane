@@ -24,7 +24,7 @@ import { isConnectionsEnabled, useCreateChoreoConnection, useCreateThirdPartyCon
 import { useProjectId } from '../hooks/useProjects';
 import { useComponentByHandler } from '../hooks/useComponents';
 import { useOrgUuid } from '../hooks/useOrgUuid';
-import { componentConnectionsBase, projectConnectionsBase } from '../utils/connections';
+import { componentConnectionsBase, friendlyConnectionError, projectConnectionsBase } from '../utils/connections';
 import ResourcePicker from '../components/Connections/create/ResourcePicker';
 import ConfigureConnectionForm from '../components/Connections/create/ConfigureConnectionForm';
 import ComingSoon from './ComingSoon';
@@ -56,7 +56,7 @@ export default function NewConnection(scope: ProjectScope | ComponentScope): JSX
   const base = componentHandle ? componentConnectionsBase(org, project, componentHandle) : projectConnectionsBase(org, project);
   const component = componentData ? { uuid: componentData.id, type: componentData.displayType } : undefined;
   const onSuccess = () => navigate(base);
-  const onError = (e: unknown) => setSubmitError(e instanceof Error ? e.message : 'Failed to create connection.');
+  const onError = (e: unknown) => setSubmitError(friendlyConnectionError(e instanceof Error ? e.message : ''));
 
   const onCreateChoreo = (request: ChoreoConnectionRequest, generateCreds: boolean) => {
     setSubmitError(null);
