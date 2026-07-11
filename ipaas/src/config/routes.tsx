@@ -124,6 +124,7 @@ const Profile = lazy(() => import('../pages/Profile'));
 const ComingSoon = lazy(() => import('../pages/ComingSoon'));
 const ProjectConnections = lazy(() => import('../pages/ProjectConnections'));
 const ComponentConnections = lazy(() => import('../pages/ComponentConnections'));
+const ComponentStorage = lazy(() => import('../pages/ComponentStorage'));
 const NewConnection = lazy(() => import('../pages/NewConnection'));
 const ConnectionDetail = lazy(() => import('../pages/ConnectionDetail'));
 
@@ -359,7 +360,7 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/storage',
-                element: <ComingSoon title="Coming Soon" description="Storage management is currently under development." />,
+                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentStorage, ['components']))),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings',

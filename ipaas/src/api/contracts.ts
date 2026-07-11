@@ -90,6 +90,7 @@ import type { OnPremKey, OnPremKeySubscription } from '../types/onPremKey';
 import type { EgressPolicy, EgressPolicyRequest } from '../types/egressPolicy';
 import type { AuthzRole, CreateAuthzRoleInput, UpdateAuthzRoleInput } from '../types/projectAuthz';
 import type { ByoiEndpointFileContents, CreateByoiComponentInput, CreateByoiComponentResult, DevopsVolume, DevopsVolumeMount, VolumeMountWriteData, VolumeWriteData } from '../types/tailscale';
+import type { StorageClass, Volume, VolumeCreateData, VolumeMount, VolumeMountCreateData, VolumeMountPath, VolumeMountUpdateData } from '../types/storage';
 import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseDetails, SecretWriteData } from '../types/devopsConfigs';
 import type { CreateUrlMappingInput, CustomDomain, CustomDomainType, CustomUrlMapping } from '../types/customDomain';
 import type { OrgWorkflowConfig, WorkflowConfigRequest, WorkflowDefinition } from '../types/workflow';
@@ -678,6 +679,18 @@ export interface GenaiServicesApi {
 // Aggregate — the full API surface consumed by the app
 // ---------------------------------------------------------------------------
 
+// Component storage (volume mounts, devops API). wip-only for now; cloud/icp stubs throw.
+export interface StorageApi {
+  listVolumes(orgUuid: string, projectId: string, environmentId: string): Promise<Volume[]>;
+  createVolume(orgUuid: string, projectId: string, data: VolumeCreateData): Promise<Volume>;
+  deleteVolume(orgUuid: string, projectId: string, volumeId: string): Promise<void>;
+  listVolumeMounts(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<VolumeMount[]>;
+  createVolumeMount(orgUuid: string, projectId: string, path: VolumeMountPath, data: VolumeMountCreateData): Promise<VolumeMount>;
+  updateVolumeMount(orgUuid: string, projectId: string, path: VolumeMountPath, mountId: string, data: VolumeMountUpdateData): Promise<VolumeMount>;
+  deleteVolumeMount(orgUuid: string, projectId: string, path: VolumeMountPath, mountId: string): Promise<void>;
+  listStorageClasses(orgUuid: string, projectId: string, environmentId: string): Promise<StorageClass[]>;
+}
+
 export interface AppApi {
   alerts: AlertsApi;
   apim: ApimApi;
@@ -707,6 +720,7 @@ export interface AppApi {
   projects: ProjectsApi;
   projectAuthz: ProjectAuthzApi;
   tailscale: TailscaleApi;
+  storage: StorageApi;
   devopsConfigs: DevopsConfigsApi;
   customDomains: CustomDomainsApi;
   repository: RepositoryApi;
