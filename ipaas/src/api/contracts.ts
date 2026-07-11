@@ -91,6 +91,7 @@ import type { EgressPolicy, EgressPolicyRequest } from '../types/egressPolicy';
 import type { AuthzRole, CreateAuthzRoleInput, UpdateAuthzRoleInput } from '../types/projectAuthz';
 import type { ByoiEndpointFileContents, CreateByoiComponentInput, CreateByoiComponentResult, DevopsVolume, DevopsVolumeMount, VolumeMountWriteData, VolumeWriteData } from '../types/tailscale';
 import type { StorageClass, Volume, VolumeCreateData, VolumeMount, VolumeMountCreateData, VolumeMountPath, VolumeMountUpdateData } from '../types/storage';
+import type { ClusterPod, Hpa, HpaMetric, HpaWriteData, HttpScaler, HttpScalerWriteData, PodMetrics, ScalingMethodToggle, ScalingPath, ScalingState } from '../types/scaling';
 import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseDetails, SecretWriteData } from '../types/devopsConfigs';
 import type { CreateUrlMappingInput, CustomDomain, CustomDomainType, CustomUrlMapping } from '../types/customDomain';
 import type { OrgWorkflowConfig, WorkflowConfigRequest, WorkflowDefinition } from '../types/workflow';
@@ -691,6 +692,22 @@ export interface StorageApi {
   listStorageClasses(orgUuid: string, projectId: string, environmentId: string): Promise<StorageClass[]>;
 }
 
+// Component scaling (devops API). wip-only for now; cloud/icp stubs throw.
+export interface ScalingApi {
+  getScalingState(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<ScalingState>;
+  getHttpScaler(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<HttpScaler | null>;
+  getHpa(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<Hpa | null>;
+  setScalingMethod(orgUuid: string, projectId: string, path: ScalingPath, data: ScalingMethodToggle): Promise<void>;
+  updateHttpScaler(orgUuid: string, projectId: string, path: ScalingPath, data: HttpScalerWriteData): Promise<HttpScaler>;
+  createHpa(orgUuid: string, projectId: string, path: ScalingPath, data: HpaWriteData): Promise<Hpa>;
+  updateHpa(orgUuid: string, projectId: string, path: ScalingPath, hpaId: string, data: HpaWriteData & { ID: string }): Promise<Hpa>;
+  createHpaMetric(orgUuid: string, projectId: string, path: ScalingPath, hpaId: string, data: HpaMetric): Promise<HpaMetric>;
+  updateHpaMetric(orgUuid: string, projectId: string, path: ScalingPath, hpaId: string, metricId: string, data: HpaMetric): Promise<HpaMetric>;
+  deleteHpaMetric(orgUuid: string, projectId: string, path: ScalingPath, hpaId: string, metricId: string): Promise<void>;
+  listPods(orgUuid: string, projectId: string, clusterId: string, releaseId: string): Promise<ClusterPod[]>;
+  listPodMetrics(orgUuid: string, projectId: string, clusterId: string, releaseId: string): Promise<PodMetrics[]>;
+}
+
 export interface AppApi {
   alerts: AlertsApi;
   apim: ApimApi;
@@ -721,6 +738,7 @@ export interface AppApi {
   projectAuthz: ProjectAuthzApi;
   tailscale: TailscaleApi;
   storage: StorageApi;
+  scaling: ScalingApi;
   devopsConfigs: DevopsConfigsApi;
   customDomains: CustomDomainsApi;
   repository: RepositoryApi;

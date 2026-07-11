@@ -125,6 +125,7 @@ const ComingSoon = lazy(() => import('../pages/ComingSoon'));
 const ProjectConnections = lazy(() => import('../pages/ProjectConnections'));
 const ComponentConnections = lazy(() => import('../pages/ComponentConnections'));
 const ComponentStorage = lazy(() => import('../pages/ComponentStorage'));
+const ComponentScaling = lazy(() => import('../pages/ComponentScaling'));
 const NewConnection = lazy(() => import('../pages/NewConnection'));
 const ConnectionDetail = lazy(() => import('../pages/ConnectionDetail'));
 
@@ -356,7 +357,7 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/scaling',
-                element: <ComingSoon title="Coming Soon" description="Scaling configuration is currently under development." />,
+                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentScaling, ['components']))),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/storage',
