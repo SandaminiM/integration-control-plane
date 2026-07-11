@@ -99,6 +99,7 @@ import type { Environment, CloudDataPlane, EnvironmentInput } from '../types/env
 import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../types/executions';
 import type { SubscriptionList, ComponentLimits } from '../types/subscription';
 import type { ConfigGroup, ConfigGroupNameAvailability, ConfigGroupUsage, CreateConfigGroupRequest, EditConfigGroupRequest } from '../types/configGroups';
+import type { ChoreoConnectionRequest, Connection, ConnectionCatalogResponse, ConnectionListingRecord, ConnectionRequest, ConnectionServiceIdl, ConnectionUpdatePayload, DeleteConnectionParams, EnvKeyRotationParams, ListCatalogParams, ListConnectionsParams, ResourceConnectionRequest, RotateConnectionKeysByConnectionIdParams } from '../types/connections';
 import type { AuditLogEntry, AuditLogsRequest } from '../types/auditLogs';
 import type {
   AdminUser,
@@ -608,6 +609,23 @@ export interface ConfigGroupsApi {
   getConfigGroupUsage(configGroupId: string): Promise<ConfigGroupUsage>;
 }
 
+// Connections (dependency-config service). wip-only for now; cloud/icp stubs throw.
+export interface ConnectionsApi {
+  listConnections(params: ListConnectionsParams): Promise<ConnectionListingRecord[]>;
+  listConnectionCatalog(params: ListCatalogParams): Promise<ConnectionCatalogResponse>;
+  getConnectionServiceIdl(serviceId: string): Promise<ConnectionServiceIdl>;
+  getConnection(groupUuid: string): Promise<Connection>;
+  createChoreoConnection(request: ChoreoConnectionRequest, generateCreds?: boolean): Promise<Connection>;
+  createResourceConnection(request: ResourceConnectionRequest): Promise<Connection>;
+  createThirdPartyConnection(request: ConnectionRequest): Promise<Connection>;
+  createDatabaseConnection(request: ResourceConnectionRequest): Promise<Connection>;
+  updateConnection(payload: ConnectionUpdatePayload): Promise<Connection>;
+  deleteConnection(params: DeleteConnectionParams): Promise<void>;
+  refreshConnection(connectionId: string): Promise<Connection>;
+  rotateConnectionEnvKeys(params: EnvKeyRotationParams): Promise<void>;
+  rotateConnectionKeysById(params: RotateConnectionKeysByConnectionIdParams): Promise<Connection>;
+}
+
 // Org audit logs (admin "Audit Logs"). wip-only for now; cloud/icp stubs throw.
 export interface AuditLogsApi {
   fetchAuditLogs(orgUuid: string, request: AuditLogsRequest): Promise<AuditLogEntry[]>;
@@ -695,6 +713,7 @@ export interface AppApi {
   samples: SamplesApi;
   subscriptions: SubscriptionsApi;
   configGroups: ConfigGroupsApi;
+  connections: ConnectionsApi;
   auditLogs: AuditLogsApi;
   platformServices: PlatformServicesApi;
   genaiServices: GenaiServicesApi;
