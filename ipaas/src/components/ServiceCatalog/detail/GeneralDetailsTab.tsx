@@ -20,13 +20,15 @@ import { Alert, Box, Button, Chip, CircularProgress, Stack, TextField, Typograph
 import { Plus } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useUpdateGenaiService } from '../../../hooks/useGenaiServices';
-import { GENAI_TEMPLATE_TYPE } from '../../../constants/genaiServices';
 import type { GenAiService } from '../../../types/genaiServices';
 
 const requiredSx = { '& .MuiFormLabel-asterisk': { color: 'error.main' } };
 
-/** Editable general details: name, summary, overview, and labels. Saves via PUT /services/{id}. */
-export default function GeneralDetailsTab({ service }: { service: GenAiService }): JSX.Element {
+/**
+ * Editable general details: name, summary, overview, and labels. Saves via PUT /services/{id}.
+ * `lockedTags` are non-removable labels (e.g. the GenAI feature tag); Third Party passes none.
+ */
+export default function GeneralDetailsTab({ service, lockedTags = [] }: { service: GenAiService; lockedTags?: string[] }): JSX.Element {
   const update = useUpdateGenaiService(service);
   const [name, setName] = useState(service.name);
   const [summary, setSummary] = useState(service.summary ?? '');
@@ -92,7 +94,7 @@ export default function GeneralDetailsTab({ service }: { service: GenAiService }
           </Typography>
           <Stack direction="row" gap={0.5} flexWrap="wrap" sx={{ mb: 1 }}>
             {tags.map((t) => {
-              const locked = t === GENAI_TEMPLATE_TYPE;
+              const locked = lockedTags.includes(t);
               return <Chip key={t} label={t} size="small" onDelete={locked ? undefined : () => setTags((prev) => prev.filter((x) => x !== t))} />;
             })}
             {tags.length === 0 && (

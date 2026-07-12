@@ -120,7 +120,8 @@ export interface CreateServiceRequest {
   idl: { idlType: string; content: string; environmentId: string };
   status: string;
   resourceType: string;
-  templateType: string;
+  /** Marketplace TemplateType enum (e.g. `GenAI`). Omitted for plain third-party services. */
+  templateType?: string;
 }
 
 export interface CreateServiceResponse {
@@ -187,7 +188,8 @@ export interface UpdateServiceRequest {
   isThirdParty: boolean;
   status: string;
   resourceType: string;
-  templateType: string;
+  /** Omitted for plain third-party services (backend rejects an empty TemplateType). */
+  templateType?: string;
 }
 
 /** Editable fields captured by the General Details tab. */

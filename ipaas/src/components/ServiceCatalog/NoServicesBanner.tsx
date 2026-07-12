@@ -20,26 +20,33 @@ import { Box, Button, Stack, Typography } from '@wso2/oxygen-ui';
 import { Plus } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
 
-const BANNER_SRC = `${import.meta.env.BASE_URL}assets/images/genai-services-banner.svg`;
+interface NoServicesBannerProps {
+  title: string;
+  description: string;
+  /** Illustration path (under the app base URL). */
+  bannerSrc: string;
+  ctaLabel?: string;
+  onCreate: () => void;
+}
 
-/** Empty-state hero for the GenAI Services page. Mirrors Devant's NoServiceBanner. */
-export default function NoGenAIServicesBanner({ onCreate }: { onCreate: () => void }): JSX.Element {
+/** Empty-state hero for a service-catalog list (GenAI / Third Party). Mirrors Devant's NoServiceBanner. */
+export default function NoServicesBanner({ title, description, bannerSrc, ctaLabel = 'Register Service', onCreate }: NoServicesBannerProps): JSX.Element {
   return (
-    <Stack direction={{ xs: 'column', md: 'row' }} alignItems="flex-start" justifyContent="start" gap={5} sx={{ pb: 6 }}>
-      <Stack gap={1.5} sx={{ maxWidth: 420, flexShrink: 0 }}>
+    <Stack direction={{ xs: 'column', md: 'row' }} alignItems="center" justifyContent="space-between" gap={5} sx={{ pb: 6 }}>
+      <Stack gap={1.5} sx={{ maxWidth: 520, flexShrink: 0 }}>
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
-          Bring your own AI models
+          {title}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Register GenAI services from providers like OpenAI, Azure OpenAI, Mistral AI, and Anthropic AI, then share their connections across your integrations.
+          {description}
         </Typography>
         <Box>
           <Button variant="contained" startIcon={<Plus size={20} />} onClick={onCreate} sx={{ mt: 1 }}>
-            Register Service
+            {ctaLabel}
           </Button>
         </Box>
       </Stack>
-      <Box component="img" src={BANNER_SRC} alt="GenAI services" sx={{ width: '100%', maxWidth: 720, height: 'auto' }} />
+      <Box component="img" src={bannerSrc} alt="" sx={{ width: '100%', maxWidth: 720, height: 'auto' }} />
     </Stack>
   );
 }

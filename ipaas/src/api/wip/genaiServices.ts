@@ -54,6 +54,24 @@ export function listGenaiServices(params: { query?: string; offset: number; limi
   return withScopeRetry(() => choreoClient.get<GenAiServiceListResponse>(`${SERVICES}?${qs.toString()}`));
 }
 
+/** Third-party marketplace services (own service definition, not templated). */
+export function listThirdPartyServices(params: { query?: string; offset: number; limit: number; projectId?: string }): Promise<GenAiServiceListResponse> {
+  const qs = new URLSearchParams({
+    networkVisibilityFilter: params.projectId ? 'project' : 'org',
+    isTemplated: 'false',
+    offset: String(params.offset),
+    limit: String(params.limit),
+    query: params.query ?? '',
+    sortBy: 'createdTime',
+    sortAscending: 'false',
+    isThirdParty: 'true',
+    aggregateByMajorVersion: 'false',
+    includeCreated: 'true',
+  });
+  if (params.projectId) qs.set('networkVisibilityprojectId', params.projectId);
+  return withScopeRetry(() => choreoClient.get<GenAiServiceListResponse>(`${SERVICES}?${qs.toString()}`));
+}
+
 /** GenAI provider options (Open AI, Azure Open AI, Mistral AI, Anthropic AI). */
 export function listProviderTemplates(): Promise<GenAiProviderTemplate[]> {
   return withScopeRetry(() => choreoClient.get<GenAiProviderTemplate[]>(`${TEMPLATES}/list?templateType=${encodeURIComponent(GENAI_TEMPLATE_TYPE)}`));

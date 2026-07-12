@@ -642,6 +642,7 @@ export interface PlatformServicesApi {
 // Org admin GenAI Services (internal-marketplace). wip-only for now; cloud/icp stubs throw.
 export interface GenaiServicesApi {
   listGenaiServices(params: { query?: string; offset: number; limit: number; projectId?: string }): Promise<GenAiServiceListResponse>;
+  listThirdPartyServices(params: { query?: string; offset: number; limit: number; projectId?: string }): Promise<GenAiServiceListResponse>;
   listProviderTemplates(): Promise<GenAiProviderTemplate[]>;
   getProviderTemplate(templateId: string): Promise<GenAiProviderTemplateDetail>;
   createGenaiService(request: CreateServiceRequest): Promise<CreateServiceResponse>;
