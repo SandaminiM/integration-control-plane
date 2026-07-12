@@ -26,6 +26,24 @@ import { REQUIRED_ERROR, validatePath, validatePort, type ProbeFormState } from 
 /** Colour the required-field asterisk red (Devant style). */
 const reqSx = { '& .MuiFormLabel-asterisk': { color: 'error.main' } } as const;
 
+/** The required numeric Port field shared by the HTTP GET and TCP probe forms. */
+function PortField({ value, onChange, onBlur, error }: { value: string; onChange: (value: string) => void; onBlur: () => void; error?: string }): JSX.Element {
+  return (
+    <TextField
+      label="Port"
+      required
+      size="small"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onBlur={onBlur}
+      inputProps={{ inputMode: 'numeric' }}
+      sx={{ width: 120, ...reqSx }}
+      error={!!error}
+      helperText={error ?? ' '}
+    />
+  );
+}
+
 interface ProbeConfigFieldsProps {
   kind: string;
   form: ProbeFormState;
@@ -63,18 +81,7 @@ export default function ProbeConfigFields({ kind, form, onChange }: ProbeConfigF
       {form.type === PROBE_TYPE.HTTP_GET && (
         <>
           <Stack direction="row" gap={2} sx={{ mb: 2 }}>
-            <TextField
-              label="Port"
-              required
-              size="small"
-              value={form.port}
-              onChange={(e) => onChange({ port: e.target.value })}
-              onBlur={touch('port')}
-              inputProps={{ inputMode: 'numeric' }}
-              sx={{ width: 120, ...reqSx }}
-              error={!!shownErr('port', validatePort(form.port))}
-              helperText={shownErr('port', validatePort(form.port)) ?? ' '}
-            />
+            <PortField value={form.port} onChange={(v) => onChange({ port: v })} onBlur={touch('port')} error={shownErr('port', validatePort(form.port))} />
             <TextField
               label="Path"
               required
@@ -125,20 +132,7 @@ export default function ProbeConfigFields({ kind, form, onChange }: ProbeConfigF
         </>
       )}
 
-      {form.type === PROBE_TYPE.TCP && (
-        <TextField
-          label="Port"
-          required
-          size="small"
-          value={form.port}
-          onChange={(e) => onChange({ port: e.target.value })}
-          onBlur={touch('port')}
-          inputProps={{ inputMode: 'numeric' }}
-          sx={{ width: 120, ...reqSx }}
-          error={!!shownErr('port', validatePort(form.port))}
-          helperText={shownErr('port', validatePort(form.port)) ?? ' '}
-        />
-      )}
+      {form.type === PROBE_TYPE.TCP && <PortField value={form.port} onChange={(v) => onChange({ port: v })} onBlur={touch('port')} error={shownErr('port', validatePort(form.port))} />}
 
       {form.type === PROBE_TYPE.EXEC && (
         <Box>

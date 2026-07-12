@@ -62,6 +62,7 @@ export default function StringArrayInput({ label, value, onChange, addLabel = 'A
             disabled={disabled}
             onChange={(e) => setAt(index, e.target.value)}
             sx={{ width: 200 }}
+            inputProps={{ 'aria-label': `${label} ${index + 1}` }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">

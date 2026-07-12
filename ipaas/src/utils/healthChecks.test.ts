@@ -17,7 +17,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { defaultProbeForm, formToProbe, hasProbe, isProbeFormValid, probeToForm, probeTypeLabel, validatePath, validatePort } from './healthChecks';
+import { defaultProbeForm, formToProbe, hasProbe, isProbeFormValid, probeToForm, probeTypeLabel, serializeProbeForWrite, validatePath, validatePort } from './healthChecks';
 import { PROBE_TYPE, type HCProbe } from '../types/healthChecks';
 
 const httpProbe: HCProbe = {
@@ -91,6 +91,38 @@ describe('isProbeFormValid', () => {
     expect(isProbeFormValid({ ...defaultProbeForm(), type: 'tcp', port: '9090' })).toBe(true);
     expect(isProbeFormValid({ ...defaultProbeForm(), type: 'tcp', port: '' })).toBe(false);
     expect(isProbeFormValid({ ...defaultProbeForm(), type: 'exec', command: [] })).toBe(true);
+  });
+});
+
+describe('serializeProbeForWrite', () => {
+  it('returns {} for an unset probe', () => {
+    expect(serializeProbeForWrite(undefined)).toEqual({});
+    expect(serializeProbeForWrite({ type: '', probe: {} as HCProbe['probe'] })).toEqual({});
+  });
+
+  it('preserves an untouched HTTP probe (port/path/headers/thresholds) on round-trip', () => {
+    const w = serializeProbeForWrite(httpProbe);
+    expect(w).not.toEqual({});
+    const p = (w as HCProbe).probe;
+    expect((w as HCProbe).type).toBe('httpGet');
+    expect(p.httpGet).toEqual({ path: '/test', port: 8080, httpHeaders: [{ name: 'k', value: 'v' }] });
+    expect(p.tcpSocket).toEqual({ port: 0 });
+    expect(p).toMatchObject({ failureThreshold: 3, successThreshold: 1, initialDelaySeconds: 10, periodSeconds: 30, timeoutSeconds: 10 });
+  });
+
+  it('preserves an untouched TCP probe port', () => {
+    const tcp: HCProbe = { type: 'tcp', probe: { failureThreshold: 3, initialDelaySeconds: 10, periodSeconds: 30, successThreshold: 1, timeoutSeconds: 10, tcpSocket: { port: 9090 } } };
+    const w = serializeProbeForWrite(tcp) as HCProbe;
+    expect(w.type).toBe('tcp');
+    expect(w.probe.tcpSocket).toEqual({ port: 9090 });
+    expect(w.probe.httpGet?.port).toBe(0);
+  });
+
+  it('re-encodes an exec probe command to base64 (API returns it decoded)', () => {
+    const exec: HCProbe = { type: 'exec', probe: { failureThreshold: 3, initialDelaySeconds: 10, periodSeconds: 30, successThreshold: 1, timeoutSeconds: 10, exec: { command: ['sh', '-c'] } } };
+    const w = serializeProbeForWrite(exec) as HCProbe;
+    expect(w.type).toBe('exec');
+    expect(w.probe.exec).toEqual({ command: ['c2g=', 'LWM='] });
   });
 });
 

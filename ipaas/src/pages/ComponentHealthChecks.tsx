@@ -16,13 +16,14 @@
  * under the License.
  */
 
-import { Alert, Box, CircularProgress, MenuItem, PageContent, PageTitle, Select } from '@wso2/oxygen-ui';
+import { Alert, Box, CircularProgress, PageContent, PageTitle } from '@wso2/oxygen-ui';
 import { Activity } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import EmptyListing from '../components/EmptyListing';
 import HealthCheckCard from '../components/HealthChecks/HealthCheckCard';
 import CreateHealthCheckStepper from '../components/HealthChecks/CreateHealthCheckStepper';
+import EnvironmentSelect from '../components/common/EnvironmentSelect';
 import ComingSoon from './ComingSoon';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { Permissions } from '../constants/permissions';
@@ -74,20 +75,7 @@ export default function ComponentHealthChecks({ org, project, component }: Compo
     return <ComingSoon title="Coming Soon" description="Health Checks configuration is currently under development." />;
   }
 
-  const envSelect = (
-    <Select
-      size="small"
-      value={environments.some((e) => e.id === envId) ? envId : ''}
-      onChange={(e) => setEnvId(e.target.value as string)}
-      inputProps={{ 'aria-label': 'Environment' }}
-      sx={{ fontSize: '0.8125rem', '& .MuiSelect-select': { py: 0.5, px: 1.5 }, minWidth: 140 }}>
-      {environments.map((e) => (
-        <MenuItem key={e.id} value={e.id}>
-          {e.name}
-        </MenuItem>
-      ))}
-    </Select>
-  );
+  const envSelect = <EnvironmentSelect environments={environments} value={envId} onChange={setEnvId} />;
 
   const notify = (type: 'success' | 'error', message: string): void => setAlert({ type, message });
 

@@ -16,9 +16,10 @@
  * under the License.
  */
 
-import { Alert, Box, CircularProgress, MenuItem, PageContent, PageTitle, Select } from '@wso2/oxygen-ui';
+import { Alert, Box, CircularProgress, PageContent, PageTitle } from '@wso2/oxygen-ui';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
+import EnvironmentSelect from '../components/common/EnvironmentSelect';
 import ContainerInfoCard from '../components/Containers/ContainerInfoCard';
 import ComingSoon from './ComingSoon';
 import { useAccessControl } from '../contexts/AccessControlContext';
@@ -70,20 +71,7 @@ export default function ComponentContainers({ org, project, component }: Compone
 
   const containers = release?.containers ?? [];
 
-  const envSelect = (
-    <Select
-      size="small"
-      value={environments.some((e) => e.id === envId) ? envId : ''}
-      onChange={(e) => setEnvId(e.target.value as string)}
-      inputProps={{ 'aria-label': 'Environment' }}
-      sx={{ fontSize: '0.8125rem', '& .MuiSelect-select': { py: 0.5, px: 1.5 }, minWidth: 140 }}>
-      {environments.map((e) => (
-        <MenuItem key={e.id} value={e.id}>
-          {e.name}
-        </MenuItem>
-      ))}
-    </Select>
-  );
+  const envSelect = <EnvironmentSelect environments={environments} value={envId} onChange={setEnvId} />;
 
   return (
     <Box>

@@ -22,7 +22,7 @@ import { useState, type JSX } from 'react';
 import ProbeConfigFields from './ProbeConfigFields';
 import ProbeSliderGroup, { type ProbeSliderValues } from './ProbeSliderGroup';
 import { useUpdateHealthCheck } from '../../hooks/useHealthChecks';
-import { probeToForm, formToProbe, isProbeFormValid, serializeProbeForWrite, hasProbe, type ProbeFormState } from '../../utils/healthChecks';
+import { DEFAULT_PORT, defaultProbeForm, probeToForm, formToProbe, isProbeFormValid, serializeProbeForWrite, hasProbe, type ProbeFormState } from '../../utils/healthChecks';
 import { PROBE_KIND, type HealthCheck, type ProbeKind, type WriteProbe } from '../../types/healthChecks';
 import type { ReleaseContainer } from '../../types/devopsConfigs';
 
@@ -39,14 +39,12 @@ interface ProbeFormProps {
 }
 
 export default function ProbeForm({ kind, healthCheck: hc, container, projectId, componentId, releaseId, onClose, onSaved, onError }: ProbeFormProps): JSX.Element {
-  const fallbackPort = container.ports?.[0]?.port ?? 8080;
+  const fallbackPort = container.ports?.[0]?.port ?? DEFAULT_PORT;
   const isLiveness = kind === PROBE_KIND.LIVENESS;
   const editedProbe = isLiveness ? hc.probes.liveness_probe : hc.probes.readiness_probe;
   const existed = hasProbe(editedProbe);
 
-  const [form, setForm] = useState<ProbeFormState>(() =>
-    existed ? probeToForm(editedProbe, fallbackPort) : { ...probeToForm({ type: 'httpGet', probe: { failureThreshold: 3, initialDelaySeconds: 10, periodSeconds: 30, successThreshold: 1, timeoutSeconds: 10 } }, fallbackPort) },
-  );
+  const [form, setForm] = useState<ProbeFormState>(() => (existed ? probeToForm(editedProbe, fallbackPort) : defaultProbeForm(fallbackPort)));
   const update = useUpdateHealthCheck(projectId);
 
   const patch = (p: Partial<ProbeFormState>): void => setForm((prev) => ({ ...prev, ...p }));

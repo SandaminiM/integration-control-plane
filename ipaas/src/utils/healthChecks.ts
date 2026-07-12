@@ -24,7 +24,7 @@ export const THRESHOLD_MARKS = [1, 3, 5, 7, 10];
 export const TIMING_MARKS = [5, 10, 15, 30, 60, 120, 180, 240, 300];
 export const TIMEOUT_MARKS = [1, 5, 10, 15, 30, 60];
 
-export const FAILURE = { min: 0, max: 10, marks: [0, ...THRESHOLD_MARKS] };
+export const FAILURE = { min: 1, max: 10, marks: THRESHOLD_MARKS };
 export const SUCCESS = { min: 1, max: 10, marks: THRESHOLD_MARKS };
 export const INITIAL_DELAY = { min: TIMING_MARKS[0], max: 300, marks: TIMING_MARKS };
 export const FREQUENCY = { min: TIMING_MARKS[2], max: 300, marks: TIMING_MARKS };

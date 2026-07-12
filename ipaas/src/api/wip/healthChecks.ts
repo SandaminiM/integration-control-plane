@@ -48,5 +48,5 @@ export async function updateHealthCheck(orgUuid: string, projectId: string, comp
 }
 
 export async function deleteHealthCheck(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string, healthCheckId: string): Promise<void> {
-  await choreoClient.delete<Wrapped<HealthCheck[]>>(`${containerHcPath(componentId, releaseId, containerId, healthCheckId)}?${dq(orgUuid, projectId)}`, {});
+  await choreoClient.delete<void>(`${containerHcPath(componentId, releaseId, containerId, healthCheckId)}?${dq(orgUuid, projectId)}`);
 }
