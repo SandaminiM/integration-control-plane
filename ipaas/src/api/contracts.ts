@@ -91,6 +91,7 @@ import type { EgressPolicy, EgressPolicyRequest } from '../types/egressPolicy';
 import type { AuthzRole, CreateAuthzRoleInput, UpdateAuthzRoleInput } from '../types/projectAuthz';
 import type { ByoiEndpointFileContents, CreateByoiComponentInput, CreateByoiComponentResult, DevopsVolume, DevopsVolumeMount, VolumeMountWriteData, VolumeWriteData } from '../types/tailscale';
 import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseDetails, SecretWriteData } from '../types/devopsConfigs';
+import type { ExternalCiToken } from '../types/externalCi';
 import type { CreateUrlMappingInput, CustomDomain, CustomDomainType, CustomUrlMapping } from '../types/customDomain';
 import type { OrgWorkflowConfig, WorkflowConfigRequest, WorkflowDefinition } from '../types/workflow';
 import type { Dataplane, IdentityProvider, IdentityProviderRequest, RoleGroupMappingResponse } from '../types/appSecurity';
@@ -456,6 +457,16 @@ export interface DevopsConfigsApi {
 }
 
 // ---------------------------------------------------------------------------
+// External CI
+// ---------------------------------------------------------------------------
+
+export interface ExternalCiApi {
+  getExternalCiTokens(orgUuid: string, projectId: string, componentId: string): Promise<ExternalCiToken[]>;
+  createExternalCiToken(orgUuid: string, projectId: string, componentId: string, tokenName: string): Promise<string>;
+  revokeExternalCiToken(orgUuid: string, projectId: string, componentId: string, tokenId: string): Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
 // Environments
 // ---------------------------------------------------------------------------
 
@@ -691,6 +702,7 @@ export interface AppApi {
   projectAuthz: ProjectAuthzApi;
   tailscale: TailscaleApi;
   devopsConfigs: DevopsConfigsApi;
+  externalCi: ExternalCiApi;
   customDomains: CustomDomainsApi;
   repository: RepositoryApi;
   samples: SamplesApi;

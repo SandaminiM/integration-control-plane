@@ -28,6 +28,11 @@ import type { DisplayType } from '../types/component';
  */
 export const GENERIC_SERVICE_TYPES = new Set(['ballerinaService', 'byocService', 'byoiService', 'miApiService', 'restApi', 'byocRestApi', 'miRestApi', 'buildRestApi', 'graphql', 'buildpackService']);
 
+/** Bring-Your-Own-Image components (deploy a pre-built image) — gated features like External CI apply. */
+export function isByoiComponent(displayType: string): boolean {
+  return displayType.startsWith('byoi');
+}
+
 export const SUPPORTED_DISPLAY_TYPES = new Set([
   'restApi',
   'manualTrigger',
@@ -40,6 +45,8 @@ export const SUPPORTED_DISPLAY_TYPES = new Set([
   'miCronjob',
   'miJob',
   'miWebhook',
+  'byocWebhook',
+  'buildpackWebhook',
   'ballerinaEventHandler',
   'ballerinaWebhook',
   'ballerinaFileIntegration',
@@ -78,6 +85,8 @@ export function getDisplayLabel(displayType: string, componentSubType: string | 
       return 'MCP Server';
     case 'tailscale':
       return 'Tailscale VPN';
+    case 'webhook':
+      return 'Webhook';
   }
   switch (displayType) {
     case 'ballerinaService':

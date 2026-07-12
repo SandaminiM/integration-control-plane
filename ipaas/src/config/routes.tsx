@@ -82,6 +82,7 @@ const ComponentDeploymentTracks = lazy(() => import('../pages/ComponentDeploymen
 const ComponentProxyVersions = lazy(() => import('../pages/ComponentProxyVersions'));
 const ComponentUrlSettings = lazy(() => import('../pages/ComponentUrlSettings'));
 const ComponentConfigs = lazy(() => import('../pages/ComponentConfigs'));
+const ComponentExternalCI = lazy(() => import('../pages/ComponentExternalCI'));
 const CdPipelineEditor = lazy(() => import('../pages/CdPipelineEditor'));
 const OrgSettings = lazy(() => import('../pages/OrgSettings'));
 const OnPremKeys = lazy(() => import('../pages/OnPremKeys'));
@@ -359,6 +360,10 @@ const routes: AppRoute[] = [
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/storage',
                 element: <ComingSoon title="Coming Soon" description="Storage management is currently under development." />,
+              },
+              {
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/external-ci',
+                element: createElement(withScope(ComponentExternalCI, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings',
