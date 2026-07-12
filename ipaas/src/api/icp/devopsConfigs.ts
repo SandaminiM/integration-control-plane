@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseDetails, SecretWriteData } from '../../types/devopsConfigs';
+import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, ContainerWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseContainer, ReleaseDetails, SecretWriteData } from '../../types/devopsConfigs';
 
 // Intentionally a stub (the standard icp-stub contract — see src/api/AGENTS.md).
 const ni = (name: string): never => {
@@ -24,6 +24,7 @@ const ni = (name: string): never => {
 };
 
 export const getReleaseById = (_orgUuid: string, _projectId: string, _componentId: string, _releaseId: string): Promise<ReleaseDetails> => ni('getReleaseById');
+export const updateContainer = (_orgUuid: string, _projectId: string, _componentId: string, _releaseId: string, _containerId: string, _data: ContainerWriteData): Promise<ReleaseContainer> => ni('updateContainer');
 export const getSecrets = (_orgUuid: string, _projectId: string, _environmentId: string): Promise<DevopsSecret[]> => ni('getSecrets');
 export const getSecretDetails = (_orgUuid: string, _projectId: string, _environmentId: string, _secretId: string): Promise<DevopsSecretDetails> => ni('getSecretDetails');
 export const createSecret = (_orgUuid: string, _projectId: string, _data: SecretWriteData): Promise<DevopsSecret> => ni('createSecret');

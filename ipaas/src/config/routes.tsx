@@ -82,6 +82,8 @@ const ComponentDeploymentTracks = lazy(() => import('../pages/ComponentDeploymen
 const ComponentProxyVersions = lazy(() => import('../pages/ComponentProxyVersions'));
 const ComponentUrlSettings = lazy(() => import('../pages/ComponentUrlSettings'));
 const ComponentConfigs = lazy(() => import('../pages/ComponentConfigs'));
+const ComponentContainers = lazy(() => import('../pages/ComponentContainers'));
+const ComponentHealthChecks = lazy(() => import('../pages/ComponentHealthChecks'));
 const CdPipelineEditor = lazy(() => import('../pages/CdPipelineEditor'));
 const OrgSettings = lazy(() => import('../pages/OrgSettings'));
 const OnPremKeys = lazy(() => import('../pages/OnPremKeys'));
@@ -338,7 +340,7 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/containers',
-                element: <ComingSoon title="Coming Soon" description="Containers management is currently under development." />,
+                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentContainers, ['components']))),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/configs',
@@ -346,7 +348,7 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/health-checks',
-                element: <ComingSoon title="Coming Soon" description="Health Checks configuration is currently under development." />,
+                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentHealthChecks, ['components']))),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/scaling',

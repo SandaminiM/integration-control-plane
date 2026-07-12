@@ -46,7 +46,7 @@
  */
 
 import { bff, items, q, seg, type ListResponse } from './_client';
-import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseContainer, ReleaseDetails, SecretWriteData } from '../../types/devopsConfigs';
+import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, ContainerWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseContainer, ReleaseDetails, SecretWriteData } from '../../types/devopsConfigs';
 
 // _orgUuid/_projectId are kept for devant contract parity where cloud does not
 // need them; cloud derives the org from the token and addresses everything by
@@ -211,6 +211,10 @@ export const getReleaseById = async (_orgUuid: string, _projectId: string, compo
   const containers: ReleaseContainer[] = env ? [{ ID: env, name: env, type: 'MAIN' }] : [];
   return { ID: releaseId, containers };
 };
+
+/** Container editing is a WIP-only devops surface; OpenChoreo has no equivalent BFF endpoint. */
+export const updateContainer = (_orgUuid: string, _projectId: string, _componentId: string, _releaseId: string, _containerId: string, _data: ContainerWriteData): Promise<ReleaseContainer> =>
+  Promise.reject(new Error('[cloud] devopsConfigs.updateContainer: not implemented'));
 
 // ── config maps / secrets = env-var groups (files have no env-scoped source) ───
 

@@ -90,7 +90,8 @@ import type { OnPremKey, OnPremKeySubscription } from '../types/onPremKey';
 import type { EgressPolicy, EgressPolicyRequest } from '../types/egressPolicy';
 import type { AuthzRole, CreateAuthzRoleInput, UpdateAuthzRoleInput } from '../types/projectAuthz';
 import type { ByoiEndpointFileContents, CreateByoiComponentInput, CreateByoiComponentResult, DevopsVolume, DevopsVolumeMount, VolumeMountWriteData, VolumeWriteData } from '../types/tailscale';
-import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseDetails, SecretWriteData } from '../types/devopsConfigs';
+import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, ContainerWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseContainer, ReleaseDetails, SecretWriteData } from '../types/devopsConfigs';
+import type { HealthCheck, HealthCheckWriteData } from '../types/healthChecks';
 import type { CreateUrlMappingInput, CustomDomain, CustomDomainType, CustomUrlMapping } from '../types/customDomain';
 import type { OrgWorkflowConfig, ReviewerDecisionRequest, WorkflowConfigRequest, WorkflowDefinition, WorkflowInstanceResponse, WorkflowReviewData } from '../types/workflow';
 import type { Dataplane, IdentityProvider, IdentityProviderRequest, RoleGroupMappingResponse } from '../types/appSecurity';
@@ -446,6 +447,7 @@ export interface TailscaleApi {
 
 export interface DevopsConfigsApi {
   getReleaseById(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<ReleaseDetails>;
+  updateContainer(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string, data: ContainerWriteData): Promise<ReleaseContainer>;
   getSecrets(orgUuid: string, projectId: string, environmentId: string): Promise<DevopsSecret[]>;
   getSecretDetails(orgUuid: string, projectId: string, environmentId: string, secretId: string): Promise<DevopsSecretDetails>;
   createSecret(orgUuid: string, projectId: string, data: SecretWriteData): Promise<DevopsSecret>;
@@ -460,6 +462,13 @@ export interface DevopsConfigsApi {
   mountConfig(orgUuid: string, projectId: string, componentId: string, data: ConfigMountWriteData): Promise<DevopsConfigMount>;
   updateConfigMount(orgUuid: string, projectId: string, path: ConfigMountPath, data: Record<string, unknown>): Promise<DevopsConfigMount>;
   removeConfigMount(orgUuid: string, projectId: string, path: ConfigMountPath): Promise<void>;
+}
+
+export interface HealthChecksApi {
+  getHealthChecks(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<HealthCheck[]>;
+  createHealthCheck(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string, data: HealthCheckWriteData): Promise<HealthCheck>;
+  updateHealthCheck(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string, healthCheckId: string, data: HealthCheckWriteData): Promise<HealthCheck>;
+  deleteHealthCheck(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string, healthCheckId: string): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -723,6 +732,7 @@ export interface AppApi {
   projectAuthz: ProjectAuthzApi;
   tailscale: TailscaleApi;
   devopsConfigs: DevopsConfigsApi;
+  healthChecks: HealthChecksApi;
   customDomains: CustomDomainsApi;
   repository: RepositoryApi;
   samples: SamplesApi;
