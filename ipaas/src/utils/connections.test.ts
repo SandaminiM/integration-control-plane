@@ -17,7 +17,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { buildChoreoConnectionRequest, buildThirdPartyConnectionRequest, buildVisibilities, projectConnectionsBase } from './connections';
+import { buildChoreoConnectionRequest, buildThirdPartyConnectionRequest, buildVisibilities, componentConnectionsBase, projectConnectionsBase } from './connections';
 import type { ConnectionSchemaEntry } from '../types/connections';
 
 const ORG = 'org-uuid-1';
@@ -135,5 +135,11 @@ describe('buildThirdPartyConnectionRequest', () => {
 describe('projectConnectionsBase', () => {
   it('builds the project connections URL', () => {
     expect(projectConnectionsBase('acme', 'store')).toBe('/organizations/acme/projects/store/admin/connections');
+  });
+});
+
+describe('componentConnectionsBase', () => {
+  it('builds the component connections URL', () => {
+    expect(componentConnectionsBase('acme', 'store', 'checkout')).toBe('/organizations/acme/projects/store/components/checkout/admin/connections');
   });
 });

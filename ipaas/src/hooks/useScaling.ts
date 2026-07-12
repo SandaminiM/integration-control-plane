@@ -92,7 +92,7 @@ export function useUpdateHpa(projectId: string) {
   const orgUuid = useOrgUuid();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (vars: { path: ScalingPath; hpaId: string; data: HpaWriteData & { ID: string } }) => updateHpa(orgUuid!, projectId, vars.path, vars.hpaId, vars.data),
+    mutationFn: (vars: { path: ScalingPath; hpaId: string; data: HpaWriteData }) => updateHpa(orgUuid!, projectId, vars.path, vars.hpaId, vars.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT] }),
   });
 }

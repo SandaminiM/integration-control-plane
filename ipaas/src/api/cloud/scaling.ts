@@ -28,7 +28,7 @@ export const getHpa = (_orgUuid: string, _projectId: string, _componentId: strin
 export const setScalingMethod = (_orgUuid: string, _projectId: string, _path: ScalingPath, _data: ScalingMethodToggle): Promise<void> => ni('setScalingMethod');
 export const updateHttpScaler = (_orgUuid: string, _projectId: string, _path: ScalingPath, _data: HttpScalerWriteData): Promise<HttpScaler> => ni('updateHttpScaler');
 export const createHpa = (_orgUuid: string, _projectId: string, _path: ScalingPath, _data: HpaWriteData): Promise<Hpa> => ni('createHpa');
-export const updateHpa = (_orgUuid: string, _projectId: string, _path: ScalingPath, _hpaId: string, _data: HpaWriteData & { ID: string }): Promise<Hpa> => ni('updateHpa');
+export const updateHpa = (_orgUuid: string, _projectId: string, _path: ScalingPath, _hpaId: string, _data: HpaWriteData): Promise<Hpa> => ni('updateHpa');
 export const createHpaMetric = (_orgUuid: string, _projectId: string, _path: ScalingPath, _hpaId: string, _data: HpaMetric): Promise<HpaMetric> => ni('createHpaMetric');
 export const updateHpaMetric = (_orgUuid: string, _projectId: string, _path: ScalingPath, _hpaId: string, _metricId: string, _data: HpaMetric): Promise<HpaMetric> => ni('updateHpaMetric');
 export const deleteHpaMetric = (_orgUuid: string, _projectId: string, _path: ScalingPath, _hpaId: string, _metricId: string): Promise<void> => ni('deleteHpaMetric');

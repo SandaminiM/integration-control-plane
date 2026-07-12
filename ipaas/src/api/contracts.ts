@@ -714,7 +714,7 @@ export interface ScalingApi {
   setScalingMethod(orgUuid: string, projectId: string, path: ScalingPath, data: ScalingMethodToggle): Promise<void>;
   updateHttpScaler(orgUuid: string, projectId: string, path: ScalingPath, data: HttpScalerWriteData): Promise<HttpScaler>;
   createHpa(orgUuid: string, projectId: string, path: ScalingPath, data: HpaWriteData): Promise<Hpa>;
-  updateHpa(orgUuid: string, projectId: string, path: ScalingPath, hpaId: string, data: HpaWriteData & { ID: string }): Promise<Hpa>;
+  updateHpa(orgUuid: string, projectId: string, path: ScalingPath, hpaId: string, data: HpaWriteData): Promise<Hpa>;
   createHpaMetric(orgUuid: string, projectId: string, path: ScalingPath, hpaId: string, data: HpaMetric): Promise<HpaMetric>;
   updateHpaMetric(orgUuid: string, projectId: string, path: ScalingPath, hpaId: string, metricId: string, data: HpaMetric): Promise<HpaMetric>;
   deleteHpaMetric(orgUuid: string, projectId: string, path: ScalingPath, hpaId: string, metricId: string): Promise<void>;

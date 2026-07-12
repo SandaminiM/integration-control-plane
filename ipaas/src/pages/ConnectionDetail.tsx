@@ -39,10 +39,14 @@ function CopyButton({ value }: { value: string }): JSX.Element {
       <IconButton
         size="small"
         aria-label="Copy value"
-        onClick={() => {
-          navigator.clipboard?.writeText(value);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1500);
+        onClick={async () => {
+          try {
+            await navigator.clipboard?.writeText(value);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          } catch {
+            // clipboard unavailable or denied — leave the button in its default state
+          }
         }}>
         {copied ? <Check size={14} /> : <Copy size={14} />}
       </IconButton>
@@ -83,7 +87,7 @@ function ConfigRow({ entry }: { entry: ConfigKeyEntry }): JSX.Element {
           {revealed ? <EyeOff size={14} /> : <Eye size={14} />}
         </IconButton>
       )}
-      {!!entry.value && <CopyButton value={entry.value} />}
+      {!!entry.value && (!entry.isSensitive || revealed) && <CopyButton value={entry.value} />}
     </Stack>
   );
 }

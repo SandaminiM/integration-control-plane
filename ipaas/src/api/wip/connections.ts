@@ -80,7 +80,7 @@ export function listConnectionCatalog(params: ListCatalogParams): Promise<Connec
 export async function getConnectionServiceIdl(serviceId: string): Promise<ConnectionServiceIdl> {
   const raw = await withScopeRetry(() => choreoClient.get<{ content: unknown; idlType?: string; environmentId?: string }>(`${MARKETPLACE}/services/${encodeURIComponent(serviceId)}/idl`));
   return {
-    content: typeof raw.content === 'string' ? raw.content : JSON.stringify(raw.content ?? '', null, 2),
+    content: raw.content == null ? '' : typeof raw.content === 'string' ? raw.content : JSON.stringify(raw.content, null, 2),
     idlType: raw.idlType,
     environmentId: raw.environmentId,
   };

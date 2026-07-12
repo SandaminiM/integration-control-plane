@@ -17,7 +17,7 @@
  */
 
 import { Box, Button, CircularProgress, FormControlLabel, Slider, Stack, Switch, Typography } from '@wso2/oxygen-ui';
-import { useState, type JSX } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 import { useCreateHpa, useHpaMetricMutations, useUpdateHpa } from '../../hooks/useScaling';
 import { CPU_THRESHOLD, MEMORY_THRESHOLD } from '../../constants/scaling';
 import RangeInput from './RangeInput';
@@ -91,6 +91,16 @@ export default function HpaConfig({ orgUuid, projectId, path, version, maxReplic
   const [memValue, setMemValue] = useState(memMetric ? Number(memMetric.rule.resource.value) : MEMORY_THRESHOLD.default);
   const [submitting, setSubmitting] = useState(false);
 
+  // Resync when the saved HPA / its metrics change after a refetch.
+  useEffect(() => {
+    setMin(hpa?.min ?? 1);
+    setMax(hpa?.max ?? 1);
+    setCpuEnabled(!!cpuMetric);
+    setCpuValue(cpuMetric ? Number(cpuMetric.rule.resource.value) : CPU_THRESHOLD.default);
+    setMemEnabled(!!memMetric);
+    setMemValue(memMetric ? Number(memMetric.rule.resource.value) : MEMORY_THRESHOLD.default);
+  }, [hpa]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const syncMetric = async (hpaId: string, name: MetricResource, enabled: boolean, value: number, existing?: HpaMetric) => {
     if (enabled && existing?.ID) await metricMut.update.mutateAsync({ path, hpaId, metricId: existing.ID, data: buildMetric(name, value) });
     else if (enabled) await metricMut.create.mutateAsync({ path, hpaId, data: buildMetric(name, value) });
@@ -101,7 +111,7 @@ export default function HpaConfig({ orgUuid, projectId, path, version, maxReplic
     setSubmitting(true);
     try {
       const body = { organization_id: orgUuid, project_id: projectId, version, app_environment_id: path.releaseId, min, max };
-      const saved = hpa ? await updateHpa.mutateAsync({ path, hpaId: hpa.ID, data: { ...body, ID: hpa.ID } }) : await createHpa.mutateAsync({ path, data: body });
+      const saved = hpa ? await updateHpa.mutateAsync({ path, hpaId: hpa.ID, data: body }) : await createHpa.mutateAsync({ path, data: body });
       await syncMetric(saved.ID, 'cpu', cpuEnabled, cpuValue, cpuMetric);
       await syncMetric(saved.ID, 'memory', memEnabled, memValue, memMetric);
       onSaved('Scaling configuration saved.');

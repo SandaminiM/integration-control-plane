@@ -17,7 +17,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { buildVolumeCreatePayload, combineVolumesAndMounts, volumeTypeLabel } from './storage';
+import { buildVolumeCreatePayload, combineVolumesAndMounts, validateMountPath, validateVolumeName, volumeTypeLabel } from './storage';
 import { VolumeFormType } from '../types/storage';
 import type { Volume, VolumeMount } from '../types/storage';
 
@@ -68,5 +68,35 @@ describe('combineVolumesAndMounts', () => {
     const rows = combineVolumesAndMounts([vol('b', 'other')], [mount('m2', 'b')], 'rel');
     expect(rows).toHaveLength(1);
     expect(rows[0].volume.ID).toBe('b');
+  });
+});
+
+describe('validateVolumeName', () => {
+  it('accepts valid k8s-style names', () => {
+    expect(validateVolumeName('my-vol')).toBeUndefined();
+    expect(validateVolumeName('a1')).toBeUndefined();
+  });
+  it('requires a value', () => {
+    expect(validateVolumeName('   ')).toBeDefined();
+  });
+  it('rejects >50 chars', () => {
+    expect(validateVolumeName('a'.repeat(50))).toBeUndefined();
+    expect(validateVolumeName('a'.repeat(51))).toBeDefined();
+  });
+  it('rejects invalid formats (uppercase, leading digit, trailing hyphen)', () => {
+    expect(validateVolumeName('MyVol')).toBeDefined();
+    expect(validateVolumeName('1vol')).toBeDefined();
+    expect(validateVolumeName('vol-')).toBeDefined();
+  });
+});
+
+describe('validateMountPath', () => {
+  it('accepts absolute paths', () => {
+    expect(validateMountPath('/data')).toBeUndefined();
+    expect(validateMountPath('/tmp/cache')).toBeUndefined();
+  });
+  it('requires a value and a leading slash', () => {
+    expect(validateMountPath('')).toBeDefined();
+    expect(validateMountPath('data')).toBeDefined();
   });
 });

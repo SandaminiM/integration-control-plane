@@ -84,6 +84,7 @@ export default function VolumeWizard({ ctx, existing, onBack, onSaved, onError }
   const [drafts, setDrafts] = useState<VolumeMountDraft[]>(() => (existing?.mounts ?? []).map((m) => ({ id: m.ID, containerId: m.container_id, mountPath: m.MountPath, readOnly: m.ReadOnly, existing: true })));
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const [mountPath, setMountPath] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [nameTouched, setNameTouched] = useState(false);
   const [mountTouched, setMountTouched] = useState(false);
 
@@ -94,23 +95,32 @@ export default function VolumeWizard({ ctx, existing, onBack, onSaved, onError }
   const toggleAccessMode = (mode: VolumeAccessMode) => setAccessModes((prev) => (prev.includes(mode) ? prev.filter((m) => m !== mode) : [...prev, mode]));
 
   const mountFormatError = validateMountPath(mountPath);
-  const duplicateMount = !mountFormatError && drafts.some((d) => d.mountPath === mountPath.trim());
+  const duplicateMount = !mountFormatError && drafts.some((d) => d.id !== editingId && d.mountPath === mountPath.trim());
   const mountError = mountFormatError ?? (duplicateMount ? 'This mount path is already added' : undefined);
   const canAddMount = !mountError;
 
   const addMount = () => {
     if (!canAddMount) return;
-    setDrafts((prev) => [...prev, { id: `new-${draftId.current++}`, containerId: ctx.containerId, mountPath: mountPath.trim(), readOnly: false }]);
+    const path = mountPath.trim();
+    // Editing an existing row updates it in place (keeps its id/`existing`), so submitEdit issues a
+    // single updateMount instead of delete+create.
+    if (editingId) setDrafts((prev) => prev.map((d) => (d.id === editingId ? { ...d, mountPath: path } : d)));
+    else setDrafts((prev) => [...prev, { id: `new-${draftId.current++}`, containerId: ctx.containerId, mountPath: path, readOnly: false }]);
+    setEditingId(null);
     setMountPath('');
     setMountTouched(false);
   };
 
   const editMount = (draft: VolumeMountDraft) => {
     setMountPath(draft.mountPath);
-    removeMount(draft);
+    setEditingId(draft.id);
   };
 
   const removeMount = (draft: VolumeMountDraft) => {
+    if (draft.id === editingId) {
+      setEditingId(null);
+      setMountPath('');
+    }
     if (draft.existing) setDeletedIds((prev) => [...prev, draft.id]);
     setDrafts((prev) => prev.filter((d) => d.id !== draft.id));
   };
@@ -129,9 +139,7 @@ export default function VolumeWizard({ ctx, existing, onBack, onSaved, onError }
         pvc: isPvc ? { storageClassName, capacityGi, accessModes } : undefined,
       }),
     );
-    for (const draft of drafts) {
-      await createMount.mutateAsync({ path: mountPathBase, data: { app_volume_id: volume.ID, mountPath: draft.mountPath, readOnly: draft.readOnly } });
-    }
+    await Promise.all(drafts.map((draft) => createMount.mutateAsync({ path: mountPathBase, data: { app_volume_id: volume.ID, mountPath: draft.mountPath, readOnly: draft.readOnly } })));
   };
 
   const submitEdit = async () => {

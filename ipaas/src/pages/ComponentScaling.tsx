@@ -26,6 +26,7 @@ import HpaConfig from '../components/Scaling/HpaConfig';
 import ReplicasTable from '../components/Scaling/ReplicasTable';
 import ComingSoon from './ComingSoon';
 import { Permissions } from '../constants/permissions';
+import { GENERIC_SERVICE_TYPES } from '../constants/integrations';
 import { CLOUD_DP_MAX_REPLICAS, HPA_CARD, SCALE_TO_ZERO_CARD } from '../constants/scaling';
 import { isScalingEnabled, useHpa, useHttpScaler, useScalingState, useSetScalingMethod } from '../hooks/useScaling';
 import { useComponentByHandler } from '../hooks/useComponents';
@@ -132,6 +133,15 @@ export default function ComponentScaling({ org, project, component }: ComponentS
           <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
         ) : !comp ? (
           <Alert severity="error">Integration not found</Alert>
+        ) : !GENERIC_SERVICE_TYPES.has(comp.displayType) ? (
+          <>
+            <PageTitle>
+              <PageTitle.Header>Scaling</PageTitle.Header>
+            </PageTitle>
+            <Alert severity="info" sx={{ mt: 1 }}>
+              Scaling isn&apos;t available for this integration type.
+            </Alert>
+          </>
         ) : !releaseId || !containerId ? (
           <>
             <PageTitle>
@@ -154,13 +164,13 @@ export default function ComponentScaling({ org, project, component }: ComponentS
             )}
 
             <Stack direction={{ xs: 'column', md: 'row' }} gap={2} sx={{ mb: 3 }}>
-              <ScaleMethodCard title={SCALE_TO_ZERO_CARD.title} description={SCALE_TO_ZERO_CARD.description} selected={currentMethod === ScalingMethod.ScaleToZero} onSelect={() => onSelectMethod(ScalingMethod.ScaleToZero)} />
-              <ScaleMethodCard title={HPA_CARD.title} description={HPA_CARD.description} selected={currentMethod === ScalingMethod.HPA} onSelect={() => onSelectMethod(ScalingMethod.HPA)} />
+              <ScaleMethodCard title={SCALE_TO_ZERO_CARD.title} description={SCALE_TO_ZERO_CARD.description} selected={currentMethod === ScalingMethod.ScaleToZero} disabled={!canManage} onSelect={() => onSelectMethod(ScalingMethod.ScaleToZero)} />
+              <ScaleMethodCard title={HPA_CARD.title} description={HPA_CARD.description} selected={currentMethod === ScalingMethod.HPA} disabled={!canManage} onSelect={() => onSelectMethod(ScalingMethod.HPA)} />
             </Stack>
 
             {currentMethod === ScalingMethod.ScaleToZero && (
               <Alert severity="info" sx={{ mb: 3 }}>
-                Please refer the documentation to troubleshoot your scaled-to-zero integration.
+                Please refer to the documentation to troubleshoot your scaled-to-zero integration.
               </Alert>
             )}
 

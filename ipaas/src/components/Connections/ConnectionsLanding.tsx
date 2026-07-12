@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, Card, CardActionArea, CardContent, CircularProgress, Grid, PageContent, PageTitle, Stack, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Card, CardActionArea, CardContent, CircularProgress, Grid, PageContent, PageTitle, Stack, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
 import { useNavigate } from 'react-router';
 import { useConnections } from '../../hooks/useConnections';
@@ -43,13 +43,23 @@ interface ConnectionsLandingProps {
  */
 export default function ConnectionsLanding({ projectId, componentId, base }: ConnectionsLandingProps): JSX.Element {
   const navigate = useNavigate();
-  const { data: connections, isLoading } = useConnections({ projectId, componentId });
+  const { data: connections, isLoading, isError, refetch } = useConnections({ projectId, componentId });
   const goCreate = (tab?: 'services' | 'databases' | 'storage') => navigate(tab ? `${base}/new?tab=${tab}` : `${base}/new`);
 
   if (isLoading && projectId) {
     return (
       <PageContent>
         <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+      </PageContent>
+    );
+  }
+
+  if (isError) {
+    return (
+      <PageContent>
+        <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => refetch()}>Retry</Button>}>
+          Failed to load connections.
+        </Alert>
       </PageContent>
     );
   }

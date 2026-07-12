@@ -85,8 +85,8 @@ export async function createHpa(orgUuid: string, projectId: string, path: Scalin
   return res.data;
 }
 
-export async function updateHpa(orgUuid: string, projectId: string, path: ScalingPath, hpaId: string, data: HpaWriteData & { ID: string }): Promise<Hpa> {
-  const res = await choreoClient.put<Wrapped<Hpa>>(`${releaseBase(path.componentId, path.releaseId)}/hpa/${encodeURIComponent(hpaId)}?${dq(orgUuid, projectId)}`, data);
+export async function updateHpa(orgUuid: string, projectId: string, path: ScalingPath, hpaId: string, data: HpaWriteData): Promise<Hpa> {
+  const res = await choreoClient.put<Wrapped<Hpa>>(`${releaseBase(path.componentId, path.releaseId)}/hpa/${encodeURIComponent(hpaId)}?${dq(orgUuid, projectId)}`, { ...data, ID: hpaId });
   return res.data;
 }
 
