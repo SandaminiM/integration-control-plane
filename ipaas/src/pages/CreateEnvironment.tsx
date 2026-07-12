@@ -95,7 +95,13 @@ export default function CreateEnvironment(scope: OrgScope): JSX.Element {
           {loadingDataPlanes ? (
             <CircularProgress size={20} />
           ) : dataPlanesError ? (
-            <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => refetchDataPlanes()}>Retry</Button>}>
+            <Alert
+              severity="error"
+              action={
+                <Button color="inherit" size="small" onClick={() => refetchDataPlanes()}>
+                  Retry
+                </Button>
+              }>
               Failed to load data planes.
             </Alert>
           ) : (

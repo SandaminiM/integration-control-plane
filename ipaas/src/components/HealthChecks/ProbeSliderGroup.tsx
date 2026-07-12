@@ -55,14 +55,46 @@ export default function ProbeSliderGroup({ values, showSuccess, viewMode, disabl
       </Grid>
       {showSuccess && (
         <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-          <PresetSlider label="Success threshold after first failure" value={values.successThreshold} min={SUCCESS.min} max={SUCCESS.max} marks={SUCCESS.marks} viewMode={viewMode} disabled={disabled} description={desc?.success} onChange={(v) => onChange?.('successThreshold', v)} />
+          <PresetSlider
+            label="Success threshold after first failure"
+            value={values.successThreshold}
+            min={SUCCESS.min}
+            max={SUCCESS.max}
+            marks={SUCCESS.marks}
+            viewMode={viewMode}
+            disabled={disabled}
+            description={desc?.success}
+            onChange={(v) => onChange?.('successThreshold', v)}
+          />
         </Grid>
       )}
       <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-        <PresetSlider label="Delay before initial probe" unit="s" value={values.initialDelaySeconds} min={INITIAL_DELAY.min} max={INITIAL_DELAY.max} marks={INITIAL_DELAY.marks} viewMode={viewMode} disabled={disabled} description={desc?.delay} onChange={(v) => onChange?.('initialDelaySeconds', v)} />
+        <PresetSlider
+          label="Delay before initial probe"
+          unit="s"
+          value={values.initialDelaySeconds}
+          min={INITIAL_DELAY.min}
+          max={INITIAL_DELAY.max}
+          marks={INITIAL_DELAY.marks}
+          viewMode={viewMode}
+          disabled={disabled}
+          description={desc?.delay}
+          onChange={(v) => onChange?.('initialDelaySeconds', v)}
+        />
       </Grid>
       <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-        <PresetSlider label="Probe frequency" unit="s" value={values.periodSeconds} min={FREQUENCY.min} max={FREQUENCY.max} marks={FREQUENCY.marks} viewMode={viewMode} disabled={disabled} description={desc?.frequency} onChange={(v) => onChange?.('periodSeconds', v)} />
+        <PresetSlider
+          label="Probe frequency"
+          unit="s"
+          value={values.periodSeconds}
+          min={FREQUENCY.min}
+          max={FREQUENCY.max}
+          marks={FREQUENCY.marks}
+          viewMode={viewMode}
+          disabled={disabled}
+          description={desc?.frequency}
+          onChange={(v) => onChange?.('periodSeconds', v)}
+        />
       </Grid>
       <Grid size={{ xs: 12, md: 6, lg: 4 }}>
         <PresetSlider label="Timeout" unit="s" value={values.timeoutSeconds} min={TIMEOUT.min} max={TIMEOUT.max} marks={TIMEOUT.marks} viewMode={viewMode} disabled={disabled} description={desc?.timeout} onChange={(v) => onChange?.('timeoutSeconds', v)} />

@@ -68,7 +68,7 @@ export function milliToCpu(milli: number): number {
 
 /** CPU (display) → milli-CPU (wire), rounded to the CPU step. */
 export function cpuToMilli(cpu: number): number {
-  return Math.round((cpu + Number.EPSILON) * 100) / 100 * 1000;
+  return (Math.round((cpu + Number.EPSILON) * 100) / 100) * 1000;
 }
 
 /** The editable form state for a container. */

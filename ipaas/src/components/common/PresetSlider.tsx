@@ -52,17 +52,7 @@ export default function PresetSlider({ label, value, min, max, marks, unit = '',
         </Typography>
       </Stack>
       <Box sx={{ px: 1 }}>
-        <Slider
-          value={value}
-          min={min}
-          max={max}
-          step={null}
-          marks={marks.map((v) => ({ value: v }))}
-          disabled={disabled || viewMode}
-          onChange={(_e, v) => onChange?.(v as number)}
-          valueLabelDisplay={viewMode ? 'off' : 'auto'}
-          aria-label={label}
-        />
+        <Slider value={value} min={min} max={max} step={null} marks={marks.map((v) => ({ value: v }))} disabled={disabled || viewMode} onChange={(_e, v) => onChange?.(v as number)} valueLabelDisplay={viewMode ? 'off' : 'auto'} aria-label={label} />
       </Box>
       {description && !viewMode && (
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>

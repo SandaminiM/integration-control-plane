@@ -49,9 +49,7 @@ export default function StringArrayInput({ label, value, onChange, addLabel = 'A
       <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 0.5 }}>
         {label}
       </Typography>
-      <Box
-        component="pre"
-        sx={{ m: 0, mb: 1.5, px: 1.5, py: 1, bgcolor: 'action.hover', borderRadius: 1, fontSize: '0.8125rem', fontFamily: 'monospace', color: 'text.secondary', overflowX: 'auto' }}>
+      <Box component="pre" sx={{ m: 0, mb: 1.5, px: 1.5, py: 1, bgcolor: 'action.hover', borderRadius: 1, fontSize: '0.8125rem', fontFamily: 'monospace', color: 'text.secondary', overflowX: 'auto' }}>
         {JSON.stringify(value)}
       </Box>
       <Stack direction="row" flexWrap="wrap" alignItems="center" gap={1.5}>

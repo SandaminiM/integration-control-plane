@@ -28,8 +28,7 @@ function dq(orgUuid: string, projectId: string): string {
   return new URLSearchParams({ organization_id: orgUuid, project_id: projectId }).toString();
 }
 
-const releasePath = (componentId: string, releaseId: string): string =>
-  `${BASE}/components/${encodeURIComponent(componentId)}/release/${encodeURIComponent(releaseId)}`;
+const releasePath = (componentId: string, releaseId: string): string => `${BASE}/components/${encodeURIComponent(componentId)}/release/${encodeURIComponent(releaseId)}`;
 const containerHcPath = (componentId: string, releaseId: string, containerId: string, healthCheckId?: string): string =>
   `${releasePath(componentId, releaseId)}/container/${encodeURIComponent(containerId)}/health-check${healthCheckId ? `/${encodeURIComponent(healthCheckId)}` : ''}`;
 

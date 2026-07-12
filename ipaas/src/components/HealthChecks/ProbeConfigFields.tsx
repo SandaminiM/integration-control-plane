@@ -63,14 +63,56 @@ export default function ProbeConfigFields({ kind, form, onChange }: ProbeConfigF
       {form.type === PROBE_TYPE.HTTP_GET && (
         <>
           <Stack direction="row" gap={2} sx={{ mb: 2 }}>
-            <TextField label="Port" required size="small" value={form.port} onChange={(e) => onChange({ port: e.target.value })} onBlur={touch('port')} inputProps={{ inputMode: 'numeric' }} sx={{ width: 120, ...reqSx }} error={!!shownErr('port', validatePort(form.port))} helperText={shownErr('port', validatePort(form.port)) ?? ' '} />
-            <TextField label="Path" required size="small" placeholder="Eg. /healthz" value={form.path} onChange={(e) => onChange({ path: e.target.value })} onBlur={touch('path')} sx={{ flex: 1, ...reqSx }} error={!!shownErr('path', validatePath(form.path))} helperText={shownErr('path', validatePath(form.path)) ?? ' '} />
+            <TextField
+              label="Port"
+              required
+              size="small"
+              value={form.port}
+              onChange={(e) => onChange({ port: e.target.value })}
+              onBlur={touch('port')}
+              inputProps={{ inputMode: 'numeric' }}
+              sx={{ width: 120, ...reqSx }}
+              error={!!shownErr('port', validatePort(form.port))}
+              helperText={shownErr('port', validatePort(form.port)) ?? ' '}
+            />
+            <TextField
+              label="Path"
+              required
+              size="small"
+              placeholder="Eg. /healthz"
+              value={form.path}
+              onChange={(e) => onChange({ path: e.target.value })}
+              onBlur={touch('path')}
+              sx={{ flex: 1, ...reqSx }}
+              error={!!shownErr('path', validatePath(form.path))}
+              helperText={shownErr('path', validatePath(form.path)) ?? ' '}
+            />
           </Stack>
           <Stack gap={1.5} sx={{ mb: 1.5 }}>
             {form.httpHeaders.map((h, i) => (
               <Stack key={i} direction="row" gap={1.5} alignItems="flex-start">
-                <TextField label="Header Key" required size="small" value={h.name} onChange={(e) => setHeaders(form.httpHeaders.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} onBlur={touch(`hk${i}`)} sx={{ flex: 1, ...reqSx }} error={!!shownErr(`hk${i}`, h.name.trim() === '' ? REQUIRED_ERROR : undefined)} helperText={shownErr(`hk${i}`, h.name.trim() === '' ? REQUIRED_ERROR : undefined) ?? ' '} />
-                <TextField label="Header Value" required size="small" value={h.value} onChange={(e) => setHeaders(form.httpHeaders.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)))} onBlur={touch(`hv${i}`)} sx={{ flex: 1, ...reqSx }} error={!!shownErr(`hv${i}`, h.value.trim() === '' ? REQUIRED_ERROR : undefined)} helperText={shownErr(`hv${i}`, h.value.trim() === '' ? REQUIRED_ERROR : undefined) ?? ' '} />
+                <TextField
+                  label="Header Key"
+                  required
+                  size="small"
+                  value={h.name}
+                  onChange={(e) => setHeaders(form.httpHeaders.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
+                  onBlur={touch(`hk${i}`)}
+                  sx={{ flex: 1, ...reqSx }}
+                  error={!!shownErr(`hk${i}`, h.name.trim() === '' ? REQUIRED_ERROR : undefined)}
+                  helperText={shownErr(`hk${i}`, h.name.trim() === '' ? REQUIRED_ERROR : undefined) ?? ' '}
+                />
+                <TextField
+                  label="Header Value"
+                  required
+                  size="small"
+                  value={h.value}
+                  onChange={(e) => setHeaders(form.httpHeaders.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)))}
+                  onBlur={touch(`hv${i}`)}
+                  sx={{ flex: 1, ...reqSx }}
+                  error={!!shownErr(`hv${i}`, h.value.trim() === '' ? REQUIRED_ERROR : undefined)}
+                  helperText={shownErr(`hv${i}`, h.value.trim() === '' ? REQUIRED_ERROR : undefined) ?? ' '}
+                />
                 <IconButton aria-label={`Remove header ${i + 1}`} sx={{ mt: 0.5 }} onClick={() => setHeaders(form.httpHeaders.filter((_, j) => j !== i))}>
                   <X size={16} />
                 </IconButton>
@@ -83,7 +125,20 @@ export default function ProbeConfigFields({ kind, form, onChange }: ProbeConfigF
         </>
       )}
 
-      {form.type === PROBE_TYPE.TCP && <TextField label="Port" required size="small" value={form.port} onChange={(e) => onChange({ port: e.target.value })} onBlur={touch('port')} inputProps={{ inputMode: 'numeric' }} sx={{ width: 120, ...reqSx }} error={!!shownErr('port', validatePort(form.port))} helperText={shownErr('port', validatePort(form.port)) ?? ' '} />}
+      {form.type === PROBE_TYPE.TCP && (
+        <TextField
+          label="Port"
+          required
+          size="small"
+          value={form.port}
+          onChange={(e) => onChange({ port: e.target.value })}
+          onBlur={touch('port')}
+          inputProps={{ inputMode: 'numeric' }}
+          sx={{ width: 120, ...reqSx }}
+          error={!!shownErr('port', validatePort(form.port))}
+          helperText={shownErr('port', validatePort(form.port)) ?? ' '}
+        />
+      )}
 
       {form.type === PROBE_TYPE.EXEC && (
         <Box>

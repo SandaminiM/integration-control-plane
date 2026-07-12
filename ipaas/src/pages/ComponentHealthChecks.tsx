@@ -112,18 +112,18 @@ export default function ComponentHealthChecks({ org, project, component }: Compo
         ) : !mainC ? (
           <Alert severity="info">This integration has no containers in the selected environment yet. Deploy it to configure health checks.</Alert>
         ) : creating ? (
-            <CreateHealthCheckStepper
-              container={mainC}
-              projectId={projectId}
-              componentId={comp.id}
-              releaseId={releaseId}
-              onClose={() => setCreating(false)}
-              onSaved={(m) => {
-                setCreating(false);
-                notify('success', m);
-              }}
-              onError={(m) => notify('error', m)}
-            />
+          <CreateHealthCheckStepper
+            container={mainC}
+            projectId={projectId}
+            componentId={comp.id}
+            releaseId={releaseId}
+            onClose={() => setCreating(false)}
+            onSaved={(m) => {
+              setCreating(false);
+              notify('success', m);
+            }}
+            onError={(m) => notify('error', m)}
+          />
         ) : healthChecks.length === 0 ? (
           <EmptyListing
             icon={<Activity size={48} />}

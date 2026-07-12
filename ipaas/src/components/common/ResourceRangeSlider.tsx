@@ -72,18 +72,7 @@ export default function ResourceRangeSlider({ label, unit, min, max, step, reque
         </Typography>
       </Stack>
       <Box sx={{ px: 1 }}>
-        <Slider
-          value={[request, limit]}
-          min={min}
-          max={max}
-          step={step}
-          disabled={disabled || viewMode}
-          disableSwap
-          onChange={handleChange}
-          valueLabelDisplay={viewMode ? 'off' : 'auto'}
-          valueLabelFormat={(v) => format(v as number)}
-          aria-label={label}
-        />
+        <Slider value={[request, limit]} min={min} max={max} step={step} disabled={disabled || viewMode} disableSwap onChange={handleChange} valueLabelDisplay={viewMode ? 'off' : 'auto'} valueLabelFormat={(v) => format(v as number)} aria-label={label} />
       </Box>
     </Box>
   );

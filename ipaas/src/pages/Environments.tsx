@@ -65,7 +65,12 @@ function DeleteDialog({ template, orgUuid, onClose, onSuccess, onError }: { temp
     );
 
   return (
-    <ConfirmDeleteDialog title={<>Are you sure you want to delete the environment '{template.name}'?</>} onConfirm={doDelete} onClose={onClose} isPending={mutation.isPending} confirmDisabled={confirm !== template.name || eligibility.isLoading || hasDeployments}>
+    <ConfirmDeleteDialog
+      title={<>Are you sure you want to delete the environment '{template.name}'?</>}
+      onConfirm={doDelete}
+      onClose={onClose}
+      isPending={mutation.isPending}
+      confirmDisabled={confirm !== template.name || eligibility.isLoading || hasDeployments}>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         This action is irreversible and will permanently remove all active integrations from this environment (including other configurations and data associated with this environment).
       </Typography>
@@ -146,7 +151,13 @@ export default function Environments(scope: OrgScope | ProjectScope): JSX.Elemen
       {isLoading ? (
         <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
       ) : isError ? (
-        <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => refetch()}>Retry</Button>}>
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={() => refetch()}>
+              Retry
+            </Button>
+          }>
           Failed to load environments.
         </Alert>
       ) : !templates?.length ? (

@@ -16,7 +16,20 @@
  * under the License.
  */
 
-import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, ContainerWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseContainer, ReleaseDetails, SecretWriteData } from '../../types/devopsConfigs';
+import type {
+  ConfigMapWriteData,
+  ConfigMountPath,
+  ConfigMountWriteData,
+  ContainerWriteData,
+  DevopsConfigMap,
+  DevopsConfigMapDetails,
+  DevopsConfigMount,
+  DevopsSecret,
+  DevopsSecretDetails,
+  ReleaseContainer,
+  ReleaseDetails,
+  SecretWriteData,
+} from '../../types/devopsConfigs';
 
 // Intentionally a stub (the standard icp-stub contract — see src/api/AGENTS.md).
 const ni = (name: string): never => {

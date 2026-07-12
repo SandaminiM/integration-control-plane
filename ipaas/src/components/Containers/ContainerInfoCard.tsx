@@ -89,7 +89,13 @@ export default function ContainerInfoCard({ container: c, projectId, componentId
 
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 5 }}>
-          {imageName ? <CopyField label="Image:" value={imageName} /> : <Alert severity="info" sx={{ mb: 1 }}>No image has been deployed yet.</Alert>}
+          {imageName ? (
+            <CopyField label="Image:" value={imageName} />
+          ) : (
+            <Alert severity="info" sx={{ mb: 1 }}>
+              No image has been deployed yet.
+            </Alert>
+          )}
           <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 1.5 }}>
             <Chip size="small" variant="outlined" label={`Image Pull Policy: ${policyLabel}`} sx={{ borderColor: 'divider', color: 'text.secondary' }} />
             {c.ports?.map((p) => (
@@ -131,9 +137,7 @@ function ResourceBars({ container: c }: { container: ReleaseContainer }): JSX.El
         <ReadonlySingle label="Memory Request" unit="Mi" min={MEMORY_MIN} max={MEMORY_MAX} value={c.memory ?? 0} format={memFmt} />
       </Grid>
       <Grid size={{ xs: 12 }}>
-        <Alert severity="warning">
-          Resource limits are disabled for this container. Containers without resource limits can freely use up resources and can negatively impact the performance of other integrations.
-        </Alert>
+        <Alert severity="warning">Resource limits are disabled for this container. Containers without resource limits can freely use up resources and can negatively impact the performance of other integrations.</Alert>
       </Grid>
     </Grid>
   );

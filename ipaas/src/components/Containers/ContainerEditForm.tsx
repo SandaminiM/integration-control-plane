@@ -75,7 +75,11 @@ export default function ContainerEditForm({ container, projectId, componentId, r
           labelPlacement="start"
           sx={{ ml: 0, mb: 2 }}
           control={<Switch checked={form.limitsEnabled} onChange={(e) => set('limitsEnabled', e.target.checked)} />}
-          label={<Typography variant="subtitle2" fontWeight={600} sx={{ mr: 1 }}>{form.limitsEnabled ? 'Limits Enabled' : 'Limits Disabled'}</Typography>}
+          label={
+            <Typography variant="subtitle2" fontWeight={600} sx={{ mr: 1 }}>
+              {form.limitsEnabled ? 'Limits Enabled' : 'Limits Disabled'}
+            </Typography>
+          }
         />
       )}
 

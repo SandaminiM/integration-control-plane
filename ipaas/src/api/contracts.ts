@@ -90,7 +90,20 @@ import type { OnPremKey, OnPremKeySubscription } from '../types/onPremKey';
 import type { EgressPolicy, EgressPolicyRequest } from '../types/egressPolicy';
 import type { AuthzRole, CreateAuthzRoleInput, UpdateAuthzRoleInput } from '../types/projectAuthz';
 import type { ByoiEndpointFileContents, CreateByoiComponentInput, CreateByoiComponentResult, DevopsVolume, DevopsVolumeMount, VolumeMountWriteData, VolumeWriteData } from '../types/tailscale';
-import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, ContainerWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseContainer, ReleaseDetails, SecretWriteData } from '../types/devopsConfigs';
+import type {
+  ConfigMapWriteData,
+  ConfigMountPath,
+  ConfigMountWriteData,
+  ContainerWriteData,
+  DevopsConfigMap,
+  DevopsConfigMapDetails,
+  DevopsConfigMount,
+  DevopsSecret,
+  DevopsSecretDetails,
+  ReleaseContainer,
+  ReleaseDetails,
+  SecretWriteData,
+} from '../types/devopsConfigs';
 import type { HealthCheck, HealthCheckWriteData } from '../types/healthChecks';
 import type { CreateUrlMappingInput, CustomDomain, CustomDomainType, CustomUrlMapping } from '../types/customDomain';
 import type { OrgWorkflowConfig, ReviewerDecisionRequest, WorkflowConfigRequest, WorkflowDefinition, WorkflowInstanceResponse, WorkflowReviewData } from '../types/workflow';

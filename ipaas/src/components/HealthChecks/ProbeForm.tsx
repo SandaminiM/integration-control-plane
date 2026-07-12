@@ -44,7 +44,9 @@ export default function ProbeForm({ kind, healthCheck: hc, container, projectId,
   const editedProbe = isLiveness ? hc.probes.liveness_probe : hc.probes.readiness_probe;
   const existed = hasProbe(editedProbe);
 
-  const [form, setForm] = useState<ProbeFormState>(() => (existed ? probeToForm(editedProbe, fallbackPort) : { ...probeToForm({ type: 'httpGet', probe: { failureThreshold: 3, initialDelaySeconds: 10, periodSeconds: 30, successThreshold: 1, timeoutSeconds: 10 } }, fallbackPort) }));
+  const [form, setForm] = useState<ProbeFormState>(() =>
+    existed ? probeToForm(editedProbe, fallbackPort) : { ...probeToForm({ type: 'httpGet', probe: { failureThreshold: 3, initialDelaySeconds: 10, periodSeconds: 30, successThreshold: 1, timeoutSeconds: 10 } }, fallbackPort) },
+  );
   const update = useUpdateHealthCheck(projectId);
 
   const patch = (p: Partial<ProbeFormState>): void => setForm((prev) => ({ ...prev, ...p }));

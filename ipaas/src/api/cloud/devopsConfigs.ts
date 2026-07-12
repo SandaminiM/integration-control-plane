@@ -46,7 +46,20 @@
  */
 
 import { bff, items, q, seg, type ListResponse } from './_client';
-import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, ContainerWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseContainer, ReleaseDetails, SecretWriteData } from '../../types/devopsConfigs';
+import type {
+  ConfigMapWriteData,
+  ConfigMountPath,
+  ConfigMountWriteData,
+  ContainerWriteData,
+  DevopsConfigMap,
+  DevopsConfigMapDetails,
+  DevopsConfigMount,
+  DevopsSecret,
+  DevopsSecretDetails,
+  ReleaseContainer,
+  ReleaseDetails,
+  SecretWriteData,
+} from '../../types/devopsConfigs';
 
 // _orgUuid/_projectId are kept for devant contract parity where cloud does not
 // need them; cloud derives the org from the token and addresses everything by
