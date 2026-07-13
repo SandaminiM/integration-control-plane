@@ -124,6 +124,8 @@ import { CopilotProvider } from '../contexts/CopilotContext';
 import CopilotDrawer from '../components/AiCopilot/CopilotDrawer';
 import CopilotButton from '../components/CopilotButton';
 import UpgradeButton from '../components/UpgradeButton';
+import PersonaSwitcher, { type Persona } from '../components/PersonaSwitcher';
+import { PE_NAV, PE_PARENT_MAP, isPeNavGroup, peActiveId, pePathForId } from '../config/platformEngineerNav';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { IS_WIP, IS_CLOUD } from '../features';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions';
@@ -213,8 +215,15 @@ function AppLayoutInner(): JSX.Element {
 
   const { state: shell, actions } = useAppShell({ initialCollapsed: true });
 
+  // Which perspective the user is in, derived from the URL. Platform Engineer
+  // routes live under `/organizations/:org/pe/...`; everything else is Developer.
+  const persona: Persona = /\/pe(\/|$)/.test(pathname) ? 'platform-engineer' : 'developer';
+
   // Compute the active nav item ID — uses URL matching for component/org scopes; Matrix resource for project scope
   const activeNavId = useMemo((): string => {
+    if (persona === 'platform-engineer') {
+      return peActiveId(pathname, scope.org);
+    }
     if (!hasProject(scope)) {
       // Org scope
       const base = `/organizations/${scope.org}`;
@@ -298,11 +307,11 @@ function AppLayoutInner(): JSX.Element {
     if (rest.startsWith('admin/storage')) return 'storage';
     if (rest.startsWith('settings')) return 'component-settings';
     return 'overview';
-  }, [pathname, scope]);
+  }, [pathname, scope, persona]);
 
   // Auto-expand the parent group when navigating to a child nav item
   useEffect(() => {
-    const parentMap = hasComponent(scope) ? COMPONENT_PARENT_MAP : !hasProject(scope) ? ORG_PARENT_MAP : PROJECT_PARENT_MAP;
+    const parentMap = persona === 'platform-engineer' ? PE_PARENT_MAP : hasComponent(scope) ? COMPONENT_PARENT_MAP : !hasProject(scope) ? ORG_PARENT_MAP : PROJECT_PARENT_MAP;
     const parent = parentMap[activeNavId];
     if (parent && !shell.expandedMenus[parent]) {
       actions.toggleMenu(parent);
@@ -544,6 +553,11 @@ function AppLayoutInner(): JSX.Element {
       'component-settings': `${compBase}/settings`,
     };
     const url = urlMap[id];
+    if (url) navigate(url);
+  };
+
+  const handlePeNavSelect = (id: string) => {
+    const url = pePathForId(scope.org, id);
     if (url) navigate(url);
   };
 
@@ -1021,6 +1035,7 @@ function AppLayoutInner(): JSX.Element {
                 </Badge>
               </IconButton>
             </Tooltip>
+            {IS_WIP && <PersonaSwitcher persona={persona} org={scope.org} />}
             {IS_WIP && <CopilotButton />}
             {IS_WIP && <UpgradeButton orgUuid={orgUuid ?? ''} />}
             <Divider orientation="vertical" flexItem sx={{ mx: 1, display: { xs: 'none', sm: 'block' } }} />
@@ -1044,6 +1059,8 @@ function AppLayoutInner(): JSX.Element {
           onSelect={(id) => {
             if (id === 'expand') {
               actions.toggleSidebar();
+            } else if (persona === 'platform-engineer') {
+              handlePeNavSelect(id);
             } else if (hasComponent(scope)) {
               handleComponentNavSelect(id);
             } else if (!hasProject(scope)) {
@@ -1057,7 +1074,36 @@ function AppLayoutInner(): JSX.Element {
           onToggleExpand={actions.toggleMenu}
           sx={{ backgroundColor: 'background.acrylic', backdropFilter: 'blur(3px)' }}>
           <Sidebar.Nav>
-            {!hasProject(scope) ? (
+            {persona === 'platform-engineer' ? (
+              /* Platform Engineer nav — driven by the shared config */
+              <Sidebar.Category>
+                {PE_NAV.map((entry) =>
+                  isPeNavGroup(entry) ? (
+                    <Sidebar.Item key={entry.id} id={entry.id}>
+                      <Sidebar.ItemIcon>
+                        <entry.icon size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>{entry.label}</Sidebar.ItemLabel>
+                      {entry.items.map((leaf) => (
+                        <Sidebar.Item key={leaf.id} id={leaf.id}>
+                          <Sidebar.ItemIcon>
+                            <leaf.icon size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>{leaf.label}</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+                      ))}
+                    </Sidebar.Item>
+                  ) : (
+                    <Sidebar.Item key={entry.id} id={entry.id}>
+                      <Sidebar.ItemIcon>
+                        <entry.icon size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>{entry.label}</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  ),
+                )}
+              </Sidebar.Category>
+            ) : !hasProject(scope) ? (
               /* Org-level nav */
               <Sidebar.Category>
                 <Sidebar.Item id="overview">

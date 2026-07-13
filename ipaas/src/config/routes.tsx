@@ -21,6 +21,7 @@ import { type RouteProps, Navigate, Outlet } from 'react-router';
 import { cookiePolicyUrl, loginUrl, orgRoleDetailUrl, projectRoleDetailUrl, componentRoleDetailUrl, projectGroupDetailUrl, componentGroupDetailUrl, signupUrl, registerOrgUrl } from '../paths';
 import { ScopeResolver, generateMatrixRoutes, withScope, type Matrix } from '../nav';
 import { IS_WIP, IS_CLOUD } from '../features';
+import { PE_ROUTE_DEFS } from './platformEngineerNav';
 import { createElement } from 'react';
 const PrebuiltIntegrationConfigProvider = lazy(() => import('../contexts/PrebuiltIntegrationConfigContext').then((m) => ({ default: m.PrebuiltIntegrationConfigProvider })));
 
@@ -211,6 +212,11 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/settings/on-prem-keys', element: createElement(withScope(OnPremKeys, ['organizations'])) },
               { path: 'organizations/:orgHandler/settings/application-security/:tab', element: createElement(withScope(ApplicationSecurity, ['organizations'])) },
               ...generateMatrixRoutes(MATRIX),
+              // Platform Engineer perspective — skeleton routes (ComingSoon stubs)
+              ...PE_ROUTE_DEFS.map((def) => ({
+                path: `organizations/:orgHandler/pe/${def.segment}`,
+                element: <ComingSoon title={def.label} description={`${def.label} is currently under development.`} />,
+              })),
               { path: 'organizations/:orgHandler/projects/:projectHandler/develop', element: <ComingSoon title="Coming Soon" description="Development tools are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/deploy', element: <ComingSoon title="Coming Soon" description="Deployment management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/test', element: <ComingSoon title="Coming Soon" description="Testing tools are currently under development." /> },
