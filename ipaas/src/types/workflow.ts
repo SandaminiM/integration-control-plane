@@ -47,3 +47,71 @@ export interface WorkflowConfigRequest {
   formatRequestData?: boolean;
   externalWorkflowEngineEndpoint?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Workflow instances (approval requests)
+// ---------------------------------------------------------------------------
+
+export interface WorkflowUser {
+  email: string;
+  displayName: string;
+  idpId: string;
+}
+
+export const WorkflowInstanceStatus = {
+  Pending: 'PENDING',
+  Approved: 'APPROVED',
+  Rejected: 'REJECTED',
+  Cancelled: 'CANCELLED',
+  Timeout: 'TIMEOUT',
+} as const;
+
+export type WorkflowInstanceStatus = (typeof WorkflowInstanceStatus)[keyof typeof WorkflowInstanceStatus];
+
+export const ReviewerDecision = {
+  Approved: 'APPROVED',
+  Rejected: 'REJECTED',
+} as const;
+
+export type ReviewerDecision = (typeof ReviewerDecision)[keyof typeof ReviewerDecision];
+
+export interface ReviewerDecisionData {
+  decision: ReviewerDecision;
+  reviewedUser: WorkflowUser;
+  reviewComment?: string;
+  reviewedTime: string;
+}
+
+export interface WorkflowContext {
+  workflowDefinitionIdentifier: string;
+  resource: string;
+}
+
+/** A single approval request (workflow instance). */
+export interface WorkflowInstanceResponse {
+  wkfId: string;
+  orgId: string;
+  createdTime: string;
+  createdUser: WorkflowUser;
+  context: WorkflowContext;
+  description?: string;
+  requestComment?: string;
+  workflowDefinitionIdentifier: string;
+  reviewerDecision?: ReviewerDecisionData | null;
+  status: WorkflowInstanceStatus;
+  cancelledBy?: WorkflowUser | null;
+  cancelledTime?: string | null;
+}
+
+/** Approve/reject decision body. */
+export interface ReviewerDecisionRequest {
+  decision: ReviewerDecision;
+  reviewComment?: string;
+}
+
+/** Extra data shown in the review drawer for an instance. */
+export interface WorkflowReviewData {
+  comment?: string;
+  data: unknown;
+  metadata: unknown;
+}

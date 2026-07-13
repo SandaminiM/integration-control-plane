@@ -17,11 +17,17 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createConfigMap, createSecret, getConfigMapDetails, getConfigMaps, getContainerConfigMounts, getReleaseById, getSecrets, mountConfig, removeConfigMount, updateConfigMapData, updateConfigMount, updateSecret } from '#api/devopsConfigs';
-import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, ReleaseDetails, SaveConfigInput, SecretWriteData } from '../types/devopsConfigs';
+import { createConfigMap, createSecret, getConfigMapDetails, getConfigMaps, getContainerConfigMounts, getReleaseById, getSecrets, mountConfig, removeConfigMount, updateConfigMapData, updateConfigMount, updateContainer, updateSecret } from '#api/devopsConfigs';
+import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, ContainerWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, ReleaseDetails, SaveConfigInput, SecretWriteData } from '../types/devopsConfigs';
+import { IS_WIP } from '../features';
 import { useOrgUuid } from './useOrgUuid';
 
 const ROOT = 'devopsConfigs';
+
+/** Container management is a WIP-only devops surface (cloud/icp API stubs throw). */
+export function isContainersEnabled(): boolean {
+  return IS_WIP;
+}
 
 // ── reads ─────────────────────────────────────────────────────────────────────
 
@@ -147,6 +153,19 @@ export function useSaveConfig(projectId: string) {
         await updateConfigMount(orgUuid, projectId, { componentId, releaseId, containerId, mountId: existing.mountId }, mount);
       }
       return configId;
+    },
+    onSuccess: () => invalidateAll(qc),
+  });
+}
+
+/** Update a release container (resources, image-pull policy, command/args). */
+export function useUpdateContainer(projectId: string, componentId: string, releaseId: string) {
+  const orgUuid = useOrgUuid();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ containerId, data }: { containerId: string; data: ContainerWriteData }) => {
+      if (!orgUuid) throw new Error('Organization is not available.');
+      return updateContainer(orgUuid, projectId, componentId, releaseId, containerId, data);
     },
     onSuccess: () => invalidateAll(qc),
   });

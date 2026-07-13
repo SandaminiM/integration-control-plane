@@ -17,7 +17,20 @@
  */
 
 import { choreoClient } from './httpClients';
-import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseDetails, SecretWriteData } from '../../types/devopsConfigs';
+import type {
+  ConfigMapWriteData,
+  ConfigMountPath,
+  ConfigMountWriteData,
+  ContainerWriteData,
+  DevopsConfigMap,
+  DevopsConfigMapDetails,
+  DevopsConfigMount,
+  DevopsSecret,
+  DevopsSecretDetails,
+  ReleaseContainer,
+  ReleaseDetails,
+  SecretWriteData,
+} from '../../types/devopsConfigs';
 
 // ConfigMaps, Secrets, and their container config-mounts live on the devops
 // service (via choreoClient). REST calls take `organization_id` + `project_id`
@@ -34,6 +47,12 @@ function dq(orgUuid: string, projectId: string): string {
 
 export async function getReleaseById(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<ReleaseDetails> {
   const res = await choreoClient.get<Wrapped<ReleaseDetails>>(`${BASE}/components/${encodeURIComponent(componentId)}/release/${encodeURIComponent(releaseId)}?${dq(orgUuid, projectId)}`);
+  return res.data;
+}
+
+/** Update a release container's resources, image-pull policy, command/args and ports. */
+export async function updateContainer(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string, data: ContainerWriteData): Promise<ReleaseContainer> {
+  const res = await choreoClient.put<Wrapped<ReleaseContainer>>(`${BASE}/components/${encodeURIComponent(componentId)}/release/${encodeURIComponent(releaseId)}/container/${encodeURIComponent(containerId)}?${dq(orgUuid, projectId)}`, data);
   return res.data;
 }
 

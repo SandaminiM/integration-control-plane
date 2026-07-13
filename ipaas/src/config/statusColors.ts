@@ -16,6 +16,9 @@
  * under the License.
  */
 
+/** The oxygen-ui (MUI) palette color names accepted by Chip/Button `color` props. */
+export type PaletteColor = 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
+
 export const STATUS_COLORS: Record<string, 'success' | 'warning' | 'default' | 'error' | 'info'> = {
   active: 'success',
   connected: 'success',

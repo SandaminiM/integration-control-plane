@@ -64,6 +64,9 @@ const EditConfigGroup = lazy(() => import('../pages/EditConfigGroup'));
 const OrgAuditLogs = lazy(() => import('../pages/OrgAuditLogs'));
 const ProjectCdPipelines = lazy(() => import('../pages/ProjectCdPipelines'));
 const OrgDatabases = lazy(() => import('../pages/OrgDatabases'));
+const OrgDataPlanes = lazy(() => import('../pages/OrgDataPlanes'));
+const ComponentRuntime = lazy(() => import('../pages/ComponentRuntime'));
+const OrgApprovals = lazy(() => import('../pages/OrgApprovals'));
 const CreateDatabaseServer = lazy(() => import('../pages/CreateDatabaseServer'));
 const DatabaseServerDetail = lazy(() => import('../pages/DatabaseServerDetail'));
 const SetupRagIngestion = lazy(() => import('../pages/SetupRagIngestion'));
@@ -82,6 +85,8 @@ const ComponentDeploymentTracks = lazy(() => import('../pages/ComponentDeploymen
 const ComponentProxyVersions = lazy(() => import('../pages/ComponentProxyVersions'));
 const ComponentUrlSettings = lazy(() => import('../pages/ComponentUrlSettings'));
 const ComponentConfigs = lazy(() => import('../pages/ComponentConfigs'));
+const ComponentContainers = lazy(() => import('../pages/ComponentContainers'));
+const ComponentHealthChecks = lazy(() => import('../pages/ComponentHealthChecks'));
 const CdPipelineEditor = lazy(() => import('../pages/CdPipelineEditor'));
 const OrgSettings = lazy(() => import('../pages/OrgSettings'));
 const OnPremKeys = lazy(() => import('../pages/OnPremKeys'));
@@ -198,9 +203,9 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/admin/cd-pipelines', element: createElement(withScope(OrgCdPipelines, ['organizations'])) },
               { path: 'organizations/:orgHandler/admin/cd-pipelines/new', element: <CdPipelineEditor /> },
               { path: 'organizations/:orgHandler/admin/cd-pipelines/:pipelineId/edit', element: <CdPipelineEditor /> },
-              { path: 'organizations/:orgHandler/admin/data-planes', element: <ComingSoon title="Coming Soon" description="Data Planes management is currently under development." /> },
+              { path: 'organizations/:orgHandler/admin/data-planes', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgDataPlanes, ['organizations']))) },
               { path: 'organizations/:orgHandler/admin/audit-logs', element: <OrgAuditLogs /> },
-              { path: 'organizations/:orgHandler/admin/approvals', element: <ComingSoon title="Coming Soon" description="Approvals management is currently under development." /> },
+              { path: 'organizations/:orgHandler/admin/approvals', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgApprovals, ['organizations']))) },
               { path: 'organizations/:orgHandler/admin/certificates', element: <ComingSoon title="Coming Soon" description="Certificates management is currently under development." /> },
               { path: 'organizations/:orgHandler/settings', element: createElement(withScope(OrgSettings, ['organizations'])) },
               { path: 'organizations/:orgHandler/settings/egress-control', element: createElement(withScope(EgressControl, ['organizations'])) },
@@ -334,11 +339,11 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/runtimes',
-                element: <ComingSoon title="Coming Soon" description="Runtime management is currently under development." />,
+                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentRuntime, ['components']))),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/containers',
-                element: <ComingSoon title="Coming Soon" description="Containers management is currently under development." />,
+                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentContainers, ['components']))),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/configs',
@@ -346,7 +351,7 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/health-checks',
-                element: <ComingSoon title="Coming Soon" description="Health Checks configuration is currently under development." />,
+                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentHealthChecks, ['components']))),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/scaling',

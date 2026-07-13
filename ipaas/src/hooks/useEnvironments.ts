@@ -18,8 +18,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getOrgUuidFromToken } from '../auth/tokenManager';
-import { fetchEnvironments, fetchAllEnvironments, fetchCloudDataPlanes, fetchLoggers, createEnvironment, updateEnvironment, deleteEnvironment, updateLogLevel } from '#api/environments';
-import type { EnvironmentInput } from '../types/environment';
+import { createOrgEnvironment, deleteEnvironmentTemplate, fetchAllEnvironments, fetchCloudDataPlanes, fetchEnvironments, fetchEnvironmentTemplates, fetchLoggers, getEnvDeleteEligibility, updateEnvironment, updateLogLevel } from '#api/environments';
+import type { CreateEnvironmentData, EnvironmentInput } from '../types/environment';
 
 export function useEnvironments(orgUuid: string, projectId: string) {
   const effectiveOrgUuid = getOrgUuidFromToken() ?? orgUuid;
@@ -55,26 +55,10 @@ export function useLoggers(environmentId: string, componentId: string) {
   });
 }
 
-export function useCreateEnvironment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (input: EnvironmentInput) => createEnvironment(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['environments'] }),
-  });
-}
-
 export function useUpdateEnvironment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: EnvironmentInput & { environmentId: string }) => updateEnvironment(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['environments'] }),
-  });
-}
-
-export function useDeleteEnvironment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (environmentId: string) => deleteEnvironment(environmentId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['environments'] }),
   });
 }
@@ -86,5 +70,44 @@ export function useUpdateLogLevel() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['loggers'] });
     },
+  });
+}
+
+// --- Org environment templates + REST create/delete (devops API) ---
+
+export function useEnvironmentTemplates(orgId: string) {
+  return useQuery({
+    queryKey: ['environment-templates', orgId],
+    queryFn: () => fetchEnvironmentTemplates(orgId),
+    enabled: !!orgId,
+    retry: false,
+  });
+}
+
+export function useAddEnvironment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateEnvironmentData & { orgUuid: string; vhost: string }) => {
+      const { orgUuid, ...request } = input;
+      return createOrgEnvironment(orgUuid, request);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['environment-templates'] }),
+  });
+}
+
+export function useEnvDeleteEligibility(orgUuid: string, templateId: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: ['env-delete-eligibility', orgUuid, templateId],
+    queryFn: () => getEnvDeleteEligibility(orgUuid, templateId!),
+    enabled: enabled && !!orgUuid && !!templateId,
+    retry: false,
+  });
+}
+
+export function useDeleteEnvironmentTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { orgUuid: string; templateId: string }) => deleteEnvironmentTemplate(input.orgUuid, input.templateId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['environment-templates'] }),
   });
 }

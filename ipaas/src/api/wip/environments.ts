@@ -17,8 +17,11 @@
  */
 
 import { gql } from './graphql';
-import { choreoClient } from './httpClients';
-import type { Environment, CloudDataPlane, Logger, EnvironmentInput, UpdateLogLevelInput } from '../../types/environment';
+import { choreoClient, withScopeRetry } from './httpClients';
+import { EnvironmentValidationError } from '../../utils/environment';
+import type { CloudDataPlane, CreateEnvironmentData, EnvDeletionEligibility, EnvironmentTemplate, Environment, EnvironmentInput, Logger, UpdateLogLevelInput, ValidityResponse } from '../../types/environment';
+
+const DEVOPS = '/devops/1.0.0/api/v1';
 
 const ENVIRONMENTS_QUERY = `
   query GetEnvironments($orgUuid: String!, $projectId: String!) {
@@ -28,7 +31,7 @@ const ENVIRONMENTS_QUERY = `
   }`;
 
 const ALL_ENVIRONMENTS_QUERY = `{
-  environments { id, name, description, critical, dpId, createdAt }
+  environments { id, name, description, critical, dpId, templateId, createdAt }
 }`;
 
 const LOGGERS_QUERY = `
@@ -96,4 +99,67 @@ export async function updateLogLevel(input: UpdateLogLevelInput): Promise<{ succ
   return gql<{ updateLogLevel: { success: boolean; message: string; commandIds: string[] } }>(UPDATE_LOG_LEVEL, {
     input: { runtimeIds: input.runtimeIds, componentName: input.componentName, logLevel: input.logLevel },
   }).then((d) => d.updateLogLevel);
+}
+
+// --- Org environment templates + REST create/delete (devops API) ---
+
+// Wire shape of a template row (snake_case); mapped to the domain type below.
+interface RawEnvironmentTemplate {
+  id: string;
+  env_name: string;
+  created_at?: string;
+  region?: string;
+  cluster_id?: string;
+  choreo_env?: string;
+  critical: boolean;
+  dns_prefix?: string;
+}
+
+function toEnvironmentTemplate(raw: RawEnvironmentTemplate): EnvironmentTemplate {
+  return {
+    id: raw.id,
+    name: raw.env_name,
+    createdAt: raw.created_at,
+    region: raw.region,
+    clusterId: raw.cluster_id,
+    choreoEnv: raw.choreo_env,
+    critical: raw.critical,
+    dnsPrefix: raw.dns_prefix,
+  };
+}
+
+/** Org environment templates. Keyed by the numeric org id, not the uuid. */
+export async function fetchEnvironmentTemplates(orgId: string): Promise<EnvironmentTemplate[]> {
+  const res = await withScopeRetry(() => choreoClient.get<{ data: RawEnvironmentTemplate[] }>(`${DEVOPS}/organizations/${encodeURIComponent(orgId)}/environment-templates`));
+  return (res.data ?? []).map(toEnvironmentTemplate);
+}
+
+function validateEnvName(orgUuid: string, name: string): Promise<ValidityResponse> {
+  return withScopeRetry(() => choreoClient.post<ValidityResponse>(`${DEVOPS}/organizations/${encodeURIComponent(orgUuid)}/apim/environments/validate-name?name=${encodeURIComponent(name)}`, {}));
+}
+
+function validateVhost(orgUuid: string, vhost: string): Promise<ValidityResponse> {
+  return withScopeRetry(() => choreoClient.post<ValidityResponse>(`${DEVOPS}/organizations/${encodeURIComponent(orgUuid)}/apim/environments/validate-vhost?vhost=${encodeURIComponent(vhost)}`, {}));
+}
+
+/**
+ * Create an org environment the way Devant does: validate the name, then the
+ * derived vhost, then POST the environment. Throws `EnvironmentValidationError`
+ * when a pre-flight check fails so the form can flag the offending field.
+ */
+export async function createOrgEnvironment(orgUuid: string, input: CreateEnvironmentData & { vhost: string }): Promise<void> {
+  const { vhost, ...data } = input;
+  if (!(await validateEnvName(orgUuid, data.name)).validity) throw new EnvironmentValidationError('name');
+  if (!(await validateVhost(orgUuid, vhost)).validity) throw new EnvironmentValidationError('vhost');
+  await withScopeRetry(() => choreoClient.post<void>(`${DEVOPS}/organizations/${encodeURIComponent(orgUuid)}/environments`, data));
+}
+
+/** Whether an environment template can be deleted (and what is deployed to it). */
+export async function getEnvDeleteEligibility(orgUuid: string, templateId: string): Promise<EnvDeletionEligibility> {
+  return withScopeRetry(() => choreoClient.get<EnvDeletionEligibility>(`${DEVOPS}/organizations/${encodeURIComponent(orgUuid)}/environments/templates/${encodeURIComponent(templateId)}/deletion-eligibility`));
+}
+
+/** Delete an org environment by its template id. */
+export async function deleteEnvironmentTemplate(orgUuid: string, templateId: string): Promise<void> {
+  await withScopeRetry(() => choreoClient.delete<void>(`${DEVOPS}/organizations/${encodeURIComponent(orgUuid)}/environments/templates/${encodeURIComponent(templateId)}`));
 }
