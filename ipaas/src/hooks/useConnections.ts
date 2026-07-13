@@ -94,7 +94,12 @@ export function useCreateChoreoConnection() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (vars: { request: Parameters<typeof createChoreoConnection>[0]; generateCreds?: boolean }) => createChoreoConnection(vars.request, vars.generateCreds),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY] }),
+    // Fire-and-forget: don't return the promise, so the mutation settles (and the
+    // caller's onSuccess redirect fires) immediately instead of waiting for the
+    // list refetch — the destination list refetches on mount anyway.
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: [ROOT_KEY] });
+    },
   });
 }
 
@@ -102,7 +107,9 @@ export function useCreateThirdPartyConnection() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: createThirdPartyConnection,
-    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: [ROOT_KEY] });
+    },
   });
 }
 

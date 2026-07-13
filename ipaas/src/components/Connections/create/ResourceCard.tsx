@@ -17,7 +17,7 @@
  */
 
 import { Avatar, Box, Card, CardContent, Chip, IconButton, Stack, Typography } from '@wso2/oxygen-ui';
-import { ExternalLink, Eye } from '@wso2/oxygen-ui-icons-react';
+import { ChevronRight, Eye } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
 import { formatVersion } from '../../../utils/connections';
 import type { ConnectionCatalogItem } from '../../../types/connections';
@@ -65,7 +65,7 @@ export default function ResourceCard({ item, onClick, onDetail }: ResourceCardPr
               onDetail();
             }}
             sx={{ color: 'text.secondary', mt: -0.5, mr: -0.5, flexShrink: 0 }}>
-            <ExternalLink size={14} />
+            <ChevronRight size={16} />
           </IconButton>
         </Stack>
 

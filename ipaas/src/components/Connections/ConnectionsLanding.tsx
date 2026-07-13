@@ -43,16 +43,8 @@ interface ConnectionsLandingProps {
  */
 export default function ConnectionsLanding({ projectId, componentId, base }: ConnectionsLandingProps): JSX.Element {
   const navigate = useNavigate();
-  const { data: connections, isLoading, isError, refetch } = useConnections({ projectId, componentId });
+  const { data: connections, isLoading, isFetching, isError, refetch } = useConnections({ projectId, componentId });
   const goCreate = (tab?: 'services' | 'databases' | 'storage') => navigate(tab ? `${base}/new?tab=${tab}` : `${base}/new`);
-
-  if (isLoading && projectId) {
-    return (
-      <PageContent>
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
-      </PageContent>
-    );
-  }
 
   if (isError) {
     return (
@@ -68,6 +60,18 @@ export default function ConnectionsLanding({ projectId, componentId, base }: Con
     return (
       <PageContent>
         <ConnectionsListView key={componentId ?? projectId} projectId={projectId} componentId={componentId} base={base} />
+      </PageContent>
+    );
+  }
+
+  // Show the loader while loading OR while a refetch is in flight with no cached
+  // rows yet — e.g. right after creating the first connection, when the stale
+  // cache is empty. This prevents the empty landing from flashing before the
+  // freshly-created connection arrives and the list renders.
+  if ((isLoading || isFetching) && projectId) {
+    return (
+      <PageContent>
+        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
       </PageContent>
     );
   }

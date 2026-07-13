@@ -42,19 +42,19 @@ export default function SelectCard({ selected, title, description, icon, onClick
       }}
       sx={{
         cursor: 'pointer',
-        border: '1px solid',
+        border: 2,
         borderColor: selected ? 'primary.main' : 'divider',
-        bgcolor: selected ? 'action.hover' : 'transparent',
+        bgcolor: selected ? 'primary.50' : 'background.paper',
         borderRadius: 1,
         p: 1.75,
         width: 320,
-        transition: 'border-color 0.15s',
-        '&:hover': { borderColor: 'primary.main' },
+        transition: 'border-color 0.15s, background-color 0.15s',
+        '&:hover': { borderColor: selected ? 'primary.main' : 'primary.light' },
       }}>
       <Stack direction="row" gap={1.25} alignItems="flex-start">
-        {icon && <Box sx={{ color: 'text.secondary', mt: 0.25 }}>{icon}</Box>}
+        {icon && <Box sx={{ color: selected ? 'primary.main' : 'text.secondary', mt: 0.25 }}>{icon}</Box>}
         <Box>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: selected ? 'primary.main' : 'text.primary' }}>
             {title}
           </Typography>
           {description && (

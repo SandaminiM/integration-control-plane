@@ -44,7 +44,10 @@ export default function NewConnection(scope: ProjectScope | ComponentScope): JSX
   const createThirdParty = useCreateThirdPartyConnection();
   const [pickedService, setPickedService] = useState<ConnectionCatalogItem | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const submitting = createChoreo.isPending || createThirdParty.isPending;
+  const [redirecting, setRedirecting] = useState(false);
+  // Keep the button in its progress state through the redirect too, so it doesn't
+  // flash back to "Create" between the mutation settling and the navigation.
+  const submitting = createChoreo.isPending || createThirdParty.isPending || redirecting;
 
   const tabParam = searchParams.get('tab');
   const initialTab: ResourceTab = tabParam === 'databases' || tabParam === 'storage' ? tabParam : 'services';
@@ -55,7 +58,10 @@ export default function NewConnection(scope: ProjectScope | ComponentScope): JSX
 
   const base = componentHandle ? componentConnectionsBase(org, project, componentHandle) : projectConnectionsBase(org, project);
   const component = componentData ? { uuid: componentData.id, type: componentData.displayType } : undefined;
-  const onSuccess = () => navigate(base);
+  const onSuccess = () => {
+    setRedirecting(true);
+    navigate(base);
+  };
   const onError = (e: unknown) => setSubmitError(friendlyConnectionError(e instanceof Error ? e.message : ''));
 
   const onCreateChoreo = (request: ChoreoConnectionRequest, generateCreds: boolean) => {
