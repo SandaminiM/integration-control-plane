@@ -55,6 +55,11 @@ describe('matchPrebuiltIntegration', () => {
     expect(matchPrebuiltIntegration(repo({ branch: 'dev' }), prebuilts)).toBeUndefined();
   });
 
+  it('matches a prebuilt with no branch field against a main-branch repo (pi.branch ?? "main")', () => {
+    const noBranch: PrebuiltIntegration[] = [{ ...prebuilts[0], branch: undefined }];
+    expect(matchPrebuiltIntegration(repo({ branch: 'main' }), noBranch)?.displayName).toBe('Stripe Customer');
+  });
+
   it('returns undefined without repo fields or prebuilt list', () => {
     expect(matchPrebuiltIntegration(null, prebuilts)).toBeUndefined();
     expect(matchPrebuiltIntegration(repo({}), undefined)).toBeUndefined();

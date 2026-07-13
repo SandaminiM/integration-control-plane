@@ -38,7 +38,7 @@ export default function EnvCardBody({ component, env, projectId, versionId, rele
   const showEndpointPanel = hasDeployment && envEndpoints.length > 0;
   const notDeployed = !loadingDeployment && !hasDeployment;
   const insightsApiId = activeEndpoint?.apimId ?? component.apiId ?? '';
-  const showInsights = !!env.critical && !!env.id && !!env.name && !!projectId;
+  const showInsights = !!env.critical && !!env.id && !!env.name && !!projectId && !!insightsApiId;
 
   if (loadingDeployment) return <EnvCardSkeleton />;
 
