@@ -19,14 +19,14 @@
 import { Alert, Autocomplete, Avatar, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, ListingTable, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, useCallback, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useLocation } from 'react-router';
 import SearchField from '../components/SearchField';
 import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { Permissions } from '../constants/permissions';
 import { useUsers, useGroups, useUpdateUserGroups, useRemoveUserFromGroup } from '../hooks/useAuth';
 import type { User, Group } from '../types/auth';
-import { orgAccessControlUrl } from '../paths';
+import { orgAccessControlUrl, peAccessControlUrl } from '../paths';
 import { FormDialog } from '../components/Settings/AccessControl/shared';
 import { useFiltered, getUserInitial } from '../components/Settings/AccessControl/utils';
 
@@ -203,7 +203,8 @@ export default function EditUser(): JSX.Element {
   const { orgHandler = 'default', userId = '' } = useParams();
   const navigate = useNavigate();
   const { data: users, isLoading } = useUsers(orgHandler);
-  const backUrl = orgAccessControlUrl(orgHandler, 'users');
+  const isPe = /\/pe(\/|$)/.test(useLocation().pathname);
+  const backUrl = isPe ? peAccessControlUrl(orgHandler, 'users') : orgAccessControlUrl(orgHandler, 'users');
 
   if (isLoading)
     return (

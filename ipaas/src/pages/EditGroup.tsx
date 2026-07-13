@@ -46,14 +46,14 @@ import {
 } from '@wso2/oxygen-ui';
 import { ArrowLeft, Lock, Plus, Trash2, Users } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useLocation } from 'react-router';
 import { Permissions, ALL_ROLE_MODIFY_PERMISSIONS } from '../constants/permissions';
 import SearchField from '../components/SearchField';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { useGroups, useGroupRoles, useGroupUsers, useAddRolesToGroup, useRemoveRoleFromGroup, useAddUsersToGroup, useRemoveUserFromGroup, useUsers, useRoles } from '../hooks/useAuth';
 import { useAllEnvironments } from '../hooks/useEnvironments';
 import type { Group, Role } from '../types/auth';
-import { orgAccessControlUrl } from '../paths';
+import { orgAccessControlUrl, peAccessControlUrl } from '../paths';
 import { FormDialog } from '../components/Settings/AccessControl/shared';
 import { useFiltered, mappingLevel, envLabel, getUserInitial } from '../components/Settings/AccessControl/utils';
 
@@ -511,7 +511,8 @@ export default function EditGroup(): JSX.Element {
   const { orgHandler = 'default', groupId = '' } = useParams();
   const navigate = useNavigate();
   const { data: groups, isLoading, isError } = useGroups(orgHandler);
-  const backUrl = orgAccessControlUrl(orgHandler, 'groups');
+  const isPe = /\/pe(\/|$)/.test(useLocation().pathname);
+  const backUrl = isPe ? peAccessControlUrl(orgHandler, 'groups') : orgAccessControlUrl(orgHandler, 'groups');
 
   if (isLoading)
     return (

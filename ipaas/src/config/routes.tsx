@@ -21,7 +21,7 @@ import { type RouteProps, Navigate, Outlet } from 'react-router';
 import { cookiePolicyUrl, loginUrl, orgRoleDetailUrl, projectRoleDetailUrl, componentRoleDetailUrl, projectGroupDetailUrl, componentGroupDetailUrl, signupUrl, registerOrgUrl } from '../paths';
 import { ScopeResolver, generateMatrixRoutes, withScope, type Matrix } from '../nav';
 import { IS_WIP, IS_CLOUD } from '../features';
-import { PE_ROUTE_DEFS } from './platformEngineerNav';
+import { PE_ALL_ROUTE_DEFS, type PeRouteDef } from './platformEngineerNav';
 import { createElement } from 'react';
 const PrebuiltIntegrationConfigProvider = lazy(() => import('../contexts/PrebuiltIntegrationConfigContext').then((m) => ({ default: m.PrebuiltIntegrationConfigProvider })));
 
@@ -128,6 +128,25 @@ const CreateGroup = lazy(() => import('../pages/CreateGroup'));
 const EditGroup = lazy(() => import('../pages/EditGroup'));
 const Profile = lazy(() => import('../pages/Profile'));
 const ComingSoon = lazy(() => import('../pages/ComingSoon'));
+const PeAccessControl = lazy(() => import('../pages/PeAccessControl'));
+
+// Platform Engineer perspective — real pages that reuse Developer-mode components,
+// keyed by `${scopeLevel}:${navId}`. Everything not listed falls back to a
+// ComingSoon stub. Mirrors Devant's PE reuse: User Management at org scope,
+// Audit Logs at org, Runtime Logs at project + component, Alerts at component.
+const PE_ROUTE_OVERRIDES: Record<string, RouteProps['element']> = {
+  'org:pe-users': <PeAccessControl tab="users" />,
+  'org:pe-roles': <PeAccessControl tab="roles" />,
+  'org:pe-groups': <PeAccessControl tab="groups" />,
+  'org:pe-audit-logs': <OrgAuditLogs />,
+  'project:pe-runtime-logs': createElement(withScope(RuntimeLogsProject, ['projects'])),
+  'component:pe-runtime-logs': createElement(withScope(RuntimeLogsIntegration, ['components'])),
+  'component:pe-alerts': createElement(withScope(Alerts, ['components'])),
+};
+
+function peRouteElement(def: PeRouteDef): RouteProps['element'] {
+  return PE_ROUTE_OVERRIDES[`${def.level}:${def.id}`] ?? <ComingSoon title={def.label} description={`${def.label} is currently under development.`} />;
+}
 
 export interface AppRoute extends Omit<RouteProps, 'children'> {
   children?: AppRoute[];
@@ -212,11 +231,18 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/settings/on-prem-keys', element: createElement(withScope(OnPremKeys, ['organizations'])) },
               { path: 'organizations/:orgHandler/settings/application-security/:tab', element: createElement(withScope(ApplicationSecurity, ['organizations'])) },
               ...generateMatrixRoutes(MATRIX),
-              // Platform Engineer perspective — skeleton routes (ComingSoon stubs)
-              ...PE_ROUTE_DEFS.map((def) => ({
-                path: `organizations/:orgHandler/pe/${def.segment}`,
-                element: <ComingSoon title={def.label} description={`${def.label} is currently under development.`} />,
-              })),
+              // Platform Engineer perspective — User Management CRUD flows (org scope).
+              // Reuse the Developer-mode create/edit/detail pages; they detect the PE
+              // path and keep their Back links inside the PE perspective.
+              { path: 'organizations/:orgHandler/pe/user-management/users/new', element: <CreateUser /> },
+              { path: 'organizations/:orgHandler/pe/user-management/users/:userId/edit', element: <EditUser /> },
+              { path: 'organizations/:orgHandler/pe/user-management/roles/new', element: <CreateRole /> },
+              { path: 'organizations/:orgHandler/pe/user-management/roles/:roleId/edit', element: <RoleDetail /> },
+              { path: 'organizations/:orgHandler/pe/user-management/groups/new', element: <CreateGroup /> },
+              { path: 'organizations/:orgHandler/pe/user-management/groups/:groupId/edit', element: <EditGroup /> },
+              // Platform Engineer perspective — scope-aware leaf routes (org / project /
+              // component). Real pages come from PE_ROUTE_OVERRIDES; the rest are stubs.
+              ...PE_ALL_ROUTE_DEFS.map((def) => ({ path: def.path, element: peRouteElement(def) })),
               { path: 'organizations/:orgHandler/projects/:projectHandler/develop', element: <ComingSoon title="Coming Soon" description="Development tools are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/deploy', element: <ComingSoon title="Coming Soon" description="Deployment management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/test', element: <ComingSoon title="Coming Soon" description="Testing tools are currently under development." /> },

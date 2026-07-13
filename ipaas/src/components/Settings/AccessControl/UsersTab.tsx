@@ -26,7 +26,7 @@ import Authorized from '../../Authorized';
 import { useAuth } from '../../../auth/AuthContext';
 import { useUsers, useDeleteUser, usePendingInvitations, useDeleteInvitation } from '../../../hooks/useAuth';
 import type { User } from '../../../types/auth';
-import { editOrgUserUrl } from '../../../paths';
+import { editOrgUserUrl, editPeUserUrl } from '../../../paths';
 import { Loading } from './shared';
 import { useFiltered, getUserInitial } from './utils';
 import InviteUsersDialog from './InviteUsersDialog';
@@ -44,6 +44,9 @@ export function UsersTab({ orgHandler }: { orgHandler: string }): JSX.Element {
   const [tableAlert, setTableAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  // PE perspective keeps the edit-user flow inside the PE route tree (org scope).
+  const isPe = /\/pe(\/|$)/.test(location.pathname);
+  const getEditUserUrl = (userId: string) => (isPe ? editPeUserUrl(orgHandler, userId) : editOrgUserUrl(orgHandler, userId));
   const getSearchStr = useCallback((u: User) => `${u.username} ${u.displayName}`, []);
   const filtered = useFiltered(users ?? [], search, getSearchStr);
   const maxPage = Math.max(0, Math.ceil(filtered.length / rowsPerPage) - 1);
@@ -129,14 +132,14 @@ export function UsersTab({ orgHandler }: { orgHandler: string }): JSX.Element {
                       tabIndex={isSelf ? undefined : 0}
                       aria-label={isSelf ? undefined : `Edit ${u.displayName}`}
                       hover={!isSelf}
-                      onClick={isSelf ? undefined : () => navigate(editOrgUserUrl(orgHandler, u.userId))}
+                      onClick={isSelf ? undefined : () => navigate(getEditUserUrl(u.userId))}
                       onKeyDown={
                         isSelf
                           ? undefined
                           : (e) => {
                               if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
                                 e.preventDefault();
-                                navigate(editOrgUserUrl(orgHandler, u.userId));
+                                navigate(getEditUserUrl(u.userId));
                               }
                             }
                       }>
@@ -159,7 +162,7 @@ export function UsersTab({ orgHandler }: { orgHandler: string }): JSX.Element {
                                 aria-label="Edit user"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  navigate(editOrgUserUrl(orgHandler, u.userId));
+                                  navigate(getEditUserUrl(u.userId));
                                 }}>
                                 <Pencil size={16} />
                               </IconButton>

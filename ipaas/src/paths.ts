@@ -169,6 +169,38 @@ export function componentRoleDetailUrl(orgHandler: string, projectHandler: strin
   return `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/settings/access-control/roles/${roleId}/edit`;
 }
 
+// --- Platform Engineer perspective: User Management (org-scoped) ---
+// Mirror of the Developer-mode `settings/access-control` helpers, but under the
+// PE route prefix so the shared Users/Roles/Groups CRUD flows stay inside the PE
+// perspective instead of leaking back to Settings.
+export function peAccessControlUrl(orgHandler: string, tab: 'users' | 'roles' | 'groups' = 'users'): string {
+  return `/organizations/${orgHandler}/pe/user-management/${tab}`;
+}
+
+export function newPeUserUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/pe/user-management/users/new`;
+}
+
+export function editPeUserUrl(orgHandler: string, userId: string): string {
+  return `/organizations/${orgHandler}/pe/user-management/users/${userId}/edit`;
+}
+
+export function newPeRoleUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/pe/user-management/roles/new`;
+}
+
+export function peRoleDetailUrl(orgHandler: string, roleId: string): string {
+  return `/organizations/${orgHandler}/pe/user-management/roles/${roleId}/edit`;
+}
+
+export function newPeGroupUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/pe/user-management/groups/new`;
+}
+
+export function peGroupDetailUrl(orgHandler: string, groupId: string): string {
+  return `/organizations/${orgHandler}/pe/user-management/groups/${groupId}/edit`;
+}
+
 export function orgAnalyticsUrl(orgHandler: string): string {
   return `/organizations/${orgHandler}/analytics`;
 }

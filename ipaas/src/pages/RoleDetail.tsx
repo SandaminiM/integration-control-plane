@@ -45,12 +45,12 @@ import {
 } from '@wso2/oxygen-ui';
 import { ArrowLeft, ChevronDown, ChevronUp, Link2, Lock, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useCallback, type JSX } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, useLocation } from 'react-router';
 import SearchField from '../components/SearchField';
 import { useRoleDetail, useAllPermissions, useRoleGroups, useUpdateRole, useGroups, useAddRolesToGroup, useRemoveRoleFromGroup } from '../hooks/useAuth';
 import type { Permission, RoleGroupMapping, Group } from '../types/auth';
 import { useAllEnvironments } from '../hooks/useEnvironments';
-import { orgAccessControlUrl } from '../paths';
+import { orgAccessControlUrl, peAccessControlUrl } from '../paths';
 import Authorized from '../components/Authorized';
 import { ALL_ROLE_MODIFY_PERMISSIONS } from '../constants/permissions';
 import { useAccessControl } from '../contexts/AccessControlContext';
@@ -228,7 +228,8 @@ export default function RoleDetail(): JSX.Element {
     const s = search.toLowerCase();
     return roleGroups.filter((g) => getSearchStr(g).toLowerCase().includes(s));
   }, [roleGroups, search, getSearchStr]);
-  const onBack = () => navigate(orgAccessControlUrl(orgHandler, 'roles'));
+  const isPe = /\/pe(\/|$)/.test(useLocation().pathname);
+  const onBack = () => navigate(isPe ? peAccessControlUrl(orgHandler, 'roles') : orgAccessControlUrl(orgHandler, 'roles'));
   const handleDeleteGroup = (group: RoleGroupMapping) => {
     setDeletingGroup(group);
   };

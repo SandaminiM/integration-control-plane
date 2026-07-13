@@ -78,7 +78,7 @@ export default function PersonaSwitcher({ persona, org }: { persona: Persona; or
         color: 'text.primary',
         fontSize: '0.8125rem',
         '& .MuiOutlinedInput-root': { height: '30.75px' },
-        '& .MuiOutlinedInput-notchedOutline': { borderRadius: 5 },
+        '& .MuiOutlinedInput-notchedOutline': { borderRadius: 5, borderColor: 'text.primary' },
         '& .MuiSelect-select': { py: 1, px: 1.5, minHeight: 0, height: '100%', display: 'flex', alignItems: 'center', boxSizing: 'border-box' },
       }}>
       {OPTIONS.map((option) => (

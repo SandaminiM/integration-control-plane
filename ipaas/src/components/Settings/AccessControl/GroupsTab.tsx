@@ -26,7 +26,7 @@ import { Permissions } from '../../../constants/permissions';
 import { useGroups, useDeleteGroup } from '../../../hooks/useAuth';
 import { useComponentByHandler } from '../../../hooks/useComponents';
 import type { Group } from '../../../types/auth';
-import { newOrgGroupUrl, editOrgGroupUrl, projectGroupDetailUrl, componentGroupDetailUrl } from '../../../paths';
+import { newOrgGroupUrl, editOrgGroupUrl, projectGroupDetailUrl, componentGroupDetailUrl, newPeGroupUrl, peGroupDetailUrl } from '../../../paths';
 import { Loading } from './shared';
 import { useFiltered } from './utils';
 
@@ -50,7 +50,12 @@ export function GroupsTab({ orgHandler, projectId, projectHandler, componentHand
   const safePage = Math.min(page, maxPage);
   const paginated = filtered.slice(safePage * rowsPerPage, safePage * rowsPerPage + rowsPerPage);
 
+  // In the Platform Engineer perspective User Management is org-scoped; keep the
+  // create/detail navigation inside the PE route tree instead of Settings.
+  const isPe = /\/pe(\/|$)/.test(location.pathname);
+
   const getGroupDetailUrl = (groupId: string) => {
+    if (isPe) return peGroupDetailUrl(orgHandler, groupId);
     if (componentHandler && projectHandler) return componentGroupDetailUrl(orgHandler, projectHandler, componentHandler, groupId);
     if (projectHandler) return projectGroupDetailUrl(orgHandler, projectHandler, groupId);
     return editOrgGroupUrl(orgHandler, groupId);
@@ -77,7 +82,7 @@ export function GroupsTab({ orgHandler, projectId, projectHandler, componentHand
           searchSlot={<SearchField value={search} onChange={setSearch} />}
           actions={
             !effectiveReadOnly && (
-              <Button variant="contained" startIcon={<Plus size={18} />} onClick={() => navigate(newOrgGroupUrl(orgHandler))}>
+              <Button variant="contained" startIcon={<Plus size={18} />} onClick={() => navigate(isPe ? newPeGroupUrl(orgHandler) : newOrgGroupUrl(orgHandler))}>
                 Create Group
               </Button>
             )

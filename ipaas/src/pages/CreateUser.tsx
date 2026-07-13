@@ -19,9 +19,9 @@
 import { Alert, Button, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useLocation } from 'react-router';
 import { useCreateUser } from '../hooks/useAuth';
-import { orgAccessControlUrl } from '../paths';
+import { orgAccessControlUrl, peAccessControlUrl } from '../paths';
 
 export default function CreateUser(): JSX.Element {
   const { orgHandler = 'default' } = useParams();
@@ -33,7 +33,8 @@ export default function CreateUser(): JSX.Element {
   const [passwordError, setPasswordError] = useState('');
   const [error, setError] = useState<string | null>(null);
   const mutation = useCreateUser(orgHandler);
-  const backUrl = orgAccessControlUrl(orgHandler, 'users');
+  const isPe = /\/pe(\/|$)/.test(useLocation().pathname);
+  const backUrl = isPe ? peAccessControlUrl(orgHandler, 'users') : orgAccessControlUrl(orgHandler, 'users');
 
   const submit = () => {
     let valid = true;

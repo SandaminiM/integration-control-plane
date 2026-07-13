@@ -125,7 +125,7 @@ import CopilotDrawer from '../components/AiCopilot/CopilotDrawer';
 import CopilotButton from '../components/CopilotButton';
 import UpgradeButton from '../components/UpgradeButton';
 import PersonaSwitcher, { type Persona } from '../components/PersonaSwitcher';
-import { PE_NAV, PE_PARENT_MAP, isPeNavGroup, peActiveId, pePathForId } from '../config/platformEngineerNav';
+import { PE_NAV, PE_PARENT_MAP, isPeNavGroup, peActiveId, peOverviewPath, pePathForId } from '../config/platformEngineerNav';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { IS_WIP, IS_CLOUD } from '../features';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions';
@@ -222,7 +222,7 @@ function AppLayoutInner(): JSX.Element {
   // Compute the active nav item ID — uses URL matching for component/org scopes; Matrix resource for project scope
   const activeNavId = useMemo((): string => {
     if (persona === 'platform-engineer') {
-      return peActiveId(pathname, scope.org);
+      return peActiveId(pathname, scope);
     }
     if (!hasProject(scope)) {
       // Org scope
@@ -557,7 +557,7 @@ function AppLayoutInner(): JSX.Element {
   };
 
   const handlePeNavSelect = (id: string) => {
-    const url = pePathForId(scope.org, id);
+    const url = pePathForId(scope, id);
     if (url) navigate(url);
   };
 
@@ -568,7 +568,7 @@ function AppLayoutInner(): JSX.Element {
           <Header.Toggle collapsed={shell.sidebarCollapsed} onToggle={actions.toggleSidebar} />
           <Header.Brand>
             <Header.BrandLogo>
-              <NavLink to={orgHomeUrl(scope.org)} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+              <NavLink to={persona === 'platform-engineer' ? peOverviewPath(scope.org) : orgHomeUrl(scope.org)} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
                 <Logo />
               </NavLink>
             </Header.BrandLogo>
@@ -579,11 +579,11 @@ function AppLayoutInner(): JSX.Element {
               role="button"
               tabIndex={0}
               sx={{ position: 'relative', display: 'inline-flex', alignSelf: 'center', cursor: 'pointer' }}
-              onClick={() => navigate(orgHomeUrl(scope.org))}
+              onClick={() => navigate(persona === 'platform-engineer' ? peOverviewPath(scope.org) : orgHomeUrl(scope.org))}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  navigate(orgHomeUrl(scope.org));
+                  navigate(persona === 'platform-engineer' ? peOverviewPath(scope.org) : orgHomeUrl(scope.org));
                 }
               }}>
               <ComplexSelect
@@ -763,6 +763,10 @@ function AppLayoutInner(): JSX.Element {
                         setProjectMenuAnchor(null);
                         setProjectSearch('');
                         const newScope = narrow({ level: 'organizations', org: scope.org }, p.handler);
+                        if (persona === 'platform-engineer') {
+                          navigate(pePathForId(newScope, activeNavId) ?? pePathForId(newScope, 'pe-overview')!);
+                          return;
+                        }
                         const settingsUrl = settingsSwitchUrl(newScope, p.id, undefined);
                         if (settingsUrl) {
                           navigate(settingsUrl);
@@ -783,11 +787,11 @@ function AppLayoutInner(): JSX.Element {
                   role="button"
                   tabIndex={0}
                   sx={{ position: 'relative', display: 'inline-flex', cursor: 'pointer' }}
-                  onClick={() => navigate(resourceUrl({ level: 'projects' as const, org: scope.org, project: scope.project }, 'overview'))}
+                  onClick={() => navigate(persona === 'platform-engineer' ? (pePathForId({ level: 'projects', org: scope.org, project: scope.project }, 'pe-overview') ?? peOverviewPath(scope.org)) : resourceUrl({ level: 'projects' as const, org: scope.org, project: scope.project }, 'overview'))}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      navigate(resourceUrl({ level: 'projects' as const, org: scope.org, project: scope.project }, 'overview'));
+                      navigate(persona === 'platform-engineer' ? (pePathForId({ level: 'projects', org: scope.org, project: scope.project }, 'pe-overview') ?? peOverviewPath(scope.org)) : resourceUrl({ level: 'projects' as const, org: scope.org, project: scope.project }, 'overview'));
                     }
                   }}>
                   <ComplexSelect
@@ -843,6 +847,10 @@ function AppLayoutInner(): JSX.Element {
                     onClick={(e) => {
                       e.stopPropagation();
                       const orgScope = { level: 'organizations' as const, org: scope.org };
+                      if (persona === 'platform-engineer') {
+                        navigate(pePathForId(orgScope, activeNavId) ?? pePathForId(orgScope, 'pe-overview')!);
+                        return;
+                      }
                       const settingsUrl = settingsSwitchUrl(orgScope, undefined, undefined);
                       if (settingsUrl) {
                         navigate(settingsUrl);
@@ -928,6 +936,10 @@ function AppLayoutInner(): JSX.Element {
                             setComponentMenuAnchor(null);
                             setComponentSearch('');
                             const newScope = narrow({ level: 'projects', org: scope.org, project: scope.project }, c.handler);
+                            if (persona === 'platform-engineer') {
+                              navigate(pePathForId(newScope, activeNavId) ?? pePathForId(newScope, 'pe-overview')!);
+                              return;
+                            }
                             if (activeNavId === 'lifecycle') {
                               navigate(GENERIC_SERVICE_TYPES.has(c.displayType) ? `/organizations/${scope.org}/projects/${scope.project}/components/${c.handler}/manage/lifecycle` : componentOverviewUrl(scope.org, scope.project, c.handler));
                             } else {
@@ -948,11 +960,11 @@ function AppLayoutInner(): JSX.Element {
                 role="button"
                 tabIndex={0}
                 sx={{ position: 'relative', display: 'inline-flex', cursor: 'pointer' }}
-                onClick={() => navigate(resourceUrl(scope, 'overview'))}
+                onClick={() => navigate(persona === 'platform-engineer' ? (pePathForId(scope, 'pe-overview') ?? peOverviewPath(scope.org)) : resourceUrl(scope, 'overview'))}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    navigate(resourceUrl(scope, 'overview'));
+                    navigate(persona === 'platform-engineer' ? (pePathForId(scope, 'pe-overview') ?? peOverviewPath(scope.org)) : resourceUrl(scope, 'overview'));
                   }
                 }}>
                 <ComplexSelect
@@ -1008,6 +1020,10 @@ function AppLayoutInner(): JSX.Element {
                   onClick={(e) => {
                     e.stopPropagation();
                     const projectScope = broaden(scope)!;
+                    if (persona === 'platform-engineer') {
+                      navigate(pePathForId(projectScope, activeNavId) ?? pePathForId(projectScope, 'pe-overview')!);
+                      return;
+                    }
                     const settingsUrl = settingsSwitchUrl(projectScope, projectId || undefined, undefined);
                     if (settingsUrl) {
                       navigate(settingsUrl);

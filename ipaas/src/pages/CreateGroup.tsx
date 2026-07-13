@@ -19,9 +19,9 @@
 import { Alert, Button, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useLocation } from 'react-router';
 import { useCreateGroup } from '../hooks/useAuth';
-import { orgAccessControlUrl } from '../paths';
+import { orgAccessControlUrl, peAccessControlUrl } from '../paths';
 
 export default function CreateGroup(): JSX.Element {
   const { orgHandler = 'default' } = useParams();
@@ -30,7 +30,8 @@ export default function CreateGroup(): JSX.Element {
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
   const mutation = useCreateGroup(orgHandler);
-  const backUrl = orgAccessControlUrl(orgHandler, 'groups');
+  const isPe = /\/pe(\/|$)/.test(useLocation().pathname);
+  const backUrl = isPe ? peAccessControlUrl(orgHandler, 'groups') : orgAccessControlUrl(orgHandler, 'groups');
 
   const submit = () => {
     setError(null);

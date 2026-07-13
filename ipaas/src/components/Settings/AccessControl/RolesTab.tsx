@@ -23,7 +23,7 @@ import { useNavigate, useLocation } from 'react-router';
 import SearchField from '../../SearchField';
 import { useAccessControl } from '../../../contexts/AccessControlContext';
 import { Permissions } from '../../../constants/permissions';
-import { orgRoleDetailUrl, projectRoleDetailUrl, componentRoleDetailUrl, newOrgRoleUrl } from '../../../paths';
+import { orgRoleDetailUrl, projectRoleDetailUrl, componentRoleDetailUrl, newOrgRoleUrl, newPeRoleUrl, peRoleDetailUrl } from '../../../paths';
 import { useRoles, useDeleteRole } from '../../../hooks/useAuth';
 import { useComponentByHandler } from '../../../hooks/useComponents';
 import type { Role } from '../../../types/auth';
@@ -58,7 +58,12 @@ export function RolesTab({ orgHandler, projectId, projectHandler, componentHandl
     }
   }, [location, navigate]);
 
+  // In the Platform Engineer perspective User Management is org-scoped; keep the
+  // create/detail navigation inside the PE route tree instead of Settings.
+  const isPe = /\/pe(\/|$)/.test(location.pathname);
+
   const getRoleDetailUrl = (roleId: string) => {
+    if (isPe) return peRoleDetailUrl(orgHandler, roleId);
     if (componentHandler && projectHandler) return componentRoleDetailUrl(orgHandler, projectHandler, componentHandler, roleId);
     if (projectHandler) return projectRoleDetailUrl(orgHandler, projectHandler, roleId);
     return orgRoleDetailUrl(orgHandler, roleId);
@@ -77,7 +82,7 @@ export function RolesTab({ orgHandler, projectId, projectHandler, componentHandl
           searchSlot={<SearchField value={search} onChange={setSearch} />}
           actions={
             !effectiveReadOnly && (
-              <Button variant="contained" startIcon={<Plus size={18} />} onClick={() => navigate(newOrgRoleUrl(orgHandler))}>
+              <Button variant="contained" startIcon={<Plus size={18} />} onClick={() => navigate(isPe ? newPeRoleUrl(orgHandler) : newOrgRoleUrl(orgHandler))}>
                 Create Role
               </Button>
             )

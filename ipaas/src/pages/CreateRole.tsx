@@ -19,10 +19,10 @@
 import { Alert, Box, Button, Checkbox, FormControlLabel, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, ChevronDown, ChevronUp } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useLocation } from 'react-router';
 import { useCreateRole, useAllPermissions } from '../hooks/useAuth';
 import type { Permission } from '../types/auth';
-import { orgAccessControlUrl } from '../paths';
+import { orgAccessControlUrl, peAccessControlUrl } from '../paths';
 
 function PermissionsEditor({ allPermissions, selectedIds, onChange }: { allPermissions: Record<string, Permission[]>; selectedIds: Set<string>; onChange: (ids: Set<string>) => void }) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -92,7 +92,8 @@ export default function CreateRole(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const { data: allPermsData } = useAllPermissions();
   const mutation = useCreateRole(orgHandler);
-  const backUrl = orgAccessControlUrl(orgHandler, 'roles');
+  const isPe = /\/pe(\/|$)/.test(useLocation().pathname);
+  const backUrl = isPe ? peAccessControlUrl(orgHandler, 'roles') : orgAccessControlUrl(orgHandler, 'roles');
 
   const submit = () => {
     setError(null);

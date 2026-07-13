@@ -73,6 +73,7 @@ import {
   Workflow,
   type LucideIcon,
 } from '@wso2/oxygen-ui-icons-react';
+import { hasComponent, hasProject, type Scope } from '../nav';
 
 /** A clickable leaf item that maps to a `pe/<segment>` route. */
 export interface PeNavItem {
@@ -210,23 +211,59 @@ export const PE_PARENT_MAP: Record<string, string> = Object.fromEntries(
   PE_NAV.flatMap((entry) => (isPeNavGroup(entry) ? entry.items.map((item) => [item.id, entry.id] as const) : [])),
 );
 
-/** Route stubs — one ComingSoon page per leaf. */
-export const PE_ROUTE_DEFS: { segment: string; label: string }[] = PE_LEAVES.map(({ segment, label }) => ({ segment, label }));
+/**
+ * Scope-aware PE routing.
+ *
+ * The PE perspective mirrors the Developer nav's three scopes. As in Devant, the
+ * same nav groups show at every scope; only the URL prefix changes, and items
+ * that aren't meaningful at a scope resolve to a ComingSoon stub. The route
+ * params (`:projectHandler` / `:componentHandler`) are what `ScopeResolver` reads
+ * to drive the header switchers, so the paths must include them.
+ */
+export type PeScopeLevel = 'org' | 'project' | 'component';
 
-/** Absolute URL for a PE nav id within the given org, or undefined if unknown. */
-export function pePathForId(org: string, id: string): string | undefined {
-  const leaf = PE_LEAVES.find((item) => item.id === id);
-  return leaf ? `/organizations/${org}/pe/${leaf.segment}` : undefined;
+/** Route path prefix (React Router pattern) per PE scope level. */
+export const PE_SCOPE_PREFIX: Record<PeScopeLevel, string> = {
+  org: 'organizations/:orgHandler/pe',
+  project: 'organizations/:orgHandler/pe/projects/:projectHandler',
+  component: 'organizations/:orgHandler/pe/projects/:projectHandler/components/:componentHandler',
+};
+
+/** Absolute path prefix for a concrete scope (used at runtime for navigation). */
+export function peBase(scope: Scope): string {
+  if (hasComponent(scope)) return `/organizations/${scope.org}/pe/projects/${scope.project}/components/${scope.component}`;
+  if (hasProject(scope)) return `/organizations/${scope.org}/pe/projects/${scope.project}`;
+  return `/organizations/${scope.org}/pe`;
 }
 
-/** The PE overview landing route for an org — the switcher's entry point. */
+/** One route def per (scope level × leaf). Consumed by routes.tsx to build the tree. */
+export interface PeRouteDef {
+  level: PeScopeLevel;
+  id: string;
+  segment: string;
+  label: string;
+  /** Full React Router path pattern including scope params. */
+  path: string;
+}
+
+export const PE_ALL_ROUTE_DEFS: PeRouteDef[] = (['org', 'project', 'component'] as const).flatMap((level) =>
+  PE_LEAVES.map((leaf) => ({ level, id: leaf.id, segment: leaf.segment, label: leaf.label, path: `${PE_SCOPE_PREFIX[level]}/${leaf.segment}` })),
+);
+
+/** Absolute URL for a PE nav id within the given scope, or undefined if unknown. */
+export function pePathForId(scope: Scope, id: string): string | undefined {
+  const leaf = PE_LEAVES.find((item) => item.id === id);
+  return leaf ? `${peBase(scope)}/${leaf.segment}` : undefined;
+}
+
+/** The PE overview landing route for an org — the perspective switcher's entry point. */
 export function peOverviewPath(org: string): string {
   return `/organizations/${org}/pe/overview`;
 }
 
-/** Resolve the active PE nav id from the current pathname. */
-export function peActiveId(pathname: string, org: string): string {
-  const base = `/organizations/${org}/pe`;
+/** Resolve the active PE nav id from the current pathname within a scope. */
+export function peActiveId(pathname: string, scope: Scope): string {
+  const base = peBase(scope);
   const rest = pathname.slice(base.length).replace(/^\//, '');
   const match = PE_LEAVES.find((item) => rest === item.segment || rest.startsWith(`${item.segment}/`));
   return match ? match.id : 'pe-overview';
