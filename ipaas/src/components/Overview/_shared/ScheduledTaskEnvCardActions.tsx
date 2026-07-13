@@ -27,7 +27,7 @@ import { useSchemaConfig } from '../../../hooks/useConfiguration';
 import { formatTimeUntil, nextCronRunMs } from '../../../utils/cronUtils';
 import type { EnvCardActionsProps } from '../../../types/integration';
 import ScheduleButton from './ScheduleButton';
-import { hasMissingRequiredConfigs } from '../_shared/configStatus';
+import { hasMissingRequiredConfigs } from './configStatus';
 
 /**
  * Automation's right-header slot: the next-run label (with cron auto-fire

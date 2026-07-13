@@ -17,7 +17,8 @@
  */
 
 import { gql } from './graphql';
-import type { ComponentDeployment, BuildRun, ReleaseMgtDeployment, DeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../../types/deployment';
+import { choreoClient } from './httpClients';
+import type { ComponentDeployment, BuildRun, ReleaseMgtDeployment, DeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput, ByoiImage } from '../../types/deployment';
 import type { EnvEndpoint } from '../../types/component';
 import type { DeployComponentInput } from '../../types/build';
 
@@ -299,4 +300,25 @@ export async function redeployDeployment(input: { orgHandler: string; componentI
 
 export async function deployPrebuiltImage(input: DeployPrebuiltImageInput): Promise<string> {
   return gql<{ deployPrebuiltIntegration: string }>(DEPLOY_PREBUILT_INTEGRATION, { input }).then((d) => d.deployPrebuiltIntegration);
+}
+
+/** Raw devops REST shape for a BYOI image record. */
+interface ByoiImageResponse {
+  ID: string;
+  image_name: string;
+  image_name_with_tag: string;
+  trigger_source: 'MANUAL' | 'EXTERNAL';
+  UpdatedAt: string;
+}
+
+/**
+ * BYOI image history from the devops REST API (newest first). Used by the
+ * Deploy-page Set Up card for image-based (BYOI/RAG ingestion) components.
+ */
+export async function fetchByoiImageHistory(orgUuid: string, projectId: string, componentId: string, versionId: string): Promise<ByoiImage[]> {
+  const qs = new URLSearchParams({ organization_id: orgUuid, project_id: projectId }).toString();
+  // Let network/auth/server errors propagate to the consuming query so it can
+  // surface an error state; only an absent `data` field falls back to empty.
+  const res = await choreoClient.get<{ data: ByoiImageResponse[] }>(`/devops/1.0.0/api/v1/byoi/components/${encodeURIComponent(componentId)}/versions/${encodeURIComponent(versionId)}/images?${qs}`);
+  return (res.data ?? []).map((i) => ({ id: i.ID, imageName: i.image_name, imageUrl: i.image_name_with_tag, triggerSource: i.trigger_source, updatedAt: i.UpdatedAt }));
 }

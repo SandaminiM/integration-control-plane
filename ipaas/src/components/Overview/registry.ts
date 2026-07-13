@@ -35,5 +35,6 @@ export const integrationModuleLoaders: Record<IntegrationType, ModuleLoader> = {
   'mcp-server': () => import('./mcp-server'),
   'mcp-proxy': () => import('./mcp-server'),
   'tailscale-vpn': () => import('./tailscale-vpn'),
+  'rag-ingestion': () => import('./rag-ingestion'),
   unsupported: () => import('./_shared/UnsupportedFallback'),
 };

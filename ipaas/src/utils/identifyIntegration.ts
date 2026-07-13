@@ -47,6 +47,15 @@ export function identifyIntegration(displayType: string, componentSubType: strin
   if (componentSubType === 'tailscale') {
     return { type: 'tailscale-vpn', runtime: 'unknown', raw };
   }
+  // RAG: the scheduled ingestion cronjob has its own Overview; the retrieval
+  // service and the RAG API service are BYOI services surfaced as an
+  // Integration as API (with no source/commit/build — gated in the page).
+  if (componentSubType === 'rag-ingestion') {
+    return { type: 'rag-ingestion', runtime: 'unknown', raw };
+  }
+  if (componentSubType === 'rag-retrieval-service' || componentSubType === 'rag-service') {
+    return { type: 'integration-as-api', runtime: 'unknown', raw };
+  }
   if (componentSubType === 'ballerinaFileIntegration') {
     return { type: 'file-integration', runtime: 'ballerina', raw };
   }

@@ -16,6 +16,8 @@
   "BILLING_CONSOLE_URL": "https://subscriptions.dv.wso2.com",
   "PLATFORM_SERVICES_API_BASE_URL": "https://apis.preview-dv.choreo.dev/platform-services/v1.0",
   "ENABLE_PLATFORM_SERVICES_FEATURE": "true",
+  "ENABLE_RAG_INGESTION_FEATURE": "true",
+  "RAG_INGESTION_BACKEND": "https://7eff1239-64bb-4663-b256-30a00d187a5c-dev.e1-us-east-azure.choreoapis.dev/rag-agent/rag-ingester/v1.0",
   "ASGARDEO_ORG_NUMERIC_ID": "",
   "SYSTEM_APIS_BASE_URL": "https://783c6c4d-8b9b-4190-b70a-e717ab1ee739-systemapis.e1-us-east-azure.preview-dv.choreoapis.dev",
   "SYS_API_PREFIX": "783c6c4d-8b9b-4190-b70a-e717ab1ee739-systemapis",

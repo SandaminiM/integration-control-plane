@@ -69,6 +69,9 @@ const ComponentRuntime = lazy(() => import('../pages/ComponentRuntime'));
 const OrgApprovals = lazy(() => import('../pages/OrgApprovals'));
 const CreateDatabaseServer = lazy(() => import('../pages/CreateDatabaseServer'));
 const DatabaseServerDetail = lazy(() => import('../pages/DatabaseServerDetail'));
+const SetupRagIngestion = lazy(() => import('../pages/SetupRagIngestion'));
+const SetupRagService = lazy(() => import('../pages/SetupRagService'));
+const RagRetrieval = lazy(() => import('../pages/RagRetrieval'));
 const OrgVectorDatabases = lazy(() => import('../pages/OrgVectorDatabases'));
 const CreateVectorDatabaseServer = lazy(() => import('../pages/CreateVectorDatabaseServer'));
 const VectorDatabaseServerDetail = lazy(() => import('../pages/VectorDatabaseServerDetail'));
@@ -179,9 +182,9 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/insights/compliance', element: <ComingSoon title="Coming Soon" description="Compliance insights are currently under development." /> },
               { path: 'organizations/:orgHandler/logs', element: <ComingSoon title="Coming Soon" description="Organization-level logs are currently under development." /> },
               { path: 'organizations/:orgHandler/metrics', element: <ComingSoon title="Coming Soon" description="Organization-level metrics are currently under development." /> },
-              { path: 'organizations/:orgHandler/rag/scheduled-ingestion', element: <ComingSoon title="Coming Soon" description="Scheduled ingestion is currently under development." /> },
-              { path: 'organizations/:orgHandler/rag/service', element: <ComingSoon title="Coming Soon" description="RAG service management is currently under development." /> },
-              { path: 'organizations/:orgHandler/rag/retrieval', element: <ComingSoon title="Coming Soon" description="Retrieval configuration is currently under development." /> },
+              { path: 'organizations/:orgHandler/rag/scheduled-ingestion', element: createElement(withScope(SetupRagIngestion, ['organizations'])) },
+              { path: 'organizations/:orgHandler/rag/service', element: createElement(withScope(SetupRagService, ['organizations'])) },
+              { path: 'organizations/:orgHandler/rag/retrieval', element: createElement(withScope(RagRetrieval, ['organizations'])) },
               { path: 'organizations/:orgHandler/admin/databases', element: createElement(withScope(OrgDatabases, ['organizations'])) },
               { path: 'organizations/:orgHandler/admin/databases/new', element: createElement(withScope(CreateDatabaseServer, ['organizations'])) },
               { path: 'organizations/:orgHandler/admin/databases/:dbServerId/:tab', element: createElement(withScope(DatabaseServerDetail, ['organizations'])) },

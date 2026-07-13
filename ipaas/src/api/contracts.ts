@@ -84,7 +84,7 @@ import type {
   CheckDeletableResult,
 } from '../types/component';
 import type { CertGroup, CertMapping, SchemaConfigData, ConfigMgtData, SchemaConfigItem, SaveSchemaConfigInput, PostConfigMgtInput } from '../types/configuration';
-import type { ComponentDeployment, BuildRun, ReleaseMgtDeployment, DeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../types/deployment';
+import type { ComponentDeployment, BuildRun, ReleaseMgtDeployment, DeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput, ByoiImage } from '../types/deployment';
 import type { CreateDeploymentPipelineRequest, DeploymentPipeline, EnvTemplate, PipelineDeletionEligibility } from '../types/deploymentPipeline';
 import type { OnPremKey, OnPremKeySubscription } from '../types/onPremKey';
 import type { EgressPolicy, EgressPolicyRequest } from '../types/egressPolicy';
@@ -149,7 +149,13 @@ import type {
   ServiceIdl,
   UpdateServiceRequest,
 } from '../types/genaiServices';
+import type { RetrieveRequestBody, RetrieveResponse } from '../types/ragIngestion';
 import type { InsightsEnvironment, ComponentInsights } from '../types/insights';
+
+// RAG backend — the Retrieval query endpoint. wip-only; cloud/icp stubs throw.
+export interface RagBackendApi {
+  retrieveChunks(body: RetrieveRequestBody): Promise<RetrieveResponse>;
+}
 import type { LogsRequest, ComponentLogsRequest, LogRow } from '../types/logs';
 import type { ApiDocument, RuleAdherenceResponse, ThrottlingPolicy } from '../types/marketplace';
 import type { CreateMcpApiInput, CreatedMcpApi, McpFeatureOperation, McpProxyMetadata, CreateMcpProxyComponentInput } from '../types/mcpProxy';
@@ -327,6 +333,7 @@ export interface DeploymentsApi {
   fetchDeploymentStatus(componentId: string, versionId: string): Promise<BuildRun[]>;
   fetchReleaseMgtDeployments(orgUuid: string, projectId: string, componentId: string, versionId: string, environmentId: string): Promise<ReleaseMgtDeployment[]>;
   fetchDeploymentTrackImages(componentId: string, versionId: string): Promise<DeploymentTrackImage[]>;
+  fetchByoiImageHistory(orgUuid: string, projectId: string, componentId: string, versionId: string): Promise<ByoiImage[]>;
   deployDeploymentTrack(input: DeployDeploymentTrackInput): Promise<string>;
   triggerBuild(input: DeployComponentInput): Promise<{ message: string; success: boolean }>;
   promote(input: PromoteInput): Promise<string>;
@@ -754,4 +761,5 @@ export interface AppApi {
   auditLogs: AuditLogsApi;
   platformServices: PlatformServicesApi;
   genaiServices: GenaiServicesApi;
+  ragBackend: RagBackendApi;
 }
