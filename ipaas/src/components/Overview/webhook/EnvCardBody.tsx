@@ -22,18 +22,23 @@ import { useEnvEndpoints } from '../../../hooks/useDeployments';
 import type { EnvCardBodyProps } from '../../../types/integration';
 import EnvCardSkeleton from '../_shared/EnvCardSkeleton';
 import EndpointUrlsPanel from '../_shared/EndpointUrlsPanel';
+import ServiceInsights from '../integration-as-api/ServiceInsights';
 
 /**
- * Webhook body: the incoming endpoint URLs + deployment placeholder. Webhooks are
- * HTTP-triggered like services, so this reuses the shared endpoint panel — but,
- * matching Devant, it omits the OpenAPI/swagger viewer (webhooks have no contract).
+ * Webhook body: the incoming endpoint URLs + the insights metrics (events
+ * received, processing errors, error rate, latency) — the same layout as a
+ * service card's, but without the OpenAPI/swagger viewer (webhooks publish no
+ * contract). Matches Devant's webhook overview.
  */
-export default function EnvCardBody({ component, versionId, releaseId, hasDeployment, loadingDeployment, deploymentStatusV2 }: EnvCardBodyProps): ReactNode {
+export default function EnvCardBody({ component, env, projectId, versionId, releaseId, hasDeployment, loadingDeployment, deploymentStatusV2 }: EnvCardBodyProps): ReactNode {
   const { data: envEndpoints = [] } = useEnvEndpoints(component.id, versionId, releaseId);
   const [selectedEpIdx, setSelectedEpIdx] = useState(0);
+  const activeEndpoint = envEndpoints[selectedEpIdx] ?? envEndpoints[0];
 
   const showEndpointPanel = hasDeployment && envEndpoints.length > 0;
   const notDeployed = !loadingDeployment && !hasDeployment;
+  const insightsApiId = activeEndpoint?.apimId ?? component.apiId ?? '';
+  const showInsights = !!env.critical && !!env.id && !!env.name && !!projectId;
 
   if (loadingDeployment) return <EnvCardSkeleton />;
 
@@ -56,6 +61,8 @@ export default function EnvCardBody({ component, versionId, releaseId, hasDeploy
           This webhook has not been deployed to this environment yet.
         </Typography>
       )}
+
+      {showInsights && <ServiceInsights envName={env.name} envId={env.id} apimEnvId={env.apimEnvId} projectId={projectId} apiId={insightsApiId} />}
     </>
   );
 }
