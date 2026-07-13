@@ -16,60 +16,63 @@
  * under the License.
  */
 
-import { Alert, Button, Checkbox, FormControlLabel, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, MenuItem, PageContent, Select, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
-import { useState, type JSX } from 'react';
+import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
-import { useCreateEnvironment } from '../hooks/useEnvironments';
+import { useDataPlanes } from '../hooks/useDataPlanes';
+import { useAddEnvironment } from '../hooks/useEnvironments';
+import { useOrgUuid } from '../hooks/useOrgUuid';
+import { buildEnvironmentVhost, EnvironmentValidationError } from '../utils/environment';
 import { resourceUrl, type OrgScope } from '../nav';
-
-function formatErrorMessage(error: unknown): string {
-  const message = error instanceof Error ? error.message : typeof error === 'object' && error !== null && 'message' in error && typeof (error as { message: unknown }).message === 'string' ? (error as { message: string }).message : '';
-  const lowerMessage = message.toLowerCase();
-
-  if (lowerMessage.includes('already exists') || lowerMessage.includes('duplicate') || lowerMessage.includes('exists') || lowerMessage.includes('conflict') || lowerMessage.includes('unique')) {
-    return 'An environment with this name already exists. Please choose a different name.';
-  }
-
-  if (lowerMessage.includes('unexpected error') && lowerMessage.includes('administrator')) {
-    return 'Unable to create environment. This name may already be in use or violates system constraints.';
-  }
-
-  if (lowerMessage.includes('invalid') || lowerMessage.includes('validation')) {
-    return 'Invalid input. Please check the environment name and try again.';
-  }
-
-  if (lowerMessage.includes('permission') || lowerMessage.includes('unauthorized') || lowerMessage.includes('forbidden')) {
-    return 'You do not have permission to create environments.';
-  }
-
-  return 'An unexpected error occurred. Please try again or contact support if the issue persists.';
-}
 
 export default function CreateEnvironment(scope: OrgScope): JSX.Element {
   const navigate = useNavigate();
+  const orgUuid = useOrgUuid();
+  const listUrl = resourceUrl(scope, 'environments');
+  const { data: dataPlanes = [], isLoading: loadingDataPlanes, isError: dataPlanesError, refetch: refetchDataPlanes } = useDataPlanes();
+  const create = useAddEnvironment();
 
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState('My-New-Environment');
+  const [dnsPrefix, setDnsPrefix] = useState('my-env');
+  const [dataplaneId, setDataplaneId] = useState('');
   const [critical, setCritical] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const mutation = useCreateEnvironment();
+
+  // Default the data plane to the first available once the list loads.
+  useEffect(() => {
+    if (dataPlanes.length) setDataplaneId((prev) => (prev && dataPlanes.some((d) => d.id === prev) ? prev : dataPlanes[0].id));
+  }, [dataPlanes]);
+
+  const selectedDataPlane = useMemo(() => dataPlanes.find((d) => d.id === dataplaneId), [dataPlanes, dataplaneId]);
+  const vhostPreview = orgUuid && dnsPrefix.trim() ? buildEnvironmentVhost(orgUuid, dnsPrefix.trim(), selectedDataPlane?.externalGatewayVirtualHost) : '';
 
   const submit = () => {
     setError(null);
-    const trimmedName = name.trim();
-    mutation.mutate(
-      { name: trimmedName, description: description.trim(), critical },
+    if (!orgUuid) {
+      setError("Couldn't determine your organization. Please reload and try again.");
+      return;
+    }
+    create.mutate(
+      { orgUuid, name: name.trim(), dataplaneId, dnsPrefix: dnsPrefix.trim(), isProd: critical, vhost: buildEnvironmentVhost(orgUuid, dnsPrefix.trim(), selectedDataPlane?.externalGatewayVirtualHost) },
       {
-        onSuccess: () => navigate(resourceUrl(scope, 'environments'), { state: { success: true, environmentName: trimmedName } }),
-        onError: (err) => setError(formatErrorMessage(err)),
+        onSuccess: () => navigate(listUrl, { state: { success: true, environmentName: name.trim() } }),
+        onError: (err) => {
+          if (err instanceof EnvironmentValidationError) {
+            setError(err.field === 'name' ? 'An environment with this name already exists. Please choose a different name.' : 'The derived hostname is already in use. Try a different DNS prefix.');
+          } else {
+            setError('Failed to create the environment. Please try again.');
+          }
+        },
       },
     );
   };
 
+  const canSubmit = !!name.trim() && !!dnsPrefix.trim() && !!dataplaneId && !create.isPending;
+
   return (
     <PageContent>
-      <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(resourceUrl(scope, 'environments'))} sx={{ mb: 2 }}>
+      <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(listUrl)} sx={{ mb: 2 }}>
         Back to Environments
       </Button>
 
@@ -85,15 +88,51 @@ export default function CreateEnvironment(scope: OrgScope): JSX.Element {
 
       <Stack gap={3} sx={{ maxWidth: 600, mb: 4 }}>
         <TextField label="Name" required placeholder="e.g., staging" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
-        <TextField label="Description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth />
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.75 }}>
+            Data Plane
+          </Typography>
+          {loadingDataPlanes ? (
+            <CircularProgress size={20} />
+          ) : dataPlanesError ? (
+            <Alert
+              severity="error"
+              action={
+                <Button color="inherit" size="small" onClick={() => refetchDataPlanes()}>
+                  Retry
+                </Button>
+              }>
+              Failed to load data planes.
+            </Alert>
+          ) : (
+            <Select fullWidth size="small" displayEmpty value={dataplaneId} onChange={(e) => setDataplaneId(String(e.target.value))}>
+              <MenuItem value="" disabled>
+                Select a data plane
+              </MenuItem>
+              {dataPlanes.map((dp) => (
+                <MenuItem key={dp.id} value={dp.id}>
+                  {dp.name}
+                </MenuItem>
+              ))}
+            </Select>
+          )}
+        </Box>
+        <Box>
+          <TextField label="DNS Prefix" required placeholder="e.g., staging" value={dnsPrefix} onChange={(e) => setDnsPrefix(e.target.value)} fullWidth />
+          {vhostPreview && (
+            <Alert severity="info" sx={{ mt: 1.5 }}>
+              DNS for the environment will be created as {vhostPreview}. URL customization will be enabled for the new environment after provisioning, which can take about 5 minutes.
+            </Alert>
+          )}
+        </Box>
         <FormControlLabel control={<Checkbox checked={critical} onChange={(_, v) => setCritical(v)} />} label="Mark as Critical Environment" />
       </Stack>
 
       <Stack direction="row" gap={2}>
-        <Button variant="outlined" onClick={() => navigate(resourceUrl(scope, 'environments'))}>
+        <Button variant="outlined" onClick={() => navigate(listUrl)} disabled={create.isPending}>
           Cancel
         </Button>
-        <Button variant="contained" onClick={submit} disabled={!name.trim() || mutation.isPending}>
+        <Button variant="contained" onClick={submit} disabled={!canSubmit} startIcon={create.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}>
           Create
         </Button>
       </Stack>

@@ -1,0 +1,45 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { MenuItem, Select } from '@wso2/oxygen-ui';
+import type { JSX } from 'react';
+
+interface EnvironmentSelectProps {
+  environments: { id: string; name: string }[];
+  /** The selected environment id. */
+  value: string;
+  onChange: (environmentId: string) => void;
+}
+
+/** Compact environment picker used in the deployment-track bar of ComponentScope pages. */
+export default function EnvironmentSelect({ environments, value, onChange }: EnvironmentSelectProps): JSX.Element {
+  return (
+    <Select
+      size="small"
+      value={environments.some((e) => e.id === value) ? value : ''}
+      onChange={(e) => onChange(e.target.value as string)}
+      inputProps={{ 'aria-label': 'Environment' }}
+      sx={{ fontSize: '0.8125rem', '& .MuiSelect-select': { py: 0.5, px: 1.5 }, minWidth: 140 }}>
+      {environments.map((e) => (
+        <MenuItem key={e.id} value={e.id}>
+          {e.name}
+        </MenuItem>
+      ))}
+    </Select>
+  );
+}

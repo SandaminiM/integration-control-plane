@@ -90,12 +90,28 @@ import type { OnPremKey, OnPremKeySubscription } from '../types/onPremKey';
 import type { EgressPolicy, EgressPolicyRequest } from '../types/egressPolicy';
 import type { AuthzRole, CreateAuthzRoleInput, UpdateAuthzRoleInput } from '../types/projectAuthz';
 import type { ByoiEndpointFileContents, CreateByoiComponentInput, CreateByoiComponentResult, DevopsVolume, DevopsVolumeMount, VolumeMountWriteData, VolumeWriteData } from '../types/tailscale';
-import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseDetails, SecretWriteData } from '../types/devopsConfigs';
+import type {
+  ConfigMapWriteData,
+  ConfigMountPath,
+  ConfigMountWriteData,
+  ContainerWriteData,
+  DevopsConfigMap,
+  DevopsConfigMapDetails,
+  DevopsConfigMount,
+  DevopsSecret,
+  DevopsSecretDetails,
+  ReleaseContainer,
+  ReleaseDetails,
+  SecretWriteData,
+} from '../types/devopsConfigs';
+import type { HealthCheck, HealthCheckWriteData } from '../types/healthChecks';
 import type { CreateUrlMappingInput, CustomDomain, CustomDomainType, CustomUrlMapping } from '../types/customDomain';
-import type { OrgWorkflowConfig, WorkflowConfigRequest, WorkflowDefinition } from '../types/workflow';
+import type { OrgWorkflowConfig, ReviewerDecisionRequest, WorkflowConfigRequest, WorkflowDefinition, WorkflowInstanceResponse, WorkflowReviewData } from '../types/workflow';
 import type { Dataplane, IdentityProvider, IdentityProviderRequest, RoleGroupMappingResponse } from '../types/appSecurity';
+import type { Cluster, PdpManagerPdp } from '../types/dataPlanes';
+import type { ClusterPod, PodMetrics, RuntimeReleaseDetails } from '../types/runtime';
 import type { CreateGitCredentialInput, CredentialDeleteEligibility, GitCredential } from '../types/credentials';
-import type { Environment, CloudDataPlane, EnvironmentInput } from '../types/environment';
+import type { Environment, CloudDataPlane, EnvironmentInput, EnvironmentTemplate, CreateEnvironmentData, EnvDeletionEligibility } from '../types/environment';
 import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../types/executions';
 import type { SubscriptionList, ComponentLimits } from '../types/subscription';
 import type { ConfigGroup, ConfigGroupNameAvailability, ConfigGroupUsage, CreateConfigGroupRequest, EditConfigGroupRequest } from '../types/configGroups';
@@ -383,6 +399,11 @@ export interface WorkflowsApi {
   fetchWorkflowConfigs(): Promise<OrgWorkflowConfig[]>;
   createWorkflowConfig(input: WorkflowConfigRequest): Promise<OrgWorkflowConfig>;
   updateWorkflowConfig(configId: string, input: WorkflowConfigRequest): Promise<OrgWorkflowConfig>;
+  fetchWorkflowInstances(): Promise<WorkflowInstanceResponse[]>;
+  fetchPastWorkflowInstances(): Promise<WorkflowInstanceResponse[]>;
+  fetchWorkflowReviewData(workflowId: string): Promise<WorkflowReviewData>;
+  reviewWorkflowInstance(workflowId: string, input: ReviewerDecisionRequest): Promise<void>;
+  cancelWorkflowInstance(workflowId: string): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -439,6 +460,7 @@ export interface TailscaleApi {
 
 export interface DevopsConfigsApi {
   getReleaseById(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<ReleaseDetails>;
+  updateContainer(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string, data: ContainerWriteData): Promise<ReleaseContainer>;
   getSecrets(orgUuid: string, projectId: string, environmentId: string): Promise<DevopsSecret[]>;
   getSecretDetails(orgUuid: string, projectId: string, environmentId: string, secretId: string): Promise<DevopsSecretDetails>;
   createSecret(orgUuid: string, projectId: string, data: SecretWriteData): Promise<DevopsSecret>;
@@ -455,6 +477,13 @@ export interface DevopsConfigsApi {
   removeConfigMount(orgUuid: string, projectId: string, path: ConfigMountPath): Promise<void>;
 }
 
+export interface HealthChecksApi {
+  getHealthChecks(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<HealthCheck[]>;
+  createHealthCheck(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string, data: HealthCheckWriteData): Promise<HealthCheck>;
+  updateHealthCheck(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string, healthCheckId: string, data: HealthCheckWriteData): Promise<HealthCheck>;
+  deleteHealthCheck(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string, healthCheckId: string): Promise<void>;
+}
+
 // ---------------------------------------------------------------------------
 // Environments
 // ---------------------------------------------------------------------------
@@ -466,6 +495,10 @@ export interface EnvironmentsApi {
   createEnvironment(input: EnvironmentInput): Promise<Environment>;
   updateEnvironment(input: EnvironmentInput & { environmentId: string }): Promise<Environment>;
   deleteEnvironment(environmentId: string): Promise<string>;
+  fetchEnvironmentTemplates(orgId: string): Promise<EnvironmentTemplate[]>;
+  createOrgEnvironment(orgUuid: string, input: CreateEnvironmentData & { vhost: string }): Promise<void>;
+  getEnvDeleteEligibility(orgUuid: string, templateId: string): Promise<EnvDeletionEligibility>;
+  deleteEnvironmentTemplate(orgUuid: string, templateId: string): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -660,6 +693,26 @@ export interface GenaiServicesApi {
 // Aggregate — the full API surface consumed by the app
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Data planes (Runtimes)
+// ---------------------------------------------------------------------------
+
+export interface DataPlanesApi {
+  listDataPlanes(): Promise<Cluster[]>;
+  listPdps(): Promise<PdpManagerPdp[]>;
+}
+
+// ---------------------------------------------------------------------------
+// Component runtime (pods, metrics, redeploy)
+// ---------------------------------------------------------------------------
+
+export interface RuntimeApi {
+  fetchReleaseDetails(projectId: string, componentId: string, releaseId: string): Promise<RuntimeReleaseDetails>;
+  fetchComponentPods(projectId: string, clusterId: string, releaseId: string, namespace: string): Promise<ClusterPod[]>;
+  fetchComponentPodMetrics(projectId: string, clusterId: string, releaseId: string, namespace: string): Promise<PodMetrics[]>;
+  redeployRelease(projectId: string, componentId: string, releaseId: string, message?: string): Promise<void>;
+}
+
 export interface AppApi {
   alerts: AlertsApi;
   apim: ApimApi;
@@ -675,6 +728,8 @@ export interface AppApi {
   deploymentPipelines: DeploymentPipelinesApi;
   onPremKeys: OnPremKeysApi;
   appSecurity: AppSecurityApi;
+  dataPlanes: DataPlanesApi;
+  runtime: RuntimeApi;
   credentials: CredentialsApi;
   workflows: WorkflowsApi;
   egressControl: EgressControlApi;
@@ -690,6 +745,7 @@ export interface AppApi {
   projectAuthz: ProjectAuthzApi;
   tailscale: TailscaleApi;
   devopsConfigs: DevopsConfigsApi;
+  healthChecks: HealthChecksApi;
   customDomains: CustomDomainsApi;
   repository: RepositoryApi;
   samples: SamplesApi;
