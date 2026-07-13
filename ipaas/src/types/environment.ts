@@ -48,6 +48,55 @@ export interface EnvironmentInput {
   critical: boolean;
 }
 
+// ---------------------------------------------------------------------------
+// Org environment templates + REST create/delete (devops API)
+// ---------------------------------------------------------------------------
+
+/** An org environment template — the record the devops API creates/deletes. */
+export interface EnvironmentTemplate {
+  id: string;
+  name: string;
+  createdAt?: string;
+  region?: string;
+  clusterId?: string;
+  choreoEnv?: string;
+  critical: boolean;
+  dnsPrefix?: string;
+}
+
+/** POST body for creating an org environment. `isProd` mirrors the "critical" flag. */
+export interface CreateEnvironmentData {
+  name: string;
+  dataplaneId: string;
+  dnsPrefix: string;
+  isProd: boolean;
+}
+
+export interface DeployedComponent {
+  componentName?: string;
+  componentId?: string;
+}
+
+export interface ProjectDeployedComponents {
+  projectName?: string;
+  projectId?: string;
+  components?: DeployedComponent[];
+}
+
+/** Whether an environment template can be deleted, plus what is deployed to it. */
+export interface EnvDeletionEligibility {
+  templateId: string;
+  envName?: string;
+  deletable: boolean;
+  isClusterActive?: boolean;
+  deployedComponentsDetails?: ProjectDeployedComponents[];
+}
+
+/** APIM name/vhost pre-flight validation result. */
+export interface ValidityResponse {
+  validity: boolean;
+}
+
 export interface UpdateLogLevelInput {
   runtimeIds: string[];
   componentName: string;

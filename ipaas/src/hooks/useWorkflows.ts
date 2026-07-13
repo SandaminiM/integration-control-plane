@@ -17,8 +17,9 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createWorkflowConfig, fetchWorkflowConfigs, fetchWorkflowDefinitions, updateWorkflowConfig } from '#api/workflows';
-import type { OrgWorkflowConfig, WorkflowConfigRequest, WorkflowDefinition } from '../types/workflow';
+import { cancelWorkflowInstance, createWorkflowConfig, fetchPastWorkflowInstances, fetchWorkflowConfigs, fetchWorkflowDefinitions, fetchWorkflowInstances, fetchWorkflowReviewData, reviewWorkflowInstance, updateWorkflowConfig } from '#api/workflows';
+import type { OrgWorkflowConfig, ReviewerDecisionRequest, WorkflowConfigRequest, WorkflowDefinition, WorkflowInstanceResponse, WorkflowReviewData } from '../types/workflow';
+import { IS_WIP } from '../features';
 
 const ROOT_KEY = 'workflows';
 
@@ -50,4 +51,54 @@ export function useUpdateWorkflowConfig() {
     mutationFn: ({ configId, input }) => updateWorkflowConfig(configId, input),
     onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY] }),
   });
+}
+
+// --- Approval requests (workflow instances) ---
+
+export function useWorkflowInstances() {
+  return useQuery<WorkflowInstanceResponse[]>({
+    queryKey: [ROOT_KEY, 'instances', 'pending'],
+    queryFn: fetchWorkflowInstances,
+    enabled: isApprovalsEnabled(),
+    retry: false,
+  });
+}
+
+export function usePastWorkflowInstances() {
+  return useQuery<WorkflowInstanceResponse[]>({
+    queryKey: [ROOT_KEY, 'instances', 'past'],
+    queryFn: fetchPastWorkflowInstances,
+    enabled: isApprovalsEnabled(),
+    retry: false,
+  });
+}
+
+export function useWorkflowReviewData(workflowId: string | null) {
+  return useQuery<WorkflowReviewData>({
+    queryKey: [ROOT_KEY, 'review', workflowId],
+    queryFn: () => fetchWorkflowReviewData(workflowId!),
+    enabled: !!workflowId,
+    retry: false,
+  });
+}
+
+export function useReviewWorkflow() {
+  const qc = useQueryClient();
+  return useMutation<void, Error, { workflowId: string; input: ReviewerDecisionRequest }>({
+    mutationFn: ({ workflowId, input }) => reviewWorkflowInstance(workflowId, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'instances'] }),
+  });
+}
+
+export function useCancelWorkflowInstance() {
+  const qc = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: (workflowId) => cancelWorkflowInstance(workflowId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'instances'] }),
+  });
+}
+
+/** Approvals is a wip-only surface for now; matches the settings-side gating. */
+export function isApprovalsEnabled(): boolean {
+  return IS_WIP;
 }

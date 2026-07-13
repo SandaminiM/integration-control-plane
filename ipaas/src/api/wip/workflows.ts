@@ -17,7 +17,7 @@
  */
 
 import { choreoClient } from './httpClients';
-import type { OrgWorkflowConfig, WorkflowConfigRequest, WorkflowDefinition } from '../../types/workflow';
+import type { OrgWorkflowConfig, ReviewerDecisionRequest, WorkflowConfigRequest, WorkflowDefinition, WorkflowInstanceResponse, WorkflowReviewData } from '../../types/workflow';
 
 // Workflow-management service (via choreoClient); the org is taken from the token.
 const BASE = '/devwfmgt/v1.0';
@@ -36,4 +36,31 @@ export async function createWorkflowConfig(input: WorkflowConfigRequest): Promis
 
 export async function updateWorkflowConfig(configId: string, input: WorkflowConfigRequest): Promise<OrgWorkflowConfig> {
   return choreoClient.put<OrgWorkflowConfig>(`${BASE}/workflow/configs/${encodeURIComponent(configId)}`, input);
+}
+
+// --- Workflow instances (approval requests) ---
+
+/** Pending approval requests. */
+export async function fetchWorkflowInstances(): Promise<WorkflowInstanceResponse[]> {
+  return choreoClient.get<WorkflowInstanceResponse[]>(`${BASE}/workflow-instances?status=PENDING`);
+}
+
+/** Resolved approval requests (approved / rejected / cancelled). */
+export async function fetchPastWorkflowInstances(): Promise<WorkflowInstanceResponse[]> {
+  return choreoClient.get<WorkflowInstanceResponse[]>(`${BASE}/workflow-instances?status=APPROVED,REJECTED,CANCELLED`);
+}
+
+/** Extra review data (payload/metadata) shown in the drawer. */
+export async function fetchWorkflowReviewData(workflowId: string): Promise<WorkflowReviewData> {
+  return choreoClient.get<WorkflowReviewData>(`${BASE}/review/${encodeURIComponent(workflowId)}/data`);
+}
+
+/** Approve or reject a pending request. */
+export async function reviewWorkflowInstance(workflowId: string, input: ReviewerDecisionRequest): Promise<void> {
+  await choreoClient.post<void>(`${BASE}/review/${encodeURIComponent(workflowId)}/decision`, input);
+}
+
+/** Cancel a pending request the current user raised. */
+export async function cancelWorkflowInstance(workflowId: string): Promise<void> {
+  await choreoClient.post<void>(`${BASE}/workflow-instances/${encodeURIComponent(workflowId)}/cancellation`, {});
 }
