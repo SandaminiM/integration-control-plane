@@ -158,6 +158,8 @@ export default function ThirdPartyServices(scope: OrgScope | ProjectScope): JSX.
                       sx={{ cursor: 'pointer' }}
                       onClick={() => goDetail(s.serviceId)}
                       onKeyDown={(e) => {
+                        // Only activate on the row itself — ignore keys from nested controls (e.g. the delete button).
+                        if (e.target !== e.currentTarget) return;
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           goDetail(s.serviceId);

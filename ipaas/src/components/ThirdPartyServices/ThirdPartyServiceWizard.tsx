@@ -87,7 +87,8 @@ export default function ThirdPartyServiceWizard({ orgHandle, submitting, submitE
 
   const step1Valid = name.trim() !== '';
   const endpointComplete = (r: EndpointRow) => r.name.trim() !== '' && r.serviceUrl.trim() !== '' && r.environmentIds.length > 0 && r.params.every((p) => p.key.trim() !== '' && p.value.trim() !== '');
-  const canRegister = useMemo(() => endpoints.some(endpointComplete) && new Set(endpoints.map((r) => r.name.trim())).size === endpoints.length, [endpoints]);
+  // Every visible row must be complete (no partially-filled row is silently dropped) and names unique.
+  const canRegister = useMemo(() => endpoints.length > 0 && endpoints.every(endpointComplete) && new Set(endpoints.map((r) => r.name.trim())).size === endpoints.length, [endpoints]);
 
   const toggleReveal = (key: string) =>
     setRevealed((prev) => {
@@ -99,7 +100,8 @@ export default function ThirdPartyServiceWizard({ orgHandle, submitting, submitE
 
   const register = () => {
     if (!canRegister || submitting) return;
-    onSubmit({ name, version, summary, serviceType, serviceDefContent, endpoints: endpoints.filter(endpointComplete).map(({ id: _id, ...rest }) => rest) });
+    // canRegister guarantees every row is complete, so submit all of them.
+    onSubmit({ name, version, summary, serviceType, serviceDefContent, endpoints: endpoints.map(({ id: _id, ...rest }) => rest) });
   };
 
   return (

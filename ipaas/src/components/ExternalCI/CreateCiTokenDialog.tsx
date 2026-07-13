@@ -47,18 +47,25 @@ export default function CreateCiTokenDialog({ projectId, componentId, onClose }:
   };
 
   const copy = async (): Promise<void> => {
-    if (!token) return;
+    if (!token || !navigator.clipboard) return;
     try {
-      await navigator.clipboard?.writeText(token);
+      await navigator.clipboard.writeText(token);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
-      /* clipboard unavailable — ignore */
+      /* clipboard write failed — ignore */
     }
   };
 
   return (
-    <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open
+      onClose={() => {
+        // Don't allow backdrop/Escape dismissal while the create request is in flight.
+        if (!create.isPending) onClose();
+      }}
+      maxWidth="sm"
+      fullWidth>
       <DialogTitle>{token ? 'Token created' : 'Create External CI Token'}</DialogTitle>
       <DialogContent>
         {error && (

@@ -20,6 +20,7 @@ import { describe, it, expect } from 'vitest';
 import { buildCreateThirdPartyRequest, deriveConnectionEntries, encodeServiceDef, extractServerUrl, thirdPartyServicesBase } from './thirdPartyServices';
 import type { ThirdPartyServiceDraft } from '../types/thirdPartyServices';
 import type { EndpointConfigDraft } from '../types/genaiServices';
+import type { OrgScope, ProjectScope } from '../nav';
 
 const endpoints: EndpointConfigDraft[] = [
   { name: 'ProdEndpoint', serviceUrl: 'https://api.openai.com/v1', params: [{ key: 'APIKey', value: 'k1', isSensitive: true }], environmentIds: ['env-prod'] },
@@ -30,8 +31,10 @@ const draft: ThirdPartyServiceDraft = { name: 'orgtest', version: 'v1', summary:
 
 describe('thirdPartyServicesBase', () => {
   it('uses different segments for org and project scope', () => {
-    expect(thirdPartyServicesBase({ level: 'organizations', org: 'acme' } as never)).toBe('/organizations/acme/admin/third-party');
-    expect(thirdPartyServicesBase({ level: 'projects', org: 'acme', project: 'p1' } as never)).toBe('/organizations/acme/projects/p1/admin/third-party-services');
+    const orgScope: OrgScope = { level: 'organizations', org: 'acme' };
+    const projectScope: ProjectScope = { level: 'projects', org: 'acme', project: 'p1' };
+    expect(thirdPartyServicesBase(orgScope)).toBe('/organizations/acme/admin/third-party');
+    expect(thirdPartyServicesBase(projectScope)).toBe('/organizations/acme/projects/p1/admin/third-party-services');
   });
 });
 
@@ -62,6 +65,14 @@ describe('deriveConnectionEntries', () => {
     // APIKey appears in both endpoints but is de-duplicated to a single entry.
     expect(entries.filter((e) => e.name === 'APIKey')).toHaveLength(1);
     expect(entries.find((e) => e.name === 'APIKey')).toMatchObject({ isSensitive: true });
+  });
+
+  it('marks a duplicated param sensitive when any occurrence is sensitive', () => {
+    const eps: EndpointConfigDraft[] = [
+      { name: 'a', serviceUrl: 'u', params: [{ key: 'Key', value: 'v', isSensitive: false }], environmentIds: ['e1'] },
+      { name: 'b', serviceUrl: 'u', params: [{ key: 'Key', value: 'v', isSensitive: true }], environmentIds: ['e2'] },
+    ];
+    expect(deriveConnectionEntries(eps).find((e) => e.name === 'Key')).toMatchObject({ isSensitive: true });
   });
 });
 

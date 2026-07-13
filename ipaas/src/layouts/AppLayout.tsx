@@ -113,6 +113,7 @@ import { useOrgs } from '../hooks/useOrg';
 import { useBillingOrg } from '../hooks/useBillingOrg';
 import { isSupportedIntegration, isByoiComponent, GENERIC_SERVICE_TYPES } from '../constants/integrations';
 import { useSubscriptions } from '../hooks/useSubscription';
+import { isExternalCiEnabled } from '../hooks/useExternalCi';
 import { PAID_SUBSCRIPTION_TYPE } from '../constants/subscription';
 import { identifyIntegration } from '../utils/identifyIntegration';
 import { useOrgPermissions } from '../hooks/useAuth';
@@ -1269,7 +1270,7 @@ function AppLayoutInner(): JSX.Element {
               (() => {
                 const isGenericService = GENERIC_SERVICE_TYPES.has(currentComponent?.displayType ?? '');
                 // External CI is a paid, Bring-Your-Own-Image-only feature.
-                const showExternalCI = isByoiComponent(currentComponent?.displayType ?? '') && isSubscribed;
+                const showExternalCI = isExternalCiEnabled() && isByoiComponent(currentComponent?.displayType ?? '') && isSubscribed;
                 const integrationType = identifyIntegration(currentComponent?.displayType ?? '', currentComponent?.componentSubType ?? null).type;
                 const runtimeLogsType = ['file-integration', 'event-integration'].includes(integrationType);
                 const aiAgentType = integrationType === 'ai-agent';

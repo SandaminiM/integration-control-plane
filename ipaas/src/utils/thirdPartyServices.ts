@@ -49,8 +49,14 @@ export function encodeServiceDef(text: string): string {
  */
 export function extractServerUrl(text: string): string {
   if (!text) return '';
-  const json = text.match(/"servers"\s*:\s*\[\s*\{\s*"url"\s*:\s*"([^"]+)"/);
-  if (json) return json[1];
+  // JSON (OpenAPI): parse and read the first server's url regardless of key order.
+  try {
+    const parsed = JSON.parse(text) as { servers?: { url?: unknown }[] };
+    const url = parsed?.servers?.[0]?.url;
+    if (typeof url === 'string' && url) return url;
+  } catch {
+    /* not JSON — fall through to the YAML matcher */
+  }
   const yaml = text.match(/servers\s*:\s*\r?\n\s*-\s*url\s*:\s*(['"]?)([^\s'"]+)\1/i);
   if (yaml) return yaml[2];
   return '';
@@ -64,7 +70,8 @@ export function deriveConnectionEntries(endpoints: EndpointConfigDraft[]): Conne
   const seen = new Map<string, boolean>();
   endpoints.forEach((ep) => ep.params.forEach((p) => {
     const key = p.key.trim();
-    if (key && !seen.has(key)) seen.set(key, p.isSensitive);
+    // A param is sensitive if ANY occurrence of that name is marked sensitive.
+    if (key) seen.set(key, (seen.get(key) ?? false) || p.isSensitive);
   }));
   const paramEntries: ConnectionSchemaEntry[] = [...seen.entries()].map(([name, isSensitive]) => ({ name, type: 'string', isOptional: false, isSensitive }));
   return [{ name: SERVICE_URL_FIELD, type: 'string', isOptional: false, isSensitive: false }, ...paramEntries];

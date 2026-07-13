@@ -35,12 +35,19 @@ import type {
 const SERVICES = `${MARKETPLACE_BASE}/services`;
 const TEMPLATES = `${MARKETPLACE_BASE}/templates`;
 
-/** GenAI marketplace services (paginated, searchable). Project-scoped when `projectId` is set. */
-export function listGenaiServices(params: { query?: string; offset: number; limit: number; projectId?: string }): Promise<GenAiServiceListResponse> {
+interface ServiceListParams {
+  query?: string;
+  offset: number;
+  limit: number;
+  projectId?: string;
+}
+
+/** Shared marketplace-services list query; only template-type / isTemplated differ per caller. */
+function serviceListQuery(params: ServiceListParams, opts: { templateType?: string; isTemplated: 'true' | 'false' }): string {
   const qs = new URLSearchParams({
     networkVisibilityFilter: params.projectId ? 'project' : 'org',
-    templateType: GENAI_TEMPLATE_TYPE,
-    isTemplated: 'true',
+    ...(opts.templateType ? { templateType: opts.templateType } : {}),
+    isTemplated: opts.isTemplated,
     offset: String(params.offset),
     limit: String(params.limit),
     query: params.query ?? '',
@@ -51,25 +58,17 @@ export function listGenaiServices(params: { query?: string; offset: number; limi
     includeCreated: 'true',
   });
   if (params.projectId) qs.set('networkVisibilityprojectId', params.projectId);
-  return withScopeRetry(() => choreoClient.get<GenAiServiceListResponse>(`${SERVICES}?${qs.toString()}`));
+  return qs.toString();
+}
+
+/** GenAI marketplace services (paginated, searchable). Project-scoped when `projectId` is set. */
+export function listGenaiServices(params: ServiceListParams): Promise<GenAiServiceListResponse> {
+  return withScopeRetry(() => choreoClient.get<GenAiServiceListResponse>(`${SERVICES}?${serviceListQuery(params, { templateType: GENAI_TEMPLATE_TYPE, isTemplated: 'true' })}`));
 }
 
 /** Third-party marketplace services (own service definition, not templated). */
-export function listThirdPartyServices(params: { query?: string; offset: number; limit: number; projectId?: string }): Promise<GenAiServiceListResponse> {
-  const qs = new URLSearchParams({
-    networkVisibilityFilter: params.projectId ? 'project' : 'org',
-    isTemplated: 'false',
-    offset: String(params.offset),
-    limit: String(params.limit),
-    query: params.query ?? '',
-    sortBy: 'createdTime',
-    sortAscending: 'false',
-    isThirdParty: 'true',
-    aggregateByMajorVersion: 'false',
-    includeCreated: 'true',
-  });
-  if (params.projectId) qs.set('networkVisibilityprojectId', params.projectId);
-  return withScopeRetry(() => choreoClient.get<GenAiServiceListResponse>(`${SERVICES}?${qs.toString()}`));
+export function listThirdPartyServices(params: ServiceListParams): Promise<GenAiServiceListResponse> {
+  return withScopeRetry(() => choreoClient.get<GenAiServiceListResponse>(`${SERVICES}?${serviceListQuery(params, { isTemplated: 'false' })}`));
 }
 
 /** GenAI provider options (Open AI, Azure Open AI, Mistral AI, Anthropic AI). */
