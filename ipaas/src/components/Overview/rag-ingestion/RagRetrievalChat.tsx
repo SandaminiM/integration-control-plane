@@ -16,13 +16,79 @@
  * under the License.
  */
 
-import { Alert, Avatar, Box, Button, CircularProgress, InputBase, ListingTable, Stack, Typography } from '@wso2/oxygen-ui';
+import { Alert, Avatar, Box, Button, CircularProgress, Dialog, DialogContent, DialogTitle, InputBase, ListingTable, Stack, TablePagination, Typography } from '@wso2/oxygen-ui';
 import { Search, Send, User } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useRagRetrievalService } from '../../../hooks/useRagRetrievalService';
 import { DEFAULT_RETRIEVAL_QUERY } from '../../../constants/ragIngestion';
 import { generateUUID } from '../../../utils/string';
 import type { RetrievedChunk, RetrieveResponse } from '../../../types/ragIngestion';
+
+/** Inline chat shows only this many chunks; the rest open in a paginated modal. */
+const PREVIEW_ROWS = 3;
+const ROWS_PER_PAGE_OPTIONS = [5, 10, 20];
+
+/** The Source/Text table used both inline (preview) and inside the "See all" modal. */
+function ChunksTable({ chunks }: { chunks: RetrievedChunk[] }): ReactNode {
+  return (
+    <ListingTable.Container elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+      <ListingTable size="small">
+        <ListingTable.Head>
+          <ListingTable.Row>
+            <ListingTable.Cell sx={{ width: '30%' }}>Source</ListingTable.Cell>
+            <ListingTable.Cell>Text</ListingTable.Cell>
+          </ListingTable.Row>
+        </ListingTable.Head>
+        <ListingTable.Body>
+          {chunks.map((c, i) => (
+            <ListingTable.Row key={`${c.source}-${i}`}>
+              <ListingTable.Cell>
+                <Typography variant="caption" sx={{ wordBreak: 'break-word' }}>
+                  {c.source}
+                </Typography>
+              </ListingTable.Cell>
+              <ListingTable.Cell>
+                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                  {c.text}
+                </Typography>
+              </ListingTable.Cell>
+            </ListingTable.Row>
+          ))}
+        </ListingTable.Body>
+      </ListingTable>
+    </ListingTable.Container>
+  );
+}
+
+/** Modal listing every retrieved chunk for one query, paginated. */
+function ChunksModal({ chunks, onClose }: { chunks: RetrievedChunk[] | null; onClose: () => void }): ReactNode {
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const open = chunks !== null;
+  const safePage = chunks ? Math.min(page, Math.max(0, Math.ceil(chunks.length / rowsPerPage) - 1)) : 0;
+  const paged = chunks ? chunks.slice(safePage * rowsPerPage, safePage * rowsPerPage + rowsPerPage) : [];
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth TransitionProps={{ onExited: () => setPage(0) }}>
+      <DialogTitle>Retrieved Chunks ({chunks?.length ?? 0})</DialogTitle>
+      <DialogContent>
+        <ChunksTable chunks={paged} />
+        <TablePagination
+          component="div"
+          count={chunks?.length ?? 0}
+          page={safePage}
+          rowsPerPage={rowsPerPage}
+          rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
+          onPageChange={(_e, p) => setPage(p)}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(parseInt(e.target.value, 10));
+            setPage(0);
+          }}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 interface RagRetrievalChatProps {
   /** The ingestion component — its id is sent as `rag_component_id`. */
@@ -52,6 +118,8 @@ export default function RagRetrievalChat({ ingestionComponentId, orgHandler, pro
   const [messages, setMessages] = useState<ChatEntry[]>([]);
   const [input, setInput] = useState('');
   const [isRetrieving, setIsRetrieving] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
+  const [modalChunks, setModalChunks] = useState<RetrievedChunk[] | null>(null);
   const threadRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -160,32 +228,18 @@ export default function RagRetrievalChat({ ingestionComponentId, orgHandler, pro
                   {m.chunks.length} chunk{m.chunks.length === 1 ? '' : 's'} retrieved
                 </Typography>
                 {m.chunks.length > 0 && (
-                  <ListingTable.Container elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-                    <ListingTable size="small">
-                      <ListingTable.Head>
-                        <ListingTable.Row>
-                          <ListingTable.Cell sx={{ width: '30%' }}>Source</ListingTable.Cell>
-                          <ListingTable.Cell>Text</ListingTable.Cell>
-                        </ListingTable.Row>
-                      </ListingTable.Head>
-                      <ListingTable.Body>
-                        {m.chunks.map((c, i) => (
-                          <ListingTable.Row key={`${m.id}-${i}`}>
-                            <ListingTable.Cell>
-                              <Typography variant="caption" sx={{ wordBreak: 'break-word' }}>
-                                {c.source}
-                              </Typography>
-                            </ListingTable.Cell>
-                            <ListingTable.Cell>
-                              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                                {c.text}
-                              </Typography>
-                            </ListingTable.Cell>
-                          </ListingTable.Row>
-                        ))}
-                      </ListingTable.Body>
-                    </ListingTable>
-                  </ListingTable.Container>
+                  <>
+                    <ChunksTable chunks={m.chunks.slice(0, PREVIEW_ROWS)} />
+                    {m.chunks.length > PREVIEW_ROWS && (
+                      <Typography
+                        variant="caption"
+                        color="primary"
+                        onClick={() => setModalChunks(m.chunks)}
+                        sx={{ display: 'inline-block', mt: 0.75, cursor: 'pointer', fontWeight: 500, '&:hover': { textDecoration: 'underline' } }}>
+                        See all {m.chunks.length} results
+                      </Typography>
+                    )}
+                  </>
                 )}
               </Box>
             )}
@@ -193,7 +247,20 @@ export default function RagRetrievalChat({ ingestionComponentId, orgHandler, pro
         ))}
       </Box>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pl: 2, pr: 0.75, py: 0.75, border: '1px solid', borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          pl: 2,
+          pr: 0.75,
+          py: 0.75,
+          border: '1px solid',
+          borderColor: inputFocused ? 'primary.main' : 'divider',
+          borderRadius: 1,
+          bgcolor: 'background.paper',
+          transition: 'border-color 0.15s ease',
+        }}>
         <InputBase
           fullWidth
           multiline
@@ -202,6 +269,8 @@ export default function RagRetrievalChat({ ingestionComponentId, orgHandler, pro
           inputProps={{ 'aria-label': 'Query' }}
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onFocus={() => setInputFocused(true)}
+          onBlur={() => setInputFocused(false)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
@@ -215,6 +284,8 @@ export default function RagRetrievalChat({ ingestionComponentId, orgHandler, pro
           Send
         </Button>
       </Box>
+
+      <ChunksModal chunks={modalChunks} onClose={() => setModalChunks(null)} />
     </Stack>
   );
 }

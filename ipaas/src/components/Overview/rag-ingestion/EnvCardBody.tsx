@@ -16,15 +16,14 @@
  * under the License.
  */
 
-import { Box, Divider, Tab, Tabs, Typography } from '@wso2/oxygen-ui';
+import { Box, Divider, Typography } from '@wso2/oxygen-ui';
 import { useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { EnvCardBodyProps } from '../../../types/integration';
 import EnvCardSkeleton from '../_shared/EnvCardSkeleton';
 import AutomationExecutions from '../../AutomationExecutions';
+import PillTabs from '../../PillTabs';
 import RagRetrievalChat from './RagRetrievalChat';
-
-type RagTab = 'executions' | 'retrieval';
 
 /**
  * RAG Ingestion's content-only body: an Executions | Retrieval tab switcher.
@@ -50,7 +49,7 @@ export default function EnvCardBody({
   onNotify,
 }: EnvCardBodyProps): ReactNode {
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<RagTab>('executions');
+  const [tab, setTab] = useState(0);
 
   if (loadingDeployment) return <EnvCardSkeleton />;
 
@@ -64,12 +63,11 @@ export default function EnvCardBody({
         </Typography>
       ) : (
         <>
-          <Tabs value={tab} onChange={(_e, value: RagTab) => setTab(value)} sx={{ minHeight: 0, mb: 2 }}>
-            <Tab value="executions" label="Executions" sx={{ minHeight: 0 }} />
-            <Tab value="retrieval" label="Retrieval" sx={{ minHeight: 0 }} />
-          </Tabs>
+          <Box sx={{ mb: 2 }}>
+            <PillTabs value={tab} onChange={setTab} tabs={[{ label: 'Executions' }, { label: 'Retrieval' }]} />
+          </Box>
 
-          {tab === 'executions' && (
+          {tab === 0 && (
             <AutomationExecutions
               releaseId={releaseId}
               projectId={projectId}
@@ -91,7 +89,7 @@ export default function EnvCardBody({
             />
           )}
 
-          {tab === 'retrieval' && (
+          {tab === 1 && (
             <Box sx={{ minHeight: 320 }}>
               <RagRetrievalChat ingestionComponentId={component.id} orgHandler={orgHandler} projectId={projectId} envId={env.id} envCritical={env.critical ?? false} />
             </Box>

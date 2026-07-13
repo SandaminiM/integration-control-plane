@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, CircularProgress, PageContent, PageTitle, Stack, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, Link, PageContent, PageTitle, Stack, Typography } from '@wso2/oxygen-ui';
 import { useState, type JSX } from 'react';
 import { isRagIngestionEnabled, useRetrieveChunks } from '../hooks/useRagIngestion';
 import { useSubscriptions } from '../hooks/useSubscription';
@@ -93,7 +93,15 @@ export default function RagRetrieval(_scope: OrgScope): JSX.Element {
 
           {retrieve.isError && (
             <Alert severity="error" variant="outlined" onClose={() => retrieve.reset()} sx={{ mb: 3 }}>
-              Failed to retrieve chunks. Check the vector store and embedding configuration.
+              Failed to retrieve chunks. Check the{' '}
+              <Link component="button" type="button" onClick={() => setActiveStep(0)} sx={{ verticalAlign: 'baseline' }}>
+                vector store
+              </Link>{' '}
+              and{' '}
+              <Link component="button" type="button" onClick={() => setActiveStep(1)} sx={{ verticalAlign: 'baseline' }}>
+                embedding configuration
+              </Link>
+              .
             </Alert>
           )}
 

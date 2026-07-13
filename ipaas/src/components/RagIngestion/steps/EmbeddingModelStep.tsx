@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Grid, MenuItem, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Grid, MenuItem, Select, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { type JSX } from 'react';
 import { blankEmbedding, EMBEDDING_PROVIDERS, ragLogoUrl } from '../../../constants/ragIngestion';
 import { REQUIRED_FIELD_SX } from '../../../constants/styles';
@@ -51,13 +51,29 @@ export default function EmbeddingModelStep({ value, onChange }: EmbeddingModelSt
       {value && (
         <Stack sx={fieldStackSx}>
           {models.length > 0 ? (
-            <TextField select label="Model" required fullWidth size="small" value={value.model} onChange={(e) => onChange({ ...value, model: e.target.value })} sx={REQUIRED_FIELD_SX}>
+            <Select
+              size="small"
+              fullWidth
+              displayEmpty
+              required
+              value={value.model}
+              onChange={(e) => onChange({ ...value, model: e.target.value })}
+              inputProps={{ 'aria-label': 'Model' }}
+              renderValue={(selected) =>
+                selected ? (
+                  String(selected)
+                ) : (
+                  <Typography component="span" color="text.secondary">
+                    Model <Typography component="span" sx={{ color: 'error.main' }}>*</Typography>
+                  </Typography>
+                )
+              }>
               {models.map((m) => (
                 <MenuItem key={m} value={m}>
                   {m}
                 </MenuItem>
               ))}
-            </TextField>
+            </Select>
           ) : (
             <TextField label="Model Id" required fullWidth size="small" value={value.model} placeholder="Enter the deployment/model id" onChange={(e) => onChange({ ...value, model: e.target.value })} sx={REQUIRED_FIELD_SX} />
           )}
