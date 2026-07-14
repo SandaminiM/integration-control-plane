@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Autocomplete, Box, Button, Card, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, IconButton, InputAdornment, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Autocomplete, Box, Button, Card, Checkbox, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, IconButton, InputAdornment, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Clock, Edit, Eye } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState, type JSX } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -280,7 +280,7 @@ export default function MarketplaceTab({ componentId, version, endpoint, endpoin
             <Button variant="outlined" onClick={onCancel} disabled={saving || savingOverview}>
               Cancel
             </Button>
-            <Button variant="contained" onClick={() => handleSave({ displayName })} disabled={!isDirty || saving || savingOverview}>
+            <Button variant="contained" startIcon={(saving || savingOverview) && <CircularProgress size={16} color="inherit" />} onClick={() => handleSave({ displayName })} disabled={!isDirty || saving || savingOverview}>
               {saving || savingOverview ? 'Saving...' : 'Save'}
             </Button>
           </Box>
@@ -367,7 +367,7 @@ export default function MarketplaceTab({ componentId, version, endpoint, endpoin
           <Button variant="outlined" onClick={() => setDialogOpen(false)} disabled={savingOverview}>
             Cancel
           </Button>
-          <Button variant="contained" onClick={handleSaveOverview} disabled={savingOverview}>
+          <Button variant="contained" startIcon={savingOverview && <CircularProgress size={16} color="inherit" />} onClick={handleSaveOverview} disabled={savingOverview}>
             {savingOverview ? 'Saving...' : 'OK'}
           </Button>
         </DialogActions>

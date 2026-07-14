@@ -16,11 +16,14 @@
  * under the License.
  */
 
-import { Accordion, AccordionDetails, AccordionSummary, Autocomplete, Box, Button, Chip, FormControl, IconButton, InputLabel, MenuItem, Select, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Accordion, AccordionDetails, AccordionSummary, Autocomplete, Box, Button, Checkbox, Chip, CircularProgress, FormControl, IconButton, InputLabel, MenuItem, Select, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, CircleHelp, Pencil } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useRef, useState, type JSX } from 'react';
 import type { ApimApiInfo } from '../../types/apim';
 import { useApimThumbnail, useUpdateApimThumbnail } from '../../hooks/useApim';
+import menuItems from './menuItems.json';
+
+const LABEL_OPTIONS: string[] = [...menuItems.connectorCategories.categories.flatMap((cat) => cat.children.map((c) => c.value)), ...menuItems.pricingCategories.categories.map((cat) => cat.value)];
 
 const VISIBILITY_OPTIONS = [
   { value: 'PUBLIC', label: 'Public' },
@@ -203,9 +206,16 @@ export default function DeveloperPortalTab({ apimId, apimInfo, onSave, onCancel,
           <Autocomplete
             multiple
             freeSolo
-            options={[]}
+            disableCloseOnSelect
+            options={LABEL_OPTIONS}
             value={tags}
             onChange={(_e, newValue) => setTags(newValue as string[])}
+            renderOption={(props, option, { selected }) => (
+              <li {...props}>
+                <Checkbox size="small" checked={selected} sx={{ mr: 1, p: 0 }} />
+                {option}
+              </li>
+            )}
             renderTags={(value, getTagProps) => value.map((option, index) => <Chip label={option} size="small" {...getTagProps({ index })} key={option} />)}
             renderInput={(params) => <TextField {...params} label="Labels" size="small" placeholder="Type and press enter to add labels" />}
           />
@@ -282,7 +292,7 @@ export default function DeveloperPortalTab({ apimId, apimInfo, onSave, onCancel,
         <Button variant="outlined" onClick={onCancel} disabled={saving || uploadingThumbnail}>
           Cancel
         </Button>
-        <Button variant="contained" onClick={handleSave} disabled={!isDirty || saving || uploadingThumbnail}>
+        <Button variant="contained" startIcon={(saving || uploadingThumbnail) && <CircularProgress size={16} color="inherit" />} onClick={handleSave} disabled={!isDirty || saving || uploadingThumbnail}>
           {saving || uploadingThumbnail ? 'Saving...' : 'Save'}
         </Button>
       </Box>
