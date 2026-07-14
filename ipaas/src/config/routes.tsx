@@ -80,6 +80,8 @@ const ProjectOverview = lazy(() => import('../pages/ProjectOverview'));
 const ProjectInsights = lazy(() => import('../pages/ProjectInsights'));
 import DeliveryInsights from '../pages/DeliveryInsights';
 import ConfigureDelivery from '../pages/ConfigureDelivery';
+import ComponentMetrics from '../pages/ComponentMetrics';
+import ProjectMetrics from '../pages/ProjectMetrics';
 const ComponentInsightsUsage = lazy(() => import('../pages/ComponentInsightsUsage'));
 const ProjectEgressControl = lazy(() => import('../pages/ProjectEgressControl'));
 const ProjectApplicationSecurity = lazy(() => import('../pages/ProjectApplicationSecurity'));
@@ -229,7 +231,7 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/projects/:projectHandler/runtimes', element: <ComingSoon title="Coming Soon" description="Runtime management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/metrics', element: <ComingSoon title="Coming Soon" description="Metrics are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/observe/runtimelogs', element: createElement(withScope(RuntimeLogsProject, ['projects'])) },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/observe/metrics', element: <ComingSoon title="Coming Soon" description="Metrics are currently under development." /> },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/observe/metrics', element: createElement(withScope(ProjectMetrics, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections', element: <ComingSoon title="Coming Soon" description="Connections management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/third-party-services', element: <ComingSoon title="Coming Soon" description="Third Party Services management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/gen-ai-services', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgGenAIServices, ['projects']))) },
@@ -337,7 +339,7 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/metrics',
-                element: <ComingSoon title="Coming Soon" description="Metrics are currently under development." />,
+                element: createElement(withScope(ComponentMetrics, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/connections',

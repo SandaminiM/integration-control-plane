@@ -152,7 +152,8 @@ function getDefaultServices(componentId: string, componentType: ComponentType): 
   };
 }
 
-function buildProjectModel(projectId: string, components: Component[]): DiagramProject {
+// eslint-disable-next-line react-refresh/only-export-components
+export function buildProjectModel(projectId: string, components: Component[]): DiagramProject {
   const diagramComponents: DiagramComponent[] = components
     .map((c): DiagramComponent | null => {
       const type = getComponentType(c.displayType ?? '', c.componentSubType ?? null);
