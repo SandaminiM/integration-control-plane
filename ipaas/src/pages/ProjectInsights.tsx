@@ -273,7 +273,7 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
           </Box>
         </Card>
         <Card
-          title="API Requests & Errors Trend"
+          title={trendMode === 'latency' ? 'API Latency Trend' : trendMode === 'traffic' ? 'API Traffic Trend' : 'API Requests & Errors Trend'}
           subtitle={trendMode === 'latency' ? 'p95 vs median latency (ms)' : trendMode === 'traffic' ? 'Successful vs error responses' : 'API traffic with error volume'}
           action={
             <TextField select size="small" value={trendMode} onChange={(e) => setTrendMode(e.target.value as 'requests' | 'traffic' | 'latency')} sx={{ minWidth: 140 }}>

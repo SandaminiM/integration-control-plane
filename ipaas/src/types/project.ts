@@ -32,6 +32,8 @@ export interface Project {
   repository?: string;
   branch?: string;
   gitProvider?: string;
+  /** Org-owner display name — used by Delivery insights' Top Performing Projects table. */
+  owner?: string;
 }
 
 export interface ProjectContributor {
