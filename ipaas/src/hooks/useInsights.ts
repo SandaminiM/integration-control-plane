@@ -18,6 +18,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchComponentInsights, fetchInsightsEnvironments } from '#api/insights';
+import { useCloudDataPlanes } from './useEnvironments';
+import { choreoInsightsQueryApiUrl } from '../config/runtimeConfig';
 import type { InsightsEnvironment } from '../types/insights';
 
 export function useInsightsEnvironments(orgUuid: string, projectId: string) {
@@ -29,11 +31,24 @@ export function useInsightsEnvironments(orgUuid: string, projectId: string) {
   });
 }
 
+// The insights analytics query-api is served by the org's systemapis gateway
+// (same host alerting/logging already resolve via useCloudDataPlanes), not a
+// static configured URL — see devant-insights-01.har. Any cloud data plane's
+// gateway works: environment scoping happens via DataFilter.environmentIds in
+// the query body, not the URL, matching devant's own `useGetInsightsUrl`
+// (which also just takes the project's first gateway URL).
+export function useInsightsQueryUrl(orgUuid: string): string | undefined {
+  const { data: cdps } = useCloudDataPlanes(orgUuid);
+  const host = cdps?.[0]?.external_gateway_virtual_host;
+  return host ? choreoInsightsQueryApiUrl(host) : undefined;
+}
+
 export function useComponentInsights(orgUuid: string, insightsEnv: InsightsEnvironment | null, apiId: string) {
+  const queryApiUrl = useInsightsQueryUrl(orgUuid);
   return useQuery({
-    queryKey: ['componentInsights', orgUuid, insightsEnv?.id ?? null, apiId],
-    queryFn: () => fetchComponentInsights(orgUuid, insightsEnv!, apiId),
-    enabled: !!orgUuid && !!insightsEnv && !!apiId,
+    queryKey: ['componentInsights', orgUuid, insightsEnv?.id ?? null, apiId, queryApiUrl],
+    queryFn: () => fetchComponentInsights(orgUuid, insightsEnv!, apiId, queryApiUrl!),
+    enabled: !!orgUuid && !!insightsEnv && !!apiId && !!queryApiUrl,
     refetchInterval: 10_000,
   });
 }

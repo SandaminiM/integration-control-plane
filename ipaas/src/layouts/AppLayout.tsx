@@ -115,7 +115,7 @@ import { identifyIntegration } from '../utils/identifyIntegration';
 import { useOrgPermissions } from '../hooks/useAuth';
 import { switchOrgToken } from '../auth/tokenManager';
 import { mockNotifications } from '../mock-data/mockNotifications';
-import { useScope, useResource, resourceUrl, broaden, narrow, newProjectUrl, newComponentUrl, hasProject, hasComponent, settingsCrossScopeUrl, type Resource, type Scope } from '../nav';
+import { useScope, useResource, resourceUrl, broaden, narrow, newProjectUrl, newComponentUrl, hasProject, hasComponent, settingsCrossScopeUrl, insightsCrossScopeUrl, type Resource, type Scope } from '../nav';
 import { isSettingsSectionVisible, type SettingsSectionDef } from '../constants/orgSettingsSections';
 import { componentOverviewUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, projectHomeUrl, termsOfUseUrl } from '../paths';
 import { useAuth } from '../auth/AuthContext';
@@ -769,11 +769,11 @@ function AppLayoutInner(): JSX.Element {
                   role="button"
                   tabIndex={0}
                   sx={{ position: 'relative', display: 'inline-flex', cursor: 'pointer' }}
-                  onClick={() => navigate(resourceUrl({ level: 'projects' as const, org: scope.org, project: scope.project }, 'overview'))}
+                  onClick={() => { const ps = { level: 'projects' as const, org: scope.org, project: scope.project }; navigate(insightsCrossScopeUrl(pathname, scope, ps) ?? resourceUrl(ps, 'overview')); }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      navigate(resourceUrl({ level: 'projects' as const, org: scope.org, project: scope.project }, 'overview'));
+                      const ps = { level: 'projects' as const, org: scope.org, project: scope.project }; navigate(insightsCrossScopeUrl(pathname, scope, ps) ?? resourceUrl(ps, 'overview'));
                     }
                   }}>
                   <ComplexSelect
@@ -914,6 +914,11 @@ function AppLayoutInner(): JSX.Element {
                             setComponentMenuAnchor(null);
                             setComponentSearch('');
                             const newScope = narrow({ level: 'projects', org: scope.org, project: scope.project }, c.handler);
+                            const insightsUrl = insightsCrossScopeUrl(pathname, scope, newScope);
+                            if (insightsUrl) {
+                              navigate(insightsUrl);
+                              return;
+                            }
                             if (activeNavId === 'lifecycle') {
                               navigate(GENERIC_SERVICE_TYPES.has(c.displayType) ? `/organizations/${scope.org}/projects/${scope.project}/components/${c.handler}/manage/lifecycle` : componentOverviewUrl(scope.org, scope.project, c.handler));
                             } else {
@@ -997,6 +1002,11 @@ function AppLayoutInner(): JSX.Element {
                     const settingsUrl = settingsSwitchUrl(projectScope, projectId || undefined, undefined);
                     if (settingsUrl) {
                       navigate(settingsUrl);
+                      return;
+                    }
+                    const insightsUrl = insightsCrossScopeUrl(pathname, scope, projectScope);
+                    if (insightsUrl) {
+                      navigate(insightsUrl);
                       return;
                     }
                     navigate(resourceUrl(projectScope, canAccessResource(projectScope, resource ?? 'overview')));
@@ -1366,32 +1376,30 @@ function AppLayoutInner(): JSX.Element {
                         </Sidebar.Item>
                       )}
 
-                      {isGenericService && (
-                        <Sidebar.Item id="insights">
+                      <Sidebar.Item id="insights">
+                        <Sidebar.ItemIcon>
+                          <BarChart3 size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
+                        <Sidebar.Item id="usage">
                           <Sidebar.ItemIcon>
-                            <BarChart3 size={20} />
+                            <Activity size={20} />
                           </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
-                          <Sidebar.Item id="usage">
-                            <Sidebar.ItemIcon>
-                              <Activity size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                          <Sidebar.Item id="delivery">
-                            <Sidebar.ItemIcon>
-                              <Truck size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                          <Sidebar.Item id="compliance">
-                            <Sidebar.ItemIcon>
-                              <ShieldCheck size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
-                          </Sidebar.Item>
+                          <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
                         </Sidebar.Item>
-                      )}
+                        <Sidebar.Item id="delivery">
+                          <Sidebar.ItemIcon>
+                            <Truck size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+                        <Sidebar.Item id="compliance">
+                          <Sidebar.ItemIcon>
+                            <ShieldCheck size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+                      </Sidebar.Item>
 
                       <Sidebar.Item id="observability">
                         <Sidebar.ItemIcon>

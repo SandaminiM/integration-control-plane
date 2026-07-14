@@ -60,8 +60,13 @@ export async function fetchExecutionConfigs(componentId: string, releaseId: stri
     .catch(() => null);
 }
 
+// 100 (up from a prior hardcoded 10) so the Automation Insights view's
+// scatter/heatmap/trend charts have enough real history to be meaningful —
+// existing callers (the Overview executions table) already paginate this
+// client-side (5/10/25 rows/page), so a larger server-side fetch just gives
+// them more rows to page through, not a behavior change.
 export async function fetchTaskExecutions(releaseId: string): Promise<TaskExecution[]> {
-  return systemClient.get<TaskExecution[]>(`/systemapis/choreoobsapi/0.3.0/tasks/executions?releaseId=${encodeURIComponent(releaseId)}&limit=10&verbose=true`);
+  return systemClient.get<TaskExecution[]>(`/systemapis/choreoobsapi/0.3.0/tasks/executions?releaseId=${encodeURIComponent(releaseId)}&limit=100&verbose=true`);
 }
 
 /**

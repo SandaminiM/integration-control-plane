@@ -77,6 +77,8 @@ const CreateVectorDatabaseServer = lazy(() => import('../pages/CreateVectorDatab
 const VectorDatabaseServerDetail = lazy(() => import('../pages/VectorDatabaseServerDetail'));
 const ProjectSettings = lazy(() => import('../pages/ProjectSettings'));
 const ProjectOverview = lazy(() => import('../pages/ProjectOverview'));
+const ProjectInsights = lazy(() => import('../pages/ProjectInsights'));
+const ComponentInsightsUsage = lazy(() => import('../pages/ComponentInsightsUsage'));
 const ProjectEgressControl = lazy(() => import('../pages/ProjectEgressControl'));
 const ProjectApplicationSecurity = lazy(() => import('../pages/ProjectApplicationSecurity'));
 const ProjectVpnConfiguration = lazy(() => import('../pages/ProjectVpnConfiguration'));
@@ -217,7 +219,7 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/projects/:projectHandler/develop', element: <ComingSoon title="Coming Soon" description="Development tools are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/deploy', element: <ComingSoon title="Coming Soon" description="Deployment management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/test', element: <ComingSoon title="Coming Soon" description="Testing tools are currently under development." /> },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/insights/usage', element: <ComingSoon title="Coming Soon" description="Usage insights are currently under development." /> },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/insights/usage', element: createElement(withScope(ProjectInsights, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/insights/delivery', element: <ComingSoon title="Coming Soon" description="Delivery insights are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/insights/compliance', element: <ComingSoon title="Coming Soon" description="Compliance insights are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/runtimes', element: <ComingSoon title="Coming Soon" description="Runtime management is currently under development." /> },
@@ -319,7 +321,7 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/insights/usage',
-                element: <ComingSoon title="Coming Soon" description="Usage insights are currently under development." />,
+                element: createElement(withScope(ComponentInsightsUsage, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/insights/delivery',

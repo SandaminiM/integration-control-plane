@@ -23,3 +23,16 @@ const ni = (name: string): never => {
 
 export const fetchInsightsEnvironments = (..._args: unknown[]): never => ni('fetchInsightsEnvironments');
 export const fetchComponentInsights = (..._args: unknown[]): never => ni('fetchComponentInsights');
+export const fetchProjectInsights = (..._args: unknown[]): never => ni('fetchProjectInsights');
+export const fetchApiUsageOverTime = (..._args: unknown[]): never => ni('fetchApiUsageOverTime');
+export const fetchApiUsageByApp = (..._args: unknown[]): never => ni('fetchApiUsageByApp');
+export const fetchUsageByBackend = (..._args: unknown[]): never => ni('fetchUsageByBackend');
+export const fetchResourceUsage = (..._args: unknown[]): never => ni('fetchResourceUsage');
+export const fetchLatencyByCategory = (..._args: unknown[]): never => ni('fetchLatencyByCategory');
+export const fetchTopSlowestApis = (..._args: unknown[]): never => ni('fetchTopSlowestApis');
+export const fetchErrorsByCategory = (..._args: unknown[]): never => ni('fetchErrorsByCategory');
+export const fetchErrorsByStatusCode = (..._args: unknown[]): never => ni('fetchErrorsByStatusCode');
+export const fetchErrorsDetails = (..._args: unknown[]): never => ni('fetchErrorsDetails');
+export const apiRangeToTimeFilter = (..._args: unknown[]): never => ni('apiRangeToTimeFilter');
+export const fetchApiInsights = (..._args: unknown[]): never => ni('fetchApiInsights');
+export const fetchAutomationInsights = (..._args: unknown[]): never => ni('fetchAutomationInsights');
