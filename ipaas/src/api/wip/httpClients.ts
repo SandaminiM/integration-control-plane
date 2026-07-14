@@ -111,6 +111,9 @@ export const obsClient = createHttpClient(() => {
 // Choreo Platform API — single client for all choreoBaseApiUrl services
 export const choreoClient = createHttpClient(() => window.API_CONFIG.choreoBaseApiUrl);
 
+// Same base, but tolerates a plain-text body (e.g. connections DELETE returns "successful").
+export const choreoClientTolerant = createHttpClient(() => window.API_CONFIG.choreoBaseApiUrl, { tolerateNonJson: true });
+
 // Choreo URL-manager — custom domains + URL mappings (custom domain feature).
 export const urlManagerClient = createHttpClient(() => {
   const base = window.API_CONFIG?.urlManagerUrl;

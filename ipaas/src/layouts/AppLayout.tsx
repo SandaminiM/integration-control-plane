@@ -200,6 +200,8 @@ function AppLayoutInner(): JSX.Element {
   const { pathname } = useLocation();
   const scope = useScope();
   const resource = useResource();
+  // Connections is a hand-written (non-matrix) resource, so preserve it manually across scope switches.
+  const onConnectionsPage = pathname.includes('/admin/connections');
 
   const queryClient = useQueryClient();
   const { username, displayName, pictureUrl, logout, userId, isOidcUser } = useAuth();
@@ -754,6 +756,10 @@ function AppLayoutInner(): JSX.Element {
                           navigate(settingsUrl);
                           return;
                         }
+                        if (onConnectionsPage) {
+                          navigate(`/organizations/${scope.org}/projects/${p.handler}/admin/connections`);
+                          return;
+                        }
                         const resolvedTarget = canAccessResource(newScope, resource ?? 'overview', p.id, undefined);
                         navigate(resolvedTarget === 'overview' ? projectHomeUrl(scope.org, p.handler) : resourceUrl(newScope, resolvedTarget));
                       }}>
@@ -916,6 +922,8 @@ function AppLayoutInner(): JSX.Element {
                             const newScope = narrow({ level: 'projects', org: scope.org, project: scope.project }, c.handler);
                             if (activeNavId === 'lifecycle') {
                               navigate(GENERIC_SERVICE_TYPES.has(c.displayType) ? `/organizations/${scope.org}/projects/${scope.project}/components/${c.handler}/manage/lifecycle` : componentOverviewUrl(scope.org, scope.project, c.handler));
+                            } else if (onConnectionsPage) {
+                              navigate(`/organizations/${scope.org}/projects/${scope.project}/components/${c.handler}/admin/connections`);
                             } else {
                               const resolvedTarget = canAccessResource(newScope, resource ?? 'overview', projectId, c.id);
                               navigate(resolvedTarget === 'overview' ? componentOverviewUrl(scope.org, scope.project, c.handler) : resourceUrl(newScope, resolvedTarget));

@@ -130,6 +130,12 @@ const CreateGroup = lazy(() => import('../pages/CreateGroup'));
 const EditGroup = lazy(() => import('../pages/EditGroup'));
 const Profile = lazy(() => import('../pages/Profile'));
 const ComingSoon = lazy(() => import('../pages/ComingSoon'));
+const ProjectConnections = lazy(() => import('../pages/ProjectConnections'));
+const ComponentConnections = lazy(() => import('../pages/ComponentConnections'));
+const ComponentStorage = lazy(() => import('../pages/ComponentStorage'));
+const ComponentScaling = lazy(() => import('../pages/ComponentScaling'));
+const NewConnection = lazy(() => import('../pages/NewConnection'));
+const ConnectionDetail = lazy(() => import('../pages/ConnectionDetail'));
 
 export interface AppRoute extends Omit<RouteProps, 'children'> {
   children?: AppRoute[];
@@ -224,7 +230,9 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/projects/:projectHandler/metrics', element: <ComingSoon title="Coming Soon" description="Metrics are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/observe/runtimelogs', element: createElement(withScope(RuntimeLogsProject, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/observe/metrics', element: <ComingSoon title="Coming Soon" description="Metrics are currently under development." /> },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections', element: <ComingSoon title="Coming Soon" description="Connections management is currently under development." /> },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections', element: createElement(RouteErrorBoundary, null, createElement(withScope(ProjectConnections, ['projects']))) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(NewConnection, ['projects']))) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections/:connectionId', element: createElement(RouteErrorBoundary, null, createElement(withScope(ConnectionDetail, ['projects']))) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/third-party-services', element: <ComingSoon title="Coming Soon" description="Third Party Services management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/gen-ai-services', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgGenAIServices, ['projects']))) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/gen-ai-services/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(RegisterGenAIService, ['projects']))) },
@@ -335,8 +343,10 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/connections',
-                element: <ComingSoon title="Coming Soon" description="Connections management is currently under development." />,
+                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentConnections, ['components']))),
               },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/connections/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(NewConnection, ['components']))) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/connections/:connectionId', element: createElement(RouteErrorBoundary, null, createElement(withScope(ConnectionDetail, ['components']))) },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/runtimes',
                 element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentRuntime, ['components']))),
@@ -355,11 +365,11 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/scaling',
-                element: <ComingSoon title="Coming Soon" description="Scaling configuration is currently under development." />,
+                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentScaling, ['components']))),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/storage',
-                element: <ComingSoon title="Coming Soon" description="Storage management is currently under development." />,
+                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentStorage, ['components']))),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings',

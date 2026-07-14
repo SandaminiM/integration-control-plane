@@ -1,0 +1,73 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { Box, Stack, Typography } from '@wso2/oxygen-ui';
+import type { JSX } from 'react';
+
+interface VolumeTypeCardProps {
+  title: string;
+  description: string;
+  selected: boolean;
+  disabled?: boolean;
+  onSelect: () => void;
+}
+
+export default function VolumeTypeCard({ title, description, selected, disabled, onSelect }: VolumeTypeCardProps): JSX.Element {
+  return (
+    <Box
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-pressed={selected}
+      aria-disabled={disabled}
+      onClick={disabled ? undefined : onSelect}
+      onKeyDown={(e) => {
+        if (disabled) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      sx={{
+        flex: 1,
+        minWidth: 240,
+        border: '1px solid',
+        borderColor: selected ? 'primary.main' : 'divider',
+        bgcolor: selected ? 'action.hover' : 'transparent',
+        borderRadius: 1,
+        p: 2,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.55 : 1,
+        transition: 'border-color 0.15s',
+        '&:hover': disabled ? undefined : { borderColor: 'primary.main' },
+      }}>
+      <Stack gap={1}>
+        <Typography variant="body1" sx={{ fontWeight: 600 }}>
+          {title}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {description}
+        </Typography>
+        {disabled && (
+          <Typography variant="caption" color="text.disabled">
+            Only available on Private Data Planes
+          </Typography>
+        )}
+      </Stack>
+    </Box>
+  );
+}
