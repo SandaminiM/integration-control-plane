@@ -45,12 +45,7 @@ export default function MetricSummaryCard({ icon, title, status, percentageChang
             <Typography variant="caption" color="text.secondary">
               {title}
             </Typography>
-            {status &&
-              (isLoading ? (
-                <Skeleton variant="rounded" width={44} height={20} />
-              ) : (
-                <Chip size="small" variant="outlined" label={status} color={PERF_COLOR[status] ?? 'default'} sx={{ height: 20, '& .MuiChip-label': { px: 1, fontSize: 11 } }} />
-              ))}
+            {status && (isLoading ? <Skeleton variant="rounded" width={44} height={20} /> : <Chip size="small" variant="outlined" label={status} color={PERF_COLOR[status] ?? 'default'} sx={{ height: 20, '& .MuiChip-label': { px: 1, fontSize: 11 } }} />)}
           </Stack>
           {isLoading ? (
             <Skeleton variant="rounded" width={120} height={36} sx={{ mt: 1 }} />

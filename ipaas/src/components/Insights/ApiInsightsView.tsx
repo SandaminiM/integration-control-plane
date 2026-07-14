@@ -44,7 +44,12 @@ const CHART = { requests: '#F47B20', errors: '#EF4444', latency: '#569CD6', p95:
 const AVAILABILITY_COLOR: Record<AvailabilityKind, string> = { available: '#2E9E5B', limited: '#ED6C02', down: '#EF4444' };
 
 function SlowestApiBars({ rows }: { rows: { name: string; latencyMs: number }[] }): JSX.Element {
-  if (rows.length === 0) return <Typography variant="body2" color="text.secondary">No data in range</Typography>;
+  if (rows.length === 0)
+    return (
+      <Typography variant="body2" color="text.secondary">
+        No data in range
+      </Typography>
+    );
   const max = Math.max(...rows.map((r) => r.latencyMs), 1);
   return (
     <Stack gap={1.25} sx={{ mt: 0.5 }}>
@@ -137,241 +142,253 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
             ))}
           </Box>
 
-      {tab === 'overview' && (
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.55fr 1fr' }, gap: 2 }}>
-          <InsightsCard title="Requests, Errors & Latency" subtitle="Traffic volume with overlaid latency">
-            <ChartBox>
-              <AreaChart
-                data={data.overview.trend}
-                xAxisDataKey="label"
-                height={320}
-                colors={[CHART.requests, CHART.errors, CHART.latency]}
-                areas={[
-                  { dataKey: 'requests', name: 'Requests', type: 'monotone', stroke: CHART.requests, fill: CHART.requests, fillOpacity: 0.2 },
-                  { dataKey: 'errors', name: 'Errors', type: 'monotone', stroke: CHART.errors, fill: CHART.errors, fillOpacity: 0.2 },
-                  { dataKey: 'latency', name: 'Latency', type: 'monotone', stroke: CHART.latency, fill: CHART.latency, fillOpacity: 0, strokeDasharray: '5 3', dot: false },
-                ]}
-                legend={{ show: true, verticalAlign: 'top' }} margin={{ top: 16 }}
-                tooltip={{ show: true }}
-                grid={{ show: true }}
-              />
-            </ChartBox>
-          </InsightsCard>
-          <InsightsCard title="Availability">
-            {data.overview.availability.length === 0 ? (
-              <Alert severity="info">No traffic in range.</Alert>
-            ) : (
-              <Stack alignItems="center" gap={2}>
-                <Box sx={{ width: 230, height: 230 }}>
-                  <PieChart
-                    data={data.overview.availability.map((a) => ({ name: a.label, value: a.value }))}
-                    pies={[{ dataKey: 'value', nameKey: 'name', innerRadius: '62%', outerRadius: '100%' }]}
-                    colors={data.overview.availability.map((a) => AVAILABILITY_COLOR[a.kind])}
-                    height={230}
-                    legend={{ show: false }}
+          {tab === 'overview' && (
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.55fr 1fr' }, gap: 2 }}>
+              <InsightsCard title="Requests, Errors & Latency" subtitle="Traffic volume with overlaid latency">
+                <ChartBox>
+                  <AreaChart
+                    data={data.overview.trend}
+                    xAxisDataKey="label"
+                    height={320}
+                    colors={[CHART.requests, CHART.errors, CHART.latency]}
+                    areas={[
+                      { dataKey: 'requests', name: 'Requests', type: 'monotone', stroke: CHART.requests, fill: CHART.requests, fillOpacity: 0.2 },
+                      { dataKey: 'errors', name: 'Errors', type: 'monotone', stroke: CHART.errors, fill: CHART.errors, fillOpacity: 0.2 },
+                      { dataKey: 'latency', name: 'Latency', type: 'monotone', stroke: CHART.latency, fill: CHART.latency, fillOpacity: 0, strokeDasharray: '5 3', dot: false },
+                    ]}
+                    legend={{ show: true, verticalAlign: 'top' }}
+                    margin={{ top: 16 }}
                     tooltip={{ show: true }}
+                    grid={{ show: true }}
                   />
-                </Box>
-                <Stack gap={1} sx={{ width: '100%' }}>
-                  {data.overview.availability.map((a) => (
-                    <Stack key={a.kind} direction="row" alignItems="center" gap={1}>
-                      <Box sx={{ width: 10, height: 10, borderRadius: '3px', bgcolor: AVAILABILITY_COLOR[a.kind], flexShrink: 0 }} />
-                      <Typography variant="body2" sx={{ flex: 1 }}>
-                        {a.label}
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {a.value}%
-                      </Typography>
+                </ChartBox>
+              </InsightsCard>
+              <InsightsCard title="Availability">
+                {data.overview.availability.length === 0 ? (
+                  <Alert severity="info">No traffic in range.</Alert>
+                ) : (
+                  <Stack alignItems="center" gap={2}>
+                    <Box sx={{ width: 230, height: 230 }}>
+                      <PieChart
+                        data={data.overview.availability.map((a) => ({ name: a.label, value: a.value }))}
+                        pies={[{ dataKey: 'value', nameKey: 'name', innerRadius: '62%', outerRadius: '100%' }]}
+                        colors={data.overview.availability.map((a) => AVAILABILITY_COLOR[a.kind])}
+                        height={230}
+                        legend={{ show: false }}
+                        tooltip={{ show: true }}
+                      />
+                    </Box>
+                    <Stack gap={1} sx={{ width: '100%' }}>
+                      {data.overview.availability.map((a) => (
+                        <Stack key={a.kind} direction="row" alignItems="center" gap={1}>
+                          <Box sx={{ width: 10, height: 10, borderRadius: '3px', bgcolor: AVAILABILITY_COLOR[a.kind], flexShrink: 0 }} />
+                          <Typography variant="body2" sx={{ flex: 1 }}>
+                            {a.label}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {a.value}%
+                          </Typography>
+                        </Stack>
+                      ))}
                     </Stack>
-                  ))}
-                </Stack>
-              </Stack>
-            )}
-          </InsightsCard>
-        </Box>
-      )}
-
-      {tab === 'traffic' && (
-        <Stack gap={2}>
-          <InsightsCard title="API Usage Over Time" subtitle="Successful vs error responses">
-            <ChartBox>
-              <AreaChart
-                data={data.traffic.trend}
-                xAxisDataKey="label"
-                height={320}
-                colors={[CHART.requests, CHART.errors]}
-                areas={[
-                  { dataKey: 'requests', name: 'Success', type: 'monotone', stroke: CHART.requests, fill: CHART.requests, fillOpacity: 0.2 },
-                  { dataKey: 'errors', name: 'Error', type: 'monotone', stroke: CHART.errors, fill: CHART.errors, fillOpacity: 0.2 },
-                ]}
-                legend={{ show: true, verticalAlign: 'top' }} margin={{ top: 16 }}
-                tooltip={{ show: true }}
-                grid={{ show: true }}
-              />
-            </ChartBox>
-          </InsightsCard>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 2 }}>
-            <InsightsCard title="Usage by Application">
-              {data.traffic.byApplication.length === 0 ? (
-                <Alert severity="info">No application traffic in range.</Alert>
-              ) : (
-                <ChartBox>
-                  <BarChart data={data.traffic.byApplication} xAxisDataKey="label" height={220} colors={[CHART.requests]} bars={[{ dataKey: 'value', name: 'Requests', fill: CHART.requests, radius: [3, 3, 0, 0] }]} tooltip={{ show: true }} grid={{ show: true }} />
-                </ChartBox>
-              )}
-            </InsightsCard>
-            <InsightsCard title="Usage by Backend">
-              {data.traffic.byBackend.length === 0 ? (
-                <Alert severity="info">No backend traffic in range.</Alert>
-              ) : (
-                <ChartBox>
-                  <BarChart data={data.traffic.byBackend} xAxisDataKey="label" height={220} colors={[CHART.target]} bars={[{ dataKey: 'value', name: 'Requests', fill: CHART.target, radius: [3, 3, 0, 0] }]} tooltip={{ show: true }} grid={{ show: true }} />
-                </ChartBox>
-              )}
-            </InsightsCard>
-          </Box>
-          <InsightsCard title="Resource Usage">
-            {data.traffic.resources.length === 0 ? (
-              <Alert severity="info">No resource usage in range.</Alert>
-            ) : (
-              <ListingTable.Container>
-                <ListingTable density="compact">
-                  <ListingTable.Head>
-                    <ListingTable.Row>
-                      <ListingTable.Cell>Resource</ListingTable.Cell>
-                      <ListingTable.Cell>Method</ListingTable.Cell>
-                      <ListingTable.Cell align="right">Requests</ListingTable.Cell>
-                      <ListingTable.Cell align="right">Share</ListingTable.Cell>
-                    </ListingTable.Row>
-                  </ListingTable.Head>
-                  <ListingTable.Body>
-                    {data.traffic.resources.map((r, i) => (
-                      <ListingTable.Row key={`${r.path}_${r.method}_${i}`}>
-                        <ListingTable.Cell sx={{ fontFamily: 'monospace' }}>{r.path}</ListingTable.Cell>
-                        <ListingTable.Cell>
-                          <Chip size="small" variant="outlined" label={r.method} />
-                        </ListingTable.Cell>
-                        <ListingTable.Cell align="right">{r.count.toLocaleString()}</ListingTable.Cell>
-                        <ListingTable.Cell align="right">{r.share}</ListingTable.Cell>
-                      </ListingTable.Row>
-                    ))}
-                  </ListingTable.Body>
-                </ListingTable>
-              </ListingTable.Container>
-            )}
-          </InsightsCard>
-        </Stack>
-      )}
-
-      {tab === 'latency' && (
-        <Stack gap={2}>
-          {data.latency.trend.length === 0 ? (
-            <InsightsCard title="Latency by Category" subtitle="p95 vs median across the request lifecycle">
-              <Alert severity="info">No latency data in range.</Alert>
-            </InsightsCard>
-          ) : (
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 2 }}>
-              {(
-                [
-                  { title: 'Total Latency', p95Key: 'p95', medianKey: 'median' },
-                  { title: 'Target Latency', p95Key: 'backendP95', medianKey: 'backendMedian' },
-                  { title: 'Request Mediation Latency', p95Key: 'requestMedP95', medianKey: 'requestMedMedian' },
-                  { title: 'Response Mediation Latency', p95Key: 'responseMedP95', medianKey: 'responseMedMedian' },
-                ] as const
-              ).map((c) => (
-                <InsightsCard key={c.title} title={c.title} subtitle="95th percentile vs median (ms)">
-                  <ChartBox>
-                    <AreaChart
-                      data={data.latency.trend}
-                      xAxisDataKey="label"
-                      height={260}
-                      colors={[CHART.p95, CHART.median]}
-                      areas={[
-                        { dataKey: c.p95Key, name: 'p95', type: 'monotone', stroke: CHART.p95, fill: CHART.p95, fillOpacity: 0.2 },
-                        { dataKey: c.medianKey, name: 'Median', type: 'monotone', stroke: CHART.median, fill: CHART.median, fillOpacity: 0.2 },
-                      ]}
-                      legend={{ show: true, verticalAlign: 'top' }} margin={{ top: 16 }}
-                      tooltip={{ show: true }}
-                      grid={{ show: true }}
-                    />
-                  </ChartBox>
-                </InsightsCard>
-              ))}
+                  </Stack>
+                )}
+              </InsightsCard>
             </Box>
           )}
-          <InsightsCard title="Top 10 Slowest APIs" subtitle="Across this project">
-            <SlowestApiBars rows={data.latency.topSlowest} />
-          </InsightsCard>
-        </Stack>
-      )}
 
-      {tab === 'errors' && (
-        <Stack gap={2}>
-          <InsightsCard title="Errors Over Time" subtitle="Grouped by error category">
-            <ChartBox>
-              <BarChart
-                data={data.errors.trend}
-                xAxisDataKey="label"
-                height={320}
-                colors={[CHART.auth, CHART.throttled, CHART.target, CHART.other]}
-                bars={[
-                  { dataKey: 'auth', name: 'Authentication', stackId: 'cat', fill: CHART.auth },
-                  { dataKey: 'throttled', name: 'Throttling', stackId: 'cat', fill: CHART.throttled },
-                  { dataKey: 'targetConnectivity', name: 'Target', stackId: 'cat', fill: CHART.target },
-                  { dataKey: 'other', name: 'Other', stackId: 'cat', fill: CHART.other, radius: [3, 3, 0, 0] },
-                ]}
-                legend={{ show: true, verticalAlign: 'top' }} margin={{ top: 16 }}
-                tooltip={{ show: true }}
-                grid={{ show: true }}
-              />
-            </ChartBox>
-          </InsightsCard>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.15fr 1fr' }, gap: 2 }}>
-            <InsightsCard title="Errors by Status Code" subtitle="Proxy vs target · this API">
-              <StatusCodeBars heatmap={data.errors.statusCodeHeatmap} />
-            </InsightsCard>
-            <InsightsCard title="Errors by Category" subtitle="Grouped error reasons in range">
-              {data.errors.byCategory.length === 0 ? (
-                <Alert severity="info">No error details in range.</Alert>
+          {tab === 'traffic' && (
+            <Stack gap={2}>
+              <InsightsCard title="API Usage Over Time" subtitle="Successful vs error responses">
+                <ChartBox>
+                  <AreaChart
+                    data={data.traffic.trend}
+                    xAxisDataKey="label"
+                    height={320}
+                    colors={[CHART.requests, CHART.errors]}
+                    areas={[
+                      { dataKey: 'requests', name: 'Success', type: 'monotone', stroke: CHART.requests, fill: CHART.requests, fillOpacity: 0.2 },
+                      { dataKey: 'errors', name: 'Error', type: 'monotone', stroke: CHART.errors, fill: CHART.errors, fillOpacity: 0.2 },
+                    ]}
+                    legend={{ show: true, verticalAlign: 'top' }}
+                    margin={{ top: 16 }}
+                    tooltip={{ show: true }}
+                    grid={{ show: true }}
+                  />
+                </ChartBox>
+              </InsightsCard>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 2 }}>
+                <InsightsCard title="Usage by Application">
+                  {data.traffic.byApplication.length === 0 ? (
+                    <Alert severity="info">No application traffic in range.</Alert>
+                  ) : (
+                    <ChartBox>
+                      <BarChart
+                        data={data.traffic.byApplication}
+                        xAxisDataKey="label"
+                        height={220}
+                        colors={[CHART.requests]}
+                        bars={[{ dataKey: 'value', name: 'Requests', fill: CHART.requests, radius: [3, 3, 0, 0] }]}
+                        tooltip={{ show: true }}
+                        grid={{ show: true }}
+                      />
+                    </ChartBox>
+                  )}
+                </InsightsCard>
+                <InsightsCard title="Usage by Backend">
+                  {data.traffic.byBackend.length === 0 ? (
+                    <Alert severity="info">No backend traffic in range.</Alert>
+                  ) : (
+                    <ChartBox>
+                      <BarChart data={data.traffic.byBackend} xAxisDataKey="label" height={220} colors={[CHART.target]} bars={[{ dataKey: 'value', name: 'Requests', fill: CHART.target, radius: [3, 3, 0, 0] }]} tooltip={{ show: true }} grid={{ show: true }} />
+                    </ChartBox>
+                  )}
+                </InsightsCard>
+              </Box>
+              <InsightsCard title="Resource Usage">
+                {data.traffic.resources.length === 0 ? (
+                  <Alert severity="info">No resource usage in range.</Alert>
+                ) : (
+                  <ListingTable.Container>
+                    <ListingTable density="compact">
+                      <ListingTable.Head>
+                        <ListingTable.Row>
+                          <ListingTable.Cell>Resource</ListingTable.Cell>
+                          <ListingTable.Cell>Method</ListingTable.Cell>
+                          <ListingTable.Cell align="right">Requests</ListingTable.Cell>
+                          <ListingTable.Cell align="right">Share</ListingTable.Cell>
+                        </ListingTable.Row>
+                      </ListingTable.Head>
+                      <ListingTable.Body>
+                        {data.traffic.resources.map((r, i) => (
+                          <ListingTable.Row key={`${r.path}_${r.method}_${i}`}>
+                            <ListingTable.Cell sx={{ fontFamily: 'monospace' }}>{r.path}</ListingTable.Cell>
+                            <ListingTable.Cell>
+                              <Chip size="small" variant="outlined" label={r.method} />
+                            </ListingTable.Cell>
+                            <ListingTable.Cell align="right">{r.count.toLocaleString()}</ListingTable.Cell>
+                            <ListingTable.Cell align="right">{r.share}</ListingTable.Cell>
+                          </ListingTable.Row>
+                        ))}
+                      </ListingTable.Body>
+                    </ListingTable>
+                  </ListingTable.Container>
+                )}
+              </InsightsCard>
+            </Stack>
+          )}
+
+          {tab === 'latency' && (
+            <Stack gap={2}>
+              {data.latency.trend.length === 0 ? (
+                <InsightsCard title="Latency by Category" subtitle="p95 vs median across the request lifecycle">
+                  <Alert severity="info">No latency data in range.</Alert>
+                </InsightsCard>
               ) : (
-                (() => {
-                  const byReason = new Map<string, number>();
-                  data.errors.byCategory.forEach((r) => {
-                    const key = r.reason?.toUpperCase() ?? 'OTHER';
-                    byReason.set(key, (byReason.get(key) ?? 0) + r.count);
-                  });
-                  const total = [...byReason.values()].reduce((a, b) => a + b, 0);
-                  const auth = byReason.get('AUTH') ?? 0;
-                  const target = byReason.get('TARGET_CONNECTIVITY') ?? 0;
-                  const throttled = byReason.get('THROTTLED') ?? 0;
-                  const rows = [
-                    { label: 'Authentication', count: auth },
-                    { label: 'Target', count: target },
-                    { label: 'Throttling', count: throttled },
-                    { label: 'Other', count: Math.max(0, total - auth - target - throttled) },
-                  ];
-                  return (
-                    <ListingTable.Container sx={{ maxHeight: 'none', height: 'auto' }}>
-                      <ListingTable density="compact">
-                        <ListingTable.Body>
-                          {rows.map((r) => (
-                            <ListingTable.Row key={r.label}>
-                              <ListingTable.Cell>{r.label}</ListingTable.Cell>
-                              <ListingTable.Cell align="right" sx={{ fontWeight: 600 }}>
-                                {r.count.toLocaleString()}
-                              </ListingTable.Cell>
-                            </ListingTable.Row>
-                          ))}
-                        </ListingTable.Body>
-                      </ListingTable>
-                    </ListingTable.Container>
-                  );
-                })()
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 2 }}>
+                  {(
+                    [
+                      { title: 'Total Latency', p95Key: 'p95', medianKey: 'median' },
+                      { title: 'Target Latency', p95Key: 'backendP95', medianKey: 'backendMedian' },
+                      { title: 'Request Mediation Latency', p95Key: 'requestMedP95', medianKey: 'requestMedMedian' },
+                      { title: 'Response Mediation Latency', p95Key: 'responseMedP95', medianKey: 'responseMedMedian' },
+                    ] as const
+                  ).map((c) => (
+                    <InsightsCard key={c.title} title={c.title} subtitle="95th percentile vs median (ms)">
+                      <ChartBox>
+                        <AreaChart
+                          data={data.latency.trend}
+                          xAxisDataKey="label"
+                          height={260}
+                          colors={[CHART.p95, CHART.median]}
+                          areas={[
+                            { dataKey: c.p95Key, name: 'p95', type: 'monotone', stroke: CHART.p95, fill: CHART.p95, fillOpacity: 0.2 },
+                            { dataKey: c.medianKey, name: 'Median', type: 'monotone', stroke: CHART.median, fill: CHART.median, fillOpacity: 0.2 },
+                          ]}
+                          legend={{ show: true, verticalAlign: 'top' }}
+                          margin={{ top: 16 }}
+                          tooltip={{ show: true }}
+                          grid={{ show: true }}
+                        />
+                      </ChartBox>
+                    </InsightsCard>
+                  ))}
+                </Box>
               )}
-            </InsightsCard>
-          </Box>
-        </Stack>
-      )}
+              <InsightsCard title="Top 10 Slowest APIs" subtitle="Across this project">
+                <SlowestApiBars rows={data.latency.topSlowest} />
+              </InsightsCard>
+            </Stack>
+          )}
+
+          {tab === 'errors' && (
+            <Stack gap={2}>
+              <InsightsCard title="Errors Over Time" subtitle="Grouped by error category">
+                <ChartBox>
+                  <BarChart
+                    data={data.errors.trend}
+                    xAxisDataKey="label"
+                    height={320}
+                    colors={[CHART.auth, CHART.throttled, CHART.target, CHART.other]}
+                    bars={[
+                      { dataKey: 'auth', name: 'Authentication', stackId: 'cat', fill: CHART.auth },
+                      { dataKey: 'throttled', name: 'Throttling', stackId: 'cat', fill: CHART.throttled },
+                      { dataKey: 'targetConnectivity', name: 'Target', stackId: 'cat', fill: CHART.target },
+                      { dataKey: 'other', name: 'Other', stackId: 'cat', fill: CHART.other, radius: [3, 3, 0, 0] },
+                    ]}
+                    legend={{ show: true, verticalAlign: 'top' }}
+                    margin={{ top: 16 }}
+                    tooltip={{ show: true }}
+                    grid={{ show: true }}
+                  />
+                </ChartBox>
+              </InsightsCard>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.15fr 1fr' }, gap: 2 }}>
+                <InsightsCard title="Errors by Status Code" subtitle="Proxy vs target · this API">
+                  <StatusCodeBars heatmap={data.errors.statusCodeHeatmap} />
+                </InsightsCard>
+                <InsightsCard title="Errors by Category" subtitle="Grouped error reasons in range">
+                  {data.errors.byCategory.length === 0 ? (
+                    <Alert severity="info">No error details in range.</Alert>
+                  ) : (
+                    (() => {
+                      const byReason = new Map<string, number>();
+                      data.errors.byCategory.forEach((r) => {
+                        const key = r.reason?.toUpperCase() ?? 'OTHER';
+                        byReason.set(key, (byReason.get(key) ?? 0) + r.count);
+                      });
+                      const total = [...byReason.values()].reduce((a, b) => a + b, 0);
+                      const auth = byReason.get('AUTH') ?? 0;
+                      const target = byReason.get('TARGET_CONNECTIVITY') ?? 0;
+                      const throttled = byReason.get('THROTTLED') ?? 0;
+                      const rows = [
+                        { label: 'Authentication', count: auth },
+                        { label: 'Target', count: target },
+                        { label: 'Throttling', count: throttled },
+                        { label: 'Other', count: Math.max(0, total - auth - target - throttled) },
+                      ];
+                      return (
+                        <ListingTable.Container sx={{ maxHeight: 'none', height: 'auto' }}>
+                          <ListingTable density="compact">
+                            <ListingTable.Body>
+                              {rows.map((r) => (
+                                <ListingTable.Row key={r.label}>
+                                  <ListingTable.Cell>{r.label}</ListingTable.Cell>
+                                  <ListingTable.Cell align="right" sx={{ fontWeight: 600 }}>
+                                    {r.count.toLocaleString()}
+                                  </ListingTable.Cell>
+                                </ListingTable.Row>
+                              ))}
+                            </ListingTable.Body>
+                          </ListingTable>
+                        </ListingTable.Container>
+                      );
+                    })()
+                  )}
+                </InsightsCard>
+              </Box>
+            </Stack>
+          )}
 
           {isLoading && (
             <Typography variant="caption" color="text.secondary">

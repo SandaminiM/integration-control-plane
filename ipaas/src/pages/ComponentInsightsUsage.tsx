@@ -94,7 +94,8 @@ export default function ComponentInsightsUsage(scope: ComponentScope): JSX.Eleme
   const [range, setRange] = useState<InsightsRange>('7d');
 
   const isApiType = identity != null && API_LIKE_TYPES.has(identity.type);
-  const typeLabel = identity?.type === 'automation' ? 'Automation' : identity?.type === 'rag-ingestion' ? 'RAG Ingestion' : identity?.type === 'ai-agent' ? 'AI Agent' : identity?.type === 'mcp-server' ? 'MCP Server' : identity?.type === 'webhook' ? 'Webhook' : 'API';
+  const typeLabel =
+    identity?.type === 'automation' ? 'Automation' : identity?.type === 'rag-ingestion' ? 'RAG Ingestion' : identity?.type === 'ai-agent' ? 'AI Agent' : identity?.type === 'mcp-server' ? 'MCP Server' : identity?.type === 'webhook' ? 'Webhook' : 'API';
   const reportApiRef = useMemo<InsightsApiRef | null>(
     () =>
       component && isApiType
@@ -204,7 +205,16 @@ export default function ComponentInsightsUsage(scope: ComponentScope): JSX.Eleme
           No environments configured for this project yet.
         </Typography>
       ) : !isApiType ? (
-        <AutomationInsightsView component={component} env={runtimeEnv ?? primaryEnv} insightsEnv={insightsEnv} versionId={component.deploymentTracks?.find((t) => t.latest)?.id ?? component.deploymentTracks?.[0]?.id ?? ''} projectId={projectId} orgHandler={scope.org} projectHandler={project?.handler ?? scope.project} range={range} />
+        <AutomationInsightsView
+          component={component}
+          env={runtimeEnv ?? primaryEnv}
+          insightsEnv={insightsEnv}
+          versionId={component.deploymentTracks?.find((t) => t.latest)?.id ?? component.deploymentTracks?.[0]?.id ?? ''}
+          projectId={projectId}
+          orgHandler={scope.org}
+          projectHandler={project?.handler ?? scope.project}
+          range={range}
+        />
       ) : (
         <ApiInsightsView orgUuid={orgUuid} projectId={projectId} insightsEnv={insightsEnv} apiRef={reportApiRef!} range={range} actions={controls} />
       )}

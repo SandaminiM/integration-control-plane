@@ -769,11 +769,15 @@ function AppLayoutInner(): JSX.Element {
                   role="button"
                   tabIndex={0}
                   sx={{ position: 'relative', display: 'inline-flex', cursor: 'pointer' }}
-                  onClick={() => { const ps = { level: 'projects' as const, org: scope.org, project: scope.project }; navigate(insightsCrossScopeUrl(pathname, scope, ps) ?? resourceUrl(ps, 'overview')); }}
+                  onClick={() => {
+                    const ps = { level: 'projects' as const, org: scope.org, project: scope.project };
+                    navigate(insightsCrossScopeUrl(pathname, scope, ps) ?? resourceUrl(ps, 'overview'));
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      const ps = { level: 'projects' as const, org: scope.org, project: scope.project }; navigate(insightsCrossScopeUrl(pathname, scope, ps) ?? resourceUrl(ps, 'overview'));
+                      const ps = { level: 'projects' as const, org: scope.org, project: scope.project };
+                      navigate(insightsCrossScopeUrl(pathname, scope, ps) ?? resourceUrl(ps, 'overview'));
                     }
                   }}>
                   <ComplexSelect

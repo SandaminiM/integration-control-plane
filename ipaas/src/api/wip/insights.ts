@@ -176,7 +176,6 @@ function truncateTs(ts: number, labelGranularity: 'hour' | 'day' | 'week'): numb
   return d.getTime();
 }
 
-
 function buildTrend(
   successSummary: { timeSpan: string; requestCount: number }[],
   errorSummary: { timeSpan: string; errorCount: number }[],
@@ -284,15 +283,7 @@ async function fetchProjectAutomationOverview(
   };
 }
 
-export async function fetchProjectInsights(
-  orgUuid: string,
-  projectId: string,
-  insightsEnv: InsightsEnvironment,
-  apis: InsightsApiRef[],
-  automations: InsightsAutomationRef[],
-  range: InsightsRange,
-  queryApiUrl: string,
-): Promise<ProjectInsightsRaw> {
+export async function fetchProjectInsights(orgUuid: string, projectId: string, insightsEnv: InsightsEnvironment, apis: InsightsApiRef[], automations: InsightsAutomationRef[], range: InsightsRange, queryApiUrl: string): Promise<ProjectInsightsRaw> {
   const time = rangeToTimeFilter(range);
   const dataFilter = { orgId: orgUuid, environmentIds: getEnvironmentIds(insightsEnv), tenant: 'carbon.super', projectId };
 
@@ -344,10 +335,7 @@ export async function fetchProjectInsights(
 
   const scopedApis = resolved.map(({ api }) => api).filter((a) => a.id);
   const uniqueApiIds = [...new Set(scopedApis.map((a) => a.id))];
-  const [successSummary, errorTrends] = await Promise.all([
-    fetchUsageTrendForApis(queryApiUrl, dataFilter, scopedApis, time),
-    Promise.all(uniqueApiIds.map((id) => fetchErrorsByCategory(queryApiUrl, dataFilter, id, time))),
-  ]);
+  const [successSummary, errorTrends] = await Promise.all([fetchUsageTrendForApis(queryApiUrl, dataFilter, scopedApis, time), Promise.all(uniqueApiIds.map((id) => fetchErrorsByCategory(queryApiUrl, dataFilter, id, time)))]);
   const errBuckets = new Map<string, number>();
   errorTrends.flat().forEach((p) => errBuckets.set(p.timeSpan, (errBuckets.get(p.timeSpan) ?? 0) + (p.auth || 0) + (p.targetConnectivity || 0) + (p.throttled || 0) + (p.other || 0)));
   const errorSummary = [...errBuckets.entries()].map(([timeSpan, errorCount]) => ({ timeSpan, errorCount }));
@@ -360,14 +348,7 @@ export async function fetchProjectInsights(
 // Project-level latency trend for the trend card's "Latency" mode — getLatency
 // has no multi-API form, so query each API in parallel and average p95/median
 // per time bucket across APIs.
-export async function fetchProjectLatencyTrend(
-  orgUuid: string,
-  projectId: string,
-  insightsEnv: InsightsEnvironment,
-  apis: InsightsApiRef[],
-  range: InsightsRange,
-  queryApiUrl: string,
-): Promise<{ label: string; p95: number; median: number }[]> {
+export async function fetchProjectLatencyTrend(orgUuid: string, projectId: string, insightsEnv: InsightsEnvironment, apis: InsightsApiRef[], range: InsightsRange, queryApiUrl: string): Promise<{ label: string; p95: number; median: number }[]> {
   const time = rangeToTimeFilter(range);
   const dataFilter = { orgId: orgUuid, environmentIds: getEnvironmentIds(insightsEnv), tenant: 'carbon.super', projectId };
   const projectApis = await fetchAllProjectApis(queryApiUrl, dataFilter);
@@ -483,12 +464,7 @@ export async function fetchApiUsageOverTime(queryApiUrl: string, dataFilter: Rec
 // Requests-over-time summed across the project's own APIs — replaces the
 // org-level getSuccessSummary for the project trend chart. Response entries
 // are strictly filtered to the requested apiIds before summing.
-async function fetchUsageTrendForApis(
-  queryApiUrl: string,
-  dataFilter: Record<string, unknown>,
-  apis: { id: string; version: string }[],
-  time: { from: string; to: string; queryGranularity: string },
-): Promise<{ timeSpan: string; requestCount: number }[]> {
+async function fetchUsageTrendForApis(queryApiUrl: string, dataFilter: Record<string, unknown>, apis: { id: string; version: string }[], time: { from: string; to: string; queryGranularity: string }): Promise<{ timeSpan: string; requestCount: number }[]> {
   if (apis.length === 0) return [];
   const result = await postInsightsQuery<{
     data?: { getAPIUsageOverTime?: { apiId: string; usage?: TimeSeriesPoint[] } | { apiId: string; usage?: TimeSeriesPoint[] }[] };
@@ -538,12 +514,7 @@ export async function fetchApiUsageByApp(
 }
 
 // Per-backend breakdown of a single API's traffic over time — "Usage by Backend".
-export async function fetchUsageByBackend(
-  queryApiUrl: string,
-  dataFilter: Record<string, unknown>,
-  apiId: string,
-  time: { from: string; to: string; queryGranularity: string },
-): Promise<{ backend: string; usage: TimeSeriesPoint[] }[]> {
+export async function fetchUsageByBackend(queryApiUrl: string, dataFilter: Record<string, unknown>, apiId: string, time: { from: string; to: string; queryGranularity: string }): Promise<{ backend: string; usage: TimeSeriesPoint[] }[]> {
   const result = await postInsightsQuery<{
     data?: { getAPIUsageByBackendOverTime?: { usage?: { backend: string; usage?: TimeSeriesPoint[] }[] } };
   }>(
@@ -585,7 +556,11 @@ export async function fetchLatencyByCategory(
   apiId: string,
   time: { from: string; to: string; queryGranularity: string },
 ): Promise<{ timeSpan: string; response: number; backend: number; requestMediation: number; responseMediation: number; responseMedian: number; backendMedian: number; requestMediationMedian: number; responseMediationMedian: number }[]> {
-  const result = await postInsightsQuery<{ data?: { getLatency?: { summary?: { timeSpan: string; response: number; backend: number; requestMediation: number; responseMediation: number; responseMedian: number; backendMedian: number; requestMediationMedian: number; responseMediationMedian: number }[] } } }>(
+  const result = await postInsightsQuery<{
+    data?: {
+      getLatency?: { summary?: { timeSpan: string; response: number; backend: number; requestMediation: number; responseMediation: number; responseMedian: number; backendMedian: number; requestMediationMedian: number; responseMediationMedian: number }[] };
+    };
+  }>(
     queryApiUrl,
     `query ($dataFilter: DataFilter!, $timeFilter: TimeFilter!, $latencyFilter: LatencyFilter!) {
       getLatency(timeFilter: $timeFilter, latencyFilter: $latencyFilter, dataFilter: $dataFilter) {
@@ -631,7 +606,13 @@ export async function fetchErrorsByCategory(
 }
 
 // Status-code counts, split Proxy vs Target — real 2-row × status-code matrix ("Errors by Status Code").
-export async function fetchErrorsByStatusCode(queryApiUrl: string, dataFilter: Record<string, unknown>, apiId: string, apiAliases: string[], time: { from: string; to: string }): Promise<{ proxy: { statusCode: string; count: number }[]; target: { statusCode: string; count: number }[] }> {
+export async function fetchErrorsByStatusCode(
+  queryApiUrl: string,
+  dataFilter: Record<string, unknown>,
+  apiId: string,
+  apiAliases: string[],
+  time: { from: string; to: string },
+): Promise<{ proxy: { statusCode: string; count: number }[]; target: { statusCode: string; count: number }[] }> {
   const query = `query ($dataFilter: DataFilter!, $timeFilter: TimeFilter!, $errorCountByStatusCodeFilter: ErrorCountByStatusCodeFilter!) {
     getErrorsByStatusCode(timeFilter: $timeFilter, errorCountByStatusCodeFilter: $errorCountByStatusCodeFilter, dataFilter: $dataFilter) {
       errors { apiId errorCountByCode { statusCode count } }
@@ -706,9 +687,7 @@ function buildApiOverviewTrend(
     if (Number.isNaN(ts)) return;
     buckets.set(ts, { ...get(ts), latency: Math.round(p.response || 0) });
   });
-  return [...buckets.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([ts, v]) => ({ label: bucketLabel(ts, labelGranularity), requests: v.requests, errors: v.errors, latency: v.latency }));
+  return [...buckets.entries()].sort((a, b) => a[0] - b[0]).map(([ts, v]) => ({ label: bucketLabel(ts, labelGranularity), requests: v.requests, errors: v.errors, latency: v.latency }));
 }
 
 function statusCodeKind(code: string): 'limited' | 'down' | null {
@@ -718,15 +697,7 @@ function statusCodeKind(code: string): 'limited' | 'down' | null {
   return null;
 }
 
-export async function fetchApiInsights(
-  orgUuid: string,
-  projectId: string,
-  insightsEnv: InsightsEnvironment,
-  apiRef: InsightsApiRef,
-  range: InsightsRange,
-  tab: 'overview' | 'traffic' | 'latency' | 'errors',
-  queryApiUrl: string,
-): Promise<ApiInsightsRaw> {
+export async function fetchApiInsights(orgUuid: string, projectId: string, insightsEnv: InsightsEnvironment, apiRef: InsightsApiRef, range: InsightsRange, tab: 'overview' | 'traffic' | 'latency' | 'errors', queryApiUrl: string): Promise<ApiInsightsRaw> {
   const time = rangeToTimeFilter(range);
   const dataFilter = { orgId: orgUuid, environmentIds: getEnvironmentIds(insightsEnv), tenant: 'carbon.super', projectId };
 

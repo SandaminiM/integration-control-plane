@@ -55,7 +55,7 @@ export default function ProjectMetrics(scope: ProjectScope): JSX.Element {
   const { data: environments = [], isLoading: loadingEnvironments } = useEnvironments(orgUuid, projectId);
   const [envId, setEnvId] = useState('');
   useEffect(() => {
-    if (environments.length) setEnvId((prev) => (prev && environments.some((e) => e.id === prev) ? prev : ((environments.find((e) => e.critical) ?? environments[0]).id)));
+    if (environments.length) setEnvId((prev) => (prev && environments.some((e) => e.id === prev) ? prev : (environments.find((e) => e.critical) ?? environments[0]).id));
   }, [environments]);
   const primaryEnv = environments.find((e) => e.id === envId);
 

@@ -20,17 +20,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { fetchProjectInsights, fetchProjectLatencyTrend } from '#api/insights';
 import { useInsightsQueryUrl } from './useInsights';
-import type {
-  InsightsApiRef,
-  InsightsAutomationRef,
-  InsightsEnvironment,
-  InsightsRange,
-  IntegrationStatus,
-  ProjectComponentStat,
-  ProjectHealthSlice,
-  ProjectInsightsData,
-  ProjectInsightsRaw,
-} from '../types/insights';
+import type { InsightsApiRef, InsightsAutomationRef, InsightsEnvironment, InsightsRange, IntegrationStatus, ProjectComponentStat, ProjectHealthSlice, ProjectInsightsData, ProjectInsightsRaw } from '../types/insights';
 
 const fmt = (n: number): string => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(2)}M` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${Math.round(n)}`);
 
@@ -65,7 +55,14 @@ export function toProjectInsightsData(raw: ProjectInsightsRaw): ProjectInsightsD
 
   return {
     kpis: [
-      { key: 'requests', label: 'Total API Requests', value: fmt(raw.totalRequests), sub: `${apiCount} Integrations as API${agentCount > 0 ? ` · ${agentCount} AI Agents` : ''}${mcpCount > 0 ? ` · ${mcpCount} MCP Servers` : ''}${webhookCount > 0 ? ` · ${webhookCount} Webhooks` : ''}`, delta: '', deltaGood: true },
+      {
+        key: 'requests',
+        label: 'Total API Requests',
+        value: fmt(raw.totalRequests),
+        sub: `${apiCount} Integrations as API${agentCount > 0 ? ` · ${agentCount} AI Agents` : ''}${mcpCount > 0 ? ` · ${mcpCount} MCP Servers` : ''}${webhookCount > 0 ? ` · ${webhookCount} Webhooks` : ''}`,
+        delta: '',
+        deltaGood: true,
+      },
       { key: 'executions', label: 'Total Executions', value: fmt(stats?.totalExecutions ?? 0), sub: `${autoCount} Automations${ragCount > 0 ? ` · ${ragCount} RAG ingestions` : ''}`, delta: '', deltaGood: true },
       { key: 'errors', label: 'Total Errors', value: fmt(raw.totalErrors), sub: 'Across all APIs', delta: '', deltaGood: false, danger: true },
       { key: 'errorRate', label: 'Error Rate', value: `${errorRate.toFixed(1)}%`, sub: 'Across all traffic', delta: '', deltaGood: true, danger: true },
@@ -96,14 +93,7 @@ export function toProjectInsightsData(raw: ProjectInsightsRaw): ProjectInsightsD
 
 // ---------- real data ----------
 
-export function useProjectInsights(
-  orgUuid: string,
-  projectId: string,
-  insightsEnv: InsightsEnvironment | null,
-  apis: InsightsApiRef[],
-  automations: InsightsAutomationRef[],
-  range: InsightsRange,
-) {
+export function useProjectInsights(orgUuid: string, projectId: string, insightsEnv: InsightsEnvironment | null, apis: InsightsApiRef[], automations: InsightsAutomationRef[], range: InsightsRange) {
   const apiKey = apis.map((a) => a.apiId).join(',');
   const autoKey = automations.map((a) => a.id).join(',');
   const hasIntegrations = apis.length > 0 || automations.length > 0;

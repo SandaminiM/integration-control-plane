@@ -20,17 +20,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { fetchAutomationInsights } from '#api/insights';
 import { useInsightsQueryUrl } from './useInsights';
-import type {
-  AutomationInsightsData,
-  AutomationInsightsRaw,
-  AutomationTrendPoint,
-  ExecutionOutcome,
-  ExecutionScatterPoint,
-  HeatmapData,
-  InsightsEnvironment,
-  InsightsRange,
-  TaskExecutionDetail,
-} from '../types/insights';
+import type { AutomationInsightsData, AutomationInsightsRaw, AutomationTrendPoint, ExecutionOutcome, ExecutionScatterPoint, HeatmapData, InsightsEnvironment, InsightsRange, TaskExecutionDetail } from '../types/insights';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const HOUR_LABELS = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);

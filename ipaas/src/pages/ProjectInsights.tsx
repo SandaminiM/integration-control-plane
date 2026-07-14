@@ -16,25 +16,7 @@
  * under the License.
  */
 
-import {
-  Alert,
-  Avatar,
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  ListingTable,
-  MenuItem,
-  PageContent,
-  PageTitle,
-  Skeleton,
-  Stack,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-  useTheme,
-} from '@wso2/oxygen-ui';
+import { Alert, Avatar, Box, Button, Chip, CircularProgress, ListingTable, MenuItem, PageContent, PageTitle, Skeleton, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography, useTheme } from '@wso2/oxygen-ui';
 import { Download, Zap, Globe } from '@wso2/oxygen-ui-icons-react';
 import { AreaChart } from '@wso2/oxygen-ui-charts-react';
 import { useMemo, useState, type JSX } from 'react';
@@ -126,7 +108,9 @@ function downloadInsightsCsv(
     ...data.trend.map((p) => row(p.label, p.apiRequests, p.errors, p.automationRuns, p.automationErrors)),
     '',
     row('Integration', 'Type', 'Volume', 'Error Rate', 'Avg Latency', 'Last Run', 'Status'),
-    ...data.integrations.map((r) => row(r.name, r.type === 'auto' ? 'Automation' : r.type === 'rag' ? 'RAG Ingestion' : r.type === 'agent' ? 'AI Agent' : r.type === 'mcp' ? 'MCP Server' : r.type === 'webhook' ? 'Webhook' : 'API', r.volume, r.errorRate ?? '—', r.latency, r.last, r.status)),
+    ...data.integrations.map((r) =>
+      row(r.name, r.type === 'auto' ? 'Automation' : r.type === 'rag' ? 'RAG Ingestion' : r.type === 'agent' ? 'AI Agent' : r.type === 'mcp' ? 'MCP Server' : r.type === 'webhook' ? 'Webhook' : 'API', r.volume, r.errorRate ?? '—', r.latency, r.last, r.status),
+    ),
   ];
   const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
@@ -266,7 +250,8 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
                 { dataKey: 'automationRuns', name: 'Executions', type: 'monotone', stroke: CHART.auto, fill: CHART.auto, fillOpacity: 0.2 },
                 { dataKey: 'automationErrors', name: 'Errors', type: 'monotone', stroke: CHART.error, fill: CHART.error, fillOpacity: 0.2 },
               ]}
-              legend={{ show: true, verticalAlign: 'top' }} margin={{ top: 16 }}
+              legend={{ show: true, verticalAlign: 'top' }}
+              margin={{ top: 16 }}
               tooltip={{ show: true }}
               grid={{ show: true }}
             />
@@ -296,7 +281,8 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
                     { dataKey: 'p95', name: 'p95', type: 'monotone', stroke: CHART.api, fill: CHART.api, fillOpacity: 0.2 },
                     { dataKey: 'median', name: 'Median', type: 'monotone', stroke: CHART.median, fill: CHART.median, fillOpacity: 0.2 },
                   ]}
-                  legend={{ show: true, verticalAlign: 'top' }} margin={{ top: 16 }}
+                  legend={{ show: true, verticalAlign: 'top' }}
+                  margin={{ top: 16 }}
                   tooltip={{ show: true }}
                   grid={{ show: true }}
                 />
@@ -311,7 +297,8 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
                   { dataKey: 'success', name: 'Success', type: 'monotone', stackId: 'traffic', stroke: CHART.success, fill: CHART.success, fillOpacity: 0.2 },
                   { dataKey: 'errors', name: 'Errors', type: 'monotone', stackId: 'traffic', stroke: CHART.error, fill: CHART.error, fillOpacity: 0.2 },
                 ]}
-                legend={{ show: true, verticalAlign: 'top' }} margin={{ top: 16 }}
+                legend={{ show: true, verticalAlign: 'top' }}
+                margin={{ top: 16 }}
                 tooltip={{ show: true }}
                 grid={{ show: true }}
               />
@@ -325,7 +312,8 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
                   { dataKey: 'apiRequests', name: 'API requests', type: 'monotone', stroke: CHART.api, fill: CHART.api, fillOpacity: 0.2 },
                   { dataKey: 'errors', name: 'Errors', type: 'monotone', stroke: CHART.error, fill: CHART.error, fillOpacity: 0.2 },
                 ]}
-                legend={{ show: true, verticalAlign: 'top' }} margin={{ top: 16 }}
+                legend={{ show: true, verticalAlign: 'top' }}
+                margin={{ top: 16 }}
                 tooltip={{ show: true }}
                 grid={{ show: true }}
               />
@@ -360,9 +348,7 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
                     sx={row.handler ? { cursor: 'pointer' } : undefined}>
                     <ListingTable.Cell>
                       <Stack direction="row" alignItems="center" gap={1.5}>
-                        <Avatar sx={{ width: 30, height: 30, bgcolor: 'action.selected', color: 'text.secondary' }}>
-                          {row.type === 'auto' || row.type === 'rag' ? <Zap size={15} /> : <Globe size={15} />}
-                        </Avatar>
+                        <Avatar sx={{ width: 30, height: 30, bgcolor: 'action.selected', color: 'text.secondary' }}>{row.type === 'auto' || row.type === 'rag' ? <Zap size={15} /> : <Globe size={15} />}</Avatar>
                         <Box>
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
                             {row.name}
@@ -374,7 +360,11 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
                       </Stack>
                     </ListingTable.Cell>
                     <ListingTable.Cell>
-                      <Chip size="small" variant="outlined" label={row.type === 'auto' ? 'Automation' : row.type === 'rag' ? 'RAG Ingestion' : row.type === 'agent' ? 'AI Agent' : row.type === 'mcp' ? 'MCP Server' : row.type === 'webhook' ? 'Webhook' : 'API'} />
+                      <Chip
+                        size="small"
+                        variant="outlined"
+                        label={row.type === 'auto' ? 'Automation' : row.type === 'rag' ? 'RAG Ingestion' : row.type === 'agent' ? 'AI Agent' : row.type === 'mcp' ? 'MCP Server' : row.type === 'webhook' ? 'Webhook' : 'API'}
+                      />
                     </ListingTable.Cell>
                     <ListingTable.Cell align="right">{row.volume}</ListingTable.Cell>
                     <ListingTable.Cell align="right" sx={{ color: row.errorRate && parseFloat(row.errorRate) >= 3 ? theme.palette.error.main : undefined }}>

@@ -120,7 +120,8 @@ export default function AutomationInsightsView({ component, env, insightsEnv, ve
               { dataKey: 'failure', name: 'Failed', type: 'monotone', stackId: 'outcome', stroke: OUTCOME_COLOR.failure, fill: OUTCOME_COLOR.failure, fillOpacity: 0.2 },
               { dataKey: 'timeout', name: 'Timeout', type: 'monotone', stackId: 'outcome', stroke: OUTCOME_COLOR.timeout, fill: OUTCOME_COLOR.timeout, fillOpacity: 0.2 },
             ]}
-            legend={{ show: true, verticalAlign: 'top' }} margin={{ top: 16 }}
+            legend={{ show: true, verticalAlign: 'top' }}
+            margin={{ top: 16 }}
             tooltip={{ show: true }}
             grid={{ show: true }}
           />

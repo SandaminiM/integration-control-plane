@@ -36,7 +36,7 @@ export function metricTimeLabel(iso: string, range: MetricsRange): string {
   return hm;
 }
 
-const refetchMs = (seconds: number) => (seconds > 0 ? seconds * 1000 : false as const);
+const refetchMs = (seconds: number) => (seconds > 0 ? seconds * 1000 : (false as const));
 
 /** Requests-per-bucket + latency-percentile rows for one release — Devant's
  * useComponentHTTPMetrics select-mapping ported. */

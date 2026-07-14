@@ -138,7 +138,10 @@ export default function DeliveryInsights(scope: OrgScope | ProjectScope): JSX.El
   const deploymentsData = useMemo(() => data.deployments.map((p) => ({ label: chartDateLabel(p.timestamp), count: p.count })), [data.deployments]);
   const leadUnit = useMemo(() => autoTimeUnit(Math.max(...data.leadTimes.map((p) => p.leadTime), 0)), [data.leadTimes]);
   const leadData = useMemo(() => data.leadTimes.map((p) => ({ label: chartDateLabel(p.timestamp), leadTime: convertMinutes(p.leadTime, leadUnit) })), [data.leadTimes, leadUnit]);
-  const failureData = useMemo(() => [...data.failureRates].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()).map((p) => ({ label: chartDateLabel(p.timestamp), failureRate: Math.round(p.failureRate * 10000) / 100 })), [data.failureRates]);
+  const failureData = useMemo(
+    () => [...data.failureRates].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()).map((p) => ({ label: chartDateLabel(p.timestamp), failureRate: Math.round(p.failureRate * 10000) / 100 })),
+    [data.failureRates],
+  );
   const recoveryUnit = useMemo(() => autoTimeUnit(Math.max(...data.recoveryTimes.map((p) => p.recoveryTime), 0)), [data.recoveryTimes]);
   const recoveryData = useMemo(() => data.recoveryTimes.map((p) => ({ label: chartDateLabel(p.timestamp), recoveryTime: convertMinutes(p.recoveryTime, recoveryUnit) })), [data.recoveryTimes, recoveryUnit]);
 
@@ -220,12 +223,28 @@ export default function DeliveryInsights(scope: OrgScope | ProjectScope): JSX.El
               <>
                 <InsightsCard title="Change Failure Rate">
                   <ChartBox>
-                    <LineChart data={failureData} xAxisDataKey="label" height={320} colors={[CHART.failure]} lines={[{ dataKey: 'failureRate', name: 'Failure Rate (%)', stroke: CHART.failure, type: 'monotone' }]} tooltip={{ show: true }} grid={{ show: true }} />
+                    <LineChart
+                      data={failureData}
+                      xAxisDataKey="label"
+                      height={320}
+                      colors={[CHART.failure]}
+                      lines={[{ dataKey: 'failureRate', name: 'Failure Rate (%)', stroke: CHART.failure, type: 'monotone' }]}
+                      tooltip={{ show: true }}
+                      grid={{ show: true }}
+                    />
                   </ChartBox>
                 </InsightsCard>
                 <InsightsCard title="Mean Time to Recovery">
                   <ChartBox>
-                    <LineChart data={recoveryData} xAxisDataKey="label" height={320} colors={[CHART.recovery]} lines={[{ dataKey: 'recoveryTime', name: `Mean Recovery Time (${recoveryUnit})`, stroke: CHART.recovery, type: 'monotone' }]} tooltip={{ show: true }} grid={{ show: true }} />
+                    <LineChart
+                      data={recoveryData}
+                      xAxisDataKey="label"
+                      height={320}
+                      colors={[CHART.recovery]}
+                      lines={[{ dataKey: 'recoveryTime', name: `Mean Recovery Time (${recoveryUnit})`, stroke: CHART.recovery, type: 'monotone' }]}
+                      tooltip={{ show: true }}
+                      grid={{ show: true }}
+                    />
                   </ChartBox>
                 </InsightsCard>
               </>

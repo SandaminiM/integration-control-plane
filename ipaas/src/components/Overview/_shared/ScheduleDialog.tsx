@@ -53,20 +53,17 @@ export default function ScheduleDialog({ open, onClose, onSaveSuccess, onSaveErr
   const form = useScheduleForm(existingConfigs);
 
   const handleSave = () => {
-    deployTrack.mutate(
-      buildScheduleDeployInput(form, { componentId, versionId, imageId: deployment?.build?.buildId ?? '', envId, deploymentPipelineId }),
-      {
-        onSuccess: () => {
-          onClose();
-          onSaveSuccess?.();
-        },
-        onError: (err) => {
-          const msg = err instanceof Error ? err.message : 'Failed to save schedule';
-          onClose();
-          onSaveError?.(msg);
-        },
+    deployTrack.mutate(buildScheduleDeployInput(form, { componentId, versionId, imageId: deployment?.build?.buildId ?? '', envId, deploymentPipelineId }), {
+      onSuccess: () => {
+        onClose();
+        onSaveSuccess?.();
       },
-    );
+      onError: (err) => {
+        const msg = err instanceof Error ? err.message : 'Failed to save schedule';
+        onClose();
+        onSaveError?.(msg);
+      },
+    });
   };
 
   const drawerSx = {

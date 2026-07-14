@@ -78,7 +78,21 @@ export default function TopPerformingProjectsTable({ rows, isLoading, onRowClick
               </ListingTable.Body>
             </ListingTable>
           </ListingTable.Container>
-          {rows.length > 5 && <TablePagination component="div" count={rows.length} page={page} rowsPerPage={rowsPerPage} rowsPerPageOptions={[5, 10]} onPageChange={(_, p) => setPage(p)} onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }} labelRowsPerPage="Items per page" />}
+          {rows.length > 5 && (
+            <TablePagination
+              component="div"
+              count={rows.length}
+              page={page}
+              rowsPerPage={rowsPerPage}
+              rowsPerPageOptions={[5, 10]}
+              onPageChange={(_, p) => setPage(p)}
+              onRowsPerPageChange={(e) => {
+                setRowsPerPage(parseInt(e.target.value, 10));
+                setPage(0);
+              }}
+              labelRowsPerPage="Items per page"
+            />
+          )}
         </>
       )}
     </Box>
