@@ -66,18 +66,19 @@ Query keys are arrays. Keep them consistent so cache invalidation works correctl
 
 ```typescript
 // Resource list
-queryKey: ['builds', componentId]
+queryKey: ['builds', componentId];
 
 // Single resource
-queryKey: ['build-logs', componentId, versionId, workflowName]
+queryKey: ['build-logs', componentId, versionId, workflowName];
 
 // Scoped to org
-queryKey: ['projects', orgNumericId]
+queryKey: ['projects', orgNumericId];
 ```
 
 Invalidate on mutation success using the same key structure:
+
 ```typescript
-onSuccess: () => queryClient.invalidateQueries({ queryKey: ['builds', componentId] })
+onSuccess: () => queryClient.invalidateQueries({ queryKey: ['builds', componentId] });
 ```
 
 ---

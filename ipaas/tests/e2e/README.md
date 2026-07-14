@@ -27,6 +27,7 @@ tests/e2e/
 ## Prerequisites
 
 1. **Install dependencies**
+
    ```bash
    cd ipaas
    pnpm install
@@ -37,10 +38,10 @@ tests/e2e/
 
    You need a dedicated WSO2 Identity Platform account for tests — never use a personal account.
 
-   | What | Value |
-   |------|-------|
-   | Email | `wip-e2e@wso2.com` (or any shared team mailbox) |
-   | Org | Pre-create one org manually after first sign-up |
+   | What   | Value                                                                |
+   | ------ | -------------------------------------------------------------------- |
+   | Email  | `wip-e2e@wso2.com` (or any shared team mailbox)                      |
+   | Org    | Pre-create one org manually after first sign-up                      |
    | GitHub | Create a `wip-e2e-bot` GitHub account for integration tests (future) |
 
    Sign up at `https://preview-o2-dev.devant.dev` and complete email verification once. After that, the tests log in and reuse the session.
@@ -48,6 +49,7 @@ tests/e2e/
 3. **Credentials file**
 
    Copy the example file and fill in real values:
+
    ```bash
    cp .env.test.example .env.test
    # then edit .env.test with your credentials
@@ -100,15 +102,16 @@ The workflow uses secrets instead of `.env.test` (which is local-only and never 
 
 Set these at `https://github.com/sm1990/integration-control-plane/settings/secrets/actions`:
 
-| Secret | Description |
-|--------|-------------|
-| `E2E_USERNAME` | Test user email (same value as in your `.env.test`) |
-| `E2E_PASSWORD` | Test user password (same value as in your `.env.test`) |
-| `E2E_SLACK_WEBHOOK_URL` | (Optional) Slack webhook for failure notifications |
+| Secret                  | Description                                            |
+| ----------------------- | ------------------------------------------------------ |
+| `E2E_USERNAME`          | Test user email (same value as in your `.env.test`)    |
+| `E2E_PASSWORD`          | Test user password (same value as in your `.env.test`) |
+| `E2E_SLACK_WEBHOOK_URL` | (Optional) Slack webhook for failure notifications     |
 
 ### Enabling the workflow on a fork
 
 GitHub disables scheduled workflows on forks by default. After pushing:
+
 1. Go to `https://github.com/sm1990/integration-control-plane/actions`
 2. Find **E2E Nightly (WIP)**
 3. Click **Enable workflow** if shown

@@ -112,6 +112,8 @@ export interface ApiConfig {
   enableRagIngestionFeature?: boolean;
   /** RAG backend base URL — powers the Retrieval query endpoint. When unset, Retrieval's query action is disabled. */
   ragBackendUrl?: string;
+  /** Internal Marketplace API base — derived from choreoBaseApiUrl. Used to read/write service descriptions (Overview). */
+  internalMarketplaceUrl: string;
 }
 
 // Extend window interface
@@ -150,6 +152,7 @@ const DEFAULT_CONFIG: ApiConfig = {
   aiCopilotUrlSuffix: '',
   aiCopilotDatacollectorBaseUrl: '',
   availableLoginRegions: undefined,
+  internalMarketplaceUrl: 'https://apis.preview-dv.choreo.dev/marketplace/0.1.0',
 };
 
 /**
@@ -213,6 +216,7 @@ export async function loadConfig(): Promise<void> {
       ragIngestionImage: config.RAG_INGESTION_IMAGE ? trim(config.RAG_INGESTION_IMAGE) : undefined,
       enableRagIngestionFeature: config.ENABLE_RAG_INGESTION_FEATURE === 'true' || config.ENABLE_RAG_INGESTION_FEATURE === true,
       ragBackendUrl: config.RAG_INGESTION_BACKEND ? trim(config.RAG_INGESTION_BACKEND) : undefined,
+      internalMarketplaceUrl: `${choreoBase}/marketplace/0.1.0`,
     };
 
     console.info('✓ Runtime configuration loaded from config.json');

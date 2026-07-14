@@ -47,6 +47,8 @@ const OrgHome = lazy(() => import('../pages/OrgHome'));
 const Projects = lazy(() => import('../pages/Projects'));
 const Project = lazy(() => import('../pages/Project'));
 const Component = lazy(() => import('../pages/Component'));
+const ComponentIntegration = lazy(() => import('../pages/ComponentIntegration'));
+const ComponentApiInfo = lazy(() => import('../pages/ComponentApiInfo'));
 const CreateProject = lazy(() => import('../pages/CreateProject'));
 const ImportProject = lazy(() => import('../pages/ImportProject'));
 const CreateIntegrationOptions = lazy(() => import('../pages/CreateIntegrationOptions'));
@@ -256,6 +258,8 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/home', element: createElement(withScope(OrgHome, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/home', element: createElement(withScope(Project, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/overview', element: createElement(withScope(Component, ['components'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/develop/integration', element: createElement(withScope(ComponentIntegration, ['components'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/api-info', element: createElement(withScope(ComponentApiInfo, ['components'])) },
               { path: 'organizations/:orgHandler/projects/new', element: createElement(withScope(CreateProject, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/import', element: createElement(withScope(ImportProject, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new', element: createElement(withScope(CreateIntegrationOptions, ['projects'])) },

@@ -23,9 +23,9 @@ Shared TypeScript types that define the contract between the `api/` and `hooks/`
 
 ## Domain shape, not wire shape
 
-Types in this directory describe the **domain** (what a Component / Environment / Project *is*), not how any particular backend protocol happens to serialize them. The exported names have no `Gql`, `Rest`, `Raw`, or product prefix.
+Types in this directory describe the **domain** (what a Component / Environment / Project _is_), not how any particular backend protocol happens to serialize them. The exported names have no `Gql`, `Rest`, `Raw`, or product prefix.
 
-When `src/api/wip/` calls GraphQL and the response already matches the domain shape, the function returns the domain type directly. When `src/api/cloud/` (future) calls REST and the response uses different field names, that file maps wire → domain *before* returning. The mapping convention is documented in `src/api/AGENTS.md`.
+When `src/api/wip/` calls GraphQL and the response already matches the domain shape, the function returns the domain type directly. When `src/api/cloud/` (future) calls REST and the response uses different field names, that file maps wire → domain _before_ returning. The mapping convention is documented in `src/api/AGENTS.md`.
 
 This means types here are stable: a contributor adding a cloud REST adapter does not change anything in `src/types/`. They add private raw types and a mapper inside `src/api/cloud/<domain>.ts`.
 

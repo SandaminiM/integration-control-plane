@@ -21,10 +21,10 @@ api/wip/<domain>.ts          Named service functions
 
 Two retry helpers are exported from `httpClients.ts`. Domain files use these instead of calling `authenticatedFetch` directly:
 
-| Helper | When to use |
-|--------|-------------|
-| `withStsRetry(fn)` | Token is unscoped (no org UUID); STS configured. Refreshes token then retries once. |
-| `withScopeRetry(fn)` | APIM scope validation error (code 900910). Refreshes token then retries once. |
+| Helper               | When to use                                                                         |
+| -------------------- | ----------------------------------------------------------------------------------- |
+| `withStsRetry(fn)`   | Token is unscoped (no org UUID); STS configured. Refreshes token then retries once. |
+| `withScopeRetry(fn)` | APIM scope validation error (code 900910). Refreshes token then retries once.       |
 
 `createHttpClient()` also accepts an `on403` callback for client-level custom handling.
 
@@ -34,8 +34,8 @@ Two retry helpers are exported from `httpClients.ts`. Domain files use these ins
 
 Only one domain file calls `authenticatedFetch` directly. All other 403 retry cases are handled via `withStsRetry`/`withScopeRetry`.
 
-| File | Function | Reason |
-|------|----------|--------|
+| File         | Function             | Reason                                                                                                           |
+| ------------ | -------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `copilot.ts` | `getAiCopilotAnswer` | Caller-provided URL, streaming `Response`, and custom per-request headers — incompatible with `createHttpClient` |
 
 `graphql.ts` and `httpClients.ts` also call `authenticatedFetch` internally — those are transport-layer files, not domain files, so this is expected.
@@ -93,7 +93,7 @@ Some GraphQL responses already use snake_case or restructured fields (e.g. `fetc
      id: string;
      release_mgt_id: string;
      environment_id: string;
-     component_configs: { config_mapping_revision: number; /* … */ };
+     component_configs: { config_mapping_revision: number /* … */ };
      // …
    }
    ```

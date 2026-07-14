@@ -20,7 +20,6 @@ import { gql } from './graphql';
 import type {
   Component,
   ComponentDetail,
-  Endpoint,
   EnvEndpoint,
   CreateComponentInput,
   UpdateComponentInput,
@@ -203,7 +202,7 @@ const COMPONENT_BY_HANDLER_QUERY = `
 const COMPONENT_ENDPOINTS_QUERY = `
   query GetComponentEndpoints($componentId: String!, $versionId: String!) {
     componentEndpoints(input: { componentId: $componentId, versionId: $versionId }) {
-      displayName, visibility, apimId
+      id releaseId environmentId displayName visibility apimId type port apiContext signature
     }
   }`;
 
@@ -279,8 +278,8 @@ export async function fetchComponentByHandler(projectId: string, componentHandle
   return gql<{ component: ComponentDetail }>(COMPONENT_BY_HANDLER_QUERY, { projectId, componentHandler }).then((d) => d.component);
 }
 
-export async function fetchComponentEndpoints(componentId: string, versionId: string): Promise<Endpoint[]> {
-  return gql<{ componentEndpoints: Endpoint[] }>(COMPONENT_ENDPOINTS_QUERY, { componentId, versionId })
+export async function fetchComponentEndpoints(componentId: string, versionId: string): Promise<EnvEndpoint[]> {
+  return gql<{ componentEndpoints: EnvEndpoint[] }>(COMPONENT_ENDPOINTS_QUERY, { componentId, versionId })
     .then((d) => d.componentEndpoints ?? [])
     .catch(() => []);
 }

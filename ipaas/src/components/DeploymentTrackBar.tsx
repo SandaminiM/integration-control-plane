@@ -36,11 +36,15 @@ interface DeploymentTrackBarProps {
 
 const TOOLTIP_TEXT = 'Deployment tracks control the release path of your component versions through different environments.';
 
+function normalizeVersion(v: string): string {
+  return /^v/i.test(v) ? v : `v${v}`;
+}
+
 function TrackLabel({ track, versionView }: { track: DeploymentTrack; versionView?: boolean }) {
   if (versionView) {
     return (
       <Typography variant="body2" sx={{ fontSize: '0.8125rem' }}>
-        {track.apiVersion ? `v${track.apiVersion}` : track.id}
+        {track.apiVersion ? normalizeVersion(track.apiVersion) : track.id}
       </Typography>
     );
   }
@@ -50,7 +54,7 @@ function TrackLabel({ track, versionView }: { track: DeploymentTrack; versionVie
       <Typography variant="body2" sx={{ fontSize: '0.8125rem' }}>
         {track.branch || 'None'}
       </Typography>
-      {track.apiVersion && <Chip label={`API v${track.apiVersion}`} size="small" variant="outlined" color="primary" sx={{ height: 20, fontSize: '0.68rem', fontWeight: 500 }} />}
+      {track.apiVersion && <Chip label={`API ${normalizeVersion(track.apiVersion)}`} size="small" variant="outlined" color="primary" sx={{ height: 20, fontSize: '0.68rem', fontWeight: 500 }} />}
     </Stack>
   );
 }
@@ -66,7 +70,7 @@ export default function DeploymentTrackBar({ tracks, selectedId, onChange, orgHa
         alignItems: 'center',
         gap: 2,
         px: 3,
-        py: 1,
+        minHeight: 48,
         borderBottom: '1px solid',
         borderColor: 'divider',
         bgcolor: 'background.acrylic',

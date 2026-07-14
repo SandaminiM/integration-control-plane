@@ -231,11 +231,7 @@ export default function RagRetrievalChat({ ingestionComponentId, orgHandler, pro
                   <>
                     <ChunksTable chunks={m.chunks.slice(0, PREVIEW_ROWS)} />
                     {m.chunks.length > PREVIEW_ROWS && (
-                      <Typography
-                        variant="caption"
-                        color="primary"
-                        onClick={() => setModalChunks(m.chunks)}
-                        sx={{ display: 'inline-block', mt: 0.75, cursor: 'pointer', fontWeight: 500, '&:hover': { textDecoration: 'underline' } }}>
+                      <Typography variant="caption" color="primary" onClick={() => setModalChunks(m.chunks)} sx={{ display: 'inline-block', mt: 0.75, cursor: 'pointer', fontWeight: 500, '&:hover': { textDecoration: 'underline' } }}>
                         See all {m.chunks.length} results
                       </Typography>
                     )}

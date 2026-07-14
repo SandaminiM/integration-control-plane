@@ -28,20 +28,7 @@ const reqSx = { '& .MuiFormLabel-asterisk': { color: 'error.main' } } as const;
 
 /** The required numeric Port field shared by the HTTP GET and TCP probe forms. */
 function PortField({ value, onChange, onBlur, error }: { value: string; onChange: (value: string) => void; onBlur: () => void; error?: string }): JSX.Element {
-  return (
-    <TextField
-      label="Port"
-      required
-      size="small"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      onBlur={onBlur}
-      inputProps={{ inputMode: 'numeric' }}
-      sx={{ width: 120, ...reqSx }}
-      error={!!error}
-      helperText={error ?? ' '}
-    />
-  );
+  return <TextField label="Port" required size="small" value={value} onChange={(e) => onChange(e.target.value)} onBlur={onBlur} inputProps={{ inputMode: 'numeric' }} sx={{ width: 120, ...reqSx }} error={!!error} helperText={error ?? ' '} />;
 }
 
 interface ProbeConfigFieldsProps {
