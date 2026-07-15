@@ -33,9 +33,8 @@ import {
   saveApimThumbnail,
   saveMarketplaceService,
   updateApimApi,
-  type MarketplaceService,
 } from '#api/apim';
-import type { ApimApiInfo, DeploySettingsV2Payload, GeneratedTestKey, LifecycleHistory, LifecycleState } from '../types/apim';
+import type { ApimApiInfo, DeploySettingsV2Payload, GeneratedTestKey, LifecycleHistory, LifecycleState, MarketplaceService } from '../types/apim';
 import type { EnvEndpoint } from '../types/component';
 
 export function useApimApi(apimId: string | undefined | null) {

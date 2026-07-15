@@ -205,7 +205,7 @@ export default function ComponentApiInfo(scope: ComponentScope): JSX.Element {
                 saving={saving}
               />
             )}
-            {tab === 1 && <DeveloperPortalTab apimId={selectedApimId ?? ''} apimInfo={apimInfo} onSave={handleSave} onCancel={handleCancel} saving={saving} />}
+            {tab === 1 && <DeveloperPortalTab apimId={selectedApimId ?? ''} apimInfo={apimInfo} onSave={handleSave} onCancel={handleCancel} onError={(msg) => setAlert({ type: 'error', message: msg })} saving={saving} />}
             {tab === 2 && <GeneralTab apimInfo={apimInfo} />}
           </>
         )}

@@ -18,31 +18,14 @@
 
 import { authenticatedFetch, getOrgUuidFromToken } from '../../auth/tokenManager';
 import { apimClient, choreoClient } from './httpClients';
-import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory } from '../../types/apim';
+import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory, MarketplaceService } from '../../types/apim';
 import type { EnvEndpoint } from '../../types/component';
 
 // ── Internal Marketplace (Overview) ──────────────────────────────────────────
 
-export interface MarketplaceService {
-  serviceId: string;
-  description?: string;
-  name?: string;
-  summary?: string;
-  tags?: string[];
-  visibility?: string[];
-  version?: string;
-  createdTime?: string;
-  organizationId?: string;
-  serviceType?: string;
-  connectionSchemas?: unknown;
-  status?: string;
-  resourceType?: string;
-  isThirdParty?: boolean;
-  [key: string]: unknown;
-}
-
 async function getEndpointHash(endpoint: EnvEndpoint): Promise<string> {
   if (endpoint.signature) return endpoint.signature.substring(0, 5);
+  if (!crypto?.subtle) throw new Error('SubtleCrypto unavailable: a secure context (HTTPS) is required');
   const raw = `${endpoint.port}|${endpoint.type}|${endpoint.apiContext}`;
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
   const view = new DataView(digest);

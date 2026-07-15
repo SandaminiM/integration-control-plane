@@ -16,18 +16,14 @@
  * under the License.
  */
 
-import { Autocomplete, Box, Button, Card, Checkbox, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, IconButton, InputAdornment, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, Card, Chip, CircularProgress, Divider, IconButton, InputAdornment, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Clock, Edit, Eye } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState, type JSX } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import MonacoEditor from '@monaco-editor/react';
 import type { ApimApiInfo } from '../../types/apim';
 import type { EnvEndpoint } from '../../types/component';
 import { useMarketplaceService, useUpdateMarketplaceService } from '../../hooks/useApim';
-import menuItems from './menuItems.json';
-
-const LABEL_OPTIONS: string[] = [...menuItems.connectorCategories.categories.flatMap((cat) => cat.children.map((c) => c.value)), ...menuItems.pricingCategories.categories.map((cat) => cat.value)];
+import LabelsAutocomplete from './LabelsAutocomplete';
+import OverviewEditorDialog from './OverviewEditorDialog';
 
 function getInitial(name: string): string {
   return (name.trim()[0] ?? '?').toUpperCase();
@@ -178,11 +174,10 @@ export default function MarketplaceTab({ componentId, version, endpoint, endpoin
   const [tags, setTags] = useState<string[]>([]);
 
   const { data: marketplaceService } = useMarketplaceService(componentId, version, endpoint);
-  const { mutateAsync: updateMarketplaceService, isPending: savingOverview } = useUpdateMarketplaceService();
+  const { mutateAsync: updateMarketplaceService, isPending: savingService } = useUpdateMarketplaceService();
 
-  // overviewSaved tracks the staged (pending) overview — committed to the API only on main Save.
+  // overviewSaved tracks the staged overview — committed to the API only on main Save.
   const [overviewSaved, setOverviewSaved] = useState('');
-  const [overviewDraft, setOverviewDraft] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Sync all marketplace fields when the service loads or reloads after save.
@@ -201,23 +196,16 @@ export default function MarketplaceTab({ componentId, version, endpoint, endpoin
   const overviewOriginal = marketplaceService?.description ?? '';
   const isDirty = displayName !== (apimInfo.displayName ?? '') || summary !== summaryOriginal || JSON.stringify(tags) !== JSON.stringify(tagsOriginal) || overviewSaved !== overviewOriginal;
 
-  const handleOpenOverviewDialog = () => {
-    setOverviewDraft(overviewSaved);
-    setDialogOpen(true);
-  };
-
-  // OK in the dialog only stages the value locally — the main Save button persists it.
-  const handleSaveOverview = () => {
-    setOverviewSaved(overviewDraft);
-    setDialogOpen(false);
-  };
-
   const handleSave = async (patch: Partial<ApimApiInfo>) => {
     if (marketplaceService) {
-      await updateMarketplaceService({
-        serviceId: marketplaceService.serviceId,
-        service: { ...marketplaceService, description: overviewSaved, summary, tags },
-      });
+      try {
+        await updateMarketplaceService({
+          serviceId: marketplaceService.serviceId,
+          service: { ...marketplaceService, description: overviewSaved, summary, tags },
+        });
+      } catch {
+        // marketplace update failure does not block the APIM update
+      }
     }
     onSave(patch);
   };
@@ -248,7 +236,7 @@ export default function MarketplaceTab({ componentId, version, endpoint, endpoin
                 endAdornment: (
                   <InputAdornment position="end">
                     <Tooltip title="Edit overview" placement="top">
-                      <IconButton size="small" aria-label="Edit overview" onClick={handleOpenOverviewDialog} sx={{ color: 'primary.main', pointerEvents: 'all' }}>
+                      <IconButton size="small" aria-label="Edit overview" onClick={() => setDialogOpen(true)} sx={{ color: 'primary.main', pointerEvents: 'all' }}>
                         <Edit size={16} />
                       </IconButton>
                     </Tooltip>
@@ -259,29 +247,14 @@ export default function MarketplaceTab({ componentId, version, endpoint, endpoin
             sx={{ '& .MuiInputBase-root.Mui-disabled': { pointerEvents: 'none' }, '& .MuiInputAdornment-root': { pointerEvents: 'all' } }}
           />
 
-          <Autocomplete
-            multiple
-            freeSolo
-            disableCloseOnSelect
-            options={LABEL_OPTIONS}
-            value={tags}
-            onChange={(_e, newValue) => setTags(newValue as string[])}
-            renderOption={(props, option, { selected }) => (
-              <li {...props}>
-                <Checkbox size="small" checked={selected} sx={{ mr: 1, p: 0 }} />
-                {option}
-              </li>
-            )}
-            renderTags={(value, getTagProps) => value.map((option, index) => <Chip label={option} size="small" {...getTagProps({ index })} key={option} />)}
-            renderInput={(params) => <TextField {...params} label="Labels" size="small" placeholder="Type and press enter to add labels" />}
-          />
+          <LabelsAutocomplete value={tags} onChange={setTags} />
 
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button variant="outlined" onClick={onCancel} disabled={saving || savingOverview}>
+            <Button variant="outlined" onClick={onCancel} disabled={saving || savingService}>
               Cancel
             </Button>
-            <Button variant="contained" startIcon={(saving || savingOverview) && <CircularProgress size={16} color="inherit" />} onClick={() => handleSave({ displayName })} disabled={!isDirty || saving || savingOverview}>
-              {saving || savingOverview ? 'Saving...' : 'Save'}
+            <Button variant="contained" startIcon={(saving || savingService) && <CircularProgress size={16} color="inherit" />} onClick={() => handleSave({ displayName })} disabled={!isDirty || saving || savingService}>
+              {saving || savingService ? 'Saving...' : 'Save'}
             </Button>
           </Box>
         </Box>
@@ -305,73 +278,15 @@ export default function MarketplaceTab({ componentId, version, endpoint, endpoin
         </Box>
       </Box>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="lg">
-        <DialogTitle sx={{ pb: 0.5 }}>Overview</DialogTitle>
-        <DialogContent sx={{ pb: 1 }}>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Provide the content for the marketplace overview section using <strong>Markdown</strong> formatting.
-          </Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden', height: 480 }}>
-            {/* Editor panel */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid', borderColor: 'divider' }}>
-              <Typography variant="caption" sx={{ px: 1.5, py: 0.75, bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider', fontWeight: 600, color: 'text.secondary' }}>
-                Edit
-              </Typography>
-              <Box sx={{ flex: 1, overflow: 'hidden' }}>
-                <MonacoEditor
-                  height="100%"
-                  language="markdown"
-                  theme="vs"
-                  value={overviewDraft}
-                  onChange={(val) => setOverviewDraft(val ?? '')}
-                  options={{
-                    minimap: { enabled: false },
-                    scrollBeyondLastLine: false,
-                    wordWrap: 'on',
-                    lineNumbers: 'on',
-                    quickSuggestions: false,
-                    acceptSuggestionOnCommitCharacter: false,
-                    fontSize: 13,
-                  }}
-                />
-              </Box>
-            </Box>
-            {/* Preview panel */}
-            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-              <Typography variant="caption" sx={{ px: 1.5, py: 0.75, bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider', fontWeight: 600, color: 'text.secondary' }}>
-                Preview
-              </Typography>
-              <Box
-                sx={{
-                  flex: 1,
-                  overflow: 'auto',
-                  p: 2,
-                  '& h1,& h2,& h3,& h4': { mt: 1, mb: 0.5 },
-                  '& p': { mt: 0, mb: 1 },
-                  '& ul,& ol': { pl: 2.5 },
-                  '& code': { fontFamily: 'monospace', bgcolor: 'action.hover', px: 0.5, borderRadius: 0.5 },
-                  '& pre': { bgcolor: 'action.hover', p: 1.5, borderRadius: 1, overflow: 'auto' },
-                }}>
-                {overviewDraft ? (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{overviewDraft}</ReactMarkdown>
-                ) : (
-                  <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
-                    Nothing to preview
-                  </Typography>
-                )}
-              </Box>
-            </Box>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button variant="outlined" onClick={() => setDialogOpen(false)} disabled={savingOverview}>
-            Cancel
-          </Button>
-          <Button variant="contained" startIcon={savingOverview && <CircularProgress size={16} color="inherit" />} onClick={handleSaveOverview} disabled={savingOverview}>
-            {savingOverview ? 'Saving...' : 'OK'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <OverviewEditorDialog
+        open={dialogOpen}
+        value={overviewSaved}
+        onClose={() => setDialogOpen(false)}
+        onConfirm={(val) => {
+          setOverviewSaved(val);
+          setDialogOpen(false);
+        }}
+      />
     </>
   );
 }

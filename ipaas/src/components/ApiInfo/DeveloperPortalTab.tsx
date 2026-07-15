@@ -16,14 +16,12 @@
  * under the License.
  */
 
-import { Accordion, AccordionDetails, AccordionSummary, Autocomplete, Box, Button, Checkbox, Chip, CircularProgress, FormControl, IconButton, InputLabel, MenuItem, Select, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Button, CircularProgress, FormControl, InputLabel, MenuItem, Select, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, CircleHelp, Pencil } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useRef, useState, type JSX } from 'react';
 import type { ApimApiInfo } from '../../types/apim';
 import { useApimThumbnail, useUpdateApimThumbnail } from '../../hooks/useApim';
-import menuItems from './menuItems.json';
-
-const LABEL_OPTIONS: string[] = [...menuItems.connectorCategories.categories.flatMap((cat) => cat.children.map((c) => c.value)), ...menuItems.pricingCategories.categories.map((cat) => cat.value)];
+import LabelsAutocomplete from './LabelsAutocomplete';
 
 const VISIBILITY_OPTIONS = [
   { value: 'PUBLIC', label: 'Public' },
@@ -41,6 +39,7 @@ interface DeveloperPortalTabProps {
   apimInfo: ApimApiInfo;
   onSave: (patch: Partial<ApimApiInfo>) => void;
   onCancel: () => void;
+  onError: (message: string) => void;
   saving: boolean;
 }
 
@@ -61,7 +60,7 @@ function extractBusinessInfo(apimInfo: ApimApiInfo): BusinessInfo {
   };
 }
 
-export default function DeveloperPortalTab({ apimId, apimInfo, onSave, onCancel, saving }: DeveloperPortalTabProps): JSX.Element {
+export default function DeveloperPortalTab({ apimId, apimInfo, onSave, onCancel, onError, saving }: DeveloperPortalTabProps): JSX.Element {
   const [displayName, setDisplayName] = useState(apimInfo.displayName ?? '');
   const [description, setDescription] = useState((apimInfo.description as string) ?? '');
   const [visibility, setVisibility] = useState((apimInfo.visibility as string) ?? 'PRIVATE');
@@ -79,6 +78,9 @@ export default function DeveloperPortalTab({ apimId, apimInfo, onSave, onCancel,
     setVisibility((apimInfo.visibility as string) ?? 'PRIVATE');
     setTags(extractTags(apimInfo));
     setBizInfo(extractBusinessInfo(apimInfo));
+    setThumbnailFile(null);
+    setThumbnailPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }, [apimInfo]);
 
   const originalBiz = extractBusinessInfo(apimInfo);
@@ -104,12 +106,29 @@ export default function DeveloperPortalTab({ apimId, apimInfo, onSave, onCancel,
     setThumbnailFile(file);
   };
 
+  const handleCancel = () => {
+    setDisplayName(apimInfo.displayName ?? '');
+    setDescription((apimInfo.description as string) ?? '');
+    setVisibility((apimInfo.visibility as string) ?? 'PRIVATE');
+    setTags(extractTags(apimInfo));
+    setBizInfo(extractBusinessInfo(apimInfo));
+    setThumbnailFile(null);
+    setThumbnailPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    onCancel();
+  };
+
   const handleSave = async () => {
     if (thumbnailFile) {
-      await uploadThumbnail({ apimId, file: thumbnailFile });
-      setThumbnailFile(null);
+      try {
+        await uploadThumbnail({ apimId, file: thumbnailFile });
+        setThumbnailFile(null);
+      } catch {
+        onError('Failed to upload thumbnail. Please try again.');
+        return;
+      }
     }
-    onSave({ displayName, description, visibility, tags, businessInformation: bizInfo });
+    await onSave({ displayName, description, visibility, tags, businessInformation: bizInfo });
   };
 
   return (
@@ -129,9 +148,9 @@ export default function DeveloperPortalTab({ apimId, apimInfo, onSave, onCancel,
         <AccordionDetails sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 0, pb: 2 }}>
           {/* Thumbnail / Icon upload */}
           <Box>
-            <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleThumbnailChange} />
             <Box
-              onClick={() => fileInputRef.current?.click()}
+              component="label"
+              aria-label="Upload API icon"
               sx={{
                 position: 'relative',
                 width: 100,
@@ -146,7 +165,9 @@ export default function DeveloperPortalTab({ apimId, apimInfo, onSave, onCancel,
                 justifyContent: 'center',
                 overflow: 'hidden',
                 '&:hover .thumbnail-edit-btn': { opacity: 1 },
+                '&:focus-within': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
               }}>
+              <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleThumbnailChange} />
               {(thumbnailPreview ?? existingThumbnail) ? (
                 <Box component="img" src={thumbnailPreview ?? existingThumbnail ?? undefined} alt="API icon" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
@@ -154,8 +175,7 @@ export default function DeveloperPortalTab({ apimId, apimInfo, onSave, onCancel,
                   {(apimInfo.displayName?.[0] ?? apimInfo.name?.[0] ?? '?').toUpperCase()}
                 </Typography>
               )}
-              <IconButton
-                size="small"
+              <Box
                 className="thumbnail-edit-btn"
                 sx={{
                   position: 'absolute',
@@ -164,12 +184,18 @@ export default function DeveloperPortalTab({ apimId, apimInfo, onSave, onCancel,
                   bgcolor: 'background.paper',
                   border: '1px solid',
                   borderColor: 'divider',
+                  borderRadius: '50%',
+                  width: 22,
+                  height: 22,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   opacity: 0,
                   transition: 'opacity 0.15s',
                   pointerEvents: 'none',
                 }}>
                 <Pencil size={14} />
-              </IconButton>
+              </Box>
             </Box>
           </Box>
 
@@ -203,22 +229,7 @@ export default function DeveloperPortalTab({ apimId, apimInfo, onSave, onCancel,
             </Tooltip>
           </Box>
 
-          <Autocomplete
-            multiple
-            freeSolo
-            disableCloseOnSelect
-            options={LABEL_OPTIONS}
-            value={tags}
-            onChange={(_e, newValue) => setTags(newValue as string[])}
-            renderOption={(props, option, { selected }) => (
-              <li {...props}>
-                <Checkbox size="small" checked={selected} sx={{ mr: 1, p: 0 }} />
-                {option}
-              </li>
-            )}
-            renderTags={(value, getTagProps) => value.map((option, index) => <Chip label={option} size="small" {...getTagProps({ index })} key={option} />)}
-            renderInput={(params) => <TextField {...params} label="Labels" size="small" placeholder="Type and press enter to add labels" />}
-          />
+          <LabelsAutocomplete value={tags} onChange={setTags} />
         </AccordionDetails>
       </Accordion>
 
@@ -289,7 +300,7 @@ export default function DeveloperPortalTab({ apimId, apimInfo, onSave, onCancel,
       </Accordion>
 
       <Box sx={{ display: 'flex', gap: 1 }}>
-        <Button variant="outlined" onClick={onCancel} disabled={saving || uploadingThumbnail}>
+        <Button variant="outlined" onClick={handleCancel} disabled={saving || uploadingThumbnail}>
           Cancel
         </Button>
         <Button variant="contained" startIcon={(saving || uploadingThumbnail) && <CircularProgress size={16} color="inherit" />} onClick={handleSave} disabled={!isDirty || saving || uploadingThumbnail}>
