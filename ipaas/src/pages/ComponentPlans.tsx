@@ -235,14 +235,13 @@ export default function ComponentPlans(scope: ComponentScope): JSX.Element {
                   <ListingTable.Cell>Quota</ListingTable.Cell>
                   <ListingTable.Cell>Burst Control</ListingTable.Cell>
                   <ListingTable.Cell>Stop on Quota Reach</ListingTable.Cell>
-                  <ListingTable.Cell>Approval</ListingTable.Cell>
                   <ListingTable.Cell>Subscription Plan Status</ListingTable.Cell>
                 </ListingTable.Row>
               </ListingTable.Head>
               <ListingTable.Body>
                 {policies.length === 0 ? (
                   <ListingTable.Row>
-                    <ListingTable.Cell colSpan={8} align="center" sx={{ py: 4 }}>
+                    <ListingTable.Cell colSpan={7} align="center" sx={{ py: 4 }}>
                       <Typography variant="body2" color="text.secondary">
                         No subscription plans available.
                       </Typography>
@@ -270,9 +269,6 @@ export default function ComponentPlans(scope: ComponentScope): JSX.Element {
                         <StatusBadge enabled={policy.stopOnQuotaReach ?? false} />
                       </ListingTable.Cell>
                       <ListingTable.Cell>
-                        <StatusBadge enabled={false} />
-                      </ListingTable.Cell>
-                      <ListingTable.Cell>
                         <Switch checked={!!activePolicies[policy.name]} onChange={() => handleToggle(policy.name)} size="small" color="primary" inputProps={{ 'aria-label': `${policy.name} subscription plan status` }} />
                       </ListingTable.Cell>
                     </ListingTable.Row>
@@ -283,7 +279,7 @@ export default function ComponentPlans(scope: ComponentScope): JSX.Element {
           </ListingTable.Container>
         )}
 
-        {selectedApimId && !loadingApim && !loadingPolicies && policies.length > 0 && !Object.values(activePolicies).some(Boolean) && (
+        {selectedApimId && !loadingApim && !loadingPolicies && policies.length > 0 && isDirty && !Object.values(activePolicies).some(Boolean) && (
           <Alert severity="error" sx={{ mt: 2 }}>
             Please select at least one business plan
           </Alert>
