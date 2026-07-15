@@ -303,12 +303,12 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
       );
     }
     if (isAuthenticated) return null;
-    if (authStatus === 'authenticating') {
+    if (authStatus === 'authenticating' || authStatus === 'installing') {
       return (
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3, minHeight: 40 }}>
           <CircularProgress size={16} />
           <Typography color="text.secondary" variant="body2">
-            Completing GitHub authorization…
+            {authStatus === 'installing' ? 'Install the GitHub App in the popup, then return here…' : 'Completing GitHub authorization…'}
           </Typography>
         </Stack>
       );

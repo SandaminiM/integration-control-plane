@@ -160,6 +160,12 @@ export interface CreateComponentInput {
   isPublicRepo?: boolean;
   enableAutoDeploy?: boolean;
   isPrebuilt?: boolean;
+  /**
+   * GitHub App installation that grants access to srcGitRepoUrl (cloud
+   * private-repo mode). When set, the cloud BFF persists the source binding
+   * and provisions per-build clone secrets; other variants ignore it.
+   */
+  gitHubAppInstallationId?: string;
 }
 
 export interface UpdateComponentInput {

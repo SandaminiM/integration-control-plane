@@ -54,6 +54,8 @@ export interface Commit {
 export interface UserRepo {
   orgName: string;
   repositories: { name: string }[];
+  /** GitHub App installation granting access to this account's repos (cloud GitHub-App flow only). */
+  installationId?: string;
 }
 
 export interface RepoBranch {

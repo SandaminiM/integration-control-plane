@@ -88,7 +88,10 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
   const handleImportClick = () => {
     const { githubAppClientId, githubAppAuthRedirectUrl } = window.API_CONFIG;
     if (!githubAppClientId) {
-      navigate(importUrl);
+      // No GitHub App configured — private-repo authorization is impossible,
+      // so land the import page in public-URL mode instead of its default
+      // (private) mode with a dead Authorize button.
+      navigate(importUrl, { state: { mode: 'public' } });
       return;
     }
     setIsImportAuthenticating(true);

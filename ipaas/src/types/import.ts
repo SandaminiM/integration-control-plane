@@ -22,7 +22,7 @@ import type { GitProvider, WorkspaceIntegrationType } from './project';
 export type { GitProvider as SourceMode } from './project';
 export type { WorkspaceIntegrationType as IntegrationType } from './project';
 
-export type AuthStatus = 'idle' | 'authenticating' | 'done' | 'failed';
+export type AuthStatus = 'idle' | 'authenticating' | 'installing' | 'done' | 'failed';
 
 export interface LocationState {
   authCode?: string;

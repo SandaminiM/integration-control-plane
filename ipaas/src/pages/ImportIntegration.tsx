@@ -276,7 +276,10 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
         repositoryBranch: selectedBranch,
         repositorySubPath: subPath || '/',
         isPublicRepo,
-        ...(isPublicRepo ? { enableAutoDeploy: true } : {}),
+        // Private repos build through the GitHub App installation that grants
+        // access (cloud sets installationId on UserRepo; other variants don't
+        // and ignore the field).
+        ...(isPublicRepo ? { enableAutoDeploy: true } : { gitHubAppInstallationId: userRepos?.find((o) => o.orgName === activeOrg)?.installationId }),
       },
       {
         onSuccess: (component) => navigate(resourceUrl(narrow(scope, component.handler), 'overview')),
@@ -326,11 +329,11 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
     }
     return (
       <Box sx={{ mb: 4 }}>
-        {authStatus === 'authenticating' ? (
+        {authStatus === 'authenticating' || authStatus === 'installing' ? (
           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minHeight: 50 }}>
             <CircularProgress size={16} />
             <Typography color="text.secondary" variant="body2">
-              Completing GitHub authorization…
+              {authStatus === 'installing' ? 'Install the GitHub App in the popup, then return here…' : 'Completing GitHub authorization…'}
             </Typography>
           </Stack>
         ) : (
@@ -526,7 +529,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
 
   // Early returns
 
-  if (!isPublicRepo && authStatus === 'authenticating') {
+  if (!isPublicRepo && (authStatus === 'authenticating' || authStatus === 'installing')) {
     return (
       <PageContent sx={{ pt: 5 }}>
         <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(backUrl)} sx={{ mb: 3 }}>
@@ -541,7 +544,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 4, minHeight: 50 }}>
           <CircularProgress size={16} />
           <Typography color="text.secondary" variant="body2">
-            Completing GitHub authorization…
+            {authStatus === 'installing' ? 'Install the GitHub App in the popup, then return here…' : 'Completing GitHub authorization…'}
           </Typography>
         </Stack>
         <Skeleton variant="rounded" sx={{ width: '25%', height: 56 }} />

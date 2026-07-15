@@ -19,7 +19,7 @@
 import { useState } from 'react';
 import { useObtainGithubToken } from './useRepository';
 import { GITHUB_AUTH } from '../constants/github';
-import { buildGitHubOAuthUrl } from '../paths';
+import { buildGitHubAppInstallUrl, buildGitHubOAuthUrl } from '../paths';
 import { generateAndSaveGitHubState, validateAndClearGitHubState } from '../auth/tokenManager';
 import type { AuthStatus } from '../types/import';
 
@@ -35,10 +35,43 @@ export function useGitHubAuth(initialStatus: AuthStatus = 'idle'): UseGitHubAuth
   const [authStatus, setAuthStatus] = useState<AuthStatus>(initialStatus);
   const obtainToken = useObtainGithubToken();
 
+  // Cloud GitHub-App flow: the user authorized the App but has not installed
+  // it on any account (exchange returns needsInstallation). Open GitHub's
+  // installation page and, when the popup closes, just report done so the
+  // caller re-fetches repos — never chain a second authorize popup (a
+  // non-gesture window.open is blocked and would hang the flow). If the user
+  // closed the popup without installing, the repo list stays empty and the
+  // Authorize button simply re-renders.
+  const handleExchangeResult = (result: { success: boolean; needsInstallation?: boolean }, onSuccess?: () => void): void => {
+    if (result.success) {
+      setAuthStatus('done');
+      onSuccess?.();
+      return;
+    }
+    const slug = window.API_CONFIG.githubAppSlug;
+    if (result.needsInstallation && slug) {
+      setAuthStatus('installing');
+      const installPopup = window.open(buildGitHubAppInstallUrl(slug), 'github-app-install', GITHUB_AUTH.POPUP_DIMENSIONS);
+      if (!installPopup) {
+        setAuthStatus('failed');
+        return;
+      }
+      const poll = setInterval(() => {
+        if (installPopup.closed) {
+          clearInterval(poll);
+          setAuthStatus('done');
+          onSuccess?.();
+        }
+      }, GITHUB_AUTH.POPUP_POLL_INTERVAL_MS);
+      return;
+    }
+    setAuthStatus('failed');
+  };
+
   const exchangeAuthCode = async (code: string): Promise<void> => {
     try {
       const result = await obtainToken.mutateAsync(code);
-      setAuthStatus(result.success ? 'done' : 'failed');
+      handleExchangeResult(result);
     } catch {
       setAuthStatus('failed');
     }
@@ -73,12 +106,7 @@ export function useGitHubAuth(initialStatus: AuthStatus = 'idle'): UseGitHubAuth
       }
       try {
         const result = await obtainToken.mutateAsync(authCode);
-        if (result.success) {
-          setAuthStatus('done');
-          onSuccess?.();
-        } else {
-          setAuthStatus('failed');
-        }
+        handleExchangeResult(result, onSuccess);
       } catch {
         setAuthStatus('failed');
       }
