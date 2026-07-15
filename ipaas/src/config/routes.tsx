@@ -142,6 +142,7 @@ const ComponentStorage = lazy(() => import('../pages/ComponentStorage'));
 const ComponentScaling = lazy(() => import('../pages/ComponentScaling'));
 const NewConnection = lazy(() => import('../pages/NewConnection'));
 const ConnectionDetail = lazy(() => import('../pages/ConnectionDetail'));
+const ComponentPlans = lazy(() => import('../pages/ComponentPlans'));
 
 export interface AppRoute extends Omit<RouteProps, 'children'> {
   children?: AppRoute[];
@@ -330,8 +331,8 @@ const routes: AppRoute[] = [
                 element: <ComingSoon title="Coming Soon" description="API documentation is currently under development. You'll be able to manage your API documents directly from here." />,
               },
               {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/plans',
-                element: <ComingSoon title="Coming Soon" description="Subscription plans management is currently under development." />,
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/usage',
+                element: createElement(withScope(ComponentPlans, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/deploy',

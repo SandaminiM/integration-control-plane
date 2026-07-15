@@ -292,7 +292,7 @@ function AppLayoutInner(): JSX.Element {
     if (rest.startsWith('test')) return 'test';
     if (rest.startsWith('manage/lifecycle')) return 'lifecycle';
     if (rest.startsWith('documents')) return 'documents';
-    if (rest.startsWith('plans')) return 'plans';
+    if (rest.startsWith('manage/usage')) return 'plans';
     if (rest.startsWith('insights/usage')) return 'usage';
     if (rest.startsWith('insights/delivery')) return 'delivery';
     if (rest.startsWith('insights/compliance')) return 'compliance';
@@ -535,7 +535,7 @@ function AppLayoutInner(): JSX.Element {
       'api-info': `${compBase}/manage/api-info`,
       lifecycle: `${compBase}/manage/lifecycle`,
       documents: `${compBase}/documents`,
-      plans: `${compBase}/plans`,
+      plans: `${compBase}/manage/usage`,
       build: `${compBase}/build`,
       deploy: `${compBase}/deploy`,
       test: `${compBase}/test`,
