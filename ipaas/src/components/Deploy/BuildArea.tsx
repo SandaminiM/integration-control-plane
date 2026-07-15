@@ -52,6 +52,7 @@ import type { DeploymentTrackImage } from '../../types/deployment';
 import ConfigureDrawer from '../EnvironmentCard/ConfigureDrawer';
 import BuildAreaImageDrawer from './BuildAreaImageDrawer';
 import BuildImageCard from './BuildImageCard';
+import ByoiBuildArea from './ByoiBuildArea';
 import EndpointConfigDrawer from './EndpointConfigDrawer';
 import type { BuildAreaProps } from '../../types/deploy';
 
@@ -182,18 +183,7 @@ export default function BuildArea({
   };
 
   if (flags.isByoi) {
-    return (
-      <Card variant="outlined" sx={{ width: 320, flexShrink: 0, position: 'sticky', top: 24, alignSelf: 'flex-start', background: 'transparent' }}>
-        <CardContent>
-          <Typography variant="h4" component="h2" sx={{ mb: 2 }}>
-            Set Up
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Image-based deploy configuration is coming soon.
-          </Typography>
-        </CardContent>
-      </Card>
-    );
+    return <ByoiBuildArea componentId={componentId} versionId={versionId} orgHandler={orgHandler} orgUuid={orgUuid} projectId={projectId} firstEnvId={firstEnvId} />;
   }
 
   return (

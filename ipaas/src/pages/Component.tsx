@@ -42,6 +42,7 @@ import { resourceUrl, broaden, type ComponentScope } from '../nav';
 import { useLoadComponentPermissions } from '../hooks/usePermissionLoader';
 import BuildCard from '../components/BuildCard';
 import { UUID_RE } from '../utils/string';
+import { RAG_NO_SOURCE_SUBTYPES } from '../constants/ragIngestion';
 
 /**
  * Integration types whose Overview rendering has been migrated to the new
@@ -50,7 +51,7 @@ import { UUID_RE } from '../utils/string';
  * type uses the new dispatch and the legacy `<Environment>` is deleted.
  * See [[icp-integration-migration]] and [[icp-phase4-commitment]] in memory.
  */
-const MIGRATED_INTEGRATION_TYPES = new Set<IntegrationType>(['automation', 'integration-as-api', 'webhook', 'file-integration', 'event-integration', 'ai-agent', 'mcp-server', 'mcp-proxy', 'tailscale-vpn']);
+const MIGRATED_INTEGRATION_TYPES = new Set<IntegrationType>(['automation', 'integration-as-api', 'webhook', 'file-integration', 'event-integration', 'ai-agent', 'mcp-server', 'mcp-proxy', 'tailscale-vpn', 'rag-ingestion']);
 
 /**
  * Types whose module provides a `CustomOverview` that owns the WHOLE surface
@@ -143,7 +144,11 @@ export default function Component(scope: ComponentScope): JSX.Element {
   // built from an existing HTTP API) have no git repo. Drives the header's
   // Source/Commit + Open-in-Cloud, and the Build card — matching devant.
   const isProxyComponent = displayType === 'proxy' || displayType === 'gitProxy';
-  const hasSource = !isProxyComponent;
+  // RAG-provisioned components (ingestion cronjob, retrieval/API services) are
+  // deployed from a prebuilt image with no source repo — hide Source/Commit,
+  // the editor, and the Build card (same treatment as a proxy).
+  const isRagNoSource = RAG_NO_SOURCE_SUBTYPES.has(component.componentSubType ?? '');
+  const hasSource = !isProxyComponent && !isRagNoSource;
   const showBuildCard = !component.isPrebuilt && hasSource;
 
   return (

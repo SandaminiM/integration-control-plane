@@ -18,7 +18,7 @@
 
 // TODO: implement using ICP local REST APIs
 
-import type { Environment, CloudDataPlane, EnvironmentInput } from '../../types/environment';
+import type { CloudDataPlane, CreateEnvironmentData, EnvDeletionEligibility, EnvironmentTemplate, Environment, EnvironmentInput } from '../../types/environment';
 
 const ni = (name: string): never => {
   throw new Error(`[icp] environments.${name}: not implemented`);
@@ -30,3 +30,7 @@ export const fetchCloudDataPlanes = (_orgUuid: string): Promise<CloudDataPlane[]
 export const createEnvironment = (_input: EnvironmentInput): Promise<Environment> => ni('createEnvironment');
 export const updateEnvironment = (_input: EnvironmentInput & { environmentId: string }): Promise<Environment> => ni('updateEnvironment');
 export const deleteEnvironment = (_environmentId: string): Promise<string> => ni('deleteEnvironment');
+export const fetchEnvironmentTemplates = (_orgId: string): Promise<EnvironmentTemplate[]> => ni('fetchEnvironmentTemplates');
+export const createOrgEnvironment = (_orgUuid: string, _input: CreateEnvironmentData & { vhost: string }): Promise<void> => ni('createOrgEnvironment');
+export const getEnvDeleteEligibility = (_orgUuid: string, _templateId: string): Promise<EnvDeletionEligibility> => ni('getEnvDeleteEligibility');
+export const deleteEnvironmentTemplate = (_orgUuid: string, _templateId: string): Promise<void> => ni('deleteEnvironmentTemplate');

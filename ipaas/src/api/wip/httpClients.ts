@@ -113,6 +113,8 @@ export const choreoClient = createHttpClient(() => window.API_CONFIG.choreoBaseA
 
 // Same base, but tolerant of plain-text bodies (e.g. a "OK" from some DELETE endpoints).
 export const choreoTextClient = createHttpClient(() => window.API_CONFIG.choreoBaseApiUrl, { tolerateNonJson: true });
+// Same base, but tolerates a plain-text body (e.g. connections DELETE returns "successful").
+export const choreoClientTolerant = createHttpClient(() => window.API_CONFIG.choreoBaseApiUrl, { tolerateNonJson: true });
 
 // Choreo URL-manager — custom domains + URL mappings (custom domain feature).
 export const urlManagerClient = createHttpClient(() => {
@@ -133,6 +135,13 @@ export const platformServicesClient = createHttpClient(
   },
   { tolerateNonJson: true },
 );
+
+// RAG backend — powers the Retrieval query endpoint.
+export const ragBackendClient = createHttpClient(() => {
+  const base = window.API_CONFIG?.ragBackendUrl;
+  if (!base) throw new Error('RAG backend base URL is not configured');
+  return base;
+});
 
 // Choreo Insights — GraphQL-like query endpoint on a separate host
 export const insightsClient = createHttpClient(() => `${window.API_CONFIG.insightsBaseUrl}/insights/1.0.0`);

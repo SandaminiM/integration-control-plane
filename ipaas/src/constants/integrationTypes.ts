@@ -17,7 +17,7 @@
  */
 
 import type { ComponentType } from 'react';
-import { AlertCircle, Clock, Folder, Globe, MCP, Network, Sparkles, Webhook, Zap } from '@wso2/oxygen-ui-icons-react';
+import { AlertCircle, Clock, FileStack, Folder, Globe, MCP, Network, Sparkles, Webhook, Zap } from '@wso2/oxygen-ui-icons-react';
 import type { IntegrationType } from '../types/integration';
 
 export interface IntegrationTypeInfo {
@@ -47,5 +47,6 @@ export const INTEGRATION_TYPE_INFO: Record<IntegrationType, IntegrationTypeInfo>
   'mcp-server': { displayName: 'MCP Server', Icon: MCP },
   'mcp-proxy': { displayName: 'MCP Proxy', Icon: MCP },
   'tailscale-vpn': { displayName: 'Tailscale VPN', Icon: Network },
+  'rag-ingestion': { displayName: 'RAG Ingestion', Icon: FileStack },
   unsupported: { displayName: 'Unsupported', Icon: AlertCircle },
 };

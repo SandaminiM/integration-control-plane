@@ -43,7 +43,7 @@
  * workstream) rather than adding a query here.
  */
 
-import type { ComponentDeployment, BuildRun, ReleaseMgtDeployment, DeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../../types/deployment';
+import type { ComponentDeployment, BuildRun, ReleaseMgtDeployment, DeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput, ByoiImage } from '../../types/deployment';
 import type { EnvEndpoint } from '../../types/component';
 import type { DeployComponentInput } from '../../types/build';
 import { bff, items, q, seg, type ListResponse, type MessageResponse } from './_client';
@@ -209,6 +209,10 @@ export const fetchReleaseMgtDeployments = (_orgUuid: string, _projectId: string,
 // Deployable images are the component's successful builds (the BFF derives them
 // from WorkflowRuns, not ComponentReleases, which only exist post-deploy).
 export const fetchDeploymentTrackImages = (componentId: string, _versionId: string): Promise<DeploymentTrackImage[]> => bff.get<ListResponse<DeploymentTrackImage>>(`/components/${seg(componentId)}/releases`).then(items);
+
+// BYOI image history is a devant-only (WIP) devops feature; cloud has no
+// equivalent endpoint, so report an empty history.
+export const fetchByoiImageHistory = (_orgUuid: string, _projectId: string, _componentId: string, _versionId: string): Promise<ByoiImage[]> => Promise.resolve([]);
 
 export const deployDeploymentTrack = (input: DeployDeploymentTrackInput): Promise<string> => bff.post<MessageResponse>(`/components/${seg(input.componentId)}/deployments`, input).then((r) => r?.message ?? '');
 

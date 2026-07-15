@@ -25,6 +25,7 @@ import {
   fetchDeploymentStatus,
   fetchReleaseMgtDeployments,
   fetchDeploymentTrackImages,
+  fetchByoiImageHistory,
   deployDeploymentTrack,
   triggerBuild,
   promote,
@@ -103,6 +104,17 @@ export function useDeploymentTrackImages(componentId: string, versionId: string,
     retry: false,
     staleTime: 30_000,
     refetchInterval,
+  });
+}
+
+/** BYOI image history for the Deploy-page Set Up card (image-based components). */
+export function useByoiImageHistory(orgUuid: string, projectId: string, componentId: string, versionId: string, enabled = true) {
+  return useQuery({
+    queryKey: ['byoiImageHistory', orgUuid, projectId, componentId, versionId],
+    queryFn: () => fetchByoiImageHistory(orgUuid, projectId, componentId, versionId),
+    enabled: enabled && !!orgUuid && !!projectId && !!componentId && !!versionId,
+    retry: false,
+    staleTime: 30_000,
   });
 }
 

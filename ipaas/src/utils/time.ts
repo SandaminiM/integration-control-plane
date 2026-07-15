@@ -32,6 +32,13 @@ export function getAge(from: number, to: number): string {
   return 'just now';
 }
 
+/** Absolute local date-time (e.g. a "Registered"/"Requested at" column). Returns '—' for missing/invalid input. */
+export function formatDateTime(value?: string | null): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString();
+}
+
 export function formatDistanceToNow(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60000);

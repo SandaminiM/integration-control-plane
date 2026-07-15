@@ -19,7 +19,7 @@
 import { INTEGRATION_TYPE_INFO } from '../../../constants/integrationTypes';
 import type { IntegrationModule } from '../../../types/integration';
 import HeaderStatus from './HeaderStatus';
-import EnvCardActions from './EnvCardActions';
+import EnvCardActions from '../_shared/ScheduledTaskEnvCardActions';
 import EnvCardBody from './EnvCardBody';
 
 /**

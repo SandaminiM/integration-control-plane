@@ -973,10 +973,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
       if (!isSupportedIntegration(c.displayType, c.componentSubType)) return false;
       if (!project.gitOrganization || !project.repository) return true;
       if (!c.repository?.organizationApp || !c.repository?.nameApp) return true;
-      return (
-        c.repository.organizationApp.toLowerCase() === project.gitOrganization.toLowerCase() &&
-        c.repository.nameApp.toLowerCase() === project.repository.toLowerCase()
-      );
+      return c.repository.organizationApp.toLowerCase() === project.gitOrganization.toLowerCase() && c.repository.nameApp.toLowerCase() === project.repository.toLowerCase();
     }) ?? null;
   const projectRepoUrl = buildProjectRepoUrl(project.gitProvider, project.gitOrganization, project.repository, project.branch);
 

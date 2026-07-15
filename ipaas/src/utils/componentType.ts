@@ -54,14 +54,18 @@ export function getComponentTypeFlags(displayType: string, componentSubType?: st
   const isProxy = displayType === 'proxy' || displayType === 'gitProxy';
   const isService = displayType === 'ballerinaService' || displayType === 'miApiService';
   const isRestApi = displayType === 'restAPI' || displayType === 'miRestApi';
-  const isByoi = displayType === 'byoiService';
-  const isAutomation = displayType === 'scheduledTask' || displayType === 'miCronjob';
+  // BYOI = image-based, no source build. `byoiCronjob` (e.g. RAG ingestion) is
+  // both BYOI (image details, no commit) and a scheduled task (cron/executions).
+  const isByoi = displayType === 'byoiService' || displayType === 'byoiCronjob';
+  const isAutomation = displayType === 'scheduledTask' || displayType === 'miCronjob' || displayType === 'byoiCronjob';
 
-  const isCommitBased = isService || isRestApi || isAutomation;
+  // Image-based types never go through the commit build pipeline, even the
+  // cronjob one — so exclude BYOI from the commit-based group.
+  const isCommitBased = (isService || isRestApi || isAutomation) && !isByoi;
   const isImageBased = isByoi;
   const isDeployable = isCommitBased || isImageBased;
 
-  // Reserved for future sub-type distinctions (e.g. aiAgent, mcpServer).
+  // Reserved for future sub-type distinctions (e.g. aiAgent, MCP).
   void componentSubType;
 
   return { isProxy, isService, isRestApi, isByoi, isAutomation, isCommitBased, isImageBased, isDeployable };

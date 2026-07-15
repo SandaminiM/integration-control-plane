@@ -65,10 +65,52 @@ export interface DevopsConfigMount {
   mount_permissions: string | null;
 }
 
+/** Image Pull Policy — how the runtime decides whether to pull the image. */
+export const IMAGE_PULL_POLICY = {
+  ALWAYS: 'Always',
+  IF_NOT_PRESENT: 'IfNotPresent',
+} as const;
+export type ImagePullPolicy = (typeof IMAGE_PULL_POLICY)[keyof typeof IMAGE_PULL_POLICY];
+
+/** A container port mapping. */
+export interface ContainerPort {
+  name?: string;
+  port: number;
+  service_port: number;
+  protocol: 'TCP' | 'UDP';
+}
+
+/** Built-image metadata attached to a container (absent for custom images). */
+export interface ContainerImage {
+  image_name_with_tag?: string;
+  git_hash?: string;
+}
+
+/**
+ * A release container. The list/edit surfaces read the full record; `mainContainer`
+ * and the Configs page only touch `ID`/`name`/`type`, so the rest is optional.
+ * `cpu`/`cpu_limit` are milli-CPU (100 = 0.1 CPU); `memory`/`memory_limit` are Mi.
+ * `args`/`command` come back decoded from the API and are base64-encoded on write.
+ */
 export interface ReleaseContainer {
   ID: string;
   name: string;
   type?: string;
+  image_id?: string | null;
+  image?: ContainerImage | null;
+  custom_image?: string;
+  image_registry_id?: string | null;
+  cpu?: number;
+  memory?: number;
+  cpu_limit?: number;
+  memory_limit?: number;
+  limit_disabled?: boolean;
+  ports?: ContainerPort[] | null;
+  image_pull_policy?: ImagePullPolicy;
+  args?: string[] | null;
+  command?: string[] | null;
+  UpdatedAt?: string;
+  CreatedAt?: string;
 }
 
 export interface ReleaseNamespace {
@@ -76,11 +118,26 @@ export interface ReleaseNamespace {
   name: string;
 }
 
+/** The PUT body for updating a release container. `args`/`command` are base64-encoded. */
+export interface ContainerWriteData {
+  image_pull_policy: ImagePullPolicy;
+  args: string[];
+  command: string[];
+  ports: ContainerPort[];
+  cpu: number;
+  cpu_limit: number;
+  memory: number;
+  memory_limit: number;
+  limit_disabled: boolean;
+}
+
 /** Subset of the devops release (app-environment) record we consume. */
 export interface ReleaseDetails {
   ID: string;
   containers: ReleaseContainer[];
-  environment?: { namespaces?: ReleaseNamespace[] };
+  /** App-environment metadata; `choreo_env` is `'private_dp'` on a Private Data Plane. */
+  metadata?: { choreo_env?: string } | null;
+  environment?: { namespaces?: ReleaseNamespace[]; choreo_env?: string };
 }
 
 // ── request payloads ────────────────────────────────────────────────────────

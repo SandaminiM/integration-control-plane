@@ -51,6 +51,11 @@ interface RuntimeConfig {
   ENABLE_PLATFORM_SERVICES_FEATURE?: string | boolean;
   /** Comma-separated list of "REGION::https://domain" entries, e.g. "US::https://console.us.devant.dev,EU::https://console.eu.devant.dev". When set, a region selector is shown on login/signup. */
   AVAILABLE_LOGIN_REGIONS?: string;
+  CHOREO_URL_MANAGER_URL?: string;
+  ENABLE_CUSTOM_URL_MAPPINGS_FEATURE?: string | boolean;
+  RAG_INGESTION_IMAGE?: string;
+  ENABLE_RAG_INGESTION_FEATURE?: string | boolean;
+  RAG_INGESTION_BACKEND?: string;
 }
 
 export interface ApiConfig {
@@ -98,6 +103,12 @@ export interface ApiConfig {
   platformServicesApiBaseUrl?: string;
   /** Gates the admin Databases feature (mirrors Devant's ENABLE_PLATFORM_SERVICES_FEATURE). */
   enablePlatformServicesFeature?: boolean;
+  /** Container image deployed by the RAG Ingestion wizard. Falls back to {@link RAG_INGESTION_DEFAULT_IMAGE} when unset. */
+  ragIngestionImage?: string;
+  /** Gates the RAG Ingestion (Scheduled Ingestion) feature. */
+  enableRagIngestionFeature?: boolean;
+  /** RAG backend base URL — powers the Retrieval query endpoint. When unset, Retrieval's query action is disabled. */
+  ragBackendUrl?: string;
 }
 
 // Extend window interface
@@ -194,6 +205,9 @@ export async function loadConfig(): Promise<void> {
       platformServicesApiBaseUrl: config.PLATFORM_SERVICES_API_BASE_URL ? trim(config.PLATFORM_SERVICES_API_BASE_URL) : undefined,
       enablePlatformServicesFeature: config.ENABLE_PLATFORM_SERVICES_FEATURE === 'true' || config.ENABLE_PLATFORM_SERVICES_FEATURE === true,
       availableLoginRegions: config.AVAILABLE_LOGIN_REGIONS || undefined,
+      ragIngestionImage: config.RAG_INGESTION_IMAGE ? trim(config.RAG_INGESTION_IMAGE) : undefined,
+      enableRagIngestionFeature: config.ENABLE_RAG_INGESTION_FEATURE === 'true' || config.ENABLE_RAG_INGESTION_FEATURE === true,
+      ragBackendUrl: config.RAG_INGESTION_BACKEND ? trim(config.RAG_INGESTION_BACKEND) : undefined,
     };
 
     console.info('✓ Runtime configuration loaded from config.json');

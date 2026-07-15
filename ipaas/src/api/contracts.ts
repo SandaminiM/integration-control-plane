@@ -84,22 +84,42 @@ import type {
   CheckDeletableResult,
 } from '../types/component';
 import type { CertGroup, CertMapping, SchemaConfigData, ConfigMgtData, SchemaConfigItem, SaveSchemaConfigInput, PostConfigMgtInput } from '../types/configuration';
-import type { ComponentDeployment, BuildRun, ReleaseMgtDeployment, DeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../types/deployment';
+import type { ComponentDeployment, BuildRun, ReleaseMgtDeployment, DeploymentTrackImage, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput, ByoiImage } from '../types/deployment';
 import type { CreateDeploymentPipelineRequest, DeploymentPipeline, EnvTemplate, PipelineDeletionEligibility } from '../types/deploymentPipeline';
 import type { OnPremKey, OnPremKeySubscription } from '../types/onPremKey';
 import type { EgressPolicy, EgressPolicyRequest } from '../types/egressPolicy';
 import type { AuthzRole, CreateAuthzRoleInput, UpdateAuthzRoleInput } from '../types/projectAuthz';
 import type { ByoiEndpointFileContents, CreateByoiComponentInput, CreateByoiComponentResult, DevopsVolume, DevopsVolumeMount, VolumeMountWriteData, VolumeWriteData } from '../types/tailscale';
-import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseDetails, SecretWriteData } from '../types/devopsConfigs';
+import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, ContainerWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseContainer, ReleaseDetails, SecretWriteData } from '../types/devopsConfigs';
 import type { ExternalCiToken } from '../types/externalCi';
+import type { StorageClass, Volume, VolumeCreateData, VolumeMount, VolumeMountCreateData, VolumeMountPath, VolumeMountUpdateData } from '../types/storage';
+import type { ClusterPod, Hpa, HpaMetric, HpaWriteData, HttpScaler, HttpScalerWriteData, PodMetrics, ScalingMethodToggle, ScalingPath, ScalingState } from '../types/scaling';
+import type { HealthCheck, HealthCheckWriteData } from '../types/healthChecks';
 import type { CreateUrlMappingInput, CustomDomain, CustomDomainType, CustomUrlMapping } from '../types/customDomain';
-import type { OrgWorkflowConfig, WorkflowConfigRequest, WorkflowDefinition } from '../types/workflow';
+import type { OrgWorkflowConfig, ReviewerDecisionRequest, WorkflowConfigRequest, WorkflowDefinition, WorkflowInstanceResponse, WorkflowReviewData } from '../types/workflow';
 import type { Dataplane, IdentityProvider, IdentityProviderRequest, RoleGroupMappingResponse } from '../types/appSecurity';
+import type { Cluster, PdpManagerPdp } from '../types/dataPlanes';
+import type { ClusterPod as RuntimeClusterPod, PodMetrics as RuntimePodMetrics, RuntimeReleaseDetails } from '../types/runtime';
 import type { CreateGitCredentialInput, CredentialDeleteEligibility, GitCredential } from '../types/credentials';
-import type { Environment, CloudDataPlane, EnvironmentInput } from '../types/environment';
+import type { Environment, CloudDataPlane, EnvironmentInput, EnvironmentTemplate, CreateEnvironmentData, EnvDeletionEligibility } from '../types/environment';
 import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../types/executions';
 import type { SubscriptionList, ComponentLimits } from '../types/subscription';
 import type { ConfigGroup, ConfigGroupNameAvailability, ConfigGroupUsage, CreateConfigGroupRequest, EditConfigGroupRequest } from '../types/configGroups';
+import type {
+  ChoreoConnectionRequest,
+  Connection,
+  ConnectionCatalogResponse,
+  ConnectionListingRecord,
+  ConnectionRequest,
+  ConnectionServiceIdl,
+  ConnectionUpdatePayload,
+  DeleteConnectionParams,
+  EnvKeyRotationParams,
+  ListCatalogParams,
+  ListConnectionsParams,
+  ResourceConnectionRequest,
+  RotateConnectionKeysByConnectionIdParams,
+} from '../types/connections';
 import type { AuditLogEntry, AuditLogsRequest } from '../types/auditLogs';
 import type {
   AdminUser,
@@ -134,7 +154,13 @@ import type {
   ServiceIdl,
   UpdateServiceRequest,
 } from '../types/genaiServices';
+import type { RetrieveRequestBody, RetrieveResponse } from '../types/ragIngestion';
 import type { InsightsEnvironment, ComponentInsights } from '../types/insights';
+
+// RAG backend — the Retrieval query endpoint. wip-only; cloud/icp stubs throw.
+export interface RagBackendApi {
+  retrieveChunks(body: RetrieveRequestBody): Promise<RetrieveResponse>;
+}
 import type { LogsRequest, ComponentLogsRequest, LogRow } from '../types/logs';
 import type { ApiDocument, RuleAdherenceResponse, ThrottlingPolicy } from '../types/marketplace';
 import type { CreateMcpApiInput, CreatedMcpApi, McpFeatureOperation, McpProxyMetadata, CreateMcpProxyComponentInput } from '../types/mcpProxy';
@@ -312,6 +338,7 @@ export interface DeploymentsApi {
   fetchDeploymentStatus(componentId: string, versionId: string): Promise<BuildRun[]>;
   fetchReleaseMgtDeployments(orgUuid: string, projectId: string, componentId: string, versionId: string, environmentId: string): Promise<ReleaseMgtDeployment[]>;
   fetchDeploymentTrackImages(componentId: string, versionId: string): Promise<DeploymentTrackImage[]>;
+  fetchByoiImageHistory(orgUuid: string, projectId: string, componentId: string, versionId: string): Promise<ByoiImage[]>;
   deployDeploymentTrack(input: DeployDeploymentTrackInput): Promise<string>;
   triggerBuild(input: DeployComponentInput): Promise<{ message: string; success: boolean }>;
   promote(input: PromoteInput): Promise<string>;
@@ -384,6 +411,11 @@ export interface WorkflowsApi {
   fetchWorkflowConfigs(): Promise<OrgWorkflowConfig[]>;
   createWorkflowConfig(input: WorkflowConfigRequest): Promise<OrgWorkflowConfig>;
   updateWorkflowConfig(configId: string, input: WorkflowConfigRequest): Promise<OrgWorkflowConfig>;
+  fetchWorkflowInstances(): Promise<WorkflowInstanceResponse[]>;
+  fetchPastWorkflowInstances(): Promise<WorkflowInstanceResponse[]>;
+  fetchWorkflowReviewData(workflowId: string): Promise<WorkflowReviewData>;
+  reviewWorkflowInstance(workflowId: string, input: ReviewerDecisionRequest): Promise<void>;
+  cancelWorkflowInstance(workflowId: string): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -440,6 +472,7 @@ export interface TailscaleApi {
 
 export interface DevopsConfigsApi {
   getReleaseById(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<ReleaseDetails>;
+  updateContainer(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string, data: ContainerWriteData): Promise<ReleaseContainer>;
   getSecrets(orgUuid: string, projectId: string, environmentId: string): Promise<DevopsSecret[]>;
   getSecretDetails(orgUuid: string, projectId: string, environmentId: string, secretId: string): Promise<DevopsSecretDetails>;
   createSecret(orgUuid: string, projectId: string, data: SecretWriteData): Promise<DevopsSecret>;
@@ -454,6 +487,13 @@ export interface DevopsConfigsApi {
   mountConfig(orgUuid: string, projectId: string, componentId: string, data: ConfigMountWriteData): Promise<DevopsConfigMount>;
   updateConfigMount(orgUuid: string, projectId: string, path: ConfigMountPath, data: Record<string, unknown>): Promise<DevopsConfigMount>;
   removeConfigMount(orgUuid: string, projectId: string, path: ConfigMountPath): Promise<void>;
+}
+
+export interface HealthChecksApi {
+  getHealthChecks(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<HealthCheck[]>;
+  createHealthCheck(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string, data: HealthCheckWriteData): Promise<HealthCheck>;
+  updateHealthCheck(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string, healthCheckId: string, data: HealthCheckWriteData): Promise<HealthCheck>;
+  deleteHealthCheck(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string, healthCheckId: string): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -477,6 +517,10 @@ export interface EnvironmentsApi {
   createEnvironment(input: EnvironmentInput): Promise<Environment>;
   updateEnvironment(input: EnvironmentInput & { environmentId: string }): Promise<Environment>;
   deleteEnvironment(environmentId: string): Promise<string>;
+  fetchEnvironmentTemplates(orgId: string): Promise<EnvironmentTemplate[]>;
+  createOrgEnvironment(orgUuid: string, input: CreateEnvironmentData & { vhost: string }): Promise<void>;
+  getEnvDeleteEligibility(orgUuid: string, templateId: string): Promise<EnvDeletionEligibility>;
+  deleteEnvironmentTemplate(orgUuid: string, templateId: string): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -619,6 +663,23 @@ export interface ConfigGroupsApi {
   getConfigGroupUsage(configGroupId: string): Promise<ConfigGroupUsage>;
 }
 
+// Connections (dependency-config service). wip-only for now; cloud/icp stubs throw.
+export interface ConnectionsApi {
+  listConnections(params: ListConnectionsParams): Promise<ConnectionListingRecord[]>;
+  listConnectionCatalog(params: ListCatalogParams): Promise<ConnectionCatalogResponse>;
+  getConnectionServiceIdl(serviceId: string): Promise<ConnectionServiceIdl>;
+  getConnection(groupUuid: string): Promise<Connection>;
+  createChoreoConnection(request: ChoreoConnectionRequest, generateCreds?: boolean): Promise<Connection>;
+  createResourceConnection(request: ResourceConnectionRequest): Promise<Connection>;
+  createThirdPartyConnection(request: ConnectionRequest): Promise<Connection>;
+  createDatabaseConnection(request: ResourceConnectionRequest): Promise<Connection>;
+  updateConnection(payload: ConnectionUpdatePayload): Promise<Connection>;
+  deleteConnection(params: DeleteConnectionParams): Promise<void>;
+  refreshConnection(connectionId: string): Promise<Connection>;
+  rotateConnectionEnvKeys(params: EnvKeyRotationParams): Promise<void>;
+  rotateConnectionKeysById(params: RotateConnectionKeysByConnectionIdParams): Promise<Connection>;
+}
+
 // Org audit logs (admin "Audit Logs"). wip-only for now; cloud/icp stubs throw.
 export interface AuditLogsApi {
   fetchAuditLogs(orgUuid: string, request: AuditLogsRequest): Promise<AuditLogEntry[]>;
@@ -672,6 +733,54 @@ export interface GenaiServicesApi {
 // Aggregate — the full API surface consumed by the app
 // ---------------------------------------------------------------------------
 
+// Component storage (volume mounts, devops API). wip-only for now; cloud/icp stubs throw.
+export interface StorageApi {
+  listVolumes(orgUuid: string, projectId: string, environmentId: string): Promise<Volume[]>;
+  createVolume(orgUuid: string, projectId: string, data: VolumeCreateData): Promise<Volume>;
+  deleteVolume(orgUuid: string, projectId: string, volumeId: string): Promise<void>;
+  listVolumeMounts(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<VolumeMount[]>;
+  createVolumeMount(orgUuid: string, projectId: string, path: VolumeMountPath, data: VolumeMountCreateData): Promise<VolumeMount>;
+  updateVolumeMount(orgUuid: string, projectId: string, path: VolumeMountPath, mountId: string, data: VolumeMountUpdateData): Promise<VolumeMount>;
+  deleteVolumeMount(orgUuid: string, projectId: string, path: VolumeMountPath, mountId: string): Promise<void>;
+  listStorageClasses(orgUuid: string, projectId: string, environmentId: string): Promise<StorageClass[]>;
+}
+
+// Component scaling (devops API). wip-only for now; cloud/icp stubs throw.
+export interface ScalingApi {
+  getScalingState(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<ScalingState>;
+  getHttpScaler(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<HttpScaler | null>;
+  getHpa(orgUuid: string, projectId: string, componentId: string, releaseId: string): Promise<Hpa | null>;
+  setScalingMethod(orgUuid: string, projectId: string, path: ScalingPath, data: ScalingMethodToggle): Promise<void>;
+  updateHttpScaler(orgUuid: string, projectId: string, path: ScalingPath, data: HttpScalerWriteData): Promise<HttpScaler>;
+  createHpa(orgUuid: string, projectId: string, path: ScalingPath, data: HpaWriteData): Promise<Hpa>;
+  updateHpa(orgUuid: string, projectId: string, path: ScalingPath, hpaId: string, data: HpaWriteData): Promise<Hpa>;
+  createHpaMetric(orgUuid: string, projectId: string, path: ScalingPath, hpaId: string, data: HpaMetric): Promise<HpaMetric>;
+  updateHpaMetric(orgUuid: string, projectId: string, path: ScalingPath, hpaId: string, metricId: string, data: HpaMetric): Promise<HpaMetric>;
+  deleteHpaMetric(orgUuid: string, projectId: string, path: ScalingPath, hpaId: string, metricId: string): Promise<void>;
+  listPods(orgUuid: string, projectId: string, clusterId: string, releaseId: string): Promise<ClusterPod[]>;
+  listPodMetrics(orgUuid: string, projectId: string, clusterId: string, releaseId: string): Promise<PodMetrics[]>;
+}
+
+// ---------------------------------------------------------------------------
+// Data planes (Runtimes)
+// ---------------------------------------------------------------------------
+
+export interface DataPlanesApi {
+  listDataPlanes(): Promise<Cluster[]>;
+  listPdps(): Promise<PdpManagerPdp[]>;
+}
+
+// ---------------------------------------------------------------------------
+// Component runtime (pods, metrics, redeploy)
+// ---------------------------------------------------------------------------
+
+export interface RuntimeApi {
+  fetchReleaseDetails(projectId: string, componentId: string, releaseId: string): Promise<RuntimeReleaseDetails>;
+  fetchComponentPods(projectId: string, clusterId: string, releaseId: string, namespace: string): Promise<RuntimeClusterPod[]>;
+  fetchComponentPodMetrics(projectId: string, clusterId: string, releaseId: string, namespace: string): Promise<RuntimePodMetrics[]>;
+  redeployRelease(projectId: string, componentId: string, releaseId: string, message?: string): Promise<void>;
+}
+
 export interface AppApi {
   alerts: AlertsApi;
   apim: ApimApi;
@@ -687,6 +796,8 @@ export interface AppApi {
   deploymentPipelines: DeploymentPipelinesApi;
   onPremKeys: OnPremKeysApi;
   appSecurity: AppSecurityApi;
+  dataPlanes: DataPlanesApi;
+  runtime: RuntimeApi;
   credentials: CredentialsApi;
   workflows: WorkflowsApi;
   egressControl: EgressControlApi;
@@ -701,14 +812,19 @@ export interface AppApi {
   projects: ProjectsApi;
   projectAuthz: ProjectAuthzApi;
   tailscale: TailscaleApi;
+  storage: StorageApi;
+  scaling: ScalingApi;
   devopsConfigs: DevopsConfigsApi;
   externalCi: ExternalCiApi;
+  healthChecks: HealthChecksApi;
   customDomains: CustomDomainsApi;
   repository: RepositoryApi;
   samples: SamplesApi;
   subscriptions: SubscriptionsApi;
   configGroups: ConfigGroupsApi;
+  connections: ConnectionsApi;
   auditLogs: AuditLogsApi;
   platformServices: PlatformServicesApi;
   genaiServices: GenaiServicesApi;
+  ragBackend: RagBackendApi;
 }
