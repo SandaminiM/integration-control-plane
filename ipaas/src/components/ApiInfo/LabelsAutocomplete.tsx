@@ -25,14 +25,16 @@ const LABEL_OPTIONS: string[] = [...menuItems.connectorCategories.categories.fla
 interface LabelsAutocompleteProps {
   value: string[];
   onChange: (newValue: string[]) => void;
+  disabled?: boolean;
 }
 
-export default function LabelsAutocomplete({ value, onChange }: LabelsAutocompleteProps): JSX.Element {
+export default function LabelsAutocomplete({ value, onChange, disabled }: LabelsAutocompleteProps): JSX.Element {
   return (
     <Autocomplete
       multiple
       freeSolo
       disableCloseOnSelect
+      disabled={disabled}
       options={LABEL_OPTIONS}
       value={value}
       onChange={(_e, newValue) => onChange(newValue as string[])}

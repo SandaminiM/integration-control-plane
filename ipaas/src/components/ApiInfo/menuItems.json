@@ -87,8 +87,8 @@
             "value": "Communication/Team Chat"
           },
           {
-            "name": "Video Conferncing",
-            "value": "Communication/Video Conferncing"
+            "name": "Video Conferencing",
+            "value": "Communication/Video Conferencing"
           }
         ]
       },
@@ -378,8 +378,8 @@
         "name": "Support",
         "children": [
           {
-            "name": "Cusotmer Appreciation",
-            "value": "Support/Cusotmer Appreciation"
+            "name": "Customer Appreciation",
+            "value": "Support/Customer Appreciation"
           },
           {
             "name": "Customer Support",

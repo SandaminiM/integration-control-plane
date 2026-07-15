@@ -173,8 +173,9 @@ export default function MarketplaceTab({ componentId, version, endpoint, endpoin
   const [summary, setSummary] = useState('');
   const [tags, setTags] = useState<string[]>([]);
 
-  const { data: marketplaceService } = useMarketplaceService(componentId, version, endpoint);
+  const { data: marketplaceService, isLoading: loadingService } = useMarketplaceService(componentId, version, endpoint);
   const { mutateAsync: updateMarketplaceService, isPending: savingService } = useUpdateMarketplaceService();
+  const serviceReady = !!marketplaceService;
 
   // overviewSaved tracks the staged overview — committed to the API only on main Save.
   const [overviewSaved, setOverviewSaved] = useState('');
@@ -221,7 +222,7 @@ export default function MarketplaceTab({ componentId, version, endpoint, endpoin
 
           <TextField label="Display Name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} fullWidth size="small" slotProps={{ htmlInput: { 'aria-label': 'Display Name' } }} />
 
-          <TextField label="Summary" value={summary} onChange={(e) => setSummary(e.target.value)} fullWidth multiline rows={3} size="small" slotProps={{ htmlInput: { 'aria-label': 'Summary' } }} />
+          <TextField label="Summary" value={summary} onChange={(e) => setSummary(e.target.value)} fullWidth multiline rows={3} size="small" disabled={!serviceReady} slotProps={{ htmlInput: { 'aria-label': 'Summary' } }} />
 
           <TextField
             label="Overview"
@@ -236,9 +237,11 @@ export default function MarketplaceTab({ componentId, version, endpoint, endpoin
                 endAdornment: (
                   <InputAdornment position="end">
                     <Tooltip title="Edit overview" placement="top">
-                      <IconButton size="small" aria-label="Edit overview" onClick={() => setDialogOpen(true)} sx={{ color: 'primary.main', pointerEvents: 'all' }}>
-                        <Edit size={16} />
-                      </IconButton>
+                      <span>
+                        <IconButton size="small" aria-label="Edit overview" onClick={() => setDialogOpen(true)} disabled={!serviceReady} sx={{ color: 'primary.main', pointerEvents: 'all' }}>
+                          <Edit size={16} />
+                        </IconButton>
+                      </span>
                     </Tooltip>
                   </InputAdornment>
                 ),
@@ -247,13 +250,19 @@ export default function MarketplaceTab({ componentId, version, endpoint, endpoin
             sx={{ '& .MuiInputBase-root.Mui-disabled': { pointerEvents: 'none' }, '& .MuiInputAdornment-root': { pointerEvents: 'all' } }}
           />
 
-          <LabelsAutocomplete value={tags} onChange={setTags} />
+          <LabelsAutocomplete value={tags} onChange={setTags} disabled={!serviceReady} />
+
+          {!loadingService && !marketplaceService && (
+            <Typography variant="caption" color="text.secondary">
+              Marketplace service unavailable for this endpoint. Summary, labels, and overview cannot be edited.
+            </Typography>
+          )}
 
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button variant="outlined" onClick={onCancel} disabled={saving || savingService}>
+            <Button variant="outlined" onClick={onCancel} disabled={saving || savingService || loadingService}>
               Cancel
             </Button>
-            <Button variant="contained" startIcon={(saving || savingService) && <CircularProgress size={16} color="inherit" />} onClick={() => handleSave({ displayName })} disabled={!isDirty || saving || savingService}>
+            <Button variant="contained" startIcon={(saving || savingService) && <CircularProgress size={16} color="inherit" />} onClick={() => handleSave({ displayName })} disabled={!isDirty || saving || savingService || loadingService}>
               {saving || savingService ? 'Saving...' : 'Save'}
             </Button>
           </Box>

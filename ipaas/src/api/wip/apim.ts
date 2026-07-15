@@ -51,7 +51,7 @@ export async function fetchMarketplaceService(componentId: string, version: stri
 
 export async function saveMarketplaceService(serviceId: string, service: MarketplaceService): Promise<void> {
   const base = window.API_CONFIG.internalMarketplaceUrl;
-  if (!base) return;
+  if (!base) throw new Error('Marketplace URL is not configured');
   // The PUT endpoint accepts a closed ServiceRequest — only these fields are allowed.
   const body = {
     name: service.name,
@@ -67,7 +67,8 @@ export async function saveMarketplaceService(serviceId: string, service: Marketp
     connectionSchemas: service.connectionSchemas,
     status: service.status,
   };
-  await authenticatedFetch(`${base}/services/${encodeURIComponent(serviceId)}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const res = await authenticatedFetch(`${base}/services/${encodeURIComponent(serviceId)}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!res.ok) throw new Error(`Failed to save marketplace service: ${res.status}`);
 }
 
 // ── APIM Documents (kept for compatibility) ────────────────────────────────────────────────────
@@ -94,7 +95,7 @@ export async function saveApimOverview(apimId: string, content: string): Promise
   const base = window.API_CONFIG.apimBaseUrl;
   const qs = `?organizationId=${encodeURIComponent(orgUuid)}`;
   const list = await apimClient.get<{ list?: { documentId: string; name: string; sourceType?: string }[] }>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/documents${qs}`);
-  let docId = list.list?.find((d) => d.name === OVERVIEW_DOC_NAME)?.documentId;
+  let docId = list.list?.find((d) => d.name === OVERVIEW_DOC_NAME && (d.sourceType === 'INLINE' || d.sourceType === 'MARKDOWN'))?.documentId;
   if (!docId) {
     const created = await apimClient.post<{ documentId: string }>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/documents${qs}`, {
       name: OVERVIEW_DOC_NAME,
@@ -108,7 +109,8 @@ export async function saveApimOverview(apimId: string, content: string): Promise
   }
   const form = new FormData();
   form.append('inlineContent', content);
-  await authenticatedFetch(`${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/documents/${encodeURIComponent(docId)}/content${qs}`, { method: 'POST', body: form });
+  const res = await authenticatedFetch(`${base}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/documents/${encodeURIComponent(docId)}/content${qs}`, { method: 'POST', body: form });
+  if (!res.ok) throw new Error(`Failed to save overview: ${res.status}`);
 }
 
 export async function fetchApimThumbnail(apimId: string): Promise<string | null> {
@@ -127,7 +129,8 @@ export async function saveApimThumbnail(apimId: string, file: File): Promise<voi
   const orgUuid = getOrgUuidFromToken() ?? '';
   const form = new FormData();
   form.append('file', file);
-  await authenticatedFetch(`${window.API_CONFIG.apimBaseUrl}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/thumbnail?organizationId=${encodeURIComponent(orgUuid)}`, { method: 'PUT', body: form });
+  const res = await authenticatedFetch(`${window.API_CONFIG.apimBaseUrl}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/thumbnail?organizationId=${encodeURIComponent(orgUuid)}`, { method: 'PUT', body: form });
+  if (!res.ok) throw new Error(`Failed to upload thumbnail: ${res.status}`);
 }
 
 export async function fetchApimApi(apimId: string): Promise<ApimApiInfo | null> {
