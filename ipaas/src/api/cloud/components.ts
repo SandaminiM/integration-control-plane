@@ -37,6 +37,7 @@ import type {
 } from '../../types/component';
 import type { CreateMcpProxyComponentInput } from '../../types/mcpProxy';
 import { bff, items, q, seg, type ListResponse } from './_client';
+import { parseGitHubUrl } from '../../utils/github';
 
 // Underscored params (_orgHandler, _versionId, _releaseId) are kept on exported
 // signatures so cloud matches the devant contract that tsconfig type-checks
@@ -145,6 +146,11 @@ function resolveCreateMapping(input: CreateComponentInput): { componentType: str
 function toBffCreateComponentBody(input: CreateComponentInput) {
   const mapping = resolveCreateMapping(input);
   const appPath = (input.repositorySubPath ?? '/').replace(/^\/+/, '');
+  // GitHub-App (private repo) mode: the workflow repository must carry an
+  // explicit secretRef:"" (OpenChoreo then renders no ExternalSecret;
+  // git-app-service provisions the per-run clone secret), and the BFF receives
+  // the source binding to persist. Public/sample/prebuilt bodies are unchanged.
+  const gitHubRepo = input.gitHubAppInstallationId ? parseGitHubUrl(input.srcGitRepoUrl ?? '') : null;
   return {
     metadata: {
       name: input.name,
@@ -171,10 +177,23 @@ function toBffCreateComponentBody(input: CreateComponentInput) {
             url: input.srcGitRepoUrl ?? '',
             revision: { branch: input.repositoryBranch ?? '' },
             appPath,
+            ...(gitHubRepo ? { secretRef: '' } : {}),
           },
         },
       },
     },
+    ...(gitHubRepo
+      ? {
+          githubApp: {
+            installationId: Number(input.gitHubAppInstallationId),
+            owner: gitHubRepo.org,
+            repo: gitHubRepo.repo,
+            branch: input.repositoryBranch ?? '',
+            appPath,
+            repositoryUrl: input.srcGitRepoUrl ?? '',
+          },
+        }
+      : {}),
   };
 }
 
@@ -225,7 +244,14 @@ export const fetchComponentNameAvailability = (projectId: string, candidate: str
 export const fetchComponentEndpointSpec = (componentId: string, _versionId: string, endpointId: string): Promise<string | null> =>
   bff.get<{ spec: string | null }>(`/components/${seg(componentId)}/endpoints/${seg(endpointId)}/spec`).then((r) => r.spec ?? null);
 
-export const createComponent = (input: CreateComponentInput): Promise<Component> => bff.post<Component>(`/projects/${seg(input.projectId)}/components`, toBffCreateComponentBody(input)).then(withFrontendDisplayType);
+export const createComponent = (input: CreateComponentInput): Promise<Component> =>
+  bff.post<Component & { warning?: string }>(`/projects/${seg(input.projectId)}/components`, toBffCreateComponentBody(input)).then((created) => {
+    // Non-fatal post-create failure reported by the BFF (e.g. GitHub source
+    // binding not persisted, first build not started). The component exists;
+    // a build can be retried from the component page.
+    if (created.warning) console.warn(`[cloud] component created with warning: ${created.warning}`);
+    return withFrontendDisplayType(created);
+  });
 
 export const deleteComponent = (input: { orgHandler: string; componentId: string; projectId: string }): Promise<DeleteComponentResult> =>
   bff.delete<DeleteComponentResult | null>(`/projects/${seg(input.projectId)}/components/${seg(input.componentId)}`).then((r) => r ?? { status: 'success', canDelete: true, message: '', encodedData: '' });

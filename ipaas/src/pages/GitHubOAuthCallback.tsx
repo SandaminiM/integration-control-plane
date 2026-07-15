@@ -26,7 +26,15 @@ export default function GitHubOAuthCallback(): JSX.Element {
     const code = params.get('code');
     const state = params.get('state');
     const channel = new BroadcastChannel(GITHUB_AUTH.BROADCAST_CHANNEL);
-    channel.postMessage({ authCode: code ?? null, state: state ?? null });
+    // installationId/setupAction are present only when GitHub redirects here
+    // after a GitHub App installation (App "Setup URL" pointed at /ghapp);
+    // listeners that only destructure authCode/state are unaffected.
+    channel.postMessage({
+      authCode: code ?? null,
+      state: state ?? null,
+      installationId: params.get('installation_id'),
+      setupAction: params.get('setup_action'),
+    });
     channel.close();
     window.close();
   }, []);

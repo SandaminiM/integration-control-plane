@@ -51,6 +51,23 @@ export const items = <T>(r: ListResponse<T> | null | undefined): T[] => r?.items
 
 const bffBaseUrl = (): string => window.API_CONFIG?.choreoBaseApiUrl ?? '';
 
+/**
+ * BFF request failure carrying the HTTP status and raw body so domain files
+ * can branch on semantic statuses (e.g. 409 "github-auth-required"). The
+ * message keeps the exact `HTTP {status}: {body}` shape callers already parse.
+ */
+export class BffError extends Error {
+  readonly status: number;
+  readonly body: string;
+
+  constructor(status: number, body: string) {
+    super(`HTTP ${status}: ${body}`);
+    this.name = 'BffError';
+    this.status = status;
+    this.body = body;
+  }
+}
+
 async function request<T>(method: string, path: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
   const init: RequestInit = {
     method,
@@ -63,7 +80,7 @@ async function request<T>(method: string, path: string, body?: unknown, headers?
 
   const res = await authenticatedFetch(`${bffBaseUrl()}${path}`, init);
   const text = await res.text().catch(() => '');
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+  if (!res.ok) throw new BffError(res.status, text || res.statusText);
   return text ? (JSON.parse(text) as T) : (undefined as unknown as T);
 }
 

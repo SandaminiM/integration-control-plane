@@ -41,6 +41,7 @@ interface RuntimeConfig {
   SYS_API_PREFIX?: string;
   GITHUB_APP_CLIENT_ID?: string;
   GITHUB_APP_AUTH_REDIRECTION_URL?: string;
+  GITHUB_APP_SLUG?: string;
   SUBSCRIPTIONS_API_URL?: string;
   SAMPLES_URL?: string;
   PREBUILT_INTEGRATIONS_URL?: string;
@@ -80,6 +81,8 @@ export interface ApiConfig {
   sysApiPrefix: string;
   githubAppClientId?: string;
   githubAppAuthRedirectUrl?: string;
+  /** GitHub App slug — powers https://github.com/apps/{slug}/installations/new when the App is authorized but not yet installed on any account. */
+  githubAppSlug?: string;
   subscriptionsApiUrl: string;
   billingApiBaseUrl: string;
   /** External billing console base — the Upgrade button links to `${billingConsoleUrl}/cloud/devant/upgrade`. */
@@ -140,6 +143,7 @@ const DEFAULT_CONFIG: ApiConfig = {
   sysApiPrefix: '783c6c4d-8b9b-4190-b70a-e717ab1ee739-systemapis',
   githubAppClientId: '',
   githubAppAuthRedirectUrl: `${window.location.origin}/ghapp`,
+  githubAppSlug: '',
   subscriptionsApiUrl: import.meta.env.DEV ? '/subscriptions-proxy' : 'https://subscriptions.dv.wso2.com',
   billingApiBaseUrl: '',
   asgardeoSignupUrl: 'https://dev.asgardeo.io/signup',
@@ -190,6 +194,7 @@ export async function loadConfig(): Promise<void> {
       sysApiPrefix: config.SYS_API_PREFIX || DEFAULT_CONFIG.sysApiPrefix,
       githubAppClientId: config.GITHUB_APP_CLIENT_ID || DEFAULT_CONFIG.githubAppClientId,
       githubAppAuthRedirectUrl: config.GITHUB_APP_AUTH_REDIRECTION_URL || DEFAULT_CONFIG.githubAppAuthRedirectUrl,
+      githubAppSlug: config.GITHUB_APP_SLUG || DEFAULT_CONFIG.githubAppSlug,
       subscriptionsApiUrl: config.SUBSCRIPTIONS_API_URL || DEFAULT_CONFIG.subscriptionsApiUrl,
       billingApiBaseUrl: trim(config.BILLING_API_BASE_URL || DEFAULT_CONFIG.billingApiBaseUrl),
       samplesUrl: config.SAMPLES_URL || undefined,

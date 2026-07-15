@@ -635,7 +635,12 @@ export interface RepositoryApi {
   fetchRepoMetadata(org: string, repo: string, branch: string, subPath: string, isPublicRepo?: boolean): Promise<RepoMetadata>;
   fetchChoreoSampleImages(orgUuid: string, projectId: string): Promise<ChoreoSampleImageEntry[]>;
   updateBuildpackConfigs(input: UpdateBuildpackConfigsInput): Promise<string>;
-  obtainGithubToken(authorizationCode: string): Promise<{ success: boolean; message: string }>;
+  /**
+   * Exchange the GitHub OAuth code for repo access. `needsInstallation` (cloud
+   * GitHub-App flow) signals "authorized but the App is not installed on any
+   * account" — the UI should open the App installation page.
+   */
+  obtainGithubToken(authorizationCode: string): Promise<{ success: boolean; message: string; needsInstallation?: boolean }>;
   fetchRepoContents(org: string, repo: string, branch: string, isPublicRepo?: boolean): Promise<RepoTreeNode[]>;
 }
 

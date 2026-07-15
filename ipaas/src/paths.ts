@@ -209,3 +209,9 @@ export function buildGitHubOAuthUrl(redirectUri: string, clientId: string, state
   });
   return `https://github.com/login/oauth/authorize?${params.toString()}`;
 }
+
+// GitHub App installation page — opened when the user authorized the App but
+// has not installed it on any account/org yet (bind returns 409).
+export function buildGitHubAppInstallUrl(slug: string): string {
+  return `https://github.com/apps/${slug}/installations/new`;
+}
