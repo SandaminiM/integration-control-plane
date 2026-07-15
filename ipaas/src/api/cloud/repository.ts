@@ -136,22 +136,34 @@ export async function fetchGitHubUserRepos(): Promise<UserRepo[]> {
       return entry;
     };
 
-    const userRepos = await Promise.all(
-      installations.map(async (inst) => {
-        const repos = items(await bff.get<ListResponse<GitRepo>>(`/git/github/repos${q({ installationId: inst.installationId })}`));
-        indexEntry(inst.githubAccount, inst.installationId);
-        for (const r of repos) {
-          // Repos shared into an installation can carry an owner different
-          // from the installation account — index both.
-          indexEntry(r.owner || inst.githubAccount, inst.installationId).defaultBranchByRepo.set(r.name, r.defaultBranch);
-        }
-        return {
-          orgName: inst.githubAccount,
-          installationId: String(inst.installationId),
-          repositories: repos.map((r) => ({ name: r.name })),
-        };
-      }),
-    );
+    const userRepos = (
+      await Promise.all(
+        installations.map(async (inst): Promise<UserRepo | null> => {
+          try {
+            const repos = items(await bff.get<ListResponse<GitRepo>>(`/git/github/repos${q({ installationId: inst.installationId })}`));
+            indexEntry(inst.githubAccount, inst.installationId);
+            for (const r of repos) {
+              // Repos shared into an installation can carry an owner different
+              // from the installation account — index both.
+              indexEntry(r.owner || inst.githubAccount, inst.installationId).defaultBranchByRepo.set(r.name, r.defaultBranch);
+            }
+            return {
+              orgName: inst.githubAccount,
+              installationId: String(inst.installationId),
+              repositories: repos.map((r) => ({ name: r.name })),
+            };
+          } catch (err) {
+            // Expired/revoked authorization affects every installation — rethrow
+            // so the outer handler falls back to the Authorize button. Anything
+            // else (e.g. one suspended installation) drops only that account and
+            // keeps the user's other installations listed.
+            if (isGitHubAuthRequired(err)) throw err;
+            console.error(`[cloud] fetchGitHubUserRepos: listing repos for installation ${inst.installationId} failed:`, err);
+            return null;
+          }
+        }),
+      )
+    ).filter((r): r is UserRepo => r !== null);
 
     repoIndex = index;
     return userRepos;
