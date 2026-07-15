@@ -20,10 +20,12 @@ import { Alert, Button, Chip, CircularProgress, IconButton, ListingTable, PageCo
 import { Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
-import { isGenaiServicesEnabled, useDeleteGenaiService, useGenaiServices } from '../hooks/useGenaiServices';
+import { isThirdPartyServicesEnabled, useDeleteThirdPartyService, useThirdPartyServices } from '../hooks/useThirdPartyServices';
 import { useProjectId } from '../hooks/useProjects';
 import { GENAI_DEFAULT_PAGE_SIZE, GENAI_PAGE_SIZE_OPTIONS, marketplaceStatusLabel } from '../constants/genaiServices';
-import { formatServiceCreatedTime, genaiServicesBase } from '../utils/genaiServices';
+import { THIRD_PARTY_BANNER } from '../constants/thirdPartyServices';
+import { formatServiceCreatedTime } from '../utils/genaiServices';
+import { thirdPartyServicesBase } from '../utils/thirdPartyServices';
 import ComingSoon from './ComingSoon';
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog';
 import NoServicesBanner from '../components/ServiceCatalog/NoServicesBanner';
@@ -31,7 +33,7 @@ import SearchField from '../components/SearchField';
 import { hasProject, type OrgScope, type ProjectScope } from '../nav';
 import type { GenAiService } from '../types/genaiServices';
 
-export default function OrgGenAIServices(scope: OrgScope | ProjectScope): JSX.Element {
+export default function ThirdPartyServices(scope: OrgScope | ProjectScope): JSX.Element {
   const navigate = useNavigate();
   const projectHandle = hasProject(scope) ? scope.project : undefined;
   const { projectId, isLoading: resolvingProject } = useProjectId(projectHandle ?? '');
@@ -50,20 +52,19 @@ export default function OrgGenAIServices(scope: OrgScope | ProjectScope): JSX.El
     return () => clearTimeout(t);
   }, [search]);
 
-  // Project scope waits for a resolved (non-empty) project id so we never fall back to org-wide data.
-  const { data, isLoading, isFetching, isError, refetch } = useGenaiServices({ query: debouncedSearch, offset: page * rowsPerPage, limit: rowsPerPage, projectId: projectHandle ? projectId : undefined }, !resolvingProject && (!projectHandle || !!projectId));
-  const del = useDeleteGenaiService();
+  const { data, isLoading, isFetching, isError, refetch } = useThirdPartyServices({ query: debouncedSearch, offset: page * rowsPerPage, limit: rowsPerPage, projectId: projectHandle ? projectId : undefined }, !resolvingProject && (!projectHandle || !!projectId));
+  const del = useDeleteThirdPartyService();
 
   const services = data?.data ?? [];
   const total = data?.pagination?.total ?? 0;
   const hasAny = total > 0 || services.length > 0;
 
-  const base = genaiServicesBase(scope);
+  const base = thirdPartyServicesBase(scope);
   const goCreate = () => navigate(`${base}/new`);
   const goDetail = (serviceId: string) => navigate(`${base}/${serviceId}`);
 
-  if (!isGenaiServicesEnabled()) {
-    return <ComingSoon title="Coming Soon" description="GenAI Services management is currently under development." />;
+  if (!isThirdPartyServicesEnabled()) {
+    return <ComingSoon title="Coming Soon" description="Third Party Services management is currently under development." />;
   }
 
   const doDelete = () => {
@@ -72,11 +73,11 @@ export default function OrgGenAIServices(scope: OrgScope | ProjectScope): JSX.El
     del.mutate(toDelete.serviceId, {
       onSuccess: () => {
         setToDelete(null);
-        setAlert({ type: 'success', message: `GenAI service '${name}' deleted.` });
+        setAlert({ type: 'success', message: `Third-party service '${name}' deleted.` });
       },
       onError: (e) => {
         setToDelete(null);
-        setAlert({ type: 'error', message: e instanceof Error ? e.message : 'Failed to delete the GenAI service.' });
+        setAlert({ type: 'error', message: e instanceof Error ? e.message : 'Failed to delete the third-party service.' });
       },
     });
   };
@@ -87,7 +88,7 @@ export default function OrgGenAIServices(scope: OrgScope | ProjectScope): JSX.El
     <PageContent>
       <Stack direction="row" justifyContent="space-between" alignItems="center" gap={2} sx={{ mb: 3 }}>
         <PageTitle>
-          <PageTitle.Header>GenAI Services</PageTitle.Header>
+          <PageTitle.Header>Third Party Services</PageTitle.Header>
         </PageTitle>
         {showSearchAndCreate && (
           <Stack direction="row" alignItems="center" gap={1.5}>
@@ -115,13 +116,13 @@ export default function OrgGenAIServices(scope: OrgScope | ProjectScope): JSX.El
               Retry
             </Button>
           }>
-          Failed to load GenAI services.
+          Failed to load third-party services.
         </Alert>
       ) : !hasAny && debouncedSearch === '' ? (
         <NoServicesBanner
-          title="Bring your own AI models"
-          description="Register GenAI services from providers like OpenAI, Azure OpenAI, Mistral AI, and Anthropic AI, then share their connections across your integrations."
-          bannerSrc={`${import.meta.env.BASE_URL}assets/images/genai-services-banner.svg`}
+          title="Register your third-party services"
+          description="Bring external REST, GraphQL, SOAP, AsyncAPI, and gRPC services into the marketplace so they can be discovered and connected from your integrations."
+          bannerSrc={`${import.meta.env.BASE_URL}${THIRD_PARTY_BANNER}`}
           onCreate={goCreate}
         />
       ) : (
@@ -141,7 +142,7 @@ export default function OrgGenAIServices(scope: OrgScope | ProjectScope): JSX.El
               {services.length === 0 ? (
                 <ListingTable.Row>
                   <ListingTable.Cell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>
-                    No GenAI services match “{debouncedSearch}”.
+                    No third-party services match “{debouncedSearch}”.
                   </ListingTable.Cell>
                 </ListingTable.Row>
               ) : (
@@ -157,6 +158,8 @@ export default function OrgGenAIServices(scope: OrgScope | ProjectScope): JSX.El
                       sx={{ cursor: 'pointer' }}
                       onClick={() => goDetail(s.serviceId)}
                       onKeyDown={(e) => {
+                        // Only activate on the row itself — ignore keys from nested controls (e.g. the delete button).
+                        if (e.target !== e.currentTarget) return;
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           goDetail(s.serviceId);
@@ -231,7 +234,7 @@ export default function OrgGenAIServices(scope: OrgScope | ProjectScope): JSX.El
           onClose={() => setToDelete(null)}
           isPending={del.isPending}>
           <Typography variant="body2" color="text.secondary">
-            This permanently removes the GenAI service and its connection configurations. This action can’t be undone.
+            This permanently removes the third-party service and its connection configurations. This action can’t be undone.
           </Typography>
         </ConfirmDeleteDialog>
       )}

@@ -20,9 +20,10 @@ import { Alert, Box, Button, Chip, CircularProgress, PageContent, Stack, Tab, Ta
 import { ArrowLeft, Store } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { isGenaiServicesEnabled, useConnectionConfig, useGenaiService, useSetMarketplaceStatus } from '../hooks/useGenaiServices';
-import { GENAI_LOGO_BASE, GENAI_TEMPLATE_TYPE, marketplaceStatusLabel } from '../constants/genaiServices';
-import { genaiServicesBase, inferProviderLogo } from '../utils/genaiServices';
+import { useConnectionConfig, useGenaiService, useSetMarketplaceStatus } from '../hooks/useGenaiServices';
+import { isThirdPartyServicesEnabled } from '../hooks/useThirdPartyServices';
+import { marketplaceStatusLabel } from '../constants/genaiServices';
+import { thirdPartyServicesBase } from '../utils/thirdPartyServices';
 import ComingSoon from './ComingSoon';
 import GeneralDetailsTab from '../components/ServiceCatalog/detail/GeneralDetailsTab';
 import ServiceDefinitionTab from '../components/ServiceCatalog/detail/ServiceDefinitionTab';
@@ -32,13 +33,12 @@ import type { OrgScope, ProjectScope } from '../nav';
 type DetailTab = 'general' | 'definition' | 'endpoints';
 
 const NO_ENDPOINTS_HINT = 'Go to the Endpoints section and add at least one endpoint with all the parameters to list the service in the Marketplace.';
-const LOGO_BASE = `${import.meta.env.BASE_URL}${GENAI_LOGO_BASE}`;
 const headingChipSx = { height: 20, '& .MuiChip-label': { px: 0.75, fontSize: 11 } } as const;
 
-export default function GenAIServiceDetail(scope: OrgScope | ProjectScope): JSX.Element {
+export default function ThirdPartyServiceDetail(scope: OrgScope | ProjectScope): JSX.Element {
   const navigate = useNavigate();
   const { serviceId = '' } = useParams();
-  const base = genaiServicesBase(scope);
+  const base = thirdPartyServicesBase(scope);
   const { data: service, isLoading, isError, refetch } = useGenaiService(serviceId);
   const schemaId = service?.connectionSchemas?.[0]?.id;
   const { data: config } = useConnectionConfig(serviceId, schemaId);
@@ -46,14 +46,13 @@ export default function GenAIServiceDetail(scope: OrgScope | ProjectScope): JSX.
   const [tab, setTab] = useState<DetailTab>('general');
   const [error, setError] = useState<string | null>(null);
 
-  if (!isGenaiServicesEnabled()) {
-    return <ComingSoon title="Coming Soon" description="GenAI Services management is currently under development." />;
+  if (!isThirdPartyServicesEnabled()) {
+    return <ComingSoon title="Coming Soon" description="Third Party Services management is currently under development." />;
   }
 
   const available = service ? marketplaceStatusLabel(service.status) === 'Available' : false;
   const hasEndpoints = Object.keys(config?.configs ?? {}).length > 0;
   const addBlocked = !available && !hasEndpoints;
-  const providerLogo = inferProviderLogo((service?.connectionSchemas?.[0]?.entries ?? []).map((e) => e.name));
 
   const toggleMarketplace = () => {
     setError(null);
@@ -65,7 +64,7 @@ export default function GenAIServiceDetail(scope: OrgScope | ProjectScope): JSX.
   return (
     <PageContent>
       <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(base)} sx={{ mb: 2 }}>
-        Back to GenAI services
+        Back to Third Party Services
       </Button>
 
       {error && (
@@ -84,32 +83,28 @@ export default function GenAIServiceDetail(scope: OrgScope | ProjectScope): JSX.
               Retry
             </Button>
           }>
-          Failed to load this GenAI service.
+          Failed to load this third-party service.
         </Alert>
       ) : (
         <>
           <Stack direction="row" justifyContent="space-between" alignItems="center" gap={2} sx={{ mb: 3 }}>
             <Stack direction="row" alignItems="center" gap={2}>
-              {providerLogo ? (
-                <Box component="img" src={`${LOGO_BASE}${providerLogo}`} alt="" sx={{ width: 44, height: 44, flexShrink: 0, borderRadius: 1, objectFit: 'contain', p: 0.75, bgcolor: 'action.hover' }} />
-              ) : (
-                <Box
-                  sx={{
-                    width: 44,
-                    height: 44,
-                    flexShrink: 0,
-                    borderRadius: 1,
-                    bgcolor: 'action.hover',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 600,
-                    color: 'text.secondary',
-                    textTransform: 'uppercase',
-                  }}>
-                  {service.name.charAt(0) || '?'}
-                </Box>
-              )}
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  flexShrink: 0,
+                  borderRadius: 1,
+                  bgcolor: 'action.hover',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 600,
+                  color: 'text.secondary',
+                  textTransform: 'uppercase',
+                }}>
+                {service.name.charAt(0) || '?'}
+              </Box>
               <Stack direction="row" alignItems="center" gap={1.5} flexWrap="wrap">
                 <Typography variant="h5" sx={{ fontWeight: 600 }}>
                   {service.name}
@@ -141,7 +136,7 @@ export default function GenAIServiceDetail(scope: OrgScope | ProjectScope): JSX.
             <Tab label="Endpoints" value="endpoints" />
           </Tabs>
 
-          {tab === 'general' && <GeneralDetailsTab service={service} lockedTags={[GENAI_TEMPLATE_TYPE]} />}
+          {tab === 'general' && <GeneralDetailsTab service={service} />}
           {tab === 'definition' && <ServiceDefinitionTab serviceId={serviceId} canEdit />}
           {tab === 'endpoints' && <EndpointsTab service={service} orgHandle={scope.org} canEdit />}
         </>

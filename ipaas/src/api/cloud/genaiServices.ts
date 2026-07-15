@@ -36,6 +36,7 @@ const ni = (name: string): never => {
 };
 
 export const listGenaiServices = (_params: { query?: string; offset: number; limit: number; projectId?: string }): Promise<GenAiServiceListResponse> => ni('listGenaiServices');
+export const listThirdPartyServices = (_params: { query?: string; offset: number; limit: number; projectId?: string }): Promise<GenAiServiceListResponse> => ni('listThirdPartyServices');
 export const listProviderTemplates = (): Promise<GenAiProviderTemplate[]> => ni('listProviderTemplates');
 export const getProviderTemplate = (_templateId: string): Promise<GenAiProviderTemplateDetail> => ni('getProviderTemplate');
 export const createGenaiService = (_request: CreateServiceRequest): Promise<CreateServiceResponse> => ni('createGenaiService');

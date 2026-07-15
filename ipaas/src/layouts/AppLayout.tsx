@@ -104,13 +104,17 @@ import {
   User as UserIcon,
   Workflow,
   X,
+  Webhook,
 } from '@wso2/oxygen-ui-icons-react';
 import FeaturePreviewModal from '../components/FeaturePreview/FeaturePreviewModal';
 import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
 import { useOrgs } from '../hooks/useOrg';
 import { useBillingOrg } from '../hooks/useBillingOrg';
-import { isSupportedIntegration, GENERIC_SERVICE_TYPES } from '../constants/integrations';
+import { isSupportedIntegration, isByoiComponent, GENERIC_SERVICE_TYPES } from '../constants/integrations';
+import { useSubscriptions } from '../hooks/useSubscription';
+import { isExternalCiEnabled } from '../hooks/useExternalCi';
+import { PAID_SUBSCRIPTION_TYPE } from '../constants/subscription';
 import { identifyIntegration } from '../utils/identifyIntegration';
 import { useOrgPermissions } from '../hooks/useAuth';
 import { switchOrgToken } from '../auth/tokenManager';
@@ -192,6 +196,7 @@ const COMPONENT_PARENT_MAP: Record<string, string> = {
   'health-checks': 'admin',
   scaling: 'admin',
   storage: 'admin',
+  'external-ci': 'admin',
   'component-settings': 'admin',
 };
 
@@ -298,6 +303,7 @@ function AppLayoutInner(): JSX.Element {
     if (rest.startsWith('admin/health-checks')) return 'health-checks';
     if (rest.startsWith('admin/scaling')) return 'scaling';
     if (rest.startsWith('admin/storage')) return 'storage';
+    if (rest.startsWith('admin/external-ci')) return 'external-ci';
     if (rest.startsWith('settings')) return 'component-settings';
     return 'overview';
   }, [pathname, scope]);
@@ -316,6 +322,8 @@ function AppLayoutInner(): JSX.Element {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [featurePreviewOpen, setFeaturePreviewOpen] = useState(false);
   const orgUuid = useOrgUuid();
+  const { data: subscriptions } = useSubscriptions(orgUuid ?? '');
+  const isSubscribed = (subscriptions?.list ?? []).some((s) => s.subscriptionType === PAID_SUBSCRIPTION_TYPE);
   const orgCardRef = useRef<HTMLDivElement>(null);
   const projectCardRef = useRef<HTMLDivElement>(null);
   const integrationCardRef = useRef<HTMLDivElement>(null);
@@ -543,6 +551,7 @@ function AppLayoutInner(): JSX.Element {
       'health-checks': `${compBase}/admin/health-checks`,
       scaling: `${compBase}/admin/scaling`,
       storage: `${compBase}/admin/storage`,
+      'external-ci': `${compBase}/admin/external-ci`,
       'component-settings': `${compBase}/settings`,
     };
     const url = urlMap[id];
@@ -1268,6 +1277,8 @@ function AppLayoutInner(): JSX.Element {
             ) : hasComponent(scope) ? (
               (() => {
                 const isGenericService = GENERIC_SERVICE_TYPES.has(currentComponent?.displayType ?? '');
+                // External CI is a paid, Bring-Your-Own-Image-only feature.
+                const showExternalCI = isExternalCiEnabled() && isByoiComponent(currentComponent?.displayType ?? '') && isSubscribed;
                 const integrationType = identifyIntegration(currentComponent?.displayType ?? '', currentComponent?.componentSubType ?? null).type;
                 const runtimeLogsType = ['file-integration', 'event-integration'].includes(integrationType);
                 const aiAgentType = integrationType === 'ai-agent';
@@ -1477,6 +1488,14 @@ function AppLayoutInner(): JSX.Element {
                           </Sidebar.ItemIcon>
                           <Sidebar.ItemLabel>Storage</Sidebar.ItemLabel>
                         </Sidebar.Item>
+                        {showExternalCI && (
+                          <Sidebar.Item id="external-ci">
+                            <Sidebar.ItemIcon>
+                              <Webhook size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>External CI</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        )}
                         {canSeeAccessControl && (
                           <Sidebar.Item id="component-settings">
                             <Sidebar.ItemIcon>

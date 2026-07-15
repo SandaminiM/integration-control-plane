@@ -90,22 +90,10 @@ import type { OnPremKey, OnPremKeySubscription } from '../types/onPremKey';
 import type { EgressPolicy, EgressPolicyRequest } from '../types/egressPolicy';
 import type { AuthzRole, CreateAuthzRoleInput, UpdateAuthzRoleInput } from '../types/projectAuthz';
 import type { ByoiEndpointFileContents, CreateByoiComponentInput, CreateByoiComponentResult, DevopsVolume, DevopsVolumeMount, VolumeMountWriteData, VolumeWriteData } from '../types/tailscale';
+import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, ContainerWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseContainer, ReleaseDetails, SecretWriteData } from '../types/devopsConfigs';
+import type { ExternalCiToken } from '../types/externalCi';
 import type { StorageClass, Volume, VolumeCreateData, VolumeMount, VolumeMountCreateData, VolumeMountPath, VolumeMountUpdateData } from '../types/storage';
 import type { ClusterPod, Hpa, HpaMetric, HpaWriteData, HttpScaler, HttpScalerWriteData, PodMetrics, ScalingMethodToggle, ScalingPath, ScalingState } from '../types/scaling';
-import type {
-  ConfigMapWriteData,
-  ConfigMountPath,
-  ConfigMountWriteData,
-  ContainerWriteData,
-  DevopsConfigMap,
-  DevopsConfigMapDetails,
-  DevopsConfigMount,
-  DevopsSecret,
-  DevopsSecretDetails,
-  ReleaseContainer,
-  ReleaseDetails,
-  SecretWriteData,
-} from '../types/devopsConfigs';
 import type { HealthCheck, HealthCheckWriteData } from '../types/healthChecks';
 import type { CreateUrlMappingInput, CustomDomain, CustomDomainType, CustomUrlMapping } from '../types/customDomain';
 import type { OrgWorkflowConfig, ReviewerDecisionRequest, WorkflowConfigRequest, WorkflowDefinition, WorkflowInstanceResponse, WorkflowReviewData } from '../types/workflow';
@@ -509,6 +497,16 @@ export interface HealthChecksApi {
 }
 
 // ---------------------------------------------------------------------------
+// External CI
+// ---------------------------------------------------------------------------
+
+export interface ExternalCiApi {
+  getExternalCiTokens(orgUuid: string, projectId: string, componentId: string): Promise<ExternalCiToken[]>;
+  createExternalCiToken(orgUuid: string, projectId: string, componentId: string, tokenName: string): Promise<string>;
+  revokeExternalCiToken(orgUuid: string, projectId: string, componentId: string, tokenId: string): Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
 // Environments
 // ---------------------------------------------------------------------------
 
@@ -716,6 +714,7 @@ export interface PlatformServicesApi {
 // Org admin GenAI Services (internal-marketplace). wip-only for now; cloud/icp stubs throw.
 export interface GenaiServicesApi {
   listGenaiServices(params: { query?: string; offset: number; limit: number; projectId?: string }): Promise<GenAiServiceListResponse>;
+  listThirdPartyServices(params: { query?: string; offset: number; limit: number; projectId?: string }): Promise<GenAiServiceListResponse>;
   listProviderTemplates(): Promise<GenAiProviderTemplate[]>;
   getProviderTemplate(templateId: string): Promise<GenAiProviderTemplateDetail>;
   createGenaiService(request: CreateServiceRequest): Promise<CreateServiceResponse>;
@@ -816,6 +815,7 @@ export interface AppApi {
   storage: StorageApi;
   scaling: ScalingApi;
   devopsConfigs: DevopsConfigsApi;
+  externalCi: ExternalCiApi;
   healthChecks: HealthChecksApi;
   customDomains: CustomDomainsApi;
   repository: RepositoryApi;

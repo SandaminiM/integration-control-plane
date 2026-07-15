@@ -51,7 +51,7 @@ import { RAG_NO_SOURCE_SUBTYPES } from '../constants/ragIngestion';
  * type uses the new dispatch and the legacy `<Environment>` is deleted.
  * See [[icp-integration-migration]] and [[icp-phase4-commitment]] in memory.
  */
-const MIGRATED_INTEGRATION_TYPES = new Set<IntegrationType>(['automation', 'integration-as-api', 'file-integration', 'event-integration', 'ai-agent', 'mcp-server', 'mcp-proxy', 'tailscale-vpn', 'rag-ingestion']);
+const MIGRATED_INTEGRATION_TYPES = new Set<IntegrationType>(['automation', 'integration-as-api', 'webhook', 'file-integration', 'event-integration', 'ai-agent', 'mcp-server', 'mcp-proxy', 'tailscale-vpn', 'rag-ingestion']);
 
 /**
  * Types whose module provides a `CustomOverview` that owns the WHOLE surface

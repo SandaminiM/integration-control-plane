@@ -27,7 +27,7 @@ type ModuleLoader = () => Promise<{ default: IntegrationModule }>;
  */
 export const integrationModuleLoaders: Record<IntegrationType, ModuleLoader> = {
   'integration-as-api': () => import('./integration-as-api'),
-  webhook: () => import('./_shared/UnsupportedFallback'),
+  webhook: () => import('./webhook'),
   automation: () => import('./automation'),
   'file-integration': () => import('./file-integration'),
   'event-integration': () => import('./event-integration'),

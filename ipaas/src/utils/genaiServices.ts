@@ -168,7 +168,9 @@ export function buildUpdateServiceRequest(orgUuid: string, service: GenAiService
     isThirdParty: true,
     status: String(service.status),
     resourceType: GENAI_RESOURCE_TYPE,
-    templateType: service.templateType || GENAI_TEMPLATE_TYPE,
+    // Preserve the service's own template type; omit it entirely for plain third-party
+    // services (an empty TemplateType is rejected by the backend).
+    ...(service.templateType ? { templateType: service.templateType } : {}),
   };
 }
 
