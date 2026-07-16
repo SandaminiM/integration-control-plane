@@ -28,8 +28,7 @@
  */
 
 import { parse as parseYaml } from 'yaml';
-import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory, MarketplaceService } from '../../types/apim';
-import type { EnvEndpoint } from '../../types/component';
+import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory } from '../../types/apim';
 
 export async function fetchApimApi(_apimId: string): Promise<ApimApiInfo | null> {
   return null;
@@ -63,29 +62,20 @@ export async function changeLifecycleState(_apimId: string, _action: string): Pr
   throw new Error('Lifecycle management is not supported in this build.');
 }
 
-export async function fetchApimOverview(_apimId: string): Promise<string> {
-  return '';
-}
+// Not wired to a cloud backend yet — per the src/api/AGENTS.md stub contract
+// these throw via ni() so callers can never mistake an unsupported read or
+// save for a successful one.
+// TODO: implement using cloud APIs
+const ni = (name: string): never => {
+  throw new Error(`[cloud] apim.${name}: not implemented`);
+};
 
-export async function saveApimOverview(_apimId: string, _content: string): Promise<void> {
-  // No APIM in cloud — nothing to save.
-}
-
-export async function fetchApimThumbnail(_apimId: string): Promise<string | null> {
-  return null;
-}
-
-export async function saveApimThumbnail(_apimId: string, _file: File): Promise<void> {
-  // No APIM in cloud — nothing to save.
-}
-
-export async function fetchMarketplaceService(_componentId: string, _version: string, _endpoint: EnvEndpoint): Promise<MarketplaceService | null> {
-  return null;
-}
-
-export async function saveMarketplaceService(_serviceId: string, _service: MarketplaceService): Promise<void> {
-  // No internal marketplace in cloud — nothing to save.
-}
+export const fetchApimOverview = (..._args: unknown[]): never => ni('fetchApimOverview');
+export const saveApimOverview = (..._args: unknown[]): never => ni('saveApimOverview');
+export const fetchApimThumbnail = (..._args: unknown[]): never => ni('fetchApimThumbnail');
+export const saveApimThumbnail = (..._args: unknown[]): never => ni('saveApimThumbnail');
+export const fetchMarketplaceService = (..._args: unknown[]): never => ni('fetchMarketplaceService');
+export const saveMarketplaceService = (..._args: unknown[]): never => ni('saveMarketplaceService');
 
 // schemaContent is the endpoint's base64-encoded OpenAPI (YAML or JSON), carried
 // via the endpoint's apimRevisionId field by cloud fetchEnvEndpoints.
