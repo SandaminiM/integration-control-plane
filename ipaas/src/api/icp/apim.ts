@@ -30,3 +30,9 @@ export const fetchLifecycleState = (..._args: unknown[]): never => ni('fetchLife
 export const fetchLifecycleHistory = (..._args: unknown[]): never => ni('fetchLifecycleHistory');
 export const changeLifecycleState = (..._args: unknown[]): never => ni('changeLifecycleState');
 export const fetchApimSwagger = (..._args: unknown[]): never => ni('fetchApimSwagger');
+export const fetchApimOverview = (..._args: unknown[]): never => ni('fetchApimOverview');
+export const saveApimOverview = (..._args: unknown[]): never => ni('saveApimOverview');
+export const fetchApimThumbnail = (..._args: unknown[]): never => ni('fetchApimThumbnail');
+export const saveApimThumbnail = (..._args: unknown[]): never => ni('saveApimThumbnail');
+export const fetchMarketplaceService = (..._args: unknown[]): never => ni('fetchMarketplaceService');
+export const saveMarketplaceService = (..._args: unknown[]): never => ni('saveMarketplaceService');

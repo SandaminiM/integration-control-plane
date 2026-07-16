@@ -62,6 +62,21 @@ export async function changeLifecycleState(_apimId: string, _action: string): Pr
   throw new Error('Lifecycle management is not supported in this build.');
 }
 
+// Not wired to a cloud backend yet — per the src/api/AGENTS.md stub contract
+// these throw via ni() so callers can never mistake an unsupported read or
+// save for a successful one.
+// TODO: implement using cloud APIs
+const ni = (name: string): never => {
+  throw new Error(`[cloud] apim.${name}: not implemented`);
+};
+
+export const fetchApimOverview = (..._args: unknown[]): never => ni('fetchApimOverview');
+export const saveApimOverview = (..._args: unknown[]): never => ni('saveApimOverview');
+export const fetchApimThumbnail = (..._args: unknown[]): never => ni('fetchApimThumbnail');
+export const saveApimThumbnail = (..._args: unknown[]): never => ni('saveApimThumbnail');
+export const fetchMarketplaceService = (..._args: unknown[]): never => ni('fetchMarketplaceService');
+export const saveMarketplaceService = (..._args: unknown[]): never => ni('saveMarketplaceService');
+
 // schemaContent is the endpoint's base64-encoded OpenAPI (YAML or JSON), carried
 // via the endpoint's apimRevisionId field by cloud fetchEnvEndpoints.
 export async function fetchApimSwagger(schemaContent: string): Promise<unknown> {
