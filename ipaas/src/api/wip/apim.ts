@@ -19,6 +19,7 @@
 import { authenticatedFetch, getOrgUuidFromToken } from '../../auth/tokenManager';
 import { apimClient, choreoClient } from './httpClients';
 import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory, MarketplaceService } from '../../types/apim';
+import type { ApiDocument } from '../../types/marketplace';
 import type { EnvEndpoint } from '../../types/component';
 
 // ── Internal Marketplace (Overview) ──────────────────────────────────────────
@@ -199,6 +200,60 @@ export async function changeLifecycleState(apimId: string, action: string): Prom
   const params = new URLSearchParams({ organizationId: orgUuid, apiId: apimId, action });
   const data = await apimClient.post<{ lifecycleState: LifecycleState }>(`/api/am/publisher/v2/apis/change-lifecycle?${params}`);
   return data.lifecycleState;
+}
+
+// ── APIM Developer Documents ─────────────────────────────────────────────────
+
+export async function fetchApimDocuments(apimId: string): Promise<ApiDocument[]> {
+  const orgUuid = getOrgUuidFromToken() ?? '';
+  try {
+    const data = await apimClient.get<{ list?: ApiDocument[] }>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/documents?organizationId=${encodeURIComponent(orgUuid)}`);
+    return data.list ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchApimDocumentContent(apimId: string, docId: string): Promise<string> {
+  const orgUuid = getOrgUuidFromToken() ?? '';
+  try {
+    const res = await authenticatedFetch(`${window.API_CONFIG.apimBaseUrl}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/documents/${encodeURIComponent(docId)}/content?organizationId=${encodeURIComponent(orgUuid)}`);
+    if (!res.ok) return '';
+    return await res.text();
+  } catch {
+    return '';
+  }
+}
+
+async function uploadDocumentContent(apimId: string, docId: string, content: string): Promise<void> {
+  const orgUuid = getOrgUuidFromToken() ?? '';
+  const form = new FormData();
+  form.append('inlineContent', content);
+  const res = await authenticatedFetch(`${window.API_CONFIG.apimBaseUrl}/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/documents/${encodeURIComponent(docId)}/content?organizationId=${encodeURIComponent(orgUuid)}`, { method: 'POST', body: form });
+  if (!res.ok) throw new Error(`Failed to save document content: ${res.status}`);
+}
+
+export async function createApimDocument(apimId: string, doc: Omit<ApiDocument, 'documentId'>, content: string): Promise<ApiDocument> {
+  const orgUuid = getOrgUuidFromToken() ?? '';
+  const created = await apimClient.post<ApiDocument>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/documents?organizationId=${encodeURIComponent(orgUuid)}`, doc);
+  if ((doc.sourceType === 'MARKDOWN' || doc.sourceType === 'INLINE') && content) {
+    await uploadDocumentContent(apimId, created.documentId, content);
+  }
+  return created;
+}
+
+export async function updateApimDocument(apimId: string, docId: string, doc: ApiDocument, content?: string): Promise<ApiDocument> {
+  const orgUuid = getOrgUuidFromToken() ?? '';
+  const updated = await apimClient.put<ApiDocument>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/documents/${encodeURIComponent(docId)}?organizationId=${encodeURIComponent(orgUuid)}`, doc);
+  if ((doc.sourceType === 'MARKDOWN' || doc.sourceType === 'INLINE') && content !== undefined) {
+    await uploadDocumentContent(apimId, docId, content);
+  }
+  return updated;
+}
+
+export async function deleteApimDocument(apimId: string, docId: string): Promise<void> {
+  const orgUuid = getOrgUuidFromToken() ?? '';
+  await apimClient.delete<void>(`/api/am/publisher/v2/apis/${encodeURIComponent(apimId)}/documents/${encodeURIComponent(docId)}?organizationId=${encodeURIComponent(orgUuid)}`);
 }
 
 // ── APIM Swagger ───────────────────────────────────────────────────────────────

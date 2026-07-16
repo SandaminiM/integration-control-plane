@@ -67,7 +67,8 @@ export default function ComponentExternalCI({ org, project, component }: Compone
                 Enable Automatic Deployments using an External CI/Build Pipeline
               </Typography>
               <Typography variant="body2">
-                The platform doesn&apos;t build container images itself, but you can integrate deployment into your existing CI or build pipeline using a webhook. This feature is fully available on private data planes; on the cloud data plane you can create a token to test the feature but cannot invoke the webhook.
+                The platform doesn&apos;t build container images itself, but you can integrate deployment into your existing CI or build pipeline using a webhook. This feature is fully available on private data planes; on the cloud data plane you can create a
+                token to test the feature but cannot invoke the webhook.
               </Typography>
             </Alert>
 

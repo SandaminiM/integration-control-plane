@@ -244,7 +244,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
               apimId={apimId}
               apimApiInfo={apimApiInfo}
               activePolicies={apimApiInfo?.policies ?? []}
-              docsPath={`/organizations/${scope.org}/projects/${project?.handler ?? scope.project}/components/${component.handler}/documents`}
+              docsPath={`/organizations/${scope.org}/projects/${project?.handler ?? scope.project}/components/${component.handler}/document`}
             />
           )}
         </PageContent>
