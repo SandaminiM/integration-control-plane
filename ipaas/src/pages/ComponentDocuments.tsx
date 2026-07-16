@@ -16,59 +16,36 @@
  * under the License.
  */
 
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Divider,
-  FormControl,
-  IconButton,
-  InputLabel,
-  MenuItem,
-  PageContent,
-  Paper,
-  Select,
-  Stack,
-  Tab,
-  Tabs,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, MenuItem, PageContent, Paper, Select, Stack, Tab, Tabs, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronUp, Edit, FileText, Plus, Search, Trash2 } from '@wso2/oxygen-ui-icons-react';
-import Editor from '@monaco-editor/react';
-import { Suspense, useEffect, useMemo, useState, type JSX } from 'react';
+import { useEffect, useMemo, useState, type JSX } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import ConfirmDialog from '../components/Lifecycle/ConfirmDialog';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
+import DocFormPage from '../components/Documents/DocFormPage';
 import NotFound from '../components/NotFound';
 import { useComponentByHandler, useComponentEndpoints } from '../hooks/useComponents';
-import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjects';
+import { useProjectId } from '../hooks/useProjects';
 import { useApimApi, useApimDocumentContent, useApimDocuments, useChangeLifecycleState, useCreateApimDocument, useDeleteApimDocument, useLifecycleState, useUpdateApimApi, useUpdateApimDocument } from '../hooks/useApim';
-import ConfirmDialog from '../components/Lifecycle/ConfirmDialog';
 import { PUBLISH_ACTIONS, SUCCESS_TEXT } from '../constants/lifecycle';
 import { broaden, resourceUrl, type ComponentScope } from '../nav';
-import { UUID_RE } from '../utils/string';
 import type { ApiDocument } from '../types/marketplace';
 import type { DeploymentTrack } from '../types/component';
 
 type View = 'list' | 'create' | 'edit';
 
-const DOC_TYPES = [
-  { value: 'HOWTO', label: 'How To' },
-  { value: 'SAMPLES', label: 'Sample and SDK' },
-  { value: 'PUBLIC_FORUM', label: 'Public Forum' },
-  { value: 'SUPPORT_FORUM', label: 'Support Forum' },
-  { value: 'OTHER', label: 'Other' },
-];
+interface EditingState {
+  doc: ApiDocument;
+  content: string;
+}
 
-const DOC_TYPE_LABEL: Record<string, string> = Object.fromEntries(DOC_TYPES.map((t) => [t.value, t.label]));
+const DOC_TYPE_LABEL: Record<string, string> = {
+  HOWTO: 'How To',
+  SAMPLES: 'Sample and SDK',
+  PUBLIC_FORUM: 'Public Forum',
+  SUPPORT_FORUM: 'Support Forum',
+};
 
 function typeLabel(doc: ApiDocument): string {
   return doc.type === 'OTHER' ? (doc.otherTypeName ?? 'Other') : (DOC_TYPE_LABEL[doc.type] ?? doc.type);
@@ -92,116 +69,6 @@ function aggregateByMajorVersion(tracks: DeploymentTrack[]): DeploymentTrack[] {
     }
   }
   return Array.from(groups.values());
-}
-
-// ── Create / Edit form (full-page, Monaco editor + live preview) ──────────────
-
-interface DocFormPageProps {
-  view: 'create' | 'edit';
-  initialName: string;
-  initialType: string;
-  initialOtherType: string;
-  initialContent: string;
-  saving: boolean;
-  onBack: () => void;
-  onSave: (name: string, type: string, otherType: string, content: string) => void;
-}
-
-function DocFormPage({ view, initialName, initialType, initialOtherType, initialContent, saving, onBack, onSave }: DocFormPageProps) {
-  const [name, setName] = useState(initialName);
-  const [type, setType] = useState(initialType);
-  const [otherType, setOtherType] = useState(initialOtherType);
-  const [content, setContent] = useState(initialContent);
-  const isCreate = view === 'create';
-  const isValid = name.trim() !== '' && (type !== 'OTHER' || otherType.trim() !== '');
-
-  return (
-    <PageContent>
-      <Typography variant="h1" sx={{ mb: 3 }}>
-        {isCreate ? 'Create Developer Document' : 'Edit Developer Document'}
-      </Typography>
-
-      <Stack direction="row" gap={2} sx={{ mb: 2 }}>
-        <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter document name here" required size="small" sx={{ width: 280, '& .MuiFormLabel-asterisk': { color: 'error.main' } }} />
-        <FormControl size="small" sx={{ width: 220 }}>
-          <InputLabel>Document Type</InputLabel>
-          <Select label="Document Type" value={type} onChange={(e) => setType(e.target.value as string)}>
-            {DOC_TYPES.map((t) => (
-              <MenuItem key={t.value} value={t.value}>
-                {t.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        {type === 'OTHER' && <TextField label="Custom Document Type" value={otherType} onChange={(e) => setOtherType(e.target.value)} placeholder="Enter custom document type here" required size="small" sx={{ width: 260 }} />}
-      </Stack>
-
-      {/* Editor + preview side by side */}
-      <Paper variant="outlined" sx={{ display: 'flex', overflow: 'hidden', mt: 1 }}>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Suspense
-            fallback={
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 500, bgcolor: '#1e1e1e' }}>
-                <CircularProgress color="inherit" sx={{ color: '#fff' }} />
-              </Box>
-            }>
-            <Editor
-              key={isCreate ? 'new' : initialName}
-              height="500px"
-              language="markdown"
-              theme="vs-dark"
-              defaultValue={content || '# Enter document content'}
-              onChange={(v) => setContent(v ?? '')}
-              options={{
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-                quickSuggestions: false,
-                wordWrap: 'on',
-                lineNumbers: 'on',
-                fontSize: 14,
-              }}
-            />
-          </Suspense>
-        </Box>
-        <Divider orientation="vertical" flexItem />
-        <Box
-          sx={{
-            flex: 1,
-            minWidth: 0,
-            p: 3,
-            overflowY: 'auto',
-            height: 500,
-            '& h1,& h2,& h3,& h4': { mt: 2, mb: 1 },
-            '& p': { mb: 1 },
-            '& code': { fontFamily: 'monospace', bgcolor: 'action.hover', px: 0.5, borderRadius: 0.5, fontSize: '0.875em' },
-            '& pre': { bgcolor: 'action.hover', p: 1.5, borderRadius: 1, overflow: 'auto' },
-            '& ul,& ol': { pl: 2.5 },
-            '& a': { color: 'primary.main' },
-          }}>
-          {content && content !== '# Enter document content' ? (
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-          ) : (
-            <Typography variant="h2" color="text.disabled" sx={{ fontWeight: 400 }}>
-              Enter document content
-            </Typography>
-          )}
-        </Box>
-      </Paper>
-
-      <Stack direction="row" gap={1} sx={{ mt: 3 }}>
-        <Button variant="outlined" onClick={onBack} disabled={saving}>
-          Back
-        </Button>
-        <Button
-          variant="contained"
-          onClick={() => onSave(name.trim(), type, otherType.trim(), content === '# Enter document content' ? '' : content)}
-          disabled={!isValid || saving}
-          startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}>
-          {saving ? 'Saving...' : isCreate ? 'Create' : 'Save'}
-        </Button>
-      </Stack>
-    </PageContent>
-  );
 }
 
 // ── Document content pane (right side of list view) ──────────────────────────
@@ -261,7 +128,7 @@ function DocContentPane({ apimId, doc }: { apimId: string; doc: ApiDocument }) {
   );
 }
 
-// Thin wrapper that exposes fetched content so the parent can prime the editor.
+// Pre-fetches content so the parent can prime the editor immediately on click.
 function DocEditTrigger({ apimId, doc, onEdit }: { apimId: string; doc: ApiDocument; onEdit: (doc: ApiDocument, content: string) => void }) {
   const isInline = doc.sourceType === 'MARKDOWN' || doc.sourceType === 'INLINE';
   const { data: content = '' } = useApimDocumentContent(apimId, doc.documentId, isInline);
@@ -277,14 +144,7 @@ function DocEditTrigger({ apimId, doc, onEdit }: { apimId: string; doc: ApiDocum
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
-  const isUuid = UUID_RE.test(scope.project);
-  const { data: projectByHandler, isLoading: loadingByHandler } = useProjectByHandler(!isUuid ? scope.project : '');
-  const { data: projectById, isLoading: loadingById } = useProject(isUuid ? scope.project : '');
-  const { data: allProjects = [], isLoading: loadingProjects } = useProjects();
-  const projectFromList = !isUuid ? (allProjects.find((p) => p.handler === scope.project) ?? null) : null;
-  const project = projectByHandler ?? projectById ?? projectFromList;
-  const loadingProject = !project && (isUuid ? loadingById : loadingByHandler || loadingProjects);
-
+  const { project, isLoading: loadingProject } = useProjectId(scope.project);
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(project?.id ?? '', scope.component);
   const isLoading = loadingProject || loadingComponent;
 
@@ -325,18 +185,16 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
   const { mutateAsync: changeState, isPending: publishing } = useChangeLifecycleState(selectedApimId);
   const { mutateAsync: updateApim } = useUpdateApimApi();
 
-  const [tab, setTab] = useState(0);
   const [view, setView] = useState<View>('list');
-  const [editingDoc, setEditingDoc] = useState<ApiDocument | null>(null);
-  const [editingInitialContent, setEditingInitialContent] = useState('');
+  const [editing, setEditing] = useState<EditingState | null>(null);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [deleteDocId, setDeleteDocId] = useState<string | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [pendingPublish, setPendingPublish] = useState<string | null>(null);
   const [publishDisplayName, setPublishDisplayName] = useState('');
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const selectedDoc = documents.find((d) => d.documentId === selectedDocId) ?? null;
 
@@ -348,31 +206,31 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
     setSelectedDocId((prev) => (prev && documents.some((d) => d.documentId === prev) ? prev : documents[0].documentId));
   }, [documents]);
 
-  const groupedDocs = useMemo(() => {
+  const filteredGroupedDocs = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
     const groups: Record<string, ApiDocument[]> = {};
     for (const doc of [...documents].sort((a, b) => a.name.localeCompare(b.name))) {
+      if (q && !doc.name.toLowerCase().includes(q)) continue;
       const label = typeLabel(doc);
       if (!groups[label]) groups[label] = [];
       groups[label].push(doc);
     }
     return groups;
-  }, [documents]);
+  }, [documents, searchQuery]);
 
   const openCreate = () => {
-    setEditingDoc(null);
-    setEditingInitialContent('');
+    setEditing(null);
     setView('create');
   };
 
   const openEdit = (doc: ApiDocument, content: string) => {
-    setEditingDoc(doc);
-    setEditingInitialContent(content);
+    setEditing({ doc, content });
     setView('edit');
   };
 
   const handleBack = () => {
     setView('list');
-    setEditingDoc(null);
+    setEditing(null);
   };
 
   const handleSave = async (name: string, type: string, otherType: string, content: string) => {
@@ -390,11 +248,11 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
         await createDoc({ apimId: selectedApimId!, doc: docMeta, content });
         setAlert({ type: 'success', message: 'Document created successfully.' });
       } else {
-        await updateDoc({ apimId: selectedApimId!, docId: editingDoc!.documentId, doc: { ...editingDoc!, ...docMeta }, content });
+        await updateDoc({ apimId: selectedApimId!, docId: editing!.doc.documentId, doc: { ...editing!.doc, ...docMeta }, content });
         setAlert({ type: 'success', message: 'Document updated successfully.' });
       }
       setView('list');
-      setEditingDoc(null);
+      setEditing(null);
     } catch {
       setAlert({ type: 'error', message: isCreate ? 'Failed to create document.' : 'Failed to update document.' });
     }
@@ -412,17 +270,6 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
     setDeleteDocId(null);
     setDeleteConfirmText('');
   };
-
-  const filteredGroupedDocs = useMemo(() => {
-    if (!searchQuery.trim()) return groupedDocs;
-    const q = searchQuery.toLowerCase();
-    const filtered: Record<string, ApiDocument[]> = {};
-    for (const [label, docs] of Object.entries(groupedDocs)) {
-      const matching = docs.filter((d) => d.name.toLowerCase().includes(q));
-      if (matching.length) filtered[label] = matching;
-    }
-    return filtered;
-  }, [groupedDocs, searchQuery]);
 
   const toggleGroup = (label: string) => {
     setCollapsedGroups((prev) => {
@@ -502,10 +349,10 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
         {trackBar}
         <DocFormPage
           view={view}
-          initialName={editingDoc?.name ?? ''}
-          initialType={editingDoc?.type ?? 'HOWTO'}
-          initialOtherType={editingDoc?.otherTypeName ?? ''}
-          initialContent={editingInitialContent}
+          initialName={editing?.doc.name ?? ''}
+          initialType={editing?.doc.type ?? 'HOWTO'}
+          initialOtherType={editing?.doc.otherTypeName ?? ''}
+          initialContent={editing?.content ?? ''}
           saving={creating || updating}
           onBack={handleBack}
           onSave={handleSave}
@@ -515,6 +362,9 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
   }
 
   // ── List view ─────────────────────────────────────────────────────────────
+  const docToDelete = documents.find((d) => d.documentId === deleteDocId) ?? null;
+  const canDelete = deleteConfirmText === docToDelete?.name;
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       {trackBar}
@@ -530,7 +380,7 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
           </Alert>
         )}
 
-        <Tabs value={tab} onChange={(_e, v) => setTab(v as number)} sx={{ mb: 0 }}>
+        <Tabs value={0} sx={{ mb: 0 }}>
           <Tab label="Developer Documents" />
         </Tabs>
 
@@ -621,7 +471,6 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
                     const collapsed = collapsedGroups.has(label);
                     return (
                       <Box key={label}>
-                        {/* Group header with chevron */}
                         <Stack direction="row" alignItems="center" justifyContent="space-between" onClick={() => toggleGroup(label)} sx={{ px: 2, py: 1, mt: 1, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}>
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>
                             {label}
@@ -629,7 +478,6 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
                           {collapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                         </Stack>
 
-                        {/* Doc items */}
                         {!collapsed &&
                           docs.map((doc) => {
                             const isSelected = selectedDocId === doc.documentId;
@@ -688,42 +536,36 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
       {pendingPublish && <ConfirmDialog action={pendingPublish} displayName={publishDisplayName} onDisplayNameChange={setPublishDisplayName} onConfirm={() => void executePublish()} onCancel={() => setPendingPublish(null)} isPending={publishing} />}
 
       {/* Delete confirmation */}
-      {(() => {
-        const deleteDoc = documents.find((d) => d.documentId === deleteDocId);
-        const canDelete = deleteConfirmText === deleteDoc?.name;
-        return (
-          <Dialog
-            open={!!deleteDocId}
-            onClose={() => {
+      <Dialog
+        open={!!deleteDocId}
+        onClose={() => {
+          setDeleteDocId(null);
+          setDeleteConfirmText('');
+        }}
+        maxWidth="sm"
+        fullWidth>
+        <DialogTitle>
+          Are you sure you want to remove the document &lsquo;<strong>{docToDelete?.name}</strong>&rsquo;?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>This action will be irreversible and all related details will be lost. Please type in the document name below to confirm.</DialogContentText>
+          <TextField autoFocus fullWidth placeholder="Enter document name to confirm" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="outlined"
+            onClick={() => {
               setDeleteDocId(null);
               setDeleteConfirmText('');
             }}
-            maxWidth="sm"
-            fullWidth>
-            <DialogTitle>
-              Are you sure you want to remove the document &lsquo;<strong>{deleteDoc?.name}</strong>&rsquo;?
-            </DialogTitle>
-            <DialogContent>
-              <DialogContentText sx={{ mb: 2 }}>This action will be irreversible and all related details will be lost. Please type in the document name below to confirm.</DialogContentText>
-              <TextField autoFocus fullWidth placeholder="Enter document name to confirm" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} />
-            </DialogContent>
-            <DialogActions>
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  setDeleteDocId(null);
-                  setDeleteConfirmText('');
-                }}
-                disabled={deleting}>
-                Cancel
-              </Button>
-              <Button variant="contained" color="error" onClick={handleDeleteConfirm} disabled={!canDelete || deleting} startIcon={deleting ? <CircularProgress size={14} color="inherit" /> : undefined}>
-                {deleting ? 'Deleting...' : 'Delete'}
-              </Button>
-            </DialogActions>
-          </Dialog>
-        );
-      })()}
+            disabled={deleting}>
+            Cancel
+          </Button>
+          <Button variant="contained" color="error" onClick={handleDeleteConfirm} disabled={!canDelete || deleting} startIcon={deleting ? <CircularProgress size={14} color="inherit" /> : undefined}>
+            {deleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
