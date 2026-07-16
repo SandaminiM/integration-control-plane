@@ -178,6 +178,7 @@ const PROJECT_PARENT_MAP: Record<string, string> = {
 // Maps each component-scope leaf nav ID to its expandable parent group ID
 const COMPONENT_PARENT_MAP: Record<string, string> = {
   integration: 'develop',
+  'api-info': 'manage',
   lifecycle: 'develop',
   documents: 'develop',
   plans: 'develop',
@@ -281,6 +282,8 @@ function AppLayoutInner(): JSX.Element {
     const base = `/organizations/${scope.org}/projects/${scope.project}/components/${scope.component}`;
     const rest = pathname.slice(base.length).replace(/^\//, '');
     if (!rest || rest === 'overview') return 'overview';
+    if (rest.startsWith('develop/integration')) return 'integration';
+    if (rest.startsWith('manage/api-info')) return 'api-info';
     if (rest.startsWith('build')) return 'build';
     if (rest.startsWith('deploy')) return 'deploy';
     if (rest.startsWith('test/console')) return 'console';
@@ -289,7 +292,7 @@ function AppLayoutInner(): JSX.Element {
     if (rest.startsWith('test')) return 'test';
     if (rest.startsWith('manage/lifecycle')) return 'lifecycle';
     if (rest.startsWith('documents')) return 'documents';
-    if (rest.startsWith('plans')) return 'plans';
+    if (rest.startsWith('manage/usage')) return 'plans';
     if (rest.startsWith('insights/usage')) return 'usage';
     if (rest.startsWith('insights/delivery')) return 'delivery';
     if (rest.startsWith('insights/compliance')) return 'compliance';
@@ -528,10 +531,11 @@ function AppLayoutInner(): JSX.Element {
   const handleComponentNavSelect = (id: string) => {
     const urlMap: Record<string, string> = {
       overview: `${compBase}/overview`,
-      integration: `${compBase}/overview`,
+      integration: `${compBase}/develop/integration`,
+      'api-info': `${compBase}/manage/api-info`,
       lifecycle: `${compBase}/manage/lifecycle`,
       documents: `${compBase}/documents`,
-      plans: `${compBase}/plans`,
+      plans: `${compBase}/manage/usage`,
       build: `${compBase}/build`,
       deploy: `${compBase}/deploy`,
       test: `${compBase}/test`,
@@ -1308,6 +1312,14 @@ function AppLayoutInner(): JSX.Element {
                           </Sidebar.ItemIcon>
                           <Sidebar.ItemLabel>Integration</Sidebar.ItemLabel>
                         </Sidebar.Item>
+                        {isGenericService && (
+                          <Sidebar.Item id="api-info">
+                            <Sidebar.ItemIcon>
+                              <FileText size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>API Info</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        )}
                         {isGenericService && (
                           <Sidebar.Item id="lifecycle">
                             <Sidebar.ItemIcon>

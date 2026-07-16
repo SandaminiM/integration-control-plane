@@ -8,15 +8,15 @@ Route-level components. Each file corresponds to one route. Same import rules as
 
 ## Import rules
 
-| Allowed | Not allowed |
-|---|---|
-| `src/hooks/*` | `src/api/*` |
-| `src/types/*` | `auth/tokenManager` (data functions — see exception below) |
-| `src/constants/*` | `authenticatedFetch`, `getOrgUuidFromToken` |
-| `src/utils/*` | Any named HTTP client |
-| `src/components/*` | |
-| `src/contexts/*` | |
-| React Router (`useNavigate`, `useParams`) | |
+| Allowed                                   | Not allowed                                                |
+| ----------------------------------------- | ---------------------------------------------------------- |
+| `src/hooks/*`                             | `src/api/*`                                                |
+| `src/types/*`                             | `auth/tokenManager` (data functions — see exception below) |
+| `src/constants/*`                         | `authenticatedFetch`, `getOrgUuidFromToken`                |
+| `src/utils/*`                             | Any named HTTP client                                      |
+| `src/components/*`                        |                                                            |
+| `src/contexts/*`                          |                                                            |
+| React Router (`useNavigate`, `useParams`) |                                                            |
 
 ---
 
@@ -24,10 +24,10 @@ Route-level components. Each file corresponds to one route. Same import rules as
 
 Three pages import directly from `auth/tokenManager`:
 
-| Page | Imported symbols | Why |
-|---|---|---|
+| Page                                          | Imported symbols                                            | Why                                                                          |
+| --------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | `Project.tsx`, `CreateIntegrationOptions.tsx` | `generateAndSaveGitHubState`, `validateAndClearGitHubState` | GitHub OAuth popup CSRF state — pure localStorage utilities, no network call |
-| `OIDCCallback.tsx` | `validateAndClearOIDCState`, `getAndClearRedirectUrl` | OIDC redirect landing — one-shot state extraction on arrival |
+| `OIDCCallback.tsx`                            | `validateAndClearOIDCState`, `getAndClearRedirectUrl`       | OIDC redirect landing — one-shot state extraction on arrival                 |
 
 These are CSRF state helpers, not data access. All other `tokenManager` functions (`getOrgUuidFromToken`, `authenticatedFetch`) must go through hooks.
 
@@ -68,7 +68,9 @@ Use inline flags from `src/features.ts`:
 ```tsx
 import { IS_WIP } from '../features';
 
-{IS_WIP && <BusinessInfo />}
+{
+  IS_WIP && <BusinessInfo />;
+}
 ```
 
 Vite's `define` + Rollup DCE ensures the unused branch is not bundled.

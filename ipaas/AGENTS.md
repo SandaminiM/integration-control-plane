@@ -50,10 +50,10 @@ config/     ← same
 
 `auth/tokenManager.ts` exports two categories of functions:
 
-| Category | Examples | Used in |
-|---|---|---|
-| OAuth CSRF state (pure local storage utilities) | `generateAndSaveGitHubState`, `validateAndClearGitHubState`, `validateAndClearOIDCState`, `getAndClearRedirectUrl` | pages — acceptable |
-| Token/data access | `getOrgUuidFromToken`, `authenticatedFetch` | hooks only, via `useOrgUuid()` |
+| Category                                        | Examples                                                                                                           | Used in                        |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------ |
+| OAuth CSRF state (pure local storage utilities) | `generateAndSaveGitHubState`, `validateAndClearGitHubState`, `validateAndClearOIDCState`, `getAndClearRedirectUrl` | pages — acceptable             |
+| Token/data access                               | `getOrgUuidFromToken`, `authenticatedFetch`                                                                        | hooks only, via `useOrgUuid()` |
 
 Pages may import the OAuth CSRF helpers directly because they are pure client-side state utilities with no cache semantics, not data access.
 
@@ -63,11 +63,11 @@ Pages may import the OAuth CSRF helpers directly because they are pure client-si
 
 This codebase builds three distinct products from one source tree:
 
-| `PRODUCT` | Description |
-|-----------|-------------|
+| `PRODUCT` | Description                      |
+| --------- | -------------------------------- |
 | `wip`     | Choreo v2 / preview-dv (default) |
-| `cloud`   | Choreo v3 / cloud |
-| `icp`     | Local / ICP desktop |
+| `cloud`   | Choreo v3 / cloud                |
+| `icp`     | Local / ICP desktop              |
 
 ### Build-time flags
 
@@ -98,11 +98,11 @@ import { fetchComponents } from '#api/components';
 
 Only the selected product's implementation enters the bundle.
 
-| Directory | Purpose |
-|-----------|---------|
-| `src/api/wip/`   | Real GraphQL/REST implementations (Choreo v2) |
-| `src/api/cloud/` | Placeholder stubs (throw `[cloud] x: not implemented`) |
-| `src/api/icp/`   | Placeholder stubs (throw `[icp] x: not implemented`) |
+| Directory              | Purpose                                                                  |
+| ---------------------- | ------------------------------------------------------------------------ |
+| `src/api/wip/`         | Real GraphQL/REST implementations (Choreo v2)                            |
+| `src/api/cloud/`       | Placeholder stubs (throw `[cloud] x: not implemented`)                   |
+| `src/api/icp/`         | Placeholder stubs (throw `[icp] x: not implemented`)                     |
 | `src/api/contracts.ts` | Single source of truth for function signatures each product must satisfy |
 
 Each product folder has a `_check.ts` that performs compile-time assertion against `contracts.ts`. Drift between any product's exports and the contract becomes a TypeScript error during `tsc`/build.
@@ -121,6 +121,7 @@ import EnvironmentCardBody from '#product/EnvironmentCardBody';
 Vite resolves `#product` → `src/product/${product}/`. Only the selected product's file enters the bundle (DCE preserved).
 
 **Shell pattern** — extract shared structure into a shell component:
+
 ```text
 src/components/EnvironmentCard/EnvironmentCardShell.tsx  ← shared shell
 src/product/icp/EnvironmentCardBody.tsx                  ← icp variant (imports shell)
@@ -152,14 +153,14 @@ See `src/product/README.md` for the full guide.
 
 ## Key technology choices
 
-| Concern | Solution |
-|---|---|
-| Server state / caching | TanStack Query (React Query v5) — `useQuery`, `useMutation`, `useQueryClient` |
-| UI components | `@wso2/oxygen-ui` and `@wso2/oxygen-ui-icons-react` |
-| Routing | React Router v7 (`useNavigate`, `useParams`) |
-| GraphQL | `gql()` helper in `api/graphql.ts` — returns a typed fetch function |
-| Runtime config | `window.API_CONFIG` — shape defined in `src/config/runtimeConfig.ts` |
-| Org UUID | `useOrgUuid()` hook (`src/hooks/useOrgUuid.ts`) — never call `getOrgUuidFromToken()` from UI |
+| Concern                | Solution                                                                                     |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| Server state / caching | TanStack Query (React Query v5) — `useQuery`, `useMutation`, `useQueryClient`                |
+| UI components          | `@wso2/oxygen-ui` and `@wso2/oxygen-ui-icons-react`                                          |
+| Routing                | React Router v7 (`useNavigate`, `useParams`)                                                 |
+| GraphQL                | `gql()` helper in `api/graphql.ts` — returns a typed fetch function                          |
+| Runtime config         | `window.API_CONFIG` — shape defined in `src/config/runtimeConfig.ts`                         |
+| Org UUID               | `useOrgUuid()` hook (`src/hooks/useOrgUuid.ts`) — never call `getOrgUuidFromToken()` from UI |
 
 ---
 

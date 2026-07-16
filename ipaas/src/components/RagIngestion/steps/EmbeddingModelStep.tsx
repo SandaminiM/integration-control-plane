@@ -64,7 +64,10 @@ export default function EmbeddingModelStep({ value, onChange }: EmbeddingModelSt
                   String(selected)
                 ) : (
                   <Typography component="span" color="text.secondary">
-                    Model <Typography component="span" sx={{ color: 'error.main' }}>*</Typography>
+                    Model{' '}
+                    <Typography component="span" sx={{ color: 'error.main' }}>
+                      *
+                    </Typography>
                   </Typography>
                 )
               }>

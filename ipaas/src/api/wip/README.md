@@ -23,10 +23,10 @@ Domain files                (alerts.ts, builds.ts, components.ts, …)
 
 ## Tier 2 — Protocol wrappers
 
-| File | Protocol | Endpoint |
-|------|----------|----------|
-| `graphql.ts` | GraphQL | `window.API_CONFIG.graphqlUrl` |
-| `httpClients.ts` | REST/JSON | configurable per client |
+| File             | Protocol  | Endpoint                       |
+| ---------------- | --------- | ------------------------------ |
+| `graphql.ts`     | GraphQL   | `window.API_CONFIG.graphqlUrl` |
+| `httpClients.ts` | REST/JSON | configurable per client        |
 
 `createHttpClient(getBaseUrl)` is the REST factory. It handles JSON serialisation, `Content-Type` headers, error throwing on non-2xx, and response parsing. The optional third parameter on `post/put/delete` accepts custom headers (e.g. `application/x-www-form-urlencoded`).
 
@@ -36,25 +36,25 @@ Domain files                (alerts.ts, builds.ts, components.ts, …)
 
 All defined in `httpClients.ts`. Import the relevant client in domain files — never construct base URLs manually.
 
-| Client | Backend service | Base URL source |
-|--------|----------------|-----------------|
-| `authClient` | Auth service — users, roles, groups | `authBaseUrl` |
-| `systemClient` | System APIs — task logs, build logs | `systemApisBaseUrl` |
-| `apimClient` | APIM Publisher | `apimBaseUrl` |
-| `obsClient` | Observability — metrics, runtime logs | `observabilityUrl` |
-| `choreoClient` | Choreo Platform API (all `choreoBaseApiUrl` services) | `choreoBaseApiUrl` |
-| `subscriptionsClient` | Subscriptions service | `subscriptionsApiUrl` |
-| `insightsClient` | Choreo Insights | `insightsBaseUrl` |
-| `copilotDatacollectorClient` | AI Copilot data collector | `aiCopilotDatacollectorBaseUrl` |
+| Client                       | Backend service                                       | Base URL source                 |
+| ---------------------------- | ----------------------------------------------------- | ------------------------------- |
+| `authClient`                 | Auth service — users, roles, groups                   | `authBaseUrl`                   |
+| `systemClient`               | System APIs — task logs, build logs                   | `systemApisBaseUrl`             |
+| `apimClient`                 | APIM Publisher                                        | `apimBaseUrl`                   |
+| `obsClient`                  | Observability — metrics, runtime logs                 | `observabilityUrl`              |
+| `choreoClient`               | Choreo Platform API (all `choreoBaseApiUrl` services) | `choreoBaseApiUrl`              |
+| `subscriptionsClient`        | Subscriptions service                                 | `subscriptionsApiUrl`           |
+| `insightsClient`             | Choreo Insights                                       | `insightsBaseUrl`               |
+| `copilotDatacollectorClient` | AI Copilot data collector                             | `aiCopilotDatacollectorBaseUrl` |
 
 ## Tier 3 — 403 retry helpers
 
 Also exported from `httpClients.ts`. Use these instead of calling `authenticatedFetch` directly:
 
-| Helper | When to use |
-|--------|-------------|
-| `withStsRetry(fn)` | Token is unscoped (no org UUID in token); STS configured. Refreshes + retries once. |
-| `withScopeRetry(fn)` | APIM scope validation error (code 900910). Refreshes + retries once. |
+| Helper               | When to use                                                                         |
+| -------------------- | ----------------------------------------------------------------------------------- |
+| `withStsRetry(fn)`   | Token is unscoped (no org UUID in token); STS configured. Refreshes + retries once. |
+| `withScopeRetry(fn)` | APIM scope validation error (code 900910). Refreshes + retries once.                |
 
 ---
 
@@ -62,8 +62,8 @@ Also exported from `httpClients.ts`. Use these instead of calling `authenticated
 
 Only one domain file calls `authenticatedFetch` directly. All other 403 retry cases use the helpers above.
 
-| Location | Reason |
-|----------|--------|
+| Location                            | Reason                                                                                                           |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `copilot.ts` — `getAiCopilotAnswer` | Caller-provided URL, streaming `Response`, and custom per-request headers — incompatible with `createHttpClient` |
 
 `graphql.ts` and `httpClients.ts` call `authenticatedFetch` internally — expected, as they are the transport layer.

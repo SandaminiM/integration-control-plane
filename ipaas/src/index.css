@@ -61,7 +61,7 @@ body {
 /* Minimal scrollbar — transparent track, light-grey thumb only */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.30) transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -74,7 +74,7 @@ body {
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.30);
+  background-color: rgba(0, 0, 0, 0.3);
   border-radius: 3px;
 }
 

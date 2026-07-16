@@ -18,8 +18,24 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { changeLifecycleState, deploySettingsV2, fetchApimApi, fetchApimSwagger, fetchLifecycleHistory, fetchLifecycleState, generateTestKey, updateApimApi } from '#api/apim';
-import type { ApimApiInfo, DeploySettingsV2Payload, GeneratedTestKey, LifecycleHistory, LifecycleState } from '../types/apim';
+import {
+  changeLifecycleState,
+  deploySettingsV2,
+  fetchApimApi,
+  fetchApimOverview,
+  fetchApimSwagger,
+  fetchApimThumbnail,
+  fetchLifecycleHistory,
+  fetchLifecycleState,
+  fetchMarketplaceService,
+  generateTestKey,
+  saveApimOverview,
+  saveApimThumbnail,
+  saveMarketplaceService,
+  updateApimApi,
+} from '#api/apim';
+import type { ApimApiInfo, DeploySettingsV2Payload, GeneratedTestKey, LifecycleHistory, LifecycleState, MarketplaceService } from '../types/apim';
+import type { EnvEndpoint } from '../types/component';
 
 export function useApimApi(apimId: string | undefined | null) {
   return useQuery<ApimApiInfo | null>({
@@ -61,6 +77,46 @@ export function useChangeLifecycleState(apimId: string | null | undefined) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['lifecycleState', apimId] });
       qc.invalidateQueries({ queryKey: ['lifecycleHistory', apimId] });
+    },
+  });
+}
+
+export function useApimOverview(apimId: string | undefined | null) {
+  return useQuery<string>({
+    queryKey: ['apimOverview', apimId],
+    queryFn: () => fetchApimOverview(apimId!),
+    enabled: !!apimId,
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+export function useUpdateApimOverview() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ apimId, content }: { apimId: string; content: string }) => saveApimOverview(apimId, content),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ['apimOverview', vars.apimId] });
+    },
+  });
+}
+
+export function useMarketplaceService(componentId: string | undefined | null, version: string | undefined | null, endpoint: EnvEndpoint | null | undefined) {
+  return useQuery<MarketplaceService | null>({
+    queryKey: ['marketplaceService', componentId, version, endpoint?.id],
+    queryFn: () => fetchMarketplaceService(componentId!, version!, endpoint!),
+    enabled: !!componentId && !!version && !!endpoint,
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+export function useUpdateMarketplaceService() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ serviceId, service }: { serviceId: string; service: MarketplaceService }) => saveMarketplaceService(serviceId, service),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['marketplaceService'] });
     },
   });
 }
@@ -135,5 +191,25 @@ export function useApimSwagger(apimId: string | undefined | null) {
     enabled: !!apimId,
     staleTime: 60_000,
     retry: false,
+  });
+}
+
+export function useApimThumbnail(apimId: string | null | undefined, hasThumbnail: boolean) {
+  return useQuery<string | null>({
+    queryKey: ['apimThumbnail', apimId],
+    queryFn: () => fetchApimThumbnail(apimId!),
+    enabled: !!apimId && hasThumbnail,
+    staleTime: 60_000,
+    retry: false,
+  });
+}
+
+export function useUpdateApimThumbnail() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ apimId, file }: { apimId: string; file: File }) => saveApimThumbnail(apimId, file),
+    onSuccess: (_data, { apimId }) => {
+      queryClient.invalidateQueries({ queryKey: ['apimThumbnail', apimId] });
+    },
   });
 }

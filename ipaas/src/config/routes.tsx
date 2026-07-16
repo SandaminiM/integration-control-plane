@@ -47,6 +47,8 @@ const OrgHome = lazy(() => import('../pages/OrgHome'));
 const Projects = lazy(() => import('../pages/Projects'));
 const Project = lazy(() => import('../pages/Project'));
 const Component = lazy(() => import('../pages/Component'));
+const ComponentIntegration = lazy(() => import('../pages/ComponentIntegration'));
+const ComponentApiInfo = lazy(() => import('../pages/ComponentApiInfo'));
 const CreateProject = lazy(() => import('../pages/CreateProject'));
 const ImportProject = lazy(() => import('../pages/ImportProject'));
 const CreateIntegrationOptions = lazy(() => import('../pages/CreateIntegrationOptions'));
@@ -140,6 +142,7 @@ const ComponentStorage = lazy(() => import('../pages/ComponentStorage'));
 const ComponentScaling = lazy(() => import('../pages/ComponentScaling'));
 const NewConnection = lazy(() => import('../pages/NewConnection'));
 const ConnectionDetail = lazy(() => import('../pages/ConnectionDetail'));
+const ComponentPlans = lazy(() => import('../pages/ComponentPlans'));
 
 export interface AppRoute extends Omit<RouteProps, 'children'> {
   children?: AppRoute[];
@@ -256,6 +259,8 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/home', element: createElement(withScope(OrgHome, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/home', element: createElement(withScope(Project, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/overview', element: createElement(withScope(Component, ['components'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/develop/integration', element: createElement(withScope(ComponentIntegration, ['components'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/api-info', element: createElement(withScope(ComponentApiInfo, ['components'])) },
               { path: 'organizations/:orgHandler/projects/new', element: createElement(withScope(CreateProject, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/import', element: createElement(withScope(ImportProject, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new', element: createElement(withScope(CreateIntegrationOptions, ['projects'])) },
@@ -326,8 +331,8 @@ const routes: AppRoute[] = [
                 element: <ComingSoon title="Coming Soon" description="API documentation is currently under development. You'll be able to manage your API documents directly from here." />,
               },
               {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/plans',
-                element: <ComingSoon title="Coming Soon" description="Subscription plans management is currently under development." />,
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/usage',
+                element: createElement(withScope(ComponentPlans, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/deploy',

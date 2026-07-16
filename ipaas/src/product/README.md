@@ -18,10 +18,10 @@ src/product/
 
 ## Aliases
 
-| Alias        | Resolves to (build time)    | TS path mapping       |
-|--------------|-----------------------------|----------------------:|
-| `#api/*`     | `src/api/<product>/*`       | → `src/api/wip/*`     |
-| `#product/*` | `src/product/<product>/*`   | → `src/product/wip/*` |
+| Alias        | Resolves to (build time)  |       TS path mapping |
+| ------------ | ------------------------- | --------------------: |
+| `#api/*`     | `src/api/<product>/*`     |     → `src/api/wip/*` |
+| `#product/*` | `src/product/<product>/*` | → `src/product/wip/*` |
 
 Vite replaces these at build time. Only the selected product's files enter the bundle — the other two products are eliminated by Rollup dead code elimination (DCE).
 
@@ -29,12 +29,12 @@ Vite replaces these at build time. Only the selected product's files enter the b
 
 ## Decision table — when to use `#product`
 
-| Situation | Approach |
-|-----------|----------|
-| 1–2 element toggle (e.g. hide a button) | `IS_ICP` / `IS_WIP` inline in the shared component |
-| Many toggles following a consistent pattern | `productConfig` in `src/product-config.ts` |
-| Whole component renders completely differently | `#product/ComponentName` alias |
-| Page only exists in one product | stays in `src/pages/`, route gated in `src/config/routes.tsx` |
+| Situation                                      | Approach                                                      |
+| ---------------------------------------------- | ------------------------------------------------------------- |
+| 1–2 element toggle (e.g. hide a button)        | `IS_ICP` / `IS_WIP` inline in the shared component            |
+| Many toggles following a consistent pattern    | `productConfig` in `src/product-config.ts`                    |
+| Whole component renders completely differently | `#product/ComponentName` alias                                |
+| Page only exists in one product                | stays in `src/pages/`, route gated in `src/config/routes.tsx` |
 
 When in doubt, start with an inline `IS_ICP` flag. Only extract to `#product` when the component becomes hard to read or the diff grows large.
 
