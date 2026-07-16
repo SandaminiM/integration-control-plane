@@ -38,7 +38,7 @@ interface HeatmapProps {
 export default function Heatmap({ data, color, cellWidth = 40, cellHeight = 40, everyCol }: HeatmapProps): JSX.Element {
   const theme = useTheme();
   const dark = theme.palette.mode === 'dark';
-  const axisColor = dark ? 'rgba(208,211,226,0.55)' : 'rgba(64,64,75,0.55)';
+  const axisColor = dark ? 'rgba(234, 235, 243, 0.55)' : 'rgba(29, 29, 33, 0.55)';
   const { rows, cols, cells, max } = data;
 
   if (rows.length === 0 || cols.length === 0) {

@@ -16,18 +16,20 @@
  * under the License.
  */
 
-import { Alert, Avatar, Box, Button, Chip, CircularProgress, ListingTable, MenuItem, PageContent, PageTitle, Skeleton, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography, useTheme } from '@wso2/oxygen-ui';
-import { Download, Zap, Globe } from '@wso2/oxygen-ui-icons-react';
+import { Alert, Avatar, Box, Button, Chip, CircularProgress, ListingTable, MenuItem, PageContent, PageTitle, Skeleton, Stack, StatCard, TextField, ToggleButton, ToggleButtonGroup, Typography, useTheme } from '@wso2/oxygen-ui';
+import { Download, Zap, Globe, AlertTriangle, XCircle } from '@wso2/oxygen-ui-icons-react';
 import { AreaChart } from '@wso2/oxygen-ui-charts-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useProjectId } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
+import { useEnvironments } from '../hooks/useEnvironments';
 import { useInsightsEnvironments } from '../hooks/useInsights';
 import { useProjectInsights, useProjectLatencyTrend } from '../hooks/useProjectInsights';
+import { useIntegrationDeploymentStatuses } from '../hooks/useDeployments';
 import { identifyIntegration } from '../utils/identifyIntegration';
-import type { InsightsApiRef, InsightsRange, IntegrationStatus, ProjectInsightsKpi } from '../types/insights';
+import type { InsightsApiRef, InsightsRange } from '../types/insights';
 import type { ProjectScope } from '../nav';
 
 const RANGES: { value: InsightsRange; label: string }[] = [
@@ -37,29 +39,24 @@ const RANGES: { value: InsightsRange; label: string }[] = [
   { value: '3mo', label: '3mo' },
 ];
 
-// `auto` (#3B82F6) validated against api/error with the dataviz palette
-// checker: CVD ΔE ≥ 87.9 for the worst adjacent pair, passes light & dark.
-const CHART = { api: '#F47B20', auto: '#3B82F6', error: '#EF4444', success: '#2E9E5B', failure: '#EF4444', timeout: '#ED6C02', median: '#569CD6' };
-const STATUS_COLOR: Record<IntegrationStatus, 'success' | 'warning' | 'error'> = { Healthy: 'success', Degraded: 'warning', Down: 'error' };
+// Pastel set validated with the dataviz palette checker: lightness band,
+// chroma floor and adjacent-pair CVD pass; low surface contrast relieved by legends/tooltips.
+const CHART = { api: '#E8964A', auto: '#64B5F6', error: '#E57373', success: '#81C784', failure: '#E57373', timeout: '#D9A63F' };
 
-function KpiTile({ kpi }: { kpi: ProjectInsightsKpi }): JSX.Element {
-  return (
-    <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ minHeight: 20 }}>
-        <Typography variant="caption" color="text.secondary">
-          {kpi.label}
-        </Typography>
-        {kpi.delta && <Chip size="small" label={kpi.delta} color={kpi.deltaGood ? 'success' : 'error'} variant="outlined" sx={{ height: 20, '& .MuiChip-label': { px: 1, fontSize: 11 } }} />}
-      </Stack>
-      <Typography variant="h5" sx={{ mt: 1, fontWeight: 500, color: kpi.danger ? 'error.main' : 'text.primary' }}>
-        {kpi.value}
-      </Typography>
-      <Typography variant="caption" color="text.secondary">
-        {kpi.sub}
-      </Typography>
-    </Box>
-  );
-}
+const KPI_ICONS: Record<string, { icon: JSX.Element; color: 'primary' | 'error' | 'info' | 'warning' }> = {
+  traffic: { icon: <Globe size={24} />, color: 'primary' },
+  executions: { icon: <Zap size={24} />, color: 'info' },
+  errorRequests: { icon: <AlertTriangle size={24} />, color: 'error' },
+  failedExecutions: { icon: <XCircle size={24} />, color: 'error' },
+};
+
+const DEPLOYMENT_STATUS_CHIP: Record<string, { label: string; color: 'success' | 'warning' | 'error' | 'default' }> = {
+  ACTIVE: { label: 'Active', color: 'success' },
+  IN_PROGRESS: { label: 'In Progress', color: 'warning' },
+  ERROR: { label: 'Error', color: 'error' },
+  SUSPENDED: { label: 'Suspended', color: 'default' },
+  NOT_DEPLOYED: { label: 'Not Deployed', color: 'default' },
+};
 
 function Card({ title, subtitle, action, children }: { title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode }): JSX.Element {
   return (
@@ -89,7 +86,7 @@ function downloadInsightsCsv(
   data: {
     kpis: { label: string; value: string }[];
     trend: { label: string; apiRequests: number; automationRuns: number; automationErrors: number; errors: number }[];
-    integrations: { name: string; type: string; volume: string; errorRate: string | null; latency: string; last: string; status: string }[];
+    integrations: { name: string; type: string; successCount: string; errorCount: string; latency: string; last: string; status: string }[];
   },
 ): void {
   const esc = (v: unknown) => `"${String(v ?? '').replaceAll('"', '""')}"`;
@@ -107,9 +104,9 @@ function downloadInsightsCsv(
     row('Bucket', 'API Requests', 'API Errors', 'Automation Runs', 'Automation Failures'),
     ...data.trend.map((p) => row(p.label, p.apiRequests, p.errors, p.automationRuns, p.automationErrors)),
     '',
-    row('Integration', 'Type', 'Volume', 'Error Rate', 'Avg Latency', 'Last Run', 'Status'),
+    row('Integration', 'Type', 'Success Count', 'Error Count', 'Avg Latency', 'Last Run', 'Status'),
     ...data.integrations.map((r) =>
-      row(r.name, r.type === 'auto' ? 'Automation' : r.type === 'rag' ? 'RAG Ingestion' : r.type === 'agent' ? 'AI Agent' : r.type === 'mcp' ? 'MCP Server' : r.type === 'webhook' ? 'Webhook' : 'API', r.volume, r.errorRate ?? '—', r.latency, r.last, r.status),
+      row(r.name, r.type === 'auto' ? 'Automation' : r.type === 'rag' ? 'RAG Ingestion' : r.type === 'agent' ? 'AI Agent' : r.type === 'mcp' ? 'MCP Server' : r.type === 'webhook' ? 'Webhook' : 'Integration as API', r.successCount, r.errorCount, r.latency, r.last, r.status),
     ),
   ];
   const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
@@ -131,6 +128,7 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
 
   const { data: components } = useComponents(org, projectId);
   const { data: envs } = useInsightsEnvironments(orgUuid, projectId);
+  const { data: projectEnvs } = useEnvironments(orgUuid, projectId);
 
   const [range, setRange] = useState<InsightsRange>('7d');
   const [envId, setEnvId] = useState<string>('');
@@ -169,8 +167,12 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
   const activeEnv = envId || envOptions[0]?.id || 'production';
   const selectedEnv = useMemo(() => envs?.find((e) => (e.externalEnvId || e.id) === activeEnv) ?? null, [envs, activeEnv]);
 
+  const deploymentEnvId = useMemo(() => (projectEnvs ?? []).find((e) => e.name === selectedEnv?.name)?.id ?? projectEnvs?.[0]?.id ?? '', [projectEnvs, selectedEnv]);
+  const allIntegrations = useMemo(() => [...apis, ...automations].map((c) => ({ id: c.id, handler: c.handler })), [apis, automations]);
+  const { data: statusMap } = useIntegrationDeploymentStatuses(org, orgUuid, projectId, allIntegrations, deploymentEnvId);
+
   const real = useProjectInsights(orgUuid, projectId, selectedEnv, apis, automations, range);
-  const latencyTrend = useProjectLatencyTrend(orgUuid, projectId, selectedEnv, apis, range, trendMode === 'latency');
+  const latencyTrend = useProjectLatencyTrend(orgUuid, projectId, selectedEnv, range, trendMode === 'latency');
 
   const data = real.data;
 
@@ -180,7 +182,7 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
     return (
       <PageContent>
         <PageTitle>
-          <PageTitle.Header>Insights</PageTitle.Header>
+          <PageTitle.Header>Usage Insights</PageTitle.Header>
         </PageTitle>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2, mb: 2 }}>
           {[0, 1, 2, 3].map((i) => (
@@ -198,13 +200,19 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
 
   // const total = data.trend.reduce((a, p) => a + p.apiRequests, 0);
   const activeEnvName = envOptions.find((e) => e.id === activeEnv)?.name ?? activeEnv;
-  const handleDownloadReport = () => downloadInsightsCsv(projectData?.name ?? project, activeEnvName, range, data);
+  const handleDownloadReport = () => {
+    const enrichedIntegrations = data.integrations.map((r) => ({
+      ...r,
+      status: r.deleted ? 'Deleted' : (DEPLOYMENT_STATUS_CHIP[statusMap?.[r.id] ?? 'NOT_DEPLOYED']?.label ?? 'Not Deployed'),
+    }));
+    downloadInsightsCsv(projectData?.name ?? project, activeEnvName, range, { ...data, integrations: enrichedIntegrations });
+  };
 
   return (
     <PageContent>
       {/* ---------- Header + controls row beneath it ---------- */}
       <PageTitle>
-        <PageTitle.Header>Insights</PageTitle.Header>
+        <PageTitle.Header>Usage Insights</PageTitle.Header>
       </PageTitle>
 
       <Stack direction="row" alignItems="center" justifyContent="flex-end" flexWrap="wrap" gap={1.5} sx={{ mb: 2 }}>
@@ -233,7 +241,7 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
           the whole row. */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2, mb: 2 }}>
         {data.kpis.map((k) => (
-          <KpiTile key={k.key} kpi={k} />
+          <StatCard key={k.key} value={k.value} label={k.label} icon={KPI_ICONS[k.key]?.icon} iconColor={KPI_ICONS[k.key]?.color} />
         ))}
       </Box>
 
@@ -244,6 +252,8 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
             <AreaChart
               data={data.trend}
               xAxisDataKey="label"
+              xAxis={{show: true, name: 'Date'}}
+              yAxis={{show: true, name: 'Executions & Errors'}}
               height={320}
               colors={[CHART.auto, CHART.error]}
               areas={[
@@ -259,7 +269,7 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
         </Card>
         <Card
           title={trendMode === 'latency' ? 'API Latency Trend' : trendMode === 'traffic' ? 'API Traffic Trend' : 'API Requests & Errors Trend'}
-          subtitle={trendMode === 'latency' ? 'p95 vs median latency (ms)' : trendMode === 'traffic' ? 'Successful vs error responses' : 'API traffic with error volume'}
+          subtitle={trendMode === 'latency' ? 'Average latency (ms)' : trendMode === 'traffic' ? 'Successful vs error responses' : 'API traffic with error volume'}
           action={
             <TextField select size="small" value={trendMode} onChange={(e) => setTrendMode(e.target.value as 'requests' | 'traffic' | 'latency')} sx={{ minWidth: 140 }}>
               <MenuItem value="requests">API Requests</MenuItem>
@@ -275,12 +285,11 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
                 <AreaChart
                   data={latencyTrend.data}
                   xAxisDataKey="label"
+                  xAxis={{ show: true, name: 'Date' }}
+                  yAxis={{ show: true, name: 'Latency (ms)' }}
                   height={320}
-                  colors={[CHART.api, CHART.median]}
-                  areas={[
-                    { dataKey: 'p95', name: 'p95', type: 'monotone', stroke: CHART.api, fill: CHART.api, fillOpacity: 0.2 },
-                    { dataKey: 'median', name: 'Median', type: 'monotone', stroke: CHART.median, fill: CHART.median, fillOpacity: 0.2 },
-                  ]}
+                  colors={[CHART.api]}
+                  areas={[{ dataKey: 'latency', name: 'Avg Latency (ms)', type: 'monotone', stroke: CHART.api, fill: CHART.api, fillOpacity: 0.2 }]}
                   legend={{ show: true, verticalAlign: 'top' }}
                   margin={{ top: 16 }}
                   tooltip={{ show: true }}
@@ -291,6 +300,8 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
               <AreaChart
                 data={data.trend.map((p) => ({ label: p.label, success: Math.max(0, p.apiRequests - p.errors), errors: p.errors }))}
                 xAxisDataKey="label"
+                xAxis={{ show: true, name: 'Date' }}
+                yAxis={{ show: true, name: 'Traffic' }}
                 height={320}
                 colors={[CHART.success, CHART.error]}
                 areas={[
@@ -306,6 +317,8 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
               <AreaChart
                 data={data.trend}
                 xAxisDataKey="label"
+                xAxis={{ show: true, name: 'Date' }}
+                yAxis={{ show: true, name: 'Requests & Errors' }}
                 height={320}
                 colors={[CHART.api, CHART.error]}
                 areas={[
@@ -331,10 +344,10 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
             <ListingTable>
               <ListingTable.Head>
                 <ListingTable.Row>
-                  <ListingTable.Cell>Integration</ListingTable.Cell>
-                  <ListingTable.Cell>Type</ListingTable.Cell>
-                  <ListingTable.Cell align="right">Volume</ListingTable.Cell>
-                  <ListingTable.Cell align="right">Error Rate</ListingTable.Cell>
+                  <ListingTable.Cell>Integration Name</ListingTable.Cell>
+                  <ListingTable.Cell>Integration Type</ListingTable.Cell>
+                  <ListingTable.Cell align="right">Success Count</ListingTable.Cell>
+                  <ListingTable.Cell align="right">Error Count</ListingTable.Cell>
                   <ListingTable.Cell align="right">Avg Latency</ListingTable.Cell>
                   <ListingTable.Cell>Status</ListingTable.Cell>
                 </ListingTable.Row>
@@ -363,16 +376,23 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
                       <Chip
                         size="small"
                         variant="outlined"
-                        label={row.type === 'auto' ? 'Automation' : row.type === 'rag' ? 'RAG Ingestion' : row.type === 'agent' ? 'AI Agent' : row.type === 'mcp' ? 'MCP Server' : row.type === 'webhook' ? 'Webhook' : 'API'}
+                        label={row.type === 'auto' ? 'Automation' : row.type === 'rag' ? 'RAG Ingestion' : row.type === 'agent' ? 'AI Agent' : row.type === 'mcp' ? 'MCP Server' : row.type === 'webhook' ? 'Webhook' : 'Integration as API'}
                       />
                     </ListingTable.Cell>
-                    <ListingTable.Cell align="right">{row.volume}</ListingTable.Cell>
-                    <ListingTable.Cell align="right" sx={{ color: row.errorRate && parseFloat(row.errorRate) >= 3 ? theme.palette.error.main : undefined }}>
-                      {row.errorRate ?? '—'}
+                    <ListingTable.Cell align="right">{row.successCount}</ListingTable.Cell>
+                    <ListingTable.Cell align="right" sx={{ color: row.errorCount !== '—' && row.errorCount !== '0' ? theme.palette.error.main : undefined }}>
+                      {row.errorCount}
                     </ListingTable.Cell>
                     <ListingTable.Cell align="right">{row.latency}</ListingTable.Cell>
                     <ListingTable.Cell>
-                      <Chip size="small" label={row.status} color={STATUS_COLOR[row.status]} variant="outlined" />
+                      {row.deleted ? (
+                        <Chip size="small" label="Deleted" variant="outlined" />
+                      ) : (
+                        (() => {
+                          const s = DEPLOYMENT_STATUS_CHIP[statusMap?.[row.id] ?? 'NOT_DEPLOYED'] ?? DEPLOYMENT_STATUS_CHIP.NOT_DEPLOYED;
+                          return <Chip size="small" label={s.label} color={s.color === 'default' ? undefined : s.color} variant="outlined" />;
+                        })()
+                      )}
                     </ListingTable.Cell>
                   </ListingTable.Row>
                 ))}

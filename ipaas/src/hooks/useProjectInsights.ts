@@ -20,26 +20,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { fetchProjectInsights, fetchProjectLatencyTrend } from '#api/insights';
 import { useInsightsQueryUrl } from './useInsights';
-import type { InsightsApiRef, InsightsAutomationRef, InsightsEnvironment, InsightsRange, IntegrationStatus, ProjectComponentStat, ProjectHealthSlice, ProjectInsightsData, ProjectInsightsRaw } from '../types/insights';
+import type { InsightsApiRef, InsightsAutomationRef, InsightsEnvironment, InsightsRange, ProjectComponentStat, ProjectHealthSlice, ProjectInsightsData, ProjectInsightsRaw } from '../types/insights';
 
 const fmt = (n: number): string => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(2)}M` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${Math.round(n)}`);
-
-function statusFor(stat: ProjectComponentStat): IntegrationStatus {
-  if (stat.errorRate == null) return 'Healthy';
-  if (stat.errorRate >= 10) return 'Down';
-  if (stat.errorRate >= 3) return 'Degraded';
-  return 'Healthy';
-}
 
 // ---------- shared formatter (real + mock feed into this) ----------
 
 export function toProjectInsightsData(raw: ProjectInsightsRaw): ProjectInsightsData {
-  const errorRate = raw.totalRequests > 0 ? (raw.totalErrors / raw.totalRequests) * 100 : 0;
-  const apiCount = raw.components.filter((c) => c.type === 'api').length;
-  const agentCount = raw.components.filter((c) => c.type === 'agent').length;
-  const mcpCount = raw.components.filter((c) => c.type === 'mcp').length;
-  const webhookCount = raw.components.filter((c) => c.type === 'webhook').length;
-
   // Health combines API traffic with automation executions (getTaskExecutionStats)
   // so a project with only automations still gets a real health split — plus the
   // timeout slice, which only automations produce.
@@ -55,17 +42,10 @@ export function toProjectInsightsData(raw: ProjectInsightsRaw): ProjectInsightsD
 
   return {
     kpis: [
-      {
-        key: 'requests',
-        label: 'Total API Requests',
-        value: fmt(raw.totalRequests),
-        sub: `${apiCount} Integrations as API${agentCount > 0 ? ` · ${agentCount} AI Agents` : ''}${mcpCount > 0 ? ` · ${mcpCount} MCP Servers` : ''}${webhookCount > 0 ? ` · ${webhookCount} Webhooks` : ''}`,
-        delta: '',
-        deltaGood: true,
-      },
+      { key: 'traffic', label: 'Total Traffic', value: fmt(raw.totalTraffic), sub: 'Across all APIs', delta: '', deltaGood: true },
       { key: 'executions', label: 'Total Executions', value: fmt(stats?.totalExecutions ?? 0), sub: `${autoCount} Automations${ragCount > 0 ? ` · ${ragCount} RAG ingestions` : ''}`, delta: '', deltaGood: true },
-      { key: 'errors', label: 'Total Errors', value: fmt(raw.totalErrors), sub: 'Across all APIs', delta: '', deltaGood: false, danger: true },
-      { key: 'errorRate', label: 'Error Rate', value: `${errorRate.toFixed(1)}%`, sub: 'Across all traffic', delta: '', deltaGood: true, danger: true },
+      { key: 'errorRequests', label: 'Error Request Count', value: fmt(raw.totalTrafficErrors), sub: 'Across all APIs', delta: '', deltaGood: false, danger: true },
+      { key: 'failedExecutions', label: 'Failed Executions', value: fmt(stats?.failedJobs ?? 0), sub: 'Across all automations', delta: '', deltaGood: false, danger: true },
     ],
     trend: raw.trend.map((p) => ({ label: p.label, apiRequests: p.apiRequests, automationRuns: p.automationRuns, automationErrors: p.automationErrors, errors: p.errors })),
     health: (
@@ -80,13 +60,13 @@ export function toProjectInsightsData(raw: ProjectInsightsRaw): ProjectInsightsD
       id: c.id,
       name: c.name,
       handler: c.handler,
-      desc: c.type === 'api' ? 'API integration' : c.type === 'agent' ? 'AI Agent' : c.type === 'mcp' ? 'MCP Server' : c.type === 'webhook' ? 'Webhook' : c.type === 'rag' ? 'RAG ingestion' : 'Automation',
+      desc: c.deleted ? 'Deleted integration' : c.type === 'api' ? 'API integration' : c.type === 'agent' ? 'AI Agent' : c.type === 'mcp' ? 'MCP Server' : c.type === 'webhook' ? 'Webhook' : c.type === 'rag' ? 'RAG ingestion' : 'Automation',
       type: c.type,
-      volume: c.requestCount != null ? `${fmt(c.requestCount)} ${c.type === 'auto' || c.type === 'rag' ? 'runs' : 'req'}` : '—',
-      errorRate: c.errorRate != null ? `${c.errorRate}%` : null,
+      successCount: c.requestCount != null ? fmt(Math.max(0, (c.requestCount ?? 0) - (c.errorCount ?? 0))) : '—',
+      errorCount: c.errorCount != null ? fmt(c.errorCount) : '—',
       latency: c.latency != null ? `${c.latency} ms` : '—',
       last: c.last ?? '—',
-      status: statusFor(c),
+      deleted: c.deleted,
     })),
   };
 }
@@ -120,6 +100,8 @@ export function useProjectInsights(orgUuid: string, projectId: string, insightsE
       totalRequests: 0,
       totalErrors: 0,
       avgLatency: 0,
+      totalTraffic: 0,
+      totalTrafficErrors: 0,
       trend: [],
       components: [
         ...apis.map((a): ProjectComponentStat => ({ id: a.id, name: a.name, handler: a.handler, type: a.kind, requestCount: 0, errorCount: 0, errorRate: 0, latency: 0 })),
@@ -135,13 +117,12 @@ export function useProjectInsights(orgUuid: string, projectId: string, insightsE
 
 // Lazy latency trend for the project trend card's "Latency" mode — only
 // fetched while that mode is selected.
-export function useProjectLatencyTrend(orgUuid: string, projectId: string, insightsEnv: InsightsEnvironment | null, apis: InsightsApiRef[], range: InsightsRange, active: boolean) {
+export function useProjectLatencyTrend(orgUuid: string, projectId: string, insightsEnv: InsightsEnvironment | null, range: InsightsRange, active: boolean) {
   const queryApiUrl = useInsightsQueryUrl(orgUuid);
-  const enabled = active && !!orgUuid && !!insightsEnv && apis.length > 0 && !!queryApiUrl;
-  const apiKey = apis.map((a) => a.apiId).join(',');
+  const enabled = active && !!orgUuid && !!insightsEnv && !!queryApiUrl;
   const query = useQuery({
-    queryKey: ['projectLatencyTrend', orgUuid, projectId, insightsEnv?.id ?? null, range, apiKey, queryApiUrl],
-    queryFn: () => fetchProjectLatencyTrend(orgUuid, projectId, insightsEnv!, apis, range, queryApiUrl!),
+    queryKey: ['projectLatencyTrend', orgUuid, projectId, insightsEnv?.id ?? null, range, queryApiUrl],
+    queryFn: () => fetchProjectLatencyTrend(orgUuid, projectId, insightsEnv!, range, queryApiUrl!),
     enabled,
     staleTime: 60_000,
   });
@@ -186,6 +167,8 @@ export function useMockProjectInsights(projectId: string, range: InsightsRange, 
       totalRequests: api.reduce((a, b) => a + b, 0),
       totalErrors: errs.reduce((a, b) => a + b, 0),
       avgLatency: 238,
+      totalTraffic: api.reduce((a, b) => a + b, 0),
+      totalTrafficErrors: errs.reduce((a, b) => a + b, 0),
       trend: api.map((_, i) => ({ label: label(i), apiRequests: api[i], automationRuns: autos[i], automationErrors: autoErrs[i], errors: errs[i] })),
       components: [
         { id: 'order-events-api', name: 'order-events-api', handler: 'order-events-api', type: 'api', requestCount: 482_000, errorCount: 5300, errorRate: 1, latency: 186 },

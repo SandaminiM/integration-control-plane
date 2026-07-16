@@ -16,11 +16,12 @@
  * under the License.
  */
 
-import { Alert, Box, Chip, ListingTable, Skeleton, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
-import { AreaChart, BarChart, PieChart } from '@wso2/oxygen-ui-charts-react';
+import { Alert, Box, Chip, ListingTable, MenuItem, Skeleton, Stack, StatCard, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
+import { Activity, AlertTriangle, Globe, XCircle } from '@wso2/oxygen-ui-icons-react';
+import { AreaChart, PieChart } from '@wso2/oxygen-ui-charts-react';
 import { useState, type JSX, type ReactNode } from 'react';
 import { useApiInsights } from '../../hooks/useApiInsights';
-import { ChartBox, InsightsCard, KpiTile } from './shared';
+import { ChartBox, InsightsCard } from './shared';
 import type { InsightsApiRef, InsightsEnvironment, InsightsRange, ApiInsightsTab, AvailabilityKind } from '../../types/insights';
 
 interface ApiInsightsViewProps {
@@ -40,8 +41,21 @@ const TABS: { value: ApiInsightsTab; label: string }[] = [
   { value: 'errors', label: 'Errors' },
 ];
 
-const CHART = { requests: '#F47B20', errors: '#EF4444', latency: '#569CD6', p95: '#F47B20', median: '#569CD6', auth: '#EF4444', target: '#6F42C1', throttled: '#ED6C02', other: '#569CD6' };
-const AVAILABILITY_COLOR: Record<AvailabilityKind, string> = { available: '#2E9E5B', limited: '#ED6C02', down: '#EF4444' };
+const CHART = { requests: '#E8964A', errors: '#E57373', latency: '#64B5F6', p95: '#E8964A', median: '#64B5F6', auth: '#E57373', target: '#9575CD', throttled: '#D9A63F', other: '#64B5F6' };
+const AVAILABILITY_COLOR: Record<AvailabilityKind, string> = { available: '#81C784', limited: '#D9A63F', down: '#E57373' };
+
+const METRIC_SERIES = {
+  requests: { dataKey: 'requests', name: 'Requests', color: CHART.requests },
+  errors: { dataKey: 'errors', name: 'Errors', color: CHART.errors },
+  latency: { dataKey: 'latency', name: 'Latency (ms)', color: CHART.latency },
+} as const;
+
+const KPI_ICONS: Record<string, { icon: JSX.Element; color: 'primary' | 'error' | 'info' | 'warning' }> = {
+  traffic: { icon: <Globe size={24} />, color: 'primary' },
+  latency: { icon: <Activity size={24} />, color: 'info' },
+  errorRate: { icon: <AlertTriangle size={24} />, color: 'error' },
+  errorCount: { icon: <XCircle size={24} />, color: 'error' },
+};
 
 function SlowestApiBars({ rows }: { rows: { name: string; latencyMs: number }[] }): JSX.Element {
   if (rows.length === 0)
@@ -59,7 +73,7 @@ function SlowestApiBars({ rows }: { rows: { name: string; latencyMs: number }[] 
             {r.name}
           </Typography>
           <Box sx={{ flex: 1, height: 9, borderRadius: '5px', bgcolor: 'action.hover', overflow: 'hidden' }}>
-            <Box sx={{ height: '100%', width: `${Math.round((r.latencyMs / max) * 100)}%`, borderRadius: '5px', background: 'linear-gradient(90deg,#F47B20 0%,#EF4223 100%)' }} />
+            <Box sx={{ height: '100%', width: `${Math.round((r.latencyMs / max) * 100)}%`, borderRadius: '5px', background: 'linear-gradient(90deg,#E8964A 0%,#E57373 100%)' }} />
           </Box>
           <Typography variant="caption" sx={{ width: 60, textAlign: 'right' }}>
             {r.latencyMs} ms
@@ -72,6 +86,8 @@ function SlowestApiBars({ rows }: { rows: { name: string; latencyMs: number }[] 
 
 // Per-status-code list with proxy/target split — replaces a 2-row heatmap
 // that rendered as a cramped strip of squares with clipped row labels.
+// Each bar shows the code's proxy-vs-target share (full-width 100% split),
+// not its magnitude relative to other codes.
 function StatusCodeBars({ heatmap }: { heatmap: { rows: string[]; cols: string[]; cells: { row: number; col: number; value: number }[]; max: number } }): JSX.Element {
   const codes = heatmap.cols
     .map((code, ci) => {
@@ -80,14 +96,27 @@ function StatusCodeBars({ heatmap }: { heatmap: { rows: string[]; cols: string[]
     })
     .filter((c) => c.code.trim().toLowerCase() !== 'total' && c.proxy + c.target > 0);
   if (codes.length === 0) return <Alert severity="info">No errors in range.</Alert>;
-  const max = Math.max(...codes.map((c) => c.proxy + c.target), 1);
   return (
     <Stack gap={1.5} sx={{ mt: 0.5 }}>
+      <Stack direction="row" gap={2}>
+        {[
+          { label: 'Proxy', color: CHART.errors },
+          { label: 'Target', color: CHART.target },
+        ].map((l) => (
+          <Stack key={l.label} direction="row" alignItems="center" gap={0.75}>
+            <Box sx={{ width: 10, height: 10, borderRadius: '3px', bgcolor: l.color }} />
+            <Typography variant="caption" color="text.secondary">
+              {l.label}
+            </Typography>
+          </Stack>
+        ))}
+      </Stack>
       {codes.map((c) => (
         <Stack key={c.code} direction="row" alignItems="center" gap={1.5}>
           <Chip size="small" variant="outlined" color={c.code.trim().startsWith('5') ? 'error' : 'warning'} label={c.code} sx={{ width: 60, fontFamily: 'monospace' }} />
-          <Box sx={{ flex: 1, height: 9, borderRadius: '5px', bgcolor: 'action.hover', overflow: 'hidden' }}>
-            <Box sx={{ height: '100%', width: `${Math.round(((c.proxy + c.target) / max) * 100)}%`, borderRadius: '5px', bgcolor: CHART.errors }} />
+          <Box sx={{ flex: 1, height: 9, borderRadius: '5px', overflow: 'hidden', display: 'flex' }}>
+            <Box sx={{ height: '100%', width: `${(c.proxy / (c.proxy + c.target)) * 100}%`, bgcolor: CHART.errors }} />
+            <Box sx={{ height: '100%', width: `${(c.target / (c.proxy + c.target)) * 100}%`, bgcolor: CHART.target }} />
           </Box>
           <Typography variant="body2" color="text.secondary" sx={{ width: 170, textAlign: 'right', flexShrink: 0 }}>
             Proxy {c.proxy.toLocaleString()} · Target {c.target.toLocaleString()}
@@ -109,6 +138,7 @@ function StatusCodeBars({ heatmap }: { heatmap: { rows: string[]; cols: string[]
  */
 export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRef, range, actions }: ApiInsightsViewProps): JSX.Element {
   const [tab, setTab] = useState<ApiInsightsTab>('overview');
+  const [overviewMetric, setOverviewMetric] = useState<'requests' | 'errors' | 'latency'>('requests');
   const { data, isLoading, enabled } = useApiInsights(orgUuid, projectId, insightsEnv, apiRef, range, tab);
 
   return (
@@ -138,24 +168,31 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
         <>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2 }}>
             {data.kpis.map((k) => (
-              <KpiTile key={k.key} label={k.label} value={k.value} sub={k.sub} danger={k.danger} />
+              <StatCard key={k.key} value={k.value} label={k.label} icon={KPI_ICONS[k.key]?.icon} iconColor={KPI_ICONS[k.key]?.color} />
             ))}
           </Box>
 
           {tab === 'overview' && (
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.55fr 1fr' }, gap: 2 }}>
-              <InsightsCard title="Requests, Errors & Latency" subtitle="Traffic volume with overlaid latency">
+              <InsightsCard
+                title="Requests, Errors & Latency"
+                subtitle={overviewMetric === 'latency' ? 'Latency (ms) over time' : overviewMetric === 'errors' ? 'Error count over time' : 'Request count over time'}
+                action={
+                  <TextField select size="small" value={overviewMetric} onChange={(e) => setOverviewMetric(e.target.value as 'requests' | 'errors' | 'latency')} sx={{ minWidth: 130 }}>
+                    <MenuItem value="requests">Requests</MenuItem>
+                    <MenuItem value="errors">Errors</MenuItem>
+                    <MenuItem value="latency">Latency</MenuItem>
+                  </TextField>
+                }>
                 <ChartBox>
                   <AreaChart
                     data={data.overview.trend}
                     xAxisDataKey="label"
+                    xAxis={{ show: true, name: 'Date' }}
+                    yAxis={{ show: true, name: METRIC_SERIES[overviewMetric].name }}
                     height={320}
-                    colors={[CHART.requests, CHART.errors, CHART.latency]}
-                    areas={[
-                      { dataKey: 'requests', name: 'Requests', type: 'monotone', stroke: CHART.requests, fill: CHART.requests, fillOpacity: 0.2 },
-                      { dataKey: 'errors', name: 'Errors', type: 'monotone', stroke: CHART.errors, fill: CHART.errors, fillOpacity: 0.2 },
-                      { dataKey: 'latency', name: 'Latency', type: 'monotone', stroke: CHART.latency, fill: CHART.latency, fillOpacity: 0, strokeDasharray: '5 3', dot: false },
-                    ]}
+                    colors={[METRIC_SERIES[overviewMetric].color]}
+                    areas={[{ dataKey: METRIC_SERIES[overviewMetric].dataKey, name: METRIC_SERIES[overviewMetric].name, type: 'monotone', stroke: METRIC_SERIES[overviewMetric].color, fill: METRIC_SERIES[overviewMetric].color, fillOpacity: 0.2 }]}
                     legend={{ show: true, verticalAlign: 'top' }}
                     margin={{ top: 16 }}
                     tooltip={{ show: true }}
@@ -204,6 +241,8 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
                   <AreaChart
                     data={data.traffic.trend}
                     xAxisDataKey="label"
+                    xAxis={{ show: true, name: 'Date' }}
+                    yAxis={{ show: true, name: 'Requests' }}
                     height={320}
                     colors={[CHART.requests, CHART.errors]}
                     areas={[
@@ -223,14 +262,17 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
                     <Alert severity="info">No application traffic in range.</Alert>
                   ) : (
                     <ChartBox>
-                      <BarChart
+                      <AreaChart
                         data={data.traffic.byApplication}
                         xAxisDataKey="label"
+                        xAxis={{ show: true, name: 'Application' }}
+                        yAxis={{ show: true, name: 'Requests' }}
                         height={220}
                         colors={[CHART.requests]}
-                        bars={[{ dataKey: 'value', name: 'Requests', fill: CHART.requests, radius: [3, 3, 0, 0] }]}
+                        areas={[{ dataKey: 'value', name: 'Requests', type: 'monotone', stroke: CHART.requests, fill: CHART.requests, fillOpacity: 0.2 }]}
                         tooltip={{ show: true }}
                         grid={{ show: true }}
+                        legend={{ show: true, verticalAlign: 'top' }}
                       />
                     </ChartBox>
                   )}
@@ -240,7 +282,18 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
                     <Alert severity="info">No backend traffic in range.</Alert>
                   ) : (
                     <ChartBox>
-                      <BarChart data={data.traffic.byBackend} xAxisDataKey="label" height={220} colors={[CHART.target]} bars={[{ dataKey: 'value', name: 'Requests', fill: CHART.target, radius: [3, 3, 0, 0] }]} tooltip={{ show: true }} grid={{ show: true }} />
+                      <AreaChart
+                        data={data.traffic.byBackend}
+                        xAxisDataKey="label"
+                        xAxis={{ show: true, name: 'Backend' }}
+                        yAxis={{ show: true, name: 'Requests' }}
+                        height={220}
+                        colors={[CHART.target]}
+                        areas={[{ dataKey: 'value', name: 'Requests', type: 'monotone', stroke: CHART.target, fill: CHART.target, fillOpacity: 0.2 }]}
+                        tooltip={{ show: true }}
+                        grid={{ show: true }}
+                        legend={{ show: true, verticalAlign: 'top' }}
+                      />
                     </ChartBox>
                   )}
                 </InsightsCard>
@@ -299,6 +352,8 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
                         <AreaChart
                           data={data.latency.trend}
                           xAxisDataKey="label"
+                          xAxis={{ show: true, name: 'Date' }}
+                          yAxis={{ show: true, name: 'Latency (ms)' }}
                           height={260}
                           colors={[CHART.p95, CHART.median]}
                           areas={[
@@ -325,16 +380,18 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
             <Stack gap={2}>
               <InsightsCard title="Errors Over Time" subtitle="Grouped by error category">
                 <ChartBox>
-                  <BarChart
+                  <AreaChart
                     data={data.errors.trend}
                     xAxisDataKey="label"
+                    xAxis={{ show: true, name: 'Date' }}
+                    yAxis={{ show: true, name: 'Errors' }}
                     height={320}
                     colors={[CHART.auth, CHART.throttled, CHART.target, CHART.other]}
-                    bars={[
-                      { dataKey: 'auth', name: 'Authentication', stackId: 'cat', fill: CHART.auth },
-                      { dataKey: 'throttled', name: 'Throttling', stackId: 'cat', fill: CHART.throttled },
-                      { dataKey: 'targetConnectivity', name: 'Target', stackId: 'cat', fill: CHART.target },
-                      { dataKey: 'other', name: 'Other', stackId: 'cat', fill: CHART.other, radius: [3, 3, 0, 0] },
+                    areas={[
+                      { dataKey: 'auth', name: 'Authentication', type: 'monotone', stackId: 'cat', stroke: CHART.auth, fill: CHART.auth, fillOpacity: 0.2 },
+                      { dataKey: 'throttled', name: 'Throttling', type: 'monotone', stackId: 'cat', stroke: CHART.throttled, fill: CHART.throttled, fillOpacity: 0.2 },
+                      { dataKey: 'targetConnectivity', name: 'Target', type: 'monotone', stackId: 'cat', stroke: CHART.target, fill: CHART.target, fillOpacity: 0.2 },
+                      { dataKey: 'other', name: 'Other', type: 'monotone', stackId: 'cat', stroke: CHART.other, fill: CHART.other, fillOpacity: 0.2 },
                     ]}
                     legend={{ show: true, verticalAlign: 'top' }}
                     margin={{ top: 16 }}

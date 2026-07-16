@@ -191,7 +191,7 @@ export default function ComponentInsightsUsage(scope: ComponentScope): JSX.Eleme
   return (
     <PageContent>
       <PageTitle>
-        <PageTitle.Header>Insights</PageTitle.Header>
+        <PageTitle.Header>Usage Insights</PageTitle.Header>
       </PageTitle>
 
       {!isApiType && (

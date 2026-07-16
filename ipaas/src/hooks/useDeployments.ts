@@ -19,6 +19,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Query } from '@tanstack/react-query';
 import { fetchApimSwagger } from '#api/apim';
+import { fetchComponentByHandler } from '#api/components';
 import {
   fetchComponentDeployment,
   fetchEnvEndpoints,
@@ -192,5 +193,33 @@ export function useRedeployDeployment() {
 export function useDeployPrebuiltImage() {
   return useMutation({
     mutationFn: (input: DeployPrebuiltImageInput) => deployPrebuiltImage(input),
+  });
+}
+
+// Deployment status per integration for one environment — drives the Status
+// column on the project Insights table. Track resolution mirrors the overview
+// pages: the `latest` deployment track (or the first) is the deployed version.
+export function useIntegrationDeploymentStatuses(orgHandler: string, orgUuid: string, projectId: string, components: { id: string; handler: string }[], environmentId: string) {
+  const key = components.map((c) => c.id).join(',');
+  return useQuery({
+    queryKey: ['integration-deployment-statuses', orgUuid, projectId, environmentId, key],
+    queryFn: async () => {
+      const entries = await Promise.all(
+        components.map(async (c): Promise<[string, string]> => {
+          try {
+            const detail = await fetchComponentByHandler(projectId, c.handler);
+            const track = detail.deploymentTracks?.find((t) => t.latest) ?? detail.deploymentTracks?.[0];
+            if (!track) return [c.id, 'NOT_DEPLOYED'];
+            const deployment = await fetchComponentDeployment(orgHandler, orgUuid, c.id, track.id, environmentId);
+            return [c.id, deployment?.deploymentStatusV2 ?? 'NOT_DEPLOYED'];
+          } catch {
+            return [c.id, 'NOT_DEPLOYED'];
+          }
+        }),
+      );
+      return Object.fromEntries(entries) as Record<string, string>;
+    },
+    enabled: !!orgHandler && !!orgUuid && !!projectId && !!environmentId && components.length > 0,
+    staleTime: 60_000,
   });
 }

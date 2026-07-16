@@ -41,22 +41,6 @@ export function InsightsCard({ title, subtitle, action, children }: { title: str
   );
 }
 
-export function KpiTile({ label, value, sub, danger }: { label: string; value: string; sub: string; danger?: boolean }): JSX.Element {
-  return (
-    <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
-      <Typography variant="caption" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="h5" sx={{ mt: 1, fontWeight: 500, color: danger ? 'error.main' : 'text.primary' }}>
-        {value}
-      </Typography>
-      <Typography variant="caption" color="text.secondary">
-        {sub}
-      </Typography>
-    </Box>
-  );
-}
-
 /** Chart wrapper matching the project page's chart styling: faint grid lines,
  * and kills the chart lib's hardcoded inline `paddingTop: 32` on the recharts
  * legend wrapper (inline style — only `!important` beats it). */

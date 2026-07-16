@@ -70,7 +70,6 @@ export interface ProjectHealthSlice {
 }
 
 export type IntegrationKind = 'api' | 'auto' | 'rag' | 'agent' | 'mcp' | 'webhook';
-export type IntegrationStatus = 'Healthy' | 'Degraded' | 'Down';
 
 export interface ProjectIntegrationRow {
   id: string;
@@ -79,13 +78,13 @@ export interface ProjectIntegrationRow {
   handler: string;
   desc: string;
   type: IntegrationKind;
-  volume: string;
-  /** null for automations (no request error rate) */
-  errorRate: string | null;
+  successCount: string;
+  errorCount: string;
   /** '—' for automations */
   latency: string;
   last: string;
-  status: IntegrationStatus;
+  /** component no longer exists; row derived from analytics backend records */
+  deleted?: boolean;
 }
 
 export interface ProjectInsightsData {
@@ -112,6 +111,8 @@ export interface ProjectComponentStat {
   latency: number | null;
   /** human-readable last-run time (automations only — from getAutomationSummaryTable) */
   last?: string | null;
+  /** component no longer exists; row derived from analytics backend records */
+  deleted?: boolean;
 }
 
 /** Project-wide automation execution stats (getTaskExecutionStats). */
@@ -129,6 +130,10 @@ export interface ProjectInsightsRaw {
   totalErrors: number;
   /** request-weighted average latency (ms) */
   avgLatency: number;
+  /** project-level gateway traffic, KPI card */
+  totalTraffic: number;
+  /** project-level error request count, KPI card */
+  totalTrafficErrors: number;
   trend: { label: string; apiRequests: number; automationRuns: number; automationErrors: number; errors: number }[];
   components: ProjectComponentStat[];
   /** null when the automation overview query failed/was empty */

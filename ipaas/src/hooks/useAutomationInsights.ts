@@ -41,7 +41,7 @@ function fmtDuration(sec: number): string {
   return s === 0 ? `${m}m` : `${m}m ${s}s`;
 }
 
-const OUTCOME_COLOR: Record<ExecutionOutcome, string> = { success: '#2E9E5B', failure: '#EF4444', timeout: '#ED6C02' };
+const OUTCOME_COLOR: Record<ExecutionOutcome, string> = { success: '#81C784', failure: '#E57373', timeout: '#D9A63F' };
 
 function toAutomationInsightsData(raw: AutomationInsightsRaw, componentId: string, range: InsightsRange): AutomationInsightsData {
   const stats = raw.stats;

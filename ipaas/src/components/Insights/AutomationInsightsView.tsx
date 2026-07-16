@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Box, Skeleton, Stack, Typography } from '@wso2/oxygen-ui';
+import { Box, Skeleton, Stack, StatCard, Typography } from '@wso2/oxygen-ui';
+import { AlertTriangle, Clock, Timer, XCircle, Zap } from '@wso2/oxygen-ui-icons-react';
 import { AreaChart } from '@wso2/oxygen-ui-charts-react';
 import { type JSX } from 'react';
 import { useOrgUuid } from '../../hooks/useOrgUuid';
@@ -24,10 +25,18 @@ import { useComponentDeployment } from '../../hooks/useDeployments';
 import { useAutomationInsights, OUTCOME_COLOR } from '../../hooks/useAutomationInsights';
 import AutomationExecutions from '../AutomationExecutions';
 import Heatmap from './Heatmap';
-import { ChartBox, InsightsCard, KpiTile } from './shared';
+import { ChartBox, InsightsCard } from './shared';
 import type { Component } from '../../types/component';
 import type { Environment } from '../../types/environment';
 import type { InsightsEnvironment, InsightsRange } from '../../types/insights';
+
+const KPI_ICONS: Record<string, { icon: JSX.Element; color: 'primary' | 'error' | 'info' | 'warning' }> = {
+  total: { icon: <Zap size={24} />, color: 'primary' },
+  failed: { icon: <XCircle size={24} />, color: 'error' },
+  errorRate: { icon: <AlertTriangle size={24} />, color: 'error' },
+  avgDuration: { icon: <Clock size={24} />, color: 'info' },
+  p95Duration: { icon: <Timer size={24} />, color: 'info' },
+};
 
 interface AutomationInsightsViewProps {
   component: Component;
@@ -81,7 +90,7 @@ export default function AutomationInsightsView({ component, env, insightsEnv, ve
     <Stack gap={2}>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(5, 1fr)' }, gap: 2 }}>
         {data.kpis.map((k) => (
-          <KpiTile key={k.key} label={k.label} value={k.value} sub={k.sub} />
+          <StatCard key={k.key} value={k.value} label={k.label} icon={KPI_ICONS[k.key]?.icon} iconColor={KPI_ICONS[k.key]?.color} />
         ))}
       </Box>
 
@@ -91,9 +100,11 @@ export default function AutomationInsightsView({ component, env, insightsEnv, ve
             <AreaChart
               data={data.scatter.map((p) => ({ label: p.label, duration: p.durationSec }))}
               xAxisDataKey="label"
+              xAxis={{ show: true, name: 'Date' }}
+              yAxis={{ show: true, name: 'Duration (s)' }}
               height={320}
-              colors={['#3B82F6']}
-              areas={[{ dataKey: 'duration', name: 'Duration (s)', type: 'monotone', stroke: '#3B82F6', fill: '#3B82F6', fillOpacity: 0.2 }]}
+              colors={['#64B5F6']}
+              areas={[{ dataKey: 'duration', name: 'Duration (s)', type: 'monotone', stroke: '#64B5F6', fill: '#64B5F6', fillOpacity: 0.2 }]}
               legend={{ show: true, verticalAlign: 'top' }}
               margin={{ top: 16 }}
               tooltip={{ show: true }}
@@ -102,8 +113,8 @@ export default function AutomationInsightsView({ component, env, insightsEnv, ve
           </ChartBox>
         </InsightsCard>
         <InsightsCard title="Failures by Time" subtitle="Day of week × hour of day">
-          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Heatmap data={data.heatmap} color={OUTCOME_COLOR.failure} everyCol={4} cellWidth={36} cellHeight={36} />
+          <Box sx={{ flex: 1, display: 'flex', paddingTop: '64px' }}>
+            <Heatmap data={data.heatmap} color={OUTCOME_COLOR.failure} everyCol={4} cellWidth={30} cellHeight={30} />
           </Box>
         </InsightsCard>
       </Box>
@@ -113,6 +124,8 @@ export default function AutomationInsightsView({ component, env, insightsEnv, ve
           <AreaChart
             data={data.trend}
             xAxisDataKey="label"
+            xAxis={{ show: true, name: 'Date' }}
+            yAxis={{ show: true, name: 'Executions' }}
             height={320}
             colors={[OUTCOME_COLOR.success, OUTCOME_COLOR.failure, OUTCOME_COLOR.timeout]}
             areas={[
