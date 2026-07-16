@@ -28,7 +28,8 @@
  */
 
 import { parse as parseYaml } from 'yaml';
-import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory } from '../../types/apim';
+import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory, MarketplaceService } from '../../types/apim';
+import type { EnvEndpoint } from '../../types/component';
 
 export async function fetchApimApi(_apimId: string): Promise<ApimApiInfo | null> {
   return null;
@@ -60,6 +61,30 @@ export async function fetchLifecycleHistory(_apimId: string): Promise<LifecycleH
 
 export async function changeLifecycleState(_apimId: string, _action: string): Promise<LifecycleState> {
   throw new Error('Lifecycle management is not supported in this build.');
+}
+
+export async function fetchApimOverview(_apimId: string): Promise<string> {
+  return '';
+}
+
+export async function saveApimOverview(_apimId: string, _content: string): Promise<void> {
+  // No APIM in cloud — nothing to save.
+}
+
+export async function fetchApimThumbnail(_apimId: string): Promise<string | null> {
+  return null;
+}
+
+export async function saveApimThumbnail(_apimId: string, _file: File): Promise<void> {
+  // No APIM in cloud — nothing to save.
+}
+
+export async function fetchMarketplaceService(_componentId: string, _version: string, _endpoint: EnvEndpoint): Promise<MarketplaceService | null> {
+  return null;
+}
+
+export async function saveMarketplaceService(_serviceId: string, _service: MarketplaceService): Promise<void> {
+  // No internal marketplace in cloud — nothing to save.
 }
 
 // schemaContent is the endpoint's base64-encoded OpenAPI (YAML or JSON), carried

@@ -35,7 +35,7 @@
 
 import type { AlertComponentType } from '../constants/alerts';
 import type { AlertHistoryResponse, AlertRule, AlertRuleCountUsage } from '../types/alerts';
-import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory } from '../types/apim';
+import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory, MarketplaceService } from '../types/apim';
 import type { ArtifactType, Artifact, ArtifactParam, ArtifactStatusInput, ListenerStateInput, ArtifactToggleStatusInput, ArtifactToggleKind, TriggerTaskInput } from '../types/artifact';
 import type {
   User,
@@ -197,6 +197,12 @@ export interface ApimApi {
   fetchLifecycleHistory(apimId: string): Promise<LifecycleHistory | null>;
   changeLifecycleState(apimId: string, action: string): Promise<LifecycleState>;
   fetchApimSwagger(apimRevisionId: string): Promise<unknown>;
+  fetchApimOverview(apimId: string): Promise<string>;
+  saveApimOverview(apimId: string, content: string): Promise<void>;
+  fetchApimThumbnail(apimId: string): Promise<string | null>;
+  saveApimThumbnail(apimId: string, file: File): Promise<void>;
+  fetchMarketplaceService(componentId: string, version: string, endpoint: EnvEndpoint): Promise<MarketplaceService | null>;
+  saveMarketplaceService(serviceId: string, service: MarketplaceService): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
