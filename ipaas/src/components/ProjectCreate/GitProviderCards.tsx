@@ -20,6 +20,7 @@ import { Box, Card, CardActionArea, Stack, Tooltip, Typography } from '@wso2/oxy
 import { GitHub, Bitbucket, GitLab } from '@wso2/oxygen-ui-icons-react';
 import { type JSX } from 'react';
 import GitIcon from '../../assets/icons/GitIcon';
+import { IS_CLOUD } from '../../features';
 
 interface GitProviderCardsProps {
   onGitHubSelect: () => void;
@@ -27,9 +28,10 @@ interface GitProviderCardsProps {
 }
 
 export default function GitProviderCards({ onGitHubSelect, onPublicSelect }: GitProviderCardsProps): JSX.Element {
-  // Private GitHub needs the platform GitHub App; environments without a
-  // configured client id can only import public repos.
-  const gitHubEnabled = !!window.API_CONFIG.githubAppClientId;
+  // Cloud only: private GitHub needs the platform GitHub App, so environments
+  // without a configured client id can only import public repos. Other
+  // variants always render the card enabled, as before.
+  const gitHubEnabled = !IS_CLOUD || !!window.API_CONFIG.githubAppClientId;
   const gitHubCard = (
     <Card variant="outlined" sx={{ flex: 1, ...(gitHubEnabled ? {} : { height: '100%', opacity: 0.5 }) }}>
       <CardActionArea onClick={onGitHubSelect} disabled={!gitHubEnabled} sx={{ p: 2, ...(gitHubEnabled ? {} : { height: '100%' }) }}>
