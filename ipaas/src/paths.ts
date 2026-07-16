@@ -185,6 +185,42 @@ export function componentDeployUrl(orgHandler: string, projectHandler: string, c
   return `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/deploy`;
 }
 
+export function orgGovernanceUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/admin/governance`;
+}
+
+export function orgGovernanceNewPolicyUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/admin/governance/policies/new`;
+}
+
+export function orgGovernancePolicyUrl(orgHandler: string, policyId: string): string {
+  return `/organizations/${orgHandler}/admin/governance/policies/${encodeURIComponent(policyId)}`;
+}
+
+export function orgGovernanceNewAiPolicyUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/admin/governance/ai-policies/new`;
+}
+
+export function orgGovernanceAiPolicyUrl(orgHandler: string, policyId: string): string {
+  return `/organizations/${orgHandler}/admin/governance/ai-policies/${encodeURIComponent(policyId)}`;
+}
+
+export function orgGovernanceNewRulesetUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/admin/governance/rulesets/new`;
+}
+
+export function orgGovernanceRulesetUrl(orgHandler: string, rulesetId: string): string {
+  return `/organizations/${orgHandler}/admin/governance/rulesets/${encodeURIComponent(rulesetId)}`;
+}
+
+export function orgGovernanceNewDocumentUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/admin/governance/documents/new`;
+}
+
+export function orgGovernanceDocumentUrl(orgHandler: string, documentId: string): string {
+  return `/organizations/${orgHandler}/admin/governance/documents/${encodeURIComponent(documentId)}`;
+}
+
 // ---------------------------------------------------------------------------
 // External links
 // ---------------------------------------------------------------------------

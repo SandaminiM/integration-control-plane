@@ -70,6 +70,7 @@ import * as auditLogs from './auditLogs';
 import * as platformServices from './platformServices';
 import * as ragBackend from './ragBackend';
 import * as genaiServices from './genaiServices';
+import * as governance from './governance';
 
 const _alerts: Contracts.AlertsApi = alerts;
 const _apim: Contracts.ApimApi = apim;
@@ -116,6 +117,7 @@ const _auditLogs: Contracts.AuditLogsApi = auditLogs;
 const _platformServices: Contracts.PlatformServicesApi = platformServices;
 const _ragBackend: Contracts.RagBackendApi = ragBackend;
 const _genaiServices: Contracts.GenaiServicesApi = genaiServices;
+const _governance: Contracts.GovernanceApi = governance;
 
 void _alerts;
 void _apim;
@@ -162,3 +164,4 @@ void _auditLogs;
 void _platformServices;
 void _ragBackend;
 void _genaiServices;
+void _governance;

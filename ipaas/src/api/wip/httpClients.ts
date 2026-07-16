@@ -153,6 +153,12 @@ export const copilotDatacollectorClient = createHttpClient(() => {
   return base;
 });
 
+// Governance — org-level rulesets, documents, and governance policies (same backend as Devant).
+export const governanceClient = createHttpClient(() => `${window.API_CONFIG.choreoBaseApiUrl}/governance/v1.0`);
+
+// Ruleset content is raw YAML/JSON text, not a JSON document.
+export const governanceTextClient = createHttpClient(() => `${window.API_CONFIG.choreoBaseApiUrl}/governance/v1.0`, { tolerateNonJson: true });
+
 // Retry helpers — exported so api/ files can wrap specific calls without importing tokenManager directly.
 
 // On 403: if STS is configured and the token carries no org UUID (unscoped), refresh once and retry.

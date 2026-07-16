@@ -121,6 +121,7 @@ import type {
   RotateConnectionKeysByConnectionIdParams,
 } from '../types/connections';
 import type { AuditLogEntry, AuditLogsRequest } from '../types/auditLogs';
+import type { Ruleset, RulesetList, DocumentInfo, DocumentList, GovernancePolicyInfo, GovernancePolicyList } from '../types/governance';
 import type {
   AdminUser,
   AllowedIpsPayload,
@@ -734,6 +735,28 @@ export interface GenaiServicesApi {
   deleteGenaiService(serviceId: string): Promise<void>;
 }
 
+// Org admin Governance (rulesets, documents, policies). wip-only for now; cloud/icp stubs throw.
+export interface GovernanceApi {
+  listRulesets(): Promise<RulesetList>;
+  getRuleset(rulesetId: string): Promise<Ruleset>;
+  getRulesetContent(rulesetId: string): Promise<string>;
+  createRuleset(ruleset: Ruleset): Promise<Ruleset>;
+  updateRuleset(rulesetId: string, ruleset: Ruleset): Promise<Ruleset>;
+  deleteRuleset(rulesetId: string): Promise<void>;
+
+  listDocuments(): Promise<DocumentList>;
+  getDocument(documentId: string): Promise<DocumentInfo>;
+  createDocument(document: DocumentInfo): Promise<DocumentInfo>;
+  updateDocument(documentId: string, document: DocumentInfo): Promise<DocumentInfo>;
+  deleteDocument(documentId: string): Promise<void>;
+
+  listPolicies(): Promise<GovernancePolicyList>;
+  getPolicy(policyId: string): Promise<GovernancePolicyInfo>;
+  createPolicy(policy: GovernancePolicyInfo): Promise<GovernancePolicyInfo>;
+  updatePolicy(policyId: string, policy: GovernancePolicyInfo): Promise<GovernancePolicyInfo>;
+  deletePolicy(policyId: string): Promise<void>;
+}
+
 // ---------------------------------------------------------------------------
 // Aggregate — the full API surface consumed by the app
 // ---------------------------------------------------------------------------
@@ -831,5 +854,6 @@ export interface AppApi {
   auditLogs: AuditLogsApi;
   platformServices: PlatformServicesApi;
   genaiServices: GenaiServicesApi;
+  governance: GovernanceApi;
   ragBackend: RagBackendApi;
 }

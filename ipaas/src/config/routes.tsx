@@ -59,6 +59,11 @@ const ComponentTest = lazy(() => import('../pages/ComponentTest'));
 const OrgCdPipelines = lazy(() => import('../pages/OrgCdPipelines'));
 const OrgConfigGroups = lazy(() => import('../pages/OrgConfigGroups'));
 const CreateConfigGroup = lazy(() => import('../pages/CreateConfigGroup'));
+const OrgGovernance = lazy(() => import('../pages/OrgGovernance'));
+const CreatePolicy = lazy(() => import('../pages/CreatePolicy'));
+const CreateRuleset = lazy(() => import('../pages/CreateRuleset'));
+const CreateDocument = lazy(() => import('../pages/CreateDocument'));
+const CreateAiPolicy = lazy(() => import('../pages/CreateAiPolicy'));
 const OrgGenAIServices = lazy(() => import('../pages/OrgGenAIServices'));
 const RegisterGenAIService = lazy(() => import('../pages/RegisterGenAIService'));
 const GenAIServiceDetail = lazy(() => import('../pages/GenAIServiceDetail'));
@@ -214,7 +219,15 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/admin/config-groups', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgConfigGroups, ['organizations']))) },
               { path: 'organizations/:orgHandler/admin/config-groups/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(CreateConfigGroup, ['organizations']))) },
               { path: 'organizations/:orgHandler/admin/config-groups/:configGroupUuid', element: createElement(RouteErrorBoundary, null, createElement(withScope(EditConfigGroup, ['organizations']))) },
-              { path: 'organizations/:orgHandler/admin/governance', element: <ComingSoon title="Coming Soon" description="Governance management is currently under development." /> },
+              { path: 'organizations/:orgHandler/admin/governance', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgGovernance, ['organizations']))) },
+              { path: 'organizations/:orgHandler/admin/governance/policies/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(CreatePolicy, ['organizations']))) },
+              { path: 'organizations/:orgHandler/admin/governance/policies/:policyId', element: createElement(RouteErrorBoundary, null, createElement(withScope(CreatePolicy, ['organizations']))) },
+              { path: 'organizations/:orgHandler/admin/governance/ai-policies/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(CreateAiPolicy, ['organizations']))) },
+              { path: 'organizations/:orgHandler/admin/governance/ai-policies/:policyId', element: createElement(RouteErrorBoundary, null, createElement(withScope(CreateAiPolicy, ['organizations']))) },
+              { path: 'organizations/:orgHandler/admin/governance/rulesets/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(CreateRuleset, ['organizations']))) },
+              { path: 'organizations/:orgHandler/admin/governance/rulesets/:rulesetId', element: createElement(RouteErrorBoundary, null, createElement(withScope(CreateRuleset, ['organizations']))) },
+              { path: 'organizations/:orgHandler/admin/governance/documents/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(CreateDocument, ['organizations']))) },
+              { path: 'organizations/:orgHandler/admin/governance/documents/:documentId', element: createElement(RouteErrorBoundary, null, createElement(withScope(CreateDocument, ['organizations']))) },
               { path: 'organizations/:orgHandler/admin/cd-pipelines', element: createElement(withScope(OrgCdPipelines, ['organizations'])) },
               { path: 'organizations/:orgHandler/admin/cd-pipelines/new', element: <CdPipelineEditor /> },
               { path: 'organizations/:orgHandler/admin/cd-pipelines/:pipelineId/edit', element: <CdPipelineEditor /> },
