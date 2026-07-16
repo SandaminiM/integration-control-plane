@@ -95,7 +95,11 @@ function formatForInsights(date: Date): string {
   return date.toISOString();
 }
 
-export async function fetchComponentInsights(orgUuid: string, insightsEnv: InsightsEnvironment, apiId: string, queryApiUrl: string): Promise<ComponentInsights | null> {
+// `time` scopes the query to a chosen duration window; when omitted it falls
+// back to a rolling 6-month window (component overview KPI usage). The project
+// insights table passes the selected range so its rows track the duration
+// toggle rather than always showing 6-month totals.
+export async function fetchComponentInsights(orgUuid: string, insightsEnv: InsightsEnvironment, apiId: string, queryApiUrl: string, time?: { from: string; to: string }): Promise<ComponentInsights | null> {
   const now = new Date();
   const from = new Date(now);
   from.setUTCMonth(now.getUTCMonth() - 6);
@@ -114,7 +118,7 @@ export async function fetchComponentInsights(orgUuid: string, insightsEnv: Insig
       getTotalErrorsByAPI(filter: $filter, dataFilter: $dataFilter, apiId: $apiId) { proxy }
     }`,
     {
-      filter: { from: formatForInsights(from), to: formatForInsights(now) },
+      filter: time ?? { from: formatForInsights(from), to: formatForInsights(now) },
       dataFilter: { orgId: orgUuid, environmentIds: getEnvironmentIds(insightsEnv), tenant: 'carbon.super' },
       apiId,
     },
@@ -337,21 +341,10 @@ export async function fetchProjectInsights(orgUuid: string, projectId: string, i
   // trusting its own (often stale/empty) `apiId` field.
   const resolved = apis.map((a) => ({ ref: a, api: resolveApi(a, projectApis) }));
 
-  // APIs the insights backend still reports for the project but with no
-  // matching live component — deleted integrations whose traffic still counts
-  // toward the project totals, so they get their own (non-navigable) rows.
-  const matchedApiIds = new Set(resolved.map(({ api }) => api.id).filter(Boolean));
-  const orphanApis = projectApis.filter((a) => !matchedApiIds.has(a.id));
-
-  const [perApi, orphanStats] = await Promise.all([
-    Promise.all(resolved.map(async ({ ref, api }) => ({ ref, ins: api.id ? await fetchComponentInsights(orgUuid, insightsEnv, api.id, queryApiUrl) : null }))),
-    Promise.all(
-      orphanApis.map(async (a): Promise<ProjectComponentStat> => {
-        const ins = await fetchComponentInsights(orgUuid, insightsEnv, a.id, queryApiUrl);
-        return { id: a.id, name: a.displayName || a.name, handler: '', type: 'api' as const, deleted: true, requestCount: ins?.requestCount ?? 0, errorCount: ins?.errorCount ?? 0, errorRate: ins?.errorRate ?? 0, latency: ins?.latency ?? 0 };
-      }),
-    ),
-  ]);
+  // Per-component rows are scoped to the selected duration (same `time` the
+  // project overview uses) so the table tracks the range toggle.
+  const componentTime = { from: time.from, to: time.to };
+  const perApi = await Promise.all(resolved.map(async ({ ref, api }) => ({ ref, ins: api.id ? await fetchComponentInsights(orgUuid, insightsEnv, api.id, queryApiUrl, componentTime) : null })));
   const apiStats: ProjectComponentStat[] = perApi.map(({ ref, ins }) => ({
     id: ref.id,
     name: ref.name,
@@ -384,16 +377,24 @@ export async function fetchProjectInsights(orgUuid: string, projectId: string, i
     };
   });
 
-  // Automation summary rows not matched by any live automation component —
-  // deleted automations whose executions the backend still reports.
-  const liveAutoNames = new Set(automations.flatMap((a) => [a.name.toLowerCase(), a.handler.toLowerCase()]));
-  const durationByName = new Map(automationOverview.duration.map((r) => [r.componentName?.toLowerCase() ?? '', r]));
-  const orphanAutoStats: ProjectComponentStat[] = automationOverview.summary
-    .filter((s) => s.automationName && !liveAutoNames.has(s.automationName.toLowerCase()))
-    .map((s) => {
-      const duration = durationByName.get(s.automationName.toLowerCase());
-      return { id: `deleted-${s.automationName}`, name: s.automationName, handler: '', type: 'auto' as const, deleted: true, requestCount: s.totalExecutions ?? 0, errorCount: s.failureCount ?? 0, errorRate: Math.round(s.errorRate ?? 0), latency: duration ? Math.round(duration.averageDurationMs) : null, last: s.lastRunRelative ?? null };
-    });
+  // Deleted integrations: the project-wide overview traffic and task-execution
+  // stats still count components removed from the project, but those have no
+  // live row. Enumerating each is unreliable (only automations are reported by
+  // name), so fold them all into one aggregate row = project total minus the
+  // sum over the live rows above. Success = requests/executions that did not
+  // error; errors kept in their own column. Both clamp at 0 because the
+  // project-level and per-component scopes need not reconcile exactly.
+  const liveSuccess = [...apiStats, ...autoStats].reduce((s, c) => s + Math.max(0, (c.requestCount ?? 0) - (c.errorCount ?? 0)), 0);
+  const liveErrors = [...apiStats, ...autoStats].reduce((s, c) => s + (c.errorCount ?? 0), 0);
+  const taskStats = automationOverview.stats;
+  const fullSuccess = Math.max(0, overview.totalTraffic - overview.totalErrors) + (taskStats?.successfulJobs ?? 0);
+  const fullErrors = overview.totalErrors + (taskStats?.failedJobs ?? 0);
+  const deletedSuccess = Math.max(0, fullSuccess - liveSuccess);
+  const deletedErrors = Math.max(0, fullErrors - liveErrors);
+  const deletedStats: ProjectComponentStat[] =
+    deletedSuccess + deletedErrors > 0
+      ? [{ id: 'deleted-aggregate', name: 'Deleted Integrations', handler: '', type: 'api', deleted: true, requestCount: deletedSuccess + deletedErrors, errorCount: deletedErrors, errorRate: 0, latency: null, last: null }]
+      : [];
 
   // KPI totals = sums over the project's own integration components, so the
   // headline numbers always agree with the table beneath them.
@@ -404,7 +405,7 @@ export async function fetchProjectInsights(orgUuid: string, projectId: string, i
 
   const trend = buildTrend(overview.successSummary, overview.errorSummary, automationOverview.trend, time.labelGranularity);
 
-  return { totalRequests, totalErrors, avgLatency, totalTraffic: overview.totalTraffic, totalTrafficErrors: overview.totalErrors, trend, components: [...apiStats, ...autoStats, ...orphanStats, ...orphanAutoStats], taskStats: automationOverview.stats };
+  return { totalRequests, totalErrors, avgLatency, totalTraffic: overview.totalTraffic, totalTrafficErrors: overview.totalErrors, trend, components: [...apiStats, ...autoStats, ...deletedStats], taskStats: automationOverview.stats };
 }
 
 // Project-level latency trend — devant's getLatencySummary series

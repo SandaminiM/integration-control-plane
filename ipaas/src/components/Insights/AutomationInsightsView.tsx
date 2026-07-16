@@ -16,27 +16,22 @@
  * under the License.
  */
 
-import { Box, Skeleton, Stack, StatCard, Typography } from '@wso2/oxygen-ui';
-import { AlertTriangle, Clock, Timer, XCircle, Zap } from '@wso2/oxygen-ui-icons-react';
-import { AreaChart } from '@wso2/oxygen-ui-charts-react';
+import { Box, Skeleton, Stack, Typography } from '@wso2/oxygen-ui';
 import { type JSX } from 'react';
 import { useOrgUuid } from '../../hooks/useOrgUuid';
 import { useComponentDeployment } from '../../hooks/useDeployments';
-import { useAutomationInsights, OUTCOME_COLOR } from '../../hooks/useAutomationInsights';
+import { useAutomationInsights } from '../../hooks/useAutomationInsights';
 import AutomationExecutions from '../AutomationExecutions';
 import Heatmap from './Heatmap';
-import { ChartBox, InsightsCard } from './shared';
+import { InsightsCard, KpiCards, TrendAreaChart } from './shared';
+import { INSIGHTS_CHART_COLORS, OUTCOME_COLOR } from '../../constants/insights';
 import type { Component } from '../../types/component';
 import type { Environment } from '../../types/environment';
 import type { InsightsEnvironment, InsightsRange } from '../../types/insights';
 
-const KPI_ICONS: Record<string, { icon: JSX.Element; color: 'primary' | 'error' | 'info' | 'warning' }> = {
-  total: { icon: <Zap size={24} />, color: 'primary' },
-  failed: { icon: <XCircle size={24} />, color: 'error' },
-  errorRate: { icon: <AlertTriangle size={24} />, color: 'error' },
-  avgDuration: { icon: <Clock size={24} />, color: 'info' },
-  p95Duration: { icon: <Timer size={24} />, color: 'info' },
-};
+// Pushes the heatmap grid down so it lines up with the neighboring duration
+// chart's plot area (below that card's title + legend).
+const HEATMAP_TOP_OFFSET = '64px';
 
 interface AutomationInsightsViewProps {
   component: Component;
@@ -66,79 +61,44 @@ export default function AutomationInsightsView({ component, env, insightsEnv, ve
 
   const { data, isLoading, enabled } = useAutomationInsights(orgUuid, projectId, insightsEnv, component.id, range);
 
-  // First-load skeletons — mirror the project page's pattern so the page
-  // doesn't flash empty charts while the insights bundle loads.
-  if (enabled && isLoading) {
-    return (
-      <Stack gap={2}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(5, 1fr)' }, gap: 2 }}>
-          {[0, 1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} variant="rounded" height={96} />
-          ))}
-        </Box>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '0.5fr 0.5fr' }, gap: 2 }}>
-          <Skeleton variant="rounded" height={340} />
-          <Skeleton variant="rounded" height={340} />
-        </Box>
-        <Skeleton variant="rounded" height={400} />
-        <Skeleton variant="rounded" height={280} />
-      </Stack>
-    );
-  }
+  const loading = enabled && isLoading;
 
   return (
     <Stack gap={2}>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(5, 1fr)' }, gap: 2 }}>
-        {data.kpis.map((k) => (
-          <StatCard key={k.key} value={k.value} label={k.label} icon={KPI_ICONS[k.key]?.icon} iconColor={KPI_ICONS[k.key]?.color} />
-        ))}
-      </Box>
+      <KpiCards kpis={data.kpis} loading={loading} lgColumns={5} />
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '0.5fr 0.5fr' }, gap: 2 }}>
         <InsightsCard title="Execution Duration Over Time" subtitle="Run duration per execution (seconds)">
-          <ChartBox>
-            <AreaChart
-              data={data.scatter.map((p) => ({ label: p.label, duration: p.durationSec }))}
-              xAxisDataKey="label"
-              xAxis={{ show: true, name: 'Date' }}
-              yAxis={{ show: true, name: 'Duration (s)' }}
-              height={320}
-              colors={['#64B5F6']}
-              areas={[{ dataKey: 'duration', name: 'Duration (s)', type: 'monotone', stroke: '#64B5F6', fill: '#64B5F6', fillOpacity: 0.2 }]}
-              legend={{ show: true, verticalAlign: 'top' }}
-              margin={{ top: 16 }}
-              tooltip={{ show: true }}
-              grid={{ show: true }}
-            />
-          </ChartBox>
+          <TrendAreaChart
+            loading={loading}
+            data={data.scatter.map((p) => ({ label: p.label, duration: p.durationSec }))}
+            xName="Date"
+            yName="Duration (s)"
+            height={320}
+            areas={[{ key: 'duration', name: 'Duration (s)', color: INSIGHTS_CHART_COLORS.blue }]}
+          />
         </InsightsCard>
         <InsightsCard title="Failures by Time" subtitle="Day of week × hour of day">
-          <Box sx={{ flex: 1, display: 'flex', paddingTop: '64px' }}>
-            <Heatmap data={data.heatmap} color={OUTCOME_COLOR.failure} everyCol={4} cellWidth={30} cellHeight={30} />
+          <Box sx={{ flex: 1, display: 'flex', paddingTop: HEATMAP_TOP_OFFSET }}>
+            {loading ? <Skeleton variant="rounded" height={256} sx={{ flex: 1 }} /> : <Heatmap data={data.heatmap} color={OUTCOME_COLOR.failure} everyCol={4} cellWidth={30} cellHeight={30} />}
           </Box>
         </InsightsCard>
       </Box>
 
       <InsightsCard title="Execution Trend" subtitle="Runs per day by outcome">
-        <Box sx={{ paddingTop: '24px', '& .recharts-cartesian-grid line': { opacity: 0.3 }, '& .recharts-legend-wrapper': { paddingTop: '0 !important', top: '0 !important' } }}>
-          <AreaChart
-            data={data.trend}
-            xAxisDataKey="label"
-            xAxis={{ show: true, name: 'Date' }}
-            yAxis={{ show: true, name: 'Executions' }}
-            height={320}
-            colors={[OUTCOME_COLOR.success, OUTCOME_COLOR.failure, OUTCOME_COLOR.timeout]}
-            areas={[
-              { dataKey: 'success', name: 'Success', type: 'monotone', stackId: 'outcome', stroke: OUTCOME_COLOR.success, fill: OUTCOME_COLOR.success, fillOpacity: 0.2 },
-              { dataKey: 'failure', name: 'Failed', type: 'monotone', stackId: 'outcome', stroke: OUTCOME_COLOR.failure, fill: OUTCOME_COLOR.failure, fillOpacity: 0.2 },
-              { dataKey: 'timeout', name: 'Timeout', type: 'monotone', stackId: 'outcome', stroke: OUTCOME_COLOR.timeout, fill: OUTCOME_COLOR.timeout, fillOpacity: 0.2 },
-            ]}
-            legend={{ show: true, verticalAlign: 'top' }}
-            margin={{ top: 16 }}
-            tooltip={{ show: true }}
-            grid={{ show: true }}
-          />
-        </Box>
+        <TrendAreaChart
+          padded
+          loading={loading}
+          data={data.trend}
+          xName="Date"
+          yName="Executions"
+          height={320}
+          areas={[
+            { key: 'success', name: 'Success', color: OUTCOME_COLOR.success, stackId: 'outcome' },
+            { key: 'failure', name: 'Failed', color: OUTCOME_COLOR.failure, stackId: 'outcome' },
+            { key: 'timeout', name: 'Timeout', color: OUTCOME_COLOR.timeout, stackId: 'outcome' },
+          ]}
+        />
       </InsightsCard>
 
       <InsightsCard title="Executions" subtitle="Click a row to inspect arguments & logs">

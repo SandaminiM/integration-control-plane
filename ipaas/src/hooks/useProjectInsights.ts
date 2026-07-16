@@ -20,9 +20,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { fetchProjectInsights, fetchProjectLatencyTrend } from '#api/insights';
 import { useInsightsQueryUrl } from './useInsights';
+import { formatCount as fmt } from '../utils/insightsFormat';
+import { INSIGHTS_KIND_DESC } from '../constants/insights';
 import type { InsightsApiRef, InsightsAutomationRef, InsightsEnvironment, InsightsRange, ProjectComponentStat, ProjectHealthSlice, ProjectInsightsData, ProjectInsightsRaw } from '../types/insights';
-
-const fmt = (n: number): string => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(2)}M` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${Math.round(n)}`);
 
 // ---------- shared formatter (real + mock feed into this) ----------
 
@@ -60,7 +60,7 @@ export function toProjectInsightsData(raw: ProjectInsightsRaw): ProjectInsightsD
       id: c.id,
       name: c.name,
       handler: c.handler,
-      desc: c.deleted ? 'Deleted integration' : c.type === 'api' ? 'API integration' : c.type === 'agent' ? 'AI Agent' : c.type === 'mcp' ? 'MCP Server' : c.type === 'webhook' ? 'Webhook' : c.type === 'rag' ? 'RAG ingestion' : 'Automation',
+      desc: c.deleted ? 'Deleted integration' : INSIGHTS_KIND_DESC[c.type],
       type: c.type,
       successCount: c.requestCount != null ? fmt(Math.max(0, (c.requestCount ?? 0) - (c.errorCount ?? 0))) : '—',
       errorCount: c.errorCount != null ? fmt(c.errorCount) : '—',

@@ -1,0 +1,55 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { describe, it, expect } from 'vitest';
+import { escapeCsvCell, toCsv } from './insightsCsv';
+
+describe('escapeCsvCell', () => {
+  it('wraps plain values in double quotes', () => {
+    expect(escapeCsvCell('hello')).toBe('"hello"');
+    expect(escapeCsvCell(42)).toBe('"42"');
+  });
+
+  it('doubles embedded double-quotes', () => {
+    expect(escapeCsvCell('say "hi"')).toBe('"say ""hi"""');
+  });
+
+  it('preserves commas and newlines inside the quoted cell', () => {
+    expect(escapeCsvCell('a,b')).toBe('"a,b"');
+    expect(escapeCsvCell('line1\nline2')).toBe('"line1\nline2"');
+  });
+
+  it('renders null and undefined as empty quoted cells', () => {
+    expect(escapeCsvCell(null)).toBe('""');
+    expect(escapeCsvCell(undefined)).toBe('""');
+  });
+});
+
+describe('toCsv', () => {
+  it('joins cells with commas and rows with CRLF', () => {
+    expect(toCsv([['a', 'b'], ['c', 'd']])).toBe('"a","b"\r\n"c","d"');
+  });
+
+  it('renders an empty row array as a blank line', () => {
+    expect(toCsv([['a'], [], ['b']])).toBe('"a"\r\n\r\n"b"');
+  });
+
+  it('escapes each cell as it joins', () => {
+    expect(toCsv([['x,y', 'z"z']])).toBe('"x,y","z""z"');
+  });
+});

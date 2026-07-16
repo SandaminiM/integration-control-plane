@@ -20,33 +20,18 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { fetchAutomationInsights } from '#api/insights';
 import { useInsightsQueryUrl } from './useInsights';
-import type { AutomationInsightsData, AutomationInsightsRaw, AutomationTrendPoint, ExecutionOutcome, ExecutionScatterPoint, HeatmapData, InsightsEnvironment, InsightsRange, TaskExecutionDetail } from '../types/insights';
+import { executionOutcome, formatDuration } from '../utils/insightsFormat';
+import type { AutomationInsightsData, AutomationInsightsRaw, AutomationTrendPoint, ExecutionScatterPoint, HeatmapData, InsightsEnvironment, InsightsRange } from '../types/insights';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const HOUR_LABELS = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
 
 const EMPTY_RAW: AutomationInsightsRaw = { stats: null, durations: [], executions: [] };
 
-function outcomeOf(e: TaskExecutionDetail): ExecutionOutcome {
-  const v = e.status?.toLowerCase() ?? '';
-  if (v === 'completed' || v === 'succeeded' || v === 'success') return 'success';
-  if (/timeout|timed.?out|deadline/.test(v)) return 'timeout';
-  return 'failure';
-}
-
-function fmtDuration(sec: number): string {
-  if (sec < 60) return `${Math.round(sec)}s`;
-  const m = Math.floor(sec / 60);
-  const s = Math.round(sec % 60);
-  return s === 0 ? `${m}m` : `${m}m ${s}s`;
-}
-
-const OUTCOME_COLOR: Record<ExecutionOutcome, string> = { success: '#81C784', failure: '#E57373', timeout: '#D9A63F' };
-
 function toAutomationInsightsData(raw: AutomationInsightsRaw, componentId: string, range: InsightsRange): AutomationInsightsData {
   const stats = raw.stats;
   const total = stats?.totalExecutions ?? raw.executions.length;
-  const failed = stats ? stats.failedJobs + stats.timeoutJobs : raw.executions.filter((e) => outcomeOf(e) !== 'success').length;
+  const failed = stats ? stats.failedJobs + stats.timeoutJobs : raw.executions.filter((e) => executionOutcome(e.status) !== 'success').length;
   const errorRate = stats?.errorRatePercent ?? (total > 0 ? (failed / total) * 100 : 0);
   const duration = raw.durations.find((d) => d.componentId === componentId) ?? raw.durations[0];
 
@@ -54,8 +39,8 @@ function toAutomationInsightsData(raw: AutomationInsightsRaw, componentId: strin
     { key: 'total', label: 'Total Executions', value: `${total}`, sub: `last ${range}` },
     { key: 'failed', label: 'Failed', value: `${failed}`, sub: `${errorRate.toFixed(1)}% error rate` },
     { key: 'errorRate', label: 'Error Rate', value: `${errorRate.toFixed(1)}%`, sub: 'of executions' },
-    { key: 'avgDuration', label: 'Avg Duration', value: duration ? duration.averageDurationFormatted || fmtDuration(duration.averageDurationMs / 1000) : '—', sub: 'per run' },
-    { key: 'p95Duration', label: 'P95 Duration', value: duration ? duration.p95DurationFormatted || fmtDuration(duration.p95DurationMs / 1000) : '—', sub: 'per run' },
+    { key: 'avgDuration', label: 'Avg Duration', value: duration ? duration.averageDurationFormatted || formatDuration(duration.averageDurationMs / 1000) : '—', sub: 'per run' },
+    { key: 'p95Duration', label: 'P95 Duration', value: duration ? duration.p95DurationFormatted || formatDuration(duration.p95DurationMs / 1000) : '—', sub: 'per run' },
   ];
 
   // oldest → newest for the scatter's left-to-right time axis
@@ -65,14 +50,14 @@ function toAutomationInsightsData(raw: AutomationInsightsRaw, componentId: strin
       const ts = Date.parse(e.startTime);
       if (Number.isNaN(ts) || !(e.durationSeconds >= 0)) return null;
       const d = new Date(ts);
-      return { id: e.jobId, label: `${d.getMonth() + 1}/${d.getDate()}`, durationSec: e.durationSeconds, outcome: outcomeOf(e) } satisfies ExecutionScatterPoint;
+      return { id: e.jobId, label: `${d.getMonth() + 1}/${d.getDate()}`, durationSec: e.durationSeconds, outcome: executionOutcome(e.status) } satisfies ExecutionScatterPoint;
     })
     .filter((p): p is ExecutionScatterPoint => p !== null);
 
   // Failures by day-of-week × hour-of-day (viewer-local time, matching the axis labels)
   const cellCounts = new Map<string, number>();
   raw.executions.forEach((e) => {
-    if (outcomeOf(e) === 'success') return;
+    if (executionOutcome(e.status) === 'success') return;
     const ts = Date.parse(e.startTime);
     if (Number.isNaN(ts)) return;
     const d = new Date(ts);
@@ -93,7 +78,7 @@ function toAutomationInsightsData(raw: AutomationInsightsRaw, componentId: strin
     const d = new Date(ts);
     const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
     const b = dayBuckets.get(key) ?? { success: 0, failure: 0, timeout: 0 };
-    b[outcomeOf(e)]++;
+    b[executionOutcome(e.status)]++;
     dayBuckets.set(key, b);
   });
   const trend: AutomationTrendPoint[] = [...dayBuckets.entries()]
@@ -130,5 +115,3 @@ export function useAutomationInsights(orgUuid: string, projectId: string, insigh
   const data = useMemo(() => toAutomationInsightsData(query.data ?? EMPTY_RAW, componentId, range), [query.data, componentId, range]);
   return { data, isLoading: query.isLoading, isError: query.isError, enabled };
 }
-
-export { OUTCOME_COLOR };

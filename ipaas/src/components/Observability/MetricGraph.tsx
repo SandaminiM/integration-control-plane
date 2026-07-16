@@ -66,7 +66,7 @@ export default function MetricGraph({ title, unit, rows, series, isLoading, isEr
             xAxisDataKey="label"
             height={260}
             colors={series.map((s) => s.color)}
-            lines={series.map((s) => ({ dataKey: s.key, name: s.name, stroke: s.color, type: 'monotone' as const }))}
+            lines={series.map((s) => ({ dataKey: s.key, name: s.name, stroke: s.color, type: 'monotone' as const, dot: false }))}
             legend={{ show: true, verticalAlign: 'top' }}
             margin={{ top: 16 }}
             tooltip={{ show: true }}

@@ -16,8 +16,7 @@
  * under the License.
  */
 
-import { Box, Button, CircularProgress, MenuItem, PageContent, PageTitle, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
-import { Download } from '@wso2/oxygen-ui-icons-react';
+import { Box, CircularProgress, PageContent, PageTitle, Stack, Typography } from '@wso2/oxygen-ui';
 import { useMemo, useState, type JSX } from 'react';
 import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjects';
 import { useComponentByHandler } from '../hooks/useComponents';
@@ -29,22 +28,14 @@ import { useApiInsights } from '../hooks/useApiInsights';
 import { useAutomationInsights } from '../hooks/useAutomationInsights';
 import AutomationInsightsView from '../components/Insights/AutomationInsightsView';
 import ApiInsightsView from '../components/Insights/ApiInsightsView';
+import { InsightsControls } from '../components/Insights/shared';
 import ComingSoon from './ComingSoon';
 import NotFound from '../components/NotFound';
 import { resourceUrl, broaden, type ComponentScope } from '../nav';
 import { UUID_RE } from '../utils/string';
+import { API_LIKE_TYPES, TYPE_TO_KIND } from '../constants/insights';
+import { downloadApiInsightsCsv, downloadAutomationInsightsCsv } from '../utils/insightsCsv';
 import type { InsightsApiRef, InsightsRange } from '../types/insights';
-
-const RANGES: { value: InsightsRange; label: string }[] = [
-  { value: '24h', label: '24h' },
-  { value: '7d', label: '7d' },
-  { value: '30d', label: '30d' },
-  { value: '3mo', label: '3mo' },
-];
-
-// API-like integration types all publish an APIM-tracked API, so they share
-// the Integration-as-API insights view; RAG ingestion rides the automation one.
-const API_LIKE_TYPES = new Set(['integration-as-api', 'ai-agent', 'mcp-server', 'webhook']);
 
 /**
  * Integration-level "Usage Insights" (`.../components/:componentHandler/insights/usage`),
@@ -93,7 +84,7 @@ export default function ComponentInsightsUsage(scope: ComponentScope): JSX.Eleme
 
   const [range, setRange] = useState<InsightsRange>('7d');
 
-  const isApiType = identity != null && API_LIKE_TYPES.has(identity.type);
+  const isApiType = identity != null && API_LIKE_TYPES.includes(identity.type);
   const typeLabel =
     identity?.type === 'automation' ? 'Automation' : identity?.type === 'rag-ingestion' ? 'RAG Ingestion' : identity?.type === 'ai-agent' ? 'AI Agent' : identity?.type === 'mcp-server' ? 'MCP Server' : identity?.type === 'webhook' ? 'Webhook' : 'API';
   const reportApiRef = useMemo<InsightsApiRef | null>(
@@ -104,7 +95,7 @@ export default function ComponentInsightsUsage(scope: ComponentScope): JSX.Eleme
             name: component.displayName || component.name,
             handler: component.handler,
             apiId: component.apiId ?? '',
-            kind: identity?.type === 'ai-agent' ? ('agent' as const) : identity?.type === 'mcp-server' ? ('mcp' as const) : identity?.type === 'webhook' ? ('webhook' as const) : ('api' as const),
+            kind: (identity ? (TYPE_TO_KIND[identity.type] ?? 'api') : 'api') as InsightsApiRef['kind'],
           }
         : null,
     [component, isApiType, identity],
@@ -115,64 +106,24 @@ export default function ComponentInsightsUsage(scope: ComponentScope): JSX.Eleme
   const apiInsights = useApiInsights(orgUuid, projectId, isApiType ? insightsEnv : null, reportApiRef, range, 'overview');
 
   const handleDownloadReport = () => {
-    const esc = (v: unknown) => `"${String(v ?? '').replaceAll('"', '""')}"`;
-    const row = (...cells: unknown[]) => cells.map(esc).join(',');
-    const lines: string[] = [
-      row('Integration Insights Report'),
-      row('Integration', component?.displayName || component?.name || ''),
-      row('Type', typeLabel),
-      row('Environment', insightsEnv?.name ?? ''),
-      row('Period', range),
-      row('Generated', new Date().toISOString()),
-      '',
-      row('KPI', 'Value'),
-    ];
+    const meta = {
+      integrationName: component?.displayName || component?.name || '',
+      typeLabel,
+      handler: component?.handler ?? '',
+      envName: insightsEnv?.name ?? '',
+      range,
+    };
     if (isApiType) {
-      lines.push(...apiInsights.data.kpis.map((k) => row(k.label, k.value)), '');
-      lines.push(row('Bucket', 'Requests', 'Errors', 'Latency (ms)'));
-      lines.push(...apiInsights.data.overview.trend.map((p) => row(p.label, p.requests, p.errors, p.latency ?? '')));
+      downloadApiInsightsCsv(meta, { kpis: apiInsights.data.kpis, trend: apiInsights.data.overview.trend });
     } else {
-      lines.push(...autoInsights.data.kpis.map((k) => row(k.label, k.value)), '');
-      lines.push(row('Bucket', 'Success', 'Failed', 'Timeout'));
-      lines.push(...autoInsights.data.trend.map((p) => row(p.label, p.success, p.failure, p.timeout)));
+      downloadAutomationInsightsCsv(meta, { kpis: autoInsights.data.kpis, trend: autoInsights.data.trend });
     }
-    const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `insights-${component?.handler ?? 'integration'}-${insightsEnv?.name ?? 'env'}-${range}.csv`.replace(/\s+/g, '-').toLowerCase();
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
   };
 
   // Env/range/report controls. For the API view these render inline on the
   // tabs row (passed down as `actions`); the automation view has no tabs row,
   // so they stay in the PageTitle actions slot.
-  const controls = (
-    <Stack direction="row" alignItems="center" gap={1.5} flexWrap="wrap">
-      {envOptions.length > 0 && (
-        <TextField select size="small" value={activeEnvId} onChange={(e) => setEnvId(e.target.value)} sx={{ minWidth: 160 }}>
-          {envOptions.map((e) => (
-            <MenuItem key={e.id} value={e.id}>
-              {e.name}
-            </MenuItem>
-          ))}
-        </TextField>
-      )}
-      <ToggleButtonGroup exclusive size="small" value={range} onChange={(_, v: InsightsRange | null) => v && setRange(v)}>
-        {RANGES.map((r) => (
-          <ToggleButton key={r.value} value={r.value} sx={{ px: 1.5, textTransform: 'none' }}>
-            {r.label}
-          </ToggleButton>
-        ))}
-      </ToggleButtonGroup>
-      <Button variant="contained" size="small" startIcon={<Download size={16} />} onClick={handleDownloadReport}>
-        Report
-      </Button>
-    </Stack>
-  );
+  const controls = <InsightsControls envOptions={envOptions} envId={activeEnvId} onEnvChange={setEnvId} range={range} onRangeChange={setRange} onReport={handleDownloadReport} />;
 
   const isLoading = loadingProject || loadingComponent;
   if (isLoading) {
