@@ -173,7 +173,7 @@ export default function OrgGovernance(scope: OrgScope): JSX.Element {
 
       {/* Policies Section */}
       <Stack gap={2} sx={{ mb: 4, mt: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+        <Typography variant="h4" sx={{ fontWeight: 600 }}>
           Policies
         </Typography>
 
@@ -220,10 +220,6 @@ export default function OrgGovernance(scope: OrgScope): JSX.Element {
 
       {/* Rulesets / Documents Section */}
       <Stack gap={2}>
-        {/* <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Rulesets / Documents
-        </Typography> */}
-
         <Stack direction="row" justifyContent="space-between" alignItems="center" gap={2}>
           <Stack sx={{ minWidth: 260 }}>
             <PillTabs value={catalogTab} onChange={setCatalogTab} tabs={[{ label: 'Rulesets' }, { label: 'Documents' }]} />
