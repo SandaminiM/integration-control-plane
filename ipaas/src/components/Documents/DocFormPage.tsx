@@ -34,12 +34,13 @@ export interface DocFormPageProps {
   initialType: string;
   initialOtherType: string;
   initialContent: string;
+  initialSourceType?: string;
   saving: boolean;
   onBack: () => void;
-  onSave: (name: string, type: string, otherType: string, content: string) => void;
+  onSave: (name: string, type: string, otherType: string, content: string, sourceType: string) => void;
 }
 
-export default function DocFormPage({ view, initialName, initialType, initialOtherType, initialContent, saving, onBack, onSave }: DocFormPageProps): JSX.Element {
+export default function DocFormPage({ view, initialName, initialType, initialOtherType, initialContent, initialSourceType = 'MARKDOWN', saving, onBack, onSave }: DocFormPageProps): JSX.Element {
   const [name, setName] = useState(initialName);
   const [type, setType] = useState(initialType);
   const [otherType, setOtherType] = useState(initialOtherType);
@@ -75,7 +76,7 @@ export default function DocFormPage({ view, initialName, initialType, initialOth
         <Button variant="outlined" onClick={onBack} disabled={saving}>
           Back
         </Button>
-        <Button variant="contained" onClick={() => onSave(name.trim(), type, otherType.trim(), content === PLACEHOLDER ? '' : content)} disabled={!isValid || saving} startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}>
+        <Button variant="contained" onClick={() => onSave(name.trim(), type, otherType.trim(), content === PLACEHOLDER ? '' : content, initialSourceType)} disabled={!isValid || saving} startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}>
           {saving ? 'Saving...' : isCreate ? 'Create' : 'Save'}
         </Button>
       </Stack>

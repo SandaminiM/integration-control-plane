@@ -38,6 +38,7 @@ type View = 'list' | 'create' | 'edit';
 interface EditingState {
   doc: ApiDocument;
   content: string;
+  apimId: string;
 }
 
 const DOC_TYPE_LABEL: Record<string, string> = {
@@ -131,12 +132,14 @@ function DocContentPane({ apimId, doc }: { apimId: string; doc: ApiDocument }) {
 // Pre-fetches content so the parent can prime the editor immediately on click.
 function DocEditTrigger({ apimId, doc, onEdit }: { apimId: string; doc: ApiDocument; onEdit: (doc: ApiDocument, content: string) => void }) {
   const isInline = doc.sourceType === 'MARKDOWN' || doc.sourceType === 'INLINE';
-  const { data: content = '' } = useApimDocumentContent(apimId, doc.documentId, isInline);
+  const { data: content = '', isLoading } = useApimDocumentContent(apimId, doc.documentId, isInline);
   return (
     <Tooltip title="Edit document">
-      <IconButton size="small" sx={{ bgcolor: 'action.hover', '&:hover': { bgcolor: 'action.selected' } }} onClick={() => onEdit(doc, content)}>
-        <Edit size={16} />
-      </IconButton>
+      <span>
+        <IconButton size="small" disabled={isLoading || !isInline} sx={{ bgcolor: 'action.hover', '&:hover': { bgcolor: 'action.selected' } }} onClick={() => onEdit(doc, content)}>
+          <Edit size={16} />
+        </IconButton>
+      </span>
     </Tooltip>
   );
 }
@@ -224,7 +227,7 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
   };
 
   const openEdit = (doc: ApiDocument, content: string) => {
-    setEditing({ doc, content });
+    setEditing({ doc, content, apimId: selectedApimId ?? '' });
     setView('edit');
   };
 
@@ -233,13 +236,13 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
     setEditing(null);
   };
 
-  const handleSave = async (name: string, type: string, otherType: string, content: string) => {
+  const handleSave = async (name: string, type: string, otherType: string, content: string, sourceType: string) => {
     const isCreate = view === 'create';
     const docMeta = {
       name,
       type,
       otherTypeName: type === 'OTHER' ? otherType : undefined,
-      sourceType: 'MARKDOWN' as const,
+      sourceType: (sourceType || 'MARKDOWN') as 'MARKDOWN' | 'INLINE' | 'URL',
       visibility: 'API_LEVEL',
       summary: ' ',
     };
@@ -248,7 +251,7 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
         await createDoc({ apimId: selectedApimId!, doc: docMeta, content });
         setAlert({ type: 'success', message: 'Document created successfully.' });
       } else {
-        await updateDoc({ apimId: selectedApimId!, docId: editing!.doc.documentId, doc: { ...editing!.doc, ...docMeta }, content });
+        await updateDoc({ apimId: editing!.apimId, docId: editing!.doc.documentId, doc: { ...editing!.doc, ...docMeta }, content });
         setAlert({ type: 'success', message: 'Document updated successfully.' });
       }
       setView('list');
@@ -353,6 +356,7 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
           initialType={editing?.doc.type ?? 'HOWTO'}
           initialOtherType={editing?.doc.otherTypeName ?? ''}
           initialContent={editing?.content ?? ''}
+          initialSourceType={editing?.doc.sourceType ?? 'MARKDOWN'}
           saving={creating || updating}
           onBack={handleBack}
           onSave={handleSave}
@@ -471,7 +475,7 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
                     const collapsed = collapsedGroups.has(label);
                     return (
                       <Box key={label}>
-                        <Stack direction="row" alignItems="center" justifyContent="space-between" onClick={() => toggleGroup(label)} sx={{ px: 2, py: 1, mt: 1, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}>
+                        <Stack direction="row" alignItems="center" justifyContent="space-between" role="button" tabIndex={0} aria-expanded={!collapsed} onClick={() => toggleGroup(label)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleGroup(label); } }} sx={{ px: 2, py: 1, mt: 1, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}>
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>
                             {label}
                           </Typography>
@@ -484,7 +488,11 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
                             return (
                               <Box key={doc.documentId} sx={{ px: 1.5, py: 1 }}>
                                 <Box
+                                  role="button"
+                                  tabIndex={0}
+                                  aria-selected={isSelected}
                                   onClick={() => setSelectedDocId(doc.documentId)}
+                                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedDocId(doc.documentId); } }}
                                   sx={{
                                     display: 'flex',
                                     alignItems: 'center',
