@@ -78,6 +78,7 @@ import NotFound from '../components/NotFound';
 import { formatDistanceToNow } from '../utils/time';
 import { resourceUrl, broaden, narrow, newComponentUrl, type ProjectScope } from '../nav';
 import { generateAndSaveGitHubState, validateAndClearGitHubState } from '../auth/tokenManager';
+import { IS_CLOUD } from '../features';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useAuth } from '../auth/AuthContext';
 import { componentOverviewUrl, importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, importComingSoonUrl, buildGitHubOAuthUrl } from '../paths';
@@ -163,10 +164,11 @@ function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId
     if (!checkCreationGuard()) return;
     const { githubAppClientId, githubAppAuthRedirectUrl } = window.API_CONFIG;
     if (!githubAppClientId) {
-      // No GitHub App configured — private-repo authorization is impossible,
-      // so land the import page in public-URL mode instead of its default
-      // (private) mode with a dead Authorize button.
-      navigate(importUrl, { state: { mode: 'public' } });
+      // Cloud only: no GitHub App configured means private-repo authorization
+      // is impossible, so land the import page in public-URL mode instead of
+      // its default (private) mode with a dead Authorize button. Other
+      // variants keep the original navigation.
+      navigate(importUrl, IS_CLOUD ? { state: { mode: 'public' } } : undefined);
       return;
     }
     setIsImportAuthenticating(true);
