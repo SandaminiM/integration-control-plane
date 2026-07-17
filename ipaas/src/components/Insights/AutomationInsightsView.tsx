@@ -101,7 +101,7 @@ export default function AutomationInsightsView({ component, env, insightsEnv, ve
         />
       </InsightsCard>
 
-      <InsightsCard title="Executions" subtitle="Click a row to inspect arguments & logs">
+      <InsightsCard plain title="Executions" subtitle="Click a row to inspect arguments & logs">
         {loadingDeployment || isLoading ? (
           <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
             Loading…

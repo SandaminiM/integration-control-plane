@@ -204,7 +204,7 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
                   )}
                 </InsightsCard>
               </Box>
-              <InsightsCard title="Resource Usage">
+              <InsightsCard plain title="Resource Usage">
                 {!loading && data.traffic.resources.length === 0 ? (
                   <Alert severity="info">No resource usage in range.</Alert>
                 ) : (

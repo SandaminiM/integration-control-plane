@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, Button, ListingTable, MenuItem, Skeleton, Stack, StatCard, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, ListingTable, MenuItem, Paper, Skeleton, Stack, StatCard, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
 import { Download } from '@wso2/oxygen-ui-icons-react';
 import { AreaChart } from '@wso2/oxygen-ui-charts-react';
 import type { JSX, ReactNode } from 'react';
@@ -25,25 +25,39 @@ import type { InsightsRange } from '../../types/insights';
 
 const TOGGLE_SX = { px: 1.5, textTransform: 'none' } as const;
 
-/** Same card chrome as the project Insights view (`pages/ProjectInsights.tsx`), shared here so all three views look like one page. */
-export function InsightsCard({ title, subtitle, action, children, fill = true }: { title: string; subtitle?: string; action?: ReactNode; children: ReactNode; fill?: boolean }): JSX.Element {
-  return (
-    <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, height: fill ? '100%' : 'auto', display: 'flex', flexDirection: 'column' }}>
-      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={1.5} sx={{ mb: 2 }}>
-        <Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            {title}
+/** Same card chrome as the project Insights view (`pages/ProjectInsights.tsx`), shared here so all three views look like one page.
+ * `plain` keeps the surface as a bordered Box — used by cards wrapping a table, which bring their own surface. */
+export function InsightsCard({ title, subtitle, action, children, fill = true, plain = false }: { title: string; subtitle?: string; action?: ReactNode; children: ReactNode; fill?: boolean; plain?: boolean }): JSX.Element {
+  const header = (
+    <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={1.5} sx={{ mb: 2 }}>
+      <Box>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+          {title}
+        </Typography>
+        {subtitle && (
+          <Typography variant="caption" color="text.secondary">
+            {subtitle}
           </Typography>
-          {subtitle && (
-            <Typography variant="caption" color="text.secondary">
-              {subtitle}
-            </Typography>
-          )}
-        </Box>
-        {action}
-      </Stack>
+        )}
+      </Box>
+      {action}
+    </Stack>
+  );
+
+  if (plain) {
+    return (
+      <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2.5, height: fill ? '100%' : 'auto', display: 'flex', flexDirection: 'column' }}>
+        {header}
+        {children}
+      </Box>
+    );
+  }
+
+  return (
+    <Paper variant="outlined" sx={{ p: 2.5, height: fill ? '100%' : 'auto', display: 'flex', flexDirection: 'column' }}>
+      {header}
       {children}
-    </Box>
+    </Paper>
   );
 }
 

@@ -177,7 +177,7 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
         </InsightsCard>
       </Box>
 
-      <InsightsCard fill={false} title="Summary by Integration" subtitle={`Summary of Insights in ${activeEnvName}`}>
+      <InsightsCard plain fill={false} title="Summary by Integration" subtitle={`Summary of Insights in ${activeEnvName}`}>
         {!loading && !hasIntegrations ? (
           <Alert severity="info">There are no integrations to display.</Alert>
         ) : (
