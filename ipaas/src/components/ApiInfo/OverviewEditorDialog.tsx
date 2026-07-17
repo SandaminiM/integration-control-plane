@@ -16,11 +16,9 @@
  * under the License.
  */
 
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@wso2/oxygen-ui';
-import MonacoEditor from '@monaco-editor/react';
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@wso2/oxygen-ui';
 import { useEffect, useState, type JSX } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import MarkdownEditorPane from '../MarkdownEditorPane';
 
 interface OverviewEditorDialogProps {
   open: boolean;
@@ -43,55 +41,7 @@ export default function OverviewEditorDialog({ open, value, onClose, onConfirm }
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Provide the content for the marketplace overview section using <strong>Markdown</strong> formatting.
         </Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden', height: 480 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid', borderColor: 'divider' }}>
-            <Typography variant="caption" sx={{ px: 1.5, py: 0.75, bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider', fontWeight: 600, color: 'text.secondary' }}>
-              Edit
-            </Typography>
-            <Box sx={{ flex: 1, overflow: 'hidden' }}>
-              <MonacoEditor
-                height="100%"
-                language="markdown"
-                theme="vs"
-                value={draft}
-                onChange={(val) => setDraft(val ?? '')}
-                options={{
-                  minimap: { enabled: false },
-                  scrollBeyondLastLine: false,
-                  wordWrap: 'on',
-                  lineNumbers: 'on',
-                  quickSuggestions: false,
-                  acceptSuggestionOnCommitCharacter: false,
-                  fontSize: 13,
-                }}
-              />
-            </Box>
-          </Box>
-          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="caption" sx={{ px: 1.5, py: 0.75, bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider', fontWeight: 600, color: 'text.secondary' }}>
-              Preview
-            </Typography>
-            <Box
-              sx={{
-                flex: 1,
-                overflow: 'auto',
-                p: 2,
-                '& h1,& h2,& h3,& h4': { mt: 1, mb: 0.5 },
-                '& p': { mt: 0, mb: 1 },
-                '& ul,& ol': { pl: 2.5 },
-                '& code': { fontFamily: 'monospace', bgcolor: 'action.hover', px: 0.5, borderRadius: 0.5 },
-                '& pre': { bgcolor: 'action.hover', p: 1.5, borderRadius: 1, overflow: 'auto' },
-              }}>
-              {draft ? (
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{draft}</ReactMarkdown>
-              ) : (
-                <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
-                  Nothing to preview
-                </Typography>
-              )}
-            </Box>
-          </Box>
-        </Box>
+        <MarkdownEditorPane value={draft} onChange={setDraft} height={480} theme="vs" />
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button variant="outlined" onClick={onClose}>

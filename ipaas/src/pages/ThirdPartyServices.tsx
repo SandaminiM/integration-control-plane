@@ -52,7 +52,10 @@ export default function ThirdPartyServices(scope: OrgScope | ProjectScope): JSX.
     return () => clearTimeout(t);
   }, [search]);
 
-  const { data, isLoading, isFetching, isError, refetch } = useThirdPartyServices({ query: debouncedSearch, offset: page * rowsPerPage, limit: rowsPerPage, projectId: projectHandle ? projectId : undefined }, !resolvingProject && (!projectHandle || !!projectId));
+  const { data, isLoading, isFetching, isError, refetch } = useThirdPartyServices(
+    { query: debouncedSearch, offset: page * rowsPerPage, limit: rowsPerPage, projectId: projectHandle ? projectId : undefined },
+    !resolvingProject && (!projectHandle || !!projectId),
+  );
   const del = useDeleteThirdPartyService();
 
   const services = data?.data ?? [];
