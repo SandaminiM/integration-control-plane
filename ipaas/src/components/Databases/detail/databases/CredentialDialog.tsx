@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Autocomplete, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, Stack, TextField } from '@wso2/oxygen-ui';
+import { Alert, Autocomplete, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, Stack, TextField } from '@wso2/oxygen-ui';
 import { Eye, EyeOff } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useCreateDbCredential, useDbCredential, useUpdateDbCredential } from '../../../../hooks/usePlatformServices';
@@ -101,7 +101,9 @@ export default function CredentialDialog({ serverId, orgHandle, dbName, defaultU
         </Alert>
 
         {isEdit && loadingExisting ? (
-          <CircularProgress sx={{ display: 'block', mx: 'auto', py: 4 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <CircularProgress />
+          </Box>
         ) : (
           <Stack gap={2.5} sx={{ mt: 1 }}>
             {!isEdit && (

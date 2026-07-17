@@ -47,7 +47,9 @@ export default function PdpProgressDrawer({ open, pdpName, onClose }: PdpProgres
       return (
         <Drawer anchor="right" open onClose={onClose}>
           <Box sx={drawerBody}>
-            <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <CircularProgress />
+            </Box>
           </Box>
         </Drawer>
       );

@@ -50,7 +50,9 @@ export default function IdpDetailModal({ idp, displayName, onClose }: { idp: Ide
           <IdpLogo type={idp.type} height={44} />
         </Box>
         {isLoading ? (
-          <CircularProgress sx={{ display: 'block', mx: 'auto', py: 4 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <CircularProgress />
+          </Box>
         ) : (
           <Stack>
             <Field label="Name" value={displayName} />

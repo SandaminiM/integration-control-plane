@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Chip, Grid, IconButton, Slider, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Chip, Grid, IconButton, Paper, Slider, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Check, Clock, Copy, Pencil } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import ResourceRangeSlider from '../common/ResourceRangeSlider';
@@ -36,7 +36,7 @@ interface ContainerInfoCardProps {
   onError: (message: string) => void;
 }
 
-const cardSx = { border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 3, mb: 2 } as const;
+const cardSx = { p: 3, mb: 2 } as const;
 const cpuFmt = (v: number): string => String(Math.round(v * 100) / 100);
 const memFmt = (v: number): string => String(Math.round(v));
 
@@ -66,7 +66,7 @@ export default function ContainerInfoCard({ container: c, projectId, componentId
   const policyLabel = c.image_pull_policy === 'Always' ? 'Always' : 'If Not Present';
 
   return (
-    <Box sx={cardSx}>
+    <Paper variant="outlined" sx={cardSx}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
         <Stack direction="row" alignItems="center" gap={1.5}>
           <Typography variant="h6" fontWeight={700}>
@@ -109,7 +109,7 @@ export default function ContainerInfoCard({ container: c, projectId, componentId
       </Grid>
 
       <CommandAndArgs command={c.command} args={c.args} />
-    </Box>
+    </Paper>
   );
 }
 

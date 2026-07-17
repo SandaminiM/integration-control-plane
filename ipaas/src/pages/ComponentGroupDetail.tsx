@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
+import { Box, CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
 import { type JSX } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useGroups } from '../hooks/useAuth';
@@ -26,7 +26,11 @@ import { componentAccessControlUrl } from '../paths';
 import { GroupDetailView } from './EditGroup';
 
 function Loading() {
-  return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />;
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+      <CircularProgress />
+    </Box>
+  );
 }
 
 export default function ComponentGroupDetail(): JSX.Element {

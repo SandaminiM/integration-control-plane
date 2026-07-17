@@ -736,7 +736,9 @@ function IntegrationsTable({
       </Stack>
 
       {isLoading ? (
-        <CircularProgress size={24} color="primary" sx={{ display: 'block', mx: 'auto', py: 4 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress size={24} color="primary" />
+        </Box>
       ) : filtered.length === 0 ? (
         <EmptyListing icon={<PlugZap size={48} />} title="No integrations found" description={query || selectedLabels.length > 0 ? 'Try adjusting your search or filters' : 'Create your first integration to get started'} />
       ) : (
@@ -962,7 +964,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
 
   if (loadingProject) {
     return (
-      <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', minHeight: '100%', justifyContent: 'center', alignItems: 'center' }}>
         <CircularProgress color="primary" />
       </Box>
     );

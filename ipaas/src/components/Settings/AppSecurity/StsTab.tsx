@@ -62,7 +62,12 @@ export default function StsTab({ orgHandler }: { orgHandler: string }): JSX.Elem
 
   const stsDomain = useMemo(() => (dataplanes ?? []).map((d) => d.stsDefaultDomain).find((d): d is string => !!d), [dataplanes]);
 
-  if (loadingEnvs || loadingDps) return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />;
+  if (loadingEnvs || loadingDps)
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
 
   if (!envTemplates?.length) return <EmptyListing icon={<KeyRound size={48} />} title="No environments" description="There are no environments to show security token service endpoints for." />;
 

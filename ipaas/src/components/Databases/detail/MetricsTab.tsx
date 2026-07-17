@@ -43,7 +43,9 @@ export default function MetricsTab({ serverId }: { serverId: string }): JSX.Elem
       </Stack>
 
       {isLoading ? (
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
       ) : isError ? (
         <Alert
           severity="error"

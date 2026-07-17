@@ -71,7 +71,12 @@ export default function IdentityProvidersTab({ orgHandler }: { orgHandler: strin
     });
   };
 
-  if (isLoading) return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />;
+  if (isLoading)
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
   if (isError)
     return (
       <Alert

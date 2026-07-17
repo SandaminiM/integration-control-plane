@@ -74,7 +74,9 @@ export default function ThirdPartyServiceDetail(scope: OrgScope | ProjectScope):
       )}
 
       {isLoading ? (
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
       ) : isError || !service ? (
         <Alert
           severity="error"

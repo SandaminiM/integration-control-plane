@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Button, Chip, CircularProgress, ListingTable, Stack } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Chip, CircularProgress, ListingTable, Stack } from '@wso2/oxygen-ui';
 import { Users } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import Authorized from '../../Authorized';
@@ -31,7 +31,12 @@ export default function RoleManagementTab(): JSX.Element {
   const [mapping, setMapping] = useState<RoleGroupMapping | null>(null);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  if (isLoading) return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />;
+  if (isLoading)
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
   if (isError)
     return (
       <Alert

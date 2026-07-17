@@ -100,7 +100,12 @@ export default function EndpointsTab({ service, orgHandle, canEdit }: { service:
     });
 
   if (!schemaId) return <Alert severity="info">This service has no connection schema.</Alert>;
-  if (isLoading) return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 6 }} />;
+  if (isLoading)
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+        <CircularProgress />
+      </Box>
+    );
   if (isError) {
     return (
       <Alert

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Button, Chip, CircularProgress, IconButton, ListingTable, MenuItem, PageTitle, Select, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Chip, CircularProgress, IconButton, ListingTable, MenuItem, PageTitle, Select, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
@@ -98,7 +98,9 @@ export default function ConnectionsListView({ projectId, componentId, base }: Co
       )}
 
       {isLoading || (isFetching && !connections?.length) ? (
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
       ) : isError ? (
         <Alert
           severity="error"

@@ -56,7 +56,11 @@ import { ALL_ROLE_MODIFY_PERMISSIONS } from '../constants/permissions';
 import { useAccessControl } from '../contexts/AccessControlContext';
 
 function Loading() {
-  return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />;
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+      <CircularProgress />
+    </Box>
+  );
 }
 
 function PermissionsEditor({ allPermissions, selectedIds, onChange }: { allPermissions: Record<string, Permission[]>; selectedIds: Set<string>; onChange: (ids: Set<string>) => void }) {

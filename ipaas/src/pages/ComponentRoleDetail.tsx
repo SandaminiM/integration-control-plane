@@ -54,7 +54,11 @@ import { useComponentByHandler } from '../hooks/useComponents';
 import { componentAccessControlUrl } from '../paths';
 
 function Loading() {
-  return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />;
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+      <CircularProgress />
+    </Box>
+  );
 }
 
 function AssignRoleToGroupsDialog({

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
+import { Box, CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
 import ProjectSettingsTabs from '../components/Settings/ProjectSettingsTabs';
 import EgressPolicyEditor from '../components/Settings/Egress/EgressPolicyEditor';
@@ -29,7 +29,15 @@ export default function ProjectEgressControl({ project }: ProjectScope): JSX.Ele
   return (
     <PageContent>
       <ProjectSettingsTabs active="egress-control" />
-      {isLoading ? <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} /> : !data ? <Typography>Project not found</Typography> : <EgressPolicyEditor key={data.id} projectId={data.id} />}
+      {isLoading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
+      ) : !data ? (
+        <Typography>Project not found</Typography>
+      ) : (
+        <EgressPolicyEditor key={data.id} projectId={data.id} />
+      )}
     </PageContent>
   );
 }

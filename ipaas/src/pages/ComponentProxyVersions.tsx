@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Chip, CircularProgress, ListingTable, PageContent, Stack, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Chip, CircularProgress, ListingTable, PageContent, Stack, Typography } from '@wso2/oxygen-ui';
 import { GitMerge } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import Authorized from '../components/Authorized';
@@ -97,7 +97,15 @@ export default function ComponentProxyVersions({ org, project, component }: Comp
   return (
     <PageContent>
       <ComponentSettingsTabs active="proxy-versions" />
-      {isLoading ? <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} /> : !comp ? <Typography>Integration not found</Typography> : <VersionsBody orgHandler={org} projectId={projectId} componentId={comp.id} versions={comp.apiVersions ?? []} />}
+      {isLoading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
+      ) : !comp ? (
+        <Typography>Integration not found</Typography>
+      ) : (
+        <VersionsBody orgHandler={org} projectId={projectId} componentId={comp.id} versions={comp.apiVersions ?? []} />
+      )}
     </PageContent>
   );
 }
