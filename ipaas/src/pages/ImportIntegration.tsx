@@ -125,9 +125,12 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   const secretRef = isCredentialMode ? credentialId : '';
 
   const reposEnabled = !isPublicRepo && (isCredentialMode ? !!credentialId : authStatus === 'done' || preAuthenticated);
-  const { data: userRepos, isLoading: isReposLoading, isError: isReposError, refetch: refetchRepos } = useGitHubUserRepos(reposEnabled, secretRef);
+  const { data: userRepos, isLoading: isReposLoading, isError: isReposError, isSuccess: isReposSuccess, refetch: refetchRepos } = useGitHubUserRepos(reposEnabled, secretRef);
 
-  const isAuthenticated = !isPublicRepo && !!userRepos && userRepos.length > 0;
+  // Authorization is proven by a successful repo query, not by a non-empty list —
+  // an authorized account with no repositories is still authenticated.
+  const isAuthenticated = !isPublicRepo && isReposSuccess;
+  const hasRepos = (userRepos?.length ?? 0) > 0;
   const isCheckingAuth = !isPublicRepo && reposEnabled && isReposLoading;
 
   const { data: branches, isLoading: isBranchesLoading } = useRepoBranches(activeOrg, activeRepo, isPublicRepo, secretRef);
@@ -378,8 +381,26 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
       );
     }
     // Authenticated: no status chrome — the Organization field itself carries
-    // the provider icon and a reconnect (refresh) action.
-    if (isAuthenticated) return null;
+    // the provider icon and a reconnect (refresh) action. An authorized account
+    // with no repositories still needs guidance to grant access.
+    if (isAuthenticated) {
+      if (hasRepos) return null;
+      return (
+        <Box sx={{ mb: 4 }}>
+          <Alert
+            severity="warning"
+            action={
+              githubInstallUrl ? (
+                <Button color="inherit" size="small" onClick={() => openGitHubManage(githubInstallUrl, refetchRepos)}>
+                  Connect
+                </Button>
+              ) : undefined
+            }>
+            No repositories found. Please check your GitHub access.
+          </Alert>
+        </Box>
+      );
+    }
     // Cloud only: authorized, but the GitHub App is not installed on any
     // account yet. The install popup must open from this button's click —
     // opening it straight from the token exchange gets popup-blocked (no

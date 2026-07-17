@@ -85,6 +85,12 @@ export default function LinkRepositoryDialog({ open, onClose, project, orgHandle
   const orgOptions = userRepos?.map((o) => o.orgName) ?? [];
   const reposForOrg = userRepos?.find((o) => o.orgName === selectedOrg)?.repositories.map((r) => r.name) ?? [];
 
+  // Keep the auth area up while GitHub is authorizing AND when authorization completed
+  // but the repo list came back empty/errored — otherwise the pickers render with nothing
+  // to pick and no way to recover.
+  const gitHubReposReady = isGitHub && authStatus === 'done' && !reposLoading && !reposError && orgOptions.length > 0;
+  const showGitHubAuthArea = isGitHub && !gitHubReposReady;
+
   const resetPickers = () => {
     setSelectedOrg('');
     setSelectedRepo('');
@@ -176,8 +182,14 @@ export default function LinkRepositoryDialog({ open, onClose, project, orgHandle
                 Choose a different provider
               </Button>
 
-              {isGitHub && authStatus !== 'done' ? (
-                <GitHubAuthArea authStatus={authStatus} isCheckingAuth={false} isAuthenticated={false} onAuthorize={() => startGitHubAuth(refetchRepos)} onInstall={() => startGitHubAppInstall(refetchRepos)} />
+              {showGitHubAuthArea ? (
+                <GitHubAuthArea
+                  authStatus={authStatus}
+                  isCheckingAuth={authStatus === 'done' && reposLoading}
+                  isAuthenticated={false}
+                  onAuthorize={() => startGitHubAuth(refetchRepos)}
+                  onInstall={() => startGitHubAppInstall(refetchRepos)}
+                />
               ) : isCredential && !secretRef ? (
                 <Button variant="outlined" size="small" startIcon={providerIcon} onClick={() => setShowCredModal(true)} sx={{ alignSelf: 'flex-start' }}>
                   Authorize
