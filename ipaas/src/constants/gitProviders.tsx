@@ -46,4 +46,3 @@ export function gitProviderIcon(provider: string, size = 16): JSX.Element | null
       return null;
   }
 }
-

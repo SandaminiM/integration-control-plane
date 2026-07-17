@@ -29,13 +29,7 @@ const cred = (id: string, type: string): GitCredential => ({
   referenceToken: '',
 });
 
-const all: GitCredential[] = [
-  cred('1', GitProvider.GITHUB),
-  cred('2', GitProvider.BITBUCKET_CLOUD),
-  cred('3', GitProvider.BITBUCKET_SERVER),
-  cred('4', GitProvider.GITLAB_SELF_MANAGED),
-  cred('5', GitProvider.AZURE_DEVOPS),
-];
+const all: GitCredential[] = [cred('1', GitProvider.GITHUB), cred('2', GitProvider.BITBUCKET_CLOUD), cred('3', GitProvider.BITBUCKET_SERVER), cred('4', GitProvider.GITLAB_SELF_MANAGED), cred('5', GitProvider.AZURE_DEVOPS)];
 
 describe('credentialsForProvider', () => {
   it('matches both Bitbucket cloud and server for a Bitbucket selection', () => {

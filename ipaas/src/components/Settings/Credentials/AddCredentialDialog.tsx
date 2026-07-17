@@ -195,47 +195,47 @@ export default function AddCredentialDialog({
           </Box>
 
           {!lockProvider && (
-          <Box>
-            <Typography variant="body2" sx={{ mb: 0.75 }}>
-              Service Provider
-            </Typography>
-            <Stack direction="row" gap={1.5}>
-              {PROVIDERS.map((p) => {
-                const selected = p.value === provider;
-                return (
-                  <Box
-                    key={p.value}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => selectProvider(p.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        selectProvider(p.value);
-                      }
-                    }}
-                    sx={{
-                      flex: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 1,
-                      py: 1.5,
-                      border: '1px solid',
-                      borderColor: selected ? 'primary.main' : 'divider',
-                      borderRadius: 1.5,
-                      cursor: 'pointer',
-                      bgcolor: selected ? 'action.hover' : 'transparent',
-                    }}>
-                    <p.Icon size={22} />
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {p.label}
-                    </Typography>
-                  </Box>
-                );
-              })}
-            </Stack>
-          </Box>
+            <Box>
+              <Typography variant="body2" sx={{ mb: 0.75 }}>
+                Service Provider
+              </Typography>
+              <Stack direction="row" gap={1.5}>
+                {PROVIDERS.map((p) => {
+                  const selected = p.value === provider;
+                  return (
+                    <Box
+                      key={p.value}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => selectProvider(p.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          selectProvider(p.value);
+                        }
+                      }}
+                      sx={{
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 1,
+                        py: 1.5,
+                        border: '1px solid',
+                        borderColor: selected ? 'primary.main' : 'divider',
+                        borderRadius: 1.5,
+                        cursor: 'pointer',
+                        bgcolor: selected ? 'action.hover' : 'transparent',
+                      }}>
+                      <p.Icon size={22} />
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {p.label}
+                      </Typography>
+                    </Box>
+                  );
+                })}
+              </Stack>
+            </Box>
           )}
 
           <Box>

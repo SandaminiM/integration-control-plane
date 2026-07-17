@@ -298,7 +298,17 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
               disabled={!selectedOrg || isReposLoading}
               slotProps={{
                 input: {
-                  startAdornment: <InputAdornment position="start">{isCredentialMode ? gitProviderIcon(credProvider!, 16) : <Box sx={{ color: 'common.black', display: 'flex' }}><GitHub size={16} /></Box>}</InputAdornment>,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      {isCredentialMode ? (
+                        gitProviderIcon(credProvider!, 16)
+                      ) : (
+                        <Box sx={{ color: 'common.black', display: 'flex' }}>
+                          <GitHub size={16} />
+                        </Box>
+                      )}
+                    </InputAdornment>
+                  ),
                 },
               }}
               helperText="Select repository">
@@ -492,15 +502,7 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
       </Stack>
 
       {showCredModal && modalProvider && (
-        <AddCredentialDialog
-          initialProvider={modalProvider}
-          lockProvider
-          onClose={() => setShowCredModal(false)}
-          onCancel={() => setShowCredModal(false)}
-          onAdded={() => {}}
-          onAddedCredential={handleCredentialAdded}
-          onError={() => {}}
-        />
+        <AddCredentialDialog initialProvider={modalProvider} lockProvider onClose={() => setShowCredModal(false)} onCancel={() => setShowCredModal(false)} onAdded={() => {}} onAddedCredential={handleCredentialAdded} onError={() => {}} />
       )}
     </PageContent>
   );

@@ -168,6 +168,8 @@ export async function obtainGithubToken(authorizationCode: string): Promise<{ su
 
 export async function fetchRepoContents(org: string, repo: string, branch: string, isPublicRepo = false, secretRef = ''): Promise<RepoTreeNode[]> {
   const secretParam = secretRef ? `&secretRef=${encodeURIComponent(secretRef)}` : '';
-  const json = await withStsRetry(() => choreoClient.get<Record<string, unknown>>(`/component-mgt/1.0.0/repositories/${encodeURIComponent(org)}/${encodeURIComponent(repo)}/branches/${encodeURIComponent(branch)}/contents?isPublicRepo=${isPublicRepo}${secretParam}`));
+  const json = await withStsRetry(() =>
+    choreoClient.get<Record<string, unknown>>(`/component-mgt/1.0.0/repositories/${encodeURIComponent(org)}/${encodeURIComponent(repo)}/branches/${encodeURIComponent(branch)}/contents?isPublicRepo=${isPublicRepo}${secretParam}`),
+  );
   return (json?.data ?? json) as RepoTreeNode[];
 }

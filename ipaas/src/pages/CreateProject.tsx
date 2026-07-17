@@ -328,7 +328,17 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
               disabled={!selectedOrg || isReposLoading}
               slotProps={{
                 input: {
-                  startAdornment: <InputAdornment position="start">{isCredentialMode ? gitProviderIcon(credProvider!, 16) : <Box sx={{ color: 'common.black', display: 'flex' }}><GitHub size={16} /></Box>}</InputAdornment>,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      {isCredentialMode ? (
+                        gitProviderIcon(credProvider!, 16)
+                      ) : (
+                        <Box sx={{ color: 'common.black', display: 'flex' }}>
+                          <GitHub size={16} />
+                        </Box>
+                      )}
+                    </InputAdornment>
+                  ),
                 },
               }}
               helperText="Select repository">
@@ -468,7 +478,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
           }
         }}
         sx={{ cursor: 'pointer', mb: gitSectionOpen ? 3 : 6, userSelect: 'none' }}>
-        <Typography variant="h5" component="h2" >
+        <Typography variant="h5" component="h2">
           Connect Your Repository (Optional)
         </Typography>
         <Box sx={{ color: 'primary.main', display: 'flex' }}>{gitSectionOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</Box>
@@ -539,15 +549,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
       </Stack>
 
       {showCredModal && modalProvider && (
-        <AddCredentialDialog
-          initialProvider={modalProvider}
-          lockProvider
-          onClose={() => setShowCredModal(false)}
-          onCancel={() => setShowCredModal(false)}
-          onAdded={() => {}}
-          onAddedCredential={handleCredentialAdded}
-          onError={() => {}}
-        />
+        <AddCredentialDialog initialProvider={modalProvider} lockProvider onClose={() => setShowCredModal(false)} onCancel={() => setShowCredModal(false)} onAdded={() => {}} onAddedCredential={handleCredentialAdded} onError={() => {}} />
       )}
     </PageContent>
   );

@@ -185,7 +185,20 @@ export default function LinkRepositoryDialog({ open, onClose, project, orgHandle
               ) : (
                 <>
                   {isCredential && reposError && (
-                    <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => { setSelectedCredential(null); resetPickers(); setShowCredModal(true); }}>Retry</Button>}>
+                    <Alert
+                      severity="error"
+                      action={
+                        <Button
+                          color="inherit"
+                          size="small"
+                          onClick={() => {
+                            setSelectedCredential(null);
+                            resetPickers();
+                            setShowCredModal(true);
+                          }}>
+                          Retry
+                        </Button>
+                      }>
                       Could not access your repositories. Re-authorize and try again.
                     </Alert>
                   )}
@@ -260,7 +273,15 @@ export default function LinkRepositoryDialog({ open, onClose, project, orgHandle
                       fullWidth
                       size="small"
                       disabled={!activeOrg || !activeRepo}
-                      slotProps={{ input: { startAdornment: <InputAdornment position="start"><GitBranch size={16} /></InputAdornment> } }}>
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <GitBranch size={16} />
+                            </InputAdornment>
+                          ),
+                        },
+                      }}>
                       {(branches ?? []).map((b) => (
                         <MenuItem key={b.name} value={b.name}>
                           {b.name}

@@ -74,12 +74,7 @@ export default function CredentialSelectCard({ provider, credentials, selected, 
         </Box>
       </Stack>
 
-      <Popover
-        open={open}
-        anchorEl={anchorRef.current}
-        onClose={close}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        slotProps={{ paper: { sx: { minWidth: anchorRef.current?.offsetWidth ?? 240, mt: 0.5 } } }}>
+      <Popover open={open} anchorEl={anchorRef.current} onClose={close} anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }} slotProps={{ paper: { sx: { minWidth: anchorRef.current?.offsetWidth ?? 240, mt: 0.5 } } }}>
         <MenuList sx={{ py: 0.5 }}>
           {onAddCredential && [
             <MenuItem
