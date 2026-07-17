@@ -166,7 +166,7 @@ import type { ApiDocument, RuleAdherenceResponse, ThrottlingPolicy } from '../ty
 import type { CreateMcpApiInput, CreatedMcpApi, McpFeatureOperation, McpProxyMetadata, CreateMcpProxyComponentInput } from '../types/mcpProxy';
 import type { OrgEntry, OrgComponentLimits, OrgSubscription, RegisterUserResponse } from '../types/org';
 import type { PrebuiltIntegrationsData, PrebuiltComponentRef, PrebuiltEnvironmentRef } from '../types/prebuilt';
-import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput, UpdateProjectInput } from '../types/project';
+import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput, LinkProjectRepositoryInput, UpdateProjectInput } from '../types/project';
 import type { Repository, Commit, UserRepo, RepoBranch, RepoMetadata, RepoTreeNode, ChoreoSampleImageEntry } from '../types/repository';
 import type { Sample } from '../types/samples';
 
@@ -625,6 +625,7 @@ export interface ProjectsApi {
   fetchProjectHandlerAvailability(orgId: number, candidate: string): Promise<ProjectHandlerAvailability>;
   createProject(input: CreateProjectInput): Promise<Project>;
   createMonoRepoProject(input: CreateMonoRepoProjectInput): Promise<Project>;
+  linkProjectRepository(input: LinkProjectRepositoryInput): Promise<Project>;
   updateProject(input: UpdateProjectInput): Promise<Project>;
   deleteProject(projectId: string): Promise<void>;
 }
@@ -636,9 +637,9 @@ export interface ProjectsApi {
 export interface RepositoryApi {
   fetchComponentRepository(projectId: string, componentHandler: string): Promise<Repository | null>;
   fetchCommitHistory(componentId: string, branch: string): Promise<Commit[]>;
-  fetchGitHubUserRepos(): Promise<UserRepo[]>;
-  fetchRepoBranches(repoOrg: string, repoName: string, isPublicRepo: boolean): Promise<RepoBranch[]>;
-  fetchRepoMetadata(org: string, repo: string, branch: string, subPath: string, isPublicRepo?: boolean): Promise<RepoMetadata>;
+  fetchGitHubUserRepos(secretRef?: string): Promise<UserRepo[]>;
+  fetchRepoBranches(repoOrg: string, repoName: string, isPublicRepo: boolean, secretRef?: string): Promise<RepoBranch[]>;
+  fetchRepoMetadata(org: string, repo: string, branch: string, subPath: string, isPublicRepo?: boolean, secretRef?: string): Promise<RepoMetadata>;
   fetchChoreoSampleImages(orgUuid: string, projectId: string): Promise<ChoreoSampleImageEntry[]>;
   updateBuildpackConfigs(input: UpdateBuildpackConfigsInput): Promise<string>;
   /**
@@ -647,7 +648,7 @@ export interface RepositoryApi {
    * account" — the UI should open the App installation page.
    */
   obtainGithubToken(authorizationCode: string): Promise<{ success: boolean; message: string; needsInstallation?: boolean }>;
-  fetchRepoContents(org: string, repo: string, branch: string, isPublicRepo?: boolean): Promise<RepoTreeNode[]>;
+  fetchRepoContents(org: string, repo: string, branch: string, isPublicRepo?: boolean, secretRef?: string): Promise<RepoTreeNode[]>;
 }
 
 // ---------------------------------------------------------------------------

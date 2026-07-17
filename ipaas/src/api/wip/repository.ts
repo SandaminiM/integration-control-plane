@@ -42,16 +42,16 @@ const COMMIT_HISTORY_QUERY = `
   }`;
 
 const USER_REPOS_QUERY = `
-  query GetUserRepos {
-    userRepos {
+  query GetUserRepos($secretRef: String!) {
+    userRepos(secretRef: $secretRef) {
       orgName
       repositories { name }
     }
   }`;
 
 const REPO_BRANCHES_QUERY = `
-  query GetRepoBranches($repositoryOrganization: String!, $repositoryName: String!, $isPublicRepo: Boolean!) {
-    repoBranchList(secretRef: "", repositoryOrganization: $repositoryOrganization, repositoryName: $repositoryName, isPublicRepo: $isPublicRepo) {
+  query GetRepoBranches($repositoryOrganization: String!, $repositoryName: String!, $isPublicRepo: Boolean!, $secretRef: String!) {
+    repoBranchList(secretRef: $secretRef, repositoryOrganization: $repositoryOrganization, repositoryName: $repositoryName, isPublicRepo: $isPublicRepo) {
       name
       isDefault
     }
@@ -124,21 +124,21 @@ export async function fetchCommitHistory(componentId: string, branch: string): P
   return gql<{ commitHistory: Commit[] }>(COMMIT_HISTORY_QUERY, { componentId, branch }).then((d) => d.commitHistory ?? []);
 }
 
-export async function fetchGitHubUserRepos(): Promise<UserRepo[]> {
-  return gql<{ userRepos: UserRepo[] }>(USER_REPOS_QUERY).then((d) => d.userRepos ?? []);
+export async function fetchGitHubUserRepos(secretRef = ''): Promise<UserRepo[]> {
+  return gql<{ userRepos: UserRepo[] }>(USER_REPOS_QUERY, { secretRef }).then((d) => d.userRepos ?? []);
 }
 
-export async function fetchRepoBranches(repoOrg: string, repoName: string, isPublicRepo: boolean): Promise<RepoBranch[]> {
-  return gql<{ repoBranchList: RepoBranch[] }>(REPO_BRANCHES_QUERY, { repositoryOrganization: repoOrg, repositoryName: repoName, isPublicRepo }).then((d) => d.repoBranchList ?? []);
+export async function fetchRepoBranches(repoOrg: string, repoName: string, isPublicRepo: boolean, secretRef = ''): Promise<RepoBranch[]> {
+  return gql<{ repoBranchList: RepoBranch[] }>(REPO_BRANCHES_QUERY, { repositoryOrganization: repoOrg, repositoryName: repoName, isPublicRepo, secretRef }).then((d) => d.repoBranchList ?? []);
 }
 
-export async function fetchRepoMetadata(org: string, repo: string, branch: string, subPath: string, isPublicRepo = false): Promise<RepoMetadata> {
+export async function fetchRepoMetadata(org: string, repo: string, branch: string, subPath: string, isPublicRepo = false, secretRef = ''): Promise<RepoMetadata> {
   return gql<{ repoMetadata: RepoMetadata }>(REPO_METADATA_QUERY, {
     organizationName: org,
     repoName: repo,
     branch,
     subPath: subPath.replace(/^\//, ''),
-    secretRef: '',
+    secretRef,
     isPublicRepo,
   }).then((d) => d.repoMetadata);
 }
@@ -166,7 +166,8 @@ export async function obtainGithubToken(authorizationCode: string): Promise<{ su
   return gql<{ obtainUserToken: { success: boolean; message: string } }>(OBTAIN_USER_TOKEN, { authorizationCode }).then((d) => d.obtainUserToken);
 }
 
-export async function fetchRepoContents(org: string, repo: string, branch: string, isPublicRepo = false): Promise<RepoTreeNode[]> {
-  const json = await withStsRetry(() => choreoClient.get<Record<string, unknown>>(`/component-mgt/1.0.0/repositories/${encodeURIComponent(org)}/${encodeURIComponent(repo)}/branches/${encodeURIComponent(branch)}/contents?isPublicRepo=${isPublicRepo}`));
+export async function fetchRepoContents(org: string, repo: string, branch: string, isPublicRepo = false, secretRef = ''): Promise<RepoTreeNode[]> {
+  const secretParam = secretRef ? `&secretRef=${encodeURIComponent(secretRef)}` : '';
+  const json = await withStsRetry(() => choreoClient.get<Record<string, unknown>>(`/component-mgt/1.0.0/repositories/${encodeURIComponent(org)}/${encodeURIComponent(repo)}/branches/${encodeURIComponent(branch)}/contents?isPublicRepo=${isPublicRepo}${secretParam}`));
   return (json?.data ?? json) as RepoTreeNode[];
 }

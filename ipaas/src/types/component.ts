@@ -158,6 +158,7 @@ export interface CreateComponentInput {
   repositoryBranch?: string;
   repositorySubPath?: string;
   isPublicRepo?: boolean;
+  secretRef?: string;
   enableAutoDeploy?: boolean;
   isPrebuilt?: boolean;
   /**

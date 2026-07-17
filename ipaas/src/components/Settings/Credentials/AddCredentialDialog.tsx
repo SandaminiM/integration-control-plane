@@ -21,7 +21,7 @@ import { Bitbucket, Eye, EyeOff, Gitlab, X } from '@wso2/oxygen-ui-icons-react';
 import { useState, type ComponentType, type JSX, type ReactNode } from 'react';
 import AzureIcon from '../../../assets/icons/AzureIcon';
 import { useCreateGitCredential } from '../../../hooks/useCredentials';
-import { GitProvider, type CreateGitCredentialInput } from '../../../types/credentials';
+import { GitProvider, type CreateGitCredentialInput, type GitCredential } from '../../../types/credentials';
 
 interface FieldDef {
   label: string;
@@ -95,13 +95,44 @@ function buildInput(provider: GitProvider, name: string, f1: string, f2: string)
   }
 }
 
-export default function AddCredentialDialog({ onClose, onAdded, onError }: { onClose: () => void; onAdded: (name: string) => void; onError: (message: string) => void }): JSX.Element {
+/** Field label with a red required asterisk (the dialog's inputs use standalone labels, not TextField's built-in one). */
+function RequiredLabel({ children }: { children: ReactNode }): JSX.Element {
+  return (
+    <Typography variant="body2" sx={{ mb: 0.75 }}>
+      {children}{' '}
+      <Box component="span" sx={{ color: 'error.main' }}>
+        *
+      </Box>
+    </Typography>
+  );
+}
+
+export default function AddCredentialDialog({
+  onClose,
+  onAdded,
+  onError,
+  initialProvider,
+  onAddedCredential,
+  lockProvider = false,
+  onCancel,
+}: {
+  onClose: () => void;
+  onAdded: (name: string) => void;
+  onError: (message: string) => void;
+  initialProvider?: GitProvider;
+  onAddedCredential?: (credential: GitCredential) => void;
+  /** Lock the dialog to `initialProvider` — hides the provider selector (import flow enters from a specific provider). */
+  lockProvider?: boolean;
+  /** When provided, a Cancel button is shown even in lock mode (otherwise the locked dialog is non-dismissible). The caller decides what cancel does (e.g. navigate away, or just close). */
+  onCancel?: () => void;
+}): JSX.Element {
   const create = useCreateGitCredential();
   const [name, setName] = useState('');
-  const [provider, setProvider] = useState<GitProvider>(GitProvider.BITBUCKET_CLOUD);
+  const [provider, setProvider] = useState<GitProvider>(initialProvider ?? GitProvider.BITBUCKET_CLOUD);
   const [f1, setF1] = useState('');
   const [f2, setF2] = useState('');
   const [showSecret, setShowSecret] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const def = PROVIDERS.find((p) => p.value === provider)!;
   const canSave = name.trim() && f1.trim() && f2.trim() && !create.isPending;
 
@@ -112,33 +143,58 @@ export default function AddCredentialDialog({ onClose, onAdded, onError }: { onC
     setShowSecret(false);
   };
 
-  const handleSave = () =>
+  const handleSave = () => {
+    setSaveError('');
     create.mutate(buildInput(provider, name.trim(), f1.trim(), f2.trim()), {
-      onSuccess: () => {
+      onSuccess: (credential) => {
         onClose();
         onAdded(name.trim());
+        onAddedCredential?.(credential);
       },
       onError: (e) => {
+        const message = e.message || 'Failed to add the credential.';
+        // Locked (import) flow: keep the modal open and surface the error inline
+        // so the user can fix the token and re-authorize without losing context.
+        if (lockProvider) {
+          setSaveError(message);
+          return;
+        }
         onClose();
-        onError(e.message || 'Failed to add the credential.');
+        onError(message);
       },
     });
+  };
 
   return (
-    <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
-      <IconButton aria-label="Close" onClick={onClose} sx={{ position: 'absolute', right: 8, top: 8 }}>
-        <X size={18} />
-      </IconButton>
-      <DialogTitle sx={{ textAlign: 'center', fontWeight: 700 }}>Add Credentials</DialogTitle>
+    <Dialog open onClose={lockProvider ? undefined : onClose} disableEscapeKeyDown={lockProvider} maxWidth="sm" fullWidth>
+      {!lockProvider && (
+        <IconButton aria-label="Close" onClick={onClose} sx={{ position: 'absolute', right: 8, top: 8 }}>
+          <X size={18} />
+        </IconButton>
+      )}
+      <DialogTitle sx={{ textAlign: 'center', fontWeight: 700, fontSize: (t) => t.typography.h4.fontSize, mt: 2 }}>
+        {lockProvider ? (
+          <Stack direction="row" alignItems="center" justifyContent="center" gap={1}>
+            <def.Icon size={26} />
+            Authorize with {def.label}
+          </Stack>
+        ) : (
+          'Add Credentials'
+        )}
+      </DialogTitle>
       <DialogContent>
         <Stack gap={2.5} sx={{ mt: 1 }}>
+          {saveError && (
+            <Alert severity="error" onClose={() => setSaveError('')}>
+              {saveError}
+            </Alert>
+          )}
           <Box>
-            <Typography variant="body2" sx={{ mb: 0.75 }}>
-              Credential Name
-            </Typography>
+            <RequiredLabel>Credential Name</RequiredLabel>
             <TextField value={name} onChange={(e) => setName(e.target.value)} fullWidth placeholder="Enter Credential Name" />
           </Box>
 
+          {!lockProvider && (
           <Box>
             <Typography variant="body2" sx={{ mb: 0.75 }}>
               Service Provider
@@ -180,18 +236,15 @@ export default function AddCredentialDialog({ onClose, onAdded, onError }: { onC
               })}
             </Stack>
           </Box>
+          )}
 
           <Box>
-            <Typography variant="body2" sx={{ mb: 0.75 }}>
-              {def.f1.label}
-            </Typography>
+            <RequiredLabel>{def.f1.label}</RequiredLabel>
             <TextField value={f1} onChange={(e) => setF1(e.target.value)} fullWidth placeholder={def.f1.placeholder} />
           </Box>
 
           <Box>
-            <Typography variant="body2" sx={{ mb: 0.75 }}>
-              {def.f2.label}
-            </Typography>
+            <RequiredLabel>{def.f2.label}</RequiredLabel>
             <TextField
               value={f2}
               onChange={(e) => setF2(e.target.value)}
@@ -222,11 +275,17 @@ export default function AddCredentialDialog({ onClose, onAdded, onError }: { onC
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={create.isPending}>
-          Cancel
-        </Button>
+        {!lockProvider ? (
+          <Button onClick={onClose} disabled={create.isPending}>
+            Cancel
+          </Button>
+        ) : onCancel ? (
+          <Button onClick={onCancel} disabled={create.isPending}>
+            Cancel
+          </Button>
+        ) : null}
         <Button variant="contained" onClick={handleSave} disabled={!canSave} startIcon={create.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}>
-          {create.isPending ? 'Saving…' : 'Save'}
+          {create.isPending ? (lockProvider ? 'Authorizing…' : 'Saving…') : lockProvider ? 'Authorize' : 'Save'}
         </Button>
       </DialogActions>
     </Dialog>

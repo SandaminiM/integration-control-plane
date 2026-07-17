@@ -20,67 +20,97 @@ import { Alert, Box, Button, CircularProgress, Grid, IconButton, InputAdornment,
 import { ArrowLeft, Building2, Check, ChevronDown, ChevronUp, Edit, GitHub, GitBranch } from '@wso2/oxygen-ui-icons-react';
 import GitIcon from '../assets/icons/GitIcon';
 import GitProviderCards from '../components/ProjectCreate/GitProviderCards';
+import GitHubAuthArea from '../components/Import/GitHubAuthArea';
+import { useGitRepoSource } from '../hooks/useGitRepoSource';
 import { useState, useEffect, useLayoutEffect, type JSX } from 'react';
+import { useNavigate } from 'react-router';
 import { useCreateProject, useCreateMonoRepoProject } from '../hooks/useProjects';
 import { useCreateComponent } from '../hooks/useComponents';
-import { useGitHubUserRepos, useRepoBranches, useRepoContents } from '../hooks/useRepository';
 import { useOrgs, useOrgComponentLimits, useOrgSubscriptions } from '../hooks/useOrg';
 import type { Project } from '../types/project';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import DirectoryPickerField from '../components/DirectoryPicker';
 import WorkspaceModuleTable from '../components/ProjectCreate/WorkspaceModuleTable';
-import { FREE_COMPONENT_LIMIT, URL_DEBOUNCE_MS } from '../constants/project';
+import { FREE_COMPONENT_LIMIT } from '../constants/project';
 import { useProjectHandler } from '../hooks/useProjectHandler';
 import { resourceUrl, narrow, type OrgScope } from '../nav';
-import { useGitHubAuth } from '../hooks/useGitHubAuth';
-import { IS_CLOUD } from '../features';
 import { toHandler } from '../utils/string';
-import { parseGitHubUrl } from '../utils/github';
-import { isBallerinaWorkspace } from '../utils/technologyDetection';
 import { validateProjectName, validateProjectHandler, normalizeProjectError } from '../utils/projectValidation';
-import type { GitProvider, WorkspaceModule } from '../types/project';
+import { GitProvider as CredGitProvider } from '../types/credentials';
+import AddCredentialDialog from '../components/Settings/Credentials/AddCredentialDialog';
+import { gitProviderIcon } from '../constants/gitProviders';
+import { buildRepoUrl } from '../utils/gitProviderUrl';
 
 export default function CreateProject(scope: OrgScope): JSX.Element {
   const [displayName, setDisplayName] = useState('');
   const [description, setDescription] = useState('');
-
-  const [gitProvider, setGitProvider] = useState<GitProvider | null>(null);
-  const isPublicRepo = gitProvider === 'public';
-  const attachGit = gitProvider !== null;
-
   const [gitSectionOpen, setGitSectionOpen] = useState(false);
-
-  const [selectedOrg, setSelectedOrg] = useState('');
-  const [selectedRepo, setSelectedRepo] = useState('');
-
-  const [repoUrl, setRepoUrl] = useState('');
-  const [urlError, setUrlError] = useState('');
-  const [parsedOrg, setParsedOrg] = useState('');
-  const [parsedRepo, setParsedRepo] = useState('');
-
-  const [selectedBranch, setSelectedBranch] = useState('');
-  const [subPath, setSubPath] = useState('/');
-
-  const [isWorkspace, setIsWorkspace] = useState(false);
-  const [workspaceModules, setWorkspaceModules] = useState<WorkspaceModule[]>([]);
   const [showWorkspaceConfig, setShowWorkspaceConfig] = useState(false);
-
   const [isCreating, setIsCreating] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const activeOrg = isPublicRepo ? parsedOrg : selectedOrg;
-  const activeRepo = isPublicRepo ? parsedRepo : selectedRepo;
-  const showBranchAndSubPath = !!(activeOrg && activeRepo);
-  const pathReady = !!(activeOrg && activeRepo && selectedBranch);
+  const {
+    gitProvider,
+    credProvider,
+    selectedCredential,
+    isCredentialMode,
+    isPublicRepo,
+    providerSelected,
+    secretRef,
+    providerLabel,
+    allCredentials,
+    showCredModal,
+    setShowCredModal,
+    modalProvider,
+    selectedOrg,
+    setSelectedOrg,
+    selectedRepo,
+    setSelectedRepo,
+    repoUrl,
+    setRepoUrl,
+    urlError,
+    parsedOrg,
+    selectedBranch,
+    setSelectedBranch,
+    subPath,
+    setSubPath,
+    activeOrg,
+    activeRepo,
+    showBranchAndSubPath,
+    isWorkspace,
+    workspaceModules,
+    setWorkspaceModules,
+    userRepos,
+    isReposLoading,
+    refetchRepos,
+    isAuthenticated,
+    branches,
+    isBranchesLoading,
+    repoContents,
+    isContentsLoading,
+    isContentsError,
+    refetchContents,
+    authStatus,
+    startGitHubAuth,
+    startGitHubAppInstall,
+    isCheckingAuth,
+    credentialAuthFailed,
+    handleProviderSelect,
+    handleCredentialPicked,
+    handleCreateCredential,
+    handleCredentialAdded,
+    resetSource,
+  } = useGitRepoSource(gitSectionOpen);
+  const attachGit = providerSelected;
 
-  // colSize: 4 fields (GitHub + branch + subpath) → md:3; otherwise → md:4
   const colSize = !isPublicRepo && showBranchAndSubPath ? 3 : 4;
 
-  const { handler: effectiveHandler, handlerEdited, isCheckingAvailability, availability, startEditing, stopEditing, onHandlerChange } = useProjectHandler(displayName);
-  const { authStatus, startGitHubAuth, startGitHubAppInstall } = useGitHubAuth();
+  const { handler: effectiveHandler, handlerEdited, isCheckingAvailability, availability, availabilityError, startEditing, stopEditing, onHandlerChange } = useProjectHandler(displayName);
   const createProject = useCreateProject();
   const createMonoRepoProject = useCreateMonoRepoProject();
   const createComponent = useCreateComponent();
+  const navigate = useNavigate();
+  const orgHomeUrl = resourceUrl(scope, 'overview');
 
   const { data: orgs = [] } = useOrgs();
   const orgUuid = useOrgUuid() ?? orgs.find((o) => o.handle === scope.org)?.uuid ?? '';
@@ -90,93 +120,10 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
   const orgBillableCount = isUpgraded ? 0 : (orgLimits?.billableComponentCount ?? 0);
   const quotaRemaining = isUpgraded ? undefined : Math.max(0, FREE_COMPONENT_LIMIT - orgBillableCount);
 
-  const reposEnabled = !isPublicRepo && authStatus === 'done';
-  const { data: userRepos, isLoading: isReposLoading, refetch: refetchRepos } = useGitHubUserRepos(reposEnabled);
-  const isAuthenticated = !isPublicRepo && !!userRepos && userRepos.length > 0;
-  const isCheckingAuth = !isPublicRepo && reposEnabled && isReposLoading;
-
-  const { data: branches, isLoading: isBranchesLoading } = useRepoBranches(activeOrg, activeRepo, isPublicRepo);
-  const { data: repoContents = [], isLoading: isContentsLoading, isError: isContentsError, refetch: refetchContents } = useRepoContents(activeOrg, activeRepo, selectedBranch, isPublicRepo);
-
-  // Auto-select default branch; preserve an already-valid selection on refetch
+  // Collapse the workspace-config panel whenever the source repo/branch or detection result changes.
   useEffect(() => {
-    if (!branches || branches.length === 0) return;
-    const stillExists = branches.some((b) => b.name === selectedBranch);
-    if (!selectedBranch || !stillExists) {
-      const def = branches.find((b) => b.isDefault);
-      setSelectedBranch(def?.name ?? branches[0].name);
-    }
-  }, [branches]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Reset downstream state when GitHub repo changes
-  useEffect(() => {
-    if (isPublicRepo) return;
-    setSelectedBranch('');
-    setSubPath('/');
-    setIsWorkspace(false);
-    setWorkspaceModules([]);
     setShowWorkspaceConfig(false);
-  }, [selectedRepo]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Reset workspace when branch changes
-  useEffect(() => {
-    setIsWorkspace(false);
-    setWorkspaceModules([]);
-    setShowWorkspaceConfig(false);
-  }, [selectedBranch]);
-
-  // Public repo: debounced URL parsing
-  useEffect(() => {
-    if (!isPublicRepo) return;
-    const id = setTimeout(() => {
-      if (!repoUrl) {
-        setUrlError('');
-        setParsedOrg('');
-        setParsedRepo('');
-        setSelectedBranch('');
-        setSubPath('/');
-        return;
-      }
-      const parsed = parseGitHubUrl(repoUrl);
-      if (!parsed) {
-        setUrlError('Enter a valid GitHub URL, e.g. https://github.com/org/repo');
-        setParsedOrg('');
-        setParsedRepo('');
-        return;
-      }
-      setUrlError('');
-      if (parsed.org !== parsedOrg || parsed.repo !== parsedRepo) {
-        setSelectedBranch('');
-        setSubPath('/');
-        setParsedOrg(parsed.org);
-        setParsedRepo(parsed.repo);
-      }
-    }, URL_DEBOUNCE_MS);
-    return () => clearTimeout(id);
-    // parsedOrg/parsedRepo intentionally omitted — compared only on change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [repoUrl]);
-
-  // Workspace detection from repo contents
-  useEffect(() => {
-    if (!pathReady || isContentsLoading) {
-      setIsWorkspace(false);
-      setWorkspaceModules([]);
-      return;
-    }
-    let nodes = repoContents;
-    if (subPath && subPath !== '/') {
-      const cleanPath = subPath.replace(/^\//, '');
-      const target = repoContents.find((n) => n.path === cleanPath || n.subPath === cleanPath);
-      nodes = target?.children ?? [];
-    }
-    const workspace = isBallerinaWorkspace(nodes);
-    setIsWorkspace(workspace);
-    if (!workspace) {
-      setWorkspaceModules([]);
-      setShowWorkspaceConfig(false);
-    }
-  }, [repoContents, subPath, pathReady, isContentsLoading]);
+  }, [selectedRepo, selectedBranch, isWorkspace]);
 
   // Stabilize scrollbar gutter to prevent layout shift when content height changes
   useLayoutEffect(() => {
@@ -186,31 +133,9 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
     };
   }, []);
 
-  const resetGitState = () => {
-    setSelectedOrg('');
-    setSelectedRepo('');
-    setRepoUrl('');
-    setUrlError('');
-    setParsedOrg('');
-    setParsedRepo('');
-    setSelectedBranch('');
-    setSubPath('/');
-    setIsWorkspace(false);
-    setWorkspaceModules([]);
-    setShowWorkspaceConfig(false);
-  };
-
-  const handleProviderSelect = (provider: GitProvider) => {
-    if (gitProvider !== null) resetGitState();
-    setGitProvider(provider);
-  };
-
   const handleGitSectionToggle = () => {
-    if (gitSectionOpen) {
-      // User is dismissing the optional section — clear any provider and repo state.
-      setGitProvider(null);
-      resetGitState();
-    }
+    // Dismissing the optional section clears any chosen provider and repo state.
+    if (gitSectionOpen) resetSource();
     setGitSectionOpen((prev) => !prev);
   };
 
@@ -219,8 +144,8 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
   const handlerTaken = availability && !availability.handlerUnique ? 'This name is already taken.' : null;
 
   const gitReady = !attachGit || (showBranchAndSubPath && !!selectedBranch);
-  // Block submit until availability has returned a result (prevents racing the debounce and hitting 409)
-  const availabilityReady = !effectiveHandler || effectiveHandler.length < 2 || availability !== undefined;
+  // A failed availability check must not hard-block submit — the create call still validates uniqueness.
+  const availabilityReady = !effectiveHandler || effectiveHandler.length < 2 || availability !== undefined || availabilityError;
   const canSubmit = !!displayName.trim() && !nameError && !!effectiveHandler && !handlerError && !handlerTaken && !isCheckingAvailability && availabilityReady && gitReady;
 
   const handleSubmit = async () => {
@@ -240,8 +165,9 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
           gitOrganization: activeOrg,
           branch: selectedBranch,
           directoryPath: subPath === '/' ? '' : subPath.replace(/^\//, ''),
-          gitProvider: isPublicRepo ? 'public' : 'github',
+          gitProvider: isPublicRepo ? 'public' : isCredentialMode ? (credProvider as string) : 'github',
           isPublicRepo,
+          secretRef,
         });
       } else {
         project = await createProject.mutateAsync({
@@ -261,7 +187,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
     // Step 2: create workspace module components. The project already exists, so individual
     // component failures don't block navigation — the user can manage them from the project page.
     if (isWorkspace && workspaceModules.length > 0) {
-      const srcGitRepoUrl = `https://github.com/${activeOrg}/${activeRepo}`;
+      const srcGitRepoUrl = buildRepoUrl(credProvider ?? CredGitProvider.GITHUB, activeOrg, activeRepo, selectedCredential?.serverUrl);
       await Promise.allSettled(
         workspaceModules.map((module) =>
           createComponent.mutateAsync({
@@ -275,6 +201,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
             repositoryBranch: selectedBranch,
             repositorySubPath: module.path,
             isPublicRepo,
+            ...(isCredentialMode ? { secretRef } : {}),
           }),
         ),
       );
@@ -292,84 +219,33 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
     return handlerError ?? 'Auto-generated identifier';
   };
 
-  const renderGitHubAuthArea = () => {
-    if (isCheckingAuth) {
+  const renderCredentialAuthArea = () => {
+    if (!secretRef) return null;
+    if (credentialAuthFailed) {
+      return (
+        <Alert
+          severity="error"
+          sx={{ mb: 3 }}
+          action={
+            <Button color="inherit" size="small" onClick={resetSource}>
+              Retry
+            </Button>
+          }>
+          Could not access your {providerLabel} repositories. Re-authorize and try again.
+        </Alert>
+      );
+    }
+    if (isReposLoading) {
       return (
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3, minHeight: 40 }}>
           <CircularProgress size={16} />
           <Typography variant="body2" color="text.secondary">
-            Checking GitHub connection…
+            Loading your {providerLabel} repositories…
           </Typography>
         </Stack>
       );
     }
-    if (isAuthenticated) return null;
-    if (authStatus === 'authenticating' || (IS_CLOUD && authStatus === 'installing')) {
-      return (
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3, minHeight: 40 }}>
-          <CircularProgress size={16} />
-          <Typography color="text.secondary" variant="body2">
-            {authStatus === 'installing' ? 'Install the GitHub App in the popup, then return here…' : 'Completing GitHub authorization…'}
-          </Typography>
-        </Stack>
-      );
-    }
-    if (authStatus === 'failed') {
-      return (
-        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 3 }}>
-          <Typography variant="body2" color="error.main">
-            GitHub authorization failed.
-          </Typography>
-          <Button variant="text" size="small" sx={{ p: 0, minWidth: 0 }} onClick={() => startGitHubAuth(refetchRepos)}>
-            Try again
-          </Button>
-        </Stack>
-      );
-    }
-    // Cloud only: authorized, but the GitHub App is not installed on any
-    // account yet. The install popup must open from this button's click —
-    // opening it straight from the token exchange gets popup-blocked (no
-    // user gesture).
-    if (IS_CLOUD && authStatus === 'needs-install') {
-      return (
-        <Box sx={{ mb: 3 }}>
-          <Alert severity="info" sx={{ mb: 1.5 }}>
-            The GitHub App is not installed on any of your accounts yet. Install it on the account or organization that owns your repository, then authorize again.
-          </Alert>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={
-              <Box sx={{ color: 'common.black', display: 'flex' }}>
-                <GitHub size={16} />
-              </Box>
-            }
-            onClick={() => startGitHubAppInstall(refetchRepos)}>
-            Install GitHub App
-          </Button>
-        </Box>
-      );
-    }
-    return (
-      <Box sx={{ mb: 3 }}>
-        {authStatus === 'done' && (
-          <Alert severity="warning" sx={{ mb: 1.5 }}>
-            No repositories found. Please check your GitHub access.
-          </Alert>
-        )}
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={
-            <Box sx={{ color: 'common.black', display: 'flex' }}>
-              <GitHub size={16} />
-            </Box>
-          }
-          onClick={() => startGitHubAuth(refetchRepos)}>
-          {authStatus === 'done' ? 'Reconnect GitHub' : 'Authorize with GitHub'}
-        </Button>
-      </Box>
-    );
+    return null;
   };
 
   const orgOptions = userRepos?.map((o) => o.orgName) ?? [];
@@ -427,16 +303,13 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
               }}
               fullWidth
               disabled={!isAuthenticated || isReposLoading}
+              error={credentialAuthFailed}
               slotProps={{
                 input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Building2 size={18} />
-                    </InputAdornment>
-                  ),
+                  startAdornment: <InputAdornment position="start">{isCredentialMode ? gitProviderIcon(credProvider!, 18) : <Building2 size={18} />}</InputAdornment>,
                 },
               }}
-              helperText="GitHub organization">
+              helperText={isCredentialMode ? `${providerLabel} organization` : 'GitHub organization'}>
               {orgOptions.map((org) => (
                 <MenuItem key={org} value={org}>
                   {org}
@@ -455,13 +328,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
               disabled={!selectedOrg || isReposLoading}
               slotProps={{
                 input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Box sx={{ color: 'common.black', display: 'flex' }}>
-                        <GitHub size={16} />
-                      </Box>
-                    </InputAdornment>
-                  ),
+                  startAdornment: <InputAdornment position="start">{isCredentialMode ? gitProviderIcon(credProvider!, 16) : <Box sx={{ color: 'common.black', display: 'flex' }}><GitHub size={16} /></Box>}</InputAdornment>,
                 },
               }}
               helperText="Select repository">
@@ -515,7 +382,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
 
   return (
     <PageContent sx={{ pt: 5, '& .MuiFormLabel-asterisk': { color: 'error.main' } }}>
-      <Button startIcon={<ArrowLeft size={16} />} onClick={() => window.history.back()} sx={{ mb: 2 }}>
+      <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(orgHomeUrl)} sx={{ mb: 2 }}>
         Back to Home
       </Button>
 
@@ -600,8 +467,8 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
             handleGitSectionToggle();
           }
         }}
-        sx={{ cursor: 'pointer', mb: gitSectionOpen ? 2 : 6, userSelect: 'none' }}>
-        <Typography variant="h5" component="h2">
+        sx={{ cursor: 'pointer', mb: gitSectionOpen ? 3 : 6, userSelect: 'none' }}>
+        <Typography variant="h5" component="h2" >
           Connect Your Repository (Optional)
         </Typography>
         <Box sx={{ color: 'primary.main', display: 'flex' }}>{gitSectionOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</Box>
@@ -617,11 +484,15 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
                   startGitHubAuth(refetchRepos);
                 }}
                 onPublicSelect={() => handleProviderSelect('public')}
+                credentials={allCredentials}
+                onCredentialSelect={handleCredentialPicked}
+                onCreateCredential={handleCreateCredential}
               />
             </Box>
           ) : (
             <Box sx={{ mt: 4 }}>
-              {gitProvider === 'github' && renderGitHubAuthArea()}
+              {gitProvider === 'github' && <GitHubAuthArea authStatus={authStatus} isCheckingAuth={isCheckingAuth} isAuthenticated={isAuthenticated} onAuthorize={() => startGitHubAuth(refetchRepos)} onInstall={() => startGitHubAppInstall(refetchRepos)} />}
+              {isCredentialMode && renderCredentialAuthArea()}
               {renderRepoPickers()}
             </Box>
           )}
@@ -659,13 +530,25 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
       )}
 
       <Stack direction="row" gap={2} sx={{ mt: 3 }}>
-        <Button variant="outlined" onClick={() => window.history.back()} disabled={isCreating}>
+        <Button variant="outlined" onClick={() => navigate(orgHomeUrl)} disabled={isCreating}>
           Cancel
         </Button>
         <Button variant="contained" onClick={handleSubmit} disabled={!canSubmit || isCreating} startIcon={isCreating ? <CircularProgress size={16} color="inherit" /> : undefined}>
           {isCreating ? 'Creating…' : 'Create Project'}
         </Button>
       </Stack>
+
+      {showCredModal && modalProvider && (
+        <AddCredentialDialog
+          initialProvider={modalProvider}
+          lockProvider
+          onClose={() => setShowCredModal(false)}
+          onCancel={() => setShowCredModal(false)}
+          onAdded={() => {}}
+          onAddedCredential={handleCredentialAdded}
+          onError={() => {}}
+        />
+      )}
     </PageContent>
   );
 }
