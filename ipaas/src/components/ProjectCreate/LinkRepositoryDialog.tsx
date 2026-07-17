@@ -28,6 +28,7 @@ import { parseGitHubUrl } from '../../utils/github';
 import { GitProvider, type GitCredential } from '../../types/credentials';
 import type { Project } from '../../types/project';
 import AddCredentialDialog from '../Settings/Credentials/AddCredentialDialog';
+import GitHubAuthArea from '../Import/GitHubAuthArea';
 
 /** `null` = provider not chosen yet; otherwise a credential provider, GitHub, or a public URL. */
 type LinkProvider = GitProvider | 'public' | null;
@@ -65,7 +66,7 @@ export default function LinkRepositoryDialog({ open, onClose, project, orgHandle
   const [directoryPath, setDirectoryPath] = useState('/');
   const [error, setError] = useState('');
 
-  const { authStatus, startGitHubAuth } = useGitHubAuth();
+  const { authStatus, startGitHubAuth, startGitHubAppInstall } = useGitHubAuth();
   const link = useLinkProjectRepository();
 
   const isGitHub = provider === GitProvider.GITHUB;
@@ -126,7 +127,7 @@ export default function LinkRepositoryDialog({ open, onClose, project, orgHandle
         gitOrganization: activeOrg,
         branch: selectedBranch,
         gitProvider: isPublic ? 'public' : (provider as string),
-        directoryPath,
+        directoryPath: directoryPath === '/' ? '' : directoryPath.replace(/^\//, ''),
         isPublicRepo: isPublic,
         secretRef,
       },
@@ -176,12 +177,7 @@ export default function LinkRepositoryDialog({ open, onClose, project, orgHandle
               </Button>
 
               {isGitHub && authStatus !== 'done' ? (
-                <Stack direction="row" alignItems="center" gap={1.5} sx={{ py: 2 }}>
-                  <CircularProgress size={18} />
-                  <Typography variant="body2" color="text.secondary">
-                    Authorizing with GitHub…
-                  </Typography>
-                </Stack>
+                <GitHubAuthArea authStatus={authStatus} isCheckingAuth={false} isAuthenticated={false} onAuthorize={() => startGitHubAuth(refetchRepos)} onInstall={() => startGitHubAppInstall(refetchRepos)} />
               ) : isCredential && !secretRef ? (
                 <Button variant="outlined" size="small" startIcon={providerIcon} onClick={() => setShowCredModal(true)} sx={{ alignSelf: 'flex-start' }}>
                   Authorize
@@ -195,7 +191,20 @@ export default function LinkRepositoryDialog({ open, onClose, project, orgHandle
                   )}
 
                   {isPublic ? (
-                    <TextField label="Repository URL" required value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)} fullWidth size="small" placeholder="https://github.com/org/repo" helperText="Public repository URL" />
+                    <TextField
+                      label="Repository URL"
+                      required
+                      value={repoUrl}
+                      onChange={(e) => {
+                        setRepoUrl(e.target.value);
+                        setSelectedBranch('');
+                        setDirectoryPath('/');
+                      }}
+                      fullWidth
+                      size="small"
+                      placeholder="https://github.com/org/repo"
+                      helperText="Public repository URL"
+                    />
                   ) : (
                     <Stack direction="row" gap={2}>
                       <TextField
@@ -207,6 +216,7 @@ export default function LinkRepositoryDialog({ open, onClose, project, orgHandle
                           setSelectedOrg(e.target.value);
                           setSelectedRepo('');
                           setSelectedBranch('');
+                          setDirectoryPath('/');
                         }}
                         fullWidth
                         size="small"
@@ -218,7 +228,19 @@ export default function LinkRepositoryDialog({ open, onClose, project, orgHandle
                           </MenuItem>
                         ))}
                       </TextField>
-                      <TextField select label="Repository" required value={selectedRepo} onChange={(e) => setSelectedRepo(e.target.value)} fullWidth size="small" disabled={!selectedOrg}>
+                      <TextField
+                        select
+                        label="Repository"
+                        required
+                        value={selectedRepo}
+                        onChange={(e) => {
+                          setSelectedRepo(e.target.value);
+                          setSelectedBranch('');
+                          setDirectoryPath('/');
+                        }}
+                        fullWidth
+                        size="small"
+                        disabled={!selectedOrg}>
                         {reposForOrg.map((r) => (
                           <MenuItem key={r} value={r}>
                             {r}

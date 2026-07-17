@@ -21,6 +21,10 @@
 import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput, LinkProjectRepositoryInput, UpdateProjectInput } from '../../types/project';
 import { bff, items, q, seg, type ListResponse } from './_client';
 
+const ni = (name: string): never => {
+  throw new Error(`[cloud] projects.${name}: not implemented`);
+};
+
 // _orgId is kept on the signatures for devant contract parity; cloud derives
 // the org from the access token instead of taking a numeric id from the caller.
 
@@ -94,6 +98,4 @@ export const deleteProject = (projectId: string): Promise<void> => bff.delete<vo
 
 export const createMonoRepoProject = async (input: CreateMonoRepoProjectInput): Promise<Project> => bff.post<Project>('/projects', await toBffCreateMonoRepoProjectBody(input));
 
-export const linkProjectRepository = (_input: LinkProjectRepositoryInput): Promise<Project> => {
-  throw new Error('linkProjectRepository is not supported in the cloud build.');
-};
+export const linkProjectRepository = (_input: LinkProjectRepositoryInput): Promise<Project> => ni('linkProjectRepository');

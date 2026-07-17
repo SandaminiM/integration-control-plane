@@ -311,7 +311,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
         projectId,
         displayType: resolveDisplayType(),
         componentSubType: resolveComponentSubType(),
-        srcGitRepoUrl: buildRepoUrl(credProvider ?? GitProvider.GITHUB, activeOrg, activeRepo, selectedCredential?.serverUrl),
+        srcGitRepoUrl: buildRepoUrl(isCredentialMode && selectedCredential ? (selectedCredential.type as GitProvider) : (credProvider ?? GitProvider.GITHUB), activeOrg, activeRepo, selectedCredential?.serverUrl),
         repositoryBranch: selectedBranch,
         repositorySubPath: subPath || '/',
         isPublicRepo,

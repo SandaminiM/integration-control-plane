@@ -30,6 +30,8 @@ export function buildRepoUrl(provider: GitProvider, org: string, repo: string, s
       return `${gitProviderBase.bitbucket}/${org}/${repo}`;
     case GitProvider.GITLAB_SELF_MANAGED:
       return `${(serverUrl || gitProviderBase.gitlab).replace(/\/$/, '')}/${org}/${repo}`;
+    case GitProvider.BITBUCKET_SERVER:
+      return `${(serverUrl || gitProviderBase.bitbucket).replace(/\/$/, '')}/${org}/${repo}`;
     case GitProvider.AZURE_DEVOPS:
       return `${gitProviderBase.azure}/${org}/_git/${repo}`;
     default:

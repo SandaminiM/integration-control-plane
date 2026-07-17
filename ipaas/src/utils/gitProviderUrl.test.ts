@@ -33,6 +33,9 @@ describe('buildRepoUrl', () => {
   it('falls back to gitlab.com when no server URL is given', () => {
     expect(buildRepoUrl(GitProvider.GITLAB_SELF_MANAGED, 'acme', 'svc')).toBe('https://gitlab.com/acme/svc');
   });
+  it('builds a Bitbucket server URL from the credential server URL (trailing slash trimmed)', () => {
+    expect(buildRepoUrl(GitProvider.BITBUCKET_SERVER, 'acme', 'svc', 'https://bitbucket.acme.io/')).toBe('https://bitbucket.acme.io/acme/svc');
+  });
   it('builds an Azure DevOps _git URL', () => {
     expect(buildRepoUrl(GitProvider.AZURE_DEVOPS, 'acme', 'svc')).toBe('https://dev.azure.com/acme/_git/svc');
   });

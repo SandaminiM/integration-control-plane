@@ -119,7 +119,7 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
   const orgBillableCount = isUpgraded ? 0 : (orgLimits?.billableComponentCount ?? 0);
   const quotaRemaining = isUpgraded ? undefined : Math.max(0, FREE_COMPONENT_LIMIT - orgBillableCount);
 
-  const { handler: effectiveHandler, handlerEdited, isCheckingAvailability, availability, startEditing, stopEditing, onHandlerChange } = useProjectHandler(displayName);
+  const { handler: effectiveHandler, handlerEdited, isCheckingAvailability, availability, availabilityError, startEditing, stopEditing, onHandlerChange } = useProjectHandler(displayName);
   const createMonoRepoProject = useCreateMonoRepoProject();
   const createComponent = useCreateComponent();
   const orgHomeUrl = resourceUrl(scope, 'overview');
@@ -136,7 +136,7 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
   const handlerError = effectiveHandler ? validateProjectHandler(effectiveHandler) : null;
   const handlerTaken = availability && !availability.handlerUnique ? 'This name is already taken.' : null;
 
-  const availabilityReady = !effectiveHandler || effectiveHandler.length < 2 || availability !== undefined;
+  const availabilityReady = !effectiveHandler || effectiveHandler.length < 2 || availability !== undefined || availabilityError;
   const canSubmit = !!displayName.trim() && !nameError && !!effectiveHandler && !handlerError && !handlerTaken && !isCheckingAvailability && availabilityReady && pathReady && isWorkspace && workspaceModules.length > 0;
 
   const handleImport = async () => {

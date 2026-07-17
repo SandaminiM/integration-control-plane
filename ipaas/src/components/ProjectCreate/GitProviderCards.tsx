@@ -76,7 +76,7 @@ export default function GitProviderCards({ onGitHubSelect, onPublicSelect, crede
       provider={provider}
       credentials={credentialsForProvider(credentials ?? [], provider)}
       selected={null}
-      onSelect={(c) => onCredentialSelect?.(provider, c)}
+      onSelect={(c) => onCredentialSelect?.((c.type as GitProvider) || provider, c)}
       emptyContent={
         <Typography variant="body2" color="text.secondary">
           No credentials found.{' '}
