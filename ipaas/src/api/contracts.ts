@@ -90,7 +90,20 @@ import type { OnPremKey, OnPremKeySubscription } from '../types/onPremKey';
 import type { EgressPolicy, EgressPolicyRequest } from '../types/egressPolicy';
 import type { AuthzRole, CreateAuthzRoleInput, UpdateAuthzRoleInput } from '../types/projectAuthz';
 import type { ByoiEndpointFileContents, CreateByoiComponentInput, CreateByoiComponentResult, DevopsVolume, DevopsVolumeMount, VolumeMountWriteData, VolumeWriteData } from '../types/tailscale';
-import type { ConfigMapWriteData, ConfigMountPath, ConfigMountWriteData, ContainerWriteData, DevopsConfigMap, DevopsConfigMapDetails, DevopsConfigMount, DevopsSecret, DevopsSecretDetails, ReleaseContainer, ReleaseDetails, SecretWriteData } from '../types/devopsConfigs';
+import type {
+  ConfigMapWriteData,
+  ConfigMountPath,
+  ConfigMountWriteData,
+  ContainerWriteData,
+  DevopsConfigMap,
+  DevopsConfigMapDetails,
+  DevopsConfigMount,
+  DevopsSecret,
+  DevopsSecretDetails,
+  ReleaseContainer,
+  ReleaseDetails,
+  SecretWriteData,
+} from '../types/devopsConfigs';
 import type { ExternalCiToken } from '../types/externalCi';
 import type { StorageClass, Volume, VolumeCreateData, VolumeMount, VolumeMountCreateData, VolumeMountPath, VolumeMountUpdateData } from '../types/storage';
 import type { ClusterPod, Hpa, HpaMetric, HpaWriteData, HttpScaler, HttpScalerWriteData, PodMetrics, ScalingMethodToggle, ScalingPath, ScalingState } from '../types/scaling';

@@ -49,7 +49,13 @@ export default function ConnectionsLanding({ projectId, componentId, base }: Con
   if (isError) {
     return (
       <PageContent>
-        <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => refetch()}>Retry</Button>}>
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={() => refetch()}>
+              Retry
+            </Button>
+          }>
           Failed to load connections.
         </Alert>
       </PageContent>

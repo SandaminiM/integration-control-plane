@@ -68,11 +68,13 @@ export function extractServerUrl(text: string): string {
  */
 export function deriveConnectionEntries(endpoints: EndpointConfigDraft[]): ConnectionSchemaEntry[] {
   const seen = new Map<string, boolean>();
-  endpoints.forEach((ep) => ep.params.forEach((p) => {
-    const key = p.key.trim();
-    // A param is sensitive if ANY occurrence of that name is marked sensitive.
-    if (key) seen.set(key, (seen.get(key) ?? false) || p.isSensitive);
-  }));
+  endpoints.forEach((ep) =>
+    ep.params.forEach((p) => {
+      const key = p.key.trim();
+      // A param is sensitive if ANY occurrence of that name is marked sensitive.
+      if (key) seen.set(key, (seen.get(key) ?? false) || p.isSensitive);
+    }),
+  );
   const paramEntries: ConnectionSchemaEntry[] = [...seen.entries()].map(([name, isSensitive]) => ({ name, type: 'string', isOptional: false, isSensitive }));
   return [{ name: SERVICE_URL_FIELD, type: 'string', isOptional: false, isSensitive: false }, ...paramEntries];
 }

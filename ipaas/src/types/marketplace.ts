@@ -31,8 +31,11 @@ export interface ApiDocument {
   documentId: string;
   name: string;
   type: string;
+  otherTypeName?: string;
   summary?: string;
   sourceType?: string;
+  sourceUrl?: string;
+  visibility?: string;
 }
 
 export interface RuleAdherenceRuleset {
