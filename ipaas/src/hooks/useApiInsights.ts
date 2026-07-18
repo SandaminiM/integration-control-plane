@@ -35,7 +35,6 @@ const EMPTY_RAW: ApiInsightsRaw = {
   byBackend: [],
   resources: [],
   latencyTrend: [],
-  topSlowest: [],
   errorsTrend: [],
   statusCodeHeatmap: { rows: [], cols: [], cells: [], max: 1 },
   errorsByCategory: [],
@@ -52,7 +51,7 @@ function toApiInsightsData(raw: ApiInsightsRaw): ApiInsightsData {
     ],
     overview: { trend: raw.overviewTrend, availability: raw.availability },
     traffic: { trend: raw.overviewTrend, byApplication: raw.byApplication, byBackend: raw.byBackend, resources: raw.resources },
-    latency: { trend: raw.latencyTrend, topSlowest: raw.topSlowest },
+    latency: { trend: raw.latencyTrend },
     errors: { trend: raw.errorsTrend, statusCodeHeatmap: raw.statusCodeHeatmap, byCategory: raw.errorsByCategory },
   };
 }

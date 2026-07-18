@@ -78,6 +78,7 @@ const VectorDatabaseServerDetail = lazy(() => import('../pages/VectorDatabaseSer
 const ProjectSettings = lazy(() => import('../pages/ProjectSettings'));
 const ProjectOverview = lazy(() => import('../pages/ProjectOverview'));
 const ProjectInsights = lazy(() => import('../pages/ProjectInsights'));
+const OrgInsights = lazy(() => import('../pages/OrgInsights'));
 import DeliveryInsights from '../pages/DeliveryInsights';
 import ConfigureDelivery from '../pages/ConfigureDelivery';
 import ComponentMetrics from '../pages/ComponentMetrics';
@@ -183,7 +184,7 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/develop', element: <ComingSoon title="Coming Soon" description="Development tools are currently under development." /> },
               { path: 'organizations/:orgHandler/deploy', element: <ComingSoon title="Coming Soon" description="Deployment management is currently under development." /> },
               { path: 'organizations/:orgHandler/test', element: <ComingSoon title="Coming Soon" description="Testing tools are currently under development." /> },
-              { path: 'organizations/:orgHandler/insights/usage', element: <ComingSoon title="Coming Soon" description="Usage insights are currently under development." /> },
+              { path: 'organizations/:orgHandler/insights/usage', element: createElement(withScope(OrgInsights, ['organizations'])) },
               { path: 'organizations/:orgHandler/insights/delivery', element: createElement(withScope(DeliveryInsights, ['organizations'])) },
               { path: 'organizations/:orgHandler/insights/delivery/configure', element: createElement(withScope(ConfigureDelivery, ['organizations'])) },
               { path: 'organizations/:orgHandler/insights/compliance', element: <ComingSoon title="Coming Soon" description="Compliance insights are currently under development." /> },

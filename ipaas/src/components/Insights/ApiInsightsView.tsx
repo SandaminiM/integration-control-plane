@@ -21,7 +21,6 @@ import { AreaChart, PieChart } from '@wso2/oxygen-ui-charts-react';
 import { useState, type JSX, type ReactNode } from 'react';
 import { useApiInsights } from '../../hooks/useApiInsights';
 import { ChartBox, InsightsCard, KpiCards, TableSkeletonRows, TrendAreaChart } from './shared';
-import SlowestApiBars from './SlowestApiBars';
 import StatusCodeBars from './StatusCodeBars';
 import { API_CHART as CHART, API_TABS, AVAILABILITY_COLOR, METRIC_SERIES } from '../../constants/insights';
 import type { ApiInsightsTab, ErrorCategoryRow, InsightsApiRef, InsightsEnvironment, InsightsRange } from '../../types/insights';
@@ -273,9 +272,6 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
                   ))}
                 </Box>
               )}
-              <InsightsCard title="Top 10 Slowest APIs" subtitle="Across this project">
-                {loading ? <Skeleton variant="rounded" height={280} /> : <SlowestApiBars rows={data.latency.topSlowest} />}
-              </InsightsCard>
             </Stack>
           )}
 

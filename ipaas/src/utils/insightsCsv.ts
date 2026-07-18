@@ -124,3 +124,21 @@ export function downloadAutomationInsightsCsv(meta: IntegrationCsvMeta, data: { 
   ];
   downloadCsv(integrationFilename(meta), toCsv(lines));
 }
+
+export function downloadOrgInsightsCsv(orgName: string, envName: string, range: string, data: { kpis: { label: string; value: string }[]; trend: { label: string; apiRequests: number; errors: number }[] }): void {
+  const lines: unknown[][] = [
+    ['Organization Usage Insights Report'],
+    ['Organization', orgName],
+    ['Environment', envName],
+    ['Range', range],
+    ['Generated', new Date().toISOString()],
+    [],
+    ['KPI', 'Value'],
+    ...data.kpis.map((k) => [k.label, k.value]),
+    [],
+    ['Date', 'API Requests', 'Errors'],
+    ...data.trend.map((p) => [p.label, p.apiRequests, p.errors]),
+  ];
+  const filename = `org-insights-${orgName}-${range}.csv`.replace(/\s+/g, '-').toLowerCase();
+  downloadCsv(filename, toCsv(lines));
+}

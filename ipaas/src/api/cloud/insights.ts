@@ -24,6 +24,9 @@ const ni = (name: string): never => {
 export const fetchInsightsEnvironments = (..._args: unknown[]): never => ni('fetchInsightsEnvironments');
 export const fetchComponentInsights = (..._args: unknown[]): never => ni('fetchComponentInsights');
 export const fetchProjectInsights = (..._args: unknown[]): never => ni('fetchProjectInsights');
+export const fetchProjectLatencyTrend = (..._args: unknown[]): never => ni('fetchProjectLatencyTrend');
+export const fetchOrgInsights = (..._args: unknown[]): never => ni('fetchOrgInsights');
+export const fetchTopSlowestApisNamed = (..._args: unknown[]): never => ni('fetchTopSlowestApisNamed');
 export const fetchApiUsageOverTime = (..._args: unknown[]): never => ni('fetchApiUsageOverTime');
 export const fetchApiUsageByApp = (..._args: unknown[]): never => ni('fetchApiUsageByApp');
 export const fetchUsageByBackend = (..._args: unknown[]): never => ni('fetchUsageByBackend');

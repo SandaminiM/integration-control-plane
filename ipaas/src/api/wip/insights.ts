@@ -31,6 +31,8 @@ import type {
   AutomationInsightsRaw,
   AutomationDurationStat,
   TaskExecutionDetail,
+  OrgInsightsRaw,
+  SlowestApiRow,
 } from '../../types/insights';
 
 // The insights query endpoint lives on the org's own systemapis gateway
@@ -55,7 +57,7 @@ async function postInsightsQuery<T>(queryApiUrl: string, query: string, variable
 // build a query's `environmentIds`) comes from the main project GraphQL API's
 // `insightsEnvironments` query, confirmed against devant-insights-01.har —
 // not the analytics query-api itself.
-export async function fetchInsightsEnvironments(orgUuid: string, projectId: string): Promise<InsightsEnvironment[]> {
+export async function fetchInsightsEnvironments(orgUuid: string, projectId?: string): Promise<InsightsEnvironment[]> {
   try {
     const data = await gql<{ insightsEnvironments: InsightsEnvironment[] }>(
       `query insightsEnvironments($orgId: String!, $projectId: String) {
@@ -63,7 +65,7 @@ export async function fetchInsightsEnvironments(orgUuid: string, projectId: stri
           id externalEnvId internalEnvId sandboxEnvId choreoEnvId name type region
         }
       }`,
-      { orgId: orgUuid, projectId },
+      { orgId: orgUuid, projectId: projectId ?? null },
     );
     return data.insightsEnvironments ?? [];
   } catch {
@@ -410,9 +412,9 @@ export async function fetchProjectInsights(orgUuid: string, projectId: string, i
 
 // Project-level latency trend — devant's getLatencySummary series
 // (devant-insights-03.har), one query, no per-API fan-out.
-export async function fetchProjectLatencyTrend(orgUuid: string, projectId: string, insightsEnv: InsightsEnvironment, range: InsightsRange, queryApiUrl: string): Promise<{ label: string; latency: number }[]> {
+export async function fetchProjectLatencyTrend(orgUuid: string, projectId: string | null, insightsEnv: InsightsEnvironment, range: InsightsRange, queryApiUrl: string): Promise<{ label: string; latency: number }[]> {
   const time = rangeToTimeFilter(range);
-  const dataFilter = { orgId: orgUuid, environmentIds: getEnvironmentIds(insightsEnv), tenant: 'carbon.super', projectId };
+  const dataFilter = { orgId: orgUuid, environmentIds: getEnvironmentIds(insightsEnv), tenant: 'carbon.super', ...(projectId ? { projectId } : {}) };
   const result = await postInsightsQuery<{ data?: { getLatencySummary?: { summary?: { timeSpan: string; latencyTime: number }[] } } }>(
     queryApiUrl,
     `query ($dataFilter: DataFilter!, $filter: TimeFilter!, $latencySummaryFilter: LatencySummaryFilter!) {
@@ -434,6 +436,44 @@ export async function fetchProjectLatencyTrend(orgUuid: string, projectId: strin
     buckets.set(key, b);
   }
   return [...buckets.entries()].sort((a, b) => a[0] - b[0]).map(([ts, v]) => ({ label: bucketLabel(ts, time.labelGranularity), latency: Math.round(v.sum / v.n) }));
+}
+
+// Org-level overview — same composite deployed devant issues for its org Usage Insights page (devant-orgInsights-01.har): org-wide dataFilter, no projectId.
+export async function fetchOrgInsights(orgUuid: string, insightsEnv: InsightsEnvironment, range: InsightsRange, queryApiUrl: string): Promise<OrgInsightsRaw> {
+  const time = rangeToTimeFilter(range);
+  const dataFilter = { orgId: orgUuid, environmentIds: getEnvironmentIds(insightsEnv), tenant: 'carbon.super' };
+  const result = await postInsightsQuery<{
+    data?: {
+      getTotalTraffic?: number;
+      getOverallLatency?: number;
+      getTotalErrors?: number;
+      getSuccessSummary?: { summary?: { timeSpan: string; requestCount: number }[] };
+      getErrorSummary?: { summary?: { timeSpan: string; errorCount: number }[] };
+    };
+  }>(
+    queryApiUrl,
+    `query ($dataFilter: DataFilter!, $filter: TimeFilter!, $granularity: String!) {
+      getTotalTraffic(filter: $filter, dataFilter: $dataFilter)
+      getOverallLatency(filter: $filter, dataFilter: $dataFilter)
+      getTotalErrors(filter: $filter, dataFilter: $dataFilter)
+      getSuccessSummary(filter: $filter, dataFilter: $dataFilter, granularity: $granularity) {
+        summary { timeSpan requestCount }
+        granularity
+      }
+      getErrorSummary(filter: $filter, dataFilter: $dataFilter, granularity: $granularity) {
+        summary { timeSpan errorCount }
+        granularity
+      }
+    }`,
+    { filter: { from: time.from, to: time.to }, dataFilter, granularity: time.queryGranularity },
+  );
+  const trend = buildTrend(result?.data?.getSuccessSummary?.summary ?? [], result?.data?.getErrorSummary?.summary ?? [], [], time.labelGranularity);
+  return {
+    totalTraffic: result?.data?.getTotalTraffic ?? 0,
+    totalErrors: result?.data?.getTotalErrors ?? 0,
+    avgLatency: result?.data?.getOverallLatency ?? 0,
+    trend: trend.map((p) => ({ label: p.label, apiRequests: p.apiRequests, errors: p.errors })),
+  };
 }
 
 // ---------- Automation (integration-level) insights ----------
@@ -635,6 +675,15 @@ export async function fetchTopSlowestApis(queryApiUrl: string, dataFilter: Recor
   return result?.data?.topSlowestAPIs ?? [];
 }
 
+// Top-10 slowest with display names resolved via listAllAPI (bars otherwise show raw apiIds). projectId null = org-wide.
+export async function fetchTopSlowestApisNamed(orgUuid: string, projectId: string | null, insightsEnv: InsightsEnvironment, range: InsightsRange, queryApiUrl: string): Promise<SlowestApiRow[]> {
+  const time = rangeToTimeFilter(range);
+  const dataFilter = { orgId: orgUuid, environmentIds: getEnvironmentIds(insightsEnv), tenant: 'carbon.super', ...(projectId ? { projectId } : {}) };
+  const [slowest, apis] = await Promise.all([fetchTopSlowestApis(queryApiUrl, dataFilter, time), fetchAllProjectApis(queryApiUrl, dataFilter)]);
+  const nameById = new Map(apis.map((a) => [a.id, a.displayName || a.name]));
+  return slowest.map((s) => ({ name: nameById.get(s.apiId) || s.apiId, latencyMs: Math.round(s.latency) }));
+}
+
 // Error counts by category (auth/targetConnectivity/throttled/other) over time — "Errors Over Time".
 export async function fetchErrorsByCategory(
   queryApiUrl: string,
@@ -771,7 +820,6 @@ export async function fetchApiInsights(orgUuid: string, projectId: string, insig
       byBackend: [],
       resources: [],
       latencyTrend: [],
-      topSlowest: [],
       errorsTrend: [],
       statusCodeHeatmap: { rows: [], cols: [], cells: [], max: 1 },
       errorsByCategory: [],
@@ -853,7 +901,7 @@ export async function fetchApiInsights(orgUuid: string, projectId: string, insig
     max: Math.max(1, ...[...proxyByCode.values(), ...targetByCode.values()]),
   };
 
-  const base: Omit<ApiInsightsRaw, 'byApplication' | 'byBackend' | 'resources' | 'topSlowest' | 'errorsByCategory'> = {
+  const base: Omit<ApiInsightsRaw, 'byApplication' | 'byBackend' | 'resources' | 'errorsByCategory'> = {
     totalRequests,
     totalErrors,
     latencyP95,
@@ -872,20 +920,14 @@ export async function fetchApiInsights(orgUuid: string, projectId: string, insig
       byApplication: byApp.map((a) => ({ label: a.applicationName, value: a.usage.reduce((s, p) => s + (p.count || 0), 0) })),
       byBackend: byBackend.map((b) => ({ label: b.backend, value: b.usage.reduce((s, p) => s + (p.count || 0), 0) })),
       resources: resources.map((r) => ({ path: r.apiResourceTemplate, method: r.apiMethod, count: r.count, share: totalRequests > 0 ? `${((r.count / totalRequests) * 100).toFixed(1)}%` : '0%' })),
-      topSlowest: [],
       errorsByCategory: [],
     };
   }
 
-  if (tab === 'latency') {
-    const topSlowestRaw = await fetchTopSlowestApis(queryApiUrl, dataFilter, time);
-    return { ...base, byApplication: [], byBackend: [], resources: [], topSlowest: topSlowestRaw.map((s) => ({ name: s.apiId, latencyMs: Math.round(s.latency) })), errorsByCategory: [] };
-  }
-
   if (tab === 'errors') {
     const details = await fetchErrorsDetails(queryApiUrl, dataFilter, apiId, apiAliases, time);
-    return { ...base, byApplication: [], byBackend: [], resources: [], topSlowest: [], errorsByCategory: details.map((d) => ({ app: d.applicationName, reason: d.reason, count: d.count })) };
+    return { ...base, byApplication: [], byBackend: [], resources: [], errorsByCategory: details.map((d) => ({ app: d.applicationName, reason: d.reason, count: d.count })) };
   }
 
-  return { ...base, byApplication: [], byBackend: [], resources: [], topSlowest: [], errorsByCategory: [] };
+  return { ...base, byApplication: [], byBackend: [], resources: [], errorsByCategory: [] };
 }

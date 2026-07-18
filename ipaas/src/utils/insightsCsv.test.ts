@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { describe, it, expect } from 'vitest';
-import { escapeCsvCell, toCsv } from './insightsCsv';
+import { describe, it, expect, vi } from 'vitest';
+import { escapeCsvCell, toCsv, downloadOrgInsightsCsv } from './insightsCsv';
 
 describe('escapeCsvCell', () => {
   it('wraps plain values in double quotes', () => {
@@ -51,5 +51,35 @@ describe('toCsv', () => {
 
   it('escapes each cell as it joins', () => {
     expect(toCsv([['x,y', 'z"z']])).toBe('"x,y","z""z"');
+  });
+});
+
+describe('downloadOrgInsightsCsv', () => {
+  it('emits KPI and trend rows and triggers a download', async () => {
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    const createUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
+    const revokeUrlSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+    downloadOrgInsightsCsv('Test-Org', 'Production', '7d', {
+      kpis: [
+        { label: 'Total Traffic', value: '10.5k' },
+        { label: 'Total Errors', value: '125' },
+        { label: 'Overall Latency', value: '245 ms' },
+      ],
+      trend: [
+        { label: '7/1', apiRequests: 1000, errors: 50 },
+        { label: '7/2', apiRequests: 1200, errors: 60 },
+      ],
+    });
+
+    expect(clickSpy).toHaveBeenCalledOnce();
+    const csv = await (createUrlSpy.mock.calls[0][0] as Blob).text();
+    expect(csv).toContain('"Organization Usage Insights Report"');
+    expect(csv).toContain('"Total Traffic","10.5k"');
+    expect(csv).toContain('"7/2","1200","60"');
+
+    clickSpy.mockRestore();
+    createUrlSpy.mockRestore();
+    revokeUrlSpy.mockRestore();
   });
 });

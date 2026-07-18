@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Avatar, Box, Chip, ListingTable, MenuItem, PageContent, PageTitle, Stack, TextField, Typography, useTheme } from '@wso2/oxygen-ui';
+import { Alert, Avatar, Box, Chip, ListingTable, MenuItem, PageContent, PageTitle, Skeleton, Stack, TextField, Typography, useTheme } from '@wso2/oxygen-ui';
 import { Zap, Globe, XCircle } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
@@ -24,13 +24,14 @@ import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useProjectId } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
 import { useEnvironments } from '../hooks/useEnvironments';
-import { useInsightsEnvironments } from '../hooks/useInsights';
+import { useInsightsEnvironments, useTopSlowestApis } from '../hooks/useInsights';
 import { useProjectInsights, useProjectLatencyTrend } from '../hooks/useProjectInsights';
 import { useIntegrationDeploymentStatuses } from '../hooks/useDeployments';
 import { identifyIntegration } from '../utils/identifyIntegration';
 import { downloadProjectInsightsCsv } from '../utils/insightsCsv';
 import { API_LIKE_TYPES, DEPLOYMENT_STATUS_CHIP, INSIGHTS_KIND_LABEL, PROJECT_CHART, TYPE_TO_KIND } from '../constants/insights';
 import { InsightsCard, InsightsControls, KpiCards, TableSkeletonRows, TrendAreaChart } from '../components/Insights/shared';
+import SlowestApiBars from '../components/Insights/SlowestApiBars';
 import type { InsightsApiRef, InsightsRange } from '../types/insights';
 import type { ProjectScope } from '../nav';
 
@@ -87,6 +88,7 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
 
   const real = useProjectInsights(orgUuid, projectId, selectedEnv, apis, automations, range);
   const latencyTrend = useProjectLatencyTrend(orgUuid, projectId, selectedEnv, range, trendMode === 'latency');
+  const slowest = useTopSlowestApis(orgUuid, projectId, selectedEnv, range);
 
   const data = real.data;
 
@@ -174,6 +176,12 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
               />
             )}
           </Box>
+        </InsightsCard>
+      </Box>
+
+      <Box sx={{ mb: 2 }}>
+        <InsightsCard fill={false} title="Top 10 Slowest APIs" subtitle="Across this project">
+          {slowest.isLoading || loading ? <Skeleton variant="rounded" height={280} /> : <SlowestApiBars rows={slowest.data} />}
         </InsightsCard>
       </Box>
 

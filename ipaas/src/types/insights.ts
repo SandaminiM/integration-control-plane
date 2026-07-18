@@ -140,6 +140,13 @@ export interface ProjectInsightsRaw {
   taskStats: ProjectTaskStats | null;
 }
 
+export interface OrgInsightsRaw {
+  totalTraffic: number;
+  totalErrors: number;
+  avgLatency: number;
+  trend: { label: string; apiRequests: number; errors: number }[];
+}
+
 /** Inputs the API layer needs per component to query APIM insights.
  * `handler` (the component slug) is used to resolve the real apiId against
  * `listAllAPI` when the component's own `apiId` is stale or unset. */
@@ -319,7 +326,6 @@ export interface SlowestApiRow {
 
 export interface ApiLatencyData {
   trend: LatencyTrendPoint[];
-  topSlowest: SlowestApiRow[];
 }
 
 export interface ErrorCategoryPoint {
@@ -370,7 +376,6 @@ export interface ApiInsightsRaw {
   byBackend: NamedValue[];
   resources: ResourceUsageRow[];
   latencyTrend: LatencyTrendPoint[];
-  topSlowest: SlowestApiRow[];
   errorsTrend: ErrorCategoryPoint[];
   statusCodeHeatmap: HeatmapData;
   errorsByCategory: ErrorCategoryRow[];

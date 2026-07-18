@@ -117,7 +117,7 @@ export function useProjectInsights(orgUuid: string, projectId: string, insightsE
 
 // Lazy latency trend for the project trend card's "Latency" mode — only
 // fetched while that mode is selected.
-export function useProjectLatencyTrend(orgUuid: string, projectId: string, insightsEnv: InsightsEnvironment | null, range: InsightsRange, active: boolean) {
+export function useProjectLatencyTrend(orgUuid: string, projectId: string | null, insightsEnv: InsightsEnvironment | null, range: InsightsRange, active: boolean) {
   const queryApiUrl = useInsightsQueryUrl(orgUuid);
   const enabled = active && !!orgUuid && !!insightsEnv && !!queryApiUrl;
   const query = useQuery({
