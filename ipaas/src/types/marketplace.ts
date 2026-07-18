@@ -23,14 +23,19 @@ export interface ThrottlingPolicy {
   requestCount: number;
   unitTime?: number;
   timeUnit?: string;
+  burstControl?: { requestCount?: number; timeUnit?: string };
+  stopOnQuotaReach?: boolean;
 }
 
 export interface ApiDocument {
   documentId: string;
   name: string;
   type: string;
+  otherTypeName?: string;
   summary?: string;
   sourceType?: string;
+  sourceUrl?: string;
+  visibility?: string;
 }
 
 export interface RuleAdherenceRuleset {

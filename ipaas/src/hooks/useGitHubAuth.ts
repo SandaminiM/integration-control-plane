@@ -19,8 +19,9 @@
 import { useState } from 'react';
 import { useObtainGithubToken } from './useRepository';
 import { GITHUB_AUTH } from '../constants/github';
-import { buildGitHubOAuthUrl } from '../paths';
+import { buildGitHubAppInstallUrl, buildGitHubOAuthUrl } from '../paths';
 import { generateAndSaveGitHubState, validateAndClearGitHubState } from '../auth/tokenManager';
+import { IS_CLOUD } from '../features';
 import type { AuthStatus } from '../types/import';
 
 export interface UseGitHubAuthReturn {
@@ -29,16 +30,79 @@ export interface UseGitHubAuthReturn {
   startGitHubAuth: (onSuccess?: () => void) => void;
   /** Exchanges a raw OAuth auth code for a token (used when code arrives via location state). */
   exchangeAuthCode: (code: string) => Promise<void>;
+  /**
+   * Opens the GitHub App installation page in a popup. Must be called from a
+   * button click (a fresh user gesture) — popups opened after an async
+   * exchange are blocked by the browser. `onClosed` fires when the popup
+   * closes; the user then authorizes again to bind the new installation.
+   */
+  startGitHubAppInstall: (onClosed?: () => void) => void;
 }
 
 export function useGitHubAuth(initialStatus: AuthStatus = 'idle'): UseGitHubAuthReturn {
   const [authStatus, setAuthStatus] = useState<AuthStatus>(initialStatus);
   const obtainToken = useObtainGithubToken();
 
+  // Cloud GitHub-App flow: the user authorized the App but has not installed
+  // it on any account (exchange returns needsInstallation, a bind 409 —
+  // git-app-service persists nothing in that case). We only flag the state
+  // here; the install popup must be opened by startGitHubAppInstall from a
+  // fresh button click — a window.open at this point runs after the async
+  // exchange, outside the user-activation window, and gets popup-blocked.
+  const handleExchangeResult = (result: { success: boolean; needsInstallation?: boolean }, onSuccess?: () => void): void => {
+    if (result.success) {
+      setAuthStatus('done');
+      onSuccess?.();
+      return;
+    }
+    if (IS_CLOUD && result.needsInstallation && window.API_CONFIG.githubAppSlug) {
+      setAuthStatus('needs-install');
+      return;
+    }
+    setAuthStatus('failed');
+  };
+
+  const startGitHubAppInstall = (onClosed?: () => void): void => {
+    const slug = window.API_CONFIG.githubAppSlug;
+    if (!IS_CLOUD || !slug) return;
+    const popup = window.open(buildGitHubAppInstallUrl(slug), 'github-app-install', GITHUB_AUTH.POPUP_DIMENSIONS);
+    if (!popup) {
+      // Popup blocked: keep the Install CTA on screen so the user can allow
+      // pop-ups and retry, rather than bouncing back to a failed state.
+      setAuthStatus('needs-install');
+      return;
+    }
+    setAuthStatus('installing');
+    // Finish on either signal — the popup closing (reliable everywhere), or
+    // /ghapp posting the install redirect params (only when the App's Setup
+    // URL points at this console). On finish, drop back to idle so the
+    // Authorize button re-renders: the earlier bind persisted nothing, so the
+    // user re-authorizes (instant redirect — already authorized) and the
+    // fresh code binds the new installation. Never chain the authorize popup
+    // from here.
+    const channel = new BroadcastChannel(GITHUB_AUTH.BROADCAST_CHANNEL);
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      channel.close();
+      clearInterval(poll);
+      setAuthStatus('idle');
+      onClosed?.();
+    };
+    channel.onmessage = (event) => {
+      const { installationId, setupAction } = (event.data ?? {}) as { installationId?: string | null; setupAction?: string | null };
+      if (installationId || setupAction) finish();
+    };
+    const poll = setInterval(() => {
+      if (popup.closed) finish();
+    }, GITHUB_AUTH.POPUP_POLL_INTERVAL_MS);
+  };
+
   const exchangeAuthCode = async (code: string): Promise<void> => {
     try {
       const result = await obtainToken.mutateAsync(code);
-      setAuthStatus(result.success ? 'done' : 'failed');
+      handleExchangeResult(result);
     } catch {
       setAuthStatus('failed');
     }
@@ -73,17 +137,12 @@ export function useGitHubAuth(initialStatus: AuthStatus = 'idle'): UseGitHubAuth
       }
       try {
         const result = await obtainToken.mutateAsync(authCode);
-        if (result.success) {
-          setAuthStatus('done');
-          onSuccess?.();
-        } else {
-          setAuthStatus('failed');
-        }
+        handleExchangeResult(result, onSuccess);
       } catch {
         setAuthStatus('failed');
       }
     };
   };
 
-  return { authStatus, startGitHubAuth, exchangeAuthCode };
+  return { authStatus, startGitHubAuth, exchangeAuthCode, startGitHubAppInstall };
 }

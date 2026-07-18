@@ -38,7 +38,7 @@ Hooks import all API functions through the alias:
 
 ```ts
 import { fetchComponents } from '#api/components';
-import { getAlertRules }   from '#api/alerts';
+import { getAlertRules } from '#api/alerts';
 ```
 
 TypeScript always type-checks against `wip/` (via `tsconfig.app.json` paths) so the IDE is always correct regardless of which product is being built.
@@ -47,7 +47,7 @@ TypeScript always type-checks against `wip/` (via `tsconfig.app.json` paths) so 
 
 ## Mapping responsibility (raw wire shape → domain type)
 
-**This is where normalization lives.** Each product's API file is the *only* place that knows the wire protocol (GraphQL, REST shape, snake_case, etc.). Domain functions return types from `src/types/*` — never raw protocol shapes.
+**This is where normalization lives.** Each product's API file is the _only_ place that knows the wire protocol (GraphQL, REST shape, snake_case, etc.). Domain functions return types from `src/types/*` — never raw protocol shapes.
 
 When `wip/` calls GraphQL and the response already matches the domain shape, no mapping is needed — the function passes through. When `cloud/` calls REST and the response uses different field names (e.g. snake_case, nested envelopes), the function maps explicitly before returning.
 

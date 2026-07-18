@@ -21,12 +21,12 @@ import { ArrowLeft, Store } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { isGenaiServicesEnabled, useConnectionConfig, useGenaiService, useSetMarketplaceStatus } from '../hooks/useGenaiServices';
-import { GENAI_LOGO_BASE, marketplaceStatusLabel } from '../constants/genaiServices';
+import { GENAI_LOGO_BASE, GENAI_TEMPLATE_TYPE, marketplaceStatusLabel } from '../constants/genaiServices';
 import { genaiServicesBase, inferProviderLogo } from '../utils/genaiServices';
 import ComingSoon from './ComingSoon';
-import GeneralDetailsTab from '../components/GenAIServices/detail/GeneralDetailsTab';
-import ServiceDefinitionTab from '../components/GenAIServices/detail/ServiceDefinitionTab';
-import EndpointsTab from '../components/GenAIServices/detail/EndpointsTab';
+import GeneralDetailsTab from '../components/ServiceCatalog/detail/GeneralDetailsTab';
+import ServiceDefinitionTab from '../components/ServiceCatalog/detail/ServiceDefinitionTab';
+import EndpointsTab from '../components/ServiceCatalog/detail/EndpointsTab';
 import type { OrgScope, ProjectScope } from '../nav';
 
 type DetailTab = 'general' | 'definition' | 'endpoints';
@@ -141,7 +141,7 @@ export default function GenAIServiceDetail(scope: OrgScope | ProjectScope): JSX.
             <Tab label="Endpoints" value="endpoints" />
           </Tabs>
 
-          {tab === 'general' && <GeneralDetailsTab service={service} />}
+          {tab === 'general' && <GeneralDetailsTab service={service} lockedTags={[GENAI_TEMPLATE_TYPE]} />}
           {tab === 'definition' && <ServiceDefinitionTab serviceId={serviceId} canEdit />}
           {tab === 'endpoints' && <EndpointsTab service={service} orgHandle={scope.org} canEdit />}
         </>

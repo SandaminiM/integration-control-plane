@@ -47,6 +47,8 @@ const OrgHome = lazy(() => import('../pages/OrgHome'));
 const Projects = lazy(() => import('../pages/Projects'));
 const Project = lazy(() => import('../pages/Project'));
 const Component = lazy(() => import('../pages/Component'));
+const ComponentIntegration = lazy(() => import('../pages/ComponentIntegration'));
+const ComponentApiInfo = lazy(() => import('../pages/ComponentApiInfo'));
 const CreateProject = lazy(() => import('../pages/CreateProject'));
 const ImportProject = lazy(() => import('../pages/ImportProject'));
 const CreateIntegrationOptions = lazy(() => import('../pages/CreateIntegrationOptions'));
@@ -60,6 +62,9 @@ const CreateConfigGroup = lazy(() => import('../pages/CreateConfigGroup'));
 const OrgGenAIServices = lazy(() => import('../pages/OrgGenAIServices'));
 const RegisterGenAIService = lazy(() => import('../pages/RegisterGenAIService'));
 const GenAIServiceDetail = lazy(() => import('../pages/GenAIServiceDetail'));
+const ThirdPartyServices = lazy(() => import('../pages/ThirdPartyServices'));
+const RegisterThirdPartyService = lazy(() => import('../pages/RegisterThirdPartyService'));
+const ThirdPartyServiceDetail = lazy(() => import('../pages/ThirdPartyServiceDetail'));
 const EditConfigGroup = lazy(() => import('../pages/EditConfigGroup'));
 const OrgAuditLogs = lazy(() => import('../pages/OrgAuditLogs'));
 const ProjectCdPipelines = lazy(() => import('../pages/ProjectCdPipelines'));
@@ -92,6 +97,7 @@ const ComponentDeploymentTracks = lazy(() => import('../pages/ComponentDeploymen
 const ComponentProxyVersions = lazy(() => import('../pages/ComponentProxyVersions'));
 const ComponentUrlSettings = lazy(() => import('../pages/ComponentUrlSettings'));
 const ComponentConfigs = lazy(() => import('../pages/ComponentConfigs'));
+const ComponentExternalCI = lazy(() => import('../pages/ComponentExternalCI'));
 const ComponentContainers = lazy(() => import('../pages/ComponentContainers'));
 const ComponentHealthChecks = lazy(() => import('../pages/ComponentHealthChecks'));
 const CdPipelineEditor = lazy(() => import('../pages/CdPipelineEditor'));
@@ -137,6 +143,14 @@ const CreateGroup = lazy(() => import('../pages/CreateGroup'));
 const EditGroup = lazy(() => import('../pages/EditGroup'));
 const Profile = lazy(() => import('../pages/Profile'));
 const ComingSoon = lazy(() => import('../pages/ComingSoon'));
+const ProjectConnections = lazy(() => import('../pages/ProjectConnections'));
+const ComponentConnections = lazy(() => import('../pages/ComponentConnections'));
+const ComponentStorage = lazy(() => import('../pages/ComponentStorage'));
+const ComponentScaling = lazy(() => import('../pages/ComponentScaling'));
+const NewConnection = lazy(() => import('../pages/NewConnection'));
+const ConnectionDetail = lazy(() => import('../pages/ConnectionDetail'));
+const ComponentPlans = lazy(() => import('../pages/ComponentPlans'));
+const ComponentDocuments = lazy(() => import('../pages/ComponentDocuments'));
 
 export interface AppRoute extends Omit<RouteProps, 'children'> {
   children?: AppRoute[];
@@ -200,7 +214,9 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/admin/vector-databases/new', element: createElement(withScope(CreateVectorDatabaseServer, ['organizations'])) },
               { path: 'organizations/:orgHandler/admin/vector-databases/:dbServerId/:tab', element: createElement(withScope(VectorDatabaseServerDetail, ['organizations'])) },
               { path: 'organizations/:orgHandler/admin/message-brokers', element: <ComingSoon title="Coming Soon" description="Message Brokers management is currently under development." /> },
-              { path: 'organizations/:orgHandler/admin/third-party', element: <ComingSoon title="Coming Soon" description="Third Party Services management is currently under development." /> },
+              { path: 'organizations/:orgHandler/admin/third-party', element: createElement(RouteErrorBoundary, null, createElement(withScope(ThirdPartyServices, ['organizations']))) },
+              { path: 'organizations/:orgHandler/admin/third-party/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(RegisterThirdPartyService, ['organizations']))) },
+              { path: 'organizations/:orgHandler/admin/third-party/:serviceId', element: createElement(RouteErrorBoundary, null, createElement(withScope(ThirdPartyServiceDetail, ['organizations']))) },
               { path: 'organizations/:orgHandler/admin/genai-services', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgGenAIServices, ['organizations']))) },
               { path: 'organizations/:orgHandler/admin/genai-services/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(RegisterGenAIService, ['organizations']))) },
               { path: 'organizations/:orgHandler/admin/genai-services/:serviceId', element: createElement(RouteErrorBoundary, null, createElement(withScope(GenAIServiceDetail, ['organizations']))) },
@@ -233,8 +249,12 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/projects/:projectHandler/metrics', element: <ComingSoon title="Coming Soon" description="Metrics are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/observe/runtimelogs', element: createElement(withScope(RuntimeLogsProject, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/observe/metrics', element: createElement(withScope(ProjectMetrics, ['projects'])) },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections', element: <ComingSoon title="Coming Soon" description="Connections management is currently under development." /> },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/third-party-services', element: <ComingSoon title="Coming Soon" description="Third Party Services management is currently under development." /> },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections', element: createElement(RouteErrorBoundary, null, createElement(withScope(ProjectConnections, ['projects']))) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(NewConnection, ['projects']))) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections/:connectionId', element: createElement(RouteErrorBoundary, null, createElement(withScope(ConnectionDetail, ['projects']))) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/third-party-services', element: createElement(RouteErrorBoundary, null, createElement(withScope(ThirdPartyServices, ['projects']))) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/third-party-services/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(RegisterThirdPartyService, ['projects']))) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/third-party-services/:serviceId', element: createElement(RouteErrorBoundary, null, createElement(withScope(ThirdPartyServiceDetail, ['projects']))) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/gen-ai-services', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgGenAIServices, ['projects']))) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/gen-ai-services/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(RegisterGenAIService, ['projects']))) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/gen-ai-services/:serviceId', element: createElement(RouteErrorBoundary, null, createElement(withScope(GenAIServiceDetail, ['projects']))) },
@@ -249,6 +269,8 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/home', element: createElement(withScope(OrgHome, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/home', element: createElement(withScope(Project, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/overview', element: createElement(withScope(Component, ['components'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/develop/integration', element: createElement(withScope(ComponentIntegration, ['components'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/api-info', element: createElement(withScope(ComponentApiInfo, ['components'])) },
               { path: 'organizations/:orgHandler/projects/new', element: createElement(withScope(CreateProject, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/import', element: createElement(withScope(ImportProject, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new', element: createElement(withScope(CreateIntegrationOptions, ['projects'])) },
@@ -315,12 +337,12 @@ const routes: AppRoute[] = [
                 element: createElement(withScope(McpPolicies, ['components'])),
               },
               {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/documents',
-                element: <ComingSoon title="Coming Soon" description="API documentation is currently under development. You'll be able to manage your API documents directly from here." />,
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/document',
+                element: createElement(withScope(ComponentDocuments, ['components'])),
               },
               {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/plans',
-                element: <ComingSoon title="Coming Soon" description="Subscription plans management is currently under development." />,
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/usage',
+                element: createElement(withScope(ComponentPlans, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/deploy',
@@ -344,8 +366,10 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/connections',
-                element: <ComingSoon title="Coming Soon" description="Connections management is currently under development." />,
+                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentConnections, ['components']))),
               },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/connections/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(NewConnection, ['components']))) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/connections/:connectionId', element: createElement(RouteErrorBoundary, null, createElement(withScope(ConnectionDetail, ['components']))) },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/runtimes',
                 element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentRuntime, ['components']))),
@@ -364,11 +388,15 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/scaling',
-                element: <ComingSoon title="Coming Soon" description="Scaling configuration is currently under development." />,
+                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentScaling, ['components']))),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/storage',
-                element: <ComingSoon title="Coming Soon" description="Storage management is currently under development." />,
+                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentStorage, ['components']))),
+              },
+              {
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/external-ci',
+                element: createElement(withScope(ComponentExternalCI, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings',

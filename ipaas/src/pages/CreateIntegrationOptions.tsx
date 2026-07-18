@@ -23,6 +23,7 @@ import { useNavigate } from 'react-router';
 import { useCreateComponent } from '../hooks/useComponents';
 import { useChoreoSampleImages } from '../hooks/useRepository';
 import { generateAndSaveGitHubState, validateAndClearGitHubState } from '../auth/tokenManager';
+import { IS_CLOUD } from '../features';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useAuth } from '../auth/AuthContext';
 import IDEMockup from '../components/IDEMockup/IDEMockup';
@@ -88,7 +89,11 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
   const handleImportClick = () => {
     const { githubAppClientId, githubAppAuthRedirectUrl } = window.API_CONFIG;
     if (!githubAppClientId) {
-      navigate(importUrl);
+      // Cloud only: no GitHub App configured means private-repo authorization
+      // is impossible, so land the import page in public-URL mode instead of
+      // its default (private) mode with a dead Authorize button. Other
+      // variants keep the original navigation.
+      navigate(importUrl, IS_CLOUD ? { state: { mode: 'public' } } : undefined);
       return;
     }
     setIsImportAuthenticating(true);

@@ -8,16 +8,16 @@ Reusable UI components. Pure presentation and interaction logic — no direct ba
 
 ## Import rules
 
-| Allowed | Not allowed |
-|---|---|
-| `src/hooks/*` | `src/api/*` |
-| `src/types/*` | `src/auth/tokenManager` (data functions) |
-| `src/constants/*` | `authenticatedFetch`, `getOrgUuidFromToken` |
-| `src/utils/*` | Any named HTTP client |
-| `src/assets/*` | |
-| `src/contexts/*` | |
-| `@wso2/oxygen-ui`, `@wso2/oxygen-ui-icons-react` | |
-| React Router (`useNavigate`, `useParams`) | |
+| Allowed                                          | Not allowed                                 |
+| ------------------------------------------------ | ------------------------------------------- |
+| `src/hooks/*`                                    | `src/api/*`                                 |
+| `src/types/*`                                    | `src/auth/tokenManager` (data functions)    |
+| `src/constants/*`                                | `authenticatedFetch`, `getOrgUuidFromToken` |
+| `src/utils/*`                                    | Any named HTTP client                       |
+| `src/assets/*`                                   |                                             |
+| `src/contexts/*`                                 |                                             |
+| `@wso2/oxygen-ui`, `@wso2/oxygen-ui-icons-react` |                                             |
+| React Router (`useNavigate`, `useParams`)        |                                             |
 
 If you need data, call a hook. If the hook does not exist yet, create it in `src/hooks/` first.
 
@@ -39,7 +39,9 @@ Use the build-time flags from `src/features.ts`:
 import { IS_WIP, IS_ICP } from '../features';
 
 // Renders only in the wip bundle; tree-shaken from cloud and icp
-{IS_WIP && <CopilotButton />}
+{
+  IS_WIP && <CopilotButton />;
+}
 ```
 
 ### Whole component differs per product — the shell pattern
@@ -92,13 +94,13 @@ The page calls `useIntegrationIdentity`, then `IntegrationRenderer` dynamically 
 the matching module and hands it to the surface shell. **The shell owns only the generic
 frame + state every type shares; each type fills slots.** For Overview today:
 
-| Slot | Purpose |
-|---|---|
-| `EnvCardBody` | content-only body (no Card/header chrome) |
-| `HeaderStatus` | left header slot (status dot, Configure) |
-| `EnvCardActions` | right header slot (action buttons) |
-| `CustomHeader` | full header override — escape hatch when the header differs a lot |
-| `EnvCardFooter` | optional footer |
+| Slot             | Purpose                                                              |
+| ---------------- | -------------------------------------------------------------------- |
+| `EnvCardBody`    | content-only body (no Card/header chrome)                            |
+| `HeaderStatus`   | left header slot (status dot, Configure)                             |
+| `EnvCardActions` | right header slot (action buttons)                                   |
+| `CustomHeader`   | full header override — escape hatch when the header differs a lot    |
+| `EnvCardFooter`  | optional footer                                                      |
 | `CustomOverview` | full-surface override (type has no env-card concept, e.g. Tailscale) |
 
 A type omits any slot it doesn't need — no null-returning placeholders. Bodies shared by

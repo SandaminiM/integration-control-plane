@@ -18,7 +18,7 @@
 
 import { Alert, Box, Button, Skeleton, Stack } from '@wso2/oxygen-ui';
 import { Download, Upload } from '@wso2/oxygen-ui-icons-react';
-import { useMemo, useRef, useState, type JSX } from 'react';
+import { useMemo, useRef, useState, type ChangeEvent, type JSX } from 'react';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
 import { useGenaiServiceIdl, useUpdateGenaiServiceIdl } from '../../../hooks/useGenaiServices';
@@ -71,7 +71,7 @@ export default function ServiceDefinitionTab({ serviceId, canEdit }: { serviceId
     URL.revokeObjectURL(url);
   };
 
-  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onPick = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;

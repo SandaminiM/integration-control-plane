@@ -34,6 +34,7 @@ import { SAMPLE_REPO_URL } from '../constants/github';
 import { URL_DEBOUNCE_MS } from '../constants/project';
 import { resourceUrl, narrow, newComponentUrl, type ProjectScope } from '../nav';
 import { useGitHubAuth } from '../hooks/useGitHubAuth';
+import { IS_CLOUD } from '../features';
 import { toHandler, formatRepoNameToDisplayName } from '../utils/string';
 import { parseGitHubUrl } from '../utils/github';
 import { detectTechnology } from '../utils/technologyDetection';
@@ -52,7 +53,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   const [sourceMode] = useState<SourceMode>(locationState?.mode ?? 'github');
   const isPublicRepo = sourceMode === 'public';
 
-  const { authStatus, startGitHubAuth, exchangeAuthCode } = useGitHubAuth(preAuthenticated ? 'done' : pendingAuthCode ? 'authenticating' : 'idle');
+  const { authStatus, startGitHubAuth, exchangeAuthCode, startGitHubAppInstall } = useGitHubAuth(preAuthenticated ? 'done' : pendingAuthCode ? 'authenticating' : 'idle');
   const [selectedOrg, setSelectedOrg] = useState('');
   const [selectedRepo, setSelectedRepo] = useState('');
 
@@ -276,7 +277,10 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
         repositoryBranch: selectedBranch,
         repositorySubPath: subPath || '/',
         isPublicRepo,
-        ...(isPublicRepo ? { enableAutoDeploy: true } : {}),
+        // Private repos in the cloud variant build through the GitHub App
+        // installation that grants access; other variants keep their original
+        // payload untouched.
+        ...(isPublicRepo ? { enableAutoDeploy: true } : IS_CLOUD ? { gitHubAppInstallationId: userRepos?.find((o) => o.orgName === activeOrg)?.installationId } : {}),
       },
       {
         onSuccess: (component) => navigate(resourceUrl(narrow(scope, component.handler), 'overview')),
@@ -324,35 +328,53 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
         </Box>
       );
     }
+    // Cloud only: authorized, but the GitHub App is not installed on any
+    // account yet. The install popup must open from this button's click —
+    // opening it straight from the token exchange gets popup-blocked (no
+    // user gesture).
+    if (IS_CLOUD && authStatus === 'needs-install') {
+      return (
+        <Box sx={{ mb: 4 }}>
+          <Alert severity="info" sx={{ mb: 1.5 }}>
+            The GitHub App is not installed on any of your accounts yet. Install it on the account or organization that owns your repository, then authorize again.
+          </Alert>
+          <Button
+            variant="outlined"
+            startIcon={
+              <Box sx={{ color: 'common.black', display: 'flex' }}>
+                <GitHub size={16} />
+              </Box>
+            }
+            onClick={() => startGitHubAppInstall(refetchRepos)}
+            size="small">
+            Install GitHub App
+          </Button>
+        </Box>
+      );
+    }
+
+    // The authenticating/installing states never reach here — the page-level
+    // early return above renders the full-page progress view for them.
     return (
       <Box sx={{ mb: 4 }}>
-        {authStatus === 'authenticating' ? (
-          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minHeight: 50 }}>
-            <CircularProgress size={16} />
-            <Typography color="text.secondary" variant="body2">
-              Completing GitHub authorization…
-            </Typography>
-          </Stack>
-        ) : (
-          <Box>
-            {authStatus === 'failed' && (
-              <Alert severity="error" sx={{ mb: 1.5 }}>
-                GitHub authorization failed. Please try again.
-              </Alert>
-            )}
-            <Button
-              variant="outlined"
-              startIcon={
-                <Box sx={{ color: 'common.black', display: 'flex' }}>
-                  <GitHub size={16} />
-                </Box>
-              }
-              onClick={() => startGitHubAuth(refetchRepos)}
-              size="small">
-              Authorize with GitHub
-            </Button>
-          </Box>
-        )}
+        <Box>
+          {authStatus === 'failed' && (
+            <Alert severity="error" sx={{ mb: 1.5 }}>
+              GitHub authorization failed. Please try again.
+            </Alert>
+          )}
+          <Button
+            variant="outlined"
+            startIcon={
+              <Box sx={{ color: 'common.black', display: 'flex' }}>
+                <GitHub size={16} />
+              </Box>
+            }
+            onClick={() => startGitHubAuth(refetchRepos)}
+            size="small">
+            Authorize with GitHub
+          </Button>
+        </Box>
       </Box>
     );
   };
@@ -526,7 +548,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
 
   // Early returns
 
-  if (!isPublicRepo && authStatus === 'authenticating') {
+  if (!isPublicRepo && (authStatus === 'authenticating' || (IS_CLOUD && authStatus === 'installing'))) {
     return (
       <PageContent sx={{ pt: 5 }}>
         <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(backUrl)} sx={{ mb: 3 }}>
@@ -541,7 +563,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 4, minHeight: 50 }}>
           <CircularProgress size={16} />
           <Typography color="text.secondary" variant="body2">
-            Completing GitHub authorization…
+            {authStatus === 'installing' ? 'Install the GitHub App in the popup, then return here…' : 'Completing GitHub authorization…'}
           </Typography>
         </Stack>
         <Skeleton variant="rounded" sx={{ width: '25%', height: 56 }} />

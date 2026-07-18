@@ -34,6 +34,7 @@ import { FREE_COMPONENT_LIMIT, URL_DEBOUNCE_MS } from '../constants/project';
 import { useProjectHandler } from '../hooks/useProjectHandler';
 import { resourceUrl, narrow, type OrgScope } from '../nav';
 import { useGitHubAuth } from '../hooks/useGitHubAuth';
+import { IS_CLOUD } from '../features';
 import { toHandler } from '../utils/string';
 import { parseGitHubUrl } from '../utils/github';
 import { isBallerinaWorkspace } from '../utils/technologyDetection';
@@ -84,7 +85,7 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
   const quotaRemaining = isUpgraded ? undefined : Math.max(0, FREE_COMPONENT_LIMIT - orgBillableCount);
 
   const { handler: effectiveHandler, handlerEdited, isCheckingAvailability, availability, startEditing, stopEditing, onHandlerChange } = useProjectHandler(displayName);
-  const { authStatus, startGitHubAuth } = useGitHubAuth();
+  const { authStatus, startGitHubAuth, startGitHubAppInstall } = useGitHubAuth();
   const createMonoRepoProject = useCreateMonoRepoProject();
   const createComponent = useCreateComponent();
 
@@ -258,12 +259,12 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
       );
     }
     if (isAuthenticated) return null;
-    if (authStatus === 'authenticating') {
+    if (authStatus === 'authenticating' || (IS_CLOUD && authStatus === 'installing')) {
       return (
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3, minHeight: 40 }}>
           <CircularProgress size={16} />
           <Typography color="text.secondary" variant="body2">
-            Completing GitHub authorization…
+            {authStatus === 'installing' ? 'Install the GitHub App in the popup, then return here…' : 'Completing GitHub authorization…'}
           </Typography>
         </Stack>
       );
@@ -278,6 +279,30 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
             Try again
           </Button>
         </Stack>
+      );
+    }
+    // Cloud only: authorized, but the GitHub App is not installed on any
+    // account yet. The install popup must open from this button's click —
+    // opening it straight from the token exchange gets popup-blocked (no
+    // user gesture).
+    if (IS_CLOUD && authStatus === 'needs-install') {
+      return (
+        <Box sx={{ mb: 3 }}>
+          <Alert severity="info" sx={{ mb: 1.5 }}>
+            The GitHub App is not installed on any of your accounts yet. Install it on the account or organization that owns your repository, then authorize again.
+          </Alert>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={
+              <Box sx={{ color: 'common.black', display: 'flex' }}>
+                <GitHub size={16} />
+              </Box>
+            }
+            onClick={() => startGitHubAppInstall(refetchRepos)}>
+            Install GitHub App
+          </Button>
+        </Box>
       );
     }
     return (

@@ -30,6 +30,7 @@ import { getGitProviderIcon } from '../../../utils/build';
 import { useAuth } from '../../../auth/AuthContext';
 import { useOrgUuid } from '../../../hooks/useOrgUuid';
 import { getDisplayLabel } from '../../../constants/integrations';
+import SetupInstructionsButton from './SetupInstructionsButton';
 import type { IntegrationModule } from '../../../types/integration';
 import { IS_CLOUD } from '../../../features';
 
@@ -544,6 +545,9 @@ export default function ComponentHeader({ component, project, repository, latest
               </Popper>
             </Box>
           )}
+
+          {/* Prebuilt integrations expose a "How to setup this integration" guide. */}
+          <SetupInstructionsButton repository={repository ?? null} />
 
           {/* Overview-header API actions — rendered only when the type opts in
               via its module's `OverviewHeaderActions` slot. */}

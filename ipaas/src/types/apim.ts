@@ -106,3 +106,21 @@ export interface LifecycleHistory {
   count: number;
   list: LifecycleHistoryItem[];
 }
+
+export interface MarketplaceService {
+  serviceId: string;
+  description?: string;
+  name?: string;
+  summary?: string;
+  tags?: string[];
+  visibility?: string[];
+  version?: string;
+  createdTime?: string;
+  organizationId?: string;
+  serviceType?: string;
+  connectionSchemas?: unknown;
+  status?: string;
+  resourceType?: string;
+  isThirdParty?: boolean;
+  [key: string]: unknown;
+}

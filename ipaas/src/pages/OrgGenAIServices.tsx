@@ -26,7 +26,7 @@ import { GENAI_DEFAULT_PAGE_SIZE, GENAI_PAGE_SIZE_OPTIONS, marketplaceStatusLabe
 import { formatServiceCreatedTime, genaiServicesBase } from '../utils/genaiServices';
 import ComingSoon from './ComingSoon';
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog';
-import NoGenAIServicesBanner from '../components/GenAIServices/NoGenAIServicesBanner';
+import NoServicesBanner from '../components/ServiceCatalog/NoServicesBanner';
 import SearchField from '../components/SearchField';
 import { hasProject, type OrgScope, type ProjectScope } from '../nav';
 import type { GenAiService } from '../types/genaiServices';
@@ -118,7 +118,12 @@ export default function OrgGenAIServices(scope: OrgScope | ProjectScope): JSX.El
           Failed to load GenAI services.
         </Alert>
       ) : !hasAny && debouncedSearch === '' ? (
-        <NoGenAIServicesBanner onCreate={goCreate} />
+        <NoServicesBanner
+          title="Bring your own AI models"
+          description="Register GenAI services from providers like OpenAI, Azure OpenAI, Mistral AI, and Anthropic AI, then share their connections across your integrations."
+          bannerSrc={`${import.meta.env.BASE_URL}assets/images/genai-services-banner.svg`}
+          onCreate={goCreate}
+        />
       ) : (
         <ListingTable.Container elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
           <ListingTable size="small">

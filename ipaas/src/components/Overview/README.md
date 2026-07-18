@@ -2,7 +2,7 @@
 
 The Overview page (`pages/Component.tsx`) renders an env-card UI that varies by
 **integration type** (automation, integration-as-api, file-integration, …). It uses
-the **surface + slots** pattern. This README maps *this* directory; the rules and
+the **surface + slots** pattern. This README maps _this_ directory; the rules and
 the "how to add a type" steps live in `src/components/AGENTS.md`
 ("Per-integration-type rendering").
 
@@ -62,7 +62,7 @@ Overview/
 ```
 
 > **Cross-surface note:** the chat itself lives at **`src/components/AgentChat.tsx`** (top
-> level, *not* under `overview/`) because two surfaces consume it: the ai-agent
+> level, _not_ under `overview/`) because two surfaces consume it: the ai-agent
 > `EnvCardBody` here and the Test page (`pages/AgentChatConsole.tsx`, route
 > `test/agent-chat`). Its message/connection types are in `src/types/agentChat.ts`.
 
@@ -73,19 +73,19 @@ Overview/
 optional `EnvCardFooter`. A type with no env-card concept (e.g. Tailscale) exports
 `CustomOverview` and bypasses the shell entirely.
 
-| Slot | Who provides it | Example |
-|---|---|---|
-| `EnvCardBody` | every rendered type | executions table / endpoints / runtime logs / agent chat |
-| `HeaderStatus` | types with a status/Configure | service / ai-agent status dot + Configure |
-| `EnvCardActions` | types with header actions | Run/Schedule, Stop/Test/Logs |
-| `CustomHeader` | header outliers | file- + event-integration (shared `FileEventHeader`) |
-| `EnvCardFooter` | optional | — none today |
-| `CustomOverview` | full-surface outliers | Tailscale |
+| Slot             | Who provides it               | Example                                                  |
+| ---------------- | ----------------------------- | -------------------------------------------------------- |
+| `EnvCardBody`    | every rendered type           | executions table / endpoints / runtime logs / agent chat |
+| `HeaderStatus`   | types with a status/Configure | service / ai-agent status dot + Configure                |
+| `EnvCardActions` | types with header actions     | Run/Schedule, Stop/Test/Logs                             |
+| `CustomHeader`   | header outliers               | file- + event-integration (shared `FileEventHeader`)     |
+| `EnvCardFooter`  | optional                      | — none today                                             |
+| `CustomOverview` | full-surface outliers         | Tailscale                                                |
 
 `ai-agent` uses the generic-frame slots (`HeaderStatus` + `EnvCardActions` + `EnvCardBody`)
 like integration-as-api — it's a generic service under the hood (`componentSubType: aiAgent`),
 so it Tests (→ `test/agent-chat`), shows logs, and Stop/Starts. File/event use a `CustomHeader`
-instead and have **no** Test/View-Logs buttons (their body *is* the log stream).
+instead and have **no** Test/View-Logs buttons (their body _is_ the log stream).
 
 The shell passes shared per-env data (deployment status, `releaseId`, build ids) and
 cross-slot callbacks (`onNotify`, `onTrigger`, `requestPoll`) to every slot via

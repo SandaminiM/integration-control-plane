@@ -104,13 +104,17 @@ import {
   User as UserIcon,
   Workflow,
   X,
+  Webhook,
 } from '@wso2/oxygen-ui-icons-react';
 import FeaturePreviewModal from '../components/FeaturePreview/FeaturePreviewModal';
 import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
 import { useOrgs } from '../hooks/useOrg';
 import { useBillingOrg } from '../hooks/useBillingOrg';
-import { isSupportedIntegration, GENERIC_SERVICE_TYPES } from '../constants/integrations';
+import { isSupportedIntegration, isByoiComponent, GENERIC_SERVICE_TYPES } from '../constants/integrations';
+import { useSubscriptions } from '../hooks/useSubscription';
+import { isExternalCiEnabled } from '../hooks/useExternalCi';
+import { PAID_SUBSCRIPTION_TYPE } from '../constants/subscription';
 import { identifyIntegration } from '../utils/identifyIntegration';
 import { useOrgPermissions } from '../hooks/useAuth';
 import { switchOrgToken } from '../auth/tokenManager';
@@ -174,6 +178,7 @@ const PROJECT_PARENT_MAP: Record<string, string> = {
 // Maps each component-scope leaf nav ID to its expandable parent group ID
 const COMPONENT_PARENT_MAP: Record<string, string> = {
   integration: 'develop',
+  'api-info': 'manage',
   lifecycle: 'develop',
   documents: 'develop',
   plans: 'develop',
@@ -192,6 +197,7 @@ const COMPONENT_PARENT_MAP: Record<string, string> = {
   'health-checks': 'admin',
   scaling: 'admin',
   storage: 'admin',
+  'external-ci': 'admin',
   'component-settings': 'admin',
 };
 
@@ -200,6 +206,8 @@ function AppLayoutInner(): JSX.Element {
   const { pathname } = useLocation();
   const scope = useScope();
   const resource = useResource();
+  // Connections is a hand-written (non-matrix) resource, so preserve it manually across scope switches.
+  const onConnectionsPage = pathname.includes('/admin/connections');
 
   const queryClient = useQueryClient();
   const { username, displayName, pictureUrl, logout, userId, isOidcUser } = useAuth();
@@ -274,6 +282,8 @@ function AppLayoutInner(): JSX.Element {
     const base = `/organizations/${scope.org}/projects/${scope.project}/components/${scope.component}`;
     const rest = pathname.slice(base.length).replace(/^\//, '');
     if (!rest || rest === 'overview') return 'overview';
+    if (rest.startsWith('develop/integration')) return 'integration';
+    if (rest.startsWith('manage/api-info')) return 'api-info';
     if (rest.startsWith('build')) return 'build';
     if (rest.startsWith('deploy')) return 'deploy';
     if (rest.startsWith('test/console')) return 'console';
@@ -281,8 +291,8 @@ function AppLayoutInner(): JSX.Element {
     if (rest.startsWith('test/agent-chat')) return 'agent-chat';
     if (rest.startsWith('test')) return 'test';
     if (rest.startsWith('manage/lifecycle')) return 'lifecycle';
-    if (rest.startsWith('documents')) return 'documents';
-    if (rest.startsWith('plans')) return 'plans';
+    if (rest.startsWith('document')) return 'documents';
+    if (rest.startsWith('manage/usage')) return 'plans';
     if (rest.startsWith('insights/usage')) return 'usage';
     if (rest.startsWith('insights/delivery')) return 'delivery';
     if (rest.startsWith('insights/compliance')) return 'compliance';
@@ -296,6 +306,7 @@ function AppLayoutInner(): JSX.Element {
     if (rest.startsWith('admin/health-checks')) return 'health-checks';
     if (rest.startsWith('admin/scaling')) return 'scaling';
     if (rest.startsWith('admin/storage')) return 'storage';
+    if (rest.startsWith('admin/external-ci')) return 'external-ci';
     if (rest.startsWith('settings')) return 'component-settings';
     return 'overview';
   }, [pathname, scope]);
@@ -314,6 +325,8 @@ function AppLayoutInner(): JSX.Element {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [featurePreviewOpen, setFeaturePreviewOpen] = useState(false);
   const orgUuid = useOrgUuid();
+  const { data: subscriptions } = useSubscriptions(orgUuid ?? '');
+  const isSubscribed = (subscriptions?.list ?? []).some((s) => s.subscriptionType === PAID_SUBSCRIPTION_TYPE);
   const orgCardRef = useRef<HTMLDivElement>(null);
   const projectCardRef = useRef<HTMLDivElement>(null);
   const integrationCardRef = useRef<HTMLDivElement>(null);
@@ -518,10 +531,11 @@ function AppLayoutInner(): JSX.Element {
   const handleComponentNavSelect = (id: string) => {
     const urlMap: Record<string, string> = {
       overview: `${compBase}/overview`,
-      integration: `${compBase}/overview`,
+      integration: `${compBase}/develop/integration`,
+      'api-info': `${compBase}/manage/api-info`,
       lifecycle: `${compBase}/manage/lifecycle`,
-      documents: `${compBase}/documents`,
-      plans: `${compBase}/plans`,
+      documents: `${compBase}/document`,
+      plans: `${compBase}/manage/usage`,
       build: `${compBase}/build`,
       deploy: `${compBase}/deploy`,
       test: `${compBase}/test`,
@@ -541,6 +555,7 @@ function AppLayoutInner(): JSX.Element {
       'health-checks': `${compBase}/admin/health-checks`,
       scaling: `${compBase}/admin/scaling`,
       storage: `${compBase}/admin/storage`,
+      'external-ci': `${compBase}/admin/external-ci`,
       'component-settings': `${compBase}/settings`,
     };
     const url = urlMap[id];
@@ -754,6 +769,10 @@ function AppLayoutInner(): JSX.Element {
                           navigate(settingsUrl);
                           return;
                         }
+                        if (onConnectionsPage) {
+                          navigate(`/organizations/${scope.org}/projects/${p.handler}/admin/connections`);
+                          return;
+                        }
                         const resolvedTarget = canAccessResource(newScope, resource ?? 'overview', p.id, undefined);
                         navigate(resolvedTarget === 'overview' ? projectHomeUrl(scope.org, p.handler) : resourceUrl(newScope, resolvedTarget));
                       }}>
@@ -925,6 +944,8 @@ function AppLayoutInner(): JSX.Element {
                             }
                             if (activeNavId === 'lifecycle') {
                               navigate(GENERIC_SERVICE_TYPES.has(c.displayType) ? `/organizations/${scope.org}/projects/${scope.project}/components/${c.handler}/manage/lifecycle` : componentOverviewUrl(scope.org, scope.project, c.handler));
+                            } else if (onConnectionsPage) {
+                              navigate(`/organizations/${scope.org}/projects/${scope.project}/components/${c.handler}/admin/connections`);
                             } else {
                               const resolvedTarget = canAccessResource(newScope, resource ?? 'overview', projectId, c.id);
                               navigate(resolvedTarget === 'overview' ? componentOverviewUrl(scope.org, scope.project, c.handler) : resourceUrl(newScope, resolvedTarget));
@@ -1274,6 +1295,8 @@ function AppLayoutInner(): JSX.Element {
             ) : hasComponent(scope) ? (
               (() => {
                 const isGenericService = GENERIC_SERVICE_TYPES.has(currentComponent?.displayType ?? '');
+                // External CI is a paid, Bring-Your-Own-Image-only feature.
+                const showExternalCI = isExternalCiEnabled() && isByoiComponent(currentComponent?.displayType ?? '') && isSubscribed;
                 const integrationType = identifyIntegration(currentComponent?.displayType ?? '', currentComponent?.componentSubType ?? null).type;
                 const runtimeLogsType = ['file-integration', 'event-integration'].includes(integrationType);
                 const aiAgentType = integrationType === 'ai-agent';
@@ -1303,6 +1326,14 @@ function AppLayoutInner(): JSX.Element {
                           </Sidebar.ItemIcon>
                           <Sidebar.ItemLabel>Integration</Sidebar.ItemLabel>
                         </Sidebar.Item>
+                        {isGenericService && (
+                          <Sidebar.Item id="api-info">
+                            <Sidebar.ItemIcon>
+                              <FileText size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>API Info</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        )}
                         {isGenericService && (
                           <Sidebar.Item id="lifecycle">
                             <Sidebar.ItemIcon>
@@ -1481,6 +1512,14 @@ function AppLayoutInner(): JSX.Element {
                           </Sidebar.ItemIcon>
                           <Sidebar.ItemLabel>Storage</Sidebar.ItemLabel>
                         </Sidebar.Item>
+                        {showExternalCI && (
+                          <Sidebar.Item id="external-ci">
+                            <Sidebar.ItemIcon>
+                              <Webhook size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>External CI</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        )}
                         {canSeeAccessControl && (
                           <Sidebar.Item id="component-settings">
                             <Sidebar.ItemIcon>
