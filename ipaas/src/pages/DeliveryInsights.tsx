@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, PageContent, PageTitle, Skeleton, Stack, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, PageContent, PageTitle, Skeleton, Stack, Typography } from '@wso2/oxygen-ui';
 import { AudioWaveform, Clock, Gauge, Timer } from '@wso2/oxygen-ui-icons-react';
 import { BarChart, LineChart } from '@wso2/oxygen-ui-charts-react';
 import { useMemo, useState, type JSX } from 'react';
@@ -72,10 +72,10 @@ export default function DeliveryInsights(scope: OrgScope | ProjectScope): JSX.El
   const [range, setRange] = useState<DeliveryRange>('3M');
   const [granularity, setGranularity] = useState<DeliveryGranularity>('WEEKLY');
 
-  const { config, isLoading: configLoading } = useDeliveryConfig(orgUuid);
+  const { config, isLoading: configLoading, isError: configError } = useDeliveryConfig(orgUuid);
   const configured = !!config;
   const scopeReady = !projectHandler || !!projectId;
-  const { data, isLoading } = useDeliveryInsights(orgUuid, projectHandler ? projectId : undefined, range, granularity, configured, !configLoading && scopeReady);
+  const { data, isLoading, isError: insightsError } = useDeliveryInsights(orgUuid, projectHandler ? projectId : undefined, range, granularity, configured, !configLoading && scopeReady);
 
   const scopeName = projectHandler ? (projectData?.name ?? projectHandler) : scope.org;
   const baseUrl = projectHandler ? `/organizations/${scope.org}/projects/${projectHandler}` : `/organizations/${scope.org}`;
@@ -110,7 +110,7 @@ export default function DeliveryInsights(scope: OrgScope | ProjectScope): JSX.El
     return { value, unit, total: df?.totalDeployments ?? 0 };
   }, [df, granularity]);
 
-  const leadTokens = durationTokens(data.leadTimeSummary?.avgLeadTime ?? 0);
+  const leadTokens = durationTokens(data.leadTimeSummary && data.leadTimeSummary.avgLeadTime < INFINITY_MINUTES ? data.leadTimeSummary.avgLeadTime : 0);
   const recoveryTokens = durationTokens(data.recoveryTimeSummary && data.recoveryTimeSummary.avgRecoveryTime < INFINITY_MINUTES ? data.recoveryTimeSummary.avgRecoveryTime : 0);
   const failurePct = ((data.failureRateSummary?.failureRate ?? 0) * 100).toFixed(2);
 
@@ -162,6 +162,12 @@ export default function DeliveryInsights(scope: OrgScope | ProjectScope): JSX.El
         </Typography>
         <TimeRangeSelector range={range} granularity={granularity} onRangeChange={setRange} onGranularityChange={setGranularity} />
       </Stack>
+
+      {(configError || insightsError) && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Failed to load delivery insights. Some metrics may be missing or out of date.
+        </Alert>
+      )}
 
       {/* ---------- KPI row ---------- */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 2, mb: 2 }}>

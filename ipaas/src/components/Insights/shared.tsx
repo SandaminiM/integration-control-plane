@@ -116,15 +116,17 @@ interface InsightsControlsProps {
   range: InsightsRange;
   onRangeChange: (r: InsightsRange) => void;
   onReport: () => void;
+  /** Disable the Report button (e.g. until a real insights environment is resolved). */
+  reportDisabled?: boolean;
 }
 
 /** Environment select + range toggle + Report button cluster shared by the
  * project and integration insights pages. */
-export function InsightsControls({ envOptions, envId, onEnvChange, range, onRangeChange, onReport }: InsightsControlsProps): JSX.Element {
+export function InsightsControls({ envOptions, envId, onEnvChange, range, onRangeChange, onReport, reportDisabled = false }: InsightsControlsProps): JSX.Element {
   return (
     <Stack direction="row" alignItems="center" gap={1.5} flexWrap="wrap">
       {envOptions.length > 0 && (
-        <TextField select size="small" value={envId} onChange={(e) => onEnvChange(e.target.value)} sx={{ minWidth: 160 }}>
+        <TextField select size="small" value={envId} onChange={(e) => onEnvChange(e.target.value)} inputProps={{ 'aria-label': 'Environment' }} sx={{ minWidth: 160 }}>
           {envOptions.map((e) => (
             <MenuItem key={e.id} value={e.id}>
               {e.name}
@@ -132,14 +134,14 @@ export function InsightsControls({ envOptions, envId, onEnvChange, range, onRang
           ))}
         </TextField>
       )}
-      <ToggleButtonGroup exclusive size="small" value={range} onChange={(_, v: InsightsRange | null) => v && onRangeChange(v)}>
+      <ToggleButtonGroup exclusive size="small" aria-label="Time range" value={range} onChange={(_, v: InsightsRange | null) => v && onRangeChange(v)}>
         {INSIGHTS_RANGES.map((r) => (
           <ToggleButton key={r.value} value={r.value} sx={TOGGLE_SX}>
             {r.label}
           </ToggleButton>
         ))}
       </ToggleButtonGroup>
-      <Button variant="contained" size="small" startIcon={<Download size={16} />} onClick={onReport}>
+      <Button variant="contained" size="small" startIcon={<Download size={16} />} onClick={onReport} disabled={reportDisabled}>
         Report
       </Button>
     </Stack>

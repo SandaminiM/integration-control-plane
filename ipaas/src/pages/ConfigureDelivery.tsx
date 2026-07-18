@@ -89,13 +89,14 @@ export default function ConfigureDelivery(scope: OrgScope | ProjectScope): JSX.E
     }
   }, [config]);
 
-  // Default data plane: the configured one, else the first shared plane.
+  // Default data plane: the configured one (kept even when it's absent from the
+  // shared list — edit mode only displays it and never re-sends it), else the
+  // first shared plane.
   useEffect(() => {
-    if (sharedDataPlanes.length === 0) return;
     setDataPlaneId((current) => {
       if (current) return current;
-      const existing = config && sharedDataPlanes.find((dp) => dp.id === config.environmentId);
-      return (existing ?? sharedDataPlanes[0]).id;
+      if (config?.environmentId) return config.environmentId;
+      return sharedDataPlanes[0]?.id ?? '';
     });
   }, [sharedDataPlanes, config]);
 
@@ -114,7 +115,8 @@ export default function ConfigureDelivery(scope: OrgScope | ProjectScope): JSX.E
     }
   };
 
-  const nextDisabled = activeStep === 1 && !dataPlaneId;
+  // Data-plane selection is only mandatory when creating; editing never re-sends it.
+  const nextDisabled = activeStep === 1 && !isEdit && !dataPlaneId;
   const finishDisabled = incidentLabels.length === 0 || pending;
 
   if (configLoading) {
@@ -170,6 +172,7 @@ export default function ConfigureDelivery(scope: OrgScope | ProjectScope): JSX.E
                 <CircularProgress size={24} />
               ) : (
                 <TextField select label="Data Plane" size="small" value={dataPlaneId} onChange={(e) => setDataPlaneId(e.target.value)} disabled={isEdit} fullWidth>
+                  {isEdit && dataPlaneId && !sharedDataPlanes.some((dp) => dp.id === dataPlaneId) && <MenuItem value={dataPlaneId}>{dataPlaneId}</MenuItem>}
                   {sharedDataPlanes.map((dp) => (
                     <MenuItem key={dp.id} value={dp.id}>
                       {dp.label}

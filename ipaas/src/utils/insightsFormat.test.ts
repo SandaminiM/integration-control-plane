@@ -36,6 +36,12 @@ describe('formatCount', () => {
     expect(formatCount(1_000_000)).toBe('1.00M');
     expect(formatCount(2_500_000)).toBe('2.50M');
   });
+
+  it('rolls counts that would round to 1000.0k over to the M form', () => {
+    expect(formatCount(999_949)).toBe('999.9k');
+    expect(formatCount(999_950)).toBe('1.00M');
+    expect(formatCount(999_999)).toBe('1.00M');
+  });
 });
 
 describe('formatDuration', () => {
@@ -50,6 +56,11 @@ describe('formatDuration', () => {
 
   it('shows minutes and seconds together', () => {
     expect(formatDuration(200)).toBe('3m 20s');
+  });
+
+  it('normalizes values that round up to a whole minute', () => {
+    expect(formatDuration(59.6)).toBe('1m');
+    expect(formatDuration(119.6)).toBe('2m');
   });
 });
 

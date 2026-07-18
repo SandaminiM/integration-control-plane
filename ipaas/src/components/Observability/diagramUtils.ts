@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { ConnectionType } from '@wso2/cell-diagram';
-import type { Project as DiagramProject, Observations, Connection } from '@wso2/cell-diagram';
+import { ComponentType, ConnectionType } from '@wso2/cell-diagram';
+import type { Project as DiagramProject, Component as DiagramComponent, Observations, Connection, Services } from '@wso2/cell-diagram';
 import type { Component } from '../../types/component';
 import type { ProjectMetricsLink, ProjectMetricsModel } from '../../types/observability';
 
@@ -118,11 +118,11 @@ export function applyObservability(project: DiagramProject, model: ProjectMetric
             deploymentMetadata: {
               gateways: {
                 internet: {
-                  ...(service.deploymentMetadata?.gateways.internet ?? { isExposed: false }),
+                  ...(service.deploymentMetadata?.gateways?.internet ?? { isExposed: false }),
                   ...(obs.fromInternet.length > 0 ? { observations: obs.fromInternet } : {}),
                 },
                 intranet: {
-                  ...(service.deploymentMetadata?.gateways.intranet ?? { isExposed: false }),
+                  ...(service.deploymentMetadata?.gateways?.intranet ?? { isExposed: false }),
                   ...(obs.fromIntranet.length > 0 ? { observations: obs.fromIntranet } : {}),
                 },
               },
@@ -142,5 +142,151 @@ export function applyObservability(project: DiagramProject, model: ProjectMetric
 
       return { ...diagramComponent, services, connections: [...(diagramComponent.connections ?? []), ...observedConnections] };
     }),
+  };
+}
+
+function getComponentType(displayType: string, componentSubType: string | null): ComponentType | null {
+  if (componentSubType === 'ballerinaFileIntegration' || componentSubType === 'miFileIntegration') {
+    return ComponentType.EVENT_HANDLER;
+  }
+  if (componentSubType === 'aiAgent' || componentSubType === 'mcpServer') {
+    return null;
+  }
+  switch (displayType) {
+    case 'ballerinaService':
+    case 'buildpackService':
+    case 'byoiService':
+    case 'byocService':
+    case 'miApiService':
+    case 'graphql':
+    case 'thirdPartyApi':
+    case 'prismMockService':
+    case 'service':
+    case 'restApi':
+    case 'byocRestApi':
+    case 'miRestApi':
+    case 'buildRestApi':
+      return ComponentType.SERVICE;
+    case 'scheduledTask':
+    case 'byocCronjob':
+    case 'byoiCronjob':
+    case 'miCronjob':
+    case 'buildpackCronJob':
+      return ComponentType.SCHEDULED_TASK;
+    case 'manualTrigger':
+    case 'byocJob':
+    case 'byoiJob':
+    case 'miJob':
+    case 'buildpackJob':
+      return ComponentType.MANUAL_TASK;
+    case 'proxy':
+    case 'gitProxy':
+      return ComponentType.API_PROXY;
+    case 'webhook':
+    case 'byocWebhook':
+    case 'miWebhook':
+    case 'buildpackWebhook':
+    case 'ballerinaWebhook':
+      return ComponentType.WEB_HOOK;
+    case 'byocEventHandler':
+    case 'miEventHandler':
+    case 'buildpackEventHandler':
+    case 'ballerinaEventHandler':
+      return ComponentType.EVENT_HANDLER;
+    case 'byocWebApp':
+    case 'byocWebAppsDockerfileLess':
+    case 'byoiWebApp':
+    case 'buildpackWebApp':
+      return ComponentType.WEB_APP;
+    case 'byocTestRunner':
+    case 'buildpackTestRunner':
+    case 'byocTestRunnerDockerfileLess':
+      return ComponentType.TEST;
+    case 'externalConsumer':
+      return ComponentType.EXTERNAL_CONSUMER;
+    default:
+      return null;
+  }
+}
+
+function getDefaultServices(componentId: string, componentType: ComponentType): Services {
+  if (componentType === ComponentType.SCHEDULED_TASK || componentType === ComponentType.MANUAL_TASK || componentType === ComponentType.TEST || componentType === ComponentType.EXTERNAL_CONSUMER) {
+    return {};
+  }
+
+  if (componentType === ComponentType.WEB_APP) {
+    const serviceId = `${componentId}:web-app`;
+    return {
+      [serviceId]: {
+        id: serviceId,
+        label: 'Web App',
+        type: 'http',
+        dependencyIds: [],
+        deploymentMetadata: {
+          gateways: {
+            internet: { isExposed: true },
+            intranet: { isExposed: false },
+          },
+        },
+      },
+    };
+  }
+
+  if (componentType === ComponentType.WEB_HOOK || componentType === ComponentType.EVENT_HANDLER || componentType === ComponentType.API_PROXY) {
+    const serviceId = `${componentId}:endpoint`;
+    return {
+      [serviceId]: {
+        id: serviceId,
+        label: 'Endpoint',
+        type: 'http',
+        dependencyIds: [],
+        deploymentMetadata: {
+          gateways: {
+            internet: { isExposed: false },
+            intranet: { isExposed: true },
+          },
+        },
+      },
+    };
+  }
+
+  const serviceId = `${componentId}:service`;
+  return {
+    [serviceId]: {
+      id: serviceId,
+      label: 'Service',
+      type: 'http',
+      dependencyIds: [],
+      deploymentMetadata: {
+        gateways: {
+          internet: { isExposed: true },
+          intranet: { isExposed: false },
+        },
+      },
+    },
+  };
+}
+
+export function buildProjectModel(projectId: string, components: Component[]): DiagramProject {
+  const diagramComponents: DiagramComponent[] = components
+    .map((c): DiagramComponent | null => {
+      const type = getComponentType(c.displayType ?? '', c.componentSubType ?? null);
+      if (type === null) return null;
+      return {
+        id: c.id,
+        label: c.displayName,
+        version: c.version ?? '1.0.0',
+        type,
+        services: getDefaultServices(c.id, type),
+        connections: [],
+      };
+    })
+    .filter((c): c is DiagramComponent => c !== null);
+
+  return {
+    id: projectId,
+    name: '',
+    components: diagramComponents,
+    modelVersion: '2.0',
   };
 }

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, CircularProgress, IconButton, MenuItem, PageContent, PageTitle, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, IconButton, MenuItem, PageContent, PageTitle, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronUp } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
@@ -129,7 +129,19 @@ export default function ProjectMetrics(scope: ProjectScope): JSX.Element {
       </MetricsHeader>
 
       <Box sx={{ mb: 2 }}>
-        <ProjectMetricsDiagram projectId={projectId} components={components} model={diagram.model} isLoading={diagram.isLoading} onObserve={handleObserve} />
+        {diagram.isError ? (
+          <Alert
+            severity="error"
+            action={
+              <Button color="inherit" size="small" onClick={() => void diagram.refetch()}>
+                Retry
+              </Button>
+            }>
+            Failed to load the project dependency graph.
+          </Alert>
+        ) : (
+          <ProjectMetricsDiagram projectId={projectId} components={components} model={diagram.model} isLoading={diagram.isLoading} onObserve={handleObserve} />
+        )}
       </Box>
 
       {/* ---------- Runtime logs panel ---------- */}

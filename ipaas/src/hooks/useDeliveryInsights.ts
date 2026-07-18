@@ -24,9 +24,16 @@ import type { DeliveryGranularity, DeliveryInsightsRaw, DeliveryRange } from '..
 export function rangeToTimeValues(range: DeliveryRange): { from: string; to: string } {
   const to = new Date();
   const from = new Date(to);
-  if (range === '1M') from.setMonth(from.getMonth() - 1);
-  else if (range === '3M') from.setMonth(from.getMonth() - 3);
-  else if (range === '6M') from.setMonth(from.getMonth() - 6);
+  // Clamp at month boundaries so e.g. Mar 31 − 1M lands on Feb 28/29, not Mar 3.
+  const shiftMonths = (months: number) => {
+    const day = from.getDate();
+    from.setDate(1);
+    from.setMonth(from.getMonth() - months);
+    from.setDate(Math.min(day, new Date(from.getFullYear(), from.getMonth() + 1, 0).getDate()));
+  };
+  if (range === '1M') shiftMonths(1);
+  else if (range === '3M') shiftMonths(3);
+  else if (range === '6M') shiftMonths(6);
   else from.setFullYear(from.getFullYear() - 1);
   return { from: from.toISOString(), to: to.toISOString() };
 }
@@ -97,7 +104,9 @@ export function useUpdateDeliveryConfig(orgUuid: string) {
       if (selectorCriteria !== previous.selectorCriteria) await updateDeliverySelectorCriteria(orgUuid, selectorCriteria);
       if (rejectorCriteria !== previous.rejectorCriteria) await updateDeliveryRejectorCriteria(orgUuid, rejectorCriteria);
     },
-    onSuccess: () => {
+    // onSettled, not onSuccess: the two updates aren't atomic, so a failure on
+    // the second can still leave the first applied server-side — refresh caches either way.
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ['deliveryConfig', orgUuid] });
       void queryClient.invalidateQueries({ queryKey: ['deliveryInsights'] });
     },

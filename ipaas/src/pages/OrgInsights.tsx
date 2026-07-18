@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, PageContent, PageTitle, MenuItem, Skeleton, Stack, TextField } from '@wso2/oxygen-ui';
+import { Box, PageContent, PageTitle, MenuItem, Skeleton, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { useMemo, useState, type JSX } from 'react';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useOrgInsightsEnvironments, useTopSlowestApis } from '../hooks/useInsights';
@@ -38,7 +38,9 @@ export default function OrgInsights({ org }: OrgScope): JSX.Element {
   const [envId, setEnvId] = useState<string>('');
   const [trendMode, setTrendMode] = useState<'requests' | 'traffic' | 'latency'>('requests');
 
-  const envOptions = useMemo(() => envs?.map((e) => ({ id: e.externalEnvId || e.id, name: e.name })) ?? [{ id: 'production', name: 'Production' }], [envs]);
+  // The synthetic "Production" placeholder only stands in while the env list
+  // hasn't loaded; an explicitly empty list gets the no-environments state instead.
+  const envOptions = useMemo(() => (envs ? envs.map((e) => ({ id: e.externalEnvId || e.id, name: e.name })) : [{ id: 'production', name: 'Production' }]), [envs]);
   const activeEnv = envId || envOptions[0]?.id || 'production';
   const selectedEnv = useMemo(() => envs?.find((e) => (e.externalEnvId || e.id) === activeEnv) ?? null, [envs, activeEnv]);
 
@@ -46,9 +48,23 @@ export default function OrgInsights({ org }: OrgScope): JSX.Element {
   const latencyTrend = useProjectLatencyTrend(orgUuid, null, selectedEnv, range, trendMode === 'latency');
   const slowest = useTopSlowestApis(orgUuid, null, selectedEnv, range);
 
+  const noEnvironments = !envsLoading && (envs?.length ?? 0) === 0;
   const loading = envsLoading || real.isLoading;
   const activeEnvName = envOptions.find((e) => e.id === activeEnv)?.name ?? activeEnv;
   const handleDownloadReport = () => downloadOrgInsightsCsv(org, activeEnvName, range, { kpis: real.kpis, trend: real.trend });
+
+  if (noEnvironments) {
+    return (
+      <PageContent>
+        <PageTitle>
+          <PageTitle.Header>Usage Insights</PageTitle.Header>
+        </PageTitle>
+        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 8 }}>
+          No insights environments are available for this organization yet.
+        </Typography>
+      </PageContent>
+    );
+  }
 
   return (
     <PageContent>
@@ -57,7 +73,7 @@ export default function OrgInsights({ org }: OrgScope): JSX.Element {
       </PageTitle>
 
       <Stack direction="row" alignItems="center" justifyContent="flex-end" flexWrap="wrap" gap={1.5} sx={{ mb: 2 }}>
-        <InsightsControls envOptions={envOptions} envId={activeEnv} onEnvChange={setEnvId} range={range} onRangeChange={setRange} onReport={handleDownloadReport} />
+        <InsightsControls envOptions={envOptions} envId={activeEnv} onEnvChange={setEnvId} range={range} onRangeChange={setRange} onReport={handleDownloadReport} reportDisabled={!selectedEnv} />
       </Stack>
 
       <Box sx={{ mb: 2 }}>
@@ -70,7 +86,7 @@ export default function OrgInsights({ org }: OrgScope): JSX.Element {
           title={trendMode === 'latency' ? 'API Latency Trend' : trendMode === 'traffic' ? 'API Traffic Trend' : 'API Requests & Errors Trend'}
           subtitle={trendMode === 'latency' ? 'Average latency (ms)' : trendMode === 'traffic' ? 'Successful vs error responses' : 'API traffic with error volume'}
           action={
-            <TextField select size="small" value={trendMode} onChange={(e) => setTrendMode(e.target.value as 'requests' | 'traffic' | 'latency')} sx={{ minWidth: 140 }}>
+            <TextField select size="small" value={trendMode} onChange={(e) => setTrendMode(e.target.value as 'requests' | 'traffic' | 'latency')} inputProps={{ 'aria-label': 'Trend metric' }} sx={{ minWidth: 140 }}>
               <MenuItem value="requests">API Requests</MenuItem>
               <MenuItem value="traffic">Traffic</MenuItem>
               <MenuItem value="latency">Latency</MenuItem>

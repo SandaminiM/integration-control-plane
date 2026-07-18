@@ -20,7 +20,7 @@ import { Alert, Box, Skeleton, Stack } from '@wso2/oxygen-ui';
 import { CellDiagram, DiagramLayer } from '@wso2/cell-diagram';
 import type { MoreVertMenuItem } from '@wso2/cell-diagram';
 import { memo, useMemo, type JSX } from 'react';
-import { buildProjectModel } from '../ArchitectureCard';
+import { buildProjectModel } from './diagramUtils';
 import { applyObservability } from './diagramUtils';
 import type { Component } from '../../types/component';
 import type { ProjectMetricsModel } from '../../types/observability';

@@ -18,9 +18,14 @@
 
 import type { ApiTrendPoint, AutomationTrendPoint, ProjectTrendPoint } from '../types/insights';
 
-/** Quote a single CSV cell, escaping embedded quotes (RFC-4180 style). */
+/** Quote a single CSV cell, escaping embedded quotes (RFC-4180 style). String
+ * values starting with a formula trigger (= + - @ tab CR) get a leading
+ * apostrophe so spreadsheets treat them as text rather than executable
+ * formulas; numeric values pass through unchanged. */
 export function escapeCsvCell(v: unknown): string {
-  return `"${String(v ?? '').replaceAll('"', '""')}"`;
+  const s = String(v ?? '');
+  const guarded = typeof v === 'string' && /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+  return `"${guarded.replaceAll('"', '""')}"`;
 }
 
 /** Join rows into a CSV string. Each inner array is a row; an empty array is a blank line. */

@@ -76,7 +76,8 @@ function toAutomationInsightsData(raw: AutomationInsightsRaw, componentId: strin
     const ts = Date.parse(e.startTime);
     if (Number.isNaN(ts)) return;
     const d = new Date(ts);
-    const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+    // Zero-padded ISO key so localeCompare sorts chronologically ("2026-09-30" < "2026-10-02").
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
     const b = dayBuckets.get(key) ?? { success: 0, failure: 0, timeout: 0 };
     b[executionOutcome(e.status)]++;
     dayBuckets.set(key, b);
@@ -85,7 +86,7 @@ function toAutomationInsightsData(raw: AutomationInsightsRaw, componentId: strin
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, v]) => {
       const [, m, dd] = key.split('-').map(Number);
-      return { label: `${m + 1}/${dd}`, ...v };
+      return { label: `${m}/${dd}`, ...v };
     });
 
   return { kpis, scatter, heatmap, trend };

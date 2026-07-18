@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, ListingTable, Skeleton, TablePagination, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Link, ListingTable, Skeleton, TablePagination, Typography } from '@wso2/oxygen-ui';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import type { ProjectDoraRow } from '../../types/delivery';
 
@@ -64,9 +64,25 @@ export default function TopPerformingProjectsTable({ rows, isLoading, onRowClick
                 {pageRows.map((row) => (
                   <ListingTable.Row key={row.id} hover={!!row.handler} onClick={row.handler ? () => onRowClick(row) : undefined} sx={row.handler ? { cursor: 'pointer' } : undefined}>
                     <ListingTable.Cell>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {row.name}
-                      </Typography>
+                      {row.handler ? (
+                        <Link
+                          component="button"
+                          type="button"
+                          variant="body2"
+                          underline="hover"
+                          color="inherit"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRowClick(row);
+                          }}
+                          sx={{ fontWeight: 500 }}>
+                          {row.name}
+                        </Link>
+                      ) : (
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {row.name}
+                        </Typography>
+                      )}
                     </ListingTable.Cell>
                     <ListingTable.Cell align="center">{row.deployments}</ListingTable.Cell>
                     <ListingTable.Cell align="center">{row.failureRate}</ListingTable.Cell>

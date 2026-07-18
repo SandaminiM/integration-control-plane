@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Avatar, Box, Chip, ListingTable, MenuItem, PageContent, PageTitle, Skeleton, Stack, TextField, Typography, useTheme } from '@wso2/oxygen-ui';
+import { Alert, Avatar, Box, Chip, Link, ListingTable, MenuItem, PageContent, PageTitle, Skeleton, Stack, TextField, Typography, useTheme } from '@wso2/oxygen-ui';
 import { Zap, Globe, XCircle } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
@@ -115,7 +115,7 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
       </PageTitle>
 
       <Stack direction="row" alignItems="center" justifyContent="flex-end" flexWrap="wrap" gap={1.5} sx={{ mb: 2 }}>
-        <InsightsControls envOptions={envOptions} envId={activeEnv} onEnvChange={setEnvId} range={range} onRangeChange={setRange} onReport={handleDownloadReport} />
+        <InsightsControls envOptions={envOptions} envId={activeEnv} onEnvChange={setEnvId} range={range} onRangeChange={setRange} onReport={handleDownloadReport} reportDisabled={!selectedEnv} />
       </Stack>
 
       <Box sx={{ mb: 2 }}>
@@ -141,7 +141,7 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
           title={trendMode === 'latency' ? 'API Latency Trend' : trendMode === 'traffic' ? 'API Traffic Trend' : 'API Requests & Errors Trend'}
           subtitle={trendMode === 'latency' ? 'Average latency (ms)' : trendMode === 'traffic' ? 'Successful vs error responses' : 'API traffic with error volume'}
           action={
-            <TextField select size="small" value={trendMode} onChange={(e) => setTrendMode(e.target.value as 'requests' | 'traffic' | 'latency')} sx={{ minWidth: 140 }}>
+            <TextField select size="small" value={trendMode} onChange={(e) => setTrendMode(e.target.value as 'requests' | 'traffic' | 'latency')} inputProps={{ 'aria-label': 'Trend metric' }} sx={{ minWidth: 140 }}>
               <MenuItem value="requests">API Requests</MenuItem>
               <MenuItem value="traffic">Traffic</MenuItem>
               <MenuItem value="latency">Latency</MenuItem>
@@ -217,9 +217,25 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
                         <Stack direction="row" alignItems="center" gap={1.5}>
                           <Avatar sx={{ width: 30, height: 30, bgcolor: 'action.selected', color: 'text.secondary' }}>{isAggregate ? <XCircle size={15} /> : row.type === 'auto' || row.type === 'rag' ? <Zap size={15} /> : <Globe size={15} />}</Avatar>
                           <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                              {row.name}
-                            </Typography>
+                            {row.handler ? (
+                              <Link
+                                component="button"
+                                type="button"
+                                variant="body2"
+                                underline="hover"
+                                color="inherit"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/organizations/${org}/projects/${project}/components/${row.handler}/insights/usage`);
+                                }}
+                                sx={{ fontWeight: 500 }}>
+                                {row.name}
+                              </Link>
+                            ) : (
+                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                {row.name}
+                              </Typography>
+                            )}
                             <Typography variant="caption" color="text.secondary">
                               {isAggregate ? 'Combined totals from integrations removed from the project' : row.desc}
                             </Typography>

@@ -18,16 +18,20 @@
 
 import type { ExecutionOutcome } from '../types/insights';
 
-/** Compact count: 1_500_000 → '1.50M', 1500 → '1.5k', else rounded integer. */
+/** Compact count: 1_500_000 → '1.50M', 1500 → '1.5k', else rounded integer.
+ * Values that would round to '1000.0k' roll over to the M form instead. */
 export function formatCount(n: number): string {
-  return n >= 1_000_000 ? `${(n / 1_000_000).toFixed(2)}M` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${Math.round(n)}`;
+  if (n >= 999_950) return `${(n / 1_000_000).toFixed(2)}M`;
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${Math.round(n)}`;
 }
 
-/** Human duration from seconds: '45s', '3m', '3m 20s'. */
+/** Human duration from seconds: '45s', '3m', '3m 20s'. Rounds to whole seconds
+ * first so values like 59.6 or 119.6 normalize to '1m' / '2m', never '1m 60s'. */
 export function formatDuration(sec: number): string {
-  if (sec < 60) return `${Math.round(sec)}s`;
-  const m = Math.floor(sec / 60);
-  const s = Math.round(sec % 60);
+  const total = Math.round(sec);
+  if (total < 60) return `${total}s`;
+  const m = Math.floor(total / 60);
+  const s = total % 60;
   return s === 0 ? `${m}m` : `${m}m ${s}s`;
 }
 

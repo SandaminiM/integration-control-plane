@@ -72,7 +72,7 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
   return (
     <Stack gap={2}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5}>
-        <ToggleButtonGroup exclusive size="small" value={tab} onChange={(_, v: ApiInsightsTab | null) => v && setTab(v)}>
+        <ToggleButtonGroup exclusive size="small" aria-label="Insights view" value={tab} onChange={(_, v: ApiInsightsTab | null) => v && setTab(v)}>
           {API_TABS.map((t) => (
             <ToggleButton key={t.value} value={t.value} sx={{ px: 2, textTransform: 'none' }}>
               {t.label}
@@ -91,7 +91,7 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
                 title="Requests, Errors & Latency"
                 subtitle={METRIC_SERIES[overviewMetric].subtitle}
                 action={
-                  <TextField select size="small" value={overviewMetric} onChange={(e) => setOverviewMetric(e.target.value as 'requests' | 'errors' | 'latency')} sx={{ minWidth: 130 }}>
+                  <TextField select size="small" value={overviewMetric} onChange={(e) => setOverviewMetric(e.target.value as 'requests' | 'errors' | 'latency')} inputProps={{ 'aria-label': 'Overview metric' }} sx={{ minWidth: 130 }}>
                     <MenuItem value="requests">Requests</MenuItem>
                     <MenuItem value="errors">Errors</MenuItem>
                     <MenuItem value="latency">Latency</MenuItem>

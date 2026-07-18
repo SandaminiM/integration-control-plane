@@ -38,6 +38,15 @@ describe('escapeCsvCell', () => {
     expect(escapeCsvCell(null)).toBe('""');
     expect(escapeCsvCell(undefined)).toBe('""');
   });
+
+  it('prefixes formula-like strings with an apostrophe, leaving numbers unchanged', () => {
+    expect(escapeCsvCell('=SUM(A1:A2)')).toBe('"\'=SUM(A1:A2)"');
+    expect(escapeCsvCell('+cmd|calc')).toBe('"\'+cmd|calc"');
+    expect(escapeCsvCell('@import')).toBe('"\'@import"');
+    expect(escapeCsvCell('-2+3')).toBe('"\'-2+3"');
+    expect(escapeCsvCell(-42)).toBe('"-42"');
+    expect(escapeCsvCell('plain')).toBe('"plain"');
+  });
 });
 
 describe('toCsv', () => {

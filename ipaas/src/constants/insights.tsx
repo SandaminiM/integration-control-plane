@@ -93,6 +93,7 @@ export const DEPLOYMENT_STATUS_CHIP: Record<string, { label: string; color: 'suc
   ERROR: { label: 'Error', color: 'error' },
   SUSPENDED: { label: 'Suspended', color: 'default' },
   NOT_DEPLOYED: { label: 'Not Deployed', color: 'default' },
+  UNKNOWN: { label: 'Unknown', color: 'default' },
 };
 
 export const INSIGHTS_RANGES: { value: InsightsRange; label: string }[] = [

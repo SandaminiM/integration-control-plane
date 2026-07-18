@@ -772,19 +772,28 @@ function buildApiOverviewTrend(
 ): ApiInsightsRaw['overviewTrend'] {
   const buckets = new Map<number, { requests: number; errors: number; latency: number }>();
   const get = (ts: number) => buckets.get(ts) ?? { requests: 0, errors: 0, latency: 0 };
+  // Timestamps are truncated to the label granularity (same as buildTrend) so
+  // the three independently-bucketed series land in the same buckets; counts
+  // accumulate when a series has finer sub-buckets than the label granularity.
+  const bucketKey = (timeSpan: string): number | null => {
+    const ts = new Date(timeSpan).getTime();
+    return Number.isNaN(ts) ? null : truncateTs(ts, labelGranularity);
+  };
   usage.forEach((p) => {
-    const ts = new Date(p.timeSpan).getTime();
-    if (Number.isNaN(ts)) return;
-    buckets.set(ts, { ...get(ts), requests: p.count || 0 });
+    const ts = bucketKey(p.timeSpan);
+    if (ts === null) return;
+    const b = get(ts);
+    buckets.set(ts, { ...b, requests: b.requests + (p.count || 0) });
   });
   errors.forEach((p) => {
-    const ts = new Date(p.timeSpan).getTime();
-    if (Number.isNaN(ts)) return;
-    buckets.set(ts, { ...get(ts), errors: (p.auth || 0) + (p.targetConnectivity || 0) + (p.throttled || 0) + (p.other || 0) });
+    const ts = bucketKey(p.timeSpan);
+    if (ts === null) return;
+    const b = get(ts);
+    buckets.set(ts, { ...b, errors: b.errors + (p.auth || 0) + (p.targetConnectivity || 0) + (p.throttled || 0) + (p.other || 0) });
   });
   latency.forEach((p) => {
-    const ts = new Date(p.timeSpan).getTime();
-    if (Number.isNaN(ts)) return;
+    const ts = bucketKey(p.timeSpan);
+    if (ts === null) return;
     buckets.set(ts, { ...get(ts), latency: Math.round(p.response || 0) });
   });
   return [...buckets.entries()].sort((a, b) => a[0] - b[0]).map(([ts, v]) => ({ label: bucketLabel(ts, labelGranularity), requests: v.requests, errors: v.errors, latency: v.latency }));

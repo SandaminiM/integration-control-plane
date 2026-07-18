@@ -65,7 +65,7 @@ export default function ComponentInsightsUsage(scope: ComponentScope): JSX.Eleme
   // critical (Production) first, else the first configured environment.
   const primaryEnv = useMemo(() => environments.find((e) => e.critical) ?? environments[0] ?? null, [environments]);
 
-  const { data: insightsEnvs } = useInsightsEnvironments(orgUuid, projectId);
+  const { data: insightsEnvs, isLoading: insightsEnvsLoading } = useInsightsEnvironments(orgUuid, projectId);
   // User-selectable environment, defaulting to the FIRST insights environment —
   // same default the project Insights page uses. Previously this page pinned
   // the project's critical (Production) environment, which silently rendered
@@ -125,7 +125,7 @@ export default function ComponentInsightsUsage(scope: ComponentScope): JSX.Eleme
   // so they stay in the PageTitle actions slot.
   const controls = <InsightsControls envOptions={envOptions} envId={activeEnvId} onEnvChange={setEnvId} range={range} onRangeChange={setRange} onReport={handleDownloadReport} />;
 
-  const isLoading = loadingProject || loadingComponent;
+  const isLoading = loadingProject || loadingComponent || insightsEnvsLoading;
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -166,6 +166,10 @@ export default function ComponentInsightsUsage(scope: ComponentScope): JSX.Eleme
           projectHandler={project?.handler ?? scope.project}
           range={range}
         />
+      ) : envOptions.length === 0 ? (
+        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 8 }}>
+          No insights environments are available for this integration yet.
+        </Typography>
       ) : (
         <ApiInsightsView orgUuid={orgUuid} projectId={projectId} insightsEnv={insightsEnv} apiRef={reportApiRef!} range={range} actions={controls} />
       )}

@@ -26,10 +26,12 @@ import type { HeatmapData } from '../../types/insights';
 // Each bar shows the code's proxy-vs-target share (full-width 100% split),
 // not its magnitude relative to other codes.
 export default function StatusCodeBars({ heatmap }: { heatmap: HeatmapData }): JSX.Element {
+  const proxyRow = heatmap.rows.indexOf('Proxy');
+  const targetRow = heatmap.rows.indexOf('Target');
   const codes = heatmap.cols
     .map((code, ci) => {
       const at = (ri: number) => heatmap.cells.find((c) => c.row === ri && c.col === ci)?.value ?? 0;
-      return { code, proxy: at(0), target: at(1) };
+      return { code, proxy: at(proxyRow), target: at(targetRow) };
     })
     .filter((c) => c.code.trim().toLowerCase() !== 'total' && c.proxy + c.target > 0);
   if (codes.length === 0) return <Alert severity="info">No errors in range.</Alert>;

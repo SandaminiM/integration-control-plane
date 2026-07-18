@@ -790,13 +790,13 @@ function AppLayoutInner(): JSX.Element {
                   sx={{ position: 'relative', display: 'inline-flex', cursor: 'pointer' }}
                   onClick={() => {
                     const ps = { level: 'projects' as const, org: scope.org, project: scope.project };
-                    navigate(insightsCrossScopeUrl(pathname, scope, ps) ?? resourceUrl(ps, 'overview'));
+                    navigate((hasComponent(scope) ? insightsCrossScopeUrl(pathname, scope, ps) : null) ?? resourceUrl(ps, 'overview'));
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
                       const ps = { level: 'projects' as const, org: scope.org, project: scope.project };
-                      navigate(insightsCrossScopeUrl(pathname, scope, ps) ?? resourceUrl(ps, 'overview'));
+                      navigate((hasComponent(scope) ? insightsCrossScopeUrl(pathname, scope, ps) : null) ?? resourceUrl(ps, 'overview'));
                     }
                   }}>
                   <ComplexSelect

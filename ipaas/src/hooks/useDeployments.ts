@@ -213,7 +213,8 @@ export function useIntegrationDeploymentStatuses(orgHandler: string, orgUuid: st
             const deployment = await fetchComponentDeployment(orgHandler, orgUuid, c.id, track.id, environmentId);
             return [c.id, deployment?.deploymentStatusV2 ?? 'NOT_DEPLOYED'];
           } catch {
-            return [c.id, 'NOT_DEPLOYED'];
+            // A failed status fetch is not evidence the integration is undeployed.
+            return [c.id, 'UNKNOWN'];
           }
         }),
       );
