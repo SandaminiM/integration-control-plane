@@ -21,11 +21,18 @@ import { useCallback } from 'react';
 import {
   createDatabase,
   createDbCredential,
+  createKafkaAcl,
+  createKafkaTopic,
+  createKafkaUser,
   createServer,
   deleteDbCredential,
+  deleteKafkaAcl,
+  deleteKafkaTopic,
+  deleteKafkaUser,
   deleteServer,
   getAvailability,
   getDbCredential,
+  getKafkaUserConfigs,
   getServer,
   getServerAdminUser,
   getServerCaCertificate,
@@ -33,19 +40,24 @@ import {
   getServerMetrics,
   getServicePlans,
   listDbCredentials,
+  listKafkaAcls,
+  listKafkaTopics,
+  listKafkaUsers,
   listServerBackups,
   listServerDatabases,
   listServers,
+  resetKafkaUserCredentials,
   setDatabaseMarketplace,
   setServerPoweredState,
   updateAllowedIps,
   updateDbCredential,
+  updateKafkaTopic,
   updateMaintenanceWindow,
 } from '#api/platformServices';
 import { IS_WIP } from '../features';
 import { useOrgUuid } from './useOrgUuid';
 import { deriveProviders, deriveRegions } from '../utils/platformServices';
-import type { AllowedIpsPayload, CloudProvider, CloudRegion, CreateServerPayload, CredentialPayload, DatabaseServer, LogsRequest, MaintenanceWindow, MetricPeriod, ServicePlan, ServiceType } from '../types/platformServices';
+import type { AllowedIpsPayload, CloudProvider, CloudRegion, CreateServerPayload, CredentialPayload, DatabaseServer, KafkaTopicCreatePayload, KafkaTopicUpdatePayload, LogsRequest, MaintenanceWindow, MetricPeriod, ServerVariant, ServicePlan, ServiceType } from '../types/platformServices';
 
 const ROOT_KEY = 'platformServices';
 
@@ -67,11 +79,11 @@ export function useServiceAvailability() {
 }
 
 /** All database servers in the org. Polls every 15s so provisioning progress is reflected. */
-export function useDatabaseServers() {
+export function useDatabaseServers(variant: ServerVariant = 'db-servers') {
   const orgUuid = useOrgUuid();
   return useQuery({
-    queryKey: [ROOT_KEY, 'servers', orgUuid],
-    queryFn: () => listServers(orgUuid!),
+    queryKey: [ROOT_KEY, 'servers', orgUuid, variant],
+    queryFn: () => listServers(orgUuid!, variant),
     enabled: isPlatformServicesEnabled() && !!orgUuid,
     refetchInterval: 15_000,
     retry: false,
@@ -79,10 +91,10 @@ export function useDatabaseServers() {
 }
 
 /** A single server. Polls fast (10s) while provisioning/resuming, slow (60s) otherwise. */
-export function useDatabaseServer(serverId: string) {
+export function useDatabaseServer(serverId: string, variant: ServerVariant = 'db-servers') {
   return useQuery({
-    queryKey: [ROOT_KEY, 'server', serverId],
-    queryFn: () => getServer(serverId),
+    queryKey: [ROOT_KEY, 'server', serverId, variant],
+    queryFn: () => getServer(serverId, variant),
     enabled: isPlatformServicesEnabled() && !!serverId,
     refetchInterval: (query) => (['CREATING', 'RESUMING'].includes((query.state.data as DatabaseServer | undefined)?.status ?? '') ? 10_000 : 60_000),
     retry: false,
@@ -106,25 +118,25 @@ export function useServicePlans(type: ServiceType) {
   });
 }
 
-export function useCreateServer() {
+export function useCreateServer(variant: ServerVariant = 'db-servers') {
   const qc = useQueryClient();
   const orgUuid = useOrgUuid();
   return useMutation({
-    mutationFn: (payload: CreateServerPayload) => createServer(payload),
+    mutationFn: (payload: CreateServerPayload) => createServer(payload, variant),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [ROOT_KEY, 'servers', orgUuid] });
+      qc.invalidateQueries({ queryKey: [ROOT_KEY, 'servers', orgUuid, variant] });
       qc.invalidateQueries({ queryKey: [ROOT_KEY, 'availability', orgUuid] });
     },
   });
 }
 
-export function useDeleteServer() {
+export function useDeleteServer(variant: ServerVariant = 'db-servers') {
   const qc = useQueryClient();
   const orgUuid = useOrgUuid();
   return useMutation({
-    mutationFn: (serverId: string) => deleteServer(serverId),
+    mutationFn: (serverId: string) => deleteServer(serverId, variant),
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: [ROOT_KEY, 'servers', orgUuid] });
+      qc.invalidateQueries({ queryKey: [ROOT_KEY, 'servers', orgUuid, variant] });
       qc.invalidateQueries({ queryKey: [ROOT_KEY, 'availability', orgUuid] });
     },
   });
@@ -133,11 +145,11 @@ export function useDeleteServer() {
 // --- server detail (management page) ---
 
 /** Power a server on/off; refreshes the server detail on success. */
-export function useSetServerPoweredState(serverId: string) {
+export function useSetServerPoweredState(serverId: string, variant: ServerVariant = 'db-servers') {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (powered: boolean) => setServerPoweredState(serverId, powered),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'server', serverId] }),
+    mutationFn: (powered: boolean) => setServerPoweredState(serverId, powered, variant),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'server', serverId, variant] }),
   });
 }
 
@@ -154,16 +166,16 @@ export function useServerAdminUser(serverId: string, enabled: boolean) {
 }
 
 /** Lazy imperative fetch of the CA certificate (for the Download button). */
-export function useFetchServerCaCertificate(serverId: string) {
+export function useFetchServerCaCertificate(serverId: string, variant: ServerVariant = 'db-servers') {
   const qc = useQueryClient();
-  return () => qc.fetchQuery({ queryKey: [ROOT_KEY, 'caCert', serverId], queryFn: () => getServerCaCertificate(serverId) });
+  return () => qc.fetchQuery({ queryKey: [ROOT_KEY, 'caCert', serverId, variant], queryFn: () => getServerCaCertificate(serverId, variant) });
 }
 
 /** Time-series metrics for the given period. */
-export function useServerMetrics(serverId: string, period: MetricPeriod) {
+export function useServerMetrics(serverId: string, period: MetricPeriod, variant: ServerVariant = 'db-servers') {
   return useQuery({
-    queryKey: [ROOT_KEY, 'metrics', serverId, period],
-    queryFn: () => getServerMetrics(serverId, period),
+    queryKey: [ROOT_KEY, 'metrics', serverId, period, variant],
+    queryFn: () => getServerMetrics(serverId, period, variant),
     enabled: isPlatformServicesEnabled() && !!serverId,
     retry: false,
   });
@@ -253,34 +265,139 @@ export function useDeleteDbCredential(serverId: string) {
 }
 
 /** Update the maintenance window, then refresh the server detail. */
-export function useUpdateMaintenanceWindow(serverId: string) {
+export function useUpdateMaintenanceWindow(serverId: string, variant: ServerVariant = 'db-servers') {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: MaintenanceWindow) => updateMaintenanceWindow(serverId, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'server', serverId] }),
+    mutationFn: (payload: MaintenanceWindow) => updateMaintenanceWindow(serverId, payload, variant),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'server', serverId, variant] }),
   });
 }
 
 /** Update the allowed-IP policy, then refresh the server detail. */
-export function useUpdateAllowedIps(serverId: string) {
+export function useUpdateAllowedIps(serverId: string, variant: ServerVariant = 'db-servers') {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: AllowedIpsPayload) => updateAllowedIps(serverId, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'server', serverId] }),
+    mutationFn: (payload: AllowedIpsPayload) => updateAllowedIps(serverId, payload, variant),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'server', serverId, variant] }),
   });
 }
 
 /** The server's automatic backups. */
-export function useServerBackups(serverId: string) {
+export function useServerBackups(serverId: string, variant: ServerVariant = 'db-servers') {
   return useQuery({
-    queryKey: [ROOT_KEY, 'backups', serverId],
-    queryFn: () => listServerBackups(serverId),
+    queryKey: [ROOT_KEY, 'backups', serverId, variant],
+    queryFn: () => listServerBackups(serverId, variant),
     enabled: isPlatformServicesEnabled() && !!serverId,
     retry: false,
   });
 }
 
 /** Imperative log fetch — the Logs tab manages cursor paging + accumulation itself. */
-export function useFetchServerLogs(serverId: string) {
-  return useCallback((request: LogsRequest) => getServerLogs(serverId, request), [serverId]);
+export function useFetchServerLogs(serverId: string, variant: ServerVariant = 'db-servers') {
+  return useCallback((request: LogsRequest) => getServerLogs(serverId, request, variant), [serverId, variant]);
+}
+
+// --- Kafka (message brokers only) ---
+
+const KAFKA_KEY = 'kafka';
+
+export function useKafkaTopics(brokerId: string) {
+  return useQuery({
+    queryKey: [KAFKA_KEY, 'topics', brokerId],
+    queryFn: () => listKafkaTopics(brokerId),
+    enabled: isPlatformServicesEnabled() && !!brokerId,
+    retry: false,
+  });
+}
+
+export function useKafkaUserConfigs() {
+  return useQuery({
+    queryKey: [KAFKA_KEY, 'user-configs'],
+    queryFn: () => getKafkaUserConfigs(),
+    enabled: isPlatformServicesEnabled(),
+    staleTime: 60 * 60_000,
+    retry: false,
+  });
+}
+
+export function useKafkaUsers(brokerId: string) {
+  return useQuery({
+    queryKey: [KAFKA_KEY, 'users', brokerId],
+    queryFn: () => listKafkaUsers(brokerId),
+    enabled: isPlatformServicesEnabled() && !!brokerId,
+    retry: false,
+  });
+}
+
+export function useKafkaAcls(brokerId: string) {
+  return useQuery({
+    queryKey: [KAFKA_KEY, 'acls', brokerId],
+    queryFn: () => listKafkaAcls(brokerId),
+    enabled: isPlatformServicesEnabled() && !!brokerId,
+    retry: false,
+  });
+}
+
+export function useCreateKafkaTopic(brokerId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: KafkaTopicCreatePayload) => createKafkaTopic(brokerId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KAFKA_KEY, 'topics', brokerId] }),
+  });
+}
+
+export function useUpdateKafkaTopic(brokerId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ topicName, payload }: { topicName: string; payload: KafkaTopicUpdatePayload }) => updateKafkaTopic(brokerId, topicName, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KAFKA_KEY, 'topics', brokerId] }),
+  });
+}
+
+export function useDeleteKafkaTopic(brokerId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (topicName: string) => deleteKafkaTopic(brokerId, topicName),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KAFKA_KEY, 'topics', brokerId] }),
+  });
+}
+
+export function useCreateKafkaUser(brokerId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (username: string) => createKafkaUser(brokerId, username),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KAFKA_KEY, 'users', brokerId] }),
+  });
+}
+
+export function useDeleteKafkaUser(brokerId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (username: string) => deleteKafkaUser(brokerId, username),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KAFKA_KEY, 'users', brokerId] }),
+  });
+}
+
+export function useResetKafkaUserCredentials(brokerId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (username: string) => resetKafkaUserCredentials(brokerId, username),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KAFKA_KEY, 'users', brokerId] }),
+  });
+}
+
+export function useCreateKafkaAcl(brokerId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { permission: string; topic: string; username: string }) => createKafkaAcl(brokerId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KAFKA_KEY, 'acls', brokerId] }),
+  });
+}
+
+export function useDeleteKafkaAcl(brokerId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (aclId: string) => deleteKafkaAcl(brokerId, aclId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KAFKA_KEY, 'acls', brokerId] }),
+  });
 }

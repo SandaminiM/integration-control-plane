@@ -24,16 +24,17 @@ import DeleteServerDialog from '../DeleteServerDialog';
 import DetailRow from './DetailRow';
 import MaintenanceWindowDialog from './MaintenanceWindowDialog';
 import AllowedIpsDialog from './AllowedIpsDialog';
-import type { DatabaseServerDetail } from '../../../types/platformServices';
+import type { DatabaseServerDetail, ServerVariant } from '../../../types/platformServices';
 
 interface AdvancedSettingsTabProps {
   service: DatabaseServerDetail;
   isSubscribed: boolean;
+  variant?: ServerVariant;
   onDeleted: () => void;
   onError: (message: string) => void;
 }
 
-export default function AdvancedSettingsTab({ service, isSubscribed, onDeleted, onError }: AdvancedSettingsTabProps): JSX.Element {
+export default function AdvancedSettingsTab({ service, isSubscribed, variant = 'db-servers', onDeleted, onError }: AdvancedSettingsTabProps): JSX.Element {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState<'maintenance' | 'ips' | null>(null);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -119,9 +120,9 @@ export default function AdvancedSettingsTab({ service, isSubscribed, onDeleted, 
         </Button>
       </Stack>
 
-      {confirmDelete && <DeleteServerDialog server={service} isSubscribed={isSubscribed} onClose={() => setConfirmDelete(false)} onDeleted={onDeleted} onError={onError} />}
-      {editing === 'maintenance' && <MaintenanceWindowDialog serverId={service.id} current={maintenance} onClose={() => setEditing(null)} onResult={onResult} />}
-      {editing === 'ips' && <AllowedIpsDialog serverId={service.id} current={allowedIps} onClose={() => setEditing(null)} onResult={onResult} />}
+      {confirmDelete && <DeleteServerDialog server={service} isSubscribed={isSubscribed} variant={variant} onClose={() => setConfirmDelete(false)} onDeleted={onDeleted} onError={onError} />}
+      {editing === 'maintenance' && <MaintenanceWindowDialog serverId={service.id} variant={variant} current={maintenance} onClose={() => setEditing(null)} onResult={onResult} />}
+      {editing === 'ips' && <AllowedIpsDialog serverId={service.id} variant={variant} current={allowedIps} onClose={() => setEditing(null)} onResult={onResult} />}
     </Box>
   );
 }

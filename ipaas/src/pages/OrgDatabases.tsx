@@ -40,15 +40,20 @@ export function DatabaseServersListView({ scope, kind }: { scope: OrgScope; kind
   const navigate = useNavigate();
   const orgUuid = useOrgUuid();
   const availability = useServiceAvailability();
-  const servers = useDatabaseServers();
+  const servers = useDatabaseServers(kind.variant);
   const { data: subscriptions } = useSubscriptions(orgUuid ?? '');
   const isSubscribed = (subscriptions?.list ?? []).some((s) => s.subscriptionType === PAID_SUBSCRIPTION_TYPE);
+  const billingConsoleUrl = window.API_CONFIG?.billingConsoleUrl;
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const base = `/organizations/${scope.org}/admin/${kind.segment}`;
 
-  // The server list is shared org-wide; each page shows only its own flavour.
-  const kindServers = useMemo(() => (servers.data ?? []).filter((s) => (kind.isVector ? s.is_vector_enabled : !s.is_vector_enabled)), [servers.data, kind.isVector]);
+  // The db-servers list is shared org-wide between Databases and Vector Databases;
+  // each page shows only its own flavour. Brokers arrive from their own endpoint.
+  const kindServers = useMemo(
+    () => (kind.variant === 'brokers' ? (servers.data ?? []) : (servers.data ?? []).filter((s) => (kind.isVector ? s.is_vector_enabled : !s.is_vector_enabled))),
+    [servers.data, kind.isVector, kind.variant],
+  );
 
   if (!isPlatformServicesEnabled()) {
     return <ComingSoon title="Coming Soon" description={`${kind.listTitle} management is currently under development.`} />;
@@ -108,7 +113,19 @@ export function DatabaseServersListView({ scope, kind }: { scope: OrgScope; kind
               Retry
             </Button>
           }>
-          Failed to list available database services.
+          Failed to list available {kind.serverNoun} services.
+        </Alert>
+      ) : kind.requiresPaidPlan && !isSubscribed && kindServers.length === 0 ? (
+        <Alert
+          severity="info"
+          action={
+            billingConsoleUrl && orgUuid ? (
+              <Button color="inherit" size="small" variant="outlined" onClick={() => window.open(`${billingConsoleUrl}/cloud/devant/upgrade?orgId=${encodeURIComponent(orgUuid)}`, '_blank', 'noopener,noreferrer')}>
+                Upgrade
+              </Button>
+            ) : undefined
+          }>
+          {kind.listTitle} are available on paid plans. Upgrade your subscription to create a {kind.serverNoun}.
         </Alert>
       ) : kindServers.length === 0 ? (
         <NoDatabaseServersBanner createAllowed={createAllowed} upgradeRequired={upgradeRequired} headline={kind.emptyHeadline} body={kind.emptyBody} onCreate={() => navigate(`${base}/new`)} />
@@ -116,8 +133,9 @@ export function DatabaseServersListView({ scope, kind }: { scope: OrgScope; kind
         <DatabaseServersTable
           servers={kindServers}
           isSubscribed={isSubscribed}
+          variant={kind.variant}
           onOpenServer={openServer}
-          onDeleted={(name) => setAlert({ type: 'success', message: `Database server '${name}' deleted.` })}
+          onDeleted={(name) => setAlert({ type: 'success', message: `${kind.serverNoun.charAt(0).toUpperCase()}${kind.serverNoun.slice(1)} '${name}' deleted.` })}
           onError={(message) => setAlert({ type: 'error', message })}
         />
       )}

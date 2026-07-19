@@ -22,11 +22,11 @@ import { useState, type JSX } from 'react';
 import { useServerMetrics } from '../../../hooks/usePlatformServices';
 import { METRIC_CHART_COLORS, METRIC_PERIODS } from '../../../constants/platformServices';
 import { metricsToChart, metricTitle } from '../../../utils/platformServices';
-import type { MetricPeriod } from '../../../types/platformServices';
+import type { MetricPeriod, ServerVariant } from '../../../types/platformServices';
 
-export default function MetricsTab({ serverId }: { serverId: string }): JSX.Element {
+export default function MetricsTab({ serverId, variant = 'db-servers' }: { serverId: string; variant?: ServerVariant }): JSX.Element {
   const [period, setPeriod] = useState<MetricPeriod>('hour');
-  const { data, isLoading, isError, refetch } = useServerMetrics(serverId, period);
+  const { data, isLoading, isError, refetch } = useServerMetrics(serverId, period, variant);
 
   const metrics = Object.entries(data?.metrics ?? {});
 

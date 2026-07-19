@@ -85,6 +85,9 @@ const RagRetrieval = lazy(() => import('../pages/RagRetrieval'));
 const OrgVectorDatabases = lazy(() => import('../pages/OrgVectorDatabases'));
 const CreateVectorDatabaseServer = lazy(() => import('../pages/CreateVectorDatabaseServer'));
 const VectorDatabaseServerDetail = lazy(() => import('../pages/VectorDatabaseServerDetail'));
+const OrgMessageBrokers = lazy(() => import('../pages/OrgMessageBrokers'));
+const CreateMessageBroker = lazy(() => import('../pages/CreateMessageBroker'));
+const MessageBrokerDetail = lazy(() => import('../pages/MessageBrokerDetail'));
 const ProjectSettings = lazy(() => import('../pages/ProjectSettings'));
 const ProjectOverview = lazy(() => import('../pages/ProjectOverview'));
 const ProjectEgressControl = lazy(() => import('../pages/ProjectEgressControl'));
@@ -215,7 +218,9 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/admin/vector-databases', element: createElement(withScope(OrgVectorDatabases, ['organizations'])) },
               { path: 'organizations/:orgHandler/admin/vector-databases/new', element: createElement(withScope(CreateVectorDatabaseServer, ['organizations'])) },
               { path: 'organizations/:orgHandler/admin/vector-databases/:dbServerId/:tab', element: createElement(withScope(VectorDatabaseServerDetail, ['organizations'])) },
-              { path: 'organizations/:orgHandler/admin/message-brokers', element: <ComingSoon title="Coming Soon" description="Message Brokers management is currently under development." /> },
+              { path: 'organizations/:orgHandler/admin/message-brokers', element: createElement(withScope(OrgMessageBrokers, ['organizations'])) },
+              { path: 'organizations/:orgHandler/admin/message-brokers/new', element: createElement(withScope(CreateMessageBroker, ['organizations'])) },
+              { path: 'organizations/:orgHandler/admin/message-brokers/:brokerId/:tab', element: createElement(withScope(MessageBrokerDetail, ['organizations'])) },
               { path: 'organizations/:orgHandler/admin/third-party', element: createElement(RouteErrorBoundary, null, createElement(withScope(ThirdPartyServices, ['organizations']))) },
               { path: 'organizations/:orgHandler/admin/third-party/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(RegisterThirdPartyService, ['organizations']))) },
               { path: 'organizations/:orgHandler/admin/third-party/:serviceId', element: createElement(RouteErrorBoundary, null, createElement(withScope(ThirdPartyServiceDetail, ['organizations']))) },

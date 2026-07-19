@@ -28,6 +28,12 @@ import type {
   DatabaseServer,
   DatabaseServerDetail,
   DbCredential,
+  KafkaAcl,
+  KafkaTopic,
+  KafkaTopicCreatePayload,
+  KafkaTopicUpdatePayload,
+  KafkaUser,
+  KafkaUserConfigs,
   LogsRequest,
   LogsResponse,
   MaintenanceWindow,
@@ -35,11 +41,12 @@ import type {
   OrgServiceAvailability,
   PowerAction,
   ServerMetricsResponse,
+  ServerVariant,
   ServicePlan,
   ServiceType,
 } from '../../types/platformServices';
 
-const server = (id: string): string => `/db-servers/${encodeURIComponent(id)}`;
+const server = (id: string, variant: ServerVariant = 'db-servers'): string => `/${variant}/${encodeURIComponent(id)}`;
 
 /** Whether the org may provision another managed service, plus its service-count limit. */
 export function getAvailability(orgUuid: string): Promise<OrgServiceAvailability> {
@@ -47,23 +54,23 @@ export function getAvailability(orgUuid: string): Promise<OrgServiceAvailability
 }
 
 /** All managed database servers in the org (both regular and vector-enabled). */
-export function listServers(orgUuid: string): Promise<DatabaseServer[]> {
-  return platformServicesClient.get<DatabaseServer[]>(`/db-servers?organization_id=${encodeURIComponent(orgUuid)}`);
+export function listServers(orgUuid: string, variant: ServerVariant = 'db-servers'): Promise<DatabaseServer[]> {
+  return platformServicesClient.get<DatabaseServer[]>(`/${variant}?organization_id=${encodeURIComponent(orgUuid)}`);
 }
 
 /** A single server's full details (connection params, plan, nodes, maintenance). */
-export function getServer(serverId: string): Promise<DatabaseServerDetail> {
-  return platformServicesClient.get<DatabaseServerDetail>(server(serverId));
+export function getServer(serverId: string, variant: ServerVariant = 'db-servers'): Promise<DatabaseServerDetail> {
+  return platformServicesClient.get<DatabaseServerDetail>(server(serverId, variant));
 }
 
-export function deleteServer(serverId: string): Promise<void> {
-  return platformServicesClient.delete(server(serverId));
+export function deleteServer(serverId: string, variant: ServerVariant = 'db-servers'): Promise<void> {
+  return platformServicesClient.delete(server(serverId, variant));
 }
 
 /** Power the service on or off. */
-export function setServerPoweredState(serverId: string, powered: boolean): Promise<void> {
+export function setServerPoweredState(serverId: string, powered: boolean, variant: ServerVariant = 'db-servers'): Promise<void> {
   const action: PowerAction = powered ? 'power_on' : 'power_off';
-  return platformServicesClient.put(`${server(serverId)}/power`, { action });
+  return platformServicesClient.put(`${server(serverId, variant)}/power`, { action });
 }
 
 /** The default admin user and its current password (revealed on demand). */
@@ -72,13 +79,13 @@ export function getServerAdminUser(serverId: string): Promise<AdminUser> {
 }
 
 /** The server's CA certificate (for download). */
-export function getServerCaCertificate(serverId: string): Promise<CaCertificate> {
-  return platformServicesClient.get<CaCertificate>(`${server(serverId)}/ca-certificate`);
+export function getServerCaCertificate(serverId: string, variant: ServerVariant = 'db-servers'): Promise<CaCertificate> {
+  return platformServicesClient.get<CaCertificate>(`${server(serverId, variant)}/ca-certificate`);
 }
 
 /** Time-series metrics (CPU, memory, disk, …) for the given period. */
-export function getServerMetrics(serverId: string, period: MetricPeriod): Promise<ServerMetricsResponse> {
-  return platformServicesClient.post<ServerMetricsResponse>(`${server(serverId)}/metrics`, { period });
+export function getServerMetrics(serverId: string, period: MetricPeriod, variant: ServerVariant = 'db-servers'): Promise<ServerMetricsResponse> {
+  return platformServicesClient.post<ServerMetricsResponse>(`${server(serverId, variant)}/metrics`, { period });
 }
 
 /** The logical databases hosted on the server. */
@@ -120,23 +127,23 @@ export function deleteDbCredential(serverId: string, credentialId: string): Prom
 }
 
 /** Update the weekly maintenance window (`{ day, time }`). */
-export function updateMaintenanceWindow(serverId: string, payload: MaintenanceWindow): Promise<void> {
-  return platformServicesClient.put(`${server(serverId)}/maintenance`, payload);
+export function updateMaintenanceWindow(serverId: string, payload: MaintenanceWindow, variant: ServerVariant = 'db-servers'): Promise<void> {
+  return platformServicesClient.put(`${server(serverId, variant)}/maintenance`, payload);
 }
 
 /** Update the allowed-IP policy (open access, or a restricted CIDR list). */
-export function updateAllowedIps(serverId: string, payload: AllowedIpsPayload): Promise<void> {
-  return platformServicesClient.put(`${server(serverId)}/allowed-ips`, payload);
+export function updateAllowedIps(serverId: string, payload: AllowedIpsPayload, variant: ServerVariant = 'db-servers'): Promise<void> {
+  return platformServicesClient.put(`${server(serverId, variant)}/allowed-ips`, payload);
 }
 
 /** A cursor-paginated page of the server's logs. */
-export function getServerLogs(serverId: string, request: LogsRequest): Promise<LogsResponse> {
-  return platformServicesClient.post<LogsResponse>(`${server(serverId)}/logs`, request);
+export function getServerLogs(serverId: string, request: LogsRequest, variant: ServerVariant = 'db-servers'): Promise<LogsResponse> {
+  return platformServicesClient.post<LogsResponse>(`${server(serverId, variant)}/logs`, request);
 }
 
 /** The server's available automatic backups. */
-export function listServerBackups(serverId: string): Promise<BackupsResponse> {
-  return platformServicesClient.get<BackupsResponse>(`${server(serverId)}/backups`);
+export function listServerBackups(serverId: string, variant: ServerVariant = 'db-servers'): Promise<BackupsResponse> {
+  return platformServicesClient.get<BackupsResponse>(`${server(serverId, variant)}/backups`);
 }
 
 /** Service plans (with per-region pricing) offered for a database engine. */
@@ -145,6 +152,63 @@ export function getServicePlans(type: ServiceType): Promise<ServicePlan[]> {
 }
 
 /** Provision a new server. May be rejected (403) when the org isn't entitled. */
-export function createServer(payload: CreateServerPayload): Promise<DatabaseServer> {
-  return platformServicesClient.post<DatabaseServer>('/db-servers', payload);
+export function createServer(payload: CreateServerPayload, variant: ServerVariant = 'db-servers'): Promise<DatabaseServer> {
+  return platformServicesClient.post<DatabaseServer>(`/${variant}`, payload);
+}
+
+// --- Kafka (message brokers only) ---
+
+const kafka = (brokerId: string): string => `${server(brokerId, 'brokers')}/kafka`;
+
+export function listKafkaTopics(brokerId: string): Promise<KafkaTopic[]> {
+  return platformServicesClient.get<KafkaTopic[]>(`${kafka(brokerId)}/topics`);
+}
+
+export function createKafkaTopic(brokerId: string, payload: KafkaTopicCreatePayload): Promise<void> {
+  return platformServicesClient.post(`${kafka(brokerId)}/topics`, payload);
+}
+
+export function getKafkaTopic(brokerId: string, topicName: string): Promise<KafkaTopic> {
+  return platformServicesClient.get<KafkaTopic>(`${kafka(brokerId)}/topics/${encodeURIComponent(topicName)}`);
+}
+
+export function updateKafkaTopic(brokerId: string, topicName: string, payload: KafkaTopicUpdatePayload): Promise<void> {
+  return platformServicesClient.put(`${kafka(brokerId)}/topics/${encodeURIComponent(topicName)}`, payload);
+}
+
+export function deleteKafkaTopic(brokerId: string, topicName: string): Promise<void> {
+  return platformServicesClient.delete(`${kafka(brokerId)}/topics/${encodeURIComponent(topicName)}`);
+}
+
+/** Topic-setting constraints and descriptions (org-independent). */
+export function getKafkaUserConfigs(): Promise<KafkaUserConfigs> {
+  return platformServicesClient.get<KafkaUserConfigs>('/brokers/kafka-user-configs');
+}
+
+export function listKafkaUsers(brokerId: string): Promise<KafkaUser[]> {
+  return platformServicesClient.get<KafkaUser[]>(`${kafka(brokerId)}/users`);
+}
+
+export function createKafkaUser(brokerId: string, username: string): Promise<void> {
+  return platformServicesClient.post(`${kafka(brokerId)}/users`, { username });
+}
+
+export function deleteKafkaUser(brokerId: string, username: string): Promise<void> {
+  return platformServicesClient.delete(`${kafka(brokerId)}/users/${encodeURIComponent(username)}`);
+}
+
+export function resetKafkaUserCredentials(brokerId: string, username: string): Promise<void> {
+  return platformServicesClient.post(`${kafka(brokerId)}/users/${encodeURIComponent(username)}/reset-credentials`, {});
+}
+
+export function listKafkaAcls(brokerId: string): Promise<{ acls: KafkaAcl[] }> {
+  return platformServicesClient.get<{ acls: KafkaAcl[] }>(`${kafka(brokerId)}/acls`);
+}
+
+export function createKafkaAcl(brokerId: string, payload: { permission: string; topic: string; username: string }): Promise<void> {
+  return platformServicesClient.post(`${kafka(brokerId)}/acls`, payload);
+}
+
+export function deleteKafkaAcl(brokerId: string, aclId: string): Promise<void> {
+  return platformServicesClient.delete(`${kafka(brokerId)}/acls/${encodeURIComponent(aclId)}`);
 }

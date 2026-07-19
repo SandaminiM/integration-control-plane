@@ -133,12 +133,19 @@ import type {
   DatabaseServer,
   DatabaseServerDetail,
   DbCredential,
+  KafkaAcl,
+  KafkaTopic,
+  KafkaTopicCreatePayload,
+  KafkaTopicUpdatePayload,
+  KafkaUser,
+  KafkaUserConfigs,
   LogsRequest as ServerLogsRequest,
   LogsResponse as ServerLogsResponse,
   MaintenanceWindow,
   MetricPeriod,
   OrgServiceAvailability,
   ServerMetricsResponse,
+  ServerVariant,
   ServicePlan,
   ServiceType,
   CreateServerPayload,
@@ -695,18 +702,18 @@ export interface AuditLogsApi {
 // Managed databases (admin "Databases"). wip-only; cloud/icp stubs throw. Grown per phase.
 export interface PlatformServicesApi {
   getAvailability(orgUuid: string): Promise<OrgServiceAvailability>;
-  listServers(orgUuid: string): Promise<DatabaseServer[]>;
-  getServer(serverId: string): Promise<DatabaseServerDetail>;
-  deleteServer(serverId: string): Promise<void>;
+  listServers(orgUuid: string, variant?: ServerVariant): Promise<DatabaseServer[]>;
+  getServer(serverId: string, variant?: ServerVariant): Promise<DatabaseServerDetail>;
+  deleteServer(serverId: string, variant?: ServerVariant): Promise<void>;
   getServicePlans(type: ServiceType): Promise<ServicePlan[]>;
-  createServer(payload: CreateServerPayload): Promise<DatabaseServer>;
-  setServerPoweredState(serverId: string, powered: boolean): Promise<void>;
+  createServer(payload: CreateServerPayload, variant?: ServerVariant): Promise<DatabaseServer>;
+  setServerPoweredState(serverId: string, powered: boolean, variant?: ServerVariant): Promise<void>;
   getServerAdminUser(serverId: string): Promise<AdminUser>;
-  getServerCaCertificate(serverId: string): Promise<CaCertificate>;
-  getServerMetrics(serverId: string, period: MetricPeriod): Promise<ServerMetricsResponse>;
+  getServerCaCertificate(serverId: string, variant?: ServerVariant): Promise<CaCertificate>;
+  getServerMetrics(serverId: string, period: MetricPeriod, variant?: ServerVariant): Promise<ServerMetricsResponse>;
   listServerDatabases(serverId: string): Promise<DatabaseInfo[]>;
-  getServerLogs(serverId: string, request: ServerLogsRequest): Promise<ServerLogsResponse>;
-  listServerBackups(serverId: string): Promise<BackupsResponse>;
+  getServerLogs(serverId: string, request: ServerLogsRequest, variant?: ServerVariant): Promise<ServerLogsResponse>;
+  listServerBackups(serverId: string, variant?: ServerVariant): Promise<BackupsResponse>;
   createDatabase(serverId: string, name: string): Promise<DatabaseInfo>;
   setDatabaseMarketplace(serverId: string, name: string, displayOnMarketplace: boolean): Promise<void>;
   listDbCredentials(serverId: string, dbName?: string): Promise<DbCredential[]>;
@@ -714,8 +721,21 @@ export interface PlatformServicesApi {
   createDbCredential(serverId: string, payload: CredentialPayload): Promise<DbCredential>;
   updateDbCredential(serverId: string, credentialId: string, payload: CredentialPayload): Promise<DbCredential>;
   deleteDbCredential(serverId: string, credentialId: string): Promise<void>;
-  updateMaintenanceWindow(serverId: string, payload: MaintenanceWindow): Promise<void>;
-  updateAllowedIps(serverId: string, payload: AllowedIpsPayload): Promise<void>;
+  updateMaintenanceWindow(serverId: string, payload: MaintenanceWindow, variant?: ServerVariant): Promise<void>;
+  updateAllowedIps(serverId: string, payload: AllowedIpsPayload, variant?: ServerVariant): Promise<void>;
+  listKafkaTopics(brokerId: string): Promise<KafkaTopic[]>;
+  createKafkaTopic(brokerId: string, payload: KafkaTopicCreatePayload): Promise<void>;
+  getKafkaTopic(brokerId: string, topicName: string): Promise<KafkaTopic>;
+  updateKafkaTopic(brokerId: string, topicName: string, payload: KafkaTopicUpdatePayload): Promise<void>;
+  deleteKafkaTopic(brokerId: string, topicName: string): Promise<void>;
+  getKafkaUserConfigs(): Promise<KafkaUserConfigs>;
+  listKafkaUsers(brokerId: string): Promise<KafkaUser[]>;
+  createKafkaUser(brokerId: string, username: string): Promise<void>;
+  deleteKafkaUser(brokerId: string, username: string): Promise<void>;
+  resetKafkaUserCredentials(brokerId: string, username: string): Promise<void>;
+  listKafkaAcls(brokerId: string): Promise<{ acls: KafkaAcl[] }>;
+  createKafkaAcl(brokerId: string, payload: { permission: string; topic: string; username: string }): Promise<void>;
+  deleteKafkaAcl(brokerId: string, aclId: string): Promise<void>;
 }
 
 // Org admin GenAI Services (internal-marketplace). wip-only for now; cloud/icp stubs throw.
