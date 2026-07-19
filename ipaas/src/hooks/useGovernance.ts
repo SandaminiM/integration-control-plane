@@ -34,6 +34,13 @@ import {
   createPolicy,
   updatePolicy,
   deletePolicy,
+  fetchProjectCompliance,
+  fetchPolicyAdherence,
+  fetchProjectPolicyAdherence,
+  fetchComponentCompliance,
+  fetchEndpointPolicyAdherence,
+  fetchEndpointRulesetAdherence,
+  fetchEndpointRuleAdherence,
 } from '#api/governance';
 import { IS_WIP } from '../features';
 import type { Ruleset, DocumentInfo, GovernancePolicyInfo } from '../types/governance';
@@ -180,5 +187,77 @@ export function useDeletePolicy() {
   return useMutation({
     mutationFn: (policyId: string) => deletePolicy(policyId),
     onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY] }),
+  });
+}
+
+// Compliance dashboards
+
+export function useProjectCompliance() {
+  return useQuery({
+    queryKey: [ROOT_KEY, 'project-compliance'],
+    queryFn: () => fetchProjectCompliance(),
+    enabled: isGovernanceEnabled(),
+    retry: false,
+    staleTime: 60_000,
+  });
+}
+
+export function usePolicyAdherence() {
+  return useQuery({
+    queryKey: [ROOT_KEY, 'policy-adherence'],
+    queryFn: () => fetchPolicyAdherence(),
+    enabled: isGovernanceEnabled(),
+    retry: false,
+    staleTime: 60_000,
+  });
+}
+
+export function useProjectPolicyAdherence(projectId: string) {
+  return useQuery({
+    queryKey: [ROOT_KEY, 'project-policy-adherence', projectId],
+    queryFn: () => fetchProjectPolicyAdherence(projectId),
+    enabled: isGovernanceEnabled() && !!projectId,
+    retry: false,
+    staleTime: 60_000,
+  });
+}
+
+export function useComponentCompliance(projectId: string) {
+  return useQuery({
+    queryKey: [ROOT_KEY, 'component-compliance', projectId],
+    queryFn: () => fetchComponentCompliance(projectId),
+    enabled: isGovernanceEnabled() && !!projectId,
+    retry: false,
+    staleTime: 60_000,
+  });
+}
+
+export function useEndpointPolicyAdherence(projectId: string, componentId: string, apimId: string) {
+  return useQuery({
+    queryKey: [ROOT_KEY, 'endpoint-policy-adherence', projectId, componentId, apimId],
+    queryFn: () => fetchEndpointPolicyAdherence(projectId, componentId, apimId),
+    enabled: isGovernanceEnabled() && !!projectId && !!componentId && !!apimId,
+    retry: false,
+    staleTime: 60_000,
+  });
+}
+
+export function useEndpointRulesetAdherence(projectId: string, componentId: string, apimId: string) {
+  return useQuery({
+    queryKey: [ROOT_KEY, 'endpoint-ruleset-adherence', projectId, componentId, apimId],
+    queryFn: () => fetchEndpointRulesetAdherence(projectId, componentId, apimId),
+    enabled: isGovernanceEnabled() && !!projectId && !!componentId && !!apimId,
+    retry: false,
+    staleTime: 60_000,
+  });
+}
+
+export function useEndpointRuleAdherence(projectId: string, componentId: string, apimId: string) {
+  return useQuery({
+    queryKey: [ROOT_KEY, 'endpoint-rule-adherence', projectId, componentId, apimId],
+    queryFn: () => fetchEndpointRuleAdherence(projectId, componentId, apimId),
+    enabled: isGovernanceEnabled() && !!projectId && !!componentId && !!apimId,
+    retry: false,
+    staleTime: 60_000,
   });
 }

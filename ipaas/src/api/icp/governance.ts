@@ -17,7 +17,7 @@
  */
 
 // Governance is a wip-only surface for now. Signatures mirror Contracts.GovernanceApi.
-import type { Ruleset, RulesetList, DocumentInfo, DocumentList, GovernancePolicyInfo, GovernancePolicyList } from '../../types/governance';
+import type { Ruleset, RulesetList, DocumentInfo, DocumentList, GovernancePolicyInfo, GovernancePolicyList, ProjectComplianceResponse, PolicyAdherenceResponse, ProjectPolicyAdherenceResponse, ComponentComplianceResponse, EndpointPolicyAdherenceResponse, EndpointRulesetAdherenceResponse, RuleAdherenceResponse as GovernanceRuleAdherenceResponse } from '../../types/governance';
 
 const ni = (name: string): never => {
   throw new Error(`[icp] governance.${name}: not implemented`);
@@ -41,3 +41,11 @@ export const getPolicy = (_policyId: string): Promise<GovernancePolicyInfo> => n
 export const createPolicy = (_policy: GovernancePolicyInfo): Promise<GovernancePolicyInfo> => ni('createPolicy');
 export const updatePolicy = (_policyId: string, _policy: GovernancePolicyInfo): Promise<GovernancePolicyInfo> => ni('updatePolicy');
 export const deletePolicy = (_policyId: string): Promise<void> => ni('deletePolicy');
+
+export const fetchProjectCompliance = (): Promise<ProjectComplianceResponse> => ni('fetchProjectCompliance');
+export const fetchPolicyAdherence = (): Promise<PolicyAdherenceResponse> => ni('fetchPolicyAdherence');
+export const fetchProjectPolicyAdherence = (_projectId: string): Promise<ProjectPolicyAdherenceResponse> => ni('fetchProjectPolicyAdherence');
+export const fetchComponentCompliance = (_projectId: string): Promise<ComponentComplianceResponse> => ni('fetchComponentCompliance');
+export const fetchEndpointPolicyAdherence = (_projectId: string, _componentId: string, _apimId: string): Promise<EndpointPolicyAdherenceResponse> => ni('fetchEndpointPolicyAdherence');
+export const fetchEndpointRulesetAdherence = (_projectId: string, _componentId: string, _apimId: string): Promise<EndpointRulesetAdherenceResponse> => ni('fetchEndpointRulesetAdherence');
+export const fetchEndpointRuleAdherence = (_projectId: string, _componentId: string, _apimId: string): Promise<GovernanceRuleAdherenceResponse> => ni('fetchEndpointRuleAdherence');

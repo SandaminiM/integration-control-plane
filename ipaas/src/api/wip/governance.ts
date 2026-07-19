@@ -17,7 +17,7 @@
  */
 
 import { governanceClient, governanceTextClient, withScopeRetry } from './httpClients';
-import type { Ruleset, RulesetList, DocumentInfo, DocumentList, GovernancePolicyInfo, GovernancePolicyList } from '../../types/governance';
+import type { Ruleset, RulesetList, DocumentInfo, DocumentList, GovernancePolicyInfo, GovernancePolicyList, ProjectComplianceResponse, PolicyAdherenceResponse, ProjectPolicyAdherenceResponse, ComponentComplianceResponse, EndpointPolicyAdherenceResponse, EndpointRulesetAdherenceResponse, RuleAdherenceResponse } from '../../types/governance';
 
 const BASE_RULESETS = '/rulesets';
 const BASE_DOCUMENTS = '/documents';
@@ -101,4 +101,41 @@ export function updatePolicy(policyId: string, policy: GovernancePolicyInfo): Pr
 /** Delete a governance policy. */
 export function deletePolicy(policyId: string): Promise<void> {
   return withScopeRetry(() => governanceClient.delete(`${BASE_POLICIES}/${encodeURIComponent(policyId)}`));
+}
+
+// --- Compliance dashboards ---
+
+/** Org-wide project compliance summary + per-project policy/ruleset breakdown. */
+export function fetchProjectCompliance(): Promise<ProjectComplianceResponse> {
+  return withScopeRetry(() => governanceClient.get<ProjectComplianceResponse>('/project-compliance'));
+}
+
+/** Org-wide policy adherence with per-policy project statuses. */
+export function fetchPolicyAdherence(): Promise<PolicyAdherenceResponse> {
+  return withScopeRetry(() => governanceClient.get<PolicyAdherenceResponse>('/policy-adherence'));
+}
+
+/** Policy adherence within a project, with per-policy component statuses. */
+export function fetchProjectPolicyAdherence(projectId: string): Promise<ProjectPolicyAdherenceResponse> {
+  return withScopeRetry(() => governanceClient.get<ProjectPolicyAdherenceResponse>(`/projects/${encodeURIComponent(projectId)}/policy-adherence`));
+}
+
+/** Component compliance within a project, with per-component policy/ruleset breakdown. */
+export function fetchComponentCompliance(projectId: string): Promise<ComponentComplianceResponse> {
+  return withScopeRetry(() => governanceClient.get<ComponentComplianceResponse>(`/projects/${encodeURIComponent(projectId)}/component-compliance`));
+}
+
+/** Policy adherence for one API version (apimId) of a component. */
+export function fetchEndpointPolicyAdherence(projectId: string, componentId: string, apimId: string): Promise<EndpointPolicyAdherenceResponse> {
+  return withScopeRetry(() => governanceClient.get<EndpointPolicyAdherenceResponse>(`/projects/${encodeURIComponent(projectId)}/components/${encodeURIComponent(componentId)}/endpoints/${encodeURIComponent(apimId)}/policy-adherence`));
+}
+
+/** Standalone-ruleset adherence for one API version (apimId) of a component. */
+export function fetchEndpointRulesetAdherence(projectId: string, componentId: string, apimId: string): Promise<EndpointRulesetAdherenceResponse> {
+  return withScopeRetry(() => governanceClient.get<EndpointRulesetAdherenceResponse>(`/projects/${encodeURIComponent(projectId)}/components/${encodeURIComponent(componentId)}/endpoints/${encodeURIComponent(apimId)}/ruleset-adherence`));
+}
+
+/** Rule-level adherence detail (violated + adhered rules per ruleset) for one API version. */
+export function fetchEndpointRuleAdherence(projectId: string, componentId: string, apimId: string): Promise<RuleAdherenceResponse> {
+  return withScopeRetry(() => governanceClient.get<RuleAdherenceResponse>(`/projects/${encodeURIComponent(projectId)}/components/${encodeURIComponent(componentId)}/endpoints/${encodeURIComponent(apimId)}/rule-adherence`));
 }

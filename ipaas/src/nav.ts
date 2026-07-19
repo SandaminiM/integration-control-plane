@@ -149,6 +149,20 @@ export function settingsCrossScopeUrl(pathname: string, currentScope: Scope, tar
   return first ? `${base}/${first.path}` : null;
 }
 
+/**
+ * Cross-scope Insights navigation. When the user switches scope (org ⇄ project
+ * ⇄ integration) while on an Insights page, keep them on the same Insights
+ * section (usage/delivery/compliance) in the target scope — those routes exist
+ * at every level. Returns `null` when the current path is not an Insights page;
+ * the caller then falls back to its normal resource routing.
+ */
+export function insightsCrossScopeUrl(pathname: string, currentScope: Scope, targetScope: Scope): string | null {
+  const rest = pathname.slice(scopePrefix(currentScope).length).replace(/^\//, '');
+  const match = /^insights\/(usage|delivery|compliance)(\/|$)/.exec(rest);
+  if (!match) return null;
+  return `${scopePrefix(targetScope)}/insights/${match[1]}`;
+}
+
 export function broaden(scope: Scope): Scope | null {
   if (scope.level === 'components') return { level: 'projects', org: scope.org, project: scope.project };
   if (scope.level === 'projects') return { level: 'organizations', org: scope.org };

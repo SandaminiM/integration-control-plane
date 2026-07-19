@@ -99,3 +99,173 @@ export interface GovernanceError {
   message: string;
   description?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Compliance dashboards (governance insights)
+// ---------------------------------------------------------------------------
+
+export interface RuleViolationCounts {
+  error: number;
+  warn: number;
+  info: number;
+}
+
+/** Compliant/non-compliant breakdown used by project + component summaries. */
+export interface ComplianceStatusSummary {
+  total: number;
+  compliant: number;
+  nonCompliant: number;
+  notApplicable?: number;
+}
+
+/** Adhered/violated breakdown used by policy + ruleset summaries. */
+export interface AdherenceStatusSummary {
+  total: number;
+  adhered: number;
+  violated: number;
+  unapplied?: number;
+}
+
+export interface ComplianceRulesetEntry {
+  rulesetId: string;
+  rulesetName: string;
+  status: string;
+  ruleViolations?: RuleViolationCounts;
+}
+
+/** policyId/policyName are null for the synthetic standalone-ruleset entry the API emits. */
+export interface CompliancePolicyEntry {
+  policyId: string | null;
+  policyName: string | null;
+  policyType?: string;
+  status: string;
+  rulesets: { count: number; list: ComplianceRulesetEntry[] };
+}
+
+export interface ProjectComplianceEntry {
+  projectId: string;
+  projectName: string;
+  status: string;
+  ruleViolations?: RuleViolationCounts;
+  policies: { count: number; list: CompliancePolicyEntry[] };
+}
+
+export interface ProjectComplianceResponse {
+  summary: { project: ComplianceStatusSummary; component: ComplianceStatusSummary };
+  count: number;
+  list: ProjectComplianceEntry[];
+}
+
+export interface PolicyAdherenceProjectRef {
+  projectId: string;
+  projectName: string;
+  status: string;
+}
+
+export interface PolicyAdherenceEntry {
+  policyId: string;
+  policyName: string;
+  policyType?: string;
+  status: string;
+  projects?: { count: number; summary: ComplianceStatusSummary; list: PolicyAdherenceProjectRef[] };
+}
+
+export interface PolicyAdherenceResponse {
+  summary: { policy: AdherenceStatusSummary };
+  count: number;
+  list: PolicyAdherenceEntry[];
+}
+
+export interface ComponentVersionComplianceRef {
+  versionId: string;
+  version: string;
+  status: string;
+  ruleViolations?: RuleViolationCounts;
+  policies?: { count: number; list: CompliancePolicyEntry[] };
+}
+
+export interface PolicyAdherenceComponentRef {
+  componentId: string;
+  componentName: string;
+  status: string;
+  versions?: { count: number; list: ComponentVersionComplianceRef[] };
+}
+
+export interface ProjectPolicyAdherenceEntry {
+  policyId: string;
+  policyName: string;
+  policyType?: string;
+  status: string;
+  components?: { count: number; summary: ComplianceStatusSummary; list: PolicyAdherenceComponentRef[] };
+}
+
+export interface ProjectPolicyAdherenceResponse {
+  summary: { policy: AdherenceStatusSummary };
+  count: number;
+  list: ProjectPolicyAdherenceEntry[];
+}
+
+export interface ComponentComplianceEntry {
+  componentId: string;
+  componentName: string;
+  status: string;
+  ruleViolations?: RuleViolationCounts;
+  policies: { count: number; list: CompliancePolicyEntry[] };
+  versions?: { count: number; list: ComponentVersionComplianceRef[] };
+}
+
+export interface ComponentComplianceResponse {
+  summary: { component: ComplianceStatusSummary };
+  count: number;
+  list: ComponentComplianceEntry[];
+}
+
+export interface EndpointPolicyAdherenceEntry {
+  policyId: string | null;
+  policyName: string | null;
+  status: string;
+  rulesets?: { count: number; list: ComplianceRulesetEntry[] };
+}
+
+export interface EndpointPolicyAdherenceResponse {
+  summary: { policy: AdherenceStatusSummary };
+  count: number;
+  list: EndpointPolicyAdherenceEntry[];
+}
+
+export interface EndpointRulesetAdherenceResponse {
+  summary: { ruleset: AdherenceStatusSummary };
+  count: number;
+  list: ComplianceRulesetEntry[];
+}
+
+export interface RulePathDetail {
+  path: string;
+  message: string;
+}
+
+export interface AdherenceRule {
+  ruleId: string;
+  ruleName: string;
+  severity: 'error' | 'warn' | 'info' | string;
+  message: string;
+  paths?: { count: number; list: string[] };
+  pathDetails?: { count: number; list: RulePathDetail[] };
+}
+
+export interface RuleAdherenceRulesetEntry {
+  rulesetId: string;
+  rulesetName: string;
+  provider?: string | null;
+  status: string;
+  documentationLink?: string | null;
+  ruleViolations: RuleViolationCounts;
+  violatedRules: { count: number; list: AdherenceRule[] };
+  adheredRules?: { count: number; list: AdherenceRule[] };
+}
+
+export interface RuleAdherenceResponse {
+  summary: { ruleset: AdherenceStatusSummary };
+  count: number;
+  list: RuleAdherenceRulesetEntry[];
+}

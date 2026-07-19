@@ -118,6 +118,9 @@ const Deploy = lazy(() => import('../pages/Deploy'));
 const TestConsole = lazy(() => import('../pages/TestConsole'));
 const AgentChatConsole = lazy(() => import('../pages/AgentChatConsole'));
 const Lifecycle = lazy(() => import('../pages/Lifecycle'));
+const OrgCompliance = lazy(() => import('../pages/OrgCompliance'));
+const ProjectCompliance = lazy(() => import('../pages/ProjectCompliance'));
+const ComponentCompliance = lazy(() => import('../pages/ComponentCompliance'));
 const Alerts = lazy(() => import('../pages/Alerts'));
 const Environments = lazy(() => import('../pages/Environments'));
 const CreateEnvironment = lazy(() => import('../pages/CreateEnvironment'));
@@ -197,7 +200,7 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/test', element: <ComingSoon title="Coming Soon" description="Testing tools are currently under development." /> },
               { path: 'organizations/:orgHandler/insights/usage', element: <ComingSoon title="Coming Soon" description="Usage insights are currently under development." /> },
               { path: 'organizations/:orgHandler/insights/delivery', element: <ComingSoon title="Coming Soon" description="Delivery insights are currently under development." /> },
-              { path: 'organizations/:orgHandler/insights/compliance', element: <ComingSoon title="Coming Soon" description="Compliance insights are currently under development." /> },
+              { path: 'organizations/:orgHandler/insights/compliance', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgCompliance, ['organizations']))) },
               { path: 'organizations/:orgHandler/logs', element: <ComingSoon title="Coming Soon" description="Organization-level logs are currently under development." /> },
               { path: 'organizations/:orgHandler/metrics', element: <ComingSoon title="Coming Soon" description="Organization-level metrics are currently under development." /> },
               { path: 'organizations/:orgHandler/rag/scheduled-ingestion', element: createElement(withScope(SetupRagIngestion, ['organizations'])) },
@@ -247,7 +250,7 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/projects/:projectHandler/test', element: <ComingSoon title="Coming Soon" description="Testing tools are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/insights/usage', element: <ComingSoon title="Coming Soon" description="Usage insights are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/insights/delivery', element: <ComingSoon title="Coming Soon" description="Delivery insights are currently under development." /> },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/insights/compliance', element: <ComingSoon title="Coming Soon" description="Compliance insights are currently under development." /> },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/insights/compliance', element: createElement(RouteErrorBoundary, null, createElement(withScope(ProjectCompliance, ['projects']))) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/runtimes', element: <ComingSoon title="Coming Soon" description="Runtime management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/metrics', element: <ComingSoon title="Coming Soon" description="Metrics are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/observe/runtimelogs', element: createElement(withScope(RuntimeLogsProject, ['projects'])) },
@@ -361,7 +364,7 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/insights/compliance',
-                element: <ComingSoon title="Coming Soon" description="Compliance insights are currently under development." />,
+                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentCompliance, ['components']))),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/metrics',

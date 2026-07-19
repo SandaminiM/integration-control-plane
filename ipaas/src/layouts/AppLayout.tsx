@@ -119,7 +119,7 @@ import { identifyIntegration } from '../utils/identifyIntegration';
 import { useOrgPermissions } from '../hooks/useAuth';
 import { switchOrgToken } from '../auth/tokenManager';
 import { mockNotifications } from '../mock-data/mockNotifications';
-import { useScope, useResource, resourceUrl, broaden, narrow, newProjectUrl, newComponentUrl, hasProject, hasComponent, settingsCrossScopeUrl, type Resource, type Scope } from '../nav';
+import { useScope, useResource, resourceUrl, broaden, narrow, newProjectUrl, newComponentUrl, hasProject, hasComponent, settingsCrossScopeUrl, insightsCrossScopeUrl, type Resource, type Scope } from '../nav';
 import { isSettingsSectionVisible, type SettingsSectionDef } from '../constants/orgSettingsSections';
 import { componentOverviewUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, projectHomeUrl, termsOfUseUrl } from '../paths';
 import { useAuth } from '../auth/AuthContext';
@@ -764,6 +764,11 @@ function AppLayoutInner(): JSX.Element {
                         setProjectMenuAnchor(null);
                         setProjectSearch('');
                         const newScope = narrow({ level: 'organizations', org: scope.org }, p.handler);
+                        const insightsUrl = insightsCrossScopeUrl(pathname, scope, newScope);
+                        if (insightsUrl) {
+                          navigate(insightsUrl);
+                          return;
+                        }
                         const settingsUrl = settingsSwitchUrl(newScope, p.id, undefined);
                         if (settingsUrl) {
                           navigate(settingsUrl);
@@ -848,6 +853,11 @@ function AppLayoutInner(): JSX.Element {
                     onClick={(e) => {
                       e.stopPropagation();
                       const orgScope = { level: 'organizations' as const, org: scope.org };
+                      const insightsUrl = insightsCrossScopeUrl(pathname, scope, orgScope);
+                      if (insightsUrl) {
+                        navigate(insightsUrl);
+                        return;
+                      }
                       const settingsUrl = settingsSwitchUrl(orgScope, undefined, undefined);
                       if (settingsUrl) {
                         navigate(settingsUrl);
@@ -933,6 +943,11 @@ function AppLayoutInner(): JSX.Element {
                             setComponentMenuAnchor(null);
                             setComponentSearch('');
                             const newScope = narrow({ level: 'projects', org: scope.org, project: scope.project }, c.handler);
+                            const insightsUrl = insightsCrossScopeUrl(pathname, scope, newScope);
+                            if (insightsUrl) {
+                              navigate(insightsUrl);
+                              return;
+                            }
                             if (activeNavId === 'lifecycle') {
                               navigate(GENERIC_SERVICE_TYPES.has(c.displayType) ? `/organizations/${scope.org}/projects/${scope.project}/components/${c.handler}/manage/lifecycle` : componentOverviewUrl(scope.org, scope.project, c.handler));
                             } else if (onConnectionsPage) {
@@ -1015,6 +1030,11 @@ function AppLayoutInner(): JSX.Element {
                   onClick={(e) => {
                     e.stopPropagation();
                     const projectScope = broaden(scope)!;
+                    const insightsUrl = insightsCrossScopeUrl(pathname, scope, projectScope);
+                    if (insightsUrl) {
+                      navigate(insightsUrl);
+                      return;
+                    }
                     const settingsUrl = settingsSwitchUrl(projectScope, projectId || undefined, undefined);
                     if (settingsUrl) {
                       navigate(settingsUrl);

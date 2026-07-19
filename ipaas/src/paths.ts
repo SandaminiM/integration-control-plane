@@ -221,6 +221,19 @@ export function orgGovernanceDocumentUrl(orgHandler: string, documentId: string)
   return `/organizations/${orgHandler}/admin/governance/documents/${encodeURIComponent(documentId)}`;
 }
 
+/** AI policies and ruleset/document policies open different governance editors. */
+export function orgGovernancePolicyEditorUrl(orgHandler: string, policyId: string, policyType?: string | null): string {
+  return (policyType ?? '').toLowerCase() === 'ai' ? orgGovernanceAiPolicyUrl(orgHandler, policyId) : orgGovernancePolicyUrl(orgHandler, policyId);
+}
+
+export function projectComplianceUrl(orgHandler: string, projectHandler: string): string {
+  return `/organizations/${orgHandler}/projects/${projectHandler}/insights/compliance`;
+}
+
+export function componentComplianceUrl(orgHandler: string, projectHandler: string, componentHandler: string): string {
+  return `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/insights/compliance`;
+}
+
 // ---------------------------------------------------------------------------
 // External links
 // ---------------------------------------------------------------------------

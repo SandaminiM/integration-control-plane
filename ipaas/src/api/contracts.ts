@@ -121,7 +121,7 @@ import type {
   RotateConnectionKeysByConnectionIdParams,
 } from '../types/connections';
 import type { AuditLogEntry, AuditLogsRequest } from '../types/auditLogs';
-import type { Ruleset, RulesetList, DocumentInfo, DocumentList, GovernancePolicyInfo, GovernancePolicyList } from '../types/governance';
+import type { Ruleset, RulesetList, DocumentInfo, DocumentList, GovernancePolicyInfo, GovernancePolicyList, ProjectComplianceResponse, PolicyAdherenceResponse, ProjectPolicyAdherenceResponse, ComponentComplianceResponse, EndpointPolicyAdherenceResponse, EndpointRulesetAdherenceResponse, RuleAdherenceResponse as GovernanceRuleAdherenceResponse } from '../types/governance';
 import type {
   AdminUser,
   AllowedIpsPayload,
@@ -755,6 +755,14 @@ export interface GovernanceApi {
   createPolicy(policy: GovernancePolicyInfo): Promise<GovernancePolicyInfo>;
   updatePolicy(policyId: string, policy: GovernancePolicyInfo): Promise<GovernancePolicyInfo>;
   deletePolicy(policyId: string): Promise<void>;
+
+  fetchProjectCompliance(): Promise<ProjectComplianceResponse>;
+  fetchPolicyAdherence(): Promise<PolicyAdherenceResponse>;
+  fetchProjectPolicyAdherence(projectId: string): Promise<ProjectPolicyAdherenceResponse>;
+  fetchComponentCompliance(projectId: string): Promise<ComponentComplianceResponse>;
+  fetchEndpointPolicyAdherence(projectId: string, componentId: string, apimId: string): Promise<EndpointPolicyAdherenceResponse>;
+  fetchEndpointRulesetAdherence(projectId: string, componentId: string, apimId: string): Promise<EndpointRulesetAdherenceResponse>;
+  fetchEndpointRuleAdherence(projectId: string, componentId: string, apimId: string): Promise<GovernanceRuleAdherenceResponse>;
 }
 
 // ---------------------------------------------------------------------------
