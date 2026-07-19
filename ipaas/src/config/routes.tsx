@@ -151,6 +151,9 @@ const ComponentScaling = lazy(() => import('../pages/ComponentScaling'));
 const NewConnection = lazy(() => import('../pages/NewConnection'));
 const ConnectionDetail = lazy(() => import('../pages/ConnectionDetail'));
 const ComponentPlans = lazy(() => import('../pages/ComponentPlans'));
+const OrgCertificates = lazy(() => import('../pages/OrgCertificates'));
+const CreateCertificate = lazy(() => import('../pages/CreateCertificate'));
+const CertificateDetail = lazy(() => import('../pages/CertificateDetail'));
 
 export interface AppRoute extends Omit<RouteProps, 'children'> {
   children?: AppRoute[];
@@ -237,7 +240,9 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/admin/data-planes', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgDataPlanes, ['organizations']))) },
               { path: 'organizations/:orgHandler/admin/audit-logs', element: <OrgAuditLogs /> },
               { path: 'organizations/:orgHandler/admin/approvals', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgApprovals, ['organizations']))) },
-              { path: 'organizations/:orgHandler/admin/certificates', element: <ComingSoon title="Coming Soon" description="Certificates management is currently under development." /> },
+              { path: 'organizations/:orgHandler/admin/certificates', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgCertificates, ['organizations']))) },
+              { path: 'organizations/:orgHandler/admin/certificates/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(CreateCertificate, ['organizations']))) },
+              { path: 'organizations/:orgHandler/admin/certificates/:certificateId', element: createElement(RouteErrorBoundary, null, createElement(withScope(CertificateDetail, ['organizations']))) },
               { path: 'organizations/:orgHandler/settings', element: createElement(withScope(OrgSettings, ['organizations'])) },
               { path: 'organizations/:orgHandler/settings/egress-control', element: createElement(withScope(EgressControl, ['organizations'])) },
               { path: 'organizations/:orgHandler/settings/workflows', element: createElement(withScope(Workflows, ['organizations'])) },

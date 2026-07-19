@@ -105,6 +105,7 @@ import type { Environment, CloudDataPlane, EnvironmentInput, EnvironmentTemplate
 import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../types/executions';
 import type { SubscriptionList, ComponentLimits } from '../types/subscription';
 import type { ConfigGroup, ConfigGroupNameAvailability, ConfigGroupUsage, CreateConfigGroupRequest, EditConfigGroupRequest } from '../types/configGroups';
+import type { Certificate, CreateCertificateInput } from '../types/certificates';
 import type {
   ChoreoConnectionRequest,
   Connection,
@@ -765,6 +766,14 @@ export interface GovernanceApi {
   fetchEndpointRuleAdherence(projectId: string, componentId: string, apimId: string): Promise<GovernanceRuleAdherenceResponse>;
 }
 
+// Org admin Certificates (TLS trust certificates stored as config groups). wip-only for now.
+export interface CertificatesApi {
+  listCertificateGroups(): Promise<ConfigGroup[]>;
+  createCertificate(input: CreateCertificateInput): Promise<Certificate>;
+  deleteCertificate(certificateId: string): Promise<boolean>;
+  getCertificateUsage(certificateId: string): Promise<ConfigGroupUsage>;
+}
+
 // ---------------------------------------------------------------------------
 // Aggregate — the full API surface consumed by the app
 // ---------------------------------------------------------------------------
@@ -857,6 +866,7 @@ export interface AppApi {
   repository: RepositoryApi;
   samples: SamplesApi;
   subscriptions: SubscriptionsApi;
+  certificates: CertificatesApi;
   configGroups: ConfigGroupsApi;
   connections: ConnectionsApi;
   auditLogs: AuditLogsApi;

@@ -60,6 +60,8 @@ export interface ConfigGroup {
   groupDisplayName?: string;
   description: string;
   type?: string;
+  /** Extra metadata the config service attaches to special groups (e.g. certificate details). */
+  properties?: Record<string, string | undefined>;
   scopes?: ConfigGroupScope[];
   configurations: Configuration[];
   environmentSets?: ConfigEnvironmentSet[];

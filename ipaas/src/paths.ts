@@ -226,6 +226,18 @@ export function orgGovernancePolicyEditorUrl(orgHandler: string, policyId: strin
   return (policyType ?? '').toLowerCase() === 'ai' ? orgGovernanceAiPolicyUrl(orgHandler, policyId) : orgGovernancePolicyUrl(orgHandler, policyId);
 }
 
+export function orgCertificatesUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/admin/certificates`;
+}
+
+export function orgNewCertificateUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/admin/certificates/new`;
+}
+
+export function orgCertificateUrl(orgHandler: string, certificateId: string): string {
+  return `/organizations/${orgHandler}/admin/certificates/${encodeURIComponent(certificateId)}`;
+}
+
 export function projectComplianceUrl(orgHandler: string, projectHandler: string): string {
   return `/organizations/${orgHandler}/projects/${projectHandler}/insights/compliance`;
 }

@@ -19,13 +19,17 @@
 import { Alert, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
 import { Layers } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import { useConfigGroupUsage } from '../../hooks/useConfigGroups';
+import { useCertificateUsage } from '../../hooks/useCertificates';
 import EmptyListing from '../EmptyListing';
-import UsageProjectsList from './UsageProjectsList';
+import UsageProjectsList from '../ConfigGroups/UsageProjectsList';
 
-/** "Usage" tab: which projects → components → releases reference this config group. */
-export default function ConfigGroupUsageView({ configGroupUuid, active }: { configGroupUuid: string; active: boolean }): JSX.Element {
-  const { data, isLoading, isError } = useConfigGroupUsage(configGroupUuid, active);
+interface CertificateUsageViewProps {
+  certificateId: string;
+  active: boolean;
+}
+
+export default function CertificateUsageView({ certificateId, active }: CertificateUsageViewProps): JSX.Element {
+  const { data, isLoading, isError } = useCertificateUsage(certificateId, active);
   const projects = data?.usageInProjects ?? [];
 
   if (isLoading) {
@@ -40,11 +44,11 @@ export default function ConfigGroupUsageView({ configGroupUuid, active }: { conf
   }
 
   if (isError) {
-    return <Alert severity="error">Couldn&apos;t load usage for this configuration group.</Alert>;
+    return <Alert severity="error">Couldn&apos;t load usage for this certificate.</Alert>;
   }
 
   if (projects.length === 0) {
-    return <EmptyListing icon={<Layers size={48} />} title="Not used yet" description="This configuration group isn't referenced by any project, component, or release." />;
+    return <EmptyListing icon={<Layers size={48} />} title="Not used yet" description="This certificate isn't referenced by any project, component, or release." />;
   }
 
   return <UsageProjectsList projects={projects} />;
