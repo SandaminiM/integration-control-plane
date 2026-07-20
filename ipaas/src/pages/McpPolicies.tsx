@@ -160,7 +160,7 @@ export default function McpPolicies(scope: ComponentScope): JSX.Element {
         </Button>
 
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
           </Box>
         ) : !ready ? (

@@ -171,7 +171,7 @@ export default function ComponentDeploymentTracks({ org, project, component }: C
     <PageContent>
       <ComponentSettingsTabs active="deployment-tracks" />
       {isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
           <CircularProgress />
         </Box>
       ) : !comp ? (

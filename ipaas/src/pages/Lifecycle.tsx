@@ -160,7 +160,7 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
           Lifecycle
         </Typography>
         {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
           </Box>
         ) : endpointsWithApim.length === 0 ? (
@@ -174,7 +174,7 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
             </Typography>
 
             {isChanging ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
                 <CircularProgress />
               </Box>
             ) : (
