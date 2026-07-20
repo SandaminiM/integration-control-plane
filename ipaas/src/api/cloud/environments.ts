@@ -110,7 +110,14 @@ export const updateEnvironment = (input: EnvironmentInput & { environmentId: str
 
 export const deleteEnvironment = (environmentId: string): Promise<string> => bff.delete<MessageResponse>(`/environments/${seg(environmentId)}`).then((r) => r?.message ?? '');
 
-export const fetchEnvironmentTemplates = (_orgId: string): Promise<EnvironmentTemplate[]> => ni('fetchEnvironmentTemplates');
+export const fetchEnvironmentTemplates = (_orgId: string): Promise<EnvironmentTemplate[]> =>
+  bff.get<ListResponse<BffEnvironment>>('/environments').then((r) =>
+    items(r).map((e) => {
+      const { id, name, critical, createdAt } = toEnvironment(e);
+      return { id, name, critical, createdAt };
+    }),
+  );
+
 export const createOrgEnvironment = (_orgUuid: string, _input: CreateEnvironmentData & { vhost: string }): Promise<void> => ni('createOrgEnvironment');
 export const getEnvDeleteEligibility = (_orgUuid: string, _templateId: string): Promise<EnvDeletionEligibility> => ni('getEnvDeleteEligibility');
 export const deleteEnvironmentTemplate = (_orgUuid: string, _templateId: string): Promise<void> => ni('deleteEnvironmentTemplate');
