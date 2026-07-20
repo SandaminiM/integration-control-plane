@@ -16,27 +16,24 @@
  * under the License.
  */
 
-import { Alert, Avatar, Box, Chip, Link, ListingTable, MenuItem, PageContent, PageTitle, Skeleton, Stack, TextField, Typography, useTheme } from '@wso2/oxygen-ui';
-import { Zap, Globe, XCircle } from '@wso2/oxygen-ui-icons-react';
+import { Box, PageContent, PageTitle, Stack } from '@wso2/oxygen-ui';
 import { useMemo, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useProjectId } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
 import { useEnvironments } from '../hooks/useEnvironments';
-import { useInsightsEnvironments, useTopSlowestApis } from '../hooks/useInsights';
-import { useProjectInsights, useProjectLatencyTrend } from '../hooks/useProjectInsights';
-import { useIntegrationDeploymentStatuses } from '../hooks/useDeployments';
+import { useInsightsEnvironments } from '../hooks/useInsights';
+import { useProjectInsights } from '../hooks/useProjectInsights';
+import { useIntegrationDeploymentStatuses, useProjectRecentDeployments } from '../hooks/useDeployments';
 import { identifyIntegration } from '../utils/identifyIntegration';
 import { downloadProjectInsightsCsv } from '../utils/insightsCsv';
-import { API_LIKE_TYPES, DEPLOYMENT_STATUS_CHIP, INSIGHTS_KIND_LABEL, PROJECT_CHART, TYPE_TO_KIND } from '../constants/insights';
-import { InsightsCard, InsightsControls, KpiCards, TableSkeletonRows, TrendAreaChart } from '../components/Insights/shared';
-import SlowestApiBars from '../components/Insights/SlowestApiBars';
+import { API_LIKE_TYPES, DEPLOYMENT_STATUS_CHIP, INSIGHTS_KIND_LABEL, TYPE_TO_KIND } from '../constants/insights';
+import { ActivityOverTime, InsightsControls, LatencyDuration, ProjectKpiCards, RecentDeployments, TopByVolume, TopFailing } from '../components/Insights/shared';
 import type { InsightsApiRef, InsightsRange } from '../types/insights';
 import type { ProjectScope } from '../nav';
 
 export default function ProjectInsights({ org, project }: ProjectScope): JSX.Element {
-  const theme = useTheme();
   const navigate = useNavigate();
   const orgUuid = useOrgUuid() ?? '';
   const { projectId, project: projectData, isLoading } = useProjectId(project);
@@ -47,7 +44,6 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
 
   const [range, setRange] = useState<InsightsRange>('7d');
   const [envId, setEnvId] = useState<string>('');
-  const [trendMode, setTrendMode] = useState<'requests' | 'traffic' | 'latency'>('requests');
 
   // API-like integrations (Integration as API, AI Agent, MCP Server, Webhook) ride
   // the API insights path since they all publish APIM-tracked APIs, while
@@ -76,19 +72,26 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
         .map(({ c, type }) => ({ id: c.id, name: c.displayName || c.name, handler: c.handler, kind: (type === 'rag-ingestion' ? 'rag' : 'auto') as 'auto' | 'rag' })),
     [components],
   );
-  const hasIntegrations = apis.length + automations.length > 0;
+  const eventRefs = useMemo(
+    () =>
+      (components ?? [])
+        .map((c) => ({ c, type: identifyIntegration(c.displayType, c.componentSubType).type }))
+        .filter(({ type }) => type === 'event-integration' || type === 'file-integration')
+        .map(({ c, type }) => ({ id: c.id, name: c.displayName || c.name, handler: c.handler, apiId: c.apiId ?? '', kind: (type === 'file-integration' ? 'file' : 'event') as InsightsApiRef['kind'] })),
+    [components],
+  );
 
   const envOptions = useMemo(() => envs?.map((e) => ({ id: e.externalEnvId || e.id, name: e.name })) ?? [{ id: 'production', name: 'Production' }], [envs]);
   const activeEnv = envId || envOptions[0]?.id || 'production';
   const selectedEnv = useMemo(() => envs?.find((e) => (e.externalEnvId || e.id) === activeEnv) ?? null, [envs, activeEnv]);
 
   const deploymentEnvId = useMemo(() => (projectEnvs ?? []).find((e) => e.name === selectedEnv?.name)?.id ?? projectEnvs?.[0]?.id ?? '', [projectEnvs, selectedEnv]);
-  const allIntegrations = useMemo(() => [...apis, ...automations].map((c) => ({ id: c.id, handler: c.handler })), [apis, automations]);
+  const allIntegrations = useMemo(() => [...apis, ...automations, ...eventRefs].map((c) => ({ id: c.id, handler: c.handler })), [apis, automations, eventRefs]);
   const { data: statusMap } = useIntegrationDeploymentStatuses(org, orgUuid, projectId, allIntegrations, deploymentEnvId);
 
-  const real = useProjectInsights(orgUuid, projectId, selectedEnv, apis, automations, range);
-  const latencyTrend = useProjectLatencyTrend(orgUuid, projectId, selectedEnv, range, trendMode === 'latency');
-  const slowest = useTopSlowestApis(orgUuid, projectId, selectedEnv, range);
+  const recentDeployments = useProjectRecentDeployments(org, orgUuid, projectId, allIntegrations, deploymentEnvId);
+
+  const real = useProjectInsights(orgUuid, projectId, selectedEnv, apis, automations, eventRefs, range);
 
   const data = real.data;
 
@@ -119,162 +122,21 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
       </Stack>
 
       <Box sx={{ mb: 2 }}>
-        <KpiCards kpis={data.kpis} loading={loading} />
+        <ProjectKpiCards kpis={data.kpis} loading={loading} />
       </Box>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 2, mb: 2 }}>
-        <InsightsCard title="Executions & Errors Trend" subtitle="Automation runs with failed executions">
-          <TrendAreaChart
-            padded
-            loading={loading}
-            data={data.trend}
-            xName="Date"
-            yName="Executions & Errors"
-            height={320}
-            areas={[
-              { key: 'automationRuns', name: 'Executions', color: PROJECT_CHART.auto },
-              { key: 'automationErrors', name: 'Errors', color: PROJECT_CHART.error },
-            ]}
-          />
-        </InsightsCard>
-        <InsightsCard
-          title={trendMode === 'latency' ? 'API Latency Trend' : trendMode === 'traffic' ? 'API Traffic Trend' : 'API Requests & Errors Trend'}
-          subtitle={trendMode === 'latency' ? 'Average latency (ms)' : trendMode === 'traffic' ? 'Successful vs error responses' : 'API traffic with error volume'}
-          action={
-            <TextField select size="small" value={trendMode} onChange={(e) => setTrendMode(e.target.value as 'requests' | 'traffic' | 'latency')} inputProps={{ 'aria-label': 'Trend metric' }} sx={{ minWidth: 140 }}>
-              <MenuItem value="requests">API Requests</MenuItem>
-              <MenuItem value="traffic">Traffic</MenuItem>
-              <MenuItem value="latency">Latency</MenuItem>
-            </TextField>
-          }>
-          <Box sx={{ paddingTop: '24px' }}>
-            {trendMode === 'latency' ? (
-              <TrendAreaChart loading={latencyTrend.isLoading || loading} data={latencyTrend.data} xName="Date" yName="Latency (ms)" height={320} areas={[{ key: 'latency', name: 'Avg Latency (ms)', color: PROJECT_CHART.api }]} />
-            ) : trendMode === 'traffic' ? (
-              <TrendAreaChart
-                loading={loading}
-                data={data.trend.map((p) => ({ label: p.label, success: Math.max(0, p.apiRequests - p.errors), errors: p.errors }))}
-                xName="Date"
-                yName="Traffic"
-                height={320}
-                areas={[
-                  { key: 'success', name: 'Success', color: PROJECT_CHART.success, stackId: 'traffic' },
-                  { key: 'errors', name: 'Errors', color: PROJECT_CHART.error, stackId: 'traffic' },
-                ]}
-              />
-            ) : (
-              <TrendAreaChart
-                loading={loading}
-                data={data.trend}
-                xName="Date"
-                yName="Requests & Errors"
-                height={320}
-                areas={[
-                  { key: 'apiRequests', name: 'API requests', color: PROJECT_CHART.api },
-                  { key: 'errors', name: 'Errors', color: PROJECT_CHART.error },
-                ]}
-              />
-            )}
-          </Box>
-        </InsightsCard>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '65fr 35fr' }, gap: 2, mb: 2 }}>
+        <ActivityOverTime charts={data.activityCharts} loading={loading} />
+        <TopFailing rows={data.topFailing} errorSeries={data.trend.map((p) => ({ label: p.label, errors: p.errors + p.automationErrors }))} loading={loading} />
       </Box>
 
-      <Box sx={{ mb: 2 }}>
-        <InsightsCard fill={false} title="Top 10 Slowest APIs" subtitle="Across this project">
-          {slowest.isLoading || loading ? <Skeleton variant="rounded" height={280} /> : <SlowestApiBars rows={slowest.data} />}
-        </InsightsCard>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '65fr 35fr' }, gap: 2, mb: 2 }}>
+        <TopByVolume rows={data.topByVolume} loading={loading} onRowClick={(handler) => navigate(`/organizations/${org}/projects/${project}/components/${handler}/insights/usage`)} />
+        <Stack gap={2}>
+          <LatencyDuration rows={data.latencyRows} loading={loading} />
+          <RecentDeployments items={recentDeployments.data ?? []} envName={activeEnvName} loading={recentDeployments.isLoading} />
+        </Stack>
       </Box>
-
-      <InsightsCard plain fill={false} title="Summary by Integration" subtitle={`Summary of Insights in ${activeEnvName}`}>
-        {!loading && !hasIntegrations ? (
-          <Alert severity="info">There are no integrations to display.</Alert>
-        ) : (
-          <ListingTable.Container sx={{ maxHeight: 'none', height: 'auto' }}>
-            <ListingTable>
-              <ListingTable.Head>
-                <ListingTable.Row>
-                  <ListingTable.Cell>Integration Name</ListingTable.Cell>
-                  <ListingTable.Cell>Integration Type</ListingTable.Cell>
-                  <ListingTable.Cell align="right">Success Count</ListingTable.Cell>
-                  <ListingTable.Cell align="right">Error Count</ListingTable.Cell>
-                  <ListingTable.Cell align="right">Avg Latency</ListingTable.Cell>
-                  <ListingTable.Cell>Status</ListingTable.Cell>
-                </ListingTable.Row>
-              </ListingTable.Head>
-              <ListingTable.Body>
-                {loading ? (
-                  <TableSkeletonRows cols={6} />
-                ) : (
-                  data.integrations.map((row) => {
-                  const isAggregate = row.id === 'deleted-aggregate';
-                  return (
-                    <ListingTable.Row
-                      key={row.id}
-                      hover={!!row.handler}
-                      onClick={row.handler ? () => navigate(`/organizations/${org}/projects/${project}/components/${row.handler}/insights/usage`) : undefined}
-                      sx={isAggregate ? { bgcolor: 'rgba(189, 123, 123, 0.08)' } : row.handler ? { cursor: 'pointer' } : undefined}>
-                      <ListingTable.Cell>
-                        <Stack direction="row" alignItems="center" gap={1.5}>
-                          <Avatar sx={{ width: 30, height: 30, bgcolor: 'action.selected', color: 'text.secondary' }}>{isAggregate ? <XCircle size={15} /> : row.type === 'auto' || row.type === 'rag' ? <Zap size={15} /> : <Globe size={15} />}</Avatar>
-                          <Box>
-                            {row.handler ? (
-                              <Link
-                                component="button"
-                                type="button"
-                                variant="body2"
-                                underline="hover"
-                                color="inherit"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/organizations/${org}/projects/${project}/components/${row.handler}/insights/usage`);
-                                }}
-                                sx={{ fontWeight: 500 }}>
-                                {row.name}
-                              </Link>
-                            ) : (
-                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                {row.name}
-                              </Typography>
-                            )}
-                            <Typography variant="caption" color="text.secondary">
-                              {isAggregate ? 'Combined totals from integrations removed from the project' : row.desc}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                      </ListingTable.Cell>
-                      <ListingTable.Cell>
-                        {isAggregate ? (
-                          <Typography variant="body2" color="text.secondary">
-                            —
-                          </Typography>
-                        ) : (
-                          <Chip size="small" variant="outlined" label={INSIGHTS_KIND_LABEL[row.type]} />
-                        )}
-                      </ListingTable.Cell>
-                      <ListingTable.Cell align="right">{row.successCount}</ListingTable.Cell>
-                      <ListingTable.Cell align="right" sx={{ color: row.errorCount !== '—' && row.errorCount !== '0' ? theme.palette.error.main : undefined }}>
-                        {row.errorCount}
-                      </ListingTable.Cell>
-                      <ListingTable.Cell align="right">{row.latency}</ListingTable.Cell>
-                      <ListingTable.Cell>
-                        {row.deleted ? (
-                          <Chip size="small" label="Deleted" variant="outlined" />
-                        ) : (
-                          (() => {
-                            const s = DEPLOYMENT_STATUS_CHIP[statusMap?.[row.id] ?? 'NOT_DEPLOYED'] ?? DEPLOYMENT_STATUS_CHIP.NOT_DEPLOYED;
-                            return <Chip size="small" label={s.label} color={s.color === 'default' ? undefined : s.color} variant="outlined" />;
-                          })()
-                        )}
-                      </ListingTable.Cell>
-                    </ListingTable.Row>
-                  );
-                  })
-                )}
-              </ListingTable.Body>
-            </ListingTable>
-          </ListingTable.Container>
-        )}
-      </InsightsCard>
     </PageContent>
   );
 }

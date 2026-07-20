@@ -20,6 +20,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Query } from '@tanstack/react-query';
 import { fetchApimSwagger } from '#api/apim';
 import { fetchComponentByHandler } from '#api/components';
+import { identifyIntegration } from '../utils/identifyIntegration';
+import { KIND_DOT, TYPE_TO_KIND } from '../constants/insights';
 import {
   fetchComponentDeployment,
   fetchEnvEndpoints,
@@ -34,7 +36,7 @@ import {
   redeployDeployment,
   deployPrebuiltImage,
 } from '#api/deployments';
-import type { ComponentDeployment, BuildRun, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput } from '../types/deployment';
+import type { ComponentDeployment, BuildRun, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput, RecentDeployment } from '../types/deployment';
 import type { DeployComponentInput } from '../types/build';
 
 const TERMINAL_CONCLUSIONS = new Set(['success', 'failure', 'cancelled', 'timed_out', 'neutral', 'skipped']);
@@ -219,6 +221,48 @@ export function useIntegrationDeploymentStatuses(orgHandler: string, orgUuid: st
         }),
       );
       return Object.fromEntries(entries) as Record<string, string>;
+    },
+    enabled: !!orgHandler && !!orgUuid && !!projectId && !!environmentId && components.length > 0,
+    staleTime: 60_000,
+  });
+}
+
+/** Project-wide recent-deployments feed: fans out over every component, reads its
+ * latest deployment in the given environment, and returns the newest first. */
+export function useProjectRecentDeployments(orgHandler: string, orgUuid: string, projectId: string, components: { id: string; handler: string }[], environmentId: string) {
+  const key = components.map((c) => c.id).join(',');
+  return useQuery({
+    queryKey: ['project-recent-deployments', orgUuid, projectId, environmentId, key],
+    queryFn: async (): Promise<RecentDeployment[]> => {
+      const entries = await Promise.all(
+        components.map(async (c): Promise<RecentDeployment | null> => {
+          try {
+            const detail = await fetchComponentByHandler(projectId, c.handler);
+            const track = detail.deploymentTracks?.find((t) => t.latest) ?? detail.deploymentTracks?.[0];
+            if (!track) return null;
+            const dep = await fetchComponentDeployment(orgHandler, orgUuid, c.id, track.id, environmentId);
+            if (!dep?.build?.deployedAt) return null;
+            const t = identifyIntegration(detail.displayType, detail.componentSubType ?? null).type;
+            const kind = t === 'automation' ? 'auto' : t === 'rag-ingestion' ? 'rag' : (TYPE_TO_KIND[t] ?? 'api');
+            return {
+              id: c.id,
+              handler: c.handler,
+              name: detail.displayName || c.handler,
+              version: dep.releaseMgtDeployment?.releaseMgtReleaseName ?? '',
+              deployedAt: dep.build.deployedAt,
+              by: dep.build.commit?.author?.name ?? '',
+              status: dep.deploymentStatusV2 ?? '',
+              color: KIND_DOT[kind],
+            };
+          } catch {
+            return null;
+          }
+        }),
+      );
+      return entries
+        .filter((e): e is RecentDeployment => e != null)
+        .sort((a, b) => new Date(b.deployedAt).getTime() - new Date(a.deployedAt).getTime())
+        .slice(0, 3);
     },
     enabled: !!orgHandler && !!orgUuid && !!projectId && !!environmentId && components.length > 0,
     staleTime: 60_000,

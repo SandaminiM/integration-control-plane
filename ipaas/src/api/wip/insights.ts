@@ -296,14 +296,14 @@ async function fetchProjectAutomationOverview(
   stats: ProjectTaskStats | null;
   trend: { timestamp: string; totalCount: number; successCount: number; failureCount: number }[];
   summary: { automationName: string; totalExecutions: number; failureCount: number; errorRate: number; lastRunRelative?: string; lastExecutionStatus?: string }[];
-  duration: { componentId: string; componentName?: string; averageDurationMs: number }[];
+  duration: { componentId: string; componentName?: string; averageDurationMs: number; p95DurationMs: number }[];
 }> {
   const result = await postInsightsQuery<{
     data?: {
       getTaskExecutionStats?: ProjectTaskStats;
       getAutomationExecutionTrend?: { timestamp: string; totalCount: number; successCount: number; failureCount: number }[];
       getAutomationSummaryTable?: { automationName: string; totalExecutions: number; failureCount: number; errorRate: number; lastRunRelative?: string; lastExecutionStatus?: string }[];
-      getAutomationExecutionDuration?: { componentId: string; componentName?: string; averageDurationMs: number }[];
+      getAutomationExecutionDuration?: { componentId: string; componentName?: string; averageDurationMs: number; p95DurationMs: number }[];
     };
   }>(
     queryApiUrl,
@@ -318,7 +318,7 @@ async function fetchProjectAutomationOverview(
         automationName totalExecutions failureCount errorRate executionFrequency lastRun lastRunRelative lastExecutionStatus
       }
       getAutomationExecutionDuration(dataFilter: $dataFilter, timeFilter: $timeFilter, automationFilter: $automationFilter) {
-        componentId componentName averageDurationMs
+        componentId componentName averageDurationMs p95DurationMs
       }
     }`,
     { dataFilter, timeFilter: { from: time.from, to: time.to }, automationFilter: null, interval: null },
@@ -332,7 +332,7 @@ async function fetchProjectAutomationOverview(
   };
 }
 
-export async function fetchProjectInsights(orgUuid: string, projectId: string, insightsEnv: InsightsEnvironment, apis: InsightsApiRef[], automations: InsightsAutomationRef[], range: InsightsRange, queryApiUrl: string): Promise<ProjectInsightsRaw> {
+export async function fetchProjectInsights(orgUuid: string, projectId: string, insightsEnv: InsightsEnvironment, apis: InsightsApiRef[], automations: InsightsAutomationRef[], eventApis: InsightsApiRef[], range: InsightsRange, queryApiUrl: string): Promise<ProjectInsightsRaw> {
   const time = rangeToTimeFilter(range);
   const dataFilter = { orgId: orgUuid, environmentIds: getEnvironmentIds(insightsEnv), tenant: 'carbon.super', projectId };
 
@@ -348,6 +348,22 @@ export async function fetchProjectInsights(orgUuid: string, projectId: string, i
   const componentTime = { from: time.from, to: time.to };
   const perApi = await Promise.all(resolved.map(async ({ ref, api }) => ({ ref, ins: api.id ? await fetchComponentInsights(orgUuid, insightsEnv, api.id, queryApiUrl, componentTime) : null })));
   const apiStats: ProjectComponentStat[] = perApi.map(({ ref, ins }) => ({
+    id: ref.id,
+    name: ref.name,
+    handler: ref.handler,
+    type: ref.kind,
+    requestCount: ins?.requestCount ?? 0,
+    errorCount: ins?.errorCount ?? 0,
+    errorRate: ins?.errorRate ?? 0,
+    latency: ins?.latency ?? 0,
+  }));
+
+  // Event & file integrations get the same per-component APIM totals as services
+  // (they publish an APIM-tracked API on non-MI runtimes); MI ones resolve to no
+  // apiId and fall through as zeroed rows.
+  const resolvedEvents = eventApis.map((a) => ({ ref: a, api: resolveApi(a, projectApis) }));
+  const perEvent = await Promise.all(resolvedEvents.map(async ({ ref, api }) => ({ ref, ins: api.id ? await fetchComponentInsights(orgUuid, insightsEnv, api.id, queryApiUrl, componentTime) : null })));
+  const eventStats: ProjectComponentStat[] = perEvent.map(({ ref, ins }) => ({
     id: ref.id,
     name: ref.name,
     handler: ref.handler,
@@ -407,7 +423,43 @@ export async function fetchProjectInsights(orgUuid: string, projectId: string, i
 
   const trend = buildTrend(overview.successSummary, overview.errorSummary, automationOverview.trend, time.labelGranularity);
 
-  return { totalRequests, totalErrors, avgLatency, totalTraffic: overview.totalTraffic, totalTrafficErrors: overview.totalErrors, trend, components: [...apiStats, ...autoStats, ...deletedStats], taskStats: automationOverview.stats };
+  // ---- Activity over time: per-type usage series -----------------------------
+  // Reuse the integration-level getAPIUsageOverTime (same query the API insights
+  // view uses) for every API-like + event/file component, group each returned
+  // series by integration type, and fold the automation execution trend in as
+  // the Automations series (auto+rag, already combined by the backend).
+  const aliasesFor = (id: string): string[] => {
+    const m = projectApis.find((a) => a.id === id);
+    return m ? [m.version ? `${m.name} - ${m.version}` : '', m.name, m.displayName].filter(Boolean) : [];
+  };
+  const usageFor = async (ref: InsightsApiRef): Promise<{ timeSpan: string; count: number }[]> => {
+    const api = resolveApi(ref, projectApis);
+    if (!api.id) return [];
+    return fetchApiUsageOverTime(queryApiUrl, dataFilter, api.id, api.version, aliasesFor(api.id), { from: time.from, to: time.to, queryGranularity: time.queryGranularity });
+  };
+  const [apiUsage, eventUsage] = await Promise.all([
+    Promise.all(apis.map(async (ref) => ({ kind: ref.kind, usage: await usageFor(ref) }))),
+    Promise.all(eventApis.map(async (ref) => ({ usage: await usageFor(ref) }))),
+  ]);
+  const actBuckets = new Map<number, { label: string; services: number; agents: number; events: number; automations: number }>();
+  const addAct = (timeSpan: string, key: 'services' | 'agents' | 'events' | 'automations', v: number) => {
+    const ts0 = new Date(timeSpan).getTime();
+    if (Number.isNaN(ts0)) return;
+    const ts = truncateTs(ts0, time.labelGranularity);
+    const b = actBuckets.get(ts) ?? { label: bucketLabel(ts, time.labelGranularity), services: 0, agents: 0, events: 0, automations: 0 };
+    b[key] += v || 0;
+    actBuckets.set(ts, b);
+  };
+  apiUsage.forEach(({ kind, usage }) => usage.forEach((p) => addAct(p.timeSpan, kind === 'agent' ? 'agents' : 'services', p.count)));
+  eventUsage.forEach(({ usage }) => usage.forEach((p) => addAct(p.timeSpan, 'events', p.count)));
+  automationOverview.trend.forEach((p) => addAct(p.timestamp, 'automations', p.totalCount));
+  const activity = [...actBuckets.entries()].sort((a, b) => a[0] - b[0]).map(([, v]) => v);
+
+  const durs = automationOverview.duration.filter((d) => (d.averageDurationMs ?? 0) > 0);
+  const autoAvgDurationMs = durs.length ? Math.round(durs.reduce((s, d) => s + (d.averageDurationMs || 0), 0) / durs.length) : 0;
+  const autoP95DurationMs = automationOverview.duration.reduce((m, d) => Math.max(m, d.p95DurationMs || 0), 0);
+
+  return { totalRequests, totalErrors, avgLatency, autoAvgDurationMs, autoP95DurationMs, totalTraffic: overview.totalTraffic, totalTrafficErrors: overview.totalErrors, trend, activity, components: [...apiStats, ...eventStats, ...autoStats, ...deletedStats], taskStats: automationOverview.stats };
 }
 
 // Project-level latency trend — devant's getLatencySummary series

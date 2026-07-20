@@ -17,7 +17,7 @@
  */
 
 import type { JSX } from 'react';
-import { Activity, AlertTriangle, Clock, Globe, Timer, XCircle, Zap } from '@wso2/oxygen-ui-icons-react';
+import { Activity, AlertTriangle, Clock, Gauge, Globe, Layers, Timer, XCircle, Zap } from '@wso2/oxygen-ui-icons-react';
 import type { ApiInsightsTab, AvailabilityKind, InsightsApiRef, InsightsRange, IntegrationKind } from '../types/insights';
 import type { IntegrationType } from '../types/integration';
 
@@ -26,7 +26,7 @@ import type { IntegrationType } from '../types/integration';
 // legends/tooltips. Single source for every insights chart color.
 export const INSIGHTS_CHART_COLORS = {
   orange: '#E8964A',
-  blue: '#64B5F6',
+  blue: '#7986CB',
   red: '#E57373',
   green: '#81C784',
   amber: '#D9A63F',
@@ -73,7 +73,11 @@ export const OUTCOME_COLOR: Record<'success' | 'failure' | 'timeout', string> = 
  * insights views (project, api, automation). Merged into one map so each
  * view just looks up by KPI key.
  */
-export const KPI_ICONS: Record<string, { icon: JSX.Element; color: 'primary' | 'error' | 'info' | 'warning' }> = {
+export const KPI_ICONS: Record<string, { icon: JSX.Element; color: 'primary' | 'error' | 'info' | 'warning' | 'success' | 'secondary' }> = {
+  activeIntegrations: { icon: <Layers size={24} />, color: 'primary' },
+  totalInvocations: { icon: <Zap size={24} />, color: 'info' },
+  successRate: { icon: <Gauge size={24} />, color: 'success' },
+  errors: { icon: <AlertTriangle size={24} />, color: 'error' },
   traffic: { icon: <Globe size={24} />, color: 'primary' },
   executions: { icon: <Zap size={24} />, color: 'info' },
   errorRequests: { icon: <AlertTriangle size={24} />, color: 'error' },
@@ -128,6 +132,8 @@ export const TYPE_TO_KIND: Partial<Record<IntegrationType, InsightsApiRef['kind'
   'ai-agent': 'agent',
   'mcp-server': 'mcp',
   webhook: 'webhook',
+  'event-integration': 'event',
+  'file-integration': 'file',
 };
 
 /** Chip/label text per integration kind (project table chip + CSV). */
@@ -138,6 +144,8 @@ export const INSIGHTS_KIND_LABEL: Record<IntegrationKind, string> = {
   agent: 'AI Agent',
   mcp: 'MCP Server',
   webhook: 'Webhook',
+  event: 'Event Integration',
+  file: 'File Integration',
 };
 
 /** Row description text per integration kind (project table sub-text) — note
@@ -149,4 +157,50 @@ export const INSIGHTS_KIND_DESC: Record<IntegrationKind, string> = {
   agent: 'AI Agent',
   mcp: 'MCP Server',
   webhook: 'Webhook',
+  event: 'Event integration',
+  file: 'File integration',
+};
+
+/** Short plural labels for the Active Integrations card type-mix. */
+export const KIND_SHORT: Record<IntegrationKind, string> = {
+  api: 'APIs',
+  auto: 'Automations',
+  rag: 'RAG Ingestions',
+  agent: 'AI Agents',
+  mcp: 'MCP Servers',
+  webhook: 'Webhooks',
+  event: 'Event Integrations',
+  file: 'File Integrations',
+};
+
+/** Dot color per integration kind for the Active Integrations card type-mix. */
+export const KIND_DOT: Record<IntegrationKind, string> = {
+  api: INSIGHTS_CHART_COLORS.blue,
+  auto: INSIGHTS_CHART_COLORS.green,
+  rag: INSIGHTS_CHART_COLORS.amber,
+  agent: INSIGHTS_CHART_COLORS.purple,
+  mcp: INSIGHTS_CHART_COLORS.orange,
+  webhook: INSIGHTS_CHART_COLORS.red,
+  event: INSIGHTS_CHART_COLORS.orange,
+  file: INSIGHTS_CHART_COLORS.amber,
+};
+
+/** The four "Activity over time" charts: group key, card title, native unit, bar color. */
+export const ACTIVITY_META: { key: 'services' | 'agents' | 'events' | 'automations'; title: string; unit: string; color: string }[] = [
+  { key: 'services', title: 'Services', unit: 'requests', color: INSIGHTS_CHART_COLORS.blue },
+  { key: 'automations', title: 'Automations', unit: 'runs', color: INSIGHTS_CHART_COLORS.green },
+  { key: 'agents', title: 'AI Agents', unit: 'invocations', color: INSIGHTS_CHART_COLORS.purple },
+  { key: 'events', title: 'Event Handlers', unit: 'events processed', color: INSIGHTS_CHART_COLORS.orange },
+];
+
+/** Native unit per integration kind, used by the "Top integrations by volume" rows. */
+export const UNIT_BY_KIND: Record<IntegrationKind, string> = {
+  api: 'requests',
+  webhook: 'requests',
+  mcp: 'requests',
+  agent: 'invocations',
+  event: 'events',
+  file: 'events',
+  auto: 'runs',
+  rag: 'runs',
 };

@@ -49,6 +49,26 @@ export interface ProjectInsightsKpi {
   deltaGood: boolean;
   /** render the value itself in the error color */
   danger?: boolean;
+  /** per-kind active-integration counts, rendered as dot+count inside the Active Integrations card */
+  typeMix?: { kind: IntegrationKind; count: number }[];
+}
+
+export interface ProjectActivityPoint {
+  label: string;
+  services: number;
+  agents: number;
+  events: number;
+  automations: number;
+}
+
+export interface ProjectActivityChart {
+  key: 'services' | 'agents' | 'events' | 'automations';
+  title: string;
+  unit: string;
+  color: string;
+  /** formatted sum across all buckets, shown top-right */
+  total: string;
+  points: { label: string; count: number }[];
 }
 
 export interface ProjectTrendPoint {
@@ -69,7 +89,7 @@ export interface ProjectHealthSlice {
   sub: string;
 }
 
-export type IntegrationKind = 'api' | 'auto' | 'rag' | 'agent' | 'mcp' | 'webhook';
+export type IntegrationKind = 'api' | 'auto' | 'rag' | 'agent' | 'mcp' | 'webhook' | 'event' | 'file';
 
 export interface ProjectIntegrationRow {
   id: string;
@@ -87,9 +107,55 @@ export interface ProjectIntegrationRow {
   deleted?: boolean;
 }
 
+export interface ProjectVolumeRow {
+  id: string;
+  name: string;
+  handler: string;
+  type: IntegrationKind;
+  /** formatted volume count */
+  volume: string;
+  /** native unit — requests/runs/invocations/events */
+  unit: string;
+  /** 0..100 share of total volume */
+  share: number;
+  /** bar color for this kind */
+  color: string;
+}
+
+export interface ProjectFailingRow {
+  id: string;
+  name: string;
+  handler: string;
+  type: IntegrationKind;
+  /** native unit — requests/runs/invocations/events */
+  unit: string;
+  /** error percentage */
+  errorRate: number;
+  /** formatted error count */
+  errorCount: string;
+}
+
+export interface ProjectLatencyMetric {
+  label: string;
+  value: string;
+}
+
+export interface ProjectLatencyRow {
+  key: string;
+  label: string;
+  /** what the latency represents — e.g. "Response time" / "Run duration" */
+  sub: string;
+  color: string;
+  metrics: ProjectLatencyMetric[];
+}
+
 export interface ProjectInsightsData {
   kpis: ProjectInsightsKpi[];
   trend: ProjectTrendPoint[];
+  activityCharts: ProjectActivityChart[];
+  topByVolume: ProjectVolumeRow[];
+  topFailing: ProjectFailingRow[];
+  latencyRows: ProjectLatencyRow[];
   health: ProjectHealthSlice[];
   healthCenter: string;
   integrations: ProjectIntegrationRow[];
@@ -134,7 +200,13 @@ export interface ProjectInsightsRaw {
   totalTraffic: number;
   /** project-level error request count, KPI card */
   totalTrafficErrors: number;
+  /** project-mean automation duration (ms) */
+  autoAvgDurationMs: number;
+  /** worst automation p95 duration (ms) */
+  autoP95DurationMs: number;
   trend: { label: string; apiRequests: number; automationRuns: number; automationErrors: number; errors: number }[];
+  /** per-integration-type activity series (Services/AI Agents/Event Handlers/Automations), one entry per time bucket */
+  activity: ProjectActivityPoint[];
   components: ProjectComponentStat[];
   /** null when the automation overview query failed/was empty */
   taskStats: ProjectTaskStats | null;
@@ -156,7 +228,7 @@ export interface InsightsApiRef {
   handler: string;
   apiId: string;
   /** Which API-like integration flavor this component is — drives the table chip/desc. */
-  kind: 'api' | 'agent' | 'mcp' | 'webhook';
+  kind: 'api' | 'agent' | 'mcp' | 'webhook' | 'event' | 'file';
 }
 
 /** Inputs the API layer needs per automation component. Matched against the

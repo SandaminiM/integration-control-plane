@@ -161,3 +161,16 @@ export interface DeployPrebuiltImageInput {
   // separately). Optional so existing callers are unaffected.
   configurations?: SchemaConfigItem[];
 }
+
+export interface RecentDeployment {
+  id: string;
+  handler: string;
+  name: string;
+  version: string;
+  /** ISO-8601 deploy time */
+  deployedAt: string;
+  by: string;
+  status: string;
+  /** integration-kind dot color */
+  color: string;
+}
