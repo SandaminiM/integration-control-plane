@@ -21,7 +21,7 @@ import type { Query } from '@tanstack/react-query';
 import { fetchApimSwagger } from '#api/apim';
 import { fetchComponentByHandler } from '#api/components';
 import { identifyIntegration } from '../utils/identifyIntegration';
-import { KIND_DOT, TYPE_TO_KIND } from '../constants/insights';
+import { TYPE_TO_KIND } from '../constants/insights';
 import {
   fetchComponentDeployment,
   fetchEnvEndpoints,
@@ -38,6 +38,8 @@ import {
 } from '#api/deployments';
 import type { ComponentDeployment, BuildRun, DeployDeploymentTrackInput, PromoteInput, StopDeploymentInput, DeployPrebuiltImageInput, RecentDeployment } from '../types/deployment';
 import type { DeployComponentInput } from '../types/build';
+import type { ComponentDetail } from '../types/component';
+import type { IntegrationKind } from '../types/insights';
 
 const TERMINAL_CONCLUSIONS = new Set(['success', 'failure', 'cancelled', 'timed_out', 'neutral', 'skipped']);
 
@@ -201,6 +203,21 @@ export function useDeployPrebuiltImage() {
 // Deployment status per integration for one environment — drives the Status
 // column on the project Insights table. Track resolution mirrors the overview
 // pages: the `latest` deployment track (or the first) is the deployed version.
+// Resolve a component's latest deployment track, then that track's deployment in
+// the given environment. Shared by the project-scoped status and recent-deployment
+// feeds, which both fan this out over every component.
+async function resolveLatestDeployment(orgHandler: string, orgUuid: string, projectId: string, componentId: string, handler: string, environmentId: string): Promise<{ detail: ComponentDetail; deployment: ComponentDeployment | null }> {
+  const detail = await fetchComponentByHandler(projectId, handler);
+  const track = detail.deploymentTracks?.find((t) => t.latest) ?? detail.deploymentTracks?.[0];
+  const deployment = track ? await fetchComponentDeployment(orgHandler, orgUuid, componentId, track.id, environmentId) : null;
+  return { detail, deployment };
+}
+
+function kindFromDetail(detail: ComponentDetail): IntegrationKind {
+  const t = identifyIntegration(detail.displayType, detail.componentSubType ?? null).type;
+  return t === 'automation' ? 'auto' : t === 'rag-ingestion' ? 'rag' : (TYPE_TO_KIND[t] ?? 'api');
+}
+
 export function useIntegrationDeploymentStatuses(orgHandler: string, orgUuid: string, projectId: string, components: { id: string; handler: string }[], environmentId: string) {
   const key = components.map((c) => c.id).join(',');
   return useQuery({
@@ -209,10 +226,7 @@ export function useIntegrationDeploymentStatuses(orgHandler: string, orgUuid: st
       const entries = await Promise.all(
         components.map(async (c): Promise<[string, string]> => {
           try {
-            const detail = await fetchComponentByHandler(projectId, c.handler);
-            const track = detail.deploymentTracks?.find((t) => t.latest) ?? detail.deploymentTracks?.[0];
-            if (!track) return [c.id, 'NOT_DEPLOYED'];
-            const deployment = await fetchComponentDeployment(orgHandler, orgUuid, c.id, track.id, environmentId);
+            const { deployment } = await resolveLatestDeployment(orgHandler, orgUuid, projectId, c.id, c.handler, environmentId);
             return [c.id, deployment?.deploymentStatusV2 ?? 'NOT_DEPLOYED'];
           } catch {
             // A failed status fetch is not evidence the integration is undeployed.
@@ -237,22 +251,17 @@ export function useProjectRecentDeployments(orgHandler: string, orgUuid: string,
       const entries = await Promise.all(
         components.map(async (c): Promise<RecentDeployment | null> => {
           try {
-            const detail = await fetchComponentByHandler(projectId, c.handler);
-            const track = detail.deploymentTracks?.find((t) => t.latest) ?? detail.deploymentTracks?.[0];
-            if (!track) return null;
-            const dep = await fetchComponentDeployment(orgHandler, orgUuid, c.id, track.id, environmentId);
-            if (!dep?.build?.deployedAt) return null;
-            const t = identifyIntegration(detail.displayType, detail.componentSubType ?? null).type;
-            const kind = t === 'automation' ? 'auto' : t === 'rag-ingestion' ? 'rag' : (TYPE_TO_KIND[t] ?? 'api');
+            const { detail, deployment } = await resolveLatestDeployment(orgHandler, orgUuid, projectId, c.id, c.handler, environmentId);
+            if (!deployment?.build?.deployedAt) return null;
             return {
               id: c.id,
               handler: c.handler,
               name: detail.displayName || c.handler,
-              version: dep.releaseMgtDeployment?.releaseMgtReleaseName ?? '',
-              deployedAt: dep.build.deployedAt,
-              by: dep.build.commit?.author?.name ?? '',
-              status: dep.deploymentStatusV2 ?? '',
-              color: KIND_DOT[kind],
+              version: deployment.releaseMgtDeployment?.releaseMgtReleaseName ?? '',
+              deployedAt: deployment.build.deployedAt,
+              by: deployment.build.commit?.author?.name ?? '',
+              status: deployment.deploymentStatusV2 ?? '',
+              kind: kindFromDetail(detail),
             };
           } catch {
             return null;

@@ -44,9 +44,6 @@ export interface ProjectInsightsKpi {
   label: string;
   value: string;
   sub: string;
-  delta: string;
-  /** true = green (good) chip, false = red (bad) chip */
-  deltaGood: boolean;
   /** render the value itself in the error color */
   danger?: boolean;
   /** per-kind active-integration counts, rendered as dot+count inside the Active Integrations card */
@@ -79,14 +76,10 @@ export interface ProjectTrendPoint {
   errors: number;
 }
 
-export type HealthKind = 'success' | 'failure' | 'timeout';
-
-export interface ProjectHealthSlice {
-  kind: HealthKind;
+/** One bucket of the errors-over-time series feeding the Top-failing card chart. */
+export interface ProjectErrorPoint {
   label: string;
-  /** percentage share, e.g. 96.2 */
-  value: number;
-  sub: string;
+  errors: number;
 }
 
 export type IntegrationKind = 'api' | 'auto' | 'rag' | 'agent' | 'mcp' | 'webhook' | 'event' | 'file';
@@ -156,8 +149,6 @@ export interface ProjectInsightsData {
   topByVolume: ProjectVolumeRow[];
   topFailing: ProjectFailingRow[];
   latencyRows: ProjectLatencyRow[];
-  health: ProjectHealthSlice[];
-  healthCenter: string;
   integrations: ProjectIntegrationRow[];
 }
 

@@ -17,6 +17,7 @@
  */
 
 import type { SchemaConfigItem } from './configuration';
+import type { IntegrationKind } from './insights';
 
 export const DeploymentStatus = {
   Active: 'Active',
@@ -171,6 +172,6 @@ export interface RecentDeployment {
   deployedAt: string;
   by: string;
   status: string;
-  /** integration-kind dot color */
-  color: string;
+  /** integration kind — the component maps it to a dot color */
+  kind: IntegrationKind;
 }

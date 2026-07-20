@@ -332,6 +332,10 @@ async function fetchProjectAutomationOverview(
   };
 }
 
+function toComponentStat(ref: InsightsApiRef, ins: ComponentInsights | null): ProjectComponentStat {
+  return { id: ref.id, name: ref.name, handler: ref.handler, type: ref.kind, requestCount: ins?.requestCount ?? 0, errorCount: ins?.errorCount ?? 0, errorRate: ins?.errorRate ?? 0, latency: ins?.latency ?? 0 };
+}
+
 export async function fetchProjectInsights(orgUuid: string, projectId: string, insightsEnv: InsightsEnvironment, apis: InsightsApiRef[], automations: InsightsAutomationRef[], eventApis: InsightsApiRef[], range: InsightsRange, queryApiUrl: string): Promise<ProjectInsightsRaw> {
   const time = rangeToTimeFilter(range);
   const dataFilter = { orgId: orgUuid, environmentIds: getEnvironmentIds(insightsEnv), tenant: 'carbon.super', projectId };
@@ -347,32 +351,14 @@ export async function fetchProjectInsights(orgUuid: string, projectId: string, i
   // project overview uses) so the table tracks the range toggle.
   const componentTime = { from: time.from, to: time.to };
   const perApi = await Promise.all(resolved.map(async ({ ref, api }) => ({ ref, ins: api.id ? await fetchComponentInsights(orgUuid, insightsEnv, api.id, queryApiUrl, componentTime) : null })));
-  const apiStats: ProjectComponentStat[] = perApi.map(({ ref, ins }) => ({
-    id: ref.id,
-    name: ref.name,
-    handler: ref.handler,
-    type: ref.kind,
-    requestCount: ins?.requestCount ?? 0,
-    errorCount: ins?.errorCount ?? 0,
-    errorRate: ins?.errorRate ?? 0,
-    latency: ins?.latency ?? 0,
-  }));
+  const apiStats = perApi.map(({ ref, ins }) => toComponentStat(ref, ins));
 
-  // Event & file integrations get the same per-component APIM totals as services
-  // (they publish an APIM-tracked API on non-MI runtimes); MI ones resolve to no
+  // Event & file integrations get the same per-component APIM totals as services:
+  // they publish an APIM-tracked API on non-MI runtimes; MI ones resolve to no
   // apiId and fall through as zeroed rows.
   const resolvedEvents = eventApis.map((a) => ({ ref: a, api: resolveApi(a, projectApis) }));
   const perEvent = await Promise.all(resolvedEvents.map(async ({ ref, api }) => ({ ref, ins: api.id ? await fetchComponentInsights(orgUuid, insightsEnv, api.id, queryApiUrl, componentTime) : null })));
-  const eventStats: ProjectComponentStat[] = perEvent.map(({ ref, ins }) => ({
-    id: ref.id,
-    name: ref.name,
-    handler: ref.handler,
-    type: ref.kind,
-    requestCount: ins?.requestCount ?? 0,
-    errorCount: ins?.errorCount ?? 0,
-    errorRate: ins?.errorRate ?? 0,
-    latency: ins?.latency ?? 0,
-  }));
+  const eventStats = perEvent.map(({ ref, ins }) => toComponentStat(ref, ins));
 
   // Summary rows are matched by name against the component slug OR display
   // name — the backend's `automationName` is the component handler.
@@ -423,23 +409,19 @@ export async function fetchProjectInsights(orgUuid: string, projectId: string, i
 
   const trend = buildTrend(overview.successSummary, overview.errorSummary, automationOverview.trend, time.labelGranularity);
 
-  // ---- Activity over time: per-type usage series -----------------------------
-  // Reuse the integration-level getAPIUsageOverTime (same query the API insights
-  // view uses) for every API-like + event/file component, group each returned
-  // series by integration type, and fold the automation execution trend in as
-  // the Automations series (auto+rag, already combined by the backend).
+  // Per-type activity series: per-component getAPIUsageOverTime grouped by kind,
+  // plus the automation execution trend as the Automations series.
   const aliasesFor = (id: string): string[] => {
     const m = projectApis.find((a) => a.id === id);
     return m ? [m.version ? `${m.name} - ${m.version}` : '', m.name, m.displayName].filter(Boolean) : [];
   };
-  const usageFor = async (ref: InsightsApiRef): Promise<{ timeSpan: string; count: number }[]> => {
-    const api = resolveApi(ref, projectApis);
+  const usageFor = async (api: { id: string; version: string }): Promise<{ timeSpan: string; count: number }[]> => {
     if (!api.id) return [];
     return fetchApiUsageOverTime(queryApiUrl, dataFilter, api.id, api.version, aliasesFor(api.id), { from: time.from, to: time.to, queryGranularity: time.queryGranularity });
   };
   const [apiUsage, eventUsage] = await Promise.all([
-    Promise.all(apis.map(async (ref) => ({ kind: ref.kind, usage: await usageFor(ref) }))),
-    Promise.all(eventApis.map(async (ref) => ({ usage: await usageFor(ref) }))),
+    Promise.all(resolved.map(async ({ ref, api }) => ({ kind: ref.kind, usage: await usageFor(api) }))),
+    Promise.all(resolvedEvents.map(async ({ api }) => ({ usage: await usageFor(api) }))),
   ]);
   const actBuckets = new Map<number, { label: string; services: number; agents: number; events: number; automations: number }>();
   const addAct = (timeSpan: string, key: 'services' | 'agents' | 'events' | 'automations', v: number) => {

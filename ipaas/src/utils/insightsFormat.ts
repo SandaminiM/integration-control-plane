@@ -35,6 +35,17 @@ export function formatDuration(sec: number): string {
   return s === 0 ? `${m}m` : `${m}m ${s}s`;
 }
 
+/** Latency in milliseconds: '96 ms' under a second, '1.8 s' at or above. */
+export function formatLatencyMs(ms: number): string {
+  return ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${Math.round(ms)} ms`;
+}
+
+/** Deploy timestamp for the feed: 'Jul 14, 09:32'. Empty string for unparseable input. */
+export function formatDeployTime(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
 /** Classify a task-execution status string into a success/failure/timeout outcome. */
 export function executionOutcome(status: string): ExecutionOutcome {
   const v = status?.toLowerCase() ?? '';

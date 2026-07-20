@@ -48,3 +48,8 @@ export function toProjectHandler(name: string, maxLength: number): string {
 }
 
 export const generateUUID = (): string => crypto.randomUUID();
+
+/** Truncate to `max` characters, appending an ellipsis when it was longer. */
+export function truncate(s: string, max: number): string {
+  return s.length > max ? `${s.slice(0, max)}…` : s;
+}

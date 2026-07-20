@@ -29,7 +29,13 @@ import { useIntegrationDeploymentStatuses, useProjectRecentDeployments } from '.
 import { identifyIntegration } from '../utils/identifyIntegration';
 import { downloadProjectInsightsCsv } from '../utils/insightsCsv';
 import { API_LIKE_TYPES, DEPLOYMENT_STATUS_CHIP, INSIGHTS_KIND_LABEL, TYPE_TO_KIND } from '../constants/insights';
-import { ActivityOverTime, InsightsControls, LatencyDuration, ProjectKpiCards, RecentDeployments, TopByVolume, TopFailing } from '../components/Insights/shared';
+import { InsightsControls } from '../components/Insights/shared';
+import { ProjectKpiCards } from '../components/Insights/ProjectKpiCards';
+import { ActivityOverTime } from '../components/Insights/ActivityOverTime';
+import { TopByVolume } from '../components/Insights/TopByVolume';
+import { TopFailing } from '../components/Insights/TopFailing';
+import { LatencyDuration } from '../components/Insights/LatencyDuration';
+import { RecentDeployments } from '../components/Insights/RecentDeployments';
 import type { InsightsApiRef, InsightsRange } from '../types/insights';
 import type { ProjectScope } from '../nav';
 

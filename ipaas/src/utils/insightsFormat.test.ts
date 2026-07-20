@@ -17,7 +17,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { executionOutcome, formatCount, formatDuration } from './insightsFormat';
+import { executionOutcome, formatCount, formatDuration, formatLatencyMs, formatDeployTime } from './insightsFormat';
 
 describe('formatCount', () => {
   it('rounds values below 1000', () => {
@@ -80,5 +80,27 @@ describe('executionOutcome', () => {
   it('treats anything else as failure', () => {
     expect(executionOutcome('failed')).toBe('failure');
     expect(executionOutcome('')).toBe('failure');
+  });
+});
+
+describe('formatLatencyMs', () => {
+  it('shows milliseconds below one second', () => {
+    expect(formatLatencyMs(96)).toBe('96 ms');
+    expect(formatLatencyMs(412.6)).toBe('413 ms');
+  });
+
+  it('shows seconds at or above one second', () => {
+    expect(formatLatencyMs(1000)).toBe('1.0 s');
+    expect(formatLatencyMs(1800)).toBe('1.8 s');
+  });
+});
+
+describe('formatDeployTime', () => {
+  it('returns an empty string for unparseable input', () => {
+    expect(formatDeployTime('not-a-date')).toBe('');
+  });
+
+  it('formats a valid ISO timestamp to a non-empty label', () => {
+    expect(formatDeployTime('2026-07-14T09:32:00Z')).not.toBe('');
   });
 });

@@ -16,8 +16,6 @@
  * under the License.
  */
 
-import type { JSX } from 'react';
-import { Activity, AlertTriangle, Clock, Gauge, Globe, Layers, Timer, XCircle, Zap } from '@wso2/oxygen-ui-icons-react';
 import type { ApiInsightsTab, AvailabilityKind, InsightsApiRef, InsightsRange, IntegrationKind } from '../types/insights';
 import type { IntegrationType } from '../types/integration';
 
@@ -66,29 +64,6 @@ export const OUTCOME_COLOR: Record<'success' | 'failure' | 'timeout', string> = 
   success: INSIGHTS_CHART_COLORS.green,
   failure: INSIGHTS_CHART_COLORS.red,
   timeout: INSIGHTS_CHART_COLORS.amber,
-};
-
-/**
- * Icon + accent color for every StatCard KPI rendered across the three
- * insights views (project, api, automation). Merged into one map so each
- * view just looks up by KPI key.
- */
-export const KPI_ICONS: Record<string, { icon: JSX.Element; color: 'primary' | 'error' | 'info' | 'warning' | 'success' | 'secondary' }> = {
-  activeIntegrations: { icon: <Layers size={24} />, color: 'primary' },
-  totalInvocations: { icon: <Zap size={24} />, color: 'info' },
-  successRate: { icon: <Gauge size={24} />, color: 'success' },
-  errors: { icon: <AlertTriangle size={24} />, color: 'error' },
-  traffic: { icon: <Globe size={24} />, color: 'primary' },
-  executions: { icon: <Zap size={24} />, color: 'info' },
-  errorRequests: { icon: <AlertTriangle size={24} />, color: 'error' },
-  failedExecutions: { icon: <XCircle size={24} />, color: 'error' },
-  total: { icon: <Zap size={24} />, color: 'primary' },
-  failed: { icon: <XCircle size={24} />, color: 'error' },
-  errorRate: { icon: <AlertTriangle size={24} />, color: 'error' },
-  avgDuration: { icon: <Clock size={24} />, color: 'info' },
-  p95Duration: { icon: <Timer size={24} />, color: 'info' },
-  latency: { icon: <Activity size={24} />, color: 'info' },
-  errorCount: { icon: <XCircle size={24} />, color: 'error' },
 };
 
 export const DEPLOYMENT_STATUS_CHIP: Record<string, { label: string; color: 'success' | 'warning' | 'error' | 'default' }> = {

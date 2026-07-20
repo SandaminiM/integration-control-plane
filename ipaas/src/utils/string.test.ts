@@ -17,7 +17,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { capitalize, toCamelCase, toHandler, formatRepoNameToDisplayName, toProjectHandler } from './string';
+import { capitalize, toCamelCase, toHandler, formatRepoNameToDisplayName, toProjectHandler, truncate } from './string';
 
 describe('capitalize', () => {
   it('uppercases the first character', () => {
@@ -100,5 +100,16 @@ describe('toProjectHandler', () => {
   it('strips leading and trailing hyphens after truncation', () => {
     // After truncation trailing hyphens from spaces should be removed
     expect(toProjectHandler('ab cd', 3)).toBe('ab');
+  });
+});
+
+describe('truncate', () => {
+  it('leaves strings at or under the limit untouched', () => {
+    expect(truncate('short', 10)).toBe('short');
+    expect(truncate('exactly-ten', 11)).toBe('exactly-ten');
+  });
+
+  it('cuts and appends an ellipsis when longer', () => {
+    expect(truncate('a-very-long-name', 6)).toBe('a-very…');
   });
 });
