@@ -157,6 +157,7 @@ const ComponentPlans = lazy(() => import('../pages/ComponentPlans'));
 const OrgCertificates = lazy(() => import('../pages/OrgCertificates'));
 const CreateCertificate = lazy(() => import('../pages/CreateCertificate'));
 const CertificateDetail = lazy(() => import('../pages/CertificateDetail'));
+const ComponentDocuments = lazy(() => import('../pages/ComponentDocuments'));
 
 export interface AppRoute extends Omit<RouteProps, 'children'> {
   children?: AppRoute[];
@@ -353,8 +354,8 @@ const routes: AppRoute[] = [
                 element: createElement(withScope(McpPolicies, ['components'])),
               },
               {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/documents',
-                element: <ComingSoon title="Coming Soon" description="API documentation is currently under development. You'll be able to manage your API documents directly from here." />,
+                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/document',
+                element: createElement(withScope(ComponentDocuments, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/usage',

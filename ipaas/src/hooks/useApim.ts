@@ -20,8 +20,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   changeLifecycleState,
+  createApimDocument,
+  deleteApimDocument,
   deploySettingsV2,
   fetchApimApi,
+  fetchApimDocumentContent,
+  fetchApimDocuments,
   fetchApimOverview,
   fetchApimSwagger,
   fetchApimThumbnail,
@@ -33,8 +37,10 @@ import {
   saveApimThumbnail,
   saveMarketplaceService,
   updateApimApi,
+  updateApimDocument,
 } from '#api/apim';
 import type { ApimApiInfo, DeploySettingsV2Payload, GeneratedTestKey, LifecycleHistory, LifecycleState, MarketplaceService } from '../types/apim';
+import type { ApiDocument } from '../types/marketplace';
 import type { EnvEndpoint } from '../types/component';
 
 export function useApimApi(apimId: string | undefined | null) {
@@ -191,6 +197,57 @@ export function useApimSwagger(apimId: string | undefined | null) {
     enabled: !!apimId,
     staleTime: 60_000,
     retry: false,
+  });
+}
+
+export function useApimDocuments(apimId: string | null | undefined) {
+  return useQuery<ApiDocument[]>({
+    queryKey: ['apimDocuments', apimId],
+    queryFn: () => fetchApimDocuments(apimId!),
+    enabled: !!apimId,
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+export function useApimDocumentContent(apimId: string | null | undefined, docId: string | null | undefined, enabled = true) {
+  return useQuery<string>({
+    queryKey: ['apimDocumentContent', apimId, docId],
+    queryFn: () => fetchApimDocumentContent(apimId!, docId!),
+    enabled: !!apimId && !!docId && enabled,
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+export function useCreateApimDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ apimId, doc, content }: { apimId: string; doc: Omit<ApiDocument, 'documentId'>; content: string }) => createApimDocument(apimId, doc, content),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ['apimDocuments', vars.apimId] });
+    },
+  });
+}
+
+export function useUpdateApimDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ apimId, docId, doc, content }: { apimId: string; docId: string; doc: ApiDocument; content?: string }) => updateApimDocument(apimId, docId, doc, content),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ['apimDocuments', vars.apimId] });
+      qc.invalidateQueries({ queryKey: ['apimDocumentContent', vars.apimId, vars.docId] });
+    },
+  });
+}
+
+export function useDeleteApimDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ apimId, docId }: { apimId: string; docId: string }) => deleteApimDocument(apimId, docId),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ['apimDocuments', vars.apimId] });
+    },
   });
 }
 

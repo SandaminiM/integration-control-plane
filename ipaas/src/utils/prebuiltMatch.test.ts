@@ -37,8 +37,7 @@ const prebuilts: PrebuiltIntegration[] = [
   },
 ];
 
-const repo = (over: Partial<Repository>): Repository =>
-  ({ gitProvider: 'github', organizationApp: 'wso2', nameApp: 'integration-samples', branch: 'main', appSubPath: 'integrator-default-project/create-stripe-customer-wh', ...over }) as Repository;
+const repo = (over: Partial<Repository>): Repository => ({ gitProvider: 'github', organizationApp: 'wso2', nameApp: 'integration-samples', branch: 'main', appSubPath: 'integrator-default-project/create-stripe-customer-wh', ...over }) as Repository;
 
 describe('matchPrebuiltIntegration', () => {
   it('matches on repo url + component path + branch', () => {

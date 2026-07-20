@@ -291,7 +291,7 @@ function AppLayoutInner(): JSX.Element {
     if (rest.startsWith('test/agent-chat')) return 'agent-chat';
     if (rest.startsWith('test')) return 'test';
     if (rest.startsWith('manage/lifecycle')) return 'lifecycle';
-    if (rest.startsWith('documents')) return 'documents';
+    if (rest.startsWith('document')) return 'documents';
     if (rest.startsWith('manage/usage')) return 'plans';
     if (rest.startsWith('insights/usage')) return 'usage';
     if (rest.startsWith('insights/delivery')) return 'delivery';
@@ -534,7 +534,7 @@ function AppLayoutInner(): JSX.Element {
       integration: `${compBase}/develop/integration`,
       'api-info': `${compBase}/manage/api-info`,
       lifecycle: `${compBase}/manage/lifecycle`,
-      documents: `${compBase}/documents`,
+      documents: `${compBase}/document`,
       plans: `${compBase}/manage/usage`,
       build: `${compBase}/build`,
       deploy: `${compBase}/deploy`,
