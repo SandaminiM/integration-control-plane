@@ -145,7 +145,7 @@ export function toCreateError(err: unknown, serverNoun = 'database server'): Cre
   if (raw.includes('HTTP 409')) {
     return { title: 'Name already in use', message: `A ${serverNoun} with this name already exists. Choose a different service name.` };
   }
-  return { title: `Couldn't create ${serverNoun}`, message: 'Something went wrong while provisioning the server. Please try again.' };
+  return { title: `Couldn't create ${serverNoun}`, message: `Something went wrong while provisioning the ${serverNoun}. Please try again.` };
 }
 
 /** OR-combine the selected Databases-tab marketplace/credential filters. */
