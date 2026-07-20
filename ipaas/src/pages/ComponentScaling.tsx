@@ -130,7 +130,9 @@ export default function ComponentScaling({ org, project, component }: ComponentS
       {tracks.length > 0 && <DeploymentTrackBar tracks={tracks} selectedId={trackId} onChange={setTrackId} orgHandler={org} projectHandler={project} componentHandler={component} versionView extra={envSelect} />}
       <PageContent>
         {isLoading || (loadingState && releaseId) ? (
-          <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress />
+          </Box>
         ) : !comp ? (
           <Alert severity="error">Integration not found</Alert>
         ) : !GENERIC_SERVICE_TYPES.has(comp.displayType) ? (

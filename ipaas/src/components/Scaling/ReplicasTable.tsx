@@ -71,7 +71,9 @@ export default function ReplicasTable({ projectId, clusterId, releaseId, dataPla
       </Stack>
 
       {isLoading ? (
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 6 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <CircularProgress />
+        </Box>
       ) : rows.length === 0 ? (
         <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
           No running replicas.

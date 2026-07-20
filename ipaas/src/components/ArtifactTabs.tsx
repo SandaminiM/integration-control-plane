@@ -30,7 +30,12 @@ import type { TabProps } from './artifact-config';
 export function ArtifactSource({ envId, componentId, artifactType, artifact }: TabProps) {
   const sourceType = ARTIFACT_TYPE_TO_SOURCE_TYPE[artifactType] ?? artifactType.toLowerCase();
   const { data: source, isLoading, error } = useArtifactSource(envId, componentId, sourceType, artifact.name?.toString() ?? '');
-  if (isLoading) return <CircularProgress size={24} sx={{ display: 'block', mx: 'auto', py: 4 }} />;
+  if (isLoading)
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+        <CircularProgress size={24} />
+      </Box>
+    );
   if (error || !source) return <Typography sx={emptySx}>No source content available.</Typography>;
 
   return <CodeViewer code={source} language="xml" />;
@@ -100,14 +105,24 @@ export function ServiceResources({ artifact }: TabProps) {
 export function ArtifactWsdl({ envId, componentId, artifactType, artifact }: TabProps) {
   const backendType = ARTIFACT_TYPE_TO_SOURCE_TYPE[artifactType] ?? artifactType.toLowerCase();
   const { data: wsdl, isLoading, error } = useArtifactWsdl(componentId, backendType, artifact.name, envId);
-  if (isLoading) return <CircularProgress size={24} sx={{ display: 'block', mx: 'auto', py: 4 }} />;
+  if (isLoading)
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+        <CircularProgress size={24} />
+      </Box>
+    );
   if (error || !wsdl) return <Typography sx={emptySx}>No WSDL content available.</Typography>;
   return <CodeViewer code={wsdl} language="xml" />;
 }
 
 export function ArtifactValue({ artifact, envId, componentId }: TabProps) {
   const { data: value, isLoading } = useLocalEntryValue(componentId, artifact.name?.toString() ?? '', envId);
-  if (isLoading) return <CircularProgress size={24} sx={{ display: 'block', mx: 'auto', py: 4 }} />;
+  if (isLoading)
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+        <CircularProgress size={24} />
+      </Box>
+    );
   if (!value) return <Typography sx={emptySx}>No value available.</Typography>;
   return <CodeViewer code={value} language="xml" />;
 }
@@ -139,7 +154,12 @@ export function InboundEndpointParameters({ artifact, envId, componentId, artifa
   const artifactName = artifact.name?.toString() ?? '';
   const backendType = ARTIFACT_TYPE_TO_SOURCE_TYPE[artifactType] ?? artifactType.toLowerCase();
   const { data: params, isLoading, error } = useArtifactParams(componentId, backendType, artifactName, envId);
-  if (isLoading) return <CircularProgress size={24} sx={{ display: 'block', mx: 'auto', py: 4 }} />;
+  if (isLoading)
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+        <CircularProgress size={24} />
+      </Box>
+    );
   if (error) return <Typography sx={emptySx}>Failed to load parameters.</Typography>;
   if (!params || params.length === 0) return <Typography sx={emptySx}>No parameters found.</Typography>;
 
@@ -315,7 +335,12 @@ export function ProxyApiReference({ envId, componentId, artifactType, artifact }
 
   const info = useMemo(() => (wsdl ? parseWsdl(wsdl) : null), [wsdl]);
 
-  if (isLoading) return <CircularProgress size={24} sx={{ display: 'block', mx: 'auto', py: 4 }} />;
+  if (isLoading)
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+        <CircularProgress size={24} />
+      </Box>
+    );
   if (error || !wsdl) return <Typography sx={emptySx}>No WSDL content available.</Typography>;
   if (!info) return <Typography sx={emptySx}>Could not parse WSDL.</Typography>;
 

@@ -24,14 +24,15 @@ import { IS_WIP, IS_CLOUD } from '../features';
 import { createElement } from 'react';
 const PrebuiltIntegrationConfigProvider = lazy(() => import('../contexts/PrebuiltIntegrationConfigContext').then((m) => ({ default: m.PrebuiltIntegrationConfigProvider })));
 
-// Eager — needed on first paint for unauthenticated pages
+// Eager — needed on first paint for unauthenticated pages, and the authenticated
+// shell (AppLayout) which must remain stable across route transitions.
 import PublicLayout from '../layouts/PublicLayout';
 import Login from '../pages/Login';
 import Signup from '../pages/Signup';
 import RouteErrorBoundary from '../components/RouteErrorBoundary';
+import AppLayout from '../layouts/AppLayout';
 
-// Lazy — authenticated app shell and all pages
-const AppLayout = lazy(() => import('../layouts/AppLayout'));
+// Lazy — all pages inside the authenticated shell
 const PolicyLayout = lazy(() => import('../layouts/PolicyLayout'));
 const ProtectedRoute = lazy(() => import('../auth/ProtectedRoute'));
 const OrgHomeRedirect = lazy(() => import('../components/OrgHomeRedirect'));

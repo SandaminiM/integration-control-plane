@@ -74,7 +74,9 @@ export default function SetupRagIngestion(scope: OrgScope): JSX.Element {
     return (
       <PageContent>
         {title}
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
       </PageContent>
     );
   }

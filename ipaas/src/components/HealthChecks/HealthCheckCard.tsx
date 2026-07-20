@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, Button, Divider, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, Divider, IconButton, Paper, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Pencil, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import ProbeDisplay from './ProbeDisplay';
@@ -36,7 +36,7 @@ interface HealthCheckCardProps {
   onNotify: (type: 'success' | 'error', message: string) => void;
 }
 
-const cardSx = { border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 3, mb: 2 } as const;
+const cardSx = { p: 3, mb: 2 } as const;
 
 export default function HealthCheckCard({ healthCheck: hc, container, projectId, componentId, releaseId, canManage, onNotify }: HealthCheckCardProps): JSX.Element {
   const [formKind, setFormKind] = useState<ProbeKind | null>(null);
@@ -96,7 +96,7 @@ export default function HealthCheckCard({ healthCheck: hc, container, projectId,
   const missingKind: ProbeKind = hasLiveness ? PROBE_KIND.READINESS : PROBE_KIND.LIVENESS;
 
   return (
-    <Box sx={cardSx}>
+    <Paper variant="outlined" sx={cardSx}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
         <Typography variant="body2" color="text.secondary">
           Container: {container.name}
@@ -123,7 +123,7 @@ export default function HealthCheckCard({ healthCheck: hc, container, projectId,
           <ProbeDisplay probe={hc.probes.readiness_probe} showSuccess />
         </Box>
       )}
-    </Box>
+    </Paper>
   );
 }
 

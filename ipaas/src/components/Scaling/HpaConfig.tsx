@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, Button, CircularProgress, FormControlLabel, Slider, Stack, Switch, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, CircularProgress, FormControlLabel, Paper, Slider, Stack, Switch, Typography } from '@wso2/oxygen-ui';
 import { useEffect, useState, type JSX } from 'react';
 import { useCreateHpa, useHpaMetricMutations, useUpdateHpa } from '../../hooks/useScaling';
 import { CPU_THRESHOLD, MEMORY_THRESHOLD } from '../../constants/scaling';
@@ -63,7 +63,7 @@ function ThresholdSlider({
   disabled: boolean;
 }): JSX.Element {
   return (
-    <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2, flex: 1, minWidth: 260 }}>
+    <Paper variant="outlined" sx={{ p: 2, flex: 1, minWidth: 260 }}>
       <FormControlLabel control={<Switch checked={enabled} onChange={(e) => onToggle(e.target.checked)} disabled={disabled} />} label={label} />
       <Box sx={{ px: 1, mt: 1, opacity: enabled ? 1 : 0.5 }}>
         <Slider value={value} min={min} max={max} onChange={(_e, v) => onChange(v as number)} disabled={disabled || !enabled} valueLabelDisplay="auto" />
@@ -71,7 +71,7 @@ function ThresholdSlider({
           {value}% utilization
         </Typography>
       </Box>
-    </Box>
+    </Paper>
   );
 }
 

@@ -94,7 +94,9 @@ export default function ComponentHealthChecks({ org, project, component }: Compo
         )}
 
         {isLoading || (loadingHc && !!releaseId) ? (
-          <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress />
+          </Box>
         ) : !comp ? (
           <Alert severity="error">Integration not found</Alert>
         ) : !mainC ? (

@@ -27,6 +27,7 @@ export interface UseProjectHandlerReturn {
   handlerEdited: boolean;
   isCheckingAvailability: boolean;
   availability: ProjectHandlerAvailability | undefined;
+  availabilityError: boolean;
   startEditing: () => void;
   stopEditing: () => void;
   onHandlerChange: (value: string) => void;
@@ -54,7 +55,7 @@ export function useProjectHandler(displayName: string): UseProjectHandlerReturn 
     };
   }, [effectiveHandler]);
 
-  const { data: availability, isFetching: isCheckingAvailability } = useProjectHandlerAvailability(debouncedCandidate, debouncedCandidate.length >= 2);
+  const { data: availability, isFetching: isCheckingAvailability, isError: availabilityError } = useProjectHandlerAvailability(debouncedCandidate, debouncedCandidate.length >= 2);
 
   const startEditing = () => {
     setHandlerEdited(true);
@@ -75,6 +76,7 @@ export function useProjectHandler(displayName: string): UseProjectHandlerReturn 
     handlerEdited,
     isCheckingAvailability,
     availability,
+    availabilityError,
     startEditing,
     stopEditing,
     onHandlerChange,

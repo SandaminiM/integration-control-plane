@@ -24,7 +24,7 @@ import { GitProvider, type CreateGitCredentialInput, type CredentialDeleteEligib
 // are interpolated into the document, so escape any quotes/backslashes/newlines.
 const orgUuid = () => getOrgUuidFromToken() ?? '';
 const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
-const CRED_FIELDS = 'id name createdAt organizationUuid type referenceToken';
+const CRED_FIELDS = 'id name createdAt organizationUuid type referenceToken serverUrl';
 
 function providerConfig(input: CreateGitCredentialInput): string {
   switch (input.type) {

@@ -22,10 +22,11 @@ import type { CreateGitCredentialInput, CredentialDeleteEligibility, GitCredenti
 
 const ROOT_KEY = 'credentials';
 
-export function useGitCredentials() {
+export function useGitCredentials(enabled = true) {
   return useQuery<GitCredential[]>({
     queryKey: [ROOT_KEY, 'git'],
     queryFn: fetchGitCredentials,
+    enabled,
   });
 }
 

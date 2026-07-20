@@ -33,11 +33,12 @@ import SampleRowCard from '../components/SampleRowCard';
 import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
 import GitIcon from '../assets/icons/GitIcon';
 import AzureIcon from '../assets/icons/AzureIcon';
+import { GitProvider } from '../types/credentials';
 import { componentSubTypeFromSample, displayTypeFromSample } from '../constants/integrations';
 import { GITHUB_AUTH } from '../constants/github';
 import { CARD_HOVER_SX, PROVIDER_ICON_SX } from '../constants/styles';
 import { resourceUrl, narrow, type ProjectScope } from '../nav';
-import { importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, importComingSoonUrl, buildGitHubOAuthUrl } from '../paths';
+import { importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, buildGitHubOAuthUrl } from '../paths';
 import type { Sample } from '../types/samples';
 import { toHandler } from '../utils/string';
 import { useProjectId } from '../hooks/useProjects';
@@ -259,17 +260,17 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from GitLab" placement="top">
-                        <IconButton aria-label="Import from GitLab" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
+                        <IconButton aria-label="Import from GitLab" onClick={() => navigate(importUrl, { state: { provider: GitProvider.GITLAB_SELF_MANAGED } })} sx={PROVIDER_ICON_SX}>
                           <GitLab size={22} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from Bitbucket" placement="top">
-                        <IconButton aria-label="Import from Bitbucket" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
+                        <IconButton aria-label="Import from Bitbucket" onClick={() => navigate(importUrl, { state: { provider: GitProvider.BITBUCKET_CLOUD } })} sx={PROVIDER_ICON_SX}>
                           <Bitbucket size={22} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from Azure" placement="top">
-                        <IconButton aria-label="Import from Azure" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
+                        <IconButton aria-label="Import from Azure" onClick={() => navigate(importUrl, { state: { provider: GitProvider.AZURE_DEVOPS } })} sx={PROVIDER_ICON_SX}>
                           <AzureIcon size={22} />
                         </IconButton>
                       </Tooltip>

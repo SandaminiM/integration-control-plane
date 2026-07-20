@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Autocomplete, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, ListingTable, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Autocomplete, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, ListingTable, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { KeyRound, Pencil, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import Authorized from '../components/Authorized';
@@ -117,7 +117,12 @@ function ApplicationSecurityBody({ projectId }: { projectId: string }): JSX.Elem
     });
   };
 
-  if (isLoading) return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />;
+  if (isLoading)
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
   if (isError)
     return (
       <Alert
@@ -241,7 +246,15 @@ export default function ProjectApplicationSecurity({ project }: ProjectScope): J
   return (
     <PageContent>
       <ProjectSettingsTabs active="application-security" />
-      {isLoading ? <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} /> : !data ? <Typography>Project not found</Typography> : <ApplicationSecurityBody key={data.id} projectId={data.id} />}
+      {isLoading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
+      ) : !data ? (
+        <Typography>Project not found</Typography>
+      ) : (
+        <ApplicationSecurityBody key={data.id} projectId={data.id} />
+      )}
     </PageContent>
   );
 }

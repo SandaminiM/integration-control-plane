@@ -259,6 +259,14 @@ export const external = {
   githubNew: 'https://github.com/new',
 } as const;
 
+/** Public host bases used to build a component's source repo URL per git provider. */
+export const gitProviderBase = {
+  github: 'https://github.com',
+  bitbucket: 'https://bitbucket.org',
+  gitlab: 'https://gitlab.com',
+  azure: 'https://dev.azure.com',
+} as const;
+
 // Build GitHub OAuth authorization URL for repository access.
 // redirectUri falls back to window.location.origin + '/ghapp' when empty.
 export function buildGitHubOAuthUrl(redirectUri: string, clientId: string, state: string, scope = 'repo,read:user'): string {

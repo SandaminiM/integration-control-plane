@@ -337,7 +337,12 @@ export function ArtifactTypeSelector({ envId, componentId, onSelectArtifact }: {
   const selectedArtifactType = selectedType ?? types[0]?.artifactType ?? '';
   const { data: artifacts = [], isLoading: loadingArtifacts } = useArtifacts(selectedArtifactType, envId, componentId);
 
-  if (isLoading) return <CircularProgress size={24} sx={{ display: 'block', mx: 'auto', py: 4 }} />;
+  if (isLoading)
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+        <CircularProgress size={24} />
+      </Box>
+    );
   if (types.length === 0)
     return (
       <Typography color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
@@ -370,7 +375,9 @@ export function ArtifactTypeSelector({ envId, componentId, onSelectArtifact }: {
         </Typography>
         <SearchField value={query} onChange={setQuery} placeholder={`Search ${typePlural(selectedArtifactType)} by name`} fullWidth sx={{ mb: 2 }} />
         {loadingArtifacts ? (
-          <CircularProgress size={24} sx={{ display: 'block', mx: 'auto', py: 4 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <CircularProgress size={24} />
+          </Box>
         ) : (
           <SelectedTypeArtifacts artifacts={artifacts} artifactType={selectedArtifactType} envId={envId} componentId={componentId} query={query} onSelect={(a) => onSelectArtifact(a, selectedArtifactType, envId)} />
         )}
