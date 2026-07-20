@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, Button, Chip, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, Chip, CircularProgress, IconButton, Paper, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Archive, Cloud, Cpu, Download, HardDrive, MemoryStick, Power, RefreshCw, Server } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX, type ReactNode } from 'react';
 import { useFetchServerCaCertificate, useSetServerPoweredState } from '../../hooks/usePlatformServices';
@@ -82,7 +82,7 @@ export default function BrokerOverviewTab({ service, serverId, onRefresh, isRefr
 
   return (
     <Box>
-      <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+      <Paper variant="outlined">
         <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} gap={1} sx={{ px: 3, py: 1.5 }}>
           <Stack direction="row" alignItems="center" gap={2}>
             <Typography variant="body2" color="text.secondary" sx={{ width: 150 }}>
@@ -143,12 +143,12 @@ export default function BrokerOverviewTab({ service, serverId, onRefresh, isRefr
             )}
           </Stack>
         </DetailRow>
-      </Box>
+      </Paper>
 
       <Typography variant="subtitle1" sx={{ fontWeight: 600, mt: 4, mb: 1.5 }}>
         Current Service Plan
       </Typography>
-      <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 3 }}>
+      <Paper variant="outlined" sx={{ p: 3 }}>
         <Stack direction="row" flexWrap="wrap" gap={7} alignItems="flex-start">
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
@@ -177,7 +177,7 @@ export default function BrokerOverviewTab({ service, serverId, onRefresh, isRefr
             {plan.backup_retention_days > 0 ? `Every ${plan.backup_interval_hours}h, kept ${plan.backup_retention_days}d` : 'No automatic backups'}
           </PlanStat>
         </Stack>
-      </Box>
+      </Paper>
     </Box>
   );
 }

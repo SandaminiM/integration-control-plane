@@ -173,9 +173,7 @@ export default function OrgGovernance(scope: OrgScope): JSX.Element {
 
       {/* Policies Section */}
       <Stack gap={2} sx={{ mb: 4, mt: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 600 }}>
-          Policies
-        </Typography>
+        <Typography variant="subtitle1">Policies</Typography>
 
         <Typography variant="body2" color="text.secondary">
           Create policies using rulesets or documents to standardize and regulate your artifacts effectively.

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Grid, MenuItem, Skeleton, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Grid, MenuItem, Paper, Skeleton, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { LineChart } from '@wso2/oxygen-ui-charts-react';
 import { useState, type JSX } from 'react';
 import { useServerMetrics } from '../../../hooks/usePlatformServices';
@@ -46,10 +46,10 @@ export default function MetricsTab({ serverId, variant = 'db-servers' }: { serve
         <Grid container spacing={2}>
           {Array.from({ length: 3 }).map((_, i) => (
             <Grid key={i} size={12}>
-              <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2 }} aria-busy="true" aria-label="Loading metrics">
+              <Paper variant="outlined" sx={{ p: 2 }} aria-busy="true" aria-label="Loading metrics">
                 <Skeleton width={140} sx={{ mb: 1 }} />
                 <Skeleton variant="rounded" height={260} />
-              </Box>
+              </Paper>
             </Grid>
           ))}
         </Grid>
@@ -71,7 +71,7 @@ export default function MetricsTab({ serverId, variant = 'db-servers' }: { serve
             const chart = metricsToChart(series);
             return (
               <Grid key={key} size={12}>
-                <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2, height: '100%' }}>
+                <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                     {metricTitle(key)}
                   </Typography>
@@ -90,7 +90,7 @@ export default function MetricsTab({ serverId, variant = 'db-servers' }: { serve
                       No data points.
                     </Typography>
                   )}
-                </Box>
+                </Paper>
               </Grid>
             );
           })}

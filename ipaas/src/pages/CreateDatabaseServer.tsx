@@ -128,7 +128,6 @@ export function CreateDatabaseServerView({ scope, kind }: { scope: OrgScope; kin
           {error && (
             <Alert
               severity={error.upgrade ? 'warning' : 'error'}
-              variant="outlined"
               onClose={() => setError(null)}
               action={
                 error.upgrade && billingConsoleUrl && orgUuid ? (

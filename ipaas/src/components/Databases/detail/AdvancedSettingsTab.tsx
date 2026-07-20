@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Chip, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Chip, Paper, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Pencil, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { maintenanceDayLabel } from '../../../constants/platformServices';
@@ -63,7 +63,7 @@ export default function AdvancedSettingsTab({ service, isSubscribed, variant = '
         </Alert>
       )}
 
-      <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+      <Paper variant="outlined">
         <Typography variant="subtitle2" sx={{ fontWeight: 600, px: 3, py: 1.5 }}>
           Service Configuration
         </Typography>
@@ -101,7 +101,7 @@ export default function AdvancedSettingsTab({ service, isSubscribed, variant = '
             <Typography variant="body2">All connections allowed</Typography>
           )}
         </DetailRow>
-      </Box>
+      </Paper>
 
       <Typography variant="subtitle1" sx={{ fontWeight: 600, mt: 4, mb: 1.5, color: 'error.main' }}>
         Delete Server
