@@ -105,7 +105,7 @@ export function CreateDatabaseServerView({ scope, kind }: { scope: OrgScope; kin
       { name: serviceName, cloud_provider: provider, cloud_region: region, service_plan_id: planId, ...(kind.variant === 'brokers' ? {} : { is_vector_enabled: kind.isVector }) },
       {
         onSuccess: (server) => navigate(`${base}/${server.id}/overview`),
-        onError: (e) => setError(toCreateError(e)),
+        onError: (e) => setError(toCreateError(e, kind.serverNoun)),
       },
     );
   };

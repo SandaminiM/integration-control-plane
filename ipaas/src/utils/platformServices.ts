@@ -134,18 +134,18 @@ export function isValidCidr(value: string): boolean {
 }
 
 /** Map a thrown create-server error to a titled, user-facing message (recognising entitlement codes). */
-export function toCreateError(err: unknown): CreateError {
+export function toCreateError(err: unknown, serverNoun = 'database server'): CreateError {
   const raw = err instanceof Error ? err.message : String(err);
   if (raw.includes('FREE_TRIAL_EXPIRED') || raw.includes('FREE_SUB_MAX_COUNT_EXCEEDED')) {
-    return { title: 'Upgrade required', message: 'Please upgrade your WSO2 Integration Platform subscription to create more database services.', upgrade: true };
+    return { title: 'Upgrade required', message: `Please upgrade your WSO2 Integration Platform subscription to create more ${serverNoun}s.`, upgrade: true };
   }
   if (raw.includes('RATE_LIMIT')) {
     return { title: 'Too many requests', message: 'Please retry after some time. If the issue persists, contact support.' };
   }
   if (raw.includes('HTTP 409')) {
-    return { title: 'Name already in use', message: 'A database server with this name already exists. Choose a different service name.' };
+    return { title: 'Name already in use', message: `A ${serverNoun} with this name already exists. Choose a different service name.` };
   }
-  return { title: "Couldn't create database server", message: 'Something went wrong while provisioning the server. Please try again.' };
+  return { title: `Couldn't create ${serverNoun}`, message: 'Something went wrong while provisioning the server. Please try again.' };
 }
 
 /** OR-combine the selected Databases-tab marketplace/credential filters. */
