@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Button, Checkbox, CircularProgress, FormControlLabel, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
@@ -87,7 +87,9 @@ export default function EditEnvironment(): JSX.Element {
   if (isLoading)
     return (
       <PageContent>
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
       </PageContent>
     );
   if (isError)

@@ -26,7 +26,12 @@ export default function BackupsTab({ serverId }: { serverId: string }): JSX.Elem
   const { data, isLoading, isError, refetch } = useServerBackups(serverId);
   const backups = data?.backups ?? [];
 
-  if (isLoading) return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 6 }} />;
+  if (isLoading)
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+        <CircularProgress />
+      </Box>
+    );
   if (isError) {
     return (
       <Alert

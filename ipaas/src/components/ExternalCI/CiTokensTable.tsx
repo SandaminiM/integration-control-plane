@@ -78,7 +78,9 @@ export default function CiTokensTable({ projectId, componentId, canManage }: { p
       )}
 
       {isLoading ? (
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 6 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <CircularProgress />
+        </Box>
       ) : isError ? (
         <Alert
           severity="error"

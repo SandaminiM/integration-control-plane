@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, IconButton, PageContent, PageTitle, Stack, Tooltip } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, IconButton, PageContent, PageTitle, Stack, Tooltip } from '@wso2/oxygen-ui';
 import { Plus, RefreshCw } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
@@ -91,7 +91,9 @@ export function DatabaseServersListView({ scope, kind }: { scope: OrgScope; kind
       )}
 
       {servers.isLoading || availability.isLoading ? (
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
       ) : notAllowlisted ? (
         <Alert severity="info">This feature is only available for selected organizations in this environment.</Alert>
       ) : servers.isError || availability.isError ? (

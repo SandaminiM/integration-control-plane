@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, IconButton, ListingTable, PageContent, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, IconButton, ListingTable, PageContent, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { KeyRound, Pencil, Plus, RefreshCw, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import Authorized from '../components/Authorized';
@@ -145,7 +145,9 @@ export default function OnPremKeys({ org }: OrgScope): JSX.Element {
       )}
 
       {isLoading ? (
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
       ) : isError ? (
         forbidden ? (
           <Alert severity="info">On-premises keys aren&apos;t available for this organization. Your access token isn&apos;t scoped for the on-premises key service — contact WSO2 if you need this enabled.</Alert>

@@ -37,6 +37,7 @@ import {
   MenuItem,
   NotificationPanel,
   Box,
+  CircularProgress,
   Popover,
   Sidebar,
   TextField,
@@ -46,7 +47,7 @@ import {
   useAppShell,
   useNotifications,
 } from '@wso2/oxygen-ui';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { JSX } from 'react';
 import { useNavigate, Outlet, NavLink, useLocation } from 'react-router';
@@ -219,7 +220,12 @@ function AppLayoutInner(): JSX.Element {
   const billingTrial = billingOrg?.subscription?.status === 'trial' ? billingOrg.subscription.trial : null;
   const trialEndLabel = billingTrial?.trial_end ? `Trial ends ${new Date(billingTrial.trial_end).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}` : '';
 
-  const { state: shell, actions } = useAppShell({ initialCollapsed: true });
+  const { state: shell, actions } = useAppShell({ initialCollapsed: localStorage.getItem('sidebar:collapsed') !== 'false' });
+
+  const handleToggleSidebar = () => {
+    localStorage.setItem('sidebar:collapsed', String(!shell.sidebarCollapsed));
+    actions.toggleSidebar();
+  };
 
   // Compute the active nav item ID — uses URL matching for component/org scopes; Matrix resource for project scope
   const activeNavId = useMemo((): string => {
@@ -566,7 +572,7 @@ function AppLayoutInner(): JSX.Element {
     <AppShell>
       <AppShell.Navbar>
         <Header>
-          <Header.Toggle collapsed={shell.sidebarCollapsed} onToggle={actions.toggleSidebar} />
+          <Header.Toggle collapsed={shell.sidebarCollapsed} onToggle={handleToggleSidebar} />
           <Header.Brand>
             <Header.BrandLogo>
               <NavLink to={orgHomeUrl(scope.org)} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
@@ -1064,7 +1070,7 @@ function AppLayoutInner(): JSX.Element {
           expandedMenus={shell.expandedMenus}
           onSelect={(id) => {
             if (id === 'expand') {
-              actions.toggleSidebar();
+              handleToggleSidebar();
             } else if (hasComponent(scope)) {
               handleComponentNavSelect(id);
             } else if (!hasProject(scope)) {
@@ -1673,10 +1679,18 @@ function AppLayoutInner(): JSX.Element {
             sx={{
               flex: 1,
               minWidth: 0,
+              height: '100%',
               overflowY: 'auto',
               overflowX: 'auto',
             }}>
-            <Outlet />
+            <Suspense
+              fallback={
+                <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                  <CircularProgress color="primary" />
+                </Box>
+              }>
+              <Outlet />
+            </Suspense>
           </Box>
           {IS_WIP && <CopilotDrawer />}
         </Box>

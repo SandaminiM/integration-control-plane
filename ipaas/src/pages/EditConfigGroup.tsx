@@ -73,7 +73,9 @@ export default function EditConfigGroup(scope: OrgScope): JSX.Element {
 
       {tab === 'config' ? (
         isLoading ? (
-          <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress />
+          </Box>
         ) : isError || !group || !initial ? (
           <Alert
             severity="error"

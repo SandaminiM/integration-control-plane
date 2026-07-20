@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
+import { Box, CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
 import { isConnectionsEnabled } from '../hooks/useConnections';
 import { useProjectId } from '../hooks/useProjects';
@@ -40,9 +40,9 @@ export default function ComponentConnections({ org, project, component }: Compon
 
   if (isLoading) {
     return (
-      <PageContent>
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
-      </PageContent>
+      <Box sx={{ display: 'flex', minHeight: '100%', justifyContent: 'center', alignItems: 'center' }}>
+        <CircularProgress />
+      </Box>
     );
   }
   if (!projectId || !comp) {

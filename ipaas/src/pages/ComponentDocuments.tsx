@@ -31,7 +31,7 @@ import { useApimApi, useApimDocumentContent, useApimDocuments, useChangeLifecycl
 import { PUBLISH_ACTIONS, SUCCESS_TEXT } from '../constants/lifecycle';
 import { broaden, resourceUrl, type ComponentScope } from '../nav';
 import type { ApiDocument } from '../types/marketplace';
-import type { DeploymentTrack } from '../types/component';
+import { typeLabel, aggregateByMajorVersion, stripLeadingTitle } from '../utils/documents';
 
 type View = 'list' | 'create' | 'edit';
 
@@ -41,47 +41,7 @@ interface EditingState {
   apimId: string;
 }
 
-const DOC_TYPE_LABEL: Record<string, string> = {
-  HOWTO: 'How To',
-  SAMPLES: 'Sample and SDK',
-  PUBLIC_FORUM: 'Public Forum',
-  SUPPORT_FORUM: 'Support Forum',
-};
-
-function typeLabel(doc: ApiDocument): string {
-  return doc.type === 'OTHER' ? (doc.otherTypeName ?? 'Other') : (DOC_TYPE_LABEL[doc.type] ?? doc.type);
-}
-
-function getMajorVersion(apiVersion: string): string {
-  return apiVersion.replace(/^v/i, '').split('.')[0];
-}
-
-function aggregateByMajorVersion(tracks: DeploymentTrack[]): DeploymentTrack[] {
-  const groups = new Map<string, DeploymentTrack>();
-  for (const track of tracks) {
-    if (!track.apiVersion) {
-      groups.set(track.id, track);
-      continue;
-    }
-    const key = `${getMajorVersion(track.apiVersion)}.x`;
-    const existing = groups.get(key);
-    if (!existing || track.latest) {
-      groups.set(key, { ...track, apiVersion: key });
-    }
-  }
-  return Array.from(groups.values());
-}
-
 // ── Document content pane (right side of list view) ──────────────────────────
-
-function stripLeadingTitle(content: string, docName: string): string {
-  const firstLine = content.match(/^#+ .+/m)?.[0] ?? '';
-  const heading = firstLine.replace(/^#+ /, '').trim();
-  if (heading.toLowerCase() === docName.toLowerCase()) {
-    return content.replace(firstLine, '').trimStart();
-  }
-  return content;
-}
 
 function DocContentPane({ apimId, doc }: { apimId: string; doc: ApiDocument }) {
   const isInline = doc.sourceType === 'MARKDOWN' || doc.sourceType === 'INLINE';
@@ -475,7 +435,21 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
                     const collapsed = collapsedGroups.has(label);
                     return (
                       <Box key={label}>
-                        <Stack direction="row" alignItems="center" justifyContent="space-between" role="button" tabIndex={0} aria-expanded={!collapsed} onClick={() => toggleGroup(label)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleGroup(label); } }} sx={{ px: 2, py: 1, mt: 1, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}>
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          justifyContent="space-between"
+                          role="button"
+                          tabIndex={0}
+                          aria-expanded={!collapsed}
+                          onClick={() => toggleGroup(label)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              toggleGroup(label);
+                            }
+                          }}
+                          sx={{ px: 2, py: 1, mt: 1, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}>
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>
                             {label}
                           </Typography>
@@ -492,7 +466,12 @@ export default function ComponentDocuments(scope: ComponentScope): JSX.Element {
                                   tabIndex={0}
                                   aria-selected={isSelected}
                                   onClick={() => setSelectedDocId(doc.documentId)}
-                                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedDocId(doc.documentId); } }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault();
+                                      setSelectedDocId(doc.documentId);
+                                    }
+                                  }}
                                   sx={{
                                     display: 'flex',
                                     alignItems: 'center',

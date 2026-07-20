@@ -76,7 +76,11 @@ export default function DocFormPage({ view, initialName, initialType, initialOth
         <Button variant="outlined" onClick={onBack} disabled={saving}>
           Back
         </Button>
-        <Button variant="contained" onClick={() => onSave(name.trim(), type, otherType.trim(), content === PLACEHOLDER ? '' : content, initialSourceType)} disabled={!isValid || saving} startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}>
+        <Button
+          variant="contained"
+          onClick={() => onSave(name.trim(), type, otherType.trim(), content === PLACEHOLDER ? '' : content, initialSourceType)}
+          disabled={!isValid || saving}
+          startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}>
           {saving ? 'Saving...' : isCreate ? 'Create' : 'Save'}
         </Button>
       </Stack>
