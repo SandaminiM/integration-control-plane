@@ -18,8 +18,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { UUID_RE } from '../utils/string';
-import { fetchProjects, fetchProject, fetchProjectContributors, fetchProjectComponentLabels, fetchProjectHandlerAvailability, createProject, createMonoRepoProject, updateProject, deleteProject } from '#api/projects';
-import type { CreateProjectInput, CreateMonoRepoProjectInput, UpdateProjectInput } from '../types/project';
+import { fetchProjects, fetchProject, fetchProjectContributors, fetchProjectComponentLabels, fetchProjectHandlerAvailability, createProject, createMonoRepoProject, linkProjectRepository, updateProject, deleteProject } from '#api/projects';
+import type { CreateProjectInput, CreateMonoRepoProjectInput, LinkProjectRepositoryInput, UpdateProjectInput } from '../types/project';
 import { useOrgs } from './useOrg';
 import { IS_CLOUD } from '../features';
 
@@ -130,6 +130,17 @@ export function useCreateMonoRepoProject() {
   return useMutation({
     mutationFn: (input: CreateMonoRepoProjectInput) => createMonoRepoProject(input),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
+  });
+}
+
+export function useLinkProjectRepository() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: LinkProjectRepositoryInput) => linkProjectRepository(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['projects'] });
+      qc.invalidateQueries({ queryKey: ['project'] });
+    },
   });
 }
 

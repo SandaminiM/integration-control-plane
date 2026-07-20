@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { Globe, Clock, Layers, Repeat, Server, Folder, HardDrive, Zap, Radio, Sparkles, Bot, MCP, Wrench } from '@wso2/oxygen-ui-icons-react';
-import { Box } from '@wso2/oxygen-ui';
+import { Globe, Clock, Layers, Repeat, Folder, HardDrive, Zap, Radio, Sparkles, Bot, MCP, Wrench } from '@wso2/oxygen-ui-icons-react';
+import IntegratorIcon from '../assets/icons/IntegratorIcon';
 import type { ReactNode } from 'react';
 import type { IntegrationTypeOption } from '../types/import';
 
@@ -87,22 +87,12 @@ export const INTEGRATION_TYPES: IntegrationTypeOption[] = [
 export const TECH_OPTIONS: { id: 'MI' | 'BI'; label: string; icon: ReactNode }[] = [
   {
     id: 'MI',
-    label: 'WSO2 Micro Integrator',
-    icon: <Server size={20} />,
+    label: 'WSO2 Integrator: MI',
+    icon: <IntegratorIcon width={20} height={20} />,
   },
   {
     id: 'BI',
-    label: 'Ballerina Integrator',
-    icon: (
-      <Box
-        component="img"
-        src="https://ballerina.io/favicon.ico"
-        alt="Ballerina"
-        sx={{ width: 20, height: 20, objectFit: 'contain' }}
-        onError={(e) => {
-          (e.currentTarget as HTMLImageElement).style.display = 'none';
-        }}
-      />
-    ),
+    label: 'WSO2 Integrator',
+    icon: <IntegratorIcon width={20} height={20} />,
   },
 ];

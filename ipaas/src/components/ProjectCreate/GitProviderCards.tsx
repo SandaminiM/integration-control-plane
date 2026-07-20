@@ -16,109 +16,108 @@
  * under the License.
  */
 
-import { Box, Card, CardActionArea, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Box, Link, Paper, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { GitHub, Bitbucket, GitLab } from '@wso2/oxygen-ui-icons-react';
-import { type JSX } from 'react';
+import { type JSX, type ReactNode } from 'react';
 import GitIcon from '../../assets/icons/GitIcon';
+import { GitProvider, type GitCredential } from '../../types/credentials';
+import { credentialsForProvider } from '../../utils/gitCredentials';
+import CredentialSelectCard from '../Import/CredentialSelectCard';
 import { IS_CLOUD } from '../../features';
 
 interface GitProviderCardsProps {
   onGitHubSelect: () => void;
   onPublicSelect: () => void;
+  /** All stored git credentials. When paired with `onCredentialSelect`, Bitbucket + GitLab render their credential dropdown inline. */
+  credentials?: GitCredential[];
+  /** A credential was picked from the Bitbucket/GitLab card dropdown. When provided (with `credentials`), those cards are enabled; omit to render them as "coming soon" (e.g. the import-project flow, not yet wired). */
+  onCredentialSelect?: (provider: GitProvider, credential: GitCredential) => void;
+  /** Empty-state "Create a credential" action for a provider (opens the add-credential dialog). */
+  onCreateCredential?: (provider: GitProvider) => void;
 }
 
-export default function GitProviderCards({ onGitHubSelect, onPublicSelect }: GitProviderCardsProps): JSX.Element {
-  // Cloud only: private GitHub needs the platform GitHub App, so environments
-  // without a configured client id can only import public repos. Other
-  // variants always render the card enabled, as before.
-  const gitHubEnabled = !IS_CLOUD || !!window.API_CONFIG.githubAppClientId;
-  const gitHubCard = (
-    <Card variant="outlined" sx={{ flex: 1, ...(gitHubEnabled ? {} : { height: '100%', opacity: 0.5 }) }}>
-      <CardActionArea onClick={onGitHubSelect} disabled={!gitHubEnabled} sx={{ p: 2, ...(gitHubEnabled ? {} : { height: '100%' }) }}>
-        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 0.5 }}>
-          <Box sx={{ color: 'common.black', display: 'flex', flexShrink: 0 }}>
-            <GitHub size={22} />
-          </Box>
-          <Typography variant="body2" fontWeight={500}>
-            Authorize With GitHub
+const CARD_SX = { px: 3, py: 2, borderColor: 'primary', width: '100%' } as const;
+
+/** A provider card with a static subtitle (GitHub / Public), styled like the credential card. */
+function InfoCard({ icon, title, subtitle, onClick, disabled = false }: { icon: ReactNode; title: string; subtitle?: ReactNode; onClick?: () => void; disabled?: boolean }): JSX.Element {
+  return (
+    <Paper
+      variant="outlined"
+      role={disabled ? undefined : 'button'}
+      tabIndex={disabled ? undefined : 0}
+      onClick={disabled ? undefined : onClick}
+      onKeyDown={disabled ? undefined : (e) => (e.key === 'Enter' || e.key === ' ') && onClick?.()}
+      sx={{ ...CARD_SX, height: '100%', cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.5 : 1, transition: 'border-color 0.15s', '&:hover': disabled ? {} : { borderColor: 'primary.main' } }}>
+      <Stack direction="row" spacing={2} alignItems="center" sx={{ height: '100%' }}>
+        <Box sx={{ display: 'flex', flexShrink: 0, color: 'text.primary' }}>{icon}</Box>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="h6" fontWeight={500} sx={{ lineHeight: 1.3 }}>
+            {title}
           </Typography>
-        </Stack>
-        <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>
-          Connect a private GitHub repository
+          {subtitle && (
+            <Typography variant="body1" color="grey.600" sx={{ mt: 0.5 }}>
+              {subtitle}
+            </Typography>
+          )}
+        </Box>
+      </Stack>
+    </Paper>
+  );
+}
+
+export default function GitProviderCards({ onGitHubSelect, onPublicSelect, credentials, onCredentialSelect, onCreateCredential }: GitProviderCardsProps): JSX.Element {
+  const credentialsEnabled = !!onCredentialSelect;
+  // Cloud only: private GitHub needs the platform GitHub App, so environments
+  // without a configured client id can only import public repos.
+  const gitHubEnabled = !IS_CLOUD || !!window.API_CONFIG.githubAppClientId;
+
+  const credentialCard = (provider: GitProvider) => (
+    <CredentialSelectCard
+      provider={provider}
+      credentials={credentialsForProvider(credentials ?? [], provider)}
+      selected={null}
+      onSelect={(c) => onCredentialSelect?.((c.type as GitProvider) || provider, c)}
+      emptyContent={
+        <Typography variant="body2" color="text.secondary">
+          No credentials found.{' '}
+          <Link component="button" type="button" onClick={() => onCreateCredential?.(provider)} sx={{ verticalAlign: 'baseline' }}>
+            Create a credential
+          </Link>{' '}
+          to continue.
         </Typography>
-      </CardActionArea>
-    </Card>
+      }
+    />
+  );
+
+  const comingSoonCard = (icon: ReactNode, title: string, subtitle: string, message: string) => (
+    <Tooltip title={message} placement="top">
+      <Box sx={{ flex: 1 }}>
+        <InfoCard icon={icon} title={title} subtitle={subtitle} disabled />
+      </Box>
+    </Tooltip>
   );
 
   return (
-    <Stack direction="row" gap={2}>
+    <Stack direction="row" gap={2} alignItems="stretch">
       {/* GitHub */}
       {gitHubEnabled ? (
-        gitHubCard
+        <Box sx={{ flex: 1 }}>
+          <InfoCard icon={<GitHub size={30} />} title="Authorize With GitHub" subtitle="Private GitHub repository" onClick={onGitHubSelect} />
+        </Box>
       ) : (
-        <Tooltip title="Private GitHub repositories are not enabled in this environment" placement="top">
-          <Box sx={{ flex: 1 }}>{gitHubCard}</Box>
-        </Tooltip>
+        comingSoonCard(<GitHub size={30} />, 'Authorize With GitHub', 'Connect a private GitHub repository', 'Private GitHub repositories are not enabled in this environment')
       )}
 
-      {/* Bitbucket — coming soon */}
-      <Tooltip title="Bitbucket integration is coming soon" placement="top">
-        <Box sx={{ flex: 1 }}>
-          <Card variant="outlined" sx={{ height: '100%', opacity: 0.5 }}>
-            <CardActionArea disabled sx={{ p: 2, height: '100%' }}>
-              <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 0.5 }}>
-                <Box sx={{ display: 'flex', flexShrink: 0 }}>
-                  <Bitbucket size={22} />
-                </Box>
-                <Typography variant="body2" fontWeight={500}>
-                  Authorize With Bitbucket
-                </Typography>
-              </Stack>
-              <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>
-                Connect a Bitbucket repository
-              </Typography>
-            </CardActionArea>
-          </Card>
-        </Box>
-      </Tooltip>
+      {/* Bitbucket */}
+      {credentialsEnabled ? <Box sx={{ flex: 1 }}>{credentialCard(GitProvider.BITBUCKET_CLOUD)}</Box> : comingSoonCard(<Bitbucket size={30} />, 'Authorize With Bitbucket', 'Connect a Bitbucket repository', 'Bitbucket integration is coming soon')}
 
-      {/* GitLab — coming soon */}
-      <Tooltip title="GitLab integration is coming soon" placement="top">
-        <Box sx={{ flex: 1 }}>
-          <Card variant="outlined" sx={{ height: '100%', opacity: 0.5 }}>
-            <CardActionArea disabled sx={{ p: 2, height: '100%' }}>
-              <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 0.5 }}>
-                <Box sx={{ display: 'flex', flexShrink: 0 }}>
-                  <GitLab size={22} />
-                </Box>
-                <Typography variant="body2" fontWeight={500}>
-                  Authorize With GitLab
-                </Typography>
-              </Stack>
-              <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>
-                Connect a GitLab repository
-              </Typography>
-            </CardActionArea>
-          </Card>
-        </Box>
-      </Tooltip>
+      {/* GitLab */}
+      {credentialsEnabled ? <Box sx={{ flex: 1 }}>{credentialCard(GitProvider.GITLAB_SELF_MANAGED)}</Box> : comingSoonCard(<GitLab size={30} />, 'Authorize With GitLab', 'Connect a GitLab repository', 'GitLab integration is coming soon')}
 
       {/* Public Git Repository */}
-      <Card variant="outlined" sx={{ flex: 1 }}>
-        <CardActionArea onClick={onPublicSelect} sx={{ p: 2 }}>
-          <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 0.5 }}>
-            <Box sx={{ display: 'flex', flexShrink: 0 }}>
-              <GitIcon size={22} />
-            </Box>
-            <Typography variant="body2" fontWeight={500}>
-              Use Public Git Repository
-            </Typography>
-          </Stack>
-          <Typography variant="caption" color="text.secondary" sx={{ ml: 4 }}>
-            Use a public Git repository URL
-          </Typography>
-        </CardActionArea>
-      </Card>
+      <Box sx={{ flex: 1 }}>
+        <InfoCard icon={<GitIcon size={30} />} title="Use Public GitHub Repository" onClick={onPublicSelect} />
+      </Box>
     </Stack>
   );
 }

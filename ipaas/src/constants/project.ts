@@ -16,6 +16,8 @@
  * under the License.
  */
 
+import type { WorkspaceIntegrationType } from '../types/project';
+
 export const PROJECT_NAME_REGEX = /^[A-Za-z][a-zA-Z0-9\-_ ]*$/;
 export const PROJECT_HANDLER_CHARS_REGEX = /^[a-z0-9-]+$/;
 export const PROJECT_HANDLER_FULL_REGEX = /^[a-z0-9][a-z0-9-]*[a-z0-9]$/;
@@ -30,7 +32,11 @@ export const FREE_COMPONENT_LIMIT = 5;
 
 export const DENIED_HANDLERS = new Set(['new', 'edit', 'delete', 'settings', 'overview', 'components', 'analytics', 'home', 'import', 'create']);
 
-export const INTEGRATION_TYPE_LABELS: Record<string, string> = {
+export const INTEGRATION_TYPE_LABELS: Record<WorkspaceIntegrationType, string> = {
   service: 'Integration as API',
   automation: 'Automation',
+  'file-integration': 'File Integration',
+  'event-integration': 'Event Integration',
+  'ai-agent': 'AI Agent',
+  'mcp-server': 'MCP Server',
 };
