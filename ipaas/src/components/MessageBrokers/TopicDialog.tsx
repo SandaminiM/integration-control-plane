@@ -64,10 +64,10 @@ export default function TopicDialog({ brokerId, topic, onClose }: TopicDialogPro
       if (config) return validateField(fieldName, value, config.minimum, config.maximum);
     } else if (fieldName === 'minInSyncReplicas') {
       const config = configs?.minimum_in_sync_replicas;
-      if (config) return validateField(fieldName, 'Min In-Sync Replicas', config.minimum, config.maximum);
+      if (config) return validateField(fieldName, value, config.minimum, config.maximum);
     } else if (fieldName === 'retentionBytes') {
       const config = configs?.retention_bytes;
-      if (config) return validateField(fieldName, 'Retention Bytes', config.minimum, config.maximum);
+      if (config) return validateField(fieldName, value, config.minimum, config.maximum);
     }
     return null;
   };

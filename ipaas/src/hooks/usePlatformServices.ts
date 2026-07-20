@@ -57,7 +57,7 @@ import {
 import { IS_WIP } from '../features';
 import { useOrgUuid } from './useOrgUuid';
 import { deriveProviders, deriveRegions } from '../utils/platformServices';
-import type { AllowedIpsPayload, CloudProvider, CloudRegion, CreateServerPayload, CredentialPayload, DatabaseServer, KafkaTopicCreatePayload, KafkaTopicUpdatePayload, LogsRequest, MaintenanceWindow, MetricPeriod, ServerVariant, ServicePlan, ServiceType } from '../types/platformServices';
+import type { AllowedIpsPayload, CloudProvider, CloudRegion, CreateServerPayload, CredentialPayload, DatabaseServer, KafkaAcl, KafkaTopicCreatePayload, KafkaTopicUpdatePayload, LogsRequest, MaintenanceWindow, MetricPeriod, ServerVariant, ServicePlan, ServiceType } from '../types/platformServices';
 
 const ROOT_KEY = 'platformServices';
 
@@ -389,7 +389,7 @@ export function useResetKafkaUserCredentials(brokerId: string) {
 export function useCreateKafkaAcl(brokerId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { permission: string; topic: string; username: string }) => createKafkaAcl(brokerId, payload),
+    mutationFn: (payload: Omit<KafkaAcl, 'id'>) => createKafkaAcl(brokerId, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: [KAFKA_KEY, 'acls', brokerId] }),
   });
 }

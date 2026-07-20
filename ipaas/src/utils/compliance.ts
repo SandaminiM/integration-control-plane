@@ -17,8 +17,8 @@
  */
 
 import { COMPLIANCE_FAILED_STATUSES, COMPLIANCE_STATUS_LABELS, COMPLIANCE_SUCCESS_STATUSES } from '../constants/compliance';
-import type { ComplianceNestedItem, ComplianceRuleGroup, CompliancePieSlice } from '../types/compliance';
-import type { AdherenceStatusSummary, ComplianceStatusSummary, CompliancePolicyEntry, RuleAdherenceRulesetEntry } from '../types/governance';
+import type { ComplianceNestedItem, ComplianceRow, ComplianceRuleGroup, CompliancePieSlice } from '../types/compliance';
+import type { AdherenceStatusSummary, ComplianceStatusSummary, CompliancePolicyEntry, RuleAdherenceRulesetEntry, RuleViolationCounts } from '../types/governance';
 
 export function complianceStatusLabel(status: string): string {
   return COMPLIANCE_STATUS_LABELS[status] ?? status;
@@ -41,10 +41,7 @@ export function formatRuleMessage(message: string): string {
 
 /** Failed entries first, then alphabetical — matches Devant's expanded-row ordering. */
 export function sortNestedItems(items: ComplianceNestedItem[]): ComplianceNestedItem[] {
-  return items
-    .slice()
-    .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
-    .sort((a, b) => Number(isFailedStatus(b.status)) - Number(isFailedStatus(a.status)));
+  return items.slice().sort((a, b) => Number(isFailedStatus(b.status)) - Number(isFailedStatus(a.status)) || (a.name ?? '').localeCompare(b.name ?? ''));
 }
 
 /** Projects a policies list (with nested rulesets) into expanded-row items. */
@@ -64,6 +61,33 @@ export function mapPolicyNestedItems(policies: CompliancePolicyEntry[]): Complia
 
 export function countViolated(entries: { status: string }[]): number {
   return entries.filter((e) => e.status === 'violated').length;
+}
+
+/** A compliance-summary entry (project- or component-shaped) projected into a table row. */
+export function complianceEntryToRow(entry: { status: string; ruleViolations?: RuleViolationCounts; policies: { count: number; list: CompliancePolicyEntry[] } }, id: string, name: string): ComplianceRow {
+  return {
+    id,
+    name,
+    status: entry.status,
+    violations: entry.ruleViolations,
+    failed: countViolated(entry.policies.list),
+    total: entry.policies.count,
+    searchText: JSON.stringify(entry),
+    items: mapPolicyNestedItems(entry.policies.list),
+  };
+}
+
+/** A policy-adherence entry projected into a table row; `group` is its projects/components roll-up. */
+export function adherenceEntryToRow(entry: { policyId: string; policyName: string; status: string }, group: { count: number; summary: { nonCompliant: number } } | undefined, items: ComplianceNestedItem[]): ComplianceRow {
+  return {
+    id: entry.policyId,
+    name: entry.policyName,
+    status: entry.status,
+    failed: group?.summary.nonCompliant ?? 0,
+    total: group?.count ?? 0,
+    searchText: JSON.stringify(entry),
+    items,
+  };
 }
 
 /**

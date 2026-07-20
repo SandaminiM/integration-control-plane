@@ -54,17 +54,8 @@ export default function PolicyTable({ policies, onEdit, onDelete, emptyMessage =
               <ListingTable.Row
                 key={id}
                 hover
-                role="button"
-                tabIndex={0}
-                aria-label={`Edit ${policy.name}`}
                 sx={{ cursor: 'pointer' }}
-                onClick={() => onEdit(id)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onEdit(id);
-                  }
-                }}>
+                onClick={() => onEdit(id)}>
                 <ListingTable.Cell>
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {policy.name}

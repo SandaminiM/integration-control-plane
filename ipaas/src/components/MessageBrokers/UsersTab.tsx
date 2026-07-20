@@ -27,7 +27,9 @@ const downloadText = (filename: string, content: string) => {
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
+  document.body.appendChild(a);
   a.click();
+  a.remove();
   URL.revokeObjectURL(url);
 };
 
@@ -126,10 +128,6 @@ export default function UsersTab({ brokerId }: { brokerId: string }): JSX.Elemen
     );
   }
 
-  if (users.length === 0) {
-    return <Alert severity="info">No users yet.</Alert>;
-  }
-
   return (
     <>
       <Stack gap={2}>
@@ -142,6 +140,9 @@ export default function UsersTab({ brokerId }: { brokerId: string }): JSX.Elemen
           </Button>
         </Stack>
 
+        {users.length === 0 ? (
+          <Alert severity="info">No users yet. Add a user to issue Kafka credentials.</Alert>
+        ) : (
         <ListingTable.Container elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
           <ListingTable size="small">
             <ListingTable.Head>
@@ -192,6 +193,7 @@ export default function UsersTab({ brokerId }: { brokerId: string }): JSX.Elemen
             </ListingTable.Body>
           </ListingTable>
         </ListingTable.Container>
+        )}
       </Stack>
 
       {addDialogOpen && (

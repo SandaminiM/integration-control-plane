@@ -33,7 +33,8 @@ export default function ComplianceRowIndicator({ row, failedWord }: ComplianceRo
   const success = complianceStatusColor(row.status) === 'success';
   if (!row.total) return <Typography variant="body2">N/A</Typography>;
   const count = success ? row.total : row.failed;
-  const word = success ? complianceStatusLabel(row.status) : failedWord;
+  // Neutral rows (not-applicable/unapplied) show their own status, not a "Violated" count.
+  const word = failed ? failedWord : complianceStatusLabel(row.status);
   return (
     <Box sx={{ width: '100%', minWidth: 160 }}>
       <Typography variant="body2" noWrap sx={{ color: failed ? 'error.main' : success ? 'success.main' : 'text.secondary', fontWeight: 600 }}>

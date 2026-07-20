@@ -25,7 +25,7 @@ import { useComponents } from '../hooks/useComponents';
 import { componentComplianceUrl, orgGovernancePolicyEditorUrl, orgGovernanceRulesetUrl } from '../paths';
 import type { ProjectScope } from '../nav';
 import type { ComplianceRow } from '../types/compliance';
-import { adherenceSlices, buildPolicyTypeMap, complianceSlices, countViolated, mapPolicyNestedItems } from '../utils/compliance';
+import { adherenceEntryToRow, adherenceSlices, buildPolicyTypeMap, complianceEntryToRow, complianceSlices } from '../utils/compliance';
 import ComingSoon from './ComingSoon';
 import CompliancePie from '../components/Compliance/CompliancePie';
 import ExpandableComplianceTable from '../components/Compliance/ExpandableComplianceTable';
@@ -51,35 +51,23 @@ export default function ProjectCompliance(scope: ProjectScope): JSX.Element {
   };
 
   const complianceRows = useMemo<ComplianceRow[]>(
-    () =>
-      (compliance.data?.list ?? []).map((e) => ({
-        id: e.componentId,
-        name: componentMap.get(e.componentId)?.displayName ?? e.componentName,
-        status: e.status,
-        violations: e.ruleViolations,
-        failed: countViolated(e.policies.list),
-        total: e.policies.count,
-        searchText: JSON.stringify(e),
-        items: mapPolicyNestedItems(e.policies.list),
-      })),
+    () => (compliance.data?.list ?? []).map((e) => complianceEntryToRow(e, e.componentId, componentMap.get(e.componentId)?.displayName ?? e.componentName)),
     [compliance.data, componentMap],
   );
 
   const adherenceRows = useMemo<ComplianceRow[]>(
     () =>
-      (adherence.data?.list ?? []).map((e) => ({
-        id: e.policyId,
-        name: e.policyName,
-        status: e.status,
-        failed: e.components?.summary.nonCompliant ?? 0,
-        total: e.components?.count ?? 0,
-        searchText: JSON.stringify(e),
-        items: (e.components?.list ?? []).map((c) => ({
-          id: c.componentId,
-          name: componentMap.get(c.componentId)?.displayName ?? c.componentName,
-          status: c.status,
-        })),
-      })),
+      (adherence.data?.list ?? []).map((e) =>
+        adherenceEntryToRow(
+          e,
+          e.components,
+          (e.components?.list ?? []).map((c) => ({
+            id: c.componentId,
+            name: componentMap.get(c.componentId)?.displayName ?? c.componentName,
+            status: c.status,
+          })),
+        ),
+      ),
     [adherence.data, componentMap],
   );
 

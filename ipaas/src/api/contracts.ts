@@ -753,7 +753,7 @@ export interface PlatformServicesApi {
   deleteKafkaUser(brokerId: string, username: string): Promise<void>;
   resetKafkaUserCredentials(brokerId: string, username: string): Promise<void>;
   listKafkaAcls(brokerId: string): Promise<{ acls: KafkaAcl[] }>;
-  createKafkaAcl(brokerId: string, payload: { permission: string; topic: string; username: string }): Promise<void>;
+  createKafkaAcl(brokerId: string, payload: Omit<KafkaAcl, 'id'>): Promise<void>;
   deleteKafkaAcl(brokerId: string, aclId: string): Promise<void>;
 }
 

@@ -26,7 +26,9 @@ const EXPIRING_SOON_DAYS = 30;
 
 export function certificateValidity(notAfter?: string): CertificateValidity {
   if (!notAfter) return { label: 'N/A', color: 'default', category: 'UNKNOWN' };
-  const days = Math.floor((new Date(notAfter).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const expiresAt = new Date(notAfter).getTime();
+  if (Number.isNaN(expiresAt)) return { label: 'N/A', color: 'default', category: 'UNKNOWN' };
+  const days = Math.floor((expiresAt - Date.now()) / (1000 * 60 * 60 * 24));
   if (days < 0) return { label: 'Expired', color: 'error', category: 'EXPIRED' };
   if (days === 0) return { label: 'Expires today', color: 'error', category: 'EXPIRED' };
   if (days <= EXPIRING_SOON_DAYS) return { label: `Expires in ${days} ${days === 1 ? 'day' : 'days'}`, color: 'warning', category: 'EXPIRING_SOON' };

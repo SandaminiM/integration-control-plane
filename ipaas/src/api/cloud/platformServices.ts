@@ -83,5 +83,5 @@ export const createKafkaUser = (_brokerId: string, _username: string): Promise<v
 export const deleteKafkaUser = (_brokerId: string, _username: string): Promise<void> => ni('deleteKafkaUser');
 export const resetKafkaUserCredentials = (_brokerId: string, _username: string): Promise<void> => ni('resetKafkaUserCredentials');
 export const listKafkaAcls = (_brokerId: string): Promise<{ acls: KafkaAcl[] }> => ni('listKafkaAcls');
-export const createKafkaAcl = (_brokerId: string, _payload: { permission: string; topic: string; username: string }): Promise<void> => ni('createKafkaAcl');
+export const createKafkaAcl = (_brokerId: string, _payload: Omit<KafkaAcl, 'id'>): Promise<void> => ni('createKafkaAcl');
 export const deleteKafkaAcl = (_brokerId: string, _aclId: string): Promise<void> => ni('deleteKafkaAcl');

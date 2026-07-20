@@ -81,10 +81,6 @@ export default function TopicsTab({ brokerId }: { brokerId: string }): JSX.Eleme
     );
   }
 
-  if (topics.length === 0) {
-    return <Alert severity="info">No topics yet. Create a topic to start producing and consuming events.</Alert>;
-  }
-
   return (
     <>
       <Stack gap={2}>
@@ -97,6 +93,9 @@ export default function TopicsTab({ brokerId }: { brokerId: string }): JSX.Eleme
           </Button>
         </Stack>
 
+        {topics.length === 0 ? (
+          <Alert severity="info">No topics yet. Create a topic to start producing and consuming events.</Alert>
+        ) : (
         <ListingTable.Container elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
           <ListingTable size="small">
             <ListingTable.Head>
@@ -140,6 +139,7 @@ export default function TopicsTab({ brokerId }: { brokerId: string }): JSX.Eleme
             </ListingTable.Body>
           </ListingTable>
         </ListingTable.Container>
+        )}
       </Stack>
 
       {dialogOpen && <TopicDialog brokerId={brokerId} topic={editingTopic} onClose={() => setDialogOpen(false)} />}

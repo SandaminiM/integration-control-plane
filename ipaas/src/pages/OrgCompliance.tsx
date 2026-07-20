@@ -24,7 +24,7 @@ import { useProjectsByOrg } from '../hooks/useProjects';
 import { projectComplianceUrl, orgGovernancePolicyEditorUrl, orgGovernanceRulesetUrl } from '../paths';
 import type { OrgScope } from '../nav';
 import type { ComplianceRow } from '../types/compliance';
-import { adherenceSlices, buildPolicyTypeMap, complianceSlices, countViolated, mapPolicyNestedItems } from '../utils/compliance';
+import { adherenceEntryToRow, adherenceSlices, buildPolicyTypeMap, complianceEntryToRow, complianceSlices } from '../utils/compliance';
 import ComingSoon from './ComingSoon';
 import CompliancePie from '../components/Compliance/CompliancePie';
 import ExpandableComplianceTable from '../components/Compliance/ExpandableComplianceTable';
@@ -49,35 +49,23 @@ export default function OrgCompliance(scope: OrgScope): JSX.Element {
   };
 
   const complianceRows = useMemo<ComplianceRow[]>(
-    () =>
-      (compliance.data?.list ?? []).map((e) => ({
-        id: e.projectId,
-        name: projectMap.get(e.projectId)?.name ?? e.projectName,
-        status: e.status,
-        violations: e.ruleViolations,
-        failed: countViolated(e.policies.list),
-        total: e.policies.count,
-        searchText: JSON.stringify(e),
-        items: mapPolicyNestedItems(e.policies.list),
-      })),
+    () => (compliance.data?.list ?? []).map((e) => complianceEntryToRow(e, e.projectId, projectMap.get(e.projectId)?.name ?? e.projectName)),
     [compliance.data, projectMap],
   );
 
   const adherenceRows = useMemo<ComplianceRow[]>(
     () =>
-      (adherence.data?.list ?? []).map((e) => ({
-        id: e.policyId,
-        name: e.policyName,
-        status: e.status,
-        failed: e.projects?.summary.nonCompliant ?? 0,
-        total: e.projects?.count ?? 0,
-        searchText: JSON.stringify(e),
-        items: (e.projects?.list ?? []).map((p) => ({
-          id: p.projectId,
-          name: projectMap.get(p.projectId)?.name ?? p.projectName,
-          status: p.status,
-        })),
-      })),
+      (adherence.data?.list ?? []).map((e) =>
+        adherenceEntryToRow(
+          e,
+          e.projects,
+          (e.projects?.list ?? []).map((p) => ({
+            id: p.projectId,
+            name: projectMap.get(p.projectId)?.name ?? p.projectName,
+            status: p.status,
+          })),
+        ),
+      ),
     [adherence.data, projectMap],
   );
 

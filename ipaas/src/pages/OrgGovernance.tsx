@@ -182,7 +182,7 @@ export default function OrgGovernance(scope: OrgScope): JSX.Element {
         </Typography>
 
         <Stack direction="row" justifyContent="space-between" alignItems="center" gap={2}>
-          {filteredPolicies.length > 0 && (
+          {policies.length > 0 && (
             <Stack direction="row" alignItems="center" gap={1.5} ml="auto">
               <SearchField value={policySearch} onChange={setPolicySearch} placeholder="Search policies..." sx={{ minWidth: 220 }} />
               <Button variant="contained" startIcon={<Plus size={20} />} onClick={handleAddPolicy} sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}>

@@ -112,10 +112,6 @@ export default function AclTab({ brokerId }: { brokerId: string }): JSX.Element 
     );
   }
 
-  if (acls.length === 0) {
-    return <Alert severity="info">No access control entries.</Alert>;
-  }
-
   return (
     <>
       <Stack gap={2}>
@@ -128,6 +124,9 @@ export default function AclTab({ brokerId }: { brokerId: string }): JSX.Element 
           </Button>
         </Stack>
 
+        {acls.length === 0 ? (
+          <Alert severity="info">No access control entries. Add an entry to grant a user access to a topic.</Alert>
+        ) : (
         <ListingTable.Container elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
           <ListingTable size="small">
             <ListingTable.Head>
@@ -164,6 +163,7 @@ export default function AclTab({ brokerId }: { brokerId: string }): JSX.Element 
             </ListingTable.Body>
           </ListingTable>
         </ListingTable.Container>
+        )}
       </Stack>
 
       {addDialogOpen && (

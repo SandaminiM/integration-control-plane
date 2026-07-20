@@ -30,10 +30,14 @@ export default function GovernanceCatalog<T extends { id?: string }>({ items, re
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(4);
 
+  // Filtering can shrink the list below the current page; clamp instead of showing an empty page.
+  const maxPage = Math.max(0, Math.ceil(items.length / rowsPerPage) - 1);
+  const safePage = Math.min(page, maxPage);
+
   const paginatedItems = useMemo(() => {
-    const start = page * rowsPerPage;
+    const start = safePage * rowsPerPage;
     return items.slice(start, start + rowsPerPage);
-  }, [items, page, rowsPerPage]);
+  }, [items, safePage, rowsPerPage]);
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -66,7 +70,7 @@ export default function GovernanceCatalog<T extends { id?: string }>({ items, re
         <TablePagination
           component="div"
           count={items.length}
-          page={page}
+          page={safePage}
           onPageChange={handleChangePage}
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleChangeRowsPerPage}

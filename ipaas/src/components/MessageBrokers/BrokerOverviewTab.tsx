@@ -45,7 +45,9 @@ const downloadText = (filename: string, content: string) => {
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
+  document.body.appendChild(a);
   a.click();
+  a.remove();
   URL.revokeObjectURL(url);
 };
 
@@ -70,7 +72,9 @@ export default function BrokerOverviewTab({ service, serverId, onRefresh, isRefr
         const a = document.createElement('a');
         a.href = url;
         a.download = `${service.name}-ca.pem`;
+        document.body.appendChild(a);
         a.click();
+        a.remove();
         URL.revokeObjectURL(url);
       })
       .catch(() => setCaError(true));

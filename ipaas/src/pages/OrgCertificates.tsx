@@ -210,7 +210,7 @@ export default function OrgCertificates(scope: OrgScope): JSX.Element {
               )}
             </ListingTable.Body>
           </ListingTable>
-          {filtered.length > 10 && (
+          {filtered.length > rowsPerPage && (
             <Stack direction="row" justifyContent="flex-end" sx={{ borderTop: '1px solid', borderColor: 'divider', p: 1 }}>
               <Stack direction="row" alignItems="center" gap={2}>
                 <Select

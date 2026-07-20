@@ -48,14 +48,14 @@ export default function ComponentCompliance(scope: ComponentScope): JSX.Element 
   const rulesetAdherence = useEndpointRulesetAdherence(projectId, component?.id ?? '', selectedApimId ?? '');
 
   // The endpoint-level response omits policyType, so resolve it from the org policy list.
-  const { data: orgPolicies } = usePolicies();
+  const { data: orgPolicies, isLoading: loadingPolicies } = usePolicies();
   const openPolicy = (policyId: string | null) => {
     if (!policyId) return;
     const policyType = orgPolicies?.list.find((p) => p.id === policyId)?.policyType;
     navigate(orgGovernancePolicyEditorUrl(scope.org, policyId, policyType));
   };
 
-  const isLoading = loadingProject || loadingComponent || (tracks.length > 0 && !selectedTrackId) || loadingEndpoints || (endpointsWithApim.length > 0 && !selectedApimId);
+  const isLoading = loadingProject || loadingComponent || loadingPolicies || (tracks.length > 0 && !selectedTrackId) || loadingEndpoints || (endpointsWithApim.length > 0 && !selectedApimId);
 
   const policyRows = useMemo<ComplianceRow[]>(
     () =>

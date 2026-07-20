@@ -76,6 +76,19 @@ export default function GovernanceCard({
         ...cardStyles,
         cursor: isSelectable ? 'pointer' : 'default',
       }}
+      {...(isSelectable
+        ? {
+            role: 'button',
+            tabIndex: 0,
+            'aria-pressed': selected,
+            onKeyDown: (e: React.KeyboardEvent) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onToggleSelect(id);
+              }
+            },
+          }
+        : {})}
       onClick={() => isSelectable && onToggleSelect(id)}>
       <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', pb: 2, minHeight: 0 }}>
         <Stack gap={1.5} sx={{ flex: 1, minHeight: 0 }}>

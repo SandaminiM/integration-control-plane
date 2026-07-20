@@ -125,7 +125,7 @@ export default function CreateDocument(scope: OrgScope): JSX.Element {
   };
 
   const isSaving = createDocument.isPending || updateDocument.isPending;
-  const canSave = !!appliesTo && !!content && !!description && isChanged && !readonly;
+  const canSave = !!name.trim() && !!appliesTo && !!content && !!description && isChanged && !readonly;
 
   if (isEditing && documentLoading) {
     return (

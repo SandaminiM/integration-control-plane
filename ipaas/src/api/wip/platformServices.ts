@@ -205,7 +205,7 @@ export function listKafkaAcls(brokerId: string): Promise<{ acls: KafkaAcl[] }> {
   return platformServicesClient.get<{ acls: KafkaAcl[] }>(`${kafka(brokerId)}/acls`);
 }
 
-export function createKafkaAcl(brokerId: string, payload: { permission: string; topic: string; username: string }): Promise<void> {
+export function createKafkaAcl(brokerId: string, payload: Omit<KafkaAcl, 'id'>): Promise<void> {
   return platformServicesClient.post(`${kafka(brokerId)}/acls`, payload);
 }
 
