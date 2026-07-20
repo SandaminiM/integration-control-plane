@@ -381,7 +381,7 @@ export default function AutomationTest({ org, project, component }: ComponentSco
   const renderBody = (): JSX.Element => {
     if (isLoading)
       return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
           <CircularProgress />
         </Box>
       );
@@ -389,7 +389,7 @@ export default function AutomationTest({ org, project, component }: ComponentSco
     if (!releaseId) return <Alert severity="info">Deploy this integration to the selected environment to test it.</Alert>;
     if (argsLoading)
       return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
           <CircularProgress />
         </Box>
       );

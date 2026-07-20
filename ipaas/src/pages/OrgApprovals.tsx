@@ -59,7 +59,7 @@ export default function OrgApprovals(_scope: OrgScope): JSX.Element {
       </Tabs>
 
       {active.isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
           <CircularProgress />
         </Box>
       ) : active.isError ? (

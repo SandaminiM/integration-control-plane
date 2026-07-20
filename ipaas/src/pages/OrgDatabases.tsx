@@ -91,7 +91,7 @@ export function DatabaseServersListView({ scope, kind }: { scope: OrgScope; kind
       )}
 
       {servers.isLoading || availability.isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
           <CircularProgress />
         </Box>
       ) : notAllowlisted ? (

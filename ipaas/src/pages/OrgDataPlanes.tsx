@@ -80,7 +80,7 @@ export default function OrgDataPlanes(_scope: OrgScope): JSX.Element {
       </Stack>
 
       {isLoading || (isFetching && !clusters?.length && !pdps?.length) ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
           <CircularProgress />
         </Box>
       ) : isError ? (

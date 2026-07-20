@@ -30,7 +30,7 @@ export default function ProjectEgressControl({ project }: ProjectScope): JSX.Ele
     <PageContent>
       <ProjectSettingsTabs active="egress-control" />
       {isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
           <CircularProgress />
         </Box>
       ) : !data ? (

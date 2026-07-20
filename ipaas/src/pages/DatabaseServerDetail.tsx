@@ -78,7 +78,7 @@ export function DatabaseServerDetailView({ scope, kind }: { scope: OrgScope; kin
       )}
 
       {isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
           <CircularProgress />
         </Box>
       ) : isError || !service ? (

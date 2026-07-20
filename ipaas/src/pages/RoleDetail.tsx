@@ -16,33 +16,7 @@
  * under the License.
  */
 
-import {
-  Alert,
-  Autocomplete,
-  Box,
-  Button,
-  Checkbox,
-  Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  FormControlLabel,
-  IconButton,
-  ListingTable,
-  MenuItem,
-  Radio,
-  RadioGroup,
-  Stack,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  Tooltip,
-  Typography,
-  PageContent,
-} from '@wso2/oxygen-ui';
+import { Alert, Autocomplete, Box, Button, Checkbox, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, IconButton, ListingTable, MenuItem, Radio, RadioGroup, Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography, PageContent } from '@wso2/oxygen-ui';
 import { ArrowLeft, ChevronDown, ChevronUp, Link2, Lock, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useCallback, type JSX } from 'react';
 import { useParams, useNavigate } from 'react-router';
@@ -57,7 +31,7 @@ import { useAccessControl } from '../contexts/AccessControlContext';
 
 function Loading() {
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
       <CircularProgress />
     </Box>
   );

@@ -88,7 +88,7 @@ export default function ComponentContainers({ org, project, component }: Compone
         )}
 
         {isLoading || (loadingRelease && !!releaseId) ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
             <CircularProgress />
           </Box>
         ) : !comp ? (

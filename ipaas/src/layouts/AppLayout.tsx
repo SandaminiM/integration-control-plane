@@ -383,11 +383,10 @@ function AppLayoutInner(): JSX.Element {
   // Helper to get component display name with fallback to components list
   const getComponentDisplayName = () => {
     if (currentComponent?.displayName) return currentComponent.displayName;
-    // Fallback: search in components list by handler or id
+    // Search all components (not just filtered/supported types) so unsupported types still show their display name
     if (hasComponent(scope)) {
-      const foundComponent = components.find((c) => c.handler === scope.component || c.id === scope.component || String(c.id) === scope.component);
+      const foundComponent = allComponents.find((c) => c.handler === scope.component || c.id === scope.component || String(c.id) === scope.component);
       if (foundComponent?.displayName) return foundComponent.displayName;
-      // If still showing UUID, show loading instead
       const isUuid = UUID_RE.test(scope.component);
       return isUuid ? 'Loading...' : scope.component;
     }
@@ -833,15 +832,14 @@ function AppLayoutInner(): JSX.Element {
                     )}
                     SelectDisplayProps={{ 'aria-label': 'Select project' }}
                     renderValue={() => <ComplexSelect.MenuItem.Text primary={getProjectDisplayName()} secondary="Project" />}
-                    label="Projects">
-                    {/* Placeholder item so renderValue fires while project is loading by UUID */}
-                    {isProjectUuid && !project && (
-                      <ComplexSelect.MenuItem key="__uuid_placeholder__" value={scope.project} sx={{ display: 'none' }}>
-                        <ComplexSelect.MenuItem.Text primary={getProjectDisplayName()} secondary="Project" />
-                      </ComplexSelect.MenuItem>
-                    )}
+                    label="Project">
+                    {/* Hidden items ensure renderValue always fires — ComplexSelect skips renderValue when value matches a visible item,
+                        so all items are hidden. The dropdown is handled by the Popover, not ComplexSelect's own open state. */}
+                    <ComplexSelect.MenuItem key="__project_placeholder__" value={scope.project} sx={{ display: 'none' }}>
+                      <ComplexSelect.MenuItem.Text primary={getProjectDisplayName()} secondary="Project" />
+                    </ComplexSelect.MenuItem>
                     {projects.map((p) => (
-                      <ComplexSelect.MenuItem key={p.handler} value={p.handler}>
+                      <ComplexSelect.MenuItem key={p.handler} value={p.handler} sx={{ display: 'none' }}>
                         <ComplexSelect.MenuItem.Text primary={p.name} secondary={p.description} />
                       </ComplexSelect.MenuItem>
                     ))}
@@ -1000,11 +998,11 @@ function AppLayoutInner(): JSX.Element {
                   )}
                   SelectDisplayProps={{ 'aria-label': 'Select integration' }}
                   renderValue={() => <ComplexSelect.MenuItem.Text primary={getComponentDisplayName()} secondary="Integration" />}
-                  label="Integrations">
+                  label="Integration">
                   {/* Fallback keeps the value valid while components are loading */}
                   {!components.some((c) => c.handler === scope.component) && (
                     <ComplexSelect.MenuItem key="__current" value={scope.component} sx={{ display: 'none' }}>
-                      <ComplexSelect.MenuItem.Text primary="" secondary="" />
+                      <ComplexSelect.MenuItem.Text primary={getComponentDisplayName()} secondary="Integration" />
                     </ComplexSelect.MenuItem>
                   )}
                   {components.map((c) => (

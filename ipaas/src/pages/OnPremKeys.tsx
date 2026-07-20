@@ -145,7 +145,7 @@ export default function OnPremKeys({ org }: OrgScope): JSX.Element {
       )}
 
       {isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
           <CircularProgress />
         </Box>
       ) : isError ? (
