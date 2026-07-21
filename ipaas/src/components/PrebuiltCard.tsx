@@ -23,7 +23,7 @@ import AppIconsRow from './AppIconsRow';
 
 export default function PrebuiltCard({ integration, onClick, disabled, disabledTooltip }: { integration: PrebuiltIntegration; onClick?: () => void; disabled?: boolean; disabledTooltip?: string }): JSX.Element {
   return (
-    <Tooltip title={disabled ? (disabledTooltip ?? '') : 'Prebuilt Integration Configuration is coming soon'} placement="top" arrow>
+    <Tooltip title={disabled ? (disabledTooltip ?? '') : ''} placement="top" arrow>
       <Box
         onClick={disabled ? undefined : onClick}
         sx={{

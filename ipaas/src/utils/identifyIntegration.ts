@@ -103,6 +103,9 @@ export function identifyIntegration(displayType: string, componentSubType: strin
       return { type: 'automation', runtime: 'ballerina', raw };
     case 'miCronjob':
       return { type: 'automation', runtime: 'mi', raw };
+    case 'byocEventHandler':
+    case 'buildpackEventHandler':
+      return { type: 'event-integration', runtime: 'unknown', raw };
     case 'ballerinaEventHandler':
       return { type: 'event-integration', runtime: 'ballerina', raw };
     case 'miEventHandler':

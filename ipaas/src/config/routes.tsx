@@ -91,6 +91,13 @@ const CreateMessageBroker = lazy(() => import('../pages/CreateMessageBroker'));
 const MessageBrokerDetail = lazy(() => import('../pages/MessageBrokerDetail'));
 const ProjectSettings = lazy(() => import('../pages/ProjectSettings'));
 const ProjectOverview = lazy(() => import('../pages/ProjectOverview'));
+const ProjectInsights = lazy(() => import('../pages/ProjectInsights'));
+const OrgInsights = lazy(() => import('../pages/OrgInsights'));
+import DeliveryInsights from '../pages/DeliveryInsights';
+import ConfigureDelivery from '../pages/ConfigureDelivery';
+import ComponentMetrics from '../pages/ComponentMetrics';
+import ProjectMetrics from '../pages/ProjectMetrics';
+const ComponentInsightsUsage = lazy(() => import('../pages/ComponentInsightsUsage'));
 const ProjectEgressControl = lazy(() => import('../pages/ProjectEgressControl'));
 const ProjectApplicationSecurity = lazy(() => import('../pages/ProjectApplicationSecurity'));
 const ProjectVpnConfiguration = lazy(() => import('../pages/ProjectVpnConfiguration'));
@@ -206,8 +213,9 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/develop', element: <ComingSoon title="Coming Soon" description="Development tools are currently under development." /> },
               { path: 'organizations/:orgHandler/deploy', element: <ComingSoon title="Coming Soon" description="Deployment management is currently under development." /> },
               { path: 'organizations/:orgHandler/test', element: <ComingSoon title="Coming Soon" description="Testing tools are currently under development." /> },
-              { path: 'organizations/:orgHandler/insights/usage', element: <ComingSoon title="Coming Soon" description="Usage insights are currently under development." /> },
-              { path: 'organizations/:orgHandler/insights/delivery', element: <ComingSoon title="Coming Soon" description="Delivery insights are currently under development." /> },
+              { path: 'organizations/:orgHandler/insights/usage', element: createElement(withScope(OrgInsights, ['organizations'])) },
+              { path: 'organizations/:orgHandler/insights/delivery', element: createElement(withScope(DeliveryInsights, ['organizations'])) },
+              { path: 'organizations/:orgHandler/insights/delivery/configure', element: createElement(withScope(ConfigureDelivery, ['organizations'])) },
               { path: 'organizations/:orgHandler/insights/compliance', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgCompliance, ['organizations']))) },
               { path: 'organizations/:orgHandler/logs', element: <ComingSoon title="Coming Soon" description="Organization-level logs are currently under development." /> },
               { path: 'organizations/:orgHandler/metrics', element: <ComingSoon title="Coming Soon" description="Organization-level metrics are currently under development." /> },
@@ -260,13 +268,14 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/projects/:projectHandler/develop', element: <ComingSoon title="Coming Soon" description="Development tools are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/deploy', element: <ComingSoon title="Coming Soon" description="Deployment management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/test', element: <ComingSoon title="Coming Soon" description="Testing tools are currently under development." /> },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/insights/usage', element: <ComingSoon title="Coming Soon" description="Usage insights are currently under development." /> },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/insights/delivery', element: <ComingSoon title="Coming Soon" description="Delivery insights are currently under development." /> },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/insights/usage', element: createElement(withScope(ProjectInsights, ['projects'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/insights/delivery', element: createElement(withScope(DeliveryInsights, ['projects'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/insights/delivery/configure', element: createElement(withScope(ConfigureDelivery, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/insights/compliance', element: createElement(RouteErrorBoundary, null, createElement(withScope(ProjectCompliance, ['projects']))) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/runtimes', element: <ComingSoon title="Coming Soon" description="Runtime management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/metrics', element: <ComingSoon title="Coming Soon" description="Metrics are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/observe/runtimelogs', element: createElement(withScope(RuntimeLogsProject, ['projects'])) },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/observe/metrics', element: <ComingSoon title="Coming Soon" description="Metrics are currently under development." /> },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/observe/metrics', element: createElement(withScope(ProjectMetrics, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections', element: createElement(RouteErrorBoundary, null, createElement(withScope(ProjectConnections, ['projects']))) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(NewConnection, ['projects']))) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections/:connectionId', element: createElement(RouteErrorBoundary, null, createElement(withScope(ConnectionDetail, ['projects']))) },
@@ -368,11 +377,11 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/insights/usage',
-                element: <ComingSoon title="Coming Soon" description="Usage insights are currently under development." />,
+                element: createElement(withScope(ComponentInsightsUsage, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/insights/delivery',
-                element: <ComingSoon title="Coming Soon" description="Delivery insights are currently under development." />,
+                element: <ComingSoon title="Coming Soon" description="Component delivery insights will be available soon. In the meantime, you can check project delivery insights." />,
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/insights/compliance',
@@ -380,7 +389,7 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/metrics',
-                element: <ComingSoon title="Coming Soon" description="Metrics are currently under development." />,
+                element: createElement(withScope(ComponentMetrics, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/connections',

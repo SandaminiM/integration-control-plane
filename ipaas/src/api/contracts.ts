@@ -572,8 +572,8 @@ export interface ExecutionsApi {
 // ---------------------------------------------------------------------------
 
 export interface InsightsApi {
-  fetchInsightsEnvironments(orgUuid: string, projectId: string): Promise<InsightsEnvironment[]>;
-  fetchComponentInsights(orgUuid: string, insightsEnv: InsightsEnvironment, apiId: string): Promise<ComponentInsights | null>;
+  fetchInsightsEnvironments(orgUuid: string, projectId?: string): Promise<InsightsEnvironment[]>;
+  fetchComponentInsights(orgUuid: string, insightsEnv: InsightsEnvironment, apiId: string, queryApiUrl: string, time?: { from: string; to: string }): Promise<ComponentInsights | null>;
 }
 
 // ---------------------------------------------------------------------------

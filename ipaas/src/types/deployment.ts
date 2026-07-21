@@ -17,6 +17,7 @@
  */
 
 import type { SchemaConfigItem } from './configuration';
+import type { IntegrationKind } from './insights';
 
 export const DeploymentStatus = {
   Active: 'Active',
@@ -160,4 +161,17 @@ export interface DeployPrebuiltImageInput {
   // Workload container at creation; devant ignores this field (it persists config
   // separately). Optional so existing callers are unaffected.
   configurations?: SchemaConfigItem[];
+}
+
+export interface RecentDeployment {
+  id: string;
+  handler: string;
+  name: string;
+  version: string;
+  /** ISO-8601 deploy time */
+  deployedAt: string;
+  by: string;
+  status: string;
+  /** integration kind — the component maps it to a dot color */
+  kind: IntegrationKind;
 }

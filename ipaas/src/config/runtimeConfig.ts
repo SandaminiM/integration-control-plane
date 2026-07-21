@@ -244,6 +244,15 @@ export const choreologgingProjectLogsApiUrl = (gatewayHost: string): string => {
   return `https://${sysApiPrefix}.${gatewayHost}/systemapis/choreologgingapi/0.2.0/logs/project/application?live=true`;
 };
 
+// Insights (Usage Insights / APIM traffic) query endpoint — served by the same
+// per-org systemapis gateway as alerting/logging, not `insightsBaseUrl` (that
+// default is a stale host that 404s; devant's own captured traffic — see
+// devant-insights-01.har — hits `<sysApiPrefix>.<gatewayHost>/systemapis/analyticsqueryapi/0.1.0/query`).
+export const choreoInsightsQueryApiUrl = (gatewayHost: string): string => {
+  const { sysApiPrefix } = window.API_CONFIG;
+  return `https://${sysApiPrefix}.${gatewayHost}/systemapis/analyticsqueryapi/0.1.0/query`;
+};
+
 export const choreologgingComponentLogsApiUrl = (): string => {
   const base = window.API_CONFIG.systemApisBaseUrl ?? '';
   return `${base}/systemapis/choreologgingapi/0.2.0/logs/component/application`;

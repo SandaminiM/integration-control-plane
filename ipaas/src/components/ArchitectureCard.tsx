@@ -18,10 +18,11 @@
 
 import { Card, CardContent, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { GitBranch, RefreshCw } from '@wso2/oxygen-ui-icons-react';
-import { CellDiagram, ComponentType, DiagramLayer } from '@wso2/cell-diagram';
-import type { Project as DiagramProject, Component as DiagramComponent, Services } from '@wso2/cell-diagram';
+import { CellDiagram, DiagramLayer } from '@wso2/cell-diagram';
+import type { Project as DiagramProject } from '@wso2/cell-diagram';
 import { memo, useMemo, useState } from 'react';
 import type { Component } from '../types/component';
+import { buildProjectModel } from './Observability/diagramUtils';
 import type { JSX } from 'react';
 
 const EMPTY_MENU: never[] = [];
@@ -29,152 +30,6 @@ const EMPTY_MENU: never[] = [];
 const CellDiagramPreview = memo(function CellDiagramPreview({ project, refreshKey: _ }: { project: DiagramProject; refreshKey: number }) {
   return <CellDiagram project={project} componentMenu={EMPTY_MENU} defaultDiagramLayer={DiagramLayer.ARCHITECTURE} previewMode />;
 });
-
-function getComponentType(displayType: string, componentSubType: string | null): ComponentType | null {
-  if (componentSubType === 'ballerinaFileIntegration' || componentSubType === 'miFileIntegration') {
-    return ComponentType.EVENT_HANDLER;
-  }
-  if (componentSubType === 'aiAgent' || componentSubType === 'mcpServer') {
-    return null;
-  }
-  switch (displayType) {
-    case 'ballerinaService':
-    case 'buildpackService':
-    case 'byoiService':
-    case 'byocService':
-    case 'miApiService':
-    case 'graphql':
-    case 'thirdPartyApi':
-    case 'prismMockService':
-    case 'service':
-    case 'restApi':
-    case 'byocRestApi':
-    case 'miRestApi':
-    case 'buildRestApi':
-      return ComponentType.SERVICE;
-    case 'scheduledTask':
-    case 'byocCronjob':
-    case 'byoiCronjob':
-    case 'miCronjob':
-    case 'buildpackCronJob':
-      return ComponentType.SCHEDULED_TASK;
-    case 'manualTrigger':
-    case 'byocJob':
-    case 'byoiJob':
-    case 'miJob':
-    case 'buildpackJob':
-      return ComponentType.MANUAL_TASK;
-    case 'proxy':
-    case 'gitProxy':
-      return ComponentType.API_PROXY;
-    case 'webhook':
-    case 'byocWebhook':
-    case 'miWebhook':
-    case 'buildpackWebhook':
-    case 'ballerinaWebhook':
-      return ComponentType.WEB_HOOK;
-    case 'byocEventHandler':
-    case 'miEventHandler':
-    case 'buildpackEventHandler':
-    case 'ballerinaEventHandler':
-      return ComponentType.EVENT_HANDLER;
-    case 'byocWebApp':
-    case 'byocWebAppsDockerfileLess':
-    case 'byoiWebApp':
-    case 'buildpackWebApp':
-      return ComponentType.WEB_APP;
-    case 'byocTestRunner':
-    case 'buildpackTestRunner':
-    case 'byocTestRunnerDockerfileLess':
-      return ComponentType.TEST;
-    case 'externalConsumer':
-      return ComponentType.EXTERNAL_CONSUMER;
-    default:
-      return null;
-  }
-}
-
-function getDefaultServices(componentId: string, componentType: ComponentType): Services {
-  if (componentType === ComponentType.SCHEDULED_TASK || componentType === ComponentType.MANUAL_TASK || componentType === ComponentType.TEST || componentType === ComponentType.EXTERNAL_CONSUMER) {
-    return {};
-  }
-
-  if (componentType === ComponentType.WEB_APP) {
-    const serviceId = `${componentId}:web-app`;
-    return {
-      [serviceId]: {
-        id: serviceId,
-        label: 'Web App',
-        type: 'http',
-        dependencyIds: [],
-        deploymentMetadata: {
-          gateways: {
-            internet: { isExposed: true },
-            intranet: { isExposed: false },
-          },
-        },
-      },
-    };
-  }
-
-  if (componentType === ComponentType.WEB_HOOK || componentType === ComponentType.EVENT_HANDLER || componentType === ComponentType.API_PROXY) {
-    const serviceId = `${componentId}:endpoint`;
-    return {
-      [serviceId]: {
-        id: serviceId,
-        label: 'Endpoint',
-        type: 'http',
-        dependencyIds: [],
-        deploymentMetadata: {
-          gateways: {
-            internet: { isExposed: false },
-            intranet: { isExposed: true },
-          },
-        },
-      },
-    };
-  }
-
-  const serviceId = `${componentId}:service`;
-  return {
-    [serviceId]: {
-      id: serviceId,
-      label: 'Service',
-      type: 'http',
-      dependencyIds: [],
-      deploymentMetadata: {
-        gateways: {
-          internet: { isExposed: true },
-          intranet: { isExposed: false },
-        },
-      },
-    },
-  };
-}
-
-function buildProjectModel(projectId: string, components: Component[]): DiagramProject {
-  const diagramComponents: DiagramComponent[] = components
-    .map((c): DiagramComponent | null => {
-      const type = getComponentType(c.displayType ?? '', c.componentSubType ?? null);
-      if (type === null) return null;
-      return {
-        id: c.id,
-        label: c.displayName,
-        version: c.version ?? '1.0.0',
-        type,
-        services: getDefaultServices(c.id, type),
-        connections: [],
-      };
-    })
-    .filter((c): c is DiagramComponent => c !== null);
-
-  return {
-    id: projectId,
-    name: '',
-    components: diagramComponents,
-    modelVersion: '2.0',
-  };
-}
 
 export default function ArchitectureCard({ projectId, components, isLoading, isRefreshing, onRefresh }: { projectId: string; components: Component[]; isLoading: boolean; isRefreshing: boolean; onRefresh: () => void }): JSX.Element {
   const project = useMemo(() => buildProjectModel(projectId, components), [projectId, components]);
