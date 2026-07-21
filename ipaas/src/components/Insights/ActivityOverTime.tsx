@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, Skeleton, Stack, Typography } from '@wso2/oxygen-ui';
+import { Box, Skeleton, Stack, Typography, Paper } from '@wso2/oxygen-ui';
 import { BarChart } from '@wso2/oxygen-ui-charts-react';
 import type { JSX } from 'react';
 import { InsightsCard, ChartBox } from './shared';
@@ -27,10 +27,10 @@ import type { ProjectActivityChart } from '../../types/insights';
  * left and the bucket-summed total on the right. */
 export function ActivityOverTime({ charts, loading = false }: { charts: ProjectActivityChart[]; loading?: boolean }): JSX.Element {
   return (
-    <InsightsCard title="Activity over time" subtitle="Per integration type — each in its native unit and scale">
+    <InsightsCard title="Activity over time" subtitle="Requests, runs, invocations and events over selected period">
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
         {charts.map((c) => (
-          <Box key={c.key} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
+          <Paper key={c.key} sx={{ borderRadius: 0.75, p: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
               <Stack direction="row" alignItems="center" gap={1}>
                 <Box sx={{ width: 8, height: 8, borderRadius: '2px', bgcolor: c.color, flexShrink: 0 }} />
@@ -52,7 +52,7 @@ export function ActivityOverTime({ charts, loading = false }: { charts: ProjectA
                 <BarChart data={c.points} xAxisDataKey="label" xAxis={{ show: true }} yAxis={{ show: true }} height={150} bars={[{ dataKey: 'count', name: c.title, fill: c.color, radius: [2, 2, 0, 0] }]} legend={{ show: false }} grid={{ show: true }} tooltip={{ show: true }} margin={{ top: 8, right: 12, left: -16, bottom: 0 }} />
               </ChartBox>
             )}
-          </Box>
+          </Paper>
         ))}
       </Box>
     </InsightsCard>

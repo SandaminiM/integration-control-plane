@@ -28,7 +28,7 @@ import type { ProjectErrorPoint, ProjectFailingRow } from '../../types/insights'
  * rate shown beneath as "{rate}% of {unit}". */
 export function TopFailing({ rows, errorSeries, loading = false }: { rows: ProjectFailingRow[]; errorSeries: ProjectErrorPoint[]; loading?: boolean }): JSX.Element {
   return (
-    <InsightsCard title="Errors over time" subtitle="Total errors · selected period">
+    <InsightsCard title="Errors over time" subtitle="Total errors over selected period">
       {loading ? (
         <Skeleton variant="rounded" height={180} />
       ) : (

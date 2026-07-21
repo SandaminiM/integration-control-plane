@@ -66,7 +66,7 @@ export function toProjectInsightsData(raw: ProjectInsightsRaw): ProjectInsightsD
     kpis: [
       { key: 'activeIntegrations', label: 'Active Integrations', value: String(active.length), sub: '', typeMix: TYPE_MIX_KINDS.map((k) => ({ kind: k, count: active.filter((c) => c.type === k).length })).filter((t) => t.count > 0) },
       { key: 'totalInvocations', label: 'Total Invocations', value: fmt(raw.totalTraffic + (stats?.totalExecutions ?? 0)), sub: 'Across all integrations' },
-      { key: 'successRate', label: 'Success Rate', value: `${successRate.toFixed(1)}%`, sub: '' },
+      { key: 'successRate', label: 'Success Rate', value: `${successRate.toFixed(1)}%`, sub: 'Across all integrations' },
       { key: 'errors', label: 'Errors', value: fmt(failCount + timeoutCount), sub: 'Across all integrations', danger: true },
     ],
     trend: raw.trend.map((p) => ({ label: p.label, apiRequests: p.apiRequests, automationRuns: p.automationRuns, automationErrors: p.automationErrors, errors: p.errors })),
