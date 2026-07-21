@@ -22,6 +22,7 @@ import { Alert, Box, Button, CircularProgress, ColorSchemeImage, Divider, Grid, 
 import { Building2, GitHub, Google, Mail } from '@wso2/oxygen-ui-icons-react';
 import { Link as NavLink, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
+import { useBfcacheReset } from '../hooks/useBfcacheReset';
 import { privacyPolicyUrl, signupUrl } from '../paths';
 import AuthMarketingPanel from '../components/AuthMarketingPanel';
 import RegionSelector from '../components/RegionSelector';
@@ -70,18 +71,7 @@ export default function Login(): JSX.Element {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // When the user presses the browser back button after being redirected to the IdP,
-  // the page is restored from bfcache with loading=true. Reset it so the buttons are usable.
-  useEffect(() => {
-    const handlePageShow = (event: PageTransitionEvent) => {
-      if (event.persisted) {
-        setLoading(false);
-        setProvider(null);
-      }
-    };
-    window.addEventListener('pageshow', handlePageShow);
-    return () => window.removeEventListener('pageshow', handlePageShow);
-  }, []);
+  useBfcacheReset(setLoading, setProvider);
 
   const handleSignIn = async (fidp: string) => {
     setError(null);
