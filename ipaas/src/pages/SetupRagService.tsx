@@ -62,7 +62,7 @@ export default function SetupRagService(scope: OrgScope): JSX.Element {
     return (
       <PageContent>
         {title}
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
           <CircularProgress />
         </Box>
       </PageContent>

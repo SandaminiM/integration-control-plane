@@ -124,7 +124,7 @@ function ConfigView({ orgHandler, projectId, handler, canManage, onBack }: { org
         Back to list
       </Button>
       {isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
           <CircularProgress />
         </Box>
       ) : !detail ? (
@@ -179,7 +179,7 @@ export default function ProjectVpnConfiguration({ org, project }: ProjectScope):
       ) : view.kind === 'config' ? (
         <ConfigView orgHandler={org} projectId={projectId} handler={view.handler} canManage={canManage} onBack={() => setView({ kind: 'list' })} />
       ) : isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
           <CircularProgress />
         </Box>
       ) : proxies.length === 0 ? (

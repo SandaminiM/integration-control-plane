@@ -75,9 +75,11 @@ export default function ComponentRuntime({ org, project, component }: ComponentS
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', minHeight: '100%', justifyContent: 'center', alignItems: 'center' }}>
-        <CircularProgress />
-      </Box>
+      <PageContent>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+          <CircularProgress />
+        </Box>
+      </PageContent>
     );
   }
 

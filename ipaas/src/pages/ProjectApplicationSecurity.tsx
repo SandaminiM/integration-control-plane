@@ -119,7 +119,7 @@ function ApplicationSecurityBody({ projectId }: { projectId: string }): JSX.Elem
 
   if (isLoading)
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
         <CircularProgress />
       </Box>
     );
@@ -247,7 +247,7 @@ export default function ProjectApplicationSecurity({ project }: ProjectScope): J
     <PageContent>
       <ProjectSettingsTabs active="application-security" />
       {isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
           <CircularProgress />
         </Box>
       ) : !data ? (

@@ -121,7 +121,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
   const isLoading = loadingProject || loadingComponent;
   if (isLoading)
     return (
-      <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
         <CircularProgress color="primary" />
       </Box>
     );
