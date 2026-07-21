@@ -70,6 +70,19 @@ export default function Login(): JSX.Element {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // When the user presses the browser back button after being redirected to the IdP,
+  // the page is restored from bfcache with loading=true. Reset it so the buttons are usable.
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        setLoading(false);
+        setProvider(null);
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
+
   const handleSignIn = async (fidp: string) => {
     setError(null);
     setLoading(true);

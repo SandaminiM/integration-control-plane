@@ -65,6 +65,19 @@ export default function Signup(): JSX.Element {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // When the user presses the browser back button after being redirected to the IdP,
+  // the page is restored from bfcache with loading=true. Reset it so the buttons are usable.
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        setLoading(false);
+        setProvider(null);
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
+
   const handleEmailSignup = () => {
     const origin = window.location.origin;
     const postRegisterCallback = `${origin}/login?method=basic&returnToUrl=%2F`;
