@@ -193,16 +193,10 @@ export interface ProjectTaskStats {
 export interface ProjectInsightsRaw {
   totalRequests: number;
   totalErrors: number;
-  /** request-weighted average latency (ms) */
-  avgLatency: number;
   /** project-level gateway traffic, KPI card */
   totalTraffic: number;
   /** project-level error request count, KPI card */
   totalTrafficErrors: number;
-  /** project-mean automation duration (ms) */
-  autoAvgDurationMs: number;
-  /** worst automation p95 duration (ms) */
-  autoP95DurationMs: number;
   trend: { label: string; apiRequests: number; automationRuns: number; automationErrors: number; errors: number }[];
   /** per-integration-type activity series (Services/AI Agents/Event Handlers/Automations), one entry per time bucket */
   activity: ProjectActivityPoint[];

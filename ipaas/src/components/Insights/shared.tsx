@@ -72,6 +72,27 @@ export function ChartBox({ children, padded = false }: { children: ReactNode; pa
   );
 }
 
+/** Small square colour swatch — the shared legend/dot marker across insights widgets. */
+export function ColorDot({ color, size = 10 }: { color: string; size?: number }): JSX.Element {
+  return <Box sx={{ width: size, height: size, borderRadius: '2px', bgcolor: color, flexShrink: 0 }} />;
+}
+
+/** Horizontal legend row of colour swatches + labels, centered under a chart. */
+export function ChartLegend({ series }: { series: { key: string; label: string; color: string }[] }): JSX.Element {
+  return (
+    <Stack direction="row" flexWrap="wrap" gap={1.5} justifyContent="center" sx={{ mt: 1.5 }}>
+      {series.map((s) => (
+        <Stack key={s.key} direction="row" alignItems="center" gap={0.75}>
+          <ColorDot color={s.color} />
+          <Typography variant="caption" color="text.secondary">
+            {s.label}
+          </Typography>
+        </Stack>
+      ))}
+    </Stack>
+  );
+}
+
 interface TrendAreaChartProps {
   data: unknown[];
   xKey?: string;
@@ -112,26 +133,14 @@ export function TrendAreaChart({ data, xKey = 'label', xName, yName, height, are
 
 /** Bar equivalent of TrendAreaChart — same `areas` prop shape (drop-in). Multiple
  * series stack into one bar; single series renders a rounded bar. Stacked
- * segments use radius 0 (the chart wrapper defaults an omitted radius to
- * [4,4,0,0], which recharts renders as empty for stacked bars). The chart's
- * built-in legend blanks this wrapper, so a custom chip legend is rendered. */
+ * segments use radius 0: the chart wrapper defaults an omitted radius to
+ * [4,4,0,0], which recharts renders as empty for stacked bars. The wrapper's
+ * built-in legend blanks the chart, so ChartLegend is rendered instead. */
 export function TrendBarChart({ data, xKey = 'label', xName, yName, height, areas, margin, padded = false, loading = false }: TrendAreaChartProps): JSX.Element {
   if (loading) return <Skeleton variant="rounded" height={height ?? 320} />;
   const stacked = areas.length > 1;
   return (
     <ChartBox padded={padded}>
-      {stacked && (
-        <Stack direction="row" flexWrap="wrap" gap={1.5} justifyContent="center" sx={{ mb: 1.5 }}>
-          {areas.map((a) => (
-            <Stack key={a.key} direction="row" alignItems="center" gap={0.75}>
-              <Box sx={{ width: 10, height: 10, borderRadius: '2px', bgcolor: a.color, flexShrink: 0 }} />
-              <Typography variant="caption" color="text.secondary">
-                {a.name}
-              </Typography>
-            </Stack>
-          ))}
-        </Stack>
-      )}
       <BarChart
         data={data}
         xAxisDataKey={xKey}
@@ -149,6 +158,28 @@ export function TrendBarChart({ data, xKey = 'label', xName, yName, height, area
         tooltip={{ show: true }}
         grid={{ show: true }}
         maxBarSize={stacked ? 40 : 56}
+      />
+      {stacked && <ChartLegend series={areas.map((a) => ({ key: a.key, label: a.name, color: a.color }))} />}
+    </ChartBox>
+  );
+}
+
+/** Single-series category bar chart (categorical x-axis, e.g. usage by application
+ * or backend). No legend — one colour. */
+export function CategoryBarChart({ data, xKey = 'label', xName, yName, color, height = 220 }: { data: unknown[]; xKey?: string; xName?: string; yName?: string; color: string; height?: number }): JSX.Element {
+  return (
+    <ChartBox>
+      <BarChart
+        data={data}
+        xAxisDataKey={xKey}
+        xAxis={{ show: true, name: xName }}
+        yAxis={{ show: true, name: yName }}
+        height={height}
+        bars={[{ dataKey: 'value', name: yName ?? 'Value', fill: color, radius: [2, 2, 0, 0] }]}
+        legend={{ show: false }}
+        tooltip={{ show: true }}
+        grid={{ show: true }}
+        maxBarSize={56}
       />
     </ChartBox>
   );

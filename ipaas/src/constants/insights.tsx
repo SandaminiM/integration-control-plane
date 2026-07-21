@@ -163,14 +163,15 @@ export const KIND_DOT: Record<IntegrationKind, string> = {
 /** The eight integration-type series for the merged "Activity over time" chart —
  * each with a distinct color so all types are legible when "All" is selected. */
 export const ACTIVITY_SERIES: { key: IntegrationKind; label: string; color: string }[] = [
-  { key: 'api', label: 'Integration as API', color: '#7986CB' },
-  { key: 'agent', label: 'AI Agent', color: '#9575CD' },
-  { key: 'mcp', label: 'MCP Server', color: '#E8964A' },
-  { key: 'webhook', label: 'Webhook', color: '#E57373' },
+  { key: 'api', label: 'Integration as API', color: INSIGHTS_CHART_COLORS.blue },
+  { key: 'agent', label: 'AI Agent', color: INSIGHTS_CHART_COLORS.purple },
+  { key: 'mcp', label: 'MCP Server', color: INSIGHTS_CHART_COLORS.orange },
+  { key: 'webhook', label: 'Webhook', color: INSIGHTS_CHART_COLORS.red },
+  // event/file have no dedicated palette entry — keep distinct hues so all eight are legible.
   { key: 'event', label: 'Event Integration', color: '#4DB6AC' },
   { key: 'file', label: 'File Integration', color: '#F06292' },
-  { key: 'auto', label: 'Automation', color: '#81C784' },
-  { key: 'rag', label: 'RAG Ingestion', color: '#D9A63F' },
+  { key: 'auto', label: 'Automation', color: INSIGHTS_CHART_COLORS.green },
+  { key: 'rag', label: 'RAG Ingestion', color: INSIGHTS_CHART_COLORS.amber },
 ];
 
 /** Native unit per integration kind, used by the "Top integrations by volume" rows. */

@@ -18,7 +18,7 @@
 
 import { Alert, Box, Chip, Skeleton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
-import { InsightsCard } from './shared';
+import { ColorDot, InsightsCard } from './shared';
 import { DEPLOYMENT_STATUS_CHIP, KIND_DOT } from '../../constants/insights';
 import { truncate } from '../../utils/string';
 import { formatDeployTime } from '../../utils/insightsFormat';
@@ -39,7 +39,7 @@ export function RecentDeployments({ items, envName, loading = false }: { items: 
             return (
               <Box key={d.id}>
                 <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap" sx={{ minWidth: 0 }}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: '2px', bgcolor: KIND_DOT[d.kind], flexShrink: 0 }} />
+                  <ColorDot color={KIND_DOT[d.kind]} size={8} />
                   <Tooltip title={d.name}>
                     <Typography variant="body2" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
                       {truncate(d.name, 32)}

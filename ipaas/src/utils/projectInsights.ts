@@ -18,9 +18,33 @@
 
 import { formatCount as fmt, formatDuration, formatLatencyMs } from './insightsFormat';
 import { ACTIVITY_SERIES, INSIGHTS_KIND_DESC, KIND_DOT, UNIT_BY_KIND } from '../constants/insights';
-import type { ProjectComponentStat, ProjectFailingRow, ProjectInsightsData, ProjectInsightsRaw, ProjectLatencyRow, ProjectVolumeRow } from '../types/insights';
+import type { InsightsApiRef, InsightsAutomationRef, ProjectComponentStat, ProjectFailingRow, ProjectInsightsData, ProjectInsightsRaw, ProjectLatencyRow, ProjectVolumeRow } from '../types/insights';
 
 const TYPE_MIX_KINDS = ['api', 'auto', 'rag', 'agent', 'mcp', 'webhook', 'event', 'file'] as const;
+
+/** Zeroed raw aggregate that still lists every known integration as a placeholder
+ * row, so the table isn't empty before the live query resolves. */
+export function emptyProjectInsightsRaw(apis: InsightsApiRef[], automations: InsightsAutomationRef[], eventApis: InsightsApiRef[]): ProjectInsightsRaw {
+  return {
+    totalRequests: 0,
+    totalErrors: 0,
+    totalTraffic: 0,
+    totalTrafficErrors: 0,
+    trend: [],
+    activity: [],
+    serviceActivity: [],
+    eventActivity: [],
+    automationActivity: [],
+    serviceLatencyByKind: { api: 0, agent: 0, mcp: 0, webhook: 0 },
+    autoDurationByKind: { auto: { avgMs: 0, p95Ms: 0 }, rag: { avgMs: 0, p95Ms: 0 } },
+    components: [
+      ...apis.map((a): ProjectComponentStat => ({ id: a.id, name: a.name, handler: a.handler, type: a.kind, requestCount: 0, errorCount: 0, errorRate: 0, latency: 0 })),
+      ...automations.map((a): ProjectComponentStat => ({ id: a.id, name: a.name, handler: a.handler, type: a.kind, requestCount: null, errorCount: null, errorRate: null, latency: null })),
+      ...eventApis.map((a): ProjectComponentStat => ({ id: a.id, name: a.name, handler: a.handler, type: a.kind, requestCount: 0, errorCount: 0, errorRate: 0, latency: 0 })),
+    ],
+    taskStats: null,
+  };
+}
 
 function pct(part: number, whole: number): number {
   return whole > 0 ? Number(((part / whole) * 100).toFixed(1)) : 0;
@@ -46,7 +70,7 @@ function buildTopFailing(active: ProjectComponentStat[]): ProjectFailingRow[] {
 // whether the project currently has an active integration of that type. Event /
 // File integrations are intentionally excluded.
 const SERVICE_LATENCY_SUBTYPES: { key: 'api' | 'agent' | 'mcp' | 'webhook'; label: string }[] = [
-  { key: 'api', label: 'Integrations as API' },
+  { key: 'api', label: 'Integration as API' },
   { key: 'agent', label: 'AI Agents' },
   { key: 'mcp', label: 'MCP Servers' },
   { key: 'webhook', label: 'Webhooks' },

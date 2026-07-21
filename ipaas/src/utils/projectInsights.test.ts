@@ -23,9 +23,6 @@ import type { ProjectComponentStat, ProjectInsightsRaw } from '../types/insights
 const baseRaw = (over: Partial<ProjectInsightsRaw> = {}): ProjectInsightsRaw => ({
   totalRequests: 0,
   totalErrors: 0,
-  avgLatency: 0,
-  autoAvgDurationMs: 0,
-  autoP95DurationMs: 0,
   totalTraffic: 0,
   totalTrafficErrors: 0,
   trend: [],

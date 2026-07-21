@@ -336,12 +336,8 @@ function toComponentStat(ref: InsightsApiRef, ins: ComponentInsights | null): Pr
   return { id: ref.id, name: ref.name, handler: ref.handler, type: ref.kind, requestCount: ins?.requestCount ?? 0, errorCount: ins?.errorCount ?? 0, errorRate: ins?.errorRate ?? 0, latency: ins?.latency ?? 0 };
 }
 
-// Integration kinds counted as request/response "services" for the combined
-// Services Avg-latency figure. AI Agents ('agent') and event/file integrations
-// are omitted here.
-const SERVICE_LATENCY_KINDS = new Set<InsightsApiRef['kind']>(['api', 'mcp', 'webhook']);
-// Kinds we fetch per-API latency for — the services above plus AI Agents, which
-// the Latency & duration sub-type filter surfaces on their own.
+// Kinds we fetch per-API latency for — request/response services plus AI Agents;
+// the Latency & duration filter surfaces each on its own.
 const LATENCY_FETCH_KINDS = new Set<InsightsApiRef['kind']>(['api', 'mcp', 'webhook', 'agent']);
 
 export async function fetchProjectInsights(orgUuid: string, projectId: string, insightsEnv: InsightsEnvironment, apis: InsightsApiRef[], automations: InsightsAutomationRef[], eventApis: InsightsApiRef[], range: InsightsRange, queryApiUrl: string): Promise<ProjectInsightsRaw> {
@@ -430,13 +426,6 @@ export async function fetchProjectInsights(orgUuid: string, projectId: string, i
   // headline numbers always agree with the table beneath them.
   const totalRequests = apiStats.reduce((s, a) => s + (a.requestCount ?? 0), 0);
   const totalErrors = apiStats.reduce((s, a) => s + (a.errorCount ?? 0), 0);
-  // Services "Avg latency" — request-weighted mean over service integrations
-  // only (Integration as API / MCP Server / Webhook); AI Agents and event/file
-  // integrations are excluded so the figure reflects request/response services.
-  const svcStats = apiStats.filter((a) => SERVICE_LATENCY_KINDS.has(a.type as InsightsApiRef['kind']));
-  const svcRequests = svcStats.reduce((s, a) => s + (a.requestCount ?? 0), 0);
-  const svcWeightedLatency = svcStats.reduce((s, a) => s + (a.latency ?? 0) * (a.requestCount ?? 0), 0);
-  const avgLatency = svcRequests > 0 ? Math.round(svcWeightedLatency / svcRequests) : 0;
 
   // Per-sub-type request-weighted avg latency for the Latency & duration filter.
   const latencyForKind = (kind: InsightsApiRef['kind']): number => {
@@ -523,10 +512,6 @@ export async function fetchProjectInsights(orgUuid: string, projectId: string, i
     return { label: a.label, event: e?.event ?? 0, file: e?.file ?? 0 };
   });
 
-  const durs = automationOverview.duration.filter((d) => (d.averageDurationMs ?? 0) > 0);
-  const autoAvgDurationMs = durs.length ? Math.round(durs.reduce((s, d) => s + (d.averageDurationMs || 0), 0) / durs.length) : 0;
-  const autoP95DurationMs = automationOverview.duration.reduce((m, d) => Math.max(m, d.p95DurationMs || 0), 0);
-
   // Duration split by automation sub-type (Automations vs RAG Ingestions), matched
   // by componentId against the automation rows we already classified by kind.
   const durationForKind = (kind: 'auto' | 'rag') => {
@@ -541,16 +526,30 @@ export async function fetchProjectInsights(orgUuid: string, projectId: string, i
   const autoDurationByKind = { auto: durationForKind('auto'), rag: durationForKind('rag') };
 
   // Automation activity split by sub-type. The project trend is combined, so
-  // apportion each bucket by each kind's share of total executions.
+  // apportion each bucket by each kind's share of total executions. With no
+  // executions in range, split evenly when both kinds exist, else give the whole
+  // bucket to whichever single kind is present.
   const execFor = (kind: 'auto' | 'rag') => autoStats.filter((a) => a.type === kind).reduce((s, a) => s + (a.requestCount ?? 0), 0);
   const autoExec = execFor('auto');
   const ragExec = execFor('rag');
   const totalExec = autoExec + ragExec;
-  const autoFrac = totalExec > 0 ? autoExec / totalExec : autoStats.some((a) => a.type === 'auto') ? 1 : 0;
-  const ragFrac = totalExec > 0 ? ragExec / totalExec : autoStats.some((a) => a.type === 'rag') ? 1 : 0;
+  const hasAuto = autoStats.some((a) => a.type === 'auto');
+  const hasRag = autoStats.some((a) => a.type === 'rag');
+  let autoFrac: number;
+  let ragFrac: number;
+  if (totalExec > 0) {
+    autoFrac = autoExec / totalExec;
+    ragFrac = ragExec / totalExec;
+  } else if (hasAuto && hasRag) {
+    autoFrac = 0.5;
+    ragFrac = 0.5;
+  } else {
+    autoFrac = hasAuto ? 1 : 0;
+    ragFrac = hasRag ? 1 : 0;
+  }
   const automationActivity = activity.map((a) => ({ label: a.label, auto: Math.round(a.automations * autoFrac), rag: Math.round(a.automations * ragFrac) }));
 
-  return { totalRequests, totalErrors, avgLatency, autoAvgDurationMs, autoP95DurationMs, totalTraffic: overview.totalTraffic, totalTrafficErrors: overview.totalErrors, trend, activity, serviceActivity, eventActivity, automationActivity, serviceLatencyByKind, autoDurationByKind, components: [...apiStats, ...eventStats, ...autoStats, ...deletedStats], taskStats: automationOverview.stats };
+  return { totalRequests, totalErrors, totalTraffic: overview.totalTraffic, totalTrafficErrors: overview.totalErrors, trend, activity, serviceActivity, eventActivity, automationActivity, serviceLatencyByKind, autoDurationByKind, components: [...apiStats, ...eventStats, ...autoStats, ...deletedStats], taskStats: automationOverview.stats };
 }
 
 // Project-level latency trend — devant's getLatencySummary series

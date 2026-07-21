@@ -17,10 +17,10 @@
  */
 
 import { Alert, Box, Chip, ListingTable, MenuItem, Skeleton, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
-import { BarChart, PieChart } from '@wso2/oxygen-ui-charts-react';
+import { PieChart } from '@wso2/oxygen-ui-charts-react';
 import { useState, type JSX, type ReactNode } from 'react';
 import { useApiInsights } from '../../hooks/useApiInsights';
-import { ChartBox, InsightsCard, KpiCards, TableSkeletonRows, TrendAreaChart, TrendBarChart } from './shared';
+import { CategoryBarChart, InsightsCard, KpiCards, TableSkeletonRows, TrendAreaChart, TrendBarChart } from './shared';
 import StatusCodeBars from './StatusCodeBars';
 import { API_CHART as CHART, API_TABS, AVAILABILITY_COLOR, METRIC_SERIES } from '../../constants/insights';
 import type { ApiInsightsTab, ErrorCategoryRow, InsightsApiRef, InsightsEnvironment, InsightsRange } from '../../types/insights';
@@ -164,20 +164,7 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
                   ) : data.traffic.byApplication.length === 0 ? (
                     <Alert severity="info">No application traffic in range.</Alert>
                   ) : (
-                    <ChartBox>
-                      <BarChart
-                        data={data.traffic.byApplication}
-                        xAxisDataKey="label"
-                        xAxis={{ show: true, name: 'Application' }}
-                        yAxis={{ show: true, name: 'Requests' }}
-                        height={220}
-                        bars={[{ dataKey: 'value', name: 'Requests', fill: CHART.requests, radius: [2, 2, 0, 0] }]}
-                        tooltip={{ show: true }}
-                        grid={{ show: true }}
-                        legend={{ show: false }}
-                        maxBarSize={56}
-                      />
-                    </ChartBox>
+                    <CategoryBarChart data={data.traffic.byApplication} xName="Application" yName="Requests" color={CHART.requests} />
                   )}
                 </InsightsCard>
                 <InsightsCard title="Usage by Backend">
@@ -186,20 +173,7 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
                   ) : data.traffic.byBackend.length === 0 ? (
                     <Alert severity="info">No backend traffic in range.</Alert>
                   ) : (
-                    <ChartBox>
-                      <BarChart
-                        data={data.traffic.byBackend}
-                        xAxisDataKey="label"
-                        xAxis={{ show: true, name: 'Backend' }}
-                        yAxis={{ show: true, name: 'Requests' }}
-                        height={220}
-                        bars={[{ dataKey: 'value', name: 'Requests', fill: CHART.target, radius: [2, 2, 0, 0] }]}
-                        tooltip={{ show: true }}
-                        grid={{ show: true }}
-                        legend={{ show: false }}
-                        maxBarSize={56}
-                      />
-                    </ChartBox>
+                    <CategoryBarChart data={data.traffic.byBackend} xName="Backend" yName="Requests" color={CHART.target} />
                   )}
                 </InsightsCard>
               </Box>

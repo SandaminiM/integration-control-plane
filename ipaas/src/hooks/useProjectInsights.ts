@@ -20,8 +20,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { fetchProjectInsights, fetchProjectLatencyTrend } from '#api/insights';
 import { useInsightsQueryUrl } from './useInsights';
-import { toProjectInsightsData } from '../utils/projectInsights';
-import type { InsightsApiRef, InsightsAutomationRef, InsightsEnvironment, InsightsRange, ProjectComponentStat, ProjectInsightsRaw } from '../types/insights';
+import { emptyProjectInsightsRaw, toProjectInsightsData } from '../utils/projectInsights';
+import type { InsightsApiRef, InsightsAutomationRef, InsightsEnvironment, InsightsRange, ProjectInsightsRaw } from '../types/insights';
 
 export function useProjectInsights(orgUuid: string, projectId: string, insightsEnv: InsightsEnvironment | null, apis: InsightsApiRef[], automations: InsightsAutomationRef[], eventApis: InsightsApiRef[], range: InsightsRange) {
   const apiKey = apis.map((a) => a.apiId).join(',');
@@ -38,34 +38,10 @@ export function useProjectInsights(orgUuid: string, projectId: string, insightsE
     staleTime: 60_000,
   });
 
-  // Until the live query resolves (or when it is disabled/errored), still surface
-  // every known integration as a zeroed placeholder row so the table isn't empty;
-  // the query's real per-component stats override these by id once it resolves.
-  const raw = useMemo<ProjectInsightsRaw>(() => {
-    if (query.data) return query.data;
-    return {
-      totalRequests: 0,
-      totalErrors: 0,
-      avgLatency: 0,
-      autoAvgDurationMs: 0,
-      autoP95DurationMs: 0,
-      totalTraffic: 0,
-      totalTrafficErrors: 0,
-      trend: [],
-      activity: [],
-      serviceActivity: [],
-      eventActivity: [],
-      automationActivity: [],
-      serviceLatencyByKind: { api: 0, agent: 0, mcp: 0, webhook: 0 },
-      autoDurationByKind: { auto: { avgMs: 0, p95Ms: 0 }, rag: { avgMs: 0, p95Ms: 0 } },
-      components: [
-        ...apis.map((a): ProjectComponentStat => ({ id: a.id, name: a.name, handler: a.handler, type: a.kind, requestCount: 0, errorCount: 0, errorRate: 0, latency: 0 })),
-        ...automations.map((a): ProjectComponentStat => ({ id: a.id, name: a.name, handler: a.handler, type: a.kind, requestCount: null, errorCount: null, errorRate: null, latency: null })),
-        ...eventApis.map((a): ProjectComponentStat => ({ id: a.id, name: a.name, handler: a.handler, type: a.kind, requestCount: 0, errorCount: 0, errorRate: 0, latency: 0 })),
-      ],
-      taskStats: null,
-    };
-  }, [query.data, apis, automations, eventApis]);
+  // Until the live query resolves (or when it is disabled/errored), surface every
+  // known integration as a zeroed placeholder row so the table isn't empty; the
+  // query's real per-component stats override these by id once it resolves.
+  const raw = useMemo<ProjectInsightsRaw>(() => query.data ?? emptyProjectInsightsRaw(apis, automations, eventApis), [query.data, apis, automations, eventApis]);
 
   const data = useMemo(() => toProjectInsightsData(raw), [raw]);
   return { data, isLoading: query.isLoading, isError: query.isError, enabled, hasIntegrations };
