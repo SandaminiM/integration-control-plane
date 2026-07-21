@@ -17,10 +17,10 @@
  */
 
 import { Alert, Box, Chip, ListingTable, MenuItem, Skeleton, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
-import { AreaChart, PieChart } from '@wso2/oxygen-ui-charts-react';
+import { BarChart, PieChart } from '@wso2/oxygen-ui-charts-react';
 import { useState, type JSX, type ReactNode } from 'react';
 import { useApiInsights } from '../../hooks/useApiInsights';
-import { ChartBox, InsightsCard, KpiCards, TableSkeletonRows, TrendAreaChart } from './shared';
+import { ChartBox, InsightsCard, KpiCards, TableSkeletonRows, TrendAreaChart, TrendBarChart } from './shared';
 import StatusCodeBars from './StatusCodeBars';
 import { API_CHART as CHART, API_TABS, AVAILABILITY_COLOR, METRIC_SERIES } from '../../constants/insights';
 import type { ApiInsightsTab, ErrorCategoryRow, InsightsApiRef, InsightsEnvironment, InsightsRange } from '../../types/insights';
@@ -97,7 +97,7 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
                     <MenuItem value="latency">Latency</MenuItem>
                   </TextField>
                 }>
-                <TrendAreaChart
+                <TrendBarChart
                   loading={loading}
                   data={data.overview.trend}
                   xName="Date"
@@ -145,15 +145,15 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
           {tab === 'traffic' && (
             <Stack gap={2}>
               <InsightsCard title="API Usage Over Time" subtitle="Successful vs error responses">
-                <TrendAreaChart
+                <TrendBarChart
                   loading={loading}
                   data={data.traffic.trend}
                   xName="Date"
                   yName="Requests"
                   height={320}
                   areas={[
-                    { key: 'requests', name: 'Success', color: CHART.requests },
-                    { key: 'errors', name: 'Error', color: CHART.errors },
+                    { key: 'requests', name: 'Success', color: CHART.requests, stackId: 'traffic' },
+                    { key: 'errors', name: 'Error', color: CHART.errors, stackId: 'traffic' },
                   ]}
                 />
               </InsightsCard>
@@ -165,17 +165,17 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
                     <Alert severity="info">No application traffic in range.</Alert>
                   ) : (
                     <ChartBox>
-                      <AreaChart
+                      <BarChart
                         data={data.traffic.byApplication}
                         xAxisDataKey="label"
                         xAxis={{ show: true, name: 'Application' }}
                         yAxis={{ show: true, name: 'Requests' }}
                         height={220}
-                        colors={[CHART.requests]}
-                        areas={[{ dataKey: 'value', name: 'Requests', type: 'monotone', stroke: CHART.requests, fill: CHART.requests, fillOpacity: 0.2 }]}
+                        bars={[{ dataKey: 'value', name: 'Requests', fill: CHART.requests, radius: [2, 2, 0, 0] }]}
                         tooltip={{ show: true }}
                         grid={{ show: true }}
-                        legend={{ show: true, verticalAlign: 'top' }}
+                        legend={{ show: false }}
+                        maxBarSize={56}
                       />
                     </ChartBox>
                   )}
@@ -187,17 +187,17 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
                     <Alert severity="info">No backend traffic in range.</Alert>
                   ) : (
                     <ChartBox>
-                      <AreaChart
+                      <BarChart
                         data={data.traffic.byBackend}
                         xAxisDataKey="label"
                         xAxis={{ show: true, name: 'Backend' }}
                         yAxis={{ show: true, name: 'Requests' }}
                         height={220}
-                        colors={[CHART.target]}
-                        areas={[{ dataKey: 'value', name: 'Requests', type: 'monotone', stroke: CHART.target, fill: CHART.target, fillOpacity: 0.2 }]}
+                        bars={[{ dataKey: 'value', name: 'Requests', fill: CHART.target, radius: [2, 2, 0, 0] }]}
                         tooltip={{ show: true }}
                         grid={{ show: true }}
-                        legend={{ show: true, verticalAlign: 'top' }}
+                        legend={{ show: false }}
+                        maxBarSize={56}
                       />
                     </ChartBox>
                   )}
@@ -278,7 +278,7 @@ export default function ApiInsightsView({ orgUuid, projectId, insightsEnv, apiRe
           {tab === 'errors' && (
             <Stack gap={2}>
               <InsightsCard title="Errors Over Time" subtitle="Grouped by error category">
-                <TrendAreaChart
+                <TrendBarChart
                   loading={loading}
                   data={data.errors.trend}
                   xName="Date"

@@ -37,24 +37,20 @@ export function RecentDeployments({ items, envName, loading = false }: { items: 
           {items.map((d) => {
             const s = DEPLOYMENT_STATUS_CHIP[d.status] ?? DEPLOYMENT_STATUS_CHIP.UNKNOWN;
             return (
-            <Box key={d.id}>
-              <Stack direction="row" alignItems="center" gap={1} sx={{ minWidth: 0 }}>
-                <Box sx={{ width: 8, height: 8, borderRadius: '2px', bgcolor: KIND_DOT[d.kind], flexShrink: 0 }} />
-                <Tooltip title={d.name}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-block' }}>
-                    {truncate(d.name, 40)}
-                  </Typography>
-                </Tooltip>
-                <Chip size="small" variant="outlined" label={s.label} color={s.color === 'default' ? undefined : s.color} />
-              </Stack>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                {d.version ? `${d.version} · ` : ''}deployed to {envName}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                {formatDeployTime(d.deployedAt)}
-                {d.by ? ` · by ${d.by}` : ''}
-              </Typography>
-            </Box>
+              <Box key={d.id}>
+                <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap" sx={{ minWidth: 0 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '2px', bgcolor: KIND_DOT[d.kind], flexShrink: 0 }} />
+                  <Tooltip title={d.name}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      {truncate(d.name, 32)}
+                    </Typography>
+                  </Tooltip>
+                  <Chip size="small" variant="outlined" label={s.label} color={s.color === 'default' ? undefined : s.color} />
+                </Stack>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
+                  {d.version ? `${d.version} · ` : ''}{formatDeployTime(d.deployedAt)}
+                </Typography>
+              </Box>
             );
           })}
         </Stack>

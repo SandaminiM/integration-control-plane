@@ -16,11 +16,12 @@
  * under the License.
  */
 
-import { Alert, Box, Divider, Skeleton, Stack, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Divider, Skeleton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { AreaChart } from '@wso2/oxygen-ui-charts-react';
 import type { JSX } from 'react';
 import { InsightsCard, ChartBox } from './shared';
 import { INSIGHTS_CHART_COLORS } from '../../constants/insights';
+import { truncate } from '../../utils/string';
 import type { ProjectErrorPoint, ProjectFailingRow } from '../../types/insights';
 
 /** Errors-over-time area chart (dots off), a divider, then the top failing
@@ -60,9 +61,11 @@ export function TopFailing({ rows, errorSeries, loading = false }: { rows: Proje
         <Stack gap={1.5}>
           {rows.map((r) => (
             <Stack key={r.id} direction="row" alignItems="center" justifyContent="space-between" gap={1}>
-              <Typography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
-                {r.name}
-              </Typography>
+              <Tooltip title={r.name}>
+                <Typography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+                  {truncate(r.name, 30)}
+                </Typography>
+              </Tooltip>
               <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
                 <Typography variant="body2" sx={{ fontWeight: 700, color: 'error.main' }}>
                   {r.errorCount}

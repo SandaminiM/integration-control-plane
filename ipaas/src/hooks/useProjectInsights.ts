@@ -53,6 +53,11 @@ export function useProjectInsights(orgUuid: string, projectId: string, insightsE
       totalTrafficErrors: 0,
       trend: [],
       activity: [],
+      serviceActivity: [],
+      eventActivity: [],
+      automationActivity: [],
+      serviceLatencyByKind: { api: 0, agent: 0, mcp: 0, webhook: 0 },
+      autoDurationByKind: { auto: { avgMs: 0, p95Ms: 0 }, rag: { avgMs: 0, p95Ms: 0 } },
       components: [
         ...apis.map((a): ProjectComponentStat => ({ id: a.id, name: a.name, handler: a.handler, type: a.kind, requestCount: 0, errorCount: 0, errorRate: 0, latency: 0 })),
         ...automations.map((a): ProjectComponentStat => ({ id: a.id, name: a.name, handler: a.handler, type: a.kind, requestCount: null, errorCount: null, errorRate: null, latency: null })),

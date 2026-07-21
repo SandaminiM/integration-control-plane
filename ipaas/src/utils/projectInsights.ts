@@ -17,7 +17,7 @@
  */
 
 import { formatCount as fmt, formatDuration, formatLatencyMs } from './insightsFormat';
-import { ACTIVITY_META, INSIGHTS_KIND_DESC, KIND_DOT, UNIT_BY_KIND } from '../constants/insights';
+import { ACTIVITY_SERIES, INSIGHTS_KIND_DESC, KIND_DOT, UNIT_BY_KIND } from '../constants/insights';
 import type { ProjectComponentStat, ProjectFailingRow, ProjectInsightsData, ProjectInsightsRaw, ProjectLatencyRow, ProjectVolumeRow } from '../types/insights';
 
 const TYPE_MIX_KINDS = ['api', 'auto', 'rag', 'agent', 'mcp', 'webhook', 'event', 'file'] as const;
@@ -39,17 +39,33 @@ function buildTopFailing(active: ProjectComponentStat[]): ProjectFailingRow[] {
     .filter((c) => (c.errorCount ?? 0) > 0)
     .map((c) => ({ id: c.id, name: c.name, handler: c.handler, type: c.type, unit: UNIT_BY_KIND[c.type], errorRate: c.errorRate != null ? c.errorRate : pct(c.errorCount ?? 0, c.requestCount ?? 0), errorCount: fmt(c.errorCount ?? 0) }))
     .sort((a, b) => b.errorRate - a.errorRate)
-    .slice(0, 5);
+    .slice(0, 3);
 }
 
-function buildLatencyRows(raw: ProjectInsightsRaw, active: ProjectComponentStat[]): ProjectLatencyRow[] {
-  const rows: ProjectLatencyRow[] = [];
-  if (active.some((c) => c.type !== 'auto' && c.type !== 'rag')) {
-    rows.push({ key: 'services', label: 'Services', sub: 'Response time', color: KIND_DOT.api, metrics: [{ label: 'Avg latency', value: formatLatencyMs(raw.avgLatency) }] });
-  }
-  if (active.some((c) => c.type === 'auto' || c.type === 'rag')) {
-    rows.push({ key: 'automations', label: 'Automations', sub: 'Run duration', color: KIND_DOT.auto, metrics: [{ label: 'Avg', value: formatDuration(raw.autoAvgDurationMs / 1000) }, { label: 'P95', value: formatDuration(raw.autoP95DurationMs / 1000) }] });
-  }
+// Latency & duration service sub-types, always shown in this order regardless of
+// whether the project currently has an active integration of that type. Event /
+// File integrations are intentionally excluded.
+const SERVICE_LATENCY_SUBTYPES: { key: 'api' | 'agent' | 'mcp' | 'webhook'; label: string }[] = [
+  { key: 'api', label: 'Integrations as API' },
+  { key: 'agent', label: 'AI Agents' },
+  { key: 'mcp', label: 'MCP Servers' },
+  { key: 'webhook', label: 'Webhooks' },
+];
+
+function buildLatencyRows(raw: ProjectInsightsRaw): ProjectLatencyRow[] {
+  const rows: ProjectLatencyRow[] = [
+    { key: 'automations', label: 'Automations', sub: 'Execution duration', color: KIND_DOT.auto, metrics: [{ label: 'Avg', value: formatDuration(raw.autoDurationByKind.auto.avgMs / 1000) }, { label: 'P95', value: formatDuration(raw.autoDurationByKind.auto.p95Ms / 1000) }] },
+    { key: 'rag', label: 'RAG Ingestions', sub: 'Execution duration', color: KIND_DOT.rag, metrics: [{ label: 'Avg', value: formatDuration(raw.autoDurationByKind.rag.avgMs / 1000) }, { label: 'P95', value: formatDuration(raw.autoDurationByKind.rag.p95Ms / 1000) }] },
+  ];
+  SERVICE_LATENCY_SUBTYPES.forEach((t) => {
+    rows.push({
+      key: t.key,
+      label: t.label,
+      sub: 'Response time',
+      color: KIND_DOT[t.key],
+      metrics: [{ label: 'Avg latency', value: formatLatencyMs(raw.serviceLatencyByKind[t.key]) }],
+    });
+  });
   return rows;
 }
 
@@ -70,13 +86,26 @@ export function toProjectInsightsData(raw: ProjectInsightsRaw): ProjectInsightsD
       { key: 'errors', label: 'Errors', value: fmt(failCount + timeoutCount), sub: 'Across all integrations', danger: true },
     ],
     trend: raw.trend.map((p) => ({ label: p.label, apiRequests: p.apiRequests, automationRuns: p.automationRuns, automationErrors: p.automationErrors, errors: p.errors })),
-    activityCharts: ACTIVITY_META.map((m) => {
-      const points = raw.activity.map((p) => ({ label: p.label, count: p[m.key] }));
-      return { key: m.key, title: m.title, unit: m.unit, color: m.color, total: fmt(points.reduce((s, p) => s + p.count, 0)), points };
-    }),
+    // One merged chart carrying every integration type's per-bucket count. The
+    // four raw activity series (service / event / automation sub-splits + the
+    // agent aggregate) are all bucket-aligned, so index i lines up across them.
+    activityChart: {
+      series: ACTIVITY_SERIES,
+      points: raw.activity.map((p, i) => ({
+        label: p.label,
+        api: raw.serviceActivity[i]?.api ?? 0,
+        mcp: raw.serviceActivity[i]?.mcp ?? 0,
+        webhook: raw.serviceActivity[i]?.webhook ?? 0,
+        agent: p.agents,
+        event: raw.eventActivity[i]?.event ?? 0,
+        file: raw.eventActivity[i]?.file ?? 0,
+        auto: raw.automationActivity[i]?.auto ?? 0,
+        rag: raw.automationActivity[i]?.rag ?? 0,
+      })),
+    },
     topByVolume: buildTopByVolume(active),
     topFailing: buildTopFailing(active),
-    latencyRows: buildLatencyRows(raw, active),
+    latencyRows: buildLatencyRows(raw),
     integrations: raw.components.map((c) => ({
       id: c.id,
       name: c.name,

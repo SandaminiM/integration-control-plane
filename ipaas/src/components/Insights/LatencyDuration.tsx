@@ -16,13 +16,15 @@
  * under the License.
  */
 
-import { Alert, Box, Skeleton, Stack, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Divider, Skeleton, Stack, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
 import { InsightsCard } from './shared';
 import type { ProjectLatencyRow } from '../../types/insights';
 
-/** Latency & duration summary — one block per type (Services / Automations), each
- * with its available metrics. */
+/** Latency & duration summary — one block per service sub-type (Integrations as
+ * API / AI Agents / MCP Servers / Webhooks) plus Automations, divided by rules.
+ * Type title aligns with its value on the top line; the "Response time" sub and
+ * the "Avg latency" metric label sit beneath, parallel to each other. */
 export function LatencyDuration({ rows, loading = false }: { rows: ProjectLatencyRow[]; loading?: boolean }): JSX.Element {
   return (
     <InsightsCard title="Latency & duration" subtitle="Services & automations">
@@ -31,17 +33,19 @@ export function LatencyDuration({ rows, loading = false }: { rows: ProjectLatenc
       ) : rows.length === 0 ? (
         <Alert severity="info">No latency data in this period.</Alert>
       ) : (
-        <Stack gap={2}>
+        <Stack gap={2} divider={<Divider flexItem />}>
           {rows.map((r) => (
-            <Stack key={r.key} direction="row" alignItems="center" justifyContent="space-between" gap={2}>
-              <Stack direction="row" alignItems="baseline" gap={1} sx={{ minWidth: 0 }}>
-                <Box sx={{ width: 8, height: 8, borderRadius: '2px', bgcolor: r.color, flexShrink: 0, alignSelf: 'center' }} />
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {r.label}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {r.sub}
-                </Typography>
+            <Stack key={r.key} direction="row" alignItems="flex-start" justifyContent="space-between" gap={2}>
+              <Stack direction="row" alignItems="flex-start" gap={1} sx={{ minWidth: 0 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '2px', bgcolor: r.color, flexShrink: 0, mt: '5px' }} />
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {r.label}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                    {r.sub}
+                  </Typography>
+                </Box>
               </Stack>
               <Stack direction="row" gap={3} flexShrink={0}>
                 {r.metrics.map((m) => (
@@ -49,7 +53,7 @@ export function LatencyDuration({ rows, loading = false }: { rows: ProjectLatenc
                     <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                       {m.value}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '.3px' }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', letterSpacing: '.3px' }}>
                       {m.label}
                     </Typography>
                   </Box>

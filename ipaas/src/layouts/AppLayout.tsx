@@ -1048,11 +1048,6 @@ function AppLayoutInner(): JSX.Element {
                       navigate(settingsUrl);
                       return;
                     }
-                    const insightsUrl = insightsCrossScopeUrl(pathname, scope, projectScope);
-                    if (insightsUrl) {
-                      navigate(insightsUrl);
-                      return;
-                    }
                     navigate(resourceUrl(projectScope, canAccessResource(projectScope, resource ?? 'overview')));
                   }}>
                   <X size={16} />

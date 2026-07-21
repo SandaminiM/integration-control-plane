@@ -18,7 +18,7 @@
 
 import { Box, Button, ListingTable, MenuItem, Paper, Skeleton, Stack, StatCard, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
 import { Download } from '@wso2/oxygen-ui-icons-react';
-import { AreaChart } from '@wso2/oxygen-ui-charts-react';
+import { AreaChart, BarChart } from '@wso2/oxygen-ui-charts-react';
 import type { JSX, ReactNode } from 'react';
 import { INSIGHTS_RANGES } from '../../constants/insights';
 import { KPI_ICONS } from '../../constants/insightsIcons';
@@ -105,6 +105,50 @@ export function TrendAreaChart({ data, xKey = 'label', xName, yName, height, are
         margin={margin ?? { top: 16 }}
         tooltip={{ show: true }}
         grid={{ show: true }}
+      />
+    </ChartBox>
+  );
+}
+
+/** Bar equivalent of TrendAreaChart — same `areas` prop shape (drop-in). Multiple
+ * series stack into one bar; single series renders a rounded bar. Stacked
+ * segments use radius 0 (the chart wrapper defaults an omitted radius to
+ * [4,4,0,0], which recharts renders as empty for stacked bars). The chart's
+ * built-in legend blanks this wrapper, so a custom chip legend is rendered. */
+export function TrendBarChart({ data, xKey = 'label', xName, yName, height, areas, margin, padded = false, loading = false }: TrendAreaChartProps): JSX.Element {
+  if (loading) return <Skeleton variant="rounded" height={height ?? 320} />;
+  const stacked = areas.length > 1;
+  return (
+    <ChartBox padded={padded}>
+      {stacked && (
+        <Stack direction="row" flexWrap="wrap" gap={1.5} justifyContent="center" sx={{ mb: 1.5 }}>
+          {areas.map((a) => (
+            <Stack key={a.key} direction="row" alignItems="center" gap={0.75}>
+              <Box sx={{ width: 10, height: 10, borderRadius: '2px', bgcolor: a.color, flexShrink: 0 }} />
+              <Typography variant="caption" color="text.secondary">
+                {a.name}
+              </Typography>
+            </Stack>
+          ))}
+        </Stack>
+      )}
+      <BarChart
+        data={data}
+        xAxisDataKey={xKey}
+        xAxis={{ show: true, name: xName }}
+        yAxis={{ show: true, name: yName }}
+        height={height}
+        bars={areas.map((a) => ({
+          dataKey: a.key,
+          name: a.name,
+          fill: a.color,
+          ...(stacked ? { stackId: a.stackId ?? 'trend', radius: 0 as const } : { radius: [2, 2, 0, 0] as [number, number, number, number] }),
+        }))}
+        legend={{ show: false }}
+        margin={margin ?? { top: 16 }}
+        tooltip={{ show: true }}
+        grid={{ show: true }}
+        maxBarSize={stacked ? 40 : 56}
       />
     </ChartBox>
   );

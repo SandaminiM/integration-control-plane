@@ -58,14 +58,22 @@ export interface ProjectActivityPoint {
   automations: number;
 }
 
-export interface ProjectActivityChart {
-  key: 'services' | 'agents' | 'events' | 'automations';
-  title: string;
-  unit: string;
+/** One integration-type series in the merged Activity chart. */
+export interface ActivitySeriesMeta {
+  key: IntegrationKind;
+  label: string;
   color: string;
-  /** formatted sum across all buckets, shown top-right */
-  total: string;
-  points: { label: string; count: number }[];
+}
+
+/** One time bucket of the merged Activity chart — a `label` plus a per-kind count
+ * keyed by IntegrationKind (all eight keys present). */
+export type ActivityChartPoint = { label: string } & Record<IntegrationKind, number>;
+
+/** Merged "Activity over time" model: every integration type's counts in one
+ * series set, plotted together ("All") or filtered to a single type. */
+export interface ProjectActivityData {
+  points: ActivityChartPoint[];
+  series: ActivitySeriesMeta[];
 }
 
 export interface ProjectTrendPoint {
@@ -145,7 +153,7 @@ export interface ProjectLatencyRow {
 export interface ProjectInsightsData {
   kpis: ProjectInsightsKpi[];
   trend: ProjectTrendPoint[];
-  activityCharts: ProjectActivityChart[];
+  activityChart: ProjectActivityData;
   topByVolume: ProjectVolumeRow[];
   topFailing: ProjectFailingRow[];
   latencyRows: ProjectLatencyRow[];
@@ -198,6 +206,21 @@ export interface ProjectInsightsRaw {
   trend: { label: string; apiRequests: number; automationRuns: number; automationErrors: number; errors: number }[];
   /** per-integration-type activity series (Services/AI Agents/Event Handlers/Automations), one entry per time bucket */
   activity: ProjectActivityPoint[];
+  /** Services activity split by service sub-type, aligned bucket-for-bucket with
+   * `activity` — feeds the Services chart's sub-type filter. */
+  serviceActivity: { label: string; api: number; mcp: number; webhook: number }[];
+  /** Event Handlers activity split by sub-type (event / file), aligned
+   * bucket-for-bucket with `activity` — feeds the Events chart's sub-type filter. */
+  eventActivity: { label: string; event: number; file: number }[];
+  /** Automations activity split by sub-type (auto / rag), aligned bucket-for-bucket
+   * with `activity` — feeds the Automations chart's sub-type filter. */
+  automationActivity: { label: string; auto: number; rag: number }[];
+  /** request-weighted average latency (ms) per service sub-type — feeds the
+   * Latency & duration rows. */
+  serviceLatencyByKind: { api: number; agent: number; mcp: number; webhook: number };
+  /** execution duration (ms) per automation sub-type — feeds the Automations and
+   * RAG Ingestions Latency & duration rows. */
+  autoDurationByKind: { auto: { avgMs: number; p95Ms: number }; rag: { avgMs: number; p95Ms: number } };
   components: ProjectComponentStat[];
   /** null when the automation overview query failed/was empty */
   taskStats: ProjectTaskStats | null;

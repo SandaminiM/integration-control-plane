@@ -30,6 +30,11 @@ const baseRaw = (over: Partial<ProjectInsightsRaw> = {}): ProjectInsightsRaw => 
   totalTrafficErrors: 0,
   trend: [],
   activity: [],
+  serviceActivity: [],
+  eventActivity: [],
+  automationActivity: [],
+  serviceLatencyByKind: { api: 0, agent: 0, mcp: 0, webhook: 0 },
+  autoDurationByKind: { auto: { avgMs: 0, p95Ms: 0 }, rag: { avgMs: 0, p95Ms: 0 } },
   components: [],
   taskStats: null,
   ...over,
@@ -71,8 +76,8 @@ describe('toProjectInsightsData', () => {
     expect(failing.map((f) => f.id)).toEqual(['b', 'a']);
   });
 
-  it('emits latency rows only for the integration types present', () => {
-    const svcOnly = toProjectInsightsData(baseRaw({ components: [stat({ id: 'a', type: 'api' })] }));
-    expect(svcOnly.latencyRows.map((r) => r.key)).toEqual(['services']);
+  it('always emits the automation, RAG, and four service latency rows', () => {
+    const rows = toProjectInsightsData(baseRaw({ components: [stat({ id: 'a', type: 'api' })] })).latencyRows;
+    expect(rows.map((r) => r.key)).toEqual(['automations', 'rag', 'api', 'agent', 'mcp', 'webhook']);
   });
 });
