@@ -33,6 +33,8 @@ export interface GitCredential {
   organizationUuid: string;
   type: string;
   referenceToken: string;
+  /** GitLab/Bitbucket self-managed server base URL; present only for those provider types. */
+  serverUrl?: string;
 }
 
 export interface CredentialComponentRef {

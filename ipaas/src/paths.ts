@@ -185,6 +185,67 @@ export function componentDeployUrl(orgHandler: string, projectHandler: string, c
   return `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/deploy`;
 }
 
+export function orgGovernanceUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/admin/governance`;
+}
+
+export function orgGovernanceNewPolicyUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/admin/governance/policies/new`;
+}
+
+export function orgGovernancePolicyUrl(orgHandler: string, policyId: string): string {
+  return `/organizations/${orgHandler}/admin/governance/policies/${encodeURIComponent(policyId)}`;
+}
+
+export function orgGovernanceNewAiPolicyUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/admin/governance/ai-policies/new`;
+}
+
+export function orgGovernanceAiPolicyUrl(orgHandler: string, policyId: string): string {
+  return `/organizations/${orgHandler}/admin/governance/ai-policies/${encodeURIComponent(policyId)}`;
+}
+
+export function orgGovernanceNewRulesetUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/admin/governance/rulesets/new`;
+}
+
+export function orgGovernanceRulesetUrl(orgHandler: string, rulesetId: string): string {
+  return `/organizations/${orgHandler}/admin/governance/rulesets/${encodeURIComponent(rulesetId)}`;
+}
+
+export function orgGovernanceNewDocumentUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/admin/governance/documents/new`;
+}
+
+export function orgGovernanceDocumentUrl(orgHandler: string, documentId: string): string {
+  return `/organizations/${orgHandler}/admin/governance/documents/${encodeURIComponent(documentId)}`;
+}
+
+/** AI policies and ruleset/document policies open different governance editors. */
+export function orgGovernancePolicyEditorUrl(orgHandler: string, policyId: string, policyType?: string | null): string {
+  return (policyType ?? '').toLowerCase() === 'ai' ? orgGovernanceAiPolicyUrl(orgHandler, policyId) : orgGovernancePolicyUrl(orgHandler, policyId);
+}
+
+export function orgCertificatesUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/admin/certificates`;
+}
+
+export function orgNewCertificateUrl(orgHandler: string): string {
+  return `/organizations/${orgHandler}/admin/certificates/new`;
+}
+
+export function orgCertificateUrl(orgHandler: string, certificateId: string): string {
+  return `/organizations/${orgHandler}/admin/certificates/${encodeURIComponent(certificateId)}`;
+}
+
+export function projectComplianceUrl(orgHandler: string, projectHandler: string): string {
+  return `/organizations/${orgHandler}/projects/${projectHandler}/insights/compliance`;
+}
+
+export function componentComplianceUrl(orgHandler: string, projectHandler: string, componentHandler: string): string {
+  return `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/insights/compliance`;
+}
+
 // ---------------------------------------------------------------------------
 // External links
 // ---------------------------------------------------------------------------
@@ -196,6 +257,14 @@ export const external = {
   react: 'https://react.dev',
   oxygenUi: 'https://github.com/wso2/oxygen-ui/tree/next',
   githubNew: 'https://github.com/new',
+} as const;
+
+/** Public host bases used to build a component's source repo URL per git provider. */
+export const gitProviderBase = {
+  github: 'https://github.com',
+  bitbucket: 'https://bitbucket.org',
+  gitlab: 'https://gitlab.com',
+  azure: 'https://dev.azure.com',
 } as const;
 
 // Build GitHub OAuth authorization URL for repository access.

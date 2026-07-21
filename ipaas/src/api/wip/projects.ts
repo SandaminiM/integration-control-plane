@@ -17,7 +17,7 @@
  */
 
 import { gql } from './graphql';
-import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput, UpdateProjectInput } from '../../types/project';
+import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput, LinkProjectRepositoryInput, UpdateProjectInput } from '../../types/project';
 
 const PROJECT_FIELDS = 'id, orgId, name, handler, description, version, createdDate, updatedAt, region, type, defaultDeploymentPipelineId, gitOrganization, repository, branch, gitProvider, owner';
 
@@ -80,7 +80,7 @@ const CREATE_MONO_REPO_PROJECT = `
     $name: String!, $description: String!, $projectHandler: String!,
     $orgHandler: String!, $orgId: Int!,
     $repository: String!, $gitOrganization: String!, $branch: String!,
-    $directoryPath: String!, $gitProvider: String!, $isPublicRepo: Boolean!
+    $directoryPath: String!, $gitProvider: String!, $isPublicRepo: Boolean!, $secretRef: String!
   ) {
     createProject(project: {
       name: $name,
@@ -90,7 +90,7 @@ const CREATE_MONO_REPO_PROJECT = `
       orgHandler: $orgHandler,
       version: "1.0.0",
       repository: $repository,
-      secretRef: "",
+      secretRef: $secretRef,
       branch: $branch,
       gitProvider: $gitProvider,
       gitOrganization: $gitOrganization,
@@ -100,6 +100,34 @@ const CREATE_MONO_REPO_PROJECT = `
       id, orgId, name, version, createdDate, handler, region,
       description, defaultDeploymentPipelineId, deploymentPipelineIds,
       type, updatedAt
+    }
+  }`;
+
+const CREATE_PROJECT_REPOSITORY = `
+  mutation CreateProjectRepository(
+    $name: String!, $description: String!, $projectHandler: String!,
+    $orgHandler: String!, $orgId: Int!, $projectId: String!,
+    $repository: String!, $secretRef: String!, $gitOrganization: String!,
+    $branch: String!, $directoryPath: String!, $gitProvider: String!, $isPublicRepo: Boolean!
+  ) {
+    createProjectRepository(project: {
+      name: $name,
+      description: $description,
+      projectHandler: $projectHandler,
+      orgId: $orgId,
+      orgHandler: $orgHandler,
+      version: "1.0.0",
+      repository: $repository,
+      secretRef: $secretRef,
+      branch: $branch,
+      gitProvider: $gitProvider,
+      gitOrganization: $gitOrganization,
+      directoryPath: $directoryPath,
+      isPublicRepo: $isPublicRepo
+    }, projectId: $projectId) {
+      id, orgId, name, version, createdDate, handler, region,
+      description, defaultDeploymentPipelineId, deploymentPipelineIds,
+      type, updatedAt, branch, repository, gitProvider, gitOrganization
     }
   }`;
 
@@ -180,5 +208,24 @@ export async function createMonoRepoProject(input: CreateMonoRepoProjectInput): 
     directoryPath: input.directoryPath,
     gitProvider: input.gitProvider,
     isPublicRepo: input.isPublicRepo,
+    secretRef: input.secretRef ?? '',
   }).then((d) => d.createProject);
+}
+
+export async function linkProjectRepository(input: LinkProjectRepositoryInput): Promise<Project> {
+  return gql<{ createProjectRepository: Project }>(CREATE_PROJECT_REPOSITORY, {
+    name: input.name,
+    description: input.description,
+    projectHandler: input.handler,
+    orgHandler: input.orgHandler,
+    orgId: orgNumericId(),
+    projectId: input.projectId,
+    repository: input.repository,
+    secretRef: input.secretRef,
+    gitOrganization: input.gitOrganization,
+    branch: input.branch,
+    directoryPath: input.directoryPath,
+    gitProvider: input.gitProvider,
+    isPublicRepo: input.isPublicRepo,
+  }).then((d) => d.createProjectRepository);
 }

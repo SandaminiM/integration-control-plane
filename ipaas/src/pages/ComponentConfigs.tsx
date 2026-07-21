@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, ListingTable, MenuItem, PageContent, PageTitle, Select, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, ListingTable, MenuItem, PageContent, PageTitle, Select, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { KeyRound, Pencil, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import Authorized from '../components/Authorized';
@@ -117,7 +117,9 @@ export default function ComponentConfigs({ org, project, component }: ComponentS
       {tracks.length > 0 && <DeploymentTrackBar tracks={tracks} selectedId={trackId} onChange={setTrackId} orgHandler={org} projectHandler={project} componentHandler={component} extra={envSelect} />}
       <PageContent>
         {isLoading ? (
-          <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+            <CircularProgress />
+          </Box>
         ) : !comp ? (
           <Typography>Integration not found</Typography>
         ) : !releaseId || !containerId ? (
@@ -146,7 +148,9 @@ export default function ComponentConfigs({ org, project, component }: ComponentS
             )}
 
             {loadingMounts ? (
-              <CircularProgress sx={{ display: 'block', mx: 'auto', py: 6 }} />
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                <CircularProgress />
+              </Box>
             ) : rows.length === 0 ? (
               <EmptyListing icon={<KeyRound size={48} />} title="No configs or secrets" description="Inject environment variables or mount files into this integration's container." />
             ) : (

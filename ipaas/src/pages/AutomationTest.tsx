@@ -379,10 +379,20 @@ export default function AutomationTest({ org, project, component }: ComponentSco
   );
 
   const renderBody = (): JSX.Element => {
-    if (isLoading) return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />;
+    if (isLoading)
+      return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+          <CircularProgress />
+        </Box>
+      );
     if (!comp) return <Typography>Integration not found</Typography>;
     if (!releaseId) return <Alert severity="info">Deploy this integration to the selected environment to test it.</Alert>;
-    if (argsLoading) return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />;
+    if (argsLoading)
+      return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+          <CircularProgress />
+        </Box>
+      );
     if (hardArgsError) return <Alert severity="error">Failed to load the runtime arguments for this automation.</Alert>;
     return hasArgs ? renderFormView() : renderExecutionsView();
   };

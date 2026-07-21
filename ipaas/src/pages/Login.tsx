@@ -123,8 +123,7 @@ export default function Login(): JSX.Element {
             <ColorSchemeImage
               src={{ light: `${base}assets/images/logo/WSO2-Integration-Platform-Black.svg`, dark: `${base}assets/images/logo/WSO2-Integration-Platform-White.svg` }}
               alt={{ light: 'WSO2 Integration Platform Logo', dark: 'WSO2 Integration Platform Logo' }}
-              height={48}
-              width="auto"
+              sx={{ width: '100%', maxWidth: 260, height: 'auto' }}
             />
           </Box>
 

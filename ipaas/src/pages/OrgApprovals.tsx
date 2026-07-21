@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, PageContent, PageTitle, Tab, Tabs } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, PageContent, PageTitle, Tab, Tabs } from '@wso2/oxygen-ui';
 import { ClipboardCheck } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import EmptyListing from '../components/EmptyListing';
@@ -59,7 +59,9 @@ export default function OrgApprovals(_scope: OrgScope): JSX.Element {
       </Tabs>
 
       {active.isLoading ? (
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
       ) : active.isError ? (
         <Alert
           severity="error"

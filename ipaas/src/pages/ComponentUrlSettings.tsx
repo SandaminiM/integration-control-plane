@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, ListingTable, MenuItem, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, ListingTable, MenuItem, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Globe, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import Authorized from '../components/Authorized';
@@ -124,7 +124,12 @@ function UrlSettingsBody({ componentId }: { componentId: string }): JSX.Element 
     });
   };
 
-  if (isLoading) return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />;
+  if (isLoading)
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+        <CircularProgress />
+      </Box>
+    );
 
   return (
     <>
@@ -220,7 +225,9 @@ export default function ComponentUrlSettings({ project, component }: ComponentSc
       {!urlSettingsEnabled() ? (
         <Alert severity="info">Custom URL mappings are not enabled for this environment.</Alert>
       ) : isLoading ? (
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+          <CircularProgress />
+        </Box>
       ) : !comp ? (
         <Typography>Integration not found</Typography>
       ) : (

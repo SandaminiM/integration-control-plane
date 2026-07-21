@@ -81,7 +81,7 @@ function buildCreateComponentQuery(input: CreateComponentInput): string {
         repositoryType: "UserManagedNonEmpty",
         repositoryBranch: ${gqlStr(input.repositoryBranch ?? '')},
         initializeAsBallerinaProject: false,
-        secretRef: "",
+        secretRef: ${gqlStr(input.secretRef ?? '')},
         isPublicRepo: ${input.isPublicRepo ?? false},
         enableAutoDeploy: ${input.enableAutoDeploy ?? true},
         enableAutoBuild: true,

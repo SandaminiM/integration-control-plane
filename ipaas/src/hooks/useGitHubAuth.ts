@@ -37,6 +37,16 @@ export interface UseGitHubAuthReturn {
    * closes; the user then authorizes again to bind the new installation.
    */
   startGitHubAppInstall: (onClosed?: () => void) => void;
+  /**
+   * Opens an arbitrary GitHub URL (App install/manage page, new-repo page) in
+   * a popup and calls `onClosed` once it closes. Backs the org/repo dropdown
+   * "Add organization" / "Connect more repositories" / "Create repository"
+   * actions — the user grants access (or creates a repo) on GitHub, then the
+   * caller refetches the repo list. Not product-gated.
+   */
+  openGitHubManage: (url: string, onClosed?: () => void) => void;
+  /** GitHub App installation URL for the configured App, or '' when no slug is configured. */
+  githubInstallUrl: string;
 }
 
 export function useGitHubAuth(initialStatus: AuthStatus = 'idle'): UseGitHubAuthReturn {
@@ -99,6 +109,18 @@ export function useGitHubAuth(initialStatus: AuthStatus = 'idle'): UseGitHubAuth
     }, GITHUB_AUTH.POPUP_POLL_INTERVAL_MS);
   };
 
+  const openGitHubManage = (url: string, onClosed?: () => void): void => {
+    if (!url) return;
+    const popup = window.open(url, 'github-manage', GITHUB_AUTH.POPUP_DIMENSIONS);
+    if (!popup) return;
+    const poll = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(poll);
+        onClosed?.();
+      }
+    }, GITHUB_AUTH.POPUP_POLL_INTERVAL_MS);
+  };
+
   const exchangeAuthCode = async (code: string): Promise<void> => {
     try {
       const result = await obtainToken.mutateAsync(code);
@@ -144,5 +166,7 @@ export function useGitHubAuth(initialStatus: AuthStatus = 'idle'): UseGitHubAuth
     };
   };
 
-  return { authStatus, startGitHubAuth, exchangeAuthCode, startGitHubAppInstall };
+  const githubInstallUrl = window.API_CONFIG.githubAppSlug ? buildGitHubAppInstallUrl(window.API_CONFIG.githubAppSlug) : '';
+
+  return { authStatus, startGitHubAuth, exchangeAuthCode, startGitHubAppInstall, openGitHubManage, githubInstallUrl };
 }

@@ -37,6 +37,7 @@ import {
   MenuItem,
   NotificationPanel,
   Box,
+  CircularProgress,
   Popover,
   Sidebar,
   TextField,
@@ -46,7 +47,7 @@ import {
   useAppShell,
   useNotifications,
 } from '@wso2/oxygen-ui';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { JSX } from 'react';
 import { useNavigate, Outlet, NavLink, useLocation } from 'react-router';
@@ -219,7 +220,12 @@ function AppLayoutInner(): JSX.Element {
   const billingTrial = billingOrg?.subscription?.status === 'trial' ? billingOrg.subscription.trial : null;
   const trialEndLabel = billingTrial?.trial_end ? `Trial ends ${new Date(billingTrial.trial_end).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}` : '';
 
-  const { state: shell, actions } = useAppShell({ initialCollapsed: true });
+  const { state: shell, actions } = useAppShell({ initialCollapsed: localStorage.getItem('sidebar:collapsed') !== 'false' });
+
+  const handleToggleSidebar = () => {
+    localStorage.setItem('sidebar:collapsed', String(!shell.sidebarCollapsed));
+    actions.toggleSidebar();
+  };
 
   // Compute the active nav item ID — uses URL matching for component/org scopes; Matrix resource for project scope
   const activeNavId = useMemo((): string => {
@@ -377,11 +383,10 @@ function AppLayoutInner(): JSX.Element {
   // Helper to get component display name with fallback to components list
   const getComponentDisplayName = () => {
     if (currentComponent?.displayName) return currentComponent.displayName;
-    // Fallback: search in components list by handler or id
+    // Search all components (not just filtered/supported types) so unsupported types still show their display name
     if (hasComponent(scope)) {
-      const foundComponent = components.find((c) => c.handler === scope.component || c.id === scope.component || String(c.id) === scope.component);
+      const foundComponent = allComponents.find((c) => c.handler === scope.component || c.id === scope.component || String(c.id) === scope.component);
       if (foundComponent?.displayName) return foundComponent.displayName;
-      // If still showing UUID, show loading instead
       const isUuid = UUID_RE.test(scope.component);
       return isUuid ? 'Loading...' : scope.component;
     }
@@ -566,7 +571,7 @@ function AppLayoutInner(): JSX.Element {
     <AppShell>
       <AppShell.Navbar>
         <Header>
-          <Header.Toggle collapsed={shell.sidebarCollapsed} onToggle={actions.toggleSidebar} />
+          <Header.Toggle collapsed={shell.sidebarCollapsed} onToggle={handleToggleSidebar} />
           <Header.Brand>
             <Header.BrandLogo>
               <NavLink to={orgHomeUrl(scope.org)} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
@@ -764,6 +769,11 @@ function AppLayoutInner(): JSX.Element {
                         setProjectMenuAnchor(null);
                         setProjectSearch('');
                         const newScope = narrow({ level: 'organizations', org: scope.org }, p.handler);
+                        const insightsUrl = insightsCrossScopeUrl(pathname, scope, newScope);
+                        if (insightsUrl) {
+                          navigate(insightsUrl);
+                          return;
+                        }
                         const settingsUrl = settingsSwitchUrl(newScope, p.id, undefined);
                         if (settingsUrl) {
                           navigate(settingsUrl);
@@ -831,15 +841,14 @@ function AppLayoutInner(): JSX.Element {
                     )}
                     SelectDisplayProps={{ 'aria-label': 'Select project' }}
                     renderValue={() => <ComplexSelect.MenuItem.Text primary={getProjectDisplayName()} secondary="Project" />}
-                    label="Projects">
-                    {/* Placeholder item so renderValue fires while project is loading by UUID */}
-                    {isProjectUuid && !project && (
-                      <ComplexSelect.MenuItem key="__uuid_placeholder__" value={scope.project} sx={{ display: 'none' }}>
-                        <ComplexSelect.MenuItem.Text primary={getProjectDisplayName()} secondary="Project" />
-                      </ComplexSelect.MenuItem>
-                    )}
+                    label="Project">
+                    {/* Hidden items ensure renderValue always fires — ComplexSelect skips renderValue when value matches a visible item,
+                        so all items are hidden. The dropdown is handled by the Popover, not ComplexSelect's own open state. */}
+                    <ComplexSelect.MenuItem key="__project_placeholder__" value={scope.project} sx={{ display: 'none' }}>
+                      <ComplexSelect.MenuItem.Text primary={getProjectDisplayName()} secondary="Project" />
+                    </ComplexSelect.MenuItem>
                     {projects.map((p) => (
-                      <ComplexSelect.MenuItem key={p.handler} value={p.handler}>
+                      <ComplexSelect.MenuItem key={p.handler} value={p.handler} sx={{ display: 'none' }}>
                         <ComplexSelect.MenuItem.Text primary={p.name} secondary={p.description} />
                       </ComplexSelect.MenuItem>
                     ))}
@@ -852,6 +861,11 @@ function AppLayoutInner(): JSX.Element {
                     onClick={(e) => {
                       e.stopPropagation();
                       const orgScope = { level: 'organizations' as const, org: scope.org };
+                      const insightsUrl = insightsCrossScopeUrl(pathname, scope, orgScope);
+                      if (insightsUrl) {
+                        navigate(insightsUrl);
+                        return;
+                      }
                       const settingsUrl = settingsSwitchUrl(orgScope, undefined, undefined);
                       if (settingsUrl) {
                         navigate(settingsUrl);
@@ -1003,11 +1017,11 @@ function AppLayoutInner(): JSX.Element {
                   )}
                   SelectDisplayProps={{ 'aria-label': 'Select integration' }}
                   renderValue={() => <ComplexSelect.MenuItem.Text primary={getComponentDisplayName()} secondary="Integration" />}
-                  label="Integrations">
+                  label="Integration">
                   {/* Fallback keeps the value valid while components are loading */}
                   {!components.some((c) => c.handler === scope.component) && (
                     <ComplexSelect.MenuItem key="__current" value={scope.component} sx={{ display: 'none' }}>
-                      <ComplexSelect.MenuItem.Text primary="" secondary="" />
+                      <ComplexSelect.MenuItem.Text primary={getComponentDisplayName()} secondary="Integration" />
                     </ComplexSelect.MenuItem>
                   )}
                   {components.map((c) => (
@@ -1024,6 +1038,11 @@ function AppLayoutInner(): JSX.Element {
                   onClick={(e) => {
                     e.stopPropagation();
                     const projectScope = broaden(scope)!;
+                    const insightsUrl = insightsCrossScopeUrl(pathname, scope, projectScope);
+                    if (insightsUrl) {
+                      navigate(insightsUrl);
+                      return;
+                    }
                     const settingsUrl = settingsSwitchUrl(projectScope, projectId || undefined, undefined);
                     if (settingsUrl) {
                       navigate(settingsUrl);
@@ -1078,7 +1097,7 @@ function AppLayoutInner(): JSX.Element {
           expandedMenus={shell.expandedMenus}
           onSelect={(id) => {
             if (id === 'expand') {
-              actions.toggleSidebar();
+              handleToggleSidebar();
             } else if (hasComponent(scope)) {
               handleComponentNavSelect(id);
             } else if (!hasProject(scope)) {
@@ -1685,10 +1704,18 @@ function AppLayoutInner(): JSX.Element {
             sx={{
               flex: 1,
               minWidth: 0,
+              height: '100%',
               overflowY: 'auto',
               overflowX: 'auto',
             }}>
-            <Outlet />
+            <Suspense
+              fallback={
+                <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                  <CircularProgress color="primary" />
+                </Box>
+              }>
+              <Outlet />
+            </Suspense>
           </Box>
           {IS_WIP && <CopilotDrawer />}
         </Box>

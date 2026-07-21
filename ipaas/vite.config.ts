@@ -47,6 +47,10 @@ export default defineConfig({
       },
     },
   },
+  optimizeDeps: {
+    // Pre-bundle so a lazy page importing it mid-session doesn't trigger a re-optimize reload.
+    include: ['@wso2/oxygen-ui-charts-react'],
+  },
   resolve: {
     dedupe: ['react', 'react-dom', 'react/jsx-runtime'],
     alias: {

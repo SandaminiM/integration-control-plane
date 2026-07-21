@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Autocomplete, Avatar, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, ListingTable, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Autocomplete, Avatar, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, ListingTable, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, useCallback, type JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
@@ -208,7 +208,9 @@ export default function EditUser(): JSX.Element {
   if (isLoading)
     return (
       <PageContent>
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+          <CircularProgress />
+        </Box>
       </PageContent>
     );
 

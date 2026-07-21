@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, MenuItem, PageContent, PageTitle, Select } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, MenuItem, PageContent, PageTitle, Select } from '@wso2/oxygen-ui';
 import { HardDrive, Plus } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import Authorized from '../components/Authorized';
@@ -112,7 +112,9 @@ export default function ComponentStorage({ org, project, component }: ComponentS
       {tracks.length > 0 && <DeploymentTrackBar tracks={tracks} selectedId={trackId} onChange={setTrackId} orgHandler={org} projectHandler={project} componentHandler={component} extra={envSelect} />}
       <PageContent>
         {isLoading ? (
-          <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+            <CircularProgress />
+          </Box>
         ) : !comp ? (
           <Alert severity="error">Integration not found</Alert>
         ) : !releaseId || !containerId ? (
@@ -148,7 +150,9 @@ export default function ComponentStorage({ org, project, component }: ComponentS
             )}
 
             {loadingVolumes || loadingMounts ? (
-              <CircularProgress sx={{ display: 'block', mx: 'auto', py: 6 }} />
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                <CircularProgress />
+              </Box>
             ) : rows.length === 0 ? (
               <EmptyListing icon={<HardDrive size={48} />} title="No volume mounts" description="Attach in-memory, disk or persistent volumes to this integration's container." />
             ) : (

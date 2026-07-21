@@ -77,7 +77,9 @@ export default function ConnectionsLanding({ projectId, componentId, base }: Con
   if ((isLoading || isFetching) && projectId) {
     return (
       <PageContent>
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
       </PageContent>
     );
   }

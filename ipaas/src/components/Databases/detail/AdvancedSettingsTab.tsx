@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Chip, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Chip, Paper, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Pencil, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { maintenanceDayLabel } from '../../../constants/platformServices';
@@ -24,16 +24,17 @@ import DeleteServerDialog from '../DeleteServerDialog';
 import DetailRow from './DetailRow';
 import MaintenanceWindowDialog from './MaintenanceWindowDialog';
 import AllowedIpsDialog from './AllowedIpsDialog';
-import type { DatabaseServerDetail } from '../../../types/platformServices';
+import type { DatabaseServerDetail, ServerVariant } from '../../../types/platformServices';
 
 interface AdvancedSettingsTabProps {
   service: DatabaseServerDetail;
   isSubscribed: boolean;
+  variant?: ServerVariant;
   onDeleted: () => void;
   onError: (message: string) => void;
 }
 
-export default function AdvancedSettingsTab({ service, isSubscribed, onDeleted, onError }: AdvancedSettingsTabProps): JSX.Element {
+export default function AdvancedSettingsTab({ service, isSubscribed, variant = 'db-servers', onDeleted, onError }: AdvancedSettingsTabProps): JSX.Element {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState<'maintenance' | 'ips' | null>(null);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -62,7 +63,7 @@ export default function AdvancedSettingsTab({ service, isSubscribed, onDeleted, 
         </Alert>
       )}
 
-      <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+      <Paper variant="outlined">
         <Typography variant="subtitle2" sx={{ fontWeight: 600, px: 3, py: 1.5 }}>
           Service Configuration
         </Typography>
@@ -100,7 +101,7 @@ export default function AdvancedSettingsTab({ service, isSubscribed, onDeleted, 
             <Typography variant="body2">All connections allowed</Typography>
           )}
         </DetailRow>
-      </Box>
+      </Paper>
 
       <Typography variant="subtitle1" sx={{ fontWeight: 600, mt: 4, mb: 1.5, color: 'error.main' }}>
         Delete Server
@@ -119,9 +120,9 @@ export default function AdvancedSettingsTab({ service, isSubscribed, onDeleted, 
         </Button>
       </Stack>
 
-      {confirmDelete && <DeleteServerDialog server={service} isSubscribed={isSubscribed} onClose={() => setConfirmDelete(false)} onDeleted={onDeleted} onError={onError} />}
-      {editing === 'maintenance' && <MaintenanceWindowDialog serverId={service.id} current={maintenance} onClose={() => setEditing(null)} onResult={onResult} />}
-      {editing === 'ips' && <AllowedIpsDialog serverId={service.id} current={allowedIps} onClose={() => setEditing(null)} onResult={onResult} />}
+      {confirmDelete && <DeleteServerDialog server={service} isSubscribed={isSubscribed} variant={variant} onClose={() => setConfirmDelete(false)} onDeleted={onDeleted} onError={onError} />}
+      {editing === 'maintenance' && <MaintenanceWindowDialog serverId={service.id} variant={variant} current={maintenance} onClose={() => setEditing(null)} onResult={onResult} />}
+      {editing === 'ips' && <AllowedIpsDialog serverId={service.id} variant={variant} current={allowedIps} onClose={() => setEditing(null)} onResult={onResult} />}
     </Box>
   );
 }

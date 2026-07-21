@@ -38,40 +38,40 @@ export function useCommitHistory(componentId: string, branch: string) {
   });
 }
 
-export function useGitHubUserRepos(enabled: boolean) {
+export function useGitHubUserRepos(enabled: boolean, secretRef = '') {
   return useQuery({
-    queryKey: ['githubUserRepos'],
-    queryFn: fetchGitHubUserRepos,
+    queryKey: ['githubUserRepos', secretRef],
+    queryFn: () => fetchGitHubUserRepos(secretRef),
     enabled,
     staleTime: 2 * 60 * 1000,
     retry: false,
   });
 }
 
-export function useRepoBranches(repoOrg: string, repoName: string, isPublicRepo: boolean) {
+export function useRepoBranches(repoOrg: string, repoName: string, isPublicRepo: boolean, secretRef = '') {
   return useQuery({
-    queryKey: ['repoBranches', repoOrg, repoName, isPublicRepo],
-    queryFn: () => fetchRepoBranches(repoOrg, repoName, isPublicRepo),
+    queryKey: ['repoBranches', repoOrg, repoName, isPublicRepo, secretRef],
+    queryFn: () => fetchRepoBranches(repoOrg, repoName, isPublicRepo, secretRef),
     enabled: !!repoOrg && !!repoName,
     staleTime: 2 * 60 * 1000,
     retry: false,
   });
 }
 
-export function useRepoMetadata(org: string, repo: string, branch: string, subPath: string, enabled: boolean, isPublicRepo = false) {
+export function useRepoMetadata(org: string, repo: string, branch: string, subPath: string, enabled: boolean, isPublicRepo = false, secretRef = '') {
   return useQuery({
-    queryKey: ['repoMetadata', org, repo, branch, subPath, isPublicRepo],
-    queryFn: () => fetchRepoMetadata(org, repo, branch, subPath, isPublicRepo),
+    queryKey: ['repoMetadata', org, repo, branch, subPath, isPublicRepo, secretRef],
+    queryFn: () => fetchRepoMetadata(org, repo, branch, subPath, isPublicRepo, secretRef),
     enabled: enabled && !!org && !!repo && !!branch,
     staleTime: 60 * 1000,
     retry: false,
   });
 }
 
-export function useRepoContents(org: string, repo: string, branch: string, isPublicRepo = false) {
+export function useRepoContents(org: string, repo: string, branch: string, isPublicRepo = false, secretRef = '') {
   return useQuery({
-    queryKey: ['repoContents', org, repo, branch, isPublicRepo],
-    queryFn: () => fetchRepoContents(org, repo, branch, isPublicRepo),
+    queryKey: ['repoContents', org, repo, branch, isPublicRepo, secretRef],
+    queryFn: () => fetchRepoContents(org, repo, branch, isPublicRepo, secretRef),
     enabled: !!org && !!repo && !!branch,
     staleTime: 2 * 60 * 1000,
     retry: false,

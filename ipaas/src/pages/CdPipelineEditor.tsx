@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, PageContent } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, PageContent } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
 import { useParams } from 'react-router';
 import { useEnvTemplates, useOrgDeploymentPipelines } from '../hooks/useDeploymentPipelines';
@@ -40,7 +40,9 @@ export default function CdPipelineEditor(): JSX.Element {
   if (loadingEnvs || (isEdit && loadingPipelines)) {
     return (
       <PageContent>
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+          <CircularProgress />
+        </Box>
       </PageContent>
     );
   }

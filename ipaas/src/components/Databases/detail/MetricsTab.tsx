@@ -16,17 +16,17 @@
  * under the License.
  */
 
-import { Alert, Box, Button, CircularProgress, Grid, MenuItem, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Grid, MenuItem, Paper, Skeleton, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { LineChart } from '@wso2/oxygen-ui-charts-react';
 import { useState, type JSX } from 'react';
 import { useServerMetrics } from '../../../hooks/usePlatformServices';
 import { METRIC_CHART_COLORS, METRIC_PERIODS } from '../../../constants/platformServices';
 import { metricsToChart, metricTitle } from '../../../utils/platformServices';
-import type { MetricPeriod } from '../../../types/platformServices';
+import type { MetricPeriod, ServerVariant } from '../../../types/platformServices';
 
-export default function MetricsTab({ serverId }: { serverId: string }): JSX.Element {
+export default function MetricsTab({ serverId, variant = 'db-servers' }: { serverId: string; variant?: ServerVariant }): JSX.Element {
   const [period, setPeriod] = useState<MetricPeriod>('hour');
-  const { data, isLoading, isError, refetch } = useServerMetrics(serverId, period);
+  const { data, isLoading, isError, refetch } = useServerMetrics(serverId, period, variant);
 
   const metrics = Object.entries(data?.metrics ?? {});
 
@@ -43,7 +43,16 @@ export default function MetricsTab({ serverId }: { serverId: string }): JSX.Elem
       </Stack>
 
       {isLoading ? (
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Grid container spacing={2}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Grid key={i} size={12}>
+              <Paper variant="outlined" sx={{ p: 2 }} aria-busy="true" aria-label="Loading metrics">
+                <Skeleton width={140} sx={{ mb: 1 }} />
+                <Skeleton variant="rounded" height={260} />
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
       ) : isError ? (
         <Alert
           severity="error"
@@ -62,7 +71,7 @@ export default function MetricsTab({ serverId }: { serverId: string }): JSX.Elem
             const chart = metricsToChart(series);
             return (
               <Grid key={key} size={12}>
-                <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2, height: '100%' }}>
+                <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                     {metricTitle(key)}
                   </Typography>
@@ -81,7 +90,7 @@ export default function MetricsTab({ serverId }: { serverId: string }): JSX.Elem
                       No data points.
                     </Typography>
                   )}
-                </Box>
+                </Paper>
               </Grid>
             );
           })}

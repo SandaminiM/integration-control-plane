@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
+import { Box, CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
 import AutomationTest from './AutomationTest';
 import ComingSoon from './ComingSoon';
@@ -39,7 +39,9 @@ export default function ComponentTest(scope: ComponentScope): JSX.Element {
   if (isLoading) {
     return (
       <PageContent>
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+          <CircularProgress />
+        </Box>
       </PageContent>
     );
   }

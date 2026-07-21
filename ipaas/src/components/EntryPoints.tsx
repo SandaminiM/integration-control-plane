@@ -443,7 +443,12 @@ function EntryPointsList({ envId, componentId, projectId, componentType, onOpenD
     [allEntryPoints, activeKey],
   );
 
-  if (isLoading) return <CircularProgress size={24} sx={{ display: 'block', mx: 'auto', py: 4 }} />;
+  if (isLoading)
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+        <CircularProgress size={24} />
+      </Box>
+    );
   if (allEntryPoints.length === 0)
     return (
       <Typography color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>

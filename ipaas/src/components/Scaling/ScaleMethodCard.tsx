@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, Stack, Typography } from '@wso2/oxygen-ui';
+import { Card, CardActionArea, CardContent, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
 
 interface ScaleMethodCardProps {
@@ -29,41 +29,29 @@ interface ScaleMethodCardProps {
 
 export default function ScaleMethodCard({ title, description, selected, disabled, onSelect }: ScaleMethodCardProps): JSX.Element {
   return (
-    <Box
-      role="button"
-      tabIndex={disabled ? -1 : 0}
-      aria-pressed={selected}
-      aria-disabled={disabled}
-      onClick={disabled ? undefined : onSelect}
-      onKeyDown={(e) => {
-        if (disabled) return;
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onSelect();
-        }
-      }}
+    <Card
+      variant="outlined"
       sx={{
         flex: 1,
         minWidth: 280,
         maxWidth: 420,
-        border: '1px solid',
+        border: '2px solid',
         borderColor: selected ? 'primary.main' : 'divider',
-        bgcolor: selected ? 'action.hover' : 'transparent',
-        borderRadius: 1,
-        p: 2,
-        cursor: disabled ? 'not-allowed' : 'pointer',
+        bgcolor: selected ? 'primary.50' : 'background.paper',
         opacity: disabled ? 0.55 : 1,
-        transition: 'border-color 0.15s',
+        transition: 'border-color 0.15s, background-color 0.15s',
         '&:hover': disabled ? undefined : { borderColor: 'primary.main' },
       }}>
-      <Stack gap={1}>
-        <Typography variant="body1" sx={{ fontWeight: 600 }}>
-          {title}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {description}
-        </Typography>
-      </Stack>
-    </Box>
+      <CardActionArea disabled={disabled} aria-pressed={selected} onClick={onSelect} sx={{ height: '100%' }}>
+        <CardContent>
+          <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5, color: selected ? 'primary.main' : 'text.primary' }}>
+            {title}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {description}
+          </Typography>
+        </CardContent>
+      </CardActionArea>
+    </Card>
   );
 }

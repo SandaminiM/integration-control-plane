@@ -151,7 +151,15 @@ export default function ProjectOverview({ org, project }: ProjectScope): JSX.Ele
   return (
     <PageContent>
       <ProjectSettingsTabs active="project-overview" />
-      {isLoading ? <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} /> : !data ? <Typography>Project not found</Typography> : <ProjectOverviewForm key={data.id} org={org} project={data} />}
+      {isLoading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+          <CircularProgress />
+        </Box>
+      ) : !data ? (
+        <Typography>Project not found</Typography>
+      ) : (
+        <ProjectOverviewForm key={data.id} org={org} project={data} />
+      )}
     </PageContent>
   );
 }

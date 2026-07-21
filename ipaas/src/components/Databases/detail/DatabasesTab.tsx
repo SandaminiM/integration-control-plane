@@ -61,7 +61,12 @@ export default function DatabasesTab({ service, orgHandle }: { service: Database
     });
   }, [databases, credentialsByDb, filters, search]);
 
-  if (databasesQuery.isLoading || credentialsQuery.isLoading) return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 6 }} />;
+  if (databasesQuery.isLoading || credentialsQuery.isLoading)
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+        <CircularProgress />
+      </Box>
+    );
   if (databasesQuery.isError || credentialsQuery.isError) {
     const retry = () => {
       if (databasesQuery.isError) databasesQuery.refetch();

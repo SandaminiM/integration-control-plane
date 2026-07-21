@@ -22,7 +22,7 @@ import { useState, type JSX } from 'react';
 import { useUpdateAllowedIps } from '../../../hooks/usePlatformServices';
 import { isValidCidr } from '../../../utils/platformServices';
 import SelectableChoiceCard from './SelectableChoiceCard';
-import type { AllowedIpsPayload, DatabaseServerDetail } from '../../../types/platformServices';
+import type { AllowedIpsPayload, DatabaseServerDetail, ServerVariant } from '../../../types/platformServices';
 
 type Mode = 'allow_all' | 'restricted';
 interface CidrRow {
@@ -32,15 +32,16 @@ interface CidrRow {
 
 interface AllowedIpsDialogProps {
   serverId: string;
+  variant?: ServerVariant;
   current?: DatabaseServerDetail['allowed_ips'];
   onClose: () => void;
   onResult: (type: 'success' | 'error', message: string) => void;
 }
 
-export default function AllowedIpsDialog({ serverId, current, onClose, onResult }: AllowedIpsDialogProps): JSX.Element {
+export default function AllowedIpsDialog({ serverId, variant = 'db-servers', current, onClose, onResult }: AllowedIpsDialogProps): JSX.Element {
   const [mode, setMode] = useState<Mode>(current?.mode === 'restricted' ? 'restricted' : 'allow_all');
   const [rows, setRows] = useState<CidrRow[]>(current?.allow_list?.map((ip) => ({ cidr: ip.cidr, description: ip.description ?? '' })) ?? [{ cidr: '', description: '' }]);
-  const update = useUpdateAllowedIps(serverId);
+  const update = useUpdateAllowedIps(serverId, variant);
 
   const patchRow = (i: number, patch: Partial<CidrRow>) => setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
   const addRow = () => setRows((prev) => [...prev, { cidr: '', description: '' }]);

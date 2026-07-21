@@ -23,12 +23,12 @@ import { LOG_TIME_RANGES } from '../../../constants/platformServices';
 import { logOffsetNs } from '../../../utils/platformServices';
 import LogsPanel from '../../Logs/LogsPanel';
 import DbLogRow from './DbLogRow';
-import type { LogEntry } from '../../../types/platformServices';
+import type { LogEntry, ServerVariant } from '../../../types/platformServices';
 
 const PAGE_SIZE = 100;
 
-export default function LogsTab({ serverId }: { serverId: string }): JSX.Element {
-  const fetchLogs = useFetchServerLogs(serverId);
+export default function LogsTab({ serverId, variant = 'db-servers' }: { serverId: string; variant?: ServerVariant }): JSX.Element {
+  const fetchLogs = useFetchServerLogs(serverId, variant);
   const [rangeMinutes, setRangeMinutes] = useState(60);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [cursor, setCursor] = useState<string | undefined>(undefined);

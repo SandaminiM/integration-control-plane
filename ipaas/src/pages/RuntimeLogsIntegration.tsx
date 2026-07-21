@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { CircularProgress, PageContent } from '@wso2/oxygen-ui';
+import { Box, CircularProgress, PageContent } from '@wso2/oxygen-ui';
 import { ScrollText } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, type JSX } from 'react';
 import { useOrgs } from '../hooks/useOrg';
@@ -90,9 +90,9 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
 
   if (loadingOrgs || loadingProjects || loadingComponent || loadingEnvironments) {
     return (
-      <PageContent sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
+      <Box sx={{ display: 'flex', minHeight: '100%', justifyContent: 'center', alignItems: 'center' }}>
         <CircularProgress />
-      </PageContent>
+      </Box>
     );
   }
 

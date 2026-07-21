@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Button, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
 import { AlertTriangle, RefreshCw, ScrollText } from '@wso2/oxygen-ui-icons-react';
 import { Fragment, useCallback, useEffect, useRef, useState, type JSX, type ReactNode } from 'react';
 
@@ -93,7 +93,11 @@ export default function LogsPanel<T>({
   }, [handleScroll, paginated]);
 
   if (isLoading) {
-    return <CircularProgress size={28} sx={{ display: 'block', mx: 'auto', my: 6 }} />;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', my: 6 }}>
+        <CircularProgress size={28} />
+      </Box>
+    );
   }
 
   if (error) {
@@ -156,7 +160,11 @@ export default function LogsPanel<T>({
       {paginated && (
         <>
           <div ref={sentinelRef} />
-          {isFetchingNextPage && <CircularProgress size={20} sx={{ display: 'block', mx: 'auto', my: 1 }} />}
+          {isFetchingNextPage && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
+              <CircularProgress size={20} />
+            </Box>
+          )}
           {!hasNextPage && (
             <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 1 }}>
               End of logs

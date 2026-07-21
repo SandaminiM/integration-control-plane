@@ -76,7 +76,9 @@ export default function ComponentRuntime({ org, project, component }: ComponentS
   if (isLoading) {
     return (
       <PageContent>
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+          <CircularProgress />
+        </Box>
       </PageContent>
     );
   }
@@ -116,6 +118,9 @@ export default function ComponentRuntime({ org, project, component }: ComponentS
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       {tracks.length > 0 && <DeploymentTrackBar tracks={tracks} selectedId={trackId} onChange={setTrackId} orgHandler={org} projectHandler={project} componentHandler={component} extra={envSelect} />}
       <PageContent>
+        <Typography variant="h1" sx={{ mb: 3 }}>
+          Runtime
+        </Typography>
         <RuntimeOverview
           componentName={comp.displayName || comp.name || component}
           status={status}

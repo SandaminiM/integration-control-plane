@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Button, Chip, CircularProgress, IconButton, ListingTable, PageContent, PageTitle, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Chip, CircularProgress, IconButton, ListingTable, PageContent, PageTitle, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Network, RefreshCw } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import EmptyListing from '../components/EmptyListing';
@@ -80,7 +80,9 @@ export default function OrgDataPlanes(_scope: OrgScope): JSX.Element {
       </Stack>
 
       {isLoading || (isFetching && !clusters?.length && !pdps?.length) ? (
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+          <CircularProgress />
+        </Box>
       ) : isError ? (
         <Alert
           severity="error"

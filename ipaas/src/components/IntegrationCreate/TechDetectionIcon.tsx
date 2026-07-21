@@ -19,35 +19,18 @@
 import { Box, CircularProgress } from '@wso2/oxygen-ui';
 import { AlertCircle, HelpCircle } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
+import IntegratorIcon from '../../assets/icons/IntegratorIcon';
 import type { DetectedMode } from '../../types/repository';
 
 export default function TechDetectionIcon({ mode, isValidating, isError }: { mode: DetectedMode; isValidating: boolean; isError: boolean }): JSX.Element | null {
   if (isValidating) return <CircularProgress size={16} />;
   if (isError) return <AlertCircle size={16} color="var(--mui-palette-error-main, #d32f2f)" />;
   if (mode === 'non-empty') return <HelpCircle size={16} style={{ opacity: 0.5 }} />;
-  if (mode === 'mi')
+  if (mode === 'mi' || mode === 'ballerina')
     return (
-      <Box
-        component="img"
-        src="https://wso2.github.io/oxygen-ui/assets/wso2-mi-logo.png"
-        alt="WSO2 MI"
-        sx={{ width: 16, height: 16, objectFit: 'contain' }}
-        onError={(e) => {
-          (e.currentTarget as HTMLImageElement).style.display = 'none';
-        }}
-      />
-    );
-  if (mode === 'ballerina')
-    return (
-      <Box
-        component="img"
-        src="https://ballerina.io/favicon.ico"
-        alt="Ballerina"
-        sx={{ width: 16, height: 16, objectFit: 'contain' }}
-        onError={(e) => {
-          (e.currentTarget as HTMLImageElement).style.display = 'none';
-        }}
-      />
+      <Box sx={{ display: 'flex', color: 'text.primary' }}>
+        <IntegratorIcon width={16} height={16} />
+      </Box>
     );
   return null;
 }

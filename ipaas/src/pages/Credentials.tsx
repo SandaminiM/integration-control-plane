@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, IconButton, ListingTable, PageContent, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, IconButton, ListingTable, PageContent, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { KeyRound, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import EmptyListing from '../components/EmptyListing';
@@ -61,7 +61,9 @@ export default function Credentials(_scope: OrgScope): JSX.Element {
       )}
 
       {isLoading ? (
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+          <CircularProgress />
+        </Box>
       ) : isError ? (
         <Alert
           severity="error"

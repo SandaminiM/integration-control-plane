@@ -16,11 +16,15 @@
  * under the License.
  */
 
-import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from '@wso2/oxygen-ui';
+import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from '@wso2/oxygen-ui';
 import { type JSX, type ReactNode } from 'react';
 
 export function Loading(): JSX.Element {
-  return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />;
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+      <CircularProgress />
+    </Box>
+  );
 }
 
 export function FormDialog({

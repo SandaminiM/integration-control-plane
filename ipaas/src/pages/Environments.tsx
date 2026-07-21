@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Avatar, Button, CircularProgress, IconButton, PageContent, PageTitle, Stack, ListingTable, TablePagination, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Avatar, Box, Button, CircularProgress, IconButton, ListingTable, PageContent, PageTitle, Stack, TablePagination, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Clock, Layers, Plus, Trash2, AlertTriangle } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useEffect, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router';
@@ -149,7 +149,9 @@ export default function Environments(scope: OrgScope | ProjectScope): JSX.Elemen
       </PageTitle>
 
       {isLoading ? (
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+          <CircularProgress />
+        </Box>
       ) : isError ? (
         <Alert
           severity="error"

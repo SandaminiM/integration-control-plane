@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, ListingTable, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, ListingTable, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { GitBranch, Plus } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import Authorized from '../components/Authorized';
@@ -170,7 +170,15 @@ export default function ComponentDeploymentTracks({ org, project, component }: C
   return (
     <PageContent>
       <ComponentSettingsTabs active="deployment-tracks" />
-      {isLoading ? <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} /> : !comp ? <Typography>Integration not found</Typography> : <TracksBody orgHandler={org} projectId={projectId} componentId={comp.id} tracks={comp.deploymentTracks ?? []} />}
+      {isLoading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
+      ) : !comp ? (
+        <Typography>Integration not found</Typography>
+      ) : (
+        <TracksBody orgHandler={org} projectId={projectId} componentId={comp.id} tracks={comp.deploymentTracks ?? []} />
+      )}
     </PageContent>
   );
 }

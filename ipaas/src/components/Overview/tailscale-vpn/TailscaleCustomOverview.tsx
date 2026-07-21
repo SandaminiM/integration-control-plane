@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { CircularProgress, type JSX } from '@wso2/oxygen-ui';
+import { Box, CircularProgress, type JSX } from '@wso2/oxygen-ui';
 import TailscaleOverview from './TailscaleOverview';
 import { Permissions } from '../../../constants/permissions';
 import { useAccessControl } from '../../../contexts/AccessControlContext';
@@ -40,7 +40,12 @@ export default function TailscaleCustomOverview({ component }: OverviewHeaderSlo
   const { hasAnyPermission } = useAccessControl();
   const canManage = hasAnyPermission([Permissions.INTEGRATION_MANAGE], projectId || undefined, component.id);
 
-  if (!detail) return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />;
+  if (!detail)
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
 
   return <TailscaleOverview orgHandler={scope.org} projectId={projectId} component={detail} environments={environments} canManage={canManage} />;
 }

@@ -16,30 +16,7 @@
  * under the License.
  */
 
-import {
-  Alert,
-  Autocomplete,
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  FormControlLabel,
-  IconButton,
-  ListingTable,
-  MenuItem,
-  PageContent,
-  Radio,
-  RadioGroup,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@wso2/oxygen-ui';
+import { Alert, Autocomplete, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, IconButton, ListingTable, MenuItem, PageContent, Radio, RadioGroup, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useCallback, type JSX } from 'react';
 import { useParams, useNavigate } from 'react-router';
@@ -54,7 +31,11 @@ import { useComponentByHandler } from '../hooks/useComponents';
 import { componentAccessControlUrl } from '../paths';
 
 function Loading() {
-  return <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />;
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+      <CircularProgress />
+    </Box>
+  );
 }
 
 function AssignRoleToGroupsDialog({

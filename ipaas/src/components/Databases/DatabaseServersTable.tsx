@@ -20,18 +20,19 @@ import { Box, Chip, IconButton, ListingTable, Stack, Tooltip, Typography } from 
 import { Database, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { isServerAccessible, providerLabel, regionLabel, serviceTypeLabel, statusLabel, STATUS_COLORS } from '../../constants/platformServices';
-import type { DatabaseServer } from '../../types/platformServices';
+import type { DatabaseServer, ServerVariant } from '../../types/platformServices';
 import DeleteServerDialog from './DeleteServerDialog';
 
 interface DatabaseServersTableProps {
   servers: DatabaseServer[];
   isSubscribed: boolean;
+  variant?: ServerVariant;
   onOpenServer: (server: DatabaseServer) => void;
   onDeleted: (name: string) => void;
   onError: (message: string) => void;
 }
 
-export default function DatabaseServersTable({ servers, isSubscribed, onOpenServer, onDeleted, onError }: DatabaseServersTableProps): JSX.Element {
+export default function DatabaseServersTable({ servers, isSubscribed, variant = 'db-servers', onOpenServer, onDeleted, onError }: DatabaseServersTableProps): JSX.Element {
   const [toDelete, setToDelete] = useState<DatabaseServer | null>(null);
 
   return (
@@ -129,7 +130,7 @@ export default function DatabaseServersTable({ servers, isSubscribed, onOpenServ
         </ListingTable>
       </ListingTable.Container>
 
-      {toDelete && <DeleteServerDialog server={toDelete} isSubscribed={isSubscribed} onClose={() => setToDelete(null)} onDeleted={onDeleted} onError={onError} />}
+      {toDelete && <DeleteServerDialog server={toDelete} isSubscribed={isSubscribed} variant={variant} onClose={() => setToDelete(null)} onDeleted={onDeleted} onError={onError} />}
     </>
   );
 }

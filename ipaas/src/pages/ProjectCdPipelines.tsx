@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, IconButton, PageContent, PageTitle, Stack, Tooltip } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, IconButton, PageContent, PageTitle, Stack, Tooltip } from '@wso2/oxygen-ui';
 import { GitBranch, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useEnvTemplates, useProjectDeploymentPipelines } from '../hooks/useDeploymentPipelines';
@@ -63,7 +63,9 @@ export default function ProjectCdPipelines(scope: ProjectScope): JSX.Element {
       )}
 
       {resolvingProject || isLoading ? (
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 8 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
+          <CircularProgress />
+        </Box>
       ) : isError ? (
         <Alert
           severity="error"

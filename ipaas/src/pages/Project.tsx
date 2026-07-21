@@ -63,6 +63,7 @@ import PillTabs from '../components/PillTabs';
 import PrebuiltCard from '../components/PrebuiltCard';
 import SampleRowCard from '../components/SampleRowCard';
 import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
+import LinkRepositoryDialog from '../components/ProjectCreate/LinkRepositoryDialog';
 import GitIcon from '../assets/icons/GitIcon';
 import AzureIcon from '../assets/icons/AzureIcon';
 import IntegratorIcon from '../assets/icons/IntegratorIcon';
@@ -419,86 +420,6 @@ function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId
   );
 }
 
-function LinkRepositoryDialog({ open, onClose }: { scope: ProjectScope; open: boolean; onClose: () => void }) {
-  const PROVIDER_CARD_SX = {
-    cursor: 'pointer',
-    border: '1px solid',
-    borderColor: 'divider',
-    borderRadius: 2,
-    p: 2.5,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2,
-    transition: 'border-color 0.15s, box-shadow 0.15s',
-    '&:hover': { borderColor: 'primary.main', boxShadow: 1 },
-  };
-
-  const DISABLED_CARD_SX = {
-    ...PROVIDER_CARD_SX,
-    cursor: 'not-allowed',
-    opacity: 0.5,
-    pointerEvents: 'none',
-    '&:hover': {},
-  };
-
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ pb: 1 }}>Link a Repository</DialogTitle>
-      <DialogContent>
-        <Alert severity="warning" sx={{ mb: 2.5 }}>
-          This feature is currently under development.
-        </Alert>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-          Select a Git Provider
-        </Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-          {/* GitHub */}
-          <Box sx={DISABLED_CARD_SX}>
-            <GitHub size={28} />
-            <Typography variant="body2" fontWeight={500}>
-              Authorize with GitHub
-            </Typography>
-          </Box>
-
-          {/* Bitbucket */}
-          <Box sx={DISABLED_CARD_SX}>
-            <Bitbucket size={28} />
-            <Box>
-              <Typography variant="body2" fontWeight={500}>
-                Authorize with Bitbucket
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Select a Credential
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* GitLab */}
-          <Box sx={DISABLED_CARD_SX}>
-            <GitLab size={28} />
-            <Box>
-              <Typography variant="body2" fontWeight={500}>
-                Authorize with GitLab
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Select a Credential
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* Public GitHub */}
-          <Box sx={DISABLED_CARD_SX}>
-            <GitHub size={28} />
-            <Typography variant="body2" fontWeight={500}>
-              Use Public GitHub Repository
-            </Typography>
-          </Box>
-        </Box>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 function DeleteDialog({ component, scope, projectId, onClose }: { component: Component; scope: ProjectScope; projectId: string; onClose: () => void }) {
   const [confirmation, setConfirmation] = useState('');
   const mutation = useDeleteComponent();
@@ -736,7 +657,9 @@ function IntegrationsTable({
       </Stack>
 
       {isLoading ? (
-        <CircularProgress size={24} color="primary" sx={{ display: 'block', mx: 'auto', py: 4 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress size={24} color="primary" />
+        </Box>
       ) : filtered.length === 0 ? (
         <EmptyListing icon={<PlugZap size={48} />} title="No integrations found" description={query || selectedLabels.length > 0 ? 'Try adjusting your search or filters' : 'Create your first integration to get started'} />
       ) : (
@@ -962,7 +885,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
 
   if (loadingProject) {
     return (
-      <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', minHeight: '100%', justifyContent: 'center', alignItems: 'center' }}>
         <CircularProgress color="primary" />
       </Box>
     );
@@ -1228,7 +1151,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
         )}
       </Stack>
 
-      <LinkRepositoryDialog scope={scope} open={linkRepoOpen} onClose={() => setLinkRepoOpen(false)} />
+      {project && <LinkRepositoryDialog open={linkRepoOpen} onClose={() => setLinkRepoOpen(false)} project={project} orgHandler={scope.org} />}
 
       {isEmpty ? (
         <EmptyProjectView scope={scope} projectId={projectId} />

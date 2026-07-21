@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, CircularProgress, Stack, type JSX } from '@wso2/oxygen-ui';
+import { Alert, Box, CircularProgress, Stack, type JSX } from '@wso2/oxygen-ui';
 import { useMemo } from 'react';
 import TailscaleComponentInfo from './TailscaleComponentInfo';
 import TailscaleEnvCard from './TailscaleEnvCard';
@@ -48,7 +48,9 @@ export default function TailscaleOverview({ orgHandler, projectId, component, en
       {!versionId ? (
         <Alert severity="info">This proxy has no deployment track yet.</Alert>
       ) : environments.length === 0 ? (
-        <CircularProgress sx={{ display: 'block', mx: 'auto', py: 6 }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <CircularProgress />
+        </Box>
       ) : (
         <Stack>
           {environments.map((env) => (

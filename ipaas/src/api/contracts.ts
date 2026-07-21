@@ -118,6 +118,7 @@ import type { Environment, CloudDataPlane, EnvironmentInput, EnvironmentTemplate
 import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../types/executions';
 import type { SubscriptionList, ComponentLimits } from '../types/subscription';
 import type { ConfigGroup, ConfigGroupNameAvailability, ConfigGroupUsage, CreateConfigGroupRequest, EditConfigGroupRequest } from '../types/configGroups';
+import type { Certificate, CreateCertificateInput } from '../types/certificates';
 import type {
   ChoreoConnectionRequest,
   Connection,
@@ -134,6 +135,7 @@ import type {
   RotateConnectionKeysByConnectionIdParams,
 } from '../types/connections';
 import type { AuditLogEntry, AuditLogsRequest } from '../types/auditLogs';
+import type { Ruleset, RulesetList, DocumentInfo, DocumentList, GovernancePolicyInfo, GovernancePolicyList, ProjectComplianceResponse, PolicyAdherenceResponse, ProjectPolicyAdherenceResponse, ComponentComplianceResponse, EndpointPolicyAdherenceResponse, EndpointRulesetAdherenceResponse, RuleAdherenceResponse as GovernanceRuleAdherenceResponse } from '../types/governance';
 import type {
   AdminUser,
   AllowedIpsPayload,
@@ -144,12 +146,19 @@ import type {
   DatabaseServer,
   DatabaseServerDetail,
   DbCredential,
+  KafkaAcl,
+  KafkaTopic,
+  KafkaTopicCreatePayload,
+  KafkaTopicUpdatePayload,
+  KafkaUser,
+  KafkaUserConfigs,
   LogsRequest as ServerLogsRequest,
   LogsResponse as ServerLogsResponse,
   MaintenanceWindow,
   MetricPeriod,
   OrgServiceAvailability,
   ServerMetricsResponse,
+  ServerVariant,
   ServicePlan,
   ServiceType,
   CreateServerPayload,
@@ -179,7 +188,7 @@ import type { ApiDocument, RuleAdherenceResponse, ThrottlingPolicy } from '../ty
 import type { CreateMcpApiInput, CreatedMcpApi, McpFeatureOperation, McpProxyMetadata, CreateMcpProxyComponentInput } from '../types/mcpProxy';
 import type { OrgEntry, OrgComponentLimits, OrgSubscription, RegisterUserResponse } from '../types/org';
 import type { PrebuiltIntegrationsData, PrebuiltComponentRef, PrebuiltEnvironmentRef } from '../types/prebuilt';
-import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput, UpdateProjectInput } from '../types/project';
+import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput, LinkProjectRepositoryInput, UpdateProjectInput } from '../types/project';
 import type { Repository, Commit, UserRepo, RepoBranch, RepoMetadata, RepoTreeNode, ChoreoSampleImageEntry } from '../types/repository';
 import type { Sample } from '../types/samples';
 
@@ -638,6 +647,7 @@ export interface ProjectsApi {
   fetchProjectHandlerAvailability(orgId: number, candidate: string): Promise<ProjectHandlerAvailability>;
   createProject(input: CreateProjectInput): Promise<Project>;
   createMonoRepoProject(input: CreateMonoRepoProjectInput): Promise<Project>;
+  linkProjectRepository(input: LinkProjectRepositoryInput): Promise<Project>;
   updateProject(input: UpdateProjectInput): Promise<Project>;
   deleteProject(projectId: string): Promise<void>;
 }
@@ -649,9 +659,9 @@ export interface ProjectsApi {
 export interface RepositoryApi {
   fetchComponentRepository(projectId: string, componentHandler: string): Promise<Repository | null>;
   fetchCommitHistory(componentId: string, branch: string): Promise<Commit[]>;
-  fetchGitHubUserRepos(): Promise<UserRepo[]>;
-  fetchRepoBranches(repoOrg: string, repoName: string, isPublicRepo: boolean): Promise<RepoBranch[]>;
-  fetchRepoMetadata(org: string, repo: string, branch: string, subPath: string, isPublicRepo?: boolean): Promise<RepoMetadata>;
+  fetchGitHubUserRepos(secretRef?: string): Promise<UserRepo[]>;
+  fetchRepoBranches(repoOrg: string, repoName: string, isPublicRepo: boolean, secretRef?: string): Promise<RepoBranch[]>;
+  fetchRepoMetadata(org: string, repo: string, branch: string, subPath: string, isPublicRepo?: boolean, secretRef?: string): Promise<RepoMetadata>;
   fetchChoreoSampleImages(orgUuid: string, projectId: string): Promise<ChoreoSampleImageEntry[]>;
   updateBuildpackConfigs(input: UpdateBuildpackConfigsInput): Promise<string>;
   /**
@@ -660,7 +670,7 @@ export interface RepositoryApi {
    * account" — the UI should open the App installation page.
    */
   obtainGithubToken(authorizationCode: string): Promise<{ success: boolean; message: string; needsInstallation?: boolean }>;
-  fetchRepoContents(org: string, repo: string, branch: string, isPublicRepo?: boolean): Promise<RepoTreeNode[]>;
+  fetchRepoContents(org: string, repo: string, branch: string, isPublicRepo?: boolean, secretRef?: string): Promise<RepoTreeNode[]>;
 }
 
 // ---------------------------------------------------------------------------
@@ -712,18 +722,18 @@ export interface AuditLogsApi {
 // Managed databases (admin "Databases"). wip-only; cloud/icp stubs throw. Grown per phase.
 export interface PlatformServicesApi {
   getAvailability(orgUuid: string): Promise<OrgServiceAvailability>;
-  listServers(orgUuid: string): Promise<DatabaseServer[]>;
-  getServer(serverId: string): Promise<DatabaseServerDetail>;
-  deleteServer(serverId: string): Promise<void>;
+  listServers(orgUuid: string, variant?: ServerVariant): Promise<DatabaseServer[]>;
+  getServer(serverId: string, variant?: ServerVariant): Promise<DatabaseServerDetail>;
+  deleteServer(serverId: string, variant?: ServerVariant): Promise<void>;
   getServicePlans(type: ServiceType): Promise<ServicePlan[]>;
-  createServer(payload: CreateServerPayload): Promise<DatabaseServer>;
-  setServerPoweredState(serverId: string, powered: boolean): Promise<void>;
+  createServer(payload: CreateServerPayload, variant?: ServerVariant): Promise<DatabaseServer>;
+  setServerPoweredState(serverId: string, powered: boolean, variant?: ServerVariant): Promise<void>;
   getServerAdminUser(serverId: string): Promise<AdminUser>;
-  getServerCaCertificate(serverId: string): Promise<CaCertificate>;
-  getServerMetrics(serverId: string, period: MetricPeriod): Promise<ServerMetricsResponse>;
+  getServerCaCertificate(serverId: string, variant?: ServerVariant): Promise<CaCertificate>;
+  getServerMetrics(serverId: string, period: MetricPeriod, variant?: ServerVariant): Promise<ServerMetricsResponse>;
   listServerDatabases(serverId: string): Promise<DatabaseInfo[]>;
-  getServerLogs(serverId: string, request: ServerLogsRequest): Promise<ServerLogsResponse>;
-  listServerBackups(serverId: string): Promise<BackupsResponse>;
+  getServerLogs(serverId: string, request: ServerLogsRequest, variant?: ServerVariant): Promise<ServerLogsResponse>;
+  listServerBackups(serverId: string, variant?: ServerVariant): Promise<BackupsResponse>;
   createDatabase(serverId: string, name: string): Promise<DatabaseInfo>;
   setDatabaseMarketplace(serverId: string, name: string, displayOnMarketplace: boolean): Promise<void>;
   listDbCredentials(serverId: string, dbName?: string): Promise<DbCredential[]>;
@@ -731,8 +741,21 @@ export interface PlatformServicesApi {
   createDbCredential(serverId: string, payload: CredentialPayload): Promise<DbCredential>;
   updateDbCredential(serverId: string, credentialId: string, payload: CredentialPayload): Promise<DbCredential>;
   deleteDbCredential(serverId: string, credentialId: string): Promise<void>;
-  updateMaintenanceWindow(serverId: string, payload: MaintenanceWindow): Promise<void>;
-  updateAllowedIps(serverId: string, payload: AllowedIpsPayload): Promise<void>;
+  updateMaintenanceWindow(serverId: string, payload: MaintenanceWindow, variant?: ServerVariant): Promise<void>;
+  updateAllowedIps(serverId: string, payload: AllowedIpsPayload, variant?: ServerVariant): Promise<void>;
+  listKafkaTopics(brokerId: string): Promise<KafkaTopic[]>;
+  createKafkaTopic(brokerId: string, payload: KafkaTopicCreatePayload): Promise<void>;
+  getKafkaTopic(brokerId: string, topicName: string): Promise<KafkaTopic>;
+  updateKafkaTopic(brokerId: string, topicName: string, payload: KafkaTopicUpdatePayload): Promise<void>;
+  deleteKafkaTopic(brokerId: string, topicName: string): Promise<void>;
+  getKafkaUserConfigs(): Promise<KafkaUserConfigs>;
+  listKafkaUsers(brokerId: string): Promise<KafkaUser[]>;
+  createKafkaUser(brokerId: string, username: string): Promise<void>;
+  deleteKafkaUser(brokerId: string, username: string): Promise<void>;
+  resetKafkaUserCredentials(brokerId: string, username: string): Promise<void>;
+  listKafkaAcls(brokerId: string): Promise<{ acls: KafkaAcl[] }>;
+  createKafkaAcl(brokerId: string, payload: Omit<KafkaAcl, 'id'>): Promise<void>;
+  deleteKafkaAcl(brokerId: string, aclId: string): Promise<void>;
 }
 
 // Org admin GenAI Services (internal-marketplace). wip-only for now; cloud/icp stubs throw.
@@ -751,6 +774,44 @@ export interface GenaiServicesApi {
   addConnectionConfig(serviceId: string, schemaId: string, request: ConnectionConfigRequest): Promise<void>;
   setGenaiServiceStatus(serviceId: string, status: GenAiServiceStatus): Promise<void>;
   deleteGenaiService(serviceId: string): Promise<void>;
+}
+
+// Org admin Governance (rulesets, documents, policies). wip-only for now; cloud/icp stubs throw.
+export interface GovernanceApi {
+  listRulesets(): Promise<RulesetList>;
+  getRuleset(rulesetId: string): Promise<Ruleset>;
+  getRulesetContent(rulesetId: string): Promise<string>;
+  createRuleset(ruleset: Ruleset): Promise<Ruleset>;
+  updateRuleset(rulesetId: string, ruleset: Ruleset): Promise<Ruleset>;
+  deleteRuleset(rulesetId: string): Promise<void>;
+
+  listDocuments(): Promise<DocumentList>;
+  getDocument(documentId: string): Promise<DocumentInfo>;
+  createDocument(document: DocumentInfo): Promise<DocumentInfo>;
+  updateDocument(documentId: string, document: DocumentInfo): Promise<DocumentInfo>;
+  deleteDocument(documentId: string): Promise<void>;
+
+  listPolicies(): Promise<GovernancePolicyList>;
+  getPolicy(policyId: string): Promise<GovernancePolicyInfo>;
+  createPolicy(policy: GovernancePolicyInfo): Promise<GovernancePolicyInfo>;
+  updatePolicy(policyId: string, policy: GovernancePolicyInfo): Promise<GovernancePolicyInfo>;
+  deletePolicy(policyId: string): Promise<void>;
+
+  fetchProjectCompliance(): Promise<ProjectComplianceResponse>;
+  fetchPolicyAdherence(): Promise<PolicyAdherenceResponse>;
+  fetchProjectPolicyAdherence(projectId: string): Promise<ProjectPolicyAdherenceResponse>;
+  fetchComponentCompliance(projectId: string): Promise<ComponentComplianceResponse>;
+  fetchEndpointPolicyAdherence(projectId: string, componentId: string, apimId: string): Promise<EndpointPolicyAdherenceResponse>;
+  fetchEndpointRulesetAdherence(projectId: string, componentId: string, apimId: string): Promise<EndpointRulesetAdherenceResponse>;
+  fetchEndpointRuleAdherence(projectId: string, componentId: string, apimId: string): Promise<GovernanceRuleAdherenceResponse>;
+}
+
+// Org admin Certificates (TLS trust certificates stored as config groups). wip-only for now.
+export interface CertificatesApi {
+  listCertificateGroups(): Promise<ConfigGroup[]>;
+  createCertificate(input: CreateCertificateInput): Promise<Certificate>;
+  deleteCertificate(certificateId: string): Promise<boolean>;
+  getCertificateUsage(certificateId: string): Promise<ConfigGroupUsage>;
 }
 
 // ---------------------------------------------------------------------------
@@ -845,10 +906,12 @@ export interface AppApi {
   repository: RepositoryApi;
   samples: SamplesApi;
   subscriptions: SubscriptionsApi;
+  certificates: CertificatesApi;
   configGroups: ConfigGroupsApi;
   connections: ConnectionsApi;
   auditLogs: AuditLogsApi;
   platformServices: PlatformServicesApi;
   genaiServices: GenaiServicesApi;
+  governance: GovernanceApi;
   ragBackend: RagBackendApi;
 }
