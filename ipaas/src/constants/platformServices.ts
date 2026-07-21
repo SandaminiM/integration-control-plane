@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import type { CloudProvider, CloudRegion, MetricPeriod, ServerStatus, ServiceType } from '../types/platformServices';
+import type { CloudProvider, CloudRegion, MetricPeriod, ServerStatus, ServerVariant, ServiceType } from '../types/platformServices';
 
 /** Service name: starts with a letter, alphanumeric + hyphens, max 64 chars. Mirrors Devant. */
 export const SERVICE_NAME_REGEX = /^[a-zA-Z][a-zA-Z0-9-]{0,63}$/;
@@ -75,8 +75,10 @@ export const VECTOR_SERVICE_TYPES: ServiceTypeOption[] = [
 export interface DbServerKind {
   /** Value sent as `is_vector_enabled` on create and used to filter the server list. */
   isVector: boolean;
-  /** URL segment under `/admin` (`databases` or `vector-databases`). */
-  segment: 'databases' | 'vector-databases';
+  /** Which platform-services server family an operation targets. */
+  variant: ServerVariant;
+  /** URL segment under `/admin` (`databases`, `vector-databases`, or `message-brokers`). */
+  segment: 'databases' | 'vector-databases' | 'message-brokers';
   /** List-page heading. */
   listTitle: string;
   /** Create-page heading. */
@@ -89,12 +91,21 @@ export interface DbServerKind {
   emptyHeadline: string;
   /** Empty-state banner body (shown when nothing has been created yet). */
   emptyBody: string;
+  /** Lowercase noun for messages, e.g. "database server" or "message broker". */
+  serverNoun: string;
+  /** When true, unsubscribed orgs see an upgrade prompt instead of the empty-state banner. */
+  requiresPaidPlan?: boolean;
   /** Engines offered in the create wizard's type picker. */
   serviceTypes: ServiceTypeOption[];
 }
 
+export const BROKER_SERVICE_TYPES: ServiceTypeOption[] = [
+  { id: 'kafka', name: 'Apache Kafka', description: 'A fully-managed distributed event streaming platform for high-performance data pipelines and pub/sub messaging.', logo: `${DB_LOGO_BASE}kafka.svg` },
+];
+
 export const DATABASE_KIND: DbServerKind = {
   isVector: false,
+  variant: 'db-servers',
   segment: 'databases',
   listTitle: 'Databases',
   createTitle: 'Create Database Server',
@@ -102,11 +113,13 @@ export const DATABASE_KIND: DbServerKind = {
   backToDetailLabel: 'Back to Database List',
   emptyHeadline: 'Create fully-managed PostgreSQL, MySQL databases and WSO2 Integration Platform-Managed Caches (compatible with legacy Redis® OSS)',
   emptyBody: 'No database services have been created yet.',
+  serverNoun: 'database server',
   serviceTypes: SERVICE_TYPES,
 };
 
 export const VECTOR_DATABASE_KIND: DbServerKind = {
   isVector: true,
+  variant: 'db-servers',
   segment: 'vector-databases',
   listTitle: 'Vector Databases',
   createTitle: 'Create Vector Database Server',
@@ -114,7 +127,23 @@ export const VECTOR_DATABASE_KIND: DbServerKind = {
   backToDetailLabel: 'Back to Vector Database List',
   emptyHeadline: 'Create fully-managed vector databases (PostgreSQL)',
   emptyBody: 'No vector database services have been created yet.',
+  serverNoun: 'vector database server',
   serviceTypes: VECTOR_SERVICE_TYPES,
+};
+
+export const MESSAGE_BROKER_KIND: DbServerKind = {
+  isVector: false,
+  variant: 'brokers',
+  segment: 'message-brokers',
+  listTitle: 'Message Brokers',
+  createTitle: 'Create Message Broker',
+  backToListLabel: 'Back to message broker list',
+  backToDetailLabel: 'Back to Message Broker List',
+  emptyHeadline: 'No message brokers yet',
+  emptyBody: 'Create a managed Apache Kafka broker to publish and subscribe to event streams from your integrations.',
+  serverNoun: 'message broker',
+  requiresPaidPlan: true,
+  serviceTypes: BROKER_SERVICE_TYPES,
 };
 
 /** Cloud providers in display order — DigitalOcean & GCP first (they carry the hobbyist plans). */

@@ -16,11 +16,12 @@
  * under the License.
  */
 
-import { Alert, Box, Chip, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
-import { Boxes, FolderGit2, Layers } from '@wso2/oxygen-ui-icons-react';
+import { Alert, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
+import { Layers } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
 import { useConfigGroupUsage } from '../../hooks/useConfigGroups';
 import EmptyListing from '../EmptyListing';
+import UsageProjectsList from './UsageProjectsList';
 
 /** "Usage" tab: which projects → components → releases reference this config group. */
 export default function ConfigGroupUsageView({ configGroupUuid, active }: { configGroupUuid: string; active: boolean }): JSX.Element {
@@ -46,32 +47,5 @@ export default function ConfigGroupUsageView({ configGroupUuid, active }: { conf
     return <EmptyListing icon={<Layers size={48} />} title="Not used yet" description="This configuration group isn't referenced by any project, component, or release." />;
   }
 
-  return (
-    <Stack gap={2}>
-      {projects.map((project) => (
-        <Box key={project.projectId} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2 }}>
-          <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1.5 }}>
-            <FolderGit2 size={16} style={{ opacity: 0.7 }} />
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              {project.projectName}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {project.projectHandler}
-            </Typography>
-          </Stack>
-          <Stack gap={1} sx={{ pl: 3 }}>
-            {project.usageInComponents.map((component) => (
-              <Stack key={component.componentId} direction="row" alignItems="center" gap={1} flexWrap="wrap">
-                <Boxes size={14} style={{ opacity: 0.6 }} />
-                <Typography variant="body2">{component.componentName}</Typography>
-                {component.usageInReleases.map((release) => (
-                  <Chip key={release.envTemplateId} label={release.envTemplateName} size="small" variant="outlined" />
-                ))}
-              </Stack>
-            ))}
-          </Stack>
-        </Box>
-      ))}
-    </Stack>
-  );
+  return <UsageProjectsList projects={projects} />;
 }

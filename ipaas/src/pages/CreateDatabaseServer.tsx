@@ -53,7 +53,7 @@ export function CreateDatabaseServerView({ scope, kind }: { scope: OrgScope; kin
   const billingConsoleUrl = window.API_CONFIG?.billingConsoleUrl;
 
   const [activeStep, setActiveStep] = useState(0);
-  const [storageType, setStorageType] = useState<ServiceType>('postgres');
+  const [storageType, setStorageType] = useState<ServiceType>(kind.serviceTypes[0]?.id ?? 'postgres');
   const [serviceName, setServiceName] = useState('');
   const [provider, setProvider] = useState<CloudProvider | ''>('');
   const [region, setRegion] = useState<CloudRegion | ''>('');
@@ -61,8 +61,8 @@ export function CreateDatabaseServerView({ scope, kind }: { scope: OrgScope; kin
   const [error, setError] = useState<CreateError | null>(null);
 
   const plansQuery = useServicePlans(storageType);
-  const servers = useDatabaseServers();
-  const create = useCreateServer();
+  const servers = useDatabaseServers(kind.variant);
+  const create = useCreateServer(kind.variant);
 
   const disabledProviders = useMemo(() => (isSubscribed ? [] : FREE_TIER_DISABLED_PROVIDERS), [isSubscribed]);
 
@@ -101,10 +101,11 @@ export function CreateDatabaseServerView({ scope, kind }: { scope: OrgScope; kin
     if (!provider || !region || !planId) return;
     setError(null);
     create.mutate(
-      { name: serviceName, cloud_provider: provider, cloud_region: region, service_plan_id: planId, is_vector_enabled: kind.isVector },
+      // Brokers reject is_vector_enabled — it's a db-servers-only flag.
+      { name: serviceName, cloud_provider: provider, cloud_region: region, service_plan_id: planId, ...(kind.variant === 'brokers' ? {} : { is_vector_enabled: kind.isVector }) },
       {
         onSuccess: (server) => navigate(`${base}/${server.id}/overview`),
-        onError: (e) => setError(toCreateError(e)),
+        onError: (e) => setError(toCreateError(e, kind.serverNoun)),
       },
     );
   };
@@ -117,7 +118,7 @@ export function CreateDatabaseServerView({ scope, kind }: { scope: OrgScope; kin
 
       <Stack direction="row" gap={4} alignItems="flex-start">
         <Box sx={{ width: { xs: '100%', md: 220 }, flexShrink: 0, pt: 1 }}>
-          <VerticalStepper activeStep={activeStep} steps={['Select Database Type', 'Select service plan']} />
+          <VerticalStepper activeStep={activeStep} steps={[kind.variant === 'brokers' ? 'Select Broker Type' : 'Select Database Type', 'Select service plan']} />
         </Box>
         <Box sx={{ flex: 1, maxWidth: 900, mt: 2 }}>
           <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
@@ -127,7 +128,6 @@ export function CreateDatabaseServerView({ scope, kind }: { scope: OrgScope; kin
           {error && (
             <Alert
               severity={error.upgrade ? 'warning' : 'error'}
-              variant="outlined"
               onClose={() => setError(null)}
               action={
                 error.upgrade && billingConsoleUrl && orgUuid ? (
@@ -152,7 +152,7 @@ export function CreateDatabaseServerView({ scope, kind }: { scope: OrgScope; kin
             <>
               {!kind.isVector && (
                 <Typography variant="subtitle2" sx={sectionHeadingSx}>
-                  Select Cloud Storage
+                  {kind.variant === 'brokers' ? 'Select Message Broker' : 'Select Cloud Storage'}
                 </Typography>
               )}
               <Grid container spacing={2} sx={{ mb: 3 }}>

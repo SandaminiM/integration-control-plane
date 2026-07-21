@@ -20,20 +20,21 @@ import { Alert, TextField, Typography } from '@wso2/oxygen-ui';
 import { useState, type JSX } from 'react';
 import { useDeleteServer } from '../../hooks/usePlatformServices';
 import ConfirmDeleteDialog from '../ConfirmDeleteDialog';
-import type { DatabaseServer } from '../../types/platformServices';
+import type { DatabaseServer, ServerVariant } from '../../types/platformServices';
 
 interface DeleteServerDialogProps {
   server: DatabaseServer;
   /** Whether the org is on a paid plan — free-tier deletes don't restore the quota. */
   isSubscribed: boolean;
+  variant?: ServerVariant;
   onClose: () => void;
   onDeleted: (name: string) => void;
   onError: (message: string) => void;
 }
 
-/** Type-to-confirm delete for a database server: the user must type the server name to enable delete. */
-export default function DeleteServerDialog({ server, isSubscribed, onClose, onDeleted, onError }: DeleteServerDialogProps): JSX.Element {
-  const del = useDeleteServer();
+/** Type-to-confirm delete for a managed server: the user must type the server name to enable delete. */
+export default function DeleteServerDialog({ server, isSubscribed, variant = 'db-servers', onClose, onDeleted, onError }: DeleteServerDialogProps): JSX.Element {
+  const del = useDeleteServer(variant);
   const [input, setInput] = useState('');
   const confirmed = input === server.name;
 
@@ -46,7 +47,7 @@ export default function DeleteServerDialog({ server, isSubscribed, onClose, onDe
       },
       onError: (e) => {
         onClose();
-        onError(e instanceof Error ? e.message : 'Failed to delete database server.');
+        onError(e instanceof Error ? e.message : 'Failed to delete the server.');
       },
     });
   };

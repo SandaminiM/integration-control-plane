@@ -24,6 +24,9 @@
 
 export type ServiceType = 'postgres' | 'mysql' | 'redis' | 'kafka';
 
+/** Which platform-services server family an operation targets. */
+export type ServerVariant = 'db-servers' | 'brokers';
+
 export type ServerStatus = 'CREATING' | 'ACTIVE' | 'POWERED_OFF' | 'RESUMING' | 'DELETING' | 'DELETED' | 'ERROR';
 
 export type CloudProvider = 'aws' | 'gcp' | 'azure' | 'digitalocean';
@@ -90,13 +93,13 @@ export interface ServicePlan {
   regions: ServicePlanRegion[];
 }
 
-/** Request body for `POST /db-servers`. `project_id` is optional (omitted for org-level servers). */
+/** Request body for `POST /db-servers` or `POST /brokers`. `project_id` is optional (omitted for org-level servers). */
 export interface CreateServerPayload {
   name: string;
   cloud_provider: CloudProvider;
   cloud_region: CloudRegion;
   service_plan_id: string;
-  is_vector_enabled: boolean;
+  is_vector_enabled?: boolean;
   project_id?: string;
 }
 
@@ -118,6 +121,9 @@ export interface ConnectionParams {
   database: string;
   ssl_required?: boolean;
   password_reset?: boolean;
+  service_uri?: string;
+  access_key?: string;
+  access_cert?: string;
 }
 
 export interface ServerNode {
@@ -274,4 +280,61 @@ export interface BackupInfo {
 
 export interface BackupsResponse {
   backups: BackupInfo[];
+}
+
+// --- Kafka (message brokers) ---
+
+export type KafkaCleanupPolicy = 'delete' | 'compact' | 'compact,delete';
+
+export interface KafkaTopic {
+  topic_name: string;
+  state?: string;
+  cleanup_policy?: KafkaCleanupPolicy;
+  minimum_in_sync_replicas?: number;
+  partitions?: number;
+  replication?: number;
+  retention_bytes?: number;
+  retention_hours?: number;
+}
+
+export interface KafkaTopicCreatePayload {
+  topic_name: string;
+  replication?: number;
+  partitions?: number;
+  retention_hours?: number;
+  retention_bytes?: number;
+  minimum_in_sync_replicas?: number;
+  cleanup_policy?: KafkaCleanupPolicy;
+}
+
+export type KafkaTopicUpdatePayload = Omit<KafkaTopicCreatePayload, 'topic_name'>;
+
+export interface KafkaUser {
+  username: string;
+  type?: string;
+  access_cert?: string;
+  access_key?: string;
+  access_cert_expiry?: string;
+}
+
+export interface KafkaAcl {
+  id: string;
+  permission: string;
+  topic: string;
+  username: string;
+}
+
+/** Field constraints + descriptions for topic settings, from GET /brokers/kafka-user-configs. */
+export interface KafkaConfigFieldSchema {
+  minimum: number;
+  maximum: number;
+  description: string;
+}
+
+export interface KafkaUserConfigs {
+  replication?: KafkaConfigFieldSchema;
+  partitions?: KafkaConfigFieldSchema;
+  retention_bytes?: KafkaConfigFieldSchema;
+  retention_ms?: KafkaConfigFieldSchema;
+  minimum_in_sync_replicas?: KafkaConfigFieldSchema;
 }

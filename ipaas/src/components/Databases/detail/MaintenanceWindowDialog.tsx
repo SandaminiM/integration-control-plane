@@ -20,19 +20,20 @@ import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogT
 import { useState, type JSX } from 'react';
 import { useUpdateMaintenanceWindow } from '../../../hooks/usePlatformServices';
 import { MAINTENANCE_DAYS, MAINTENANCE_TIMES } from '../../../constants/platformServices';
-import type { MaintenanceWindow } from '../../../types/platformServices';
+import type { MaintenanceWindow, ServerVariant } from '../../../types/platformServices';
 
 interface MaintenanceWindowDialogProps {
   serverId: string;
+  variant?: ServerVariant;
   current?: MaintenanceWindow;
   onClose: () => void;
   onResult: (type: 'success' | 'error', message: string) => void;
 }
 
-export default function MaintenanceWindowDialog({ serverId, current, onClose, onResult }: MaintenanceWindowDialogProps): JSX.Element {
+export default function MaintenanceWindowDialog({ serverId, variant = 'db-servers', current, onClose, onResult }: MaintenanceWindowDialogProps): JSX.Element {
   const [day, setDay] = useState(current?.day || 'monday');
   const [time, setTime] = useState(current?.time?.slice(0, 5) || '00:00');
-  const update = useUpdateMaintenanceWindow(serverId);
+  const update = useUpdateMaintenanceWindow(serverId, variant);
 
   const save = () => {
     update.mutate(
