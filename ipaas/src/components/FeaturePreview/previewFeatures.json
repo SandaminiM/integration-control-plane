@@ -1,5 +1,9 @@
 [
   {
+    "title": "AI Integration Builder",
+    "description": "AI-assisted integration creation from a natural-language prompt"
+  },
+  {
     "title": "Env-wise Access Control",
     "description": "Enable environment-level access control for integrations"
   },

@@ -89,8 +89,16 @@ export function importComponentUrl(orgHandler: string, projectHandler: string): 
   return `/organizations/${orgHandler}/projects/${projectHandler}/components/new/import`;
 }
 
+export function componentsNewUrl(orgHandler: string, projectHandler: string): string {
+  return `/organizations/${orgHandler}/projects/${projectHandler}/components/new`;
+}
+
 export function browseSamplesUrl(orgHandler: string, projectHandler: string): string {
   return `/organizations/${orgHandler}/projects/${projectHandler}/components/new/samples`;
+}
+
+export function componentsNewAiBuilderUrl(orgHandler: string, projectHandler: string): string {
+  return `/organizations/${orgHandler}/projects/${projectHandler}/components/new/ai-builder`;
 }
 
 export function prebuiltIntegrationsUrl(orgHandler: string, projectHandler: string): string {
