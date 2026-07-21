@@ -142,7 +142,7 @@ export function UsersTab({ orgHandler }: { orgHandler: string }): JSX.Element {
                       }>
                       <ListingTable.Cell>
                         <Stack direction="row" alignItems="center" gap={1.5}>
-                          <Avatar src={u.pictureUrl} sx={{ width: 32, height: 32, fontSize: 14 }}>
+                          <Avatar src={u.pictureUrl} alt={u.displayName || u.username} sx={{ width: 32, height: 32, fontSize: 14 }}>
                             {getUserInitial(u)}
                           </Avatar>
                           {u.displayName}

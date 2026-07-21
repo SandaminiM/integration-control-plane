@@ -18,12 +18,12 @@
 
 import { Accordion, AccordionSummary, AccordionDetails, Box, Card, CardContent, Chip, CircularProgress, Divider, IconButton, ListingTable, Stack, TablePagination, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ScrollText } from '@wso2/oxygen-ui-icons-react';
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ARTIFACT_TYPE_TO_SOURCE_TYPE } from '../types/artifact';
 import { useArtifactSource, useArtifactParams, useArtifactWsdl, useLocalEntryValue } from '../hooks/useArtifacts';
 import { WSDL_NS, SOAP_NS, SOAP12_NS } from '../constants/wsdl';
-import CodeViewer from './CodeViewer';
+const CodeViewer = lazy(() => import('./CodeViewer'));
 import DataTable, { emptySx } from './DataTable';
 import type { TabProps } from './artifact-config';
 
@@ -38,7 +38,11 @@ export function ArtifactSource({ envId, componentId, artifactType, artifact }: T
     );
   if (error || !source) return <Typography sx={emptySx}>No source content available.</Typography>;
 
-  return <CodeViewer code={source} language="xml" />;
+  return (
+    <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>}>
+      <CodeViewer code={source} language="xml" />
+    </Suspense>
+  );
 }
 
 export function ArtifactApiDefinition({ artifact }: TabProps) {
@@ -112,7 +116,11 @@ export function ArtifactWsdl({ envId, componentId, artifactType, artifact }: Tab
       </Box>
     );
   if (error || !wsdl) return <Typography sx={emptySx}>No WSDL content available.</Typography>;
-  return <CodeViewer code={wsdl} language="xml" />;
+  return (
+    <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>}>
+      <CodeViewer code={wsdl} language="xml" />
+    </Suspense>
+  );
 }
 
 export function ArtifactValue({ artifact, envId, componentId }: TabProps) {
@@ -124,7 +132,11 @@ export function ArtifactValue({ artifact, envId, componentId }: TabProps) {
       </Box>
     );
   if (!value) return <Typography sx={emptySx}>No value available.</Typography>;
-  return <CodeViewer code={value} language="xml" />;
+  return (
+    <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>}>
+      <CodeViewer code={value} language="xml" />
+    </Suspense>
+  );
 }
 
 export function ArtifactCarbonArtifacts({ artifact }: TabProps) {

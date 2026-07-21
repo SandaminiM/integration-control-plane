@@ -18,11 +18,11 @@
 
 import { Alert, Avatar, Box, Button, Chip, CircularProgress, Divider, Drawer, IconButton, Skeleton, Stack, Tab, Tabs, Typography } from '@wso2/oxygen-ui';
 import { Download, X } from '@wso2/oxygen-ui-icons-react';
-import { useEffect, useMemo, useState, type JSX } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState, type JSX } from 'react';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
 import { useConnectionServiceIdl } from '../../../hooks/useConnections';
-import Markdown from '../../Markdown';
+const Markdown = lazy(() => import('../../Markdown'));
 import type { ConnectionCatalogItem } from '../../../types/connections';
 
 interface ServiceDetailDrawerProps {
@@ -150,7 +150,9 @@ export default function ServiceDetailDrawer({ item, onClose, onSelect }: Service
           <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 2.5 }}>
             {tab === 0 ? (
               item.description ? (
-                <Markdown>{item.description}</Markdown>
+                <Suspense fallback={null}>
+                  <Markdown>{item.description}</Markdown>
+                </Suspense>
               ) : (
                 <Typography variant="body2" color="text.secondary">
                   No description provided.

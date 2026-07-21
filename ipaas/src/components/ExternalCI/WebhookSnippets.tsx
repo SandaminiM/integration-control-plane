@@ -17,8 +17,8 @@
  */
 
 import { Box, Tab, Tabs, Typography } from '@wso2/oxygen-ui';
-import { useMemo, useState, type JSX } from 'react';
-import CodeViewer from '../CodeViewer';
+import { lazy, Suspense, useMemo, useState, type JSX } from 'react';
+const CodeViewer = lazy(() => import('../CodeViewer'));
 import { EXTERNAL_CI_PROVIDERS, getPipelineSnippet, type ExternalCiProvider } from '../../utils/externalCi';
 
 const deployEndpoint = (): string => `${window.API_CONFIG?.choreoBaseApiUrl ?? ''}/devops/1.0.0/external-ci/deploy`;
@@ -40,7 +40,9 @@ export default function WebhookSnippets({ componentId, versionId }: { componentI
           <Tab key={p.key} value={p.key} label={p.label} />
         ))}
       </Tabs>
-      <CodeViewer code={snippet} language={current.language} showLineNumbers maxHeight={320} />
+      <Suspense fallback={null}>
+        <CodeViewer code={snippet} language={current.language} showLineNumbers maxHeight={320} />
+      </Suspense>
     </Box>
   );
 }

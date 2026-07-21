@@ -18,13 +18,13 @@
 
 import { Box, Button, Typography } from '@wso2/oxygen-ui';
 import { AlertCircle } from '@wso2/oxygen-ui-icons-react';
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useContext, useEffect, useMemo, useState } from 'react';
 import type { JSX } from 'react';
 import { useNavigate } from 'react-router';
 import { CopilotContext } from '../../contexts/CopilotContext';
 import { useGetCopilotDataCollectionPermission, useSendCopilotFeedback } from '../../hooks/useDataCollector';
 import { DataCollectorStatus, MessageType, type ApiChatExecutionResult, type IMessage, type NavigationResponse } from '../../types/copilot';
-import Markdown from '../Markdown';
+const Markdown = lazy(() => import('../Markdown'));
 import ApiChatMessage from './ApiChatMessage';
 import FeedbackButtons, { type FeedbackValue } from './FeedbackButtons';
 
@@ -104,7 +104,9 @@ export default function CopilotMessage({ message, showFeedback, hasError, isCurr
       <Box sx={{ mb: 2, position: 'relative' }}>
         <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, px: 2, pt: 1.5, pb: showFeedbackButtons ? 5 : 1.5, overflowX: 'auto' }}>
           <Typography variant="body2" component="div">
-            <Markdown>{navigationData.content}</Markdown>
+            <Suspense fallback={null}>
+              <Markdown>{navigationData.content}</Markdown>
+            </Suspense>
           </Typography>
           {navigationData.navigate.path && (
             <Box sx={{ mt: 1 }}>
@@ -124,7 +126,9 @@ export default function CopilotMessage({ message, showFeedback, hasError, isCurr
     <Box sx={{ mb: 2, position: 'relative' }}>
       <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, px: 2, pt: 1.5, pb: showFeedbackButtons ? 5 : 1.5, overflowX: 'auto' }}>
         <Typography variant="body2" component="div">
-          <Markdown>{String(message.content.data)}</Markdown>
+          <Suspense fallback={null}>
+            <Markdown>{String(message.content.data)}</Markdown>
+          </Suspense>
           {isCurrentlyStreaming && (
             <Box
               component="span"
