@@ -22,6 +22,7 @@ import { Alert, Box, Button, CircularProgress, ColorSchemeImage, Divider, Grid, 
 import { GitHub, Google, Mail } from '@wso2/oxygen-ui-icons-react';
 import { Link as NavLink } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
+import { useBfcacheReset } from '../hooks/useBfcacheReset';
 import { loginUrl, privacyPolicyUrl } from '../paths';
 import AuthMarketingPanel from '../components/AuthMarketingPanel';
 import RegionSelector from '../components/RegionSelector';
@@ -65,7 +66,11 @@ export default function Signup(): JSX.Element {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useBfcacheReset(setLoading, setProvider);
+
   const handleEmailSignup = () => {
+    setLoading(true);
+    setProvider('LOCAL');
     const origin = window.location.origin;
     const postRegisterCallback = `${origin}/login?method=basic&returnToUrl=%2F`;
     const params = new URLSearchParams({
@@ -198,7 +203,7 @@ export default function Signup(): JSX.Element {
                 onClick={handleEmailSignup}
                 disabled={loading}
                 sx={{ borderRadius: '28px', py: 1.25 }}>
-                Sign up with Email
+                {loading && provider === 'LOCAL' ? 'Redirecting...' : 'Sign up with Email'}
               </Button>
             </Stack>
 
