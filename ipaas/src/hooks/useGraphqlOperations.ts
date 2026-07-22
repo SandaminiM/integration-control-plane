@@ -17,25 +17,24 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { buildClientSchema, getIntrospectionQuery, type GraphQLSchema } from 'graphql';
+import { getIntrospectionQuery } from 'graphql';
+import { buildOperations } from '../utils/graphqlSchema';
+import type { GraphqlOperation } from '../types/graphql';
 
-interface UseGraphqlSchemaParams {
-  /** Live GraphQL endpoint URL (base + apiContext). */
+interface UseGraphqlOperationsParams {
+  /** Live GraphQL endpoint URL. */
   invokeUrl: string;
   /** Test key minted for the endpoint's APIM API (`test-key` header). */
   token: string;
   enabled: boolean;
 }
 
-/**
- * Introspects a deployed GraphQL endpoint and builds a client schema — the
- * counterpart of devant's `useGraphQLSchema`/`getSchema`. The request hits the
- * running data-plane endpoint (not the console API), authenticated with the
- * `test-key` header, so this lives in react-query rather than the api layer.
- */
-export function useGraphqlSchema({ invokeUrl, token, enabled }: UseGraphqlSchemaParams) {
-  return useQuery<GraphQLSchema, Error>({
-    queryKey: ['graphqlSchema', invokeUrl],
+// Introspects a deployed GraphQL endpoint (over the `test-key` header) and returns
+// its operations as a domain shape. The request targets the running data-plane
+// endpoint, not the console API, so — like useMcpTools — it lives in a hook.
+export function useGraphqlOperations({ invokeUrl, token, enabled }: UseGraphqlOperationsParams) {
+  return useQuery<GraphqlOperation[], Error>({
+    queryKey: ['graphqlOperations', invokeUrl],
     queryFn: async () => {
       const result = await fetch(invokeUrl, {
         method: 'POST',
@@ -51,9 +50,8 @@ export function useGraphqlSchema({ invokeUrl, token, enabled }: UseGraphqlSchema
       }
 
       const body = await result.json();
-      // eslint-disable-next-line no-underscore-dangle
       if (!body?.data?.__schema) throw new Error('Invalid response received');
-      return buildClientSchema(body.data);
+      return buildOperations(body.data);
     },
     enabled: enabled && Boolean(invokeUrl && token),
     retry: 1,

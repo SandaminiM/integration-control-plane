@@ -18,17 +18,13 @@
 
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useLocation } from 'react-router';
-import { Alert, Box, Button, CircularProgress, Typography } from '@wso2/oxygen-ui';
-import { Check } from '@wso2/oxygen-ui-icons-react';
-import { useGetOrCreateSampleRegistry, useCreateCodeServer } from '../hooks/useCloudEditor';
+import { Alert, Box, Button, Typography } from '@wso2/oxygen-ui';
+import { useCreateCodeServer, useEditorKeepAlive, useGetOrCreateSampleRegistry } from '../hooks/useCloudEditor';
 import { useComponentPods } from '../hooks/useRuntime';
-import { CLOUD_EDITOR_STEPS, POD_PHASE_TO_STEP } from '../constants/cloudEditor';
+import { CLOUD_EDITOR_POLL_MS, CLOUD_EDITOR_STEPS, CLOUD_EDITOR_TIMEOUT_MS } from '../constants/cloudEditor';
 import { highestPodPhase } from '../utils/cloudEditor';
-import type { DeploymentParams, ChoreoSampleImage, CodeServerInstance, CloudEditorStepKey } from '../types/cloudEditor';
-
-const ROW_HEIGHT = 40;
-const POD_POLL_MS = 3_000;
-const REDIRECT_TIMEOUT_MS = 3 * 60 * 1000;
+import DeploymentWheel from '../components/CloudEditor/DeploymentWheel';
+import type { ChoreoSampleImage, CloudEditorStepKey, CodeServerInstance, DeploymentParams } from '../types/cloudEditor';
 
 export default function CloudEditorDeployment(): JSX.Element {
   const location = useLocation();
@@ -59,8 +55,8 @@ export default function CloudEditorDeployment(): JSX.Element {
     window.location.replace(url);
   };
 
-  // Create flow: provision the editor, then hand off to pod polling (or redirect
-  // immediately when the platform can't report pod status — e.g. cloud).
+  // Provision the editor, then hand off to pod polling (or redirect immediately
+  // when the platform can't report pod status — e.g. cloud).
   useEffect(() => {
     if (hasRun.current) return;
     hasRun.current = true;
@@ -133,18 +129,15 @@ export default function CloudEditorDeployment(): JSX.Element {
     deploy();
   }, [params, createCodeServerMutation, getOrCreateRegistryMutation]);
 
-  // Poll the editor's pod (3s) and advance the wheel as its conditions progress.
-  const podsQuery = useComponentPods(params.projectId, instance?.clusterId ?? '', instance?.releaseId ?? '', instance?.namespace ?? '', POD_POLL_MS);
-  const pods = podsQuery.data ?? [];
+  const podsQuery = useComponentPods(params.projectId, instance?.clusterId ?? '', instance?.releaseId ?? '', instance?.namespace ?? '', CLOUD_EDITOR_POLL_MS);
+  const pods = useMemo(() => podsQuery.data ?? [], [podsQuery.data]);
   const isAnyPodRunning = pods.some((p) => p.status?.phase === 'Running');
+  const isPolling = !!instance?.clusterId && !isAnyPodRunning;
 
+  // Advance the wheel as the pod's conditions progress.
   useEffect(() => {
     if (!instance?.clusterId) return;
-    if (isAnyPodRunning) {
-      setStepKey('opening');
-      return;
-    }
-    setStepKey(pods.length === 0 ? 'scheduling' : POD_PHASE_TO_STEP[highestPodPhase(pods)]);
+    setStepKey(isAnyPodRunning ? 'opening' : highestPodPhase(pods));
   }, [instance, isAnyPodRunning, pods]);
 
   // Redirect once the pod is running.
@@ -152,31 +145,16 @@ export default function CloudEditorDeployment(): JSX.Element {
     if (instance && isAnyPodRunning) redirect(instance.url);
   }, [instance, isAnyPodRunning]);
 
-  // Keep-alive ping so the scale-to-zero timer doesn't evict the pod before we redirect.
-  useEffect(() => {
-    if (!instance?.clusterId || isAnyPodRunning || hasRedirected.current) return undefined;
-    let pingUrl = instance.url;
-    try {
-      const u = new URL(instance.url);
-      u.searchParams.delete('tkn');
-      pingUrl = u.toString();
-    } catch {
-      // fall back to the raw URL
-    }
-    const ping = () => void fetch(pingUrl, { method: 'GET', mode: 'no-cors', credentials: 'omit', cache: 'no-store' }).catch(() => {});
-    ping();
-    const id = window.setInterval(ping, POD_POLL_MS);
-    return () => clearInterval(id);
-  }, [instance, isAnyPodRunning]);
+  useEditorKeepAlive(instance?.url, isPolling);
 
   // Give up if the pod never becomes ready.
   useEffect(() => {
-    if (!instance?.clusterId || isAnyPodRunning) return undefined;
+    if (!isPolling) return undefined;
     const id = window.setTimeout(() => {
       if (!hasRedirected.current) setError('Your Cloud Editor setup is taking longer than usual. Please close this window and try again later.');
-    }, REDIRECT_TIMEOUT_MS);
+    }, CLOUD_EDITOR_TIMEOUT_MS);
     return () => clearTimeout(id);
-  }, [instance, isAnyPodRunning]);
+  }, [isPolling]);
 
   const activeIndex = CLOUD_EDITOR_STEPS.findIndex((s) => s.key === stepKey);
 
@@ -201,55 +179,7 @@ export default function CloudEditorDeployment(): JSX.Element {
       <Typography variant="h3" fontWeight={700} textAlign="center">
         Your Cloud Editor instance is currently being created.
       </Typography>
-
-      {/* iOS-timer-style wheel: the active step is centred; done steps scroll up, upcoming steps sit below, both fading toward the edges. */}
-      <Box
-        sx={{
-          position: 'relative',
-          width: 260,
-          height: 6 * ROW_HEIGHT,
-          overflow: 'hidden',
-          maskImage: 'linear-gradient(to bottom, transparent 0, #000 20%, #000 80%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0, #000 20%, #000 80%, transparent 100%)',
-        }}>
-        <Box
-          sx={{ position: 'absolute', left: 0, right: 0, top: 0, transition: 'transform 450ms cubic-bezier(0.25, 0.1, 0.25, 1)', willChange: 'transform' }}
-          style={{ transform: `translateY(calc(50% - ${(activeIndex + 0.5) * ROW_HEIGHT}px))` }}>
-          {CLOUD_EDITOR_STEPS.map((step, idx) => {
-            const absOffset = Math.abs(idx - activeIndex);
-            const opacity = absOffset === 0 ? 1 : Math.max(0.22, 1 - 0.18 * absOffset);
-            const blurPx = absOffset === 0 ? 0 : Math.min(5, 0.9 * absOffset);
-            const state = idx < activeIndex ? 'complete' : idx === activeIndex ? 'active' : 'pending';
-            return (
-              <Box
-                key={step.key}
-                sx={{
-                  height: ROW_HEIGHT,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  pl: 0.5,
-                  transition: 'opacity 450ms cubic-bezier(0.25, 0.1, 0.25, 1), filter 450ms cubic-bezier(0.25, 0.1, 0.25, 1)',
-                }}
-                style={{ opacity, filter: blurPx ? `blur(${blurPx}px)` : 'none' }}>
-                <Box sx={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'text.secondary' }}>
-                  {state === 'complete' && <Check size={16} />}
-                  {state === 'active' && <CircularProgress size={14} thickness={5} />}
-                </Box>
-                <Typography
-                  variant="body1"
-                  noWrap
-                  sx={{
-                    color: state === 'active' ? 'text.primary' : state === 'complete' ? 'text.secondary' : 'text.disabled',
-                    fontWeight: state === 'active' ? 600 : 400,
-                  }}>
-                  {step.label}
-                </Typography>
-              </Box>
-            );
-          })}
-        </Box>
-      </Box>
+      <DeploymentWheel steps={CLOUD_EDITOR_STEPS} activeIndex={activeIndex} />
     </Box>
   );
 }

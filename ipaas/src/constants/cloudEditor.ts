@@ -16,9 +16,9 @@
  * under the License.
  */
 
-import type { CloudEditorStep, CloudEditorStepKey, PodPhase } from '../types/cloudEditor';
+import type { CloudEditorStep } from '../types/cloudEditor';
 
-/** Ordered deployment steps shown in the wheel. */
+/** Ordered deployment steps shown in the wheel. A `PodPhase` value is also a step key. */
 export const CLOUD_EDITOR_STEPS: CloudEditorStep[] = [
   { key: 'initializing', label: 'Getting things ready' },
   { key: 'creating', label: 'Setting up your editor' },
@@ -27,8 +27,9 @@ export const CLOUD_EDITOR_STEPS: CloudEditorStep[] = [
   { key: 'opening', label: 'Opening editor' },
 ];
 
-export const POD_PHASE_TO_STEP: Record<PodPhase, CloudEditorStepKey> = {
-  scheduling: 'scheduling',
-  starting: 'starting',
-  opening: 'opening',
-};
+/** Height of one wheel row in px. */
+export const CLOUD_EDITOR_WHEEL_ROW_HEIGHT = 40;
+/** Pod poll + keep-alive ping interval (ms). */
+export const CLOUD_EDITOR_POLL_MS = 3_000;
+/** Give up waiting for the pod after this (ms). */
+export const CLOUD_EDITOR_TIMEOUT_MS = 3 * 60 * 1000;
