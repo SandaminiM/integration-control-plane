@@ -18,7 +18,7 @@
 
 import { Alert, Box, Chip, ListingTable, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
-import { InsightsCard, TableSkeletonRows } from './shared';
+import { ColorDot, InsightsCard, TableSkeletonRows } from './shared';
 import { INSIGHTS_KIND_LABEL } from '../../constants/insights';
 import { truncate } from '../../utils/string';
 import type { ProjectVolumeRow } from '../../types/insights';
@@ -51,7 +51,7 @@ export function TopByVolume({ rows, loading = false, onRowClick }: { rows: Proje
                     <ListingTable.Row key={r.id} variant="card" hover={clickable} clickable={clickable} onClick={clickable ? () => onRowClick!(r.handler) : undefined}>
                       <ListingTable.Cell sx={{ width: '22%' }}>
                         <Stack direction="row" alignItems="center" gap={1}>
-                          <Box sx={{ width: 8, height: 8, borderRadius: '2px', bgcolor: r.color, flexShrink: 0 }} />
+                          <ColorDot color={r.color} size={8} />
                           <Tooltip title={r.name}>
                             <Typography variant="body2" sx={{ fontWeight: 500, whiteSpace: 'nowrap', minWidth: 0 }}>
                               {truncate(r.name, 25)}

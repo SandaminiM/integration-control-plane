@@ -336,6 +336,10 @@ function toComponentStat(ref: InsightsApiRef, ins: ComponentInsights | null): Pr
   return { id: ref.id, name: ref.name, handler: ref.handler, type: ref.kind, requestCount: ins?.requestCount ?? 0, errorCount: ins?.errorCount ?? 0, errorRate: ins?.errorRate ?? 0, latency: ins?.latency ?? 0 };
 }
 
+// Kinds we fetch per-API latency for — request/response services plus AI Agents;
+// the Latency & duration filter surfaces each on its own.
+const LATENCY_FETCH_KINDS = new Set<InsightsApiRef['kind']>(['api', 'mcp', 'webhook', 'agent']);
+
 export async function fetchProjectInsights(orgUuid: string, projectId: string, insightsEnv: InsightsEnvironment, apis: InsightsApiRef[], automations: InsightsAutomationRef[], eventApis: InsightsApiRef[], range: InsightsRange, queryApiUrl: string): Promise<ProjectInsightsRaw> {
   const time = rangeToTimeFilter(range);
   const dataFilter = { orgId: orgUuid, environmentIds: getEnvironmentIds(insightsEnv), tenant: 'carbon.super', projectId };
@@ -351,7 +355,25 @@ export async function fetchProjectInsights(orgUuid: string, projectId: string, i
   // project overview uses) so the table tracks the range toggle.
   const componentTime = { from: time.from, to: time.to };
   const perApi = await Promise.all(resolved.map(async ({ ref, api }) => ({ ref, ins: api.id ? await fetchComponentInsights(orgUuid, insightsEnv, api.id, queryApiUrl, componentTime) : null })));
-  const apiStats = perApi.map(({ ref, ins }) => toComponentStat(ref, ins));
+
+  // Per-API latency. getOverallLatencyByAPI errors server-side, so latency comes
+  // from the working getLatency series (same source the single-API view uses).
+  // Fetched for every API-like kind (Integration as API / MCP Server / Webhook /
+  // AI Agent) to feed the Latency & duration sub-type filter.
+  const perApiLatency = await Promise.all(
+    resolved.map(async ({ ref, api }) => {
+      if (!api.id || !LATENCY_FETCH_KINDS.has(ref.kind)) return { id: ref.id, latency: null as number | null };
+      const series = await fetchLatencyByCategory(queryApiUrl, dataFilter, api.id, { from: time.from, to: time.to, queryGranularity: time.queryGranularity });
+      const vals = series.map((p) => p.response || 0).filter((v) => v > 0);
+      return { id: ref.id, latency: vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null };
+    }),
+  );
+  const latencyById = new Map(perApiLatency.map((l) => [l.id, l.latency]));
+  const apiStats = perApi.map(({ ref, ins }) => {
+    const stat = toComponentStat(ref, ins);
+    const lat = latencyById.get(ref.id);
+    return lat != null ? { ...stat, latency: lat } : stat;
+  });
 
   // Event & file integrations get the same per-component APIM totals as services:
   // they publish an APIM-tracked API on non-MI runtimes; MI ones resolve to no
@@ -404,8 +426,15 @@ export async function fetchProjectInsights(orgUuid: string, projectId: string, i
   // headline numbers always agree with the table beneath them.
   const totalRequests = apiStats.reduce((s, a) => s + (a.requestCount ?? 0), 0);
   const totalErrors = apiStats.reduce((s, a) => s + (a.errorCount ?? 0), 0);
-  const weightedLatency = apiStats.reduce((s, a) => s + (a.latency ?? 0) * (a.requestCount ?? 0), 0);
-  const avgLatency = totalRequests > 0 ? Math.round(weightedLatency / totalRequests) : 0;
+
+  // Per-sub-type request-weighted avg latency for the Latency & duration filter.
+  const latencyForKind = (kind: InsightsApiRef['kind']): number => {
+    const cs = apiStats.filter((a) => a.type === kind);
+    const req = cs.reduce((s, a) => s + (a.requestCount ?? 0), 0);
+    const w = cs.reduce((s, a) => s + (a.latency ?? 0) * (a.requestCount ?? 0), 0);
+    return req > 0 ? Math.round(w / req) : 0;
+  };
+  const serviceLatencyByKind = { api: latencyForKind('api'), agent: latencyForKind('agent'), mcp: latencyForKind('mcp'), webhook: latencyForKind('webhook') };
 
   const trend = buildTrend(overview.successSummary, overview.errorSummary, automationOverview.trend, time.labelGranularity);
 
@@ -421,7 +450,7 @@ export async function fetchProjectInsights(orgUuid: string, projectId: string, i
   };
   const [apiUsage, eventUsage] = await Promise.all([
     Promise.all(resolved.map(async ({ ref, api }) => ({ kind: ref.kind, usage: await usageFor(api) }))),
-    Promise.all(resolvedEvents.map(async ({ api }) => ({ usage: await usageFor(api) }))),
+    Promise.all(resolvedEvents.map(async ({ ref, api }) => ({ kind: ref.kind, usage: await usageFor(api) }))),
   ]);
   const actBuckets = new Map<number, { label: string; services: number; agents: number; events: number; automations: number }>();
   const addAct = (timeSpan: string, key: 'services' | 'agents' | 'events' | 'automations', v: number) => {
@@ -432,16 +461,95 @@ export async function fetchProjectInsights(orgUuid: string, projectId: string, i
     b[key] += v || 0;
     actBuckets.set(ts, b);
   };
-  apiUsage.forEach(({ kind, usage }) => usage.forEach((p) => addAct(p.timeSpan, kind === 'agent' ? 'agents' : 'services', p.count)));
-  eventUsage.forEach(({ usage }) => usage.forEach((p) => addAct(p.timeSpan, 'events', p.count)));
+  // Services sub-type breakdown (Integration as API / MCP Server / Webhook),
+  // keyed by the same truncated bucket ts so it aligns with `activity`.
+  const svcBuckets = new Map<number, { api: number; mcp: number; webhook: number }>();
+  const addSvc = (timeSpan: string, kind: InsightsApiRef['kind'], v: number) => {
+    if (kind !== 'api' && kind !== 'mcp' && kind !== 'webhook') return;
+    const ts0 = new Date(timeSpan).getTime();
+    if (Number.isNaN(ts0)) return;
+    const ts = truncateTs(ts0, time.labelGranularity);
+    const b = svcBuckets.get(ts) ?? { api: 0, mcp: 0, webhook: 0 };
+    b[kind] += v || 0;
+    svcBuckets.set(ts, b);
+  };
+  // Event Handlers sub-type breakdown (Event Integration / File Integration),
+  // same bucket alignment as the services one above.
+  const evtBuckets = new Map<number, { event: number; file: number }>();
+  const addEvt = (timeSpan: string, kind: InsightsApiRef['kind'], v: number) => {
+    if (kind !== 'event' && kind !== 'file') return;
+    const ts0 = new Date(timeSpan).getTime();
+    if (Number.isNaN(ts0)) return;
+    const ts = truncateTs(ts0, time.labelGranularity);
+    const b = evtBuckets.get(ts) ?? { event: 0, file: 0 };
+    b[kind] += v || 0;
+    evtBuckets.set(ts, b);
+  };
+  apiUsage.forEach(({ kind, usage }) =>
+    usage.forEach((p) => {
+      addAct(p.timeSpan, kind === 'agent' ? 'agents' : 'services', p.count);
+      addSvc(p.timeSpan, kind, p.count);
+    }),
+  );
+  eventUsage.forEach(({ kind, usage }) =>
+    usage.forEach((p) => {
+      addAct(p.timeSpan, 'events', p.count);
+      addEvt(p.timeSpan, kind, p.count);
+    }),
+  );
   automationOverview.trend.forEach((p) => addAct(p.timestamp, 'automations', p.totalCount));
   const activity = [...actBuckets.entries()].sort((a, b) => a[0] - b[0]).map(([, v]) => v);
+  // Align the service breakdown to the activity buckets (0 where a bucket has no
+  // service traffic) so both series share one x-axis.
+  const svcByLabel = new Map([...svcBuckets.entries()].map(([ts, v]) => [bucketLabel(ts, time.labelGranularity), v]));
+  const serviceActivity = activity.map((a) => {
+    const s = svcByLabel.get(a.label);
+    return { label: a.label, api: s?.api ?? 0, mcp: s?.mcp ?? 0, webhook: s?.webhook ?? 0 };
+  });
+  const evtByLabel = new Map([...evtBuckets.entries()].map(([ts, v]) => [bucketLabel(ts, time.labelGranularity), v]));
+  const eventActivity = activity.map((a) => {
+    const e = evtByLabel.get(a.label);
+    return { label: a.label, event: e?.event ?? 0, file: e?.file ?? 0 };
+  });
 
-  const durs = automationOverview.duration.filter((d) => (d.averageDurationMs ?? 0) > 0);
-  const autoAvgDurationMs = durs.length ? Math.round(durs.reduce((s, d) => s + (d.averageDurationMs || 0), 0) / durs.length) : 0;
-  const autoP95DurationMs = automationOverview.duration.reduce((m, d) => Math.max(m, d.p95DurationMs || 0), 0);
+  // Duration split by automation sub-type (Automations vs RAG Ingestions), matched
+  // by componentId against the automation rows we already classified by kind.
+  const durationForKind = (kind: 'auto' | 'rag') => {
+    const ids = new Set(autoStats.filter((a) => a.type === kind).map((a) => a.id));
+    const ds = automationOverview.duration.filter((d) => ids.has(d.componentId));
+    const withAvg = ds.filter((d) => (d.averageDurationMs ?? 0) > 0);
+    return {
+      avgMs: withAvg.length ? Math.round(withAvg.reduce((s, d) => s + d.averageDurationMs, 0) / withAvg.length) : 0,
+      p95Ms: ds.reduce((m, d) => Math.max(m, d.p95DurationMs || 0), 0),
+    };
+  };
+  const autoDurationByKind = { auto: durationForKind('auto'), rag: durationForKind('rag') };
 
-  return { totalRequests, totalErrors, avgLatency, autoAvgDurationMs, autoP95DurationMs, totalTraffic: overview.totalTraffic, totalTrafficErrors: overview.totalErrors, trend, activity, components: [...apiStats, ...eventStats, ...autoStats, ...deletedStats], taskStats: automationOverview.stats };
+  // Automation activity split by sub-type. The project trend is combined, so
+  // apportion each bucket by each kind's share of total executions. With no
+  // executions in range, split evenly when both kinds exist, else give the whole
+  // bucket to whichever single kind is present.
+  const execFor = (kind: 'auto' | 'rag') => autoStats.filter((a) => a.type === kind).reduce((s, a) => s + (a.requestCount ?? 0), 0);
+  const autoExec = execFor('auto');
+  const ragExec = execFor('rag');
+  const totalExec = autoExec + ragExec;
+  const hasAuto = autoStats.some((a) => a.type === 'auto');
+  const hasRag = autoStats.some((a) => a.type === 'rag');
+  let autoFrac: number;
+  let ragFrac: number;
+  if (totalExec > 0) {
+    autoFrac = autoExec / totalExec;
+    ragFrac = ragExec / totalExec;
+  } else if (hasAuto && hasRag) {
+    autoFrac = 0.5;
+    ragFrac = 0.5;
+  } else {
+    autoFrac = hasAuto ? 1 : 0;
+    ragFrac = hasRag ? 1 : 0;
+  }
+  const automationActivity = activity.map((a) => ({ label: a.label, auto: Math.round(a.automations * autoFrac), rag: Math.round(a.automations * ragFrac) }));
+
+  return { totalRequests, totalErrors, totalTraffic: overview.totalTraffic, totalTrafficErrors: overview.totalErrors, trend, activity, serviceActivity, eventActivity, automationActivity, serviceLatencyByKind, autoDurationByKind, components: [...apiStats, ...eventStats, ...autoStats, ...deletedStats], taskStats: automationOverview.stats };
 }
 
 // Project-level latency trend — devant's getLatencySummary series
@@ -894,9 +1002,15 @@ export async function fetchApiInsights(orgUuid: string, projectId: string, insig
 
   const totalRequests = totals?.data?.getTotalTrafficByAPI ?? usage.reduce((s, p) => s + (p.count || 0), 0);
   const totalErrors = totals?.data?.getTotalErrorsByAPI?.proxy ?? errorsByCategory.reduce((s, p) => s + (p.auth || 0) + (p.targetConnectivity || 0) + (p.throttled || 0) + (p.other || 0), 0);
-  const latestLatency = latencySummary[latencySummary.length - 1];
-  const latencyP95 = latestLatency?.response ?? 0;
-  const latencyMedian = latestLatency?.responseMedian ?? 0;
+  // Overall latency for THIS integration across the whole range (getLatency is
+  // already apiId-scoped) — mean over buckets that carried traffic, not just the
+  // last bucket, so the KPI reflects the integration's overall latency.
+  const meanOver = (vals: number[]): number => {
+    const nonZero = vals.filter((v) => v > 0);
+    return nonZero.length ? Math.round(nonZero.reduce((s, v) => s + v, 0) / nonZero.length) : 0;
+  };
+  const latencyP95 = meanOver(latencySummary.map((p) => p.response || 0));
+  const latencyMedian = meanOver(latencySummary.map((p) => p.responseMedian || 0));
 
   const allStatusCounts = [...statusCodes.proxy, ...statusCodes.target];
   const limited = allStatusCounts.filter((c) => statusCodeKind(c.statusCode) === 'limited').reduce((s, c) => s + c.count, 0);

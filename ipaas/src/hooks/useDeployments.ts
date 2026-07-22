@@ -243,7 +243,7 @@ export function useIntegrationDeploymentStatuses(orgHandler: string, orgUuid: st
 
 /** Project-wide recent-deployments feed: fans out over every component, reads its
  * latest deployment in the given environment, and returns the newest first. */
-export function useProjectRecentDeployments(orgHandler: string, orgUuid: string, projectId: string, components: { id: string; handler: string }[], environmentId: string) {
+export function useProjectRecentDeployments(orgHandler: string, orgUuid: string, projectId: string, components: { id: string; handler: string; name?: string }[], environmentId: string) {
   const key = components.map((c) => c.id).join(',');
   return useQuery({
     queryKey: ['project-recent-deployments', orgUuid, projectId, environmentId, key],

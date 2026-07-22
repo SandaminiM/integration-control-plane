@@ -92,7 +92,7 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
   const selectedEnv = useMemo(() => envs?.find((e) => (e.externalEnvId || e.id) === activeEnv) ?? null, [envs, activeEnv]);
 
   const deploymentEnvId = useMemo(() => (projectEnvs ?? []).find((e) => e.name === selectedEnv?.name)?.id ?? projectEnvs?.[0]?.id ?? '', [projectEnvs, selectedEnv]);
-  const allIntegrations = useMemo(() => [...apis, ...automations, ...eventRefs].map((c) => ({ id: c.id, handler: c.handler })), [apis, automations, eventRefs]);
+  const allIntegrations = useMemo(() => [...apis, ...automations, ...eventRefs].map((c) => ({ id: c.id, handler: c.handler, name: c.name })), [apis, automations, eventRefs]);
   const { data: statusMap } = useIntegrationDeploymentStatuses(org, orgUuid, projectId, allIntegrations, deploymentEnvId);
 
   const recentDeployments = useProjectRecentDeployments(org, orgUuid, projectId, allIntegrations, deploymentEnvId);
@@ -132,7 +132,7 @@ export default function ProjectInsights({ org, project }: ProjectScope): JSX.Ele
       </Box>
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '65fr 35fr' }, gap: 2, mb: 2 }}>
-        <ActivityOverTime charts={data.activityCharts} loading={loading} />
+        <ActivityOverTime chart={data.activityChart} range={range} loading={loading} />
         <TopFailing rows={data.topFailing} errorSeries={data.trend.map((p) => ({ label: p.label, errors: p.errors + p.automationErrors }))} loading={loading} />
       </Box>
 
