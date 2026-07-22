@@ -120,9 +120,26 @@ import { identifyIntegration } from '../utils/identifyIntegration';
 import { useOrgPermissions } from '../hooks/useAuth';
 import { switchOrgToken } from '../auth/tokenManager';
 import { mockNotifications } from '../mock-data/mockNotifications';
-import { useScope, useResource, resourceUrl, broaden, narrow, newProjectUrl, newComponentUrl, hasProject, hasComponent, settingsCrossScopeUrl, insightsCrossScopeUrl, type Resource, type Scope } from '../nav';
+import {
+  useScope,
+  broaden,
+  narrow,
+  newProjectUrl,
+  newComponentUrl,
+  hasProject,
+  hasComponent,
+  settingsCrossScopeUrl,
+  resolveActiveNavId,
+  parentGroupId,
+  navUrl,
+  overviewUrl,
+  navScopeSwitchUrl,
+  resolveResourceKey,
+  GENERIC_ONLY_COMPONENT_KEYS,
+  type Scope,
+} from '../nav';
 import { isSettingsSectionVisible, type SettingsSectionDef } from '../constants/orgSettingsSections';
-import { componentOverviewUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, projectHomeUrl, termsOfUseUrl } from '../paths';
+import { componentOverviewUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, termsOfUseUrl } from '../paths';
 import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { CopilotProvider } from '../contexts/CopilotContext';
@@ -135,80 +152,10 @@ import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions'
 import { DB_TRADEMARK_NOTICE } from '../constants/platformServices';
 import { UUID_RE } from '../utils/string';
 
-// Maps each org-scope leaf nav ID to its expandable parent group ID
-const ORG_PARENT_MAP: Record<string, string> = {
-  'org-usage': 'org-insights',
-  'org-delivery': 'org-insights',
-  'org-compliance': 'org-insights',
-  'org-logs': 'org-observability',
-  'org-metrics': 'org-observability',
-  'org-scheduled-ingestion': 'org-rag',
-  'org-service': 'org-rag',
-  'org-retrieval': 'org-rag',
-  'org-databases': 'org-admin',
-  'org-vector-databases': 'org-admin',
-  'org-message-brokers': 'org-admin',
-  'org-third-party': 'org-admin',
-  'org-genai-services': 'org-admin',
-  'org-config-groups': 'org-admin',
-  'org-governance': 'org-admin',
-  'org-cd-pipelines': 'org-admin',
-  'org-data-planes': 'org-admin',
-  'org-environments': 'org-admin',
-  'org-audit-logs': 'org-admin',
-  'org-approvals': 'org-admin',
-  'org-certificates': 'org-admin',
-  'org-settings': 'org-admin',
-};
-
-// Maps each project-scope leaf nav ID to its expandable parent group ID
-const PROJECT_PARENT_MAP: Record<string, string> = {
-  'proj-usage': 'proj-insights',
-  'proj-delivery': 'proj-insights',
-  'proj-compliance': 'proj-insights',
-  'proj-logs': 'proj-observability',
-  'proj-metrics': 'proj-observability',
-  'proj-connections': 'proj-admin',
-  'proj-third-party': 'proj-admin',
-  'proj-genai-services': 'proj-admin',
-  'proj-cd-pipelines': 'proj-admin',
-  'proj-environments': 'proj-admin',
-  'proj-settings': 'proj-admin',
-};
-
-// Maps each component-scope leaf nav ID to its expandable parent group ID
-const COMPONENT_PARENT_MAP: Record<string, string> = {
-  integration: 'develop',
-  'api-info': 'manage',
-  lifecycle: 'develop',
-  documents: 'develop',
-  plans: 'develop',
-  console: 'test',
-  'api-chat': 'test',
-  usage: 'insights',
-  delivery: 'insights',
-  compliance: 'insights',
-  alerts: 'observability',
-  logs: 'observability',
-  metrics: 'observability',
-  connections: 'admin',
-  runtime: 'admin',
-  containers: 'admin',
-  'configs-secrets': 'admin',
-  'health-checks': 'admin',
-  scaling: 'admin',
-  storage: 'admin',
-  'external-ci': 'admin',
-  'component-settings': 'admin',
-};
-
 function AppLayoutInner(): JSX.Element {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const scope = useScope();
-  const resource = useResource();
-  // Connections is a hand-written (non-matrix) resource, so preserve it manually across scope switches.
-  const onConnectionsPage = pathname.includes('/admin/connections');
 
   const queryClient = useQueryClient();
   const { username, displayName, pictureUrl, logout, userId, isOidcUser } = useAuth();
@@ -227,100 +174,11 @@ function AppLayoutInner(): JSX.Element {
     actions.toggleSidebar();
   };
 
-  // Compute the active nav item ID — uses URL matching for component/org scopes; Matrix resource for project scope
-  const activeNavId = useMemo((): string => {
-    if (!hasProject(scope)) {
-      // Org scope
-      const base = `/organizations/${scope.org}`;
-      const rest = pathname.slice(base.length).replace(/^\//, '');
-      if (!rest || rest === 'home') return 'overview';
-      if (rest.startsWith('build')) return 'build';
-      if (rest.startsWith('develop')) return 'org-develop';
-      if (rest.startsWith('deploy')) return 'org-deploy';
-      if (rest.startsWith('test')) return 'org-test';
-      if (rest.startsWith('insights/usage')) return 'org-usage';
-      if (rest.startsWith('insights/delivery')) return 'org-delivery';
-      if (rest.startsWith('insights/compliance')) return 'org-compliance';
-      if (rest.startsWith('logs')) return 'org-logs';
-      if (rest.startsWith('metrics')) return 'org-metrics';
-      if (rest.startsWith('rag/scheduled-ingestion')) return 'org-scheduled-ingestion';
-      if (rest.startsWith('rag/service')) return 'org-service';
-      if (rest.startsWith('rag/retrieval')) return 'org-retrieval';
-      if (rest.startsWith('admin/databases')) return 'org-databases';
-      if (rest.startsWith('admin/vector-databases')) return 'org-vector-databases';
-      if (rest.startsWith('admin/message-brokers')) return 'org-message-brokers';
-      if (rest.startsWith('admin/third-party')) return 'org-third-party';
-      if (rest.startsWith('admin/genai-services')) return 'org-genai-services';
-      if (rest.startsWith('admin/config-groups')) return 'org-config-groups';
-      if (rest.startsWith('admin/governance')) return 'org-governance';
-      if (rest.startsWith('admin/cd-pipelines')) return 'org-cd-pipelines';
-      if (rest.startsWith('admin/data-planes')) return 'org-data-planes';
-      if (rest.startsWith('environments')) return 'org-environments';
-      if (rest.startsWith('admin/audit-logs')) return 'org-audit-logs';
-      if (rest.startsWith('admin/approvals')) return 'org-approvals';
-      if (rest.startsWith('admin/certificates')) return 'org-certificates';
-      if (rest.startsWith('settings')) return 'org-settings';
-      return 'overview';
-    }
-    if (!hasComponent(scope)) {
-      // Project scope
-      const projB = `/organizations/${scope.org}/projects/${scope.project}`;
-      const rest = pathname.slice(projB.length).replace(/^\//, '');
-      if (!rest || rest === 'home') return 'proj-overview';
-      if (rest.startsWith('develop')) return 'proj-develop';
-      if (rest.startsWith('build')) return 'proj-build';
-      if (rest.startsWith('deploy')) return 'proj-deploy';
-      if (rest.startsWith('test')) return 'proj-test';
-      if (rest.startsWith('insights/usage')) return 'proj-usage';
-      if (rest.startsWith('insights/delivery')) return 'proj-delivery';
-      if (rest.startsWith('insights/compliance')) return 'proj-compliance';
-      if (rest.startsWith('observe/runtimelogs') || rest.startsWith('logs')) return 'proj-logs';
-      if (rest.startsWith('observe/metrics') || rest.startsWith('metrics')) return 'proj-metrics';
-      if (rest.startsWith('admin/connections')) return 'proj-connections';
-      if (rest.startsWith('admin/third-party')) return 'proj-third-party';
-      if (rest.startsWith('admin/gen-ai-services')) return 'proj-genai-services';
-      if (rest.startsWith('admin/cd-pipelines')) return 'proj-cd-pipelines';
-      if (rest.startsWith('devops/environments') || rest.startsWith('environments')) return 'proj-environments';
-      if (rest.startsWith('settings')) return 'proj-settings';
-      if (rest.startsWith('runtimes')) return 'proj-overview';
-      return 'proj-overview';
-    }
-    const base = `/organizations/${scope.org}/projects/${scope.project}/components/${scope.component}`;
-    const rest = pathname.slice(base.length).replace(/^\//, '');
-    if (!rest || rest === 'overview') return 'overview';
-    if (rest.startsWith('develop/integration')) return 'integration';
-    if (rest.startsWith('manage/api-info')) return 'api-info';
-    if (rest.startsWith('build')) return 'build';
-    if (rest.startsWith('deploy')) return 'deploy';
-    if (rest.startsWith('test/console')) return 'console';
-    if (rest.startsWith('test/api-chat')) return 'api-chat';
-    if (rest.startsWith('test/agent-chat')) return 'agent-chat';
-    if (rest.startsWith('test')) return 'test';
-    if (rest.startsWith('manage/lifecycle')) return 'lifecycle';
-    if (rest.startsWith('document')) return 'documents';
-    if (rest.startsWith('manage/usage')) return 'plans';
-    if (rest.startsWith('insights/usage')) return 'usage';
-    if (rest.startsWith('insights/delivery')) return 'delivery';
-    if (rest.startsWith('insights/compliance')) return 'compliance';
-    if (rest.startsWith('alerts')) return 'alerts';
-    if (rest.startsWith('logs')) return 'logs';
-    if (rest.startsWith('metrics')) return 'metrics';
-    if (rest.startsWith('runtimes')) return 'runtime';
-    if (rest.startsWith('admin/connections')) return 'connections';
-    if (rest.startsWith('admin/containers')) return 'containers';
-    if (rest.startsWith('admin/configs')) return 'configs-secrets';
-    if (rest.startsWith('admin/health-checks')) return 'health-checks';
-    if (rest.startsWith('admin/scaling')) return 'scaling';
-    if (rest.startsWith('admin/storage')) return 'storage';
-    if (rest.startsWith('admin/external-ci')) return 'external-ci';
-    if (rest.startsWith('settings')) return 'component-settings';
-    return 'overview';
-  }, [pathname, scope]);
+  const activeNavId = useMemo(() => resolveActiveNavId(pathname, scope), [pathname, scope]);
 
-  // Auto-expand the parent group when navigating to a child nav item
+  // Auto-expand the parent group when navigating to a child nav item.
   useEffect(() => {
-    const parentMap = hasComponent(scope) ? COMPONENT_PARENT_MAP : !hasProject(scope) ? ORG_PARENT_MAP : PROJECT_PARENT_MAP;
-    const parent = parentMap[activeNavId];
+    const parent = parentGroupId(scope, activeNavId);
     if (parent && !shell.expandedMenus[parent]) {
       actions.toggleMenu(parent);
     }
@@ -428,30 +286,6 @@ function AppLayoutInner(): JSX.Element {
   const currentComponent = hasComponent(scope) ? components.find((c) => c.handler === scope.component) : undefined;
   const componentId = currentComponent?.id;
 
-  /** Returns the resource if the user has permission at the target scope, or 'overview' as fallback. */
-  const canAccessResource = (targetScope: Parameters<typeof hasProject>[0], target: Resource, targetProjectId: string | undefined = projectId || undefined, targetComponentId: string | undefined = componentId): Resource => {
-    switch (target) {
-      case 'overview':
-        return 'overview';
-      case 'access-control': {
-        const perms: string[] = [...ALL_USER_MGT_PERMISSIONS];
-        if (hasProject(targetScope)) perms.push(Permissions.PROJECT_EDIT, Permissions.PROJECT_MANAGE);
-        if (hasComponent(targetScope)) perms.push(Permissions.INTEGRATION_EDIT, Permissions.INTEGRATION_MANAGE);
-        return hasAnyPermission(perms, targetProjectId, targetComponentId) ? 'access-control' : 'overview';
-      }
-      case 'logs':
-        return 'logs';
-      case 'alerts':
-        return hasComponent(targetScope) ? 'alerts' : 'overview';
-      case 'build':
-        return 'build';
-      case 'deploy':
-        return hasComponent(targetScope) ? 'deploy' : 'overview';
-      case 'environments':
-        return 'environments';
-    }
-  };
-
   /**
    * When switching scope from a Settings page, returns the equivalent Settings
    * URL in the target scope (same section if available, else that scope's first
@@ -472,98 +306,8 @@ function AppLayoutInner(): JSX.Element {
   }
   const canSeeAccessControl = hasAnyPermission(accessControlPerms, projectId || undefined, componentId);
 
-  const orgBase = !hasProject(scope) ? `/organizations/${scope.org}` : '';
-  const projBase = hasProject(scope) && !hasComponent(scope) ? `/organizations/${scope.org}/projects/${scope.project}` : '';
-  const compBase = hasComponent(scope) ? `/organizations/${scope.org}/projects/${scope.project}/components/${scope.component}` : '';
-
-  const handleOrgNavSelect = (id: string) => {
-    const urlMap: Record<string, string> = {
-      overview: `${orgBase}/home`,
-      build: `${orgBase}/build`,
-      'org-develop': `${orgBase}/develop`,
-      'org-deploy': `${orgBase}/deploy`,
-      'org-test': `${orgBase}/test`,
-      'org-usage': `${orgBase}/insights/usage`,
-      'org-delivery': `${orgBase}/insights/delivery`,
-      'org-compliance': `${orgBase}/insights/compliance`,
-      'org-logs': `${orgBase}/logs`,
-      'org-metrics': `${orgBase}/metrics`,
-      'org-scheduled-ingestion': `${orgBase}/rag/scheduled-ingestion`,
-      'org-service': `${orgBase}/rag/service`,
-      'org-retrieval': `${orgBase}/rag/retrieval`,
-      'org-databases': `${orgBase}/admin/databases`,
-      'org-vector-databases': `${orgBase}/admin/vector-databases`,
-      'org-message-brokers': `${orgBase}/admin/message-brokers`,
-      'org-third-party': `${orgBase}/admin/third-party`,
-      'org-genai-services': `${orgBase}/admin/genai-services`,
-      'org-config-groups': `${orgBase}/admin/config-groups`,
-      'org-governance': `${orgBase}/admin/governance`,
-      'org-cd-pipelines': `${orgBase}/admin/cd-pipelines`,
-      'org-data-planes': `${orgBase}/admin/data-planes`,
-      'org-environments': `${orgBase}/environments`,
-      'org-audit-logs': `${orgBase}/admin/audit-logs`,
-      'org-approvals': `${orgBase}/admin/approvals`,
-      'org-certificates': `${orgBase}/admin/certificates`,
-      'org-settings': `${orgBase}/settings`,
-    };
-    const url = urlMap[id];
-    if (url) navigate(url);
-  };
-
-  const handleProjectNavSelect = (id: string) => {
-    const urlMap: Record<string, string> = {
-      'proj-overview': `${projBase}/home`,
-      'proj-develop': `${projBase}/develop`,
-      'proj-build': `${projBase}/build`,
-      'proj-deploy': `${projBase}/deploy`,
-      'proj-test': `${projBase}/test`,
-      'proj-usage': `${projBase}/insights/usage`,
-      'proj-delivery': `${projBase}/insights/delivery`,
-      'proj-compliance': `${projBase}/insights/compliance`,
-      'proj-logs': `${projBase}/observe/runtimelogs`,
-      'proj-metrics': `${projBase}/observe/metrics`,
-      'proj-connections': `${projBase}/admin/connections`,
-      'proj-third-party': `${projBase}/admin/third-party-services`,
-      'proj-genai-services': `${projBase}/admin/gen-ai-services`,
-      'proj-cd-pipelines': `${projBase}/admin/cd-pipelines`,
-      'proj-environments': `${projBase}/devops/environments`,
-      'proj-settings': `${projBase}/settings`,
-    };
-    const url = urlMap[id];
-    if (url) navigate(url);
-  };
-
-  const handleComponentNavSelect = (id: string) => {
-    const urlMap: Record<string, string> = {
-      overview: `${compBase}/overview`,
-      integration: `${compBase}/develop/integration`,
-      'api-info': `${compBase}/manage/api-info`,
-      lifecycle: `${compBase}/manage/lifecycle`,
-      documents: `${compBase}/document`,
-      plans: `${compBase}/manage/usage`,
-      build: `${compBase}/build`,
-      deploy: `${compBase}/deploy`,
-      test: `${compBase}/test`,
-      console: `${compBase}/test/console`,
-      'api-chat': `${compBase}/test/api-chat`,
-      'agent-chat': `${compBase}/test/agent-chat`,
-      usage: `${compBase}/insights/usage`,
-      delivery: `${compBase}/insights/delivery`,
-      compliance: `${compBase}/insights/compliance`,
-      alerts: `${compBase}/alerts`,
-      logs: `${compBase}/logs`,
-      metrics: `${compBase}/metrics`,
-      connections: `${compBase}/admin/connections`,
-      runtime: `${compBase}/runtimes`,
-      containers: `${compBase}/admin/containers`,
-      'configs-secrets': `${compBase}/admin/configs`,
-      'health-checks': `${compBase}/admin/health-checks`,
-      scaling: `${compBase}/admin/scaling`,
-      storage: `${compBase}/admin/storage`,
-      'external-ci': `${compBase}/admin/external-ci`,
-      'component-settings': `${compBase}/settings`,
-    };
-    const url = urlMap[id];
+  const handleNavSelect = (id: string) => {
+    const url = navUrl(scope, id);
     if (url) navigate(url);
   };
 
@@ -769,22 +513,9 @@ function AppLayoutInner(): JSX.Element {
                         setProjectMenuAnchor(null);
                         setProjectSearch('');
                         const newScope = narrow({ level: 'organizations', org: scope.org }, p.handler);
-                        const insightsUrl = insightsCrossScopeUrl(pathname, scope, newScope);
-                        if (insightsUrl) {
-                          navigate(insightsUrl);
-                          return;
-                        }
+                        // Settings sections are a section-aware sub-matrix; everything else preserves its resource key.
                         const settingsUrl = settingsSwitchUrl(newScope, p.id, undefined);
-                        if (settingsUrl) {
-                          navigate(settingsUrl);
-                          return;
-                        }
-                        if (onConnectionsPage) {
-                          navigate(`/organizations/${scope.org}/projects/${p.handler}/admin/connections`);
-                          return;
-                        }
-                        const resolvedTarget = canAccessResource(newScope, resource ?? 'overview', p.id, undefined);
-                        navigate(resolvedTarget === 'overview' ? projectHomeUrl(scope.org, p.handler) : resourceUrl(newScope, resolvedTarget));
+                        navigate(settingsUrl ?? navScopeSwitchUrl(pathname, scope, newScope));
                       }}>
                       {p.name}
                     </MenuItem>
@@ -800,13 +531,13 @@ function AppLayoutInner(): JSX.Element {
                   sx={{ position: 'relative', display: 'inline-flex', cursor: 'pointer' }}
                   onClick={() => {
                     const ps = { level: 'projects' as const, org: scope.org, project: scope.project };
-                    navigate((hasComponent(scope) ? insightsCrossScopeUrl(pathname, scope, ps) : null) ?? resourceUrl(ps, 'overview'));
+                    navigate(hasComponent(scope) ? navScopeSwitchUrl(pathname, scope, ps) : overviewUrl(ps));
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
                       const ps = { level: 'projects' as const, org: scope.org, project: scope.project };
-                      navigate((hasComponent(scope) ? insightsCrossScopeUrl(pathname, scope, ps) : null) ?? resourceUrl(ps, 'overview'));
+                      navigate(hasComponent(scope) ? navScopeSwitchUrl(pathname, scope, ps) : overviewUrl(ps));
                     }
                   }}>
                   <ComplexSelect
@@ -861,18 +592,8 @@ function AppLayoutInner(): JSX.Element {
                     onClick={(e) => {
                       e.stopPropagation();
                       const orgScope = { level: 'organizations' as const, org: scope.org };
-                      const insightsUrl = insightsCrossScopeUrl(pathname, scope, orgScope);
-                      if (insightsUrl) {
-                        navigate(insightsUrl);
-                        return;
-                      }
                       const settingsUrl = settingsSwitchUrl(orgScope, undefined, undefined);
-                      if (settingsUrl) {
-                        navigate(settingsUrl);
-                        return;
-                      }
-                      const resolvedOrgTarget = canAccessResource(orgScope, resource ?? 'overview');
-                      navigate(resolvedOrgTarget === 'overview' ? orgHomeUrl(scope.org) : resourceUrl(orgScope, resolvedOrgTarget));
+                      navigate(settingsUrl ?? navScopeSwitchUrl(pathname, scope, orgScope));
                     }}>
                     <X size={16} />
                   </IconButton>
@@ -951,19 +672,13 @@ function AppLayoutInner(): JSX.Element {
                             setComponentMenuAnchor(null);
                             setComponentSearch('');
                             const newScope = narrow({ level: 'projects', org: scope.org, project: scope.project }, c.handler);
-                            const insightsUrl = insightsCrossScopeUrl(pathname, scope, newScope);
-                            if (insightsUrl) {
-                              navigate(insightsUrl);
+                            // A generic-only tab (Lifecycle, API Info, Plans, …) can't survive a switch to a non-generic integration.
+                            const currentKey = resolveResourceKey(pathname, scope);
+                            if (GENERIC_ONLY_COMPONENT_KEYS.has(currentKey) && !GENERIC_SERVICE_TYPES.has(c.displayType)) {
+                              navigate(componentOverviewUrl(scope.org, scope.project, c.handler));
                               return;
                             }
-                            if (activeNavId === 'lifecycle') {
-                              navigate(GENERIC_SERVICE_TYPES.has(c.displayType) ? `/organizations/${scope.org}/projects/${scope.project}/components/${c.handler}/manage/lifecycle` : componentOverviewUrl(scope.org, scope.project, c.handler));
-                            } else if (onConnectionsPage) {
-                              navigate(`/organizations/${scope.org}/projects/${scope.project}/components/${c.handler}/admin/connections`);
-                            } else {
-                              const resolvedTarget = canAccessResource(newScope, resource ?? 'overview', projectId, c.id);
-                              navigate(resolvedTarget === 'overview' ? componentOverviewUrl(scope.org, scope.project, c.handler) : resourceUrl(newScope, resolvedTarget));
-                            }
+                            navigate(navScopeSwitchUrl(pathname, scope, newScope));
                           }}>
                           {c.displayName}
                         </MenuItem>
@@ -978,11 +693,11 @@ function AppLayoutInner(): JSX.Element {
                 role="button"
                 tabIndex={0}
                 sx={{ position: 'relative', display: 'inline-flex', cursor: 'pointer' }}
-                onClick={() => navigate(resourceUrl(scope, 'overview'))}
+                onClick={() => navigate(overviewUrl(scope))}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    navigate(resourceUrl(scope, 'overview'));
+                    navigate(overviewUrl(scope));
                   }
                 }}>
                 <ComplexSelect
@@ -1038,22 +753,8 @@ function AppLayoutInner(): JSX.Element {
                   onClick={(e) => {
                     e.stopPropagation();
                     const projectScope = broaden(scope)!;
-                    const insightsUrl = insightsCrossScopeUrl(pathname, scope, projectScope);
-                    if (insightsUrl) {
-                      navigate(insightsUrl);
-                      return;
-                    }
                     const settingsUrl = settingsSwitchUrl(projectScope, projectId || undefined, undefined);
-                    if (settingsUrl) {
-                      navigate(settingsUrl);
-                      return;
-                    }
-                    const insightsUrl = insightsCrossScopeUrl(pathname, scope, projectScope);
-                    if (insightsUrl) {
-                      navigate(insightsUrl);
-                      return;
-                    }
-                    navigate(resourceUrl(projectScope, canAccessResource(projectScope, resource ?? 'overview')));
+                    navigate(settingsUrl ?? navScopeSwitchUrl(pathname, scope, projectScope));
                   }}>
                   <X size={16} />
                 </IconButton>
@@ -1098,14 +799,8 @@ function AppLayoutInner(): JSX.Element {
           onSelect={(id) => {
             if (id === 'expand') {
               handleToggleSidebar();
-            } else if (hasComponent(scope)) {
-              handleComponentNavSelect(id);
-            } else if (!hasProject(scope)) {
-              handleOrgNavSelect(id);
-            } else if (!hasComponent(scope)) {
-              handleProjectNavSelect(id);
             } else {
-              handleComponentNavSelect(id);
+              handleNavSelect(id);
             }
           }}
           onToggleExpand={actions.toggleMenu}
