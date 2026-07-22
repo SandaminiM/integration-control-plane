@@ -149,20 +149,6 @@ export function settingsCrossScopeUrl(pathname: string, currentScope: Scope, tar
   return first ? `${base}/${first.path}` : null;
 }
 
-/**
- * Cross-scope Insights navigation. When the user switches scope (org ⇄ project
- * ⇄ integration) while on an Insights page, keep them on the same Insights
- * section (usage/delivery/compliance) in the target scope — those routes exist
- * at every level. Returns `null` when the current path is not an Insights page;
- * the caller then falls back to its normal resource routing.
- */
-export function insightsCrossScopeUrl(pathname: string, currentScope: Scope, targetScope: Scope): string | null {
-  const rest = pathname.slice(scopePrefix(currentScope).length).replace(/^\//, '');
-  const match = /^insights\/(usage|delivery|compliance)(\/|$)/.exec(rest);
-  if (!match) return null;
-  return `${scopePrefix(targetScope)}/insights/${match[1]}`;
-}
-
 export function broaden(scope: Scope): Scope | null {
   if (scope.level === 'components') return { level: 'projects', org: scope.org, project: scope.project };
   if (scope.level === 'projects') return { level: 'organizations', org: scope.org };
@@ -255,6 +241,184 @@ export function generateMcpUrl(scope: { org: string; project: string }, sourceAp
   if (sourceHandler) params.set('sourceHandler', sourceHandler);
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;
+}
+
+// ---------------------------------------------------------------------------
+// Navigation registry — single source of truth for the sidebar + scope switch.
+// The "matrix": X axis = `key` (resource), Y axis = `level`.
+// Sub-routes reached from within a page (e.g. `.../admin/connections/:id`) are
+// captured by prefix match against their parent resource's segment; register an
+// explicit entry only for a tile-less page with no registered parent segment.
+// ---------------------------------------------------------------------------
+
+export interface NavEntry {
+  /** Resource identity — the X axis. Shared across levels so a scope switch can preserve it. */
+  key: string;
+  /** Sidebar.Item id (matches AppLayout JSX). */
+  navId: string;
+  /** Path suffix after the scope prefix. '' = the level's landing page. */
+  segment: string;
+  /** Expandable group navId for sidebar auto-expand. */
+  parent?: string;
+  /** false for tile-less pages that still need to resolve for highlighting / switching. */
+  sidebar?: boolean;
+}
+
+const NAV: Record<Level, NavEntry[]> = {
+  organizations: [
+    { key: 'overview', navId: 'overview', segment: 'home' },
+    { key: 'develop', navId: 'org-develop', segment: 'develop' },
+    { key: 'build', navId: 'build', segment: 'build' },
+    { key: 'deploy', navId: 'org-deploy', segment: 'deploy' },
+    { key: 'test', navId: 'org-test', segment: 'test' },
+    { key: 'insights-usage', navId: 'org-usage', segment: 'insights/usage', parent: 'org-insights' },
+    { key: 'insights-delivery', navId: 'org-delivery', segment: 'insights/delivery', parent: 'org-insights' },
+    { key: 'insights-compliance', navId: 'org-compliance', segment: 'insights/compliance', parent: 'org-insights' },
+    { key: 'logs', navId: 'org-logs', segment: 'logs', parent: 'org-observability' },
+    { key: 'metrics', navId: 'org-metrics', segment: 'metrics', parent: 'org-observability' },
+    { key: 'rag-ingestion', navId: 'org-scheduled-ingestion', segment: 'rag/scheduled-ingestion', parent: 'org-rag' },
+    { key: 'rag-service', navId: 'org-service', segment: 'rag/service', parent: 'org-rag' },
+    { key: 'rag-retrieval', navId: 'org-retrieval', segment: 'rag/retrieval', parent: 'org-rag' },
+    { key: 'databases', navId: 'org-databases', segment: 'admin/databases', parent: 'org-admin' },
+    { key: 'vector-databases', navId: 'org-vector-databases', segment: 'admin/vector-databases', parent: 'org-admin' },
+    { key: 'message-brokers', navId: 'org-message-brokers', segment: 'admin/message-brokers', parent: 'org-admin' },
+    { key: 'third-party', navId: 'org-third-party', segment: 'admin/third-party', parent: 'org-admin' },
+    { key: 'genai-services', navId: 'org-genai-services', segment: 'admin/genai-services', parent: 'org-admin' },
+    { key: 'config-groups', navId: 'org-config-groups', segment: 'admin/config-groups', parent: 'org-admin' },
+    { key: 'governance', navId: 'org-governance', segment: 'admin/governance', parent: 'org-admin' },
+    { key: 'cd-pipelines', navId: 'org-cd-pipelines', segment: 'admin/cd-pipelines', parent: 'org-admin' },
+    { key: 'data-planes', navId: 'org-data-planes', segment: 'admin/data-planes', parent: 'org-admin' },
+    { key: 'environments', navId: 'org-environments', segment: 'environments', parent: 'org-admin' },
+    { key: 'audit-logs', navId: 'org-audit-logs', segment: 'admin/audit-logs', parent: 'org-admin' },
+    { key: 'approvals', navId: 'org-approvals', segment: 'admin/approvals', parent: 'org-admin' },
+    { key: 'certificates', navId: 'org-certificates', segment: 'admin/certificates', parent: 'org-admin' },
+    { key: 'settings', navId: 'org-settings', segment: 'settings', parent: 'org-admin' },
+  ],
+  projects: [
+    { key: 'overview', navId: 'proj-overview', segment: 'home' },
+    { key: 'develop', navId: 'proj-develop', segment: 'develop' },
+    { key: 'build', navId: 'proj-build', segment: 'build' },
+    { key: 'deploy', navId: 'proj-deploy', segment: 'deploy' },
+    { key: 'test', navId: 'proj-test', segment: 'test' },
+    { key: 'insights-usage', navId: 'proj-usage', segment: 'insights/usage', parent: 'proj-insights' },
+    { key: 'insights-delivery', navId: 'proj-delivery', segment: 'insights/delivery', parent: 'proj-insights' },
+    { key: 'insights-compliance', navId: 'proj-compliance', segment: 'insights/compliance', parent: 'proj-insights' },
+    { key: 'logs', navId: 'proj-logs', segment: 'observe/runtimelogs', parent: 'proj-observability' },
+    { key: 'metrics', navId: 'proj-metrics', segment: 'observe/metrics', parent: 'proj-observability' },
+    { key: 'connections', navId: 'proj-connections', segment: 'admin/connections', parent: 'proj-admin' },
+    { key: 'third-party', navId: 'proj-third-party', segment: 'admin/third-party-services', parent: 'proj-admin' },
+    { key: 'genai-services', navId: 'proj-genai-services', segment: 'admin/gen-ai-services', parent: 'proj-admin' },
+    { key: 'cd-pipelines', navId: 'proj-cd-pipelines', segment: 'admin/cd-pipelines', parent: 'proj-admin' },
+    { key: 'environments', navId: 'proj-environments', segment: 'devops/environments', parent: 'proj-admin' },
+    { key: 'settings', navId: 'proj-settings', segment: 'settings', parent: 'proj-admin' },
+  ],
+  components: [
+    { key: 'overview', navId: 'overview', segment: 'overview' },
+    { key: 'develop', navId: 'integration', segment: 'develop/integration', parent: 'develop' },
+    { key: 'api-info', navId: 'api-info', segment: 'manage/api-info', parent: 'develop' },
+    { key: 'lifecycle', navId: 'lifecycle', segment: 'manage/lifecycle', parent: 'develop' },
+    { key: 'documents', navId: 'documents', segment: 'document', parent: 'develop' },
+    { key: 'plans', navId: 'plans', segment: 'manage/usage', parent: 'develop' },
+    { key: 'policies', navId: 'policies', segment: 'manage/policies', parent: 'develop', sidebar: false },
+    { key: 'build', navId: 'build', segment: 'build' },
+    { key: 'deploy', navId: 'deploy', segment: 'deploy' },
+    { key: 'test', navId: 'test', segment: 'test' },
+    { key: 'console', navId: 'console', segment: 'test/console', parent: 'test' },
+    { key: 'api-chat', navId: 'api-chat', segment: 'test/api-chat', parent: 'test' },
+    { key: 'agent-chat', navId: 'agent-chat', segment: 'test/agent-chat', parent: 'test' },
+    { key: 'insights-usage', navId: 'usage', segment: 'insights/usage', parent: 'insights' },
+    { key: 'insights-delivery', navId: 'delivery', segment: 'insights/delivery', parent: 'insights' },
+    { key: 'insights-compliance', navId: 'compliance', segment: 'insights/compliance', parent: 'insights' },
+    { key: 'alerts', navId: 'alerts', segment: 'alerts', parent: 'observability' },
+    { key: 'logs', navId: 'logs', segment: 'logs', parent: 'observability' },
+    { key: 'metrics', navId: 'metrics', segment: 'metrics', parent: 'observability' },
+    { key: 'connections', navId: 'connections', segment: 'admin/connections', parent: 'admin' },
+    { key: 'runtime', navId: 'runtime', segment: 'runtimes', parent: 'admin' },
+    { key: 'containers', navId: 'containers', segment: 'admin/containers', parent: 'admin' },
+    { key: 'configs-secrets', navId: 'configs-secrets', segment: 'admin/configs', parent: 'admin' },
+    { key: 'health-checks', navId: 'health-checks', segment: 'admin/health-checks', parent: 'admin' },
+    { key: 'scaling', navId: 'scaling', segment: 'admin/scaling', parent: 'admin' },
+    { key: 'storage', navId: 'storage', segment: 'admin/storage', parent: 'admin' },
+    { key: 'external-ci', navId: 'external-ci', segment: 'admin/external-ci', parent: 'admin' },
+    { key: 'settings', navId: 'component-settings', segment: 'settings', parent: 'admin' },
+  ],
+};
+
+// Keys that exist only for generic (deployable) service types — switching to a
+// non-generic integration must fall back to overview instead of a dead tab.
+export const GENERIC_ONLY_COMPONENT_KEYS = new Set(['api-info', 'lifecycle', 'documents', 'plans', 'health-checks', 'scaling']);
+
+/** The resource key a URL resolves to at its scope (for cross-scope guards). */
+export function resolveResourceKey(pathname: string, scope: Scope): string {
+  return resolveEntry(scope.level, scopeRest(pathname, scope)).key;
+}
+
+const NAV_BY_ID: Record<Level, Record<string, NavEntry>> = {
+  organizations: Object.fromEntries(NAV.organizations.map((e) => [e.navId, e])),
+  projects: Object.fromEntries(NAV.projects.map((e) => [e.navId, e])),
+  components: Object.fromEntries(NAV.components.map((e) => [e.navId, e])),
+};
+
+const NAV_BY_KEY: Record<Level, Record<string, NavEntry>> = {
+  organizations: Object.fromEntries(NAV.organizations.map((e) => [e.key, e])),
+  projects: Object.fromEntries(NAV.projects.map((e) => [e.key, e])),
+  components: Object.fromEntries(NAV.components.map((e) => [e.key, e])),
+};
+
+// Longest segment first so a specific page (test/console) wins over its parent (test).
+const NAV_SORTED: Record<Level, NavEntry[]> = {
+  organizations: [...NAV.organizations].sort((a, b) => b.segment.length - a.segment.length),
+  projects: [...NAV.projects].sort((a, b) => b.segment.length - a.segment.length),
+  components: [...NAV.components].sort((a, b) => b.segment.length - a.segment.length),
+};
+
+function overviewEntry(level: Level): NavEntry {
+  return NAV_BY_KEY[level].overview;
+}
+
+function scopeRest(pathname: string, scope: Scope): string {
+  return pathname.slice(scopePrefix(scope).length).replace(/^\//, '');
+}
+
+// Longest-segment match, else the level's overview.
+function resolveEntry(level: Level, rest: string): NavEntry {
+  for (const e of NAV_SORTED[level]) {
+    if (e.segment && (rest === e.segment || rest.startsWith(e.segment + '/'))) return e;
+  }
+  return overviewEntry(level);
+}
+
+function buildUrl(scope: Scope, segment: string): string {
+  const prefix = scopePrefix(scope);
+  return segment ? `${prefix}/${segment}` : prefix;
+}
+
+/** The sidebar id to highlight for the current URL. */
+export function resolveActiveNavId(pathname: string, scope: Scope): string {
+  return resolveEntry(scope.level, scopeRest(pathname, scope)).navId;
+}
+
+/** The expandable group navId to auto-expand for a given sidebar id (if any). */
+export function parentGroupId(scope: Scope, navId: string): string | undefined {
+  return NAV_BY_ID[scope.level][navId]?.parent;
+}
+
+/** URL for a sidebar id at the given scope. Returns null for unknown ids (e.g. 'expand'). */
+export function navUrl(scope: Scope, navId: string): string | null {
+  const entry = NAV_BY_ID[scope.level][navId];
+  return entry ? buildUrl(scope, entry.segment) : null;
+}
+
+/** The scope's landing (Overview) URL. */
+export function overviewUrl(scope: Scope): string {
+  return buildUrl(scope, overviewEntry(scope.level).segment);
+}
+
+/** On a level switch, keep the same resource `key` at the target level; else its Overview. */
+export function navScopeSwitchUrl(pathname: string, currentScope: Scope, targetScope: Scope): string {
+  const current = resolveEntry(currentScope.level, scopeRest(pathname, currentScope));
+  const target = NAV_BY_KEY[targetScope.level][current.key];
+  return target ? buildUrl(targetScope, target.segment) : overviewUrl(targetScope);
 }
 
 // ---------------------------------------------------------------------------
