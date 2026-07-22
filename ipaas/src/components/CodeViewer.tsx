@@ -19,8 +19,7 @@
 import { useCallback, useState, useMemo } from 'react';
 import { Box, Button, Stack, Typography } from '@wso2/oxygen-ui';
 import { Copy, Check } from '@wso2/oxygen-ui-icons-react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { SyntaxHighlighter, prism } from '../utils/syntaxHighlighter';
 
 const formatCode = (code: string, language: string): string => {
   if (!code) return 'No content available.';

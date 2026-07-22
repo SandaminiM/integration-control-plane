@@ -25,7 +25,7 @@ import { CopilotContext } from '../../contexts/CopilotContext';
 import { useGetCopilotDataCollectionPermission, useSendCopilotFeedback } from '../../hooks/useDataCollector';
 import { DataCollectorStatus, MessageType, type ApiChatExecutionResult, type IMessage, type NavigationResponse } from '../../types/copilot';
 const Markdown = lazy(() => import('../Markdown'));
-import ApiChatMessage from './ApiChatMessage';
+const ApiChatMessage = lazy(() => import('./ApiChatMessage'));
 import FeedbackButtons, { type FeedbackValue } from './FeedbackButtons';
 
 interface CopilotMessageProps {
@@ -73,7 +73,11 @@ export default function CopilotMessage({ message, showFeedback, hasError, isCurr
   const showFeedbackButtons = dataCollectionEnabled && showFeedback;
 
   if (message.type === MessageType.APICHAT) {
-    return <ApiChatMessage executionResults={message.content.data as ApiChatExecutionResult[]} />;
+    return (
+      <Suspense fallback={null}>
+        <ApiChatMessage executionResults={message.content.data as ApiChatExecutionResult[]} />
+      </Suspense>
+    );
   }
 
   if (!message.content.data || String(message.content.data).length === 0) {

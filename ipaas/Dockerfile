@@ -90,6 +90,27 @@ http {
             try_files $uri =404;
         }
 
+        # index.html must never be cached — it references hashed JS/CSS filenames,
+        # so clients must always fetch the latest copy to pick up new bundles.
+        location = /index.html {
+            add_header Cache-Control "no-cache";
+            try_files $uri =404;
+        }
+
+        # Vite-built JS and CSS bundles carry a content hash in the filename
+        # (e.g. index-BYM1D2LV.js), so they are safe to cache indefinitely.
+        location ~* ^/assets/.*\.(js|css)$ {
+            add_header Cache-Control "public, max-age=31536000, immutable";
+            try_files $uri =404;
+        }
+
+        # Static images and other public assets have no content hash, so use a
+        # moderate TTL that still reduces round-trips without risking stale files.
+        location ~* \.(svg|png|jpg|jpeg|gif|ico|webp|woff|woff2)$ {
+            add_header Cache-Control "public, max-age=604800";
+            try_files $uri =404;
+        }
+
         # SPA fallback: every unknown route returns index.html so the React
         # router can handle it client-side.
         location / {
