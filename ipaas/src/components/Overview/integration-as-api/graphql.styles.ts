@@ -25,3 +25,17 @@ export const GRAPHQL_TYPE_SX = {
   fontFamily: 'monospace',
   color: 'primary.main',
 } as const;
+
+export const GRAPHQL_BORDERED_BOX_SX = {
+  border: '1px solid',
+  borderColor: 'divider',
+  borderRadius: 1,
+  p: 1.5,
+} as const;
+
+export const graphqlAttributeTreeSx = (nested: boolean) =>
+  ({
+    pl: nested ? 1.5 : 0,
+    borderLeft: nested ? '1px solid' : 'none',
+    borderColor: 'divider',
+  }) as const;

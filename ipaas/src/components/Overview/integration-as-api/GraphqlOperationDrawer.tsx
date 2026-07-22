@@ -21,11 +21,11 @@ import { useState, type ReactNode } from 'react';
 import OperationHeader from '../_shared/bodies/OperationHeader';
 import type { OperationTileColors } from '../_shared/bodies/OperationTile';
 import type { GraphqlAttrNode, GraphqlField } from '../../../types/graphql';
-import { GRAPHQL_KEY_SX, GRAPHQL_TYPE_SX } from './graphql.styles';
+import { GRAPHQL_BORDERED_BOX_SX, GRAPHQL_KEY_SX, GRAPHQL_TYPE_SX, graphqlAttributeTreeSx } from './graphql.styles';
 
 function AttributeTree({ nodes, nested = false }: { nodes: GraphqlAttrNode[]; nested?: boolean }): ReactNode {
   return (
-    <Stack gap={0.5} sx={{ pl: nested ? 1.5 : 0, borderLeft: nested ? '1px solid' : 'none', borderColor: 'divider' }}>
+    <Stack gap={0.5} sx={graphqlAttributeTreeSx(nested)}>
       {nodes.map((node) => (
         <Box key={node.name}>
           <Stack direction="row" gap={0.5} alignItems="baseline">
@@ -68,7 +68,7 @@ export default function GraphqlOperationDrawer({ operationName, field, colors }:
               const expandable = param.attributes.length > 0;
               const isExpanded = expandedParam === param.name;
               return (
-                <Box key={param.name} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+                <Box key={param.name} sx={GRAPHQL_BORDERED_BOX_SX}>
                   <Stack
                     direction="row"
                     gap={0.5}
@@ -116,7 +116,7 @@ export default function GraphqlOperationDrawer({ operationName, field, colors }:
         <Typography variant="subtitle2" sx={{ mb: 1 }}>
           Response Attributes
         </Typography>
-        <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5 }}>
+        <Box sx={GRAPHQL_BORDERED_BOX_SX}>
           {field.responseAttributes.length > 0 ? (
             <AttributeTree nodes={field.responseAttributes} />
           ) : (
