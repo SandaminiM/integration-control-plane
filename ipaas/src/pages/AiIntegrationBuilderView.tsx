@@ -187,7 +187,7 @@ function AiIntegrationBuilderView(scope: ProjectScope): JSX.Element {
                 }}
                 sx={{ flex: 1, fontSize: '0.875rem' }}
               />
-              <Button variant="contained" color="primary" onClick={sendFollowUp} disabled={!followUp.trim() || isLoading} sx={{ minWidth: 40, borderRadius: 1, flexShrink: 0 }}>
+              <Button aria-label="Send follow-up" variant="contained" color="primary" onClick={sendFollowUp} disabled={!followUp.trim() || isLoading} sx={{ minWidth: 40, borderRadius: 1, flexShrink: 0 }}>
                 <Send size={16} />
               </Button>
             </Box>

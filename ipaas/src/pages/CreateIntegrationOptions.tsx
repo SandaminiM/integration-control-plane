@@ -253,13 +253,14 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                 {aiBuilderEnabled ? (
                   <>
                     {/* Create on Cloud affordance (view1: folded into the "Create it yourself" row) */}
-                    <Box
+                    <Button
+                      variant="text"
                       onClick={handleOpenCloudEditor}
                       data-cyid="create-on-cloud-btn"
-                      sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0, cursor: 'pointer', color: 'primary.main', '&:hover': { opacity: 0.85 } }}>
-                      <Plus size={20} />
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>Create on Cloud</Typography>
-                    </Box>
+                      startIcon={<Plus size={20} />}
+                      sx={{ flexShrink: 0, color: 'primary.main', fontWeight: 500, textTransform: 'none', '&:hover': { opacity: 0.85 } }}>
+                      Create on Cloud
+                    </Button>
 
                     {/* Vertical divider */}
                     <Box sx={{ width: '2px', alignSelf: 'stretch', bgcolor: 'divider', flexShrink: 0 }} />

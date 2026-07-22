@@ -32,6 +32,9 @@ export function useTypingPlaceholder(text: string, active: boolean): string {
   useEffect(() => {
     if (!active) {
       setTypingText('');
+      setIndex(0);
+      setForward(true);
+      setPaused(false);
       return;
     }
     if (paused) {

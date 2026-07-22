@@ -46,7 +46,11 @@ async function fetchFromCentral(): Promise<{ data: BallerinaConnector[] }> {
     throw new Error(`Ballerina Central API error (${response.status})`);
   }
 
-  const { data } = await response.json();
+  const { data, errors } = await response.json();
+  if (Array.isArray(errors) && errors.length > 0) {
+    throw new Error(`Ballerina Central GraphQL error: ${JSON.stringify(errors)}`);
+  }
+
   const connectors: BallerinaConnector[] = [
     ...(data?.ballerina?.packages ?? []),
     ...(data?.ballerinax?.packages ?? []),

@@ -135,6 +135,12 @@ declare global {
   }
 }
 
+// Accepts a value only when it parses to a positive finite integer; else falls back.
+function parsePositiveInt(value: unknown, fallback: number): number {
+  const n = Number(value);
+  return Number.isInteger(n) && n > 0 ? n : fallback;
+}
+
 // Default configuration (used as fallback if config.json fails to load)
 const DEFAULT_CONFIG: ApiConfig = {
   graphqlUrl: 'https://apis.preview-dv.choreo.dev/projects/1.0.0/graphql',
@@ -234,7 +240,7 @@ export async function loadConfig(): Promise<void> {
       ragBackendUrl: config.RAG_INGESTION_BACKEND ? trim(config.RAG_INGESTION_BACKEND) : undefined,
       integrationBuilderCopilotBaseUrl: config.INTEGRATION_BUILDER_COPILOT_BASE_URL ? trim(config.INTEGRATION_BUILDER_COPILOT_BASE_URL) : 'https://apis.preview-dv.devant.dev/copilot',
       integrationBuilderLlmModel: config.INTEGRATION_BUILDER_LLM_MODEL || 'claude-sonnet-4-6',
-      integrationBuilderMaxTokens: Number(config.INTEGRATION_BUILDER_MAX_TOKENS) || 1024,
+      integrationBuilderMaxTokens: parsePositiveInt(config.INTEGRATION_BUILDER_MAX_TOKENS, DEFAULT_CONFIG.integrationBuilderMaxTokens),
       integrationBuilderCentralGraphqlUrl: config.INTEGRATION_BUILDER_CENTRAL_GRAPHQL_URL || 'https://api.dev-central.ballerina.io/2.0/graphql',
       internalMarketplaceUrl: `${choreoBase}/marketplace/0.1.0`,
     };
