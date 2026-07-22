@@ -93,3 +93,15 @@ body {
     background-color: rgba(255, 255, 255, 0.253);
   }
 }
+
+/* AI Builder — traveling glow ring for the "Start with an idea" chat box */
+@property --ai-glow-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes ai-glow-rotate {
+  to {
+    --ai-glow-angle: 360deg;
+  }
+}

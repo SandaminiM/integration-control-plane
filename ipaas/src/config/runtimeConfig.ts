@@ -57,6 +57,10 @@ interface RuntimeConfig {
   RAG_INGESTION_IMAGE?: string;
   ENABLE_RAG_INGESTION_FEATURE?: string | boolean;
   RAG_INGESTION_BACKEND?: string;
+  INTEGRATION_BUILDER_COPILOT_BASE_URL?: string;
+  INTEGRATION_BUILDER_LLM_MODEL?: string;
+  INTEGRATION_BUILDER_MAX_TOKENS?: string;
+  INTEGRATION_BUILDER_CENTRAL_GRAPHQL_URL?: string;
 }
 
 export interface ApiConfig {
@@ -114,6 +118,14 @@ export interface ApiConfig {
   ragBackendUrl?: string;
   /** Internal Marketplace API base — derived from choreoBaseApiUrl. Used to read/write service descriptions (Overview). */
   internalMarketplaceUrl: string;
+  /** AI Integration Builder copilot base URL. */
+  integrationBuilderCopilotBaseUrl: string;
+  /** AI Integration Builder LLM model name. */
+  integrationBuilderLlmModel: string;
+  /** AI Integration Builder max tokens for LLM. */
+  integrationBuilderMaxTokens: number;
+  /** AI Integration Builder central GraphQL URL for connectors. */
+  integrationBuilderCentralGraphqlUrl: string;
 }
 
 // Extend window interface
@@ -121,6 +133,12 @@ declare global {
   interface Window {
     API_CONFIG: ApiConfig;
   }
+}
+
+// Accepts a value only when it parses to a positive finite integer; else falls back.
+function parsePositiveInt(value: unknown, fallback: number): number {
+  const n = Number(value);
+  return Number.isInteger(n) && n > 0 ? n : fallback;
 }
 
 // Default configuration (used as fallback if config.json fails to load)
@@ -152,6 +170,10 @@ const DEFAULT_CONFIG: ApiConfig = {
   aiCopilotUrlSuffix: '',
   aiCopilotDatacollectorBaseUrl: '',
   availableLoginRegions: undefined,
+  integrationBuilderCopilotBaseUrl: 'https://apis.preview-dv.devant.dev/copilot',
+  integrationBuilderLlmModel: 'claude-sonnet-4-6',
+  integrationBuilderMaxTokens: 1024,
+  integrationBuilderCentralGraphqlUrl: 'https://api.dev-central.ballerina.io/2.0/graphql',
   internalMarketplaceUrl: 'https://apis.preview-dv.choreo.dev/marketplace/0.1.0',
 };
 
@@ -216,6 +238,10 @@ export async function loadConfig(): Promise<void> {
       ragIngestionImage: config.RAG_INGESTION_IMAGE ? trim(config.RAG_INGESTION_IMAGE) : undefined,
       enableRagIngestionFeature: config.ENABLE_RAG_INGESTION_FEATURE === 'true' || config.ENABLE_RAG_INGESTION_FEATURE === true,
       ragBackendUrl: config.RAG_INGESTION_BACKEND ? trim(config.RAG_INGESTION_BACKEND) : undefined,
+      integrationBuilderCopilotBaseUrl: config.INTEGRATION_BUILDER_COPILOT_BASE_URL ? trim(config.INTEGRATION_BUILDER_COPILOT_BASE_URL) : 'https://apis.preview-dv.devant.dev/copilot',
+      integrationBuilderLlmModel: config.INTEGRATION_BUILDER_LLM_MODEL || 'claude-sonnet-4-6',
+      integrationBuilderMaxTokens: parsePositiveInt(config.INTEGRATION_BUILDER_MAX_TOKENS, DEFAULT_CONFIG.integrationBuilderMaxTokens),
+      integrationBuilderCentralGraphqlUrl: config.INTEGRATION_BUILDER_CENTRAL_GRAPHQL_URL || 'https://api.dev-central.ballerina.io/2.0/graphql',
       internalMarketplaceUrl: `${choreoBase}/marketplace/0.1.0`,
     };
 

@@ -53,6 +53,7 @@ const ComponentApiInfo = lazy(() => import('../pages/ComponentApiInfo'));
 const CreateProject = lazy(() => import('../pages/CreateProject'));
 const ImportProject = lazy(() => import('../pages/ImportProject'));
 const CreateIntegrationOptions = lazy(() => import('../pages/CreateIntegrationOptions'));
+const AiIntegrationBuilderView = lazy(() => import('../pages/AiIntegrationBuilderView'));
 const ImportIntegration = lazy(() => import('../pages/ImportIntegration'));
 const McpProxyFromApi = lazy(() => import('../pages/McpProxyFromApi'));
 const McpPolicies = lazy(() => import('../pages/McpPolicies'));
@@ -301,6 +302,7 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/projects/new', element: createElement(withScope(CreateProject, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/import', element: createElement(withScope(ImportProject, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new', element: createElement(withScope(CreateIntegrationOptions, ['projects'])) },
+              { path: 'organizations/:orgHandler/projects/:projectHandler/components/new/ai-builder', element: createElement(withScope(AiIntegrationBuilderView, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new/import', element: createElement(withScope(ImportIntegration, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new/samples', element: createElement(withScope(BrowseSamples, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new/generate-mcp', element: createElement(withScope(McpProxyFromApi, ['projects'])) },

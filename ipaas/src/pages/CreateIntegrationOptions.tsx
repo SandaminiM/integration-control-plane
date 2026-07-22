@@ -17,7 +17,7 @@
  */
 
 import { Alert, Box, Button, Card, CardContent, Chip, CircularProgress, IconButton, PageContent, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { ArrowLeft, ArrowRight, GitHub, GitLab, Bitbucket } from '@wso2/oxygen-ui-icons-react';
+import { ArrowLeft, ArrowRight, GitHub, GitLab, Bitbucket, Plus, GitBranch } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
 import { useCreateComponent } from '../hooks/useComponents';
@@ -26,7 +26,9 @@ import { generateAndSaveGitHubState, validateAndClearGitHubState } from '../auth
 import { IS_CLOUD } from '../features';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useAuth } from '../auth/AuthContext';
+import { useFeaturePreview } from '../contexts/FeaturePreviewContext';
 import IDEMockup from '../components/IDEMockup/IDEMockup';
+import { AiBuilderLandingCard } from '../components/AiBuilder/AiBuilderLandingCard';
 import PillTabs from '../components/PillTabs';
 import PrebuiltCard from '../components/PrebuiltCard';
 import SampleRowCard from '../components/SampleRowCard';
@@ -38,9 +40,10 @@ import { componentSubTypeFromSample, displayTypeFromSample } from '../constants/
 import { GITHUB_AUTH } from '../constants/github';
 import { CARD_HOVER_SX, PROVIDER_ICON_SX } from '../constants/styles';
 import { resourceUrl, narrow, type ProjectScope } from '../nav';
-import { importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, buildGitHubOAuthUrl } from '../paths';
+import { importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, componentsNewAiBuilderUrl, buildGitHubOAuthUrl } from '../paths';
 import type { Sample } from '../types/samples';
 import { toHandler } from '../utils/string';
+import { buildCloudEditorUrl } from '../utils/cloudEditor';
 import { useProjectId } from '../hooks/useProjects';
 import { useSamples } from '../hooks/useSamples';
 import { usePrebuiltIntegrations } from '../hooks/usePrebuiltIntegrations';
@@ -50,6 +53,8 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
   const { userId } = useAuth();
   const { projectId } = useProjectId(scope.project);
   const orgUuid = useOrgUuid() ?? '';
+  const { features } = useFeaturePreview();
+  const aiBuilderEnabled = !!features['AI Integration Builder'];
   const { data: samplesData, isLoading: samplesLoading, isError: samplesError } = useSamples();
   const { data: prebuiltData, isLoading: prebuiltLoading, isError: prebuiltError } = usePrebuiltIntegrations();
 
@@ -66,21 +71,14 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
 
   const createComponent = useCreateComponent();
 
-  const handleOpenCloudEditor = async () => {
+  const handleOpenCloudEditor = () => {
     const codeServerSample = (sampleImages ?? []).find((img) => img.name === 'Code Server');
     if (!codeServerSample) {
       setPageError({ message: 'Cloud Editor is not available. Please try again later.', severity: 'warning' });
       return;
     }
-    const deploymentUrl = new URL('/editor', window.location.origin);
-    deploymentUrl.searchParams.set('userId', userId);
-    deploymentUrl.searchParams.set('orgUuid', orgUuid);
-    deploymentUrl.searchParams.set('orgHandle', scope.org);
-    deploymentUrl.searchParams.set('projectId', projectId);
-    deploymentUrl.searchParams.set('componentId', 'null');
-    deploymentUrl.searchParams.set('codeServerSample', JSON.stringify(codeServerSample));
-    const newTab = window.open(deploymentUrl.toString(), '_blank');
-    if (!newTab) {
+    const url = buildCloudEditorUrl({ userId, orgUuid, orgHandle: scope.org, projectId, codeServerSample }, window.location.origin);
+    if (!window.open(url, '_blank')) {
       setPageError({ message: 'Please allow popups for this site and try again.', severity: 'warning' });
     }
   };
@@ -185,6 +183,12 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
         </Alert>
       )}
 
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h1">
+          {aiBuilderEnabled ? 'How would you like to create your integration?' : 'Create an Integration'}
+        </Typography>
+      </Box>
+
       <Box
         sx={{
           display: 'grid',
@@ -192,30 +196,51 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
           alignItems: 'stretch',
           gridTemplateColumns: { xs: '1fr', md: '6fr 4fr' },
         }}>
-        {/* Left column: Cloud Editor + Import */}
+        {/* Left column: AI Builder / Cloud Editor + Import */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-          {/* Cloud Editor card */}
-          <Box sx={{ flex: 7 }}>
-            <Card sx={{ height: '100%', ...CARD_HOVER_SX }} onMouseEnter={() => setIsCloudEditorCardHovered(true)} onMouseLeave={() => setIsCloudEditorCardHovered(false)} onClick={handleOpenCloudEditor}>
-              <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3, '&:last-child': { pb: 3 } }}>
-                <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.5 }}>
-                  <Typography variant="h2">Create an Integration</Typography>
-                  <Chip label="Beta" size="small" color="primary" variant="outlined" />
-                </Stack>
-                <Typography color="text.secondary" variant="body2" sx={{ mb: 2 }}>
-                  Start developing in a complete, browser-based development environment.
-                </Typography>
-                {/* Fixed height for IDE mockup */}
-                <Box sx={{ height: 260, overflow: 'hidden' }}>
-                  <IDEMockup isHovered={isCloudEditorCardHovered} onOpenClick={handleOpenCloudEditor} />
-                </Box>
-              </CardContent>
-            </Card>
-          </Box>
+          {/* AI prompt box (gated) — replaces the IDE-mockup card in view1 */}
+          {aiBuilderEnabled ? (
+            <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+              <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary', fontWeight: 500 }}>
+                Start with an idea
+              </Typography>
+              <Box sx={{ flex: 1, minHeight: 0, mt: 1.5 }}>
+                <AiBuilderLandingCard
+                  onStartPlanning={(query) => {
+                    navigate(componentsNewAiBuilderUrl(scope.org, scope.project), { state: { query } });
+                  }}
+                />
+              </Box>
+            </Box>
+          ) : (
+            /* Cloud Editor card */
+            <Box sx={{ flex: 7 }}>
+              <Card sx={{ height: '100%', ...CARD_HOVER_SX }} onMouseEnter={() => setIsCloudEditorCardHovered(true)} onMouseLeave={() => setIsCloudEditorCardHovered(false)} onClick={handleOpenCloudEditor}>
+                <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3, '&:last-child': { pb: 3 } }}>
+                  <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.5 }}>
+                    <Typography variant="h2">Create an Integration</Typography>
+                    <Chip label="Beta" size="small" color="primary" variant="outlined" />
+                  </Stack>
+                  <Typography color="text.secondary" variant="body2" sx={{ mb: 2 }}>
+                    Start developing in a complete, browser-based development environment.
+                  </Typography>
+                  {/* Fixed height for IDE mockup */}
+                  <Box sx={{ height: 260, overflow: 'hidden' }}>
+                    <IDEMockup isHovered={isCloudEditorCardHovered} onOpenClick={handleOpenCloudEditor} />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Box>
+          )}
 
           {/* Import Integration card */}
-          <Box sx={{ flex: 3 }}>
-            <Card variant="outlined" sx={{ height: '100%', boxShadow: 'none', ...(isImportAuthenticating ? { pointerEvents: 'none', opacity: 0.7 } : {}) }}>
+          <Box sx={{ flex: aiBuilderEnabled ? '0 0 auto' : 3 }}>
+            {aiBuilderEnabled && (
+              <Typography variant="body2" sx={{ mb: 1.5, color: 'text.secondary', fontWeight: 500, mt: aiBuilderEnabled ? 1 : 0 }}>
+                Create it yourself
+              </Typography>
+            )}
+            <Card variant="outlined" sx={{ height: aiBuilderEnabled ? 'auto' : '100%', boxShadow: 'none', ...(isImportAuthenticating ? { pointerEvents: 'none', opacity: 0.7 } : {}) }}>
               <CardContent
                 sx={{
                   display: 'flex',
@@ -225,20 +250,45 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                   gap: 3,
                   '&:last-child': { pb: 3 },
                 }}>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="h2" sx={{ mb: 0.5 }}>
-                    Import an Integration
-                  </Typography>
-                  <Typography color="text.secondary" variant="body2">
-                    {isImportAuthenticating ? 'Completing GitHub authorization…' : 'Connect your repository and start building instantly'}
-                  </Typography>
-                </Box>
+                {aiBuilderEnabled ? (
+                  <>
+                    {/* Create on Cloud affordance (view1: folded into the "Create it yourself" row) */}
+                    <Button
+                      variant="text"
+                      onClick={handleOpenCloudEditor}
+                      data-cyid="create-on-cloud-btn"
+                      startIcon={<Plus size={20} />}
+                      sx={{ flexShrink: 0, color: 'primary.main', fontWeight: 500, textTransform: 'none', '&:hover': { opacity: 0.85 } }}>
+                      Create on Cloud
+                    </Button>
 
-                {/* Vertical divider */}
-                <Box sx={{ width: '2px', alignSelf: 'stretch', bgcolor: 'divider', flexShrink: 0 }} />
+                    {/* Vertical divider */}
+                    <Box sx={{ width: '2px', alignSelf: 'stretch', bgcolor: 'divider', flexShrink: 0 }} />
+
+                    {/* Import label */}
+                    <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <GitBranch size={18} />
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>Import a repository from</Typography>
+                    </Box>
+                  </>
+                ) : (
+                  <>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="h2" sx={{ mb: 0.5 }}>
+                        Import an Integration
+                      </Typography>
+                      <Typography color="text.secondary" variant="body2">
+                        {isImportAuthenticating ? 'Completing GitHub authorization…' : 'Connect your repository and start building instantly'}
+                      </Typography>
+                    </Box>
+
+                    {/* Vertical divider */}
+                    <Box sx={{ width: '2px', alignSelf: 'stretch', bgcolor: 'divider', flexShrink: 0 }} />
+                  </>
+                )}
 
                 {/* Provider icon buttons */}
-                <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 3 }}>
+                <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: aiBuilderEnabled ? 2 : 3 }}>
                   {isImportAuthenticating ? (
                     <CircularProgress size={22} />
                   ) : (
@@ -251,27 +301,27 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                             navigate(importUrl, { state: { mode: 'public' } });
                           }}
                           sx={PROVIDER_ICON_SX}>
-                          <GitIcon size={25} />
+                          <GitIcon size={aiBuilderEnabled ? 24 : 25} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from GitHub" placement="top">
                         <IconButton aria-label="Import from GitHub" onClick={handleImportClick} sx={PROVIDER_ICON_SX}>
-                          <GitHub size={24} />
+                          <GitHub size={aiBuilderEnabled ? 23 : 24} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from GitLab" placement="top">
                         <IconButton aria-label="Import from GitLab" onClick={() => navigate(importUrl, { state: { provider: GitProvider.GITLAB_SELF_MANAGED } })} sx={PROVIDER_ICON_SX}>
-                          <GitLab size={22} />
+                          <GitLab size={aiBuilderEnabled ? 21 : 22} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from Bitbucket" placement="top">
                         <IconButton aria-label="Import from Bitbucket" onClick={() => navigate(importUrl, { state: { provider: GitProvider.BITBUCKET_CLOUD } })} sx={PROVIDER_ICON_SX}>
-                          <Bitbucket size={22} />
+                          <Bitbucket size={aiBuilderEnabled ? 21 : 22} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from Azure" placement="top">
                         <IconButton aria-label="Import from Azure" onClick={() => navigate(importUrl, { state: { provider: GitProvider.AZURE_DEVOPS } })} sx={PROVIDER_ICON_SX}>
-                          <AzureIcon size={22} />
+                          <AzureIcon size={aiBuilderEnabled ? 21 : 22} />
                         </IconButton>
                       </Tooltip>
                     </>
@@ -283,22 +333,32 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
         </Box>
 
         {/* Right column: Get Started Quickly */}
-        <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          {aiBuilderEnabled && (
+            <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary', fontWeight: 500 }}>
+              Start quickly
+            </Typography>
+          )}
           <Card
             variant="outlined"
             sx={{
-              height: '100%',
+              flex: 1,
               boxShadow: 'none',
               display: 'flex',
               flexDirection: 'column',
+              mt: aiBuilderEnabled ? 1.5 : 0,
             }}>
             <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 3, '&:last-child': { pb: 3 } }}>
-              <Typography variant="h2" sx={{ mb: 0.5 }}>
-                Get Started Quickly
-              </Typography>
-              <Typography color="text.secondary" variant="body2" sx={{ mb: 2 }}>
-                Start with prebuilt integrations or simple samples to get started.
-              </Typography>
+              {!aiBuilderEnabled && (
+                <>
+                  <Typography variant="h2" sx={{ mb: 0.5 }}>
+                    Get Started Quickly
+                  </Typography>
+                  <Typography color="text.secondary" variant="body2" sx={{ mb: 2 }}>
+                    Start with prebuilt integrations or simple samples to get started.
+                  </Typography>
+                </>
+              )}
 
               <Box sx={{ mb: 2 }}>
                 <PillTabs value={selectedTab} onChange={setSelectedTab} tabs={[{ label: 'Prebuilt Integrations' }, { label: 'Samples' }]} />
