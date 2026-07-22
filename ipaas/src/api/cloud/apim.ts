@@ -29,7 +29,6 @@
 
 import { parse as parseYaml } from 'yaml';
 import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory } from '../../types/apim';
-import type { ApiDocument } from '../../types/marketplace';
 
 export async function fetchApimApi(_apimId: string): Promise<ApimApiInfo | null> {
   return null;
@@ -63,29 +62,6 @@ export async function changeLifecycleState(_apimId: string, _action: string): Pr
   throw new Error('Lifecycle management is not supported in this build.');
 }
 
-// API documentation lives in APIM's publisher store, which OpenChoreo has no
-// equivalent for; the consumers are gated on IS_DEVANT and never reach these in
-// cloud builds. Reads return empty, mutations echo/no-op so nothing throws.
-export async function fetchApimDocuments(_apimId: string): Promise<ApiDocument[]> {
-  return [];
-}
-
-export async function fetchApimDocumentContent(_apimId: string, _docId: string): Promise<string> {
-  return '';
-}
-
-export async function createApimDocument(_apimId: string, doc: Omit<ApiDocument, 'documentId'>, _content: string): Promise<ApiDocument> {
-  return { ...doc, documentId: '' };
-}
-
-export async function updateApimDocument(_apimId: string, _docId: string, doc: ApiDocument, _content?: string): Promise<ApiDocument> {
-  return doc;
-}
-
-export async function deleteApimDocument(_apimId: string, _docId: string): Promise<void> {
-  // No-op: cloud doesn't manage APIM documents.
-}
-
 // Not wired to a cloud backend yet — per the src/api/AGENTS.md stub contract
 // these throw via ni() so callers can never mistake an unsupported read or
 // save for a successful one.
@@ -100,6 +76,16 @@ export const fetchApimThumbnail = (..._args: unknown[]): never => ni('fetchApimT
 export const saveApimThumbnail = (..._args: unknown[]): never => ni('saveApimThumbnail');
 export const fetchMarketplaceService = (..._args: unknown[]): never => ni('fetchMarketplaceService');
 export const saveMarketplaceService = (..._args: unknown[]): never => ni('saveMarketplaceService');
+
+// API documentation lives in APIM's publisher store, which OpenChoreo has no
+// equivalent for. The consumers are gated on IS_DEVANT and never reach these in
+// cloud builds; they throw rather than fake a document so an unsupported call
+// can never look successful.
+export const fetchApimDocuments = (..._args: unknown[]): never => ni('fetchApimDocuments');
+export const fetchApimDocumentContent = (..._args: unknown[]): never => ni('fetchApimDocumentContent');
+export const createApimDocument = (..._args: unknown[]): never => ni('createApimDocument');
+export const updateApimDocument = (..._args: unknown[]): never => ni('updateApimDocument');
+export const deleteApimDocument = (..._args: unknown[]): never => ni('deleteApimDocument');
 
 // schemaContent is the endpoint's base64-encoded OpenAPI (YAML or JSON), carried
 // via the endpoint's apimRevisionId field by cloud fetchEnvEndpoints.

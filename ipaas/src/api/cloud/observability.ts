@@ -21,13 +21,11 @@
  *
  * The OpenChoreo BFF exposes no metrics surface — these live on Devant's obs
  * API (choreoobsapi) on the systemapis gateway. Until the BFF closes that gap,
- * the fetchers return null so the metrics widgets show an empty state rather
- * than erroring.
+ * the fetchers throw via ni() (per the src/api/AGENTS.md stub contract) so an
+ * unsupported metrics read can never be mistaken for "no data".
  *
  * awaits: choreoobsapi (component http/usage metrics, project metrics model)
  */
-
-import type { ComponentHttpMetricsPayload, ComponentUsageMetricsPayload, ProjectMetricsModel } from '../../types/observability';
 
 /** Bucket width the histograms are aggregated into: 1/100th of the range,
  * floored to whole minutes, min 1m. Pure helper — no backend dependency. */
@@ -36,14 +34,11 @@ export function metricsBreakSize(fromIso: string, toIso: string): string {
   return `${Math.max(Math.floor(minutes), 1)}m`;
 }
 
-export async function fetchComponentHttpMetrics(_releaseId: string, _fromIso: string, _toIso: string): Promise<ComponentHttpMetricsPayload | null> {
-  return null;
-}
+// TODO: implement using cloud APIs
+const ni = (name: string): never => {
+  throw new Error(`[cloud] observability.${name}: not implemented`);
+};
 
-export async function fetchComponentUsageMetrics(_releaseId: string, _fromIso: string, _toIso: string): Promise<ComponentUsageMetricsPayload | null> {
-  return null;
-}
-
-export async function fetchProjectMetricsModel(_projectId: string, _environmentId: string, _fromIso: string, _toIso: string): Promise<ProjectMetricsModel | null> {
-  return null;
-}
+export const fetchComponentHttpMetrics = (..._args: unknown[]): never => ni('fetchComponentHttpMetrics');
+export const fetchComponentUsageMetrics = (..._args: unknown[]): never => ni('fetchComponentUsageMetrics');
+export const fetchProjectMetricsModel = (..._args: unknown[]): never => ni('fetchProjectMetricsModel');
