@@ -16,44 +16,46 @@
  * under the License.
  */
 
-import { Box, Skeleton, Stack, Typography, Paper } from '@wso2/oxygen-ui';
-import { BarChart } from '@wso2/oxygen-ui-charts-react';
-import type { JSX } from 'react';
-import { InsightsCard, ChartBox } from './shared';
-import type { ProjectActivityChart } from '../../types/insights';
+import { Box, MenuItem, TextField } from '@wso2/oxygen-ui';
+import { useEffect, useState, type JSX } from 'react';
+import { InsightsCard, TrendBarChart } from './shared';
+import { UNIT_BY_KIND } from '../../constants/insights';
+import type { InsightsRange, IntegrationKind, ProjectActivityData } from '../../types/insights';
 
-/** "Activity over time" — one bar chart per integration type, each in its own
- * native unit and scale. Header per mini shows a color dot + title + unit on the
- * left and the bucket-summed total on the right. */
-export function ActivityOverTime({ charts, loading = false }: { charts: ProjectActivityChart[]; loading?: boolean }): JSX.Element {
+const ALL = 'all';
+
+/** "Activity over time" — one bar chart across all integration types with a type
+ * filter (top-right). "All" stacks every type's per-bucket count in its own
+ * colour; picking a type filters to that type alone. */
+export function ActivityOverTime({ chart, range, loading = false }: { chart: ProjectActivityData; range: InsightsRange; loading?: boolean }): JSX.Element {
+  const [sel, setSel] = useState<string>(ALL);
+  // Keep the selection valid when the available series change (e.g. project switch).
+  useEffect(() => {
+    if (sel !== ALL && !chart.series.some((s) => s.key === sel)) setSel(ALL);
+  }, [chart.series, sel]);
+
+  const showAll = sel === ALL;
+  const series = showAll ? chart.series : chart.series.filter((s) => s.key === sel);
+  const areas = series.map((s) => ({ key: s.key, name: s.label, color: s.color, ...(showAll ? { stackId: 'activity' } : {}) }));
+
+  const unit = showAll ? 'activity' : UNIT_BY_KIND[sel as IntegrationKind];
+  const subtitle = `All ${unit} over last ${range}`;
+
+  const filter = (
+    <TextField select size="small" value={sel} onChange={(e) => setSel(e.target.value)} inputProps={{ 'aria-label': 'Integration type' }} sx={{ minWidth: 190 }}>
+      <MenuItem value={ALL}>All types</MenuItem>
+      {chart.series.map((s) => (
+        <MenuItem key={s.key} value={s.key}>
+          {s.label}
+        </MenuItem>
+      ))}
+    </TextField>
+  );
+
   return (
-    <InsightsCard title="Activity over time" subtitle="Requests, runs, invocations and events over selected period">
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-        {charts.map((c) => (
-          <Paper key={c.key} sx={{ borderRadius: 0.75, p: 2 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-              <Stack direction="row" alignItems="center" gap={1}>
-                <Box sx={{ width: 8, height: 8, borderRadius: '2px', bgcolor: c.color, flexShrink: 0 }} />
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {c.title}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {c.unit}
-                </Typography>
-              </Stack>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                {c.total}
-              </Typography>
-            </Stack>
-            {loading ? (
-              <Skeleton variant="rounded" height={200} />
-            ) : (
-              <ChartBox>
-                <BarChart data={c.points} xAxisDataKey="label" xAxis={{ show: true }} yAxis={{ show: true }} height={150} bars={[{ dataKey: 'count', name: c.title, fill: c.color, radius: [2, 2, 0, 0] }]} legend={{ show: false }} grid={{ show: true }} tooltip={{ show: true }} margin={{ top: 8, right: 12, left: -16, bottom: 0 }} />
-              </ChartBox>
-            )}
-          </Paper>
-        ))}
+    <InsightsCard title="Activity over time" subtitle={subtitle} action={filter}>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <TrendBarChart data={chart.points} areas={areas} height={300} loading={loading} />
       </Box>
     </InsightsCard>
   );

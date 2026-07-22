@@ -18,6 +18,7 @@
 
 import { Box, Paper, Skeleton, Stack, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
+import { ColorDot } from './shared';
 import { KIND_DOT, KIND_SHORT } from '../../constants/insights';
 import { KPI_ICONS } from '../../constants/insightsIcons';
 import type { ProjectInsightsKpi } from '../../types/insights';
@@ -50,7 +51,7 @@ export function ProjectKpiCards({ kpis, loading = false }: { kpis: ProjectInsigh
               <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 0.5 }}>
                 {k.typeMix.map((t) => (
                   <Stack key={t.kind} direction="row" alignItems="center" gap={0.5}>
-                    <Box sx={{ width: 8, height: 8, borderRadius: '2px', bgcolor: KIND_DOT[t.kind], flexShrink: 0 }} />
+                    <ColorDot color={KIND_DOT[t.kind]} size={8} />
                     <Typography variant="caption" color="text.secondary">
                       {t.count} {KIND_SHORT[t.kind]}
                     </Typography>
