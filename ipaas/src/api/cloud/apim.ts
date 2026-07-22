@@ -77,6 +77,16 @@ export const saveApimThumbnail = (..._args: unknown[]): never => ni('saveApimThu
 export const fetchMarketplaceService = (..._args: unknown[]): never => ni('fetchMarketplaceService');
 export const saveMarketplaceService = (..._args: unknown[]): never => ni('saveMarketplaceService');
 
+// API documentation lives in APIM's publisher store, which OpenChoreo has no
+// equivalent for. The consumers are gated on IS_DEVANT and never reach these in
+// cloud builds; they throw rather than fake a document so an unsupported call
+// can never look successful.
+export const fetchApimDocuments = (..._args: unknown[]): never => ni('fetchApimDocuments');
+export const fetchApimDocumentContent = (..._args: unknown[]): never => ni('fetchApimDocumentContent');
+export const createApimDocument = (..._args: unknown[]): never => ni('createApimDocument');
+export const updateApimDocument = (..._args: unknown[]): never => ni('updateApimDocument');
+export const deleteApimDocument = (..._args: unknown[]): never => ni('deleteApimDocument');
+
 // schemaContent is the endpoint's base64-encoded OpenAPI (YAML or JSON), carried
 // via the endpoint's apimRevisionId field by cloud fetchEnvEndpoints.
 export async function fetchApimSwagger(schemaContent: string): Promise<unknown> {
