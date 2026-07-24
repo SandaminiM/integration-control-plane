@@ -20,7 +20,6 @@
 export interface BallerinaCentralTokenStatus {
   configured: boolean;
   addedOn?: string;
-  /** Ballerina Central exposes no expiry — the backend never populates this. */
   expiresOn?: string;
 }
 
