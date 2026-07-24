@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { buildClientSchema, GraphQLList, GraphQLNonNull, GraphQLObjectType, isInputObjectType, isScalarType, type GraphQLInputType, type GraphQLNamedType, type GraphQLOutputType, type GraphQLSchema } from 'graphql';
+import { buildClientSchema, GraphQLInterfaceType, GraphQLList, GraphQLNonNull, GraphQLObjectType, isInputObjectType, isScalarType, type GraphQLInputType, type GraphQLNamedType, type GraphQLOutputType, type GraphQLSchema } from 'graphql';
 import type { GraphqlAttrNode, GraphqlOperation } from '../types/graphql';
 
 const MAX_DEPTH = 3;
@@ -37,8 +37,8 @@ function unwrap(type: GraphQLOutputType | GraphQLInputType): GraphQLNamedType {
 function attributesOf(type: GraphQLOutputType | GraphQLInputType, depth = 0, visited = new Set<string>()): GraphqlAttrNode[] {
   const unwrapped = unwrap(type);
   if (isScalarType(unwrapped) || depth >= MAX_DEPTH || visited.has(unwrapped.name)) return [];
-  const isObject = unwrapped instanceof GraphQLObjectType || isInputObjectType(unwrapped);
-  if (!isObject) return [];
+  const isObjectLike = unwrapped instanceof GraphQLObjectType || unwrapped instanceof GraphQLInterfaceType || isInputObjectType(unwrapped);
+  if (!isObjectLike) return [];
 
   const next = new Set(visited).add(unwrapped.name);
   return Object.values((unwrapped as GraphQLObjectType).getFields()).map((field) => ({

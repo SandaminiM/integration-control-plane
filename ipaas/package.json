@@ -34,7 +34,7 @@
     "@wso2/oxygen-ui": "^0.8.0",
     "@wso2/oxygen-ui-charts-react": "^0.8.0",
     "@wso2/oxygen-ui-icons-react": "^0.9.1",
-    "graphql": "^16.9.0",
+    "graphql": "^16.14.2",
     "mermaid": "^11.14.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",

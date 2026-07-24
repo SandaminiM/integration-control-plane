@@ -43,16 +43,20 @@ export default function GraphqlOperationsList({ activeEndpoint, isDeploymentRead
 
   const generateKey = useGenerateTestKey();
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [keyError, setKeyError] = useState(false);
   useEffect(() => {
     if (!apimId || !isDeploymentReady) return undefined;
     let cancelled = false;
+    setKeyError(false);
     generateKey
       .mutateAsync({ apimId, keyType: envCritical ? 'Production' : 'Development' })
       .then((r) => {
-        if (!cancelled) setApiKey(r?.apikey ?? null);
+        if (cancelled) return;
+        if (r?.apikey) setApiKey(r.apikey);
+        else setKeyError(true);
       })
       .catch(() => {
-        /* surfaced via the operations error below */
+        if (!cancelled) setKeyError(true);
       });
     return () => {
       cancelled = true;
@@ -63,7 +67,11 @@ export default function GraphqlOperationsList({ activeEndpoint, isDeploymentRead
 
   const { data: operations = [], isFetching, isError, error } = useGraphqlOperations({ invokeUrl, token: apiKey ?? '', enabled: isDeploymentReady && !!invokeUrl && !!apiKey });
 
-  if ((!apiKey || isFetching) && operations.length === 0 && !isError) {
+  // Spinner only while the key is being minted or the schema is being fetched.
+  const isGeneratingKey = isDeploymentReady && !!apimId && !apiKey && !keyError;
+  const hasError = isError || keyError;
+
+  if ((isGeneratingKey || isFetching) && operations.length === 0 && !hasError) {
     return (
       <Stack alignItems="center" sx={{ py: 3 }}>
         <CircularProgress size={20} />
@@ -71,7 +79,7 @@ export default function GraphqlOperationsList({ activeEndpoint, isDeploymentRead
     );
   }
 
-  if (isError && operations.length === 0) {
+  if (hasError && operations.length === 0) {
     return (
       <Alert severity="error" sx={{ mt: 1.5 }}>
         {error?.message || 'Failed to fetch GraphQL schema.'}

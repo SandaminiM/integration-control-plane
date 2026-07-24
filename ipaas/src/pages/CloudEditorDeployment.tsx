@@ -63,8 +63,8 @@ export default function CloudEditorDeployment(): JSX.Element {
 
     const deploy = async () => {
       try {
-        if (!params.orgUuid || !params.projectId || !params.codeServerSample || !params.userId || !params.orgHandle) {
-          throw new Error('Missing required deployment parameters (userId/orgHandle). Please close this window and try again.');
+        if (!params.orgUuid || !params.projectId || !params.componentId || !params.codeServerSample || !params.userId || !params.orgHandle) {
+          throw new Error('Missing required deployment parameters. Please close this window and try again.');
         }
 
         let codeServerSample: ChoreoSampleImage;

@@ -24,9 +24,11 @@ const schema = buildSchema(`
   "A user in the system."
   type User { id: Int!, name: String!, email: String! }
   input NewUser { name: String!, email: String! }
+  interface Node { id: Int! }
   type Query {
     greeting: String!
     profile(id: Int!): User!
+    node: Node!
     legacy: String @deprecated(reason: "old")
   }
   type Mutation {
@@ -41,7 +43,7 @@ describe('operationsFromSchema', () => {
 
   it('groups fields by operation type', () => {
     expect(ops.map((o) => o.name)).toEqual(['Query', 'Mutation']);
-    expect(query?.fields.map((f) => f.name)).toEqual(['greeting', 'profile', 'legacy']);
+    expect(query?.fields.map((f) => f.name)).toEqual(['greeting', 'profile', 'node', 'legacy']);
     expect(mutation?.fields.map((f) => f.name)).toEqual(['addUser']);
   });
 
@@ -68,5 +70,11 @@ describe('operationsFromSchema', () => {
 
   it('flags deprecated fields', () => {
     expect(query?.fields.find((f) => f.name === 'legacy')?.deprecated).toBe(true);
+  });
+
+  it('expands interface return types', () => {
+    const node = query?.fields.find((f) => f.name === 'node');
+    expect(node?.responseType).toBe('Node!');
+    expect(node?.responseAttributes.map((a) => `${a.name}:${a.type}`)).toEqual(['id:Int!']);
   });
 });

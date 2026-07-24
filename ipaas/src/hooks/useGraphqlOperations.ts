@@ -29,29 +29,43 @@ interface UseGraphqlOperationsParams {
   enabled: boolean;
 }
 
+const INTROSPECTION_TIMEOUT_MS = 15_000;
+
 // Introspects a deployed GraphQL endpoint (over the `test-key` header) and returns
 // its operations as a domain shape. The request targets the running data-plane
 // endpoint, not the console API, so — like useMcpTools — it lives in a hook.
 export function useGraphqlOperations({ invokeUrl, token, enabled }: UseGraphqlOperationsParams) {
   return useQuery<GraphqlOperation[], Error>({
-    queryKey: ['graphqlOperations', invokeUrl],
-    queryFn: async () => {
-      const result = await fetch(invokeUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'test-key': token },
-        body: JSON.stringify({ query: getIntrospectionQuery() }),
-      });
+    queryKey: ['graphqlOperations', invokeUrl, token],
+    queryFn: async ({ signal }) => {
+      // Abort on the query's own signal (unmount/refetch) or after a bounded timeout.
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(new Error('GraphQL introspection timed out')), INTROSPECTION_TIMEOUT_MS);
+      const onAbort = () => controller.abort(signal?.reason);
+      signal?.addEventListener('abort', onAbort);
 
-      if (!result.ok) {
-        if (result.status === 404) throw new Error('Request URL not found.');
-        if (result.status === 401 || result.status === 403) throw new Error('Invalid or expired token. Please refresh the card.');
-        if (result.status === 503) throw new Error('Integration deployment is suspended. Redeploy to visualize the schema.');
-        throw new Error(`Unexpected HTTP status code ${result.status} received`);
+      try {
+        const result = await fetch(invokeUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'test-key': token },
+          body: JSON.stringify({ query: getIntrospectionQuery() }),
+          signal: controller.signal,
+        });
+
+        if (!result.ok) {
+          if (result.status === 404) throw new Error('Request URL not found.');
+          if (result.status === 401 || result.status === 403) throw new Error('Invalid or expired token. Please refresh the card.');
+          if (result.status === 503) throw new Error('Integration deployment is suspended. Redeploy to visualize the schema.');
+          throw new Error(`Unexpected HTTP status code ${result.status} received`);
+        }
+
+        const body = await result.json();
+        if (!body?.data?.__schema) throw new Error('Invalid response received');
+        return buildOperations(body.data);
+      } finally {
+        clearTimeout(timeout);
+        signal?.removeEventListener('abort', onAbort);
       }
-
-      const body = await result.json();
-      if (!body?.data?.__schema) throw new Error('Invalid response received');
-      return buildOperations(body.data);
     },
     enabled: enabled && Boolean(invokeUrl && token),
     retry: 1,
