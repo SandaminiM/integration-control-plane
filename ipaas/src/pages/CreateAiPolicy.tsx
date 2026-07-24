@@ -219,7 +219,7 @@ export default function CreateAiPolicy(scope: OrgScope): JSX.Element {
         {selectedItems.length > 0 && (
           <Stack gap={1} mb={1}>
             <Typography variant="body2">Added Documents</Typography>
-            <Stack direction="row" gap={1} flexWrap="wrap"> 
+            <Stack direction="row" gap={1} flexWrap="wrap">
               {selectedItems.map((item) => (
                 <Chip key={item.id} label={item.name} variant="outlined" color="primary" onDelete={() => handleRemove(item)} />
               ))}
@@ -247,16 +247,7 @@ export default function CreateAiPolicy(scope: OrgScope): JSX.Element {
             renderCard={(document) => {
               const id = document.id;
               if (!id) return null;
-              return (
-                <GovernanceCard
-                  id={id}
-                  name={document.name}
-                  description={document.description}
-                  isDefault={document.isDefault}
-                  selected={selectedIds.has(id)}
-                  onToggleSelect={() => handleToggleSelect(document)}
-                />
-              );
+              return <GovernanceCard id={id} name={document.name} description={document.description} isDefault={document.isDefault} selected={selectedIds.has(id)} onToggleSelect={() => handleToggleSelect(document)} />;
             }}
             emptyMessage="No documents found."
             itemsPerPageLabel="Documents per page"

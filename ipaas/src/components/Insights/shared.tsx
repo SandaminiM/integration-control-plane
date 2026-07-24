@@ -67,9 +67,7 @@ export function InsightsCard({ title, subtitle, action, children, fill = true, p
  * legend wrapper (inline style — only `!important` beats it). `padded` adds the
  * 24px top gap the project/automation trend cards use above their charts. */
 export function ChartBox({ children, padded = false }: { children: ReactNode; padded?: boolean }): JSX.Element {
-  return (
-    <Box sx={{ ...(padded ? { paddingTop: '24px' } : null), '& .recharts-cartesian-grid line': { opacity: 0.3 }, '& .recharts-legend-wrapper': { paddingTop: '0 !important', top: '0 !important' } }}>{children}</Box>
-  );
+  return <Box sx={{ ...(padded ? { paddingTop: '24px' } : null), '& .recharts-cartesian-grid line': { opacity: 0.3 }, '& .recharts-legend-wrapper': { paddingTop: '0 !important', top: '0 !important' } }}>{children}</Box>;
 }
 
 /** Small square colour swatch — the shared legend/dot marker across insights widgets. */
@@ -232,13 +230,7 @@ export function KpiCards({ kpis, loading = false, lgColumns = 4 }: { kpis: { key
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: `repeat(${lgColumns}, 1fr)` }, gap: 2 }}>
       {kpis.map((k) => (
-        <StatCard
-          key={k.key}
-          label={k.label}
-          icon={KPI_ICONS[k.key]?.icon}
-          iconColor={KPI_ICONS[k.key]?.color}
-          value={loading ? ((<Skeleton variant="text" width={72} sx={{ fontSize: (t) => t.typography.h5.fontSize }} />) as unknown as string) : k.value}
-        />
+        <StatCard key={k.key} label={k.label} icon={KPI_ICONS[k.key]?.icon} iconColor={KPI_ICONS[k.key]?.color} value={loading ? ((<Skeleton variant="text" width={72} sx={{ fontSize: (t) => t.typography.h5.fontSize }} />) as unknown as string) : k.value} />
       ))}
     </Box>
   );
@@ -260,4 +252,3 @@ export function TableSkeletonRows({ rows = 5, cols }: { rows?: number; cols: num
     </>
   );
 }
-

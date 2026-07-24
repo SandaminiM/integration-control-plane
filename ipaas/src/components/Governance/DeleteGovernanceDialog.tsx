@@ -40,9 +40,7 @@ export default function DeleteGovernanceDialog({ resourceName, resourceType, onC
       onClose={onClose}
       isPending={isPending}
       confirmLabel="Delete">
-      <Typography>
-        This {resourceType} will be permanently deleted and cannot be recovered.
-      </Typography>
+      <Typography>This {resourceType} will be permanently deleted and cannot be recovered.</Typography>
     </ConfirmDeleteDialog>
   );
 }

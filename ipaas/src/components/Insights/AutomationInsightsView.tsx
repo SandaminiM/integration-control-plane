@@ -69,14 +69,7 @@ export default function AutomationInsightsView({ component, env, insightsEnv, ve
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '0.5fr 0.5fr' }, gap: 2 }}>
         <InsightsCard title="Execution Duration Over Time" subtitle="Run duration per execution (seconds)">
-          <TrendAreaChart
-            loading={loading}
-            data={data.scatter.map((p) => ({ label: p.label, duration: p.durationSec }))}
-            xName="Date"
-            yName="Duration (s)"
-            height={320}
-            areas={[{ key: 'duration', name: 'Duration (s)', color: INSIGHTS_CHART_COLORS.blue }]}
-          />
+          <TrendAreaChart loading={loading} data={data.scatter.map((p) => ({ label: p.label, duration: p.durationSec }))} xName="Date" yName="Duration (s)" height={320} areas={[{ key: 'duration', name: 'Duration (s)', color: INSIGHTS_CHART_COLORS.blue }]} />
         </InsightsCard>
         <InsightsCard title="Failures by Time" subtitle="Day of week × hour of day">
           <Box sx={{ flex: 1, display: 'flex', paddingTop: HEATMAP_TOP_OFFSET }}>

@@ -49,9 +49,7 @@ const stat = (over: Partial<ProjectComponentStat> & Pick<ProjectComponentStat, '
 
 describe('toProjectInsightsData', () => {
   it('counts active integrations and builds the type mix, excluding deleted', () => {
-    const data = toProjectInsightsData(
-      baseRaw({ components: [stat({ id: 'a', type: 'api' }), stat({ id: 'b', type: 'auto', latency: null }), stat({ id: 'd', type: 'api', deleted: true })] }),
-    );
+    const data = toProjectInsightsData(baseRaw({ components: [stat({ id: 'a', type: 'api' }), stat({ id: 'b', type: 'auto', latency: null }), stat({ id: 'd', type: 'api', deleted: true })] }));
     const active = data.kpis.find((k) => k.key === 'activeIntegrations')!;
     expect(active.value).toBe('2');
     expect(active.typeMix).toEqual([

@@ -16,22 +16,7 @@
  * under the License.
  */
 
-import {
-  Box,
-  Card,
-  CardContent,
-  Collapse,
-  IconButton,
-  InputAdornment,
-  ListingTable,
-  Skeleton,
-  Stack,
-  TablePagination,
-  TableSortLabel,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@wso2/oxygen-ui';
+import { Box, Card, CardContent, Collapse, IconButton, InputAdornment, ListingTable, Skeleton, Stack, TablePagination, TableSortLabel, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ExternalLink, Search } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useSortState } from '../../hooks/useSortState';
@@ -120,7 +105,13 @@ export default function ExpandableComplianceTable(props: ExpandableComplianceTab
               }}
               placeholder="Search"
               inputProps={{ 'aria-label': `Search ${title}` }}
-              InputProps={{ startAdornment: <InputAdornment position="start"><Search size={16} /></InputAdornment> }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={16} />
+                  </InputAdornment>
+                ),
+              }}
               sx={{ maxWidth: 260 }}
             />
           </Stack>
@@ -165,7 +156,9 @@ export default function ExpandableComplianceTable(props: ExpandableComplianceTab
                         <ListingTable.Row key={row.id}>
                           <ListingTable.Cell>
                             <Stack direction="row" spacing={0.5} alignItems="center">
-                              <Typography variant="body2" noWrap>{row.name}</Typography>
+                              <Typography variant="body2" noWrap>
+                                {row.name}
+                              </Typography>
                               {onRowClick && (
                                 <Tooltip title="Open">
                                   <IconButton size="small" aria-label={`Open ${row.name}`} onClick={() => onRowClick(row)}>
@@ -185,11 +178,7 @@ export default function ExpandableComplianceTable(props: ExpandableComplianceTab
                             </Stack>
                           </ListingTable.Cell>
                           <ListingTable.Cell align="center">
-                            <IconButton
-                              size="small"
-                              aria-label={isOpen ? `Collapse ${row.name}` : `Expand ${row.name}`}
-                              disabled={items.length === 0}
-                              onClick={() => setExpanded((prev) => ({ ...prev, [row.id]: !prev[row.id] }))}>
+                            <IconButton size="small" aria-label={isOpen ? `Collapse ${row.name}` : `Expand ${row.name}`} disabled={items.length === 0} onClick={() => setExpanded((prev) => ({ ...prev, [row.id]: !prev[row.id] }))}>
                               <ChevronDown size={16} style={{ transform: isOpen ? 'rotate(180deg)' : undefined, transition: 'transform 0.2s' }} />
                             </IconButton>
                           </ListingTable.Cell>
@@ -211,7 +200,9 @@ export default function ExpandableComplianceTable(props: ExpandableComplianceTab
                                       <ListingTable.Row key={item.id ?? `item-${i}`}>
                                         <ListingTable.Cell>
                                           <Stack direction="row" spacing={0.5} alignItems="center">
-                                            <Typography variant="body2" noWrap>{item.name ?? STANDALONE_RULESET_LABEL}</Typography>
+                                            <Typography variant="body2" noWrap>
+                                              {item.name ?? STANDALONE_RULESET_LABEL}
+                                            </Typography>
                                             {onItemClick && item.id && (
                                               <Tooltip title="Open">
                                                 <IconButton size="small" aria-label={`Open ${item.name ?? 'item'}`} onClick={() => onItemClick(row, item)}>
@@ -227,11 +218,7 @@ export default function ExpandableComplianceTable(props: ExpandableComplianceTab
                                         {nestedInfoLabel && (
                                           <ListingTable.Cell>
                                             {(item.subItems ?? []).map((sub, j) => (
-                                              <ComplianceNestedLine
-                                                key={sub.id ?? `sub-${j}`}
-                                                line={sub}
-                                                onClick={onSubItemClick && sub.id ? () => onSubItemClick(row, item, sub) : undefined}
-                                              />
+                                              <ComplianceNestedLine key={sub.id ?? `sub-${j}`} line={sub} onClick={onSubItemClick && sub.id ? () => onSubItemClick(row, item, sub) : undefined} />
                                             ))}
                                           </ListingTable.Cell>
                                         )}

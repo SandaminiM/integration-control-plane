@@ -61,12 +61,7 @@ export interface AiIntegrationErrorResponse {
   message: string;
 }
 
-export type AiIntegrationBuilderResponse =
-  | PrebuiltMatchResponse
-  | CustomIntegrationResponse
-  | UnsupportedResponse
-  | InvalidPromptResponse
-  | AiIntegrationErrorResponse;
+export type AiIntegrationBuilderResponse = PrebuiltMatchResponse | CustomIntegrationResponse | UnsupportedResponse | InvalidPromptResponse | AiIntegrationErrorResponse;
 
 export interface ConversationTurn {
   id: string;

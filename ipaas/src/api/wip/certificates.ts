@@ -38,9 +38,7 @@ export async function createCertificate(input: CreateCertificateInput): Promise<
 }
 
 export async function deleteCertificate(certificateId: string): Promise<boolean> {
-  const data = await gql<{ deleteCertificate: boolean }>(
-    `mutation DeleteCertificate { deleteCertificate(certificateId: ${JSON.stringify(certificateId)}) }`,
-  );
+  const data = await gql<{ deleteCertificate: boolean }>(`mutation DeleteCertificate { deleteCertificate(certificateId: ${JSON.stringify(certificateId)}) }`);
   return data.deleteCertificate;
 }
 

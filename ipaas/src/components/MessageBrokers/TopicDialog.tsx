@@ -118,16 +118,13 @@ export default function TopicDialog({ brokerId, topic, onClose }: TopicDialogPro
         {
           onSuccess: () => onClose(),
           onError: (err) => setError(err instanceof Error ? err.message : 'Failed to update topic'),
-        }
+        },
       );
     } else {
-      create.mutate(
-        { topic_name: topicName, ...payload } as KafkaTopicCreatePayload,
-        {
-          onSuccess: () => onClose(),
-          onError: (err) => setError(err instanceof Error ? err.message : 'Failed to create topic'),
-        }
-      );
+      create.mutate({ topic_name: topicName, ...payload } as KafkaTopicCreatePayload, {
+        onSuccess: () => onClose(),
+        onError: (err) => setError(err instanceof Error ? err.message : 'Failed to create topic'),
+      });
     }
   };
 
@@ -183,15 +180,7 @@ export default function TopicDialog({ brokerId, topic, onClose }: TopicDialogPro
             helperText={getFieldError('minInSyncReplicas', minInSyncReplicas) || getHelperText('minInSyncReplicas')}
           />
 
-          <TextField
-            label="Retention Hours"
-            fullWidth
-            size="small"
-            type="number"
-            value={retentionHours}
-            onChange={(e) => setRetentionHours(e.target.value)}
-            helperText="Number of hours to retain messages"
-          />
+          <TextField label="Retention Hours" fullWidth size="small" type="number" value={retentionHours} onChange={(e) => setRetentionHours(e.target.value)} helperText="Number of hours to retain messages" />
 
           <TextField
             label="Retention Bytes"

@@ -17,9 +17,11 @@
  */
 
 import { Box, Link, Paper, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { GitHub, Bitbucket, GitLab } from '@wso2/oxygen-ui-icons-react';
+import { GitHub } from '@wso2/oxygen-ui-icons-react';
 import { type JSX, type ReactNode } from 'react';
-import GitIcon from '../../assets/icons/GitIcon';
+import GitLogoIcon from '../../assets/icons/GitLogoIcon';
+import GitLabIcon from '../../assets/icons/GitLabIcon';
+import BitbucketIcon from '../../assets/icons/BitbucketIcon';
 import { GitProvider, type GitCredential } from '../../types/credentials';
 import { credentialsForProvider } from '../../utils/gitCredentials';
 import CredentialSelectCard from '../Import/CredentialSelectCard';
@@ -109,14 +111,14 @@ export default function GitProviderCards({ onGitHubSelect, onPublicSelect, crede
       )}
 
       {/* Bitbucket */}
-      {credentialsEnabled ? <Box sx={{ flex: 1 }}>{credentialCard(GitProvider.BITBUCKET_CLOUD)}</Box> : comingSoonCard(<Bitbucket size={30} />, 'Authorize With Bitbucket', 'Connect a Bitbucket repository', 'Bitbucket integration is coming soon')}
+      {credentialsEnabled ? <Box sx={{ flex: 1 }}>{credentialCard(GitProvider.BITBUCKET_CLOUD)}</Box> : comingSoonCard(<BitbucketIcon size={30} />, 'Authorize With Bitbucket', 'Connect a Bitbucket repository', 'Bitbucket integration is coming soon')}
 
       {/* GitLab */}
-      {credentialsEnabled ? <Box sx={{ flex: 1 }}>{credentialCard(GitProvider.GITLAB_SELF_MANAGED)}</Box> : comingSoonCard(<GitLab size={30} />, 'Authorize With GitLab', 'Connect a GitLab repository', 'GitLab integration is coming soon')}
+      {credentialsEnabled ? <Box sx={{ flex: 1 }}>{credentialCard(GitProvider.GITLAB_SELF_MANAGED)}</Box> : comingSoonCard(<GitLabIcon size={30} />, 'Authorize With GitLab', 'Connect a GitLab repository', 'GitLab integration is coming soon')}
 
       {/* Public Git Repository */}
       <Box sx={{ flex: 1 }}>
-        <InfoCard icon={<GitIcon size={30} />} title="Use Public GitHub Repository" onClick={onPublicSelect} />
+        <InfoCard icon={<GitLogoIcon size={30} />} title="Use Public GitHub Repository" onClick={onPublicSelect} />
       </Box>
     </Stack>
   );

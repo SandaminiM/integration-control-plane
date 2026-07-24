@@ -55,18 +55,7 @@ const selectedCardStyles = {
   borderWidth: 2,
 } as const;
 
-export default function GovernanceCard({
-  id,
-  name,
-  description,
-  isDefault,
-  provider,
-  documentationLink,
-  onEdit,
-  onDelete,
-  selected,
-  onToggleSelect,
-}: GovernanceCardProps): JSX.Element {
+export default function GovernanceCard({ id, name, description, isDefault, provider, documentationLink, onEdit, onDelete, selected, onToggleSelect }: GovernanceCardProps): JSX.Element {
   const isSelectable = !!onToggleSelect;
   const cardStyles = selected ? selectedCardStyles : cardContainerStyles;
 

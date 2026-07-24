@@ -224,21 +224,8 @@ export default function OrgGovernance(scope: OrgScope): JSX.Element {
           </Stack>
           {(catalogTab === 0 ? rulesets : documents).length > 0 && (
             <Stack direction="row" alignItems="center" gap={1.5}>
-              <SearchField
-                value={catalogSearch}
-                onChange={setCatalogSearch}
-                placeholder="Search..."
-                sx={{ minWidth: 220 }}
-              />
-              <Button
-                variant="contained"
-                startIcon={<Plus size={20} />}
-                onClick={() =>
-                  catalogTab === 0
-                    ? navigate(orgGovernanceNewRulesetUrl(scope.org))
-                    : navigate(orgGovernanceNewDocumentUrl(scope.org))
-                }
-                sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+              <SearchField value={catalogSearch} onChange={setCatalogSearch} placeholder="Search..." sx={{ minWidth: 220 }} />
+              <Button variant="contained" startIcon={<Plus size={20} />} onClick={() => (catalogTab === 0 ? navigate(orgGovernanceNewRulesetUrl(scope.org)) : navigate(orgGovernanceNewDocumentUrl(scope.org)))} sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
                 Add {catalogTab === 0 ? 'Ruleset' : 'Document'}
               </Button>
             </Stack>
@@ -265,16 +252,16 @@ export default function OrgGovernance(scope: OrgScope): JSX.Element {
                 const id = ruleset.id;
                 if (!id) return null;
                 return (
-                <GovernanceCard
-                  id={id}
-                  name={ruleset.name}
-                  description={ruleset.description}
-                  isDefault={ruleset.isDefault}
-                  provider={ruleset.provider}
-                  documentationLink={ruleset.documentationLink}
-                  onEdit={ruleset.isDefault ? undefined : () => handleEditRuleset(id)}
-                  onDelete={ruleset.isDefault ? undefined : () => handleDeleteRuleset(ruleset)}
-                />
+                  <GovernanceCard
+                    id={id}
+                    name={ruleset.name}
+                    description={ruleset.description}
+                    isDefault={ruleset.isDefault}
+                    provider={ruleset.provider}
+                    documentationLink={ruleset.documentationLink}
+                    onEdit={ruleset.isDefault ? undefined : () => handleEditRuleset(id)}
+                    onDelete={ruleset.isDefault ? undefined : () => handleDeleteRuleset(ruleset)}
+                  />
                 );
               }}
               emptyMessage="No rulesets found."
@@ -300,14 +287,14 @@ export default function OrgGovernance(scope: OrgScope): JSX.Element {
               const id = document.id;
               if (!id) return null;
               return (
-              <GovernanceCard
-                id={id}
-                name={document.name}
-                description={document.description}
-                isDefault={document.isDefault}
-                onEdit={document.isDefault ? undefined : () => handleEditDocument(id)}
-                onDelete={document.isDefault ? undefined : () => handleDeleteDocument(document)}
-              />
+                <GovernanceCard
+                  id={id}
+                  name={document.name}
+                  description={document.description}
+                  isDefault={document.isDefault}
+                  onEdit={document.isDefault ? undefined : () => handleEditDocument(id)}
+                  onDelete={document.isDefault ? undefined : () => handleDeleteDocument(document)}
+                />
               );
             }}
             emptyMessage="No documents found."
@@ -319,35 +306,11 @@ export default function OrgGovernance(scope: OrgScope): JSX.Element {
       {/* Dialogs */}
       <AddPolicyDialog open={addPolicyOpen} onClose={() => setAddPolicyOpen(false)} onRulesetPolicy={handleAddPolicyRuleset} onAiPolicy={handleAddPolicyAi} />
 
-      {toDeletePolicy && (
-        <DeleteGovernanceDialog
-          resourceName={toDeletePolicy.name}
-          resourceType="policy"
-          onConfirm={handleConfirmDeletePolicy}
-          onClose={() => setToDeletePolicy(null)}
-          isPending={deletePolicyMutation.isPending}
-        />
-      )}
+      {toDeletePolicy && <DeleteGovernanceDialog resourceName={toDeletePolicy.name} resourceType="policy" onConfirm={handleConfirmDeletePolicy} onClose={() => setToDeletePolicy(null)} isPending={deletePolicyMutation.isPending} />}
 
-      {toDeleteRuleset && (
-        <DeleteGovernanceDialog
-          resourceName={toDeleteRuleset.name}
-          resourceType="ruleset"
-          onConfirm={handleConfirmDeleteRuleset}
-          onClose={() => setToDeleteRuleset(null)}
-          isPending={deleteRulesetMutation.isPending}
-        />
-      )}
+      {toDeleteRuleset && <DeleteGovernanceDialog resourceName={toDeleteRuleset.name} resourceType="ruleset" onConfirm={handleConfirmDeleteRuleset} onClose={() => setToDeleteRuleset(null)} isPending={deleteRulesetMutation.isPending} />}
 
-      {toDeleteDocument && (
-        <DeleteGovernanceDialog
-          resourceName={toDeleteDocument.name}
-          resourceType="document"
-          onConfirm={handleConfirmDeleteDocument}
-          onClose={() => setToDeleteDocument(null)}
-          isPending={deleteDocumentMutation.isPending}
-        />
-      )}
+      {toDeleteDocument && <DeleteGovernanceDialog resourceName={toDeleteDocument.name} resourceType="document" onConfirm={handleConfirmDeleteDocument} onClose={() => setToDeleteDocument(null)} isPending={deleteDocumentMutation.isPending} />}
     </PageContent>
   );
 }

@@ -18,9 +18,11 @@
 
 /* eslint-disable react-refresh/only-export-components */
 import { Box, Stack, Typography } from '@wso2/oxygen-ui';
-import { Bitbucket, GitBranch, Github, Gitlab } from '@wso2/oxygen-ui-icons-react';
+import { GitBranch, Github } from '@wso2/oxygen-ui-icons-react';
 import type { JSX, ReactNode } from 'react';
-import AzureIcon from '../assets/icons/AzureIcon';
+import AzureDevOpsIcon from '../assets/icons/AzureDevOpsIcon';
+import GitLabIcon from '../assets/icons/GitLabIcon';
+import BitbucketIcon from '../assets/icons/BitbucketIcon';
 import type { BuildRunLogs } from '../types/build';
 import type { Repository } from '../types/repository';
 import { BUILD_STAGES } from '../constants/build';
@@ -130,12 +132,12 @@ export function getGitProviderIcon(provider?: string): (props: { size?: number }
       return Github;
     case 'gitlab':
     case 'gitlab_self_managed':
-      return Gitlab;
+      return GitLabIcon;
     case 'bitbucket':
     case 'bitbucket_server':
-      return Bitbucket;
+      return BitbucketIcon;
     case 'azure_devops':
-      return AzureIcon;
+      return AzureDevOpsIcon;
     default:
       return GitBranch;
   }

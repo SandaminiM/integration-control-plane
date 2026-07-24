@@ -123,9 +123,7 @@ User: "Help me automate something"
 User: "Is Slack down right now?"
 → {"type":"invalid","message":"Service status checks aren't something I handle — Slack's status page is the right spot for that. If you want to build something that uses Slack, though, I can help with scenarios like 'notify a Slack channel when a Jira ticket is created' or 'post a daily standup summary from Linear into Slack'."}`;
 
-export function buildValidationUserMessage(
-  contextualizedQuery: string
-): string {
+export function buildValidationUserMessage(contextualizedQuery: string): string {
   return `${contextualizedQuery}
 
 ${getSystemContextBlock()}
@@ -243,10 +241,7 @@ Catalog has only "Send a Slack notification when a GitHub PR is merged" — same
 → {"match": false, "selected_index": null}
 (Services align but the action/trigger does not — issue-opened ≠ PR-merged.)`;
 
-export function buildPrebuiltMatchUserMessage(
-  contextualizedQuery: string,
-  candidates: unknown[]
-): string {
+export function buildPrebuiltMatchUserMessage(contextualizedQuery: string, candidates: unknown[]): string {
   return `User query: ${contextualizedQuery}
 
 Prebuilt integrations (JSON):
@@ -443,10 +438,7 @@ Catalog: ["ballerinax/shopify.admin", "ballerinax/googleapis.sheets", "ballerina
     "is_doable": true
   }`;
 
-export function buildConnectorCheckUserMessage(
-  contextualizedQuery: string,
-  connectors: unknown[]
-): string {
+export function buildConnectorCheckUserMessage(contextualizedQuery: string, connectors: unknown[]): string {
   return `Integration scenario: ${contextualizedQuery}
 
 Available connectors (JSON):
@@ -637,22 +629,16 @@ Query: "How do I write a for-loop in Ballerina?"
   "message": "That's a general Ballerina language question rather than an integration scenario, so there's no workflow plan to produce here."
 }`;
 
-export function buildPlanGenerationUserMessage(
-  contextualizedQuery: string,
-  requiredConnectors: string[],
-  httpFallbackServices: string[] = []
-): string {
+export function buildPlanGenerationUserMessage(contextualizedQuery: string, requiredConnectors: string[], httpFallbackServices: string[] = []): string {
   const connectorContext =
     requiredConnectors.length > 0
-      ? `Use these available Ballerina connectors for this integration: ${requiredConnectors.join(
-          ', '
-        )}. Prefer these dedicated connectors and reference them in the relevant step descriptions.`
+      ? `Use these available Ballerina connectors for this integration: ${requiredConnectors.join(', ')}. Prefer these dedicated connectors and reference them in the relevant step descriptions.`
       : `Build this integration using available Ballerina connectors from the ballerinax organization.`;
 
   const httpContext =
     httpFallbackServices.length > 0
       ? `\n\nThese services have NO dedicated connector and must be integrated by calling their REST APIs over HTTP using the ballerina/http module: ${httpFallbackServices.join(
-          ', '
+          ', ',
         )}. For each, include steps to authenticate to the service and call the appropriate REST API endpoint(s); the specific endpoints are resolved during implementation.`
       : '';
 

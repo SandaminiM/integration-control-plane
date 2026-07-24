@@ -52,7 +52,7 @@ import {
   Tooltip,
   Typography,
 } from '@wso2/oxygen-ui';
-import { ArrowRight, Bitbucket, ChevronDown, ChevronUp, ExternalLink, FileText, Filter, GitHub, GitBranch, GitLab, Info, Link2, Pencil, Plus, PlugZap, RefreshCw, Search, Trash2 } from '@wso2/oxygen-ui-icons-react';
+import { ArrowRight, ChevronDown, ChevronUp, ExternalLink, FileText, Filter, GitHub, GitBranch, Info, Link2, Pencil, Plus, PlugZap, RefreshCw, Search, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import EmptyListing from '../components/EmptyListing';
 import Markdown from '../components/Markdown';
 import IntegrationTypesCard from '../components/IntegrationTypesCard';
@@ -64,8 +64,10 @@ import PrebuiltCard from '../components/PrebuiltCard';
 import SampleRowCard from '../components/SampleRowCard';
 import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
 import LinkRepositoryDialog from '../components/ProjectCreate/LinkRepositoryDialog';
-import GitIcon from '../assets/icons/GitIcon';
-import AzureIcon from '../assets/icons/AzureIcon';
+import GitLogoIcon from '../assets/icons/GitLogoIcon';
+import GitLabIcon from '../assets/icons/GitLabIcon';
+import BitbucketIcon from '../assets/icons/BitbucketIcon';
+import AzureDevOpsIcon from '../assets/icons/AzureDevOpsIcon';
 import IntegratorIcon from '../assets/icons/IntegratorIcon';
 import { useNavigate } from 'react-router';
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
@@ -86,7 +88,7 @@ import { componentOverviewUrl, importComponentUrl, browseSamplesUrl, prebuiltInt
 import { Permissions } from '../constants/permissions';
 import { isSupportedIntegration, getDisplayLabel, displayTypeFromSample, getNonIntegrationPlatform } from '../constants/integrations';
 import { GITHUB_AUTH } from '../constants/github';
-import { CARD_HOVER_SX, PROVIDER_ICON_SX } from '../constants/styles';
+import { CARD_HOVER_SX, PROVIDER_ICON_SX, GITHUB_ICON_SX } from '../constants/styles';
 import Authorized from '../components/Authorized';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { useFeaturePreview } from '../contexts/FeaturePreviewContext';
@@ -310,27 +312,27 @@ function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId
                               navigate(importUrl, { state: { mode: 'public' } });
                             }}
                             sx={PROVIDER_ICON_SX}>
-                            <GitIcon size={25} />
+                            <GitLogoIcon size={25} />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Import from GitHub" placement="top">
-                          <IconButton aria-label="Import from GitHub" onClick={handleImportClick} sx={PROVIDER_ICON_SX}>
+                          <IconButton aria-label="Import from GitHub" onClick={handleImportClick} sx={GITHUB_ICON_SX}>
                             <GitHub size={24} />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Import from GitLab" placement="top">
                           <IconButton aria-label="Import from GitLab" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
-                            <GitLab size={22} />
+                            <GitLabIcon size={22} />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Import from Bitbucket" placement="top">
                           <IconButton aria-label="Import from Bitbucket" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
-                            <Bitbucket size={22} />
+                            <BitbucketIcon size={22} />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Import from Azure" placement="top">
                           <IconButton aria-label="Import from Azure" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
-                            <AzureIcon size={22} />
+                            <AzureDevOpsIcon size={22} />
                           </IconButton>
                         </Tooltip>
                       </>

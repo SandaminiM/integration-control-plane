@@ -21,11 +21,7 @@ import type { AnthropicRequest, AnthropicResponse } from './types';
 
 const LLM_PATH = '/llm-api/v1.0/claude/messages';
 
-async function fetchWithAuth(
-  body: AnthropicRequest,
-  getToken: () => Promise<string>,
-  signal?: AbortSignal
-): Promise<AnthropicResponse> {
+async function fetchWithAuth(body: AnthropicRequest, getToken: () => Promise<string>, signal?: AbortSignal): Promise<AnthropicResponse> {
   const baseUrl = window.API_CONFIG.integrationBuilderCopilotBaseUrl;
   const url = `${baseUrl}${LLM_PATH}`;
 
@@ -75,12 +71,7 @@ async function fetchWithAuth(
 }
 
 /** Calls the LLM proxy and returns the parsed JSON plus the raw content blocks. */
-export async function callLlm<T>(
-  systemPrompt: string,
-  messages: Array<{ role: 'user' | 'assistant'; content: string }>,
-  getToken: () => Promise<string>,
-  signal?: AbortSignal
-): Promise<{ parsed: T; rawContent: Array<{ type: 'text'; text: string }> }> {
+export async function callLlm<T>(systemPrompt: string, messages: Array<{ role: 'user' | 'assistant'; content: string }>, getToken: () => Promise<string>, signal?: AbortSignal): Promise<{ parsed: T; rawContent: Array<{ type: 'text'; text: string }> }> {
   const request: AnthropicRequest = {
     model: window.API_CONFIG.integrationBuilderLlmModel,
     max_tokens: window.API_CONFIG.integrationBuilderMaxTokens,

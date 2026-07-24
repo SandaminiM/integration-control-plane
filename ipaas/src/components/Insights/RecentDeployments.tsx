@@ -48,7 +48,8 @@ export function RecentDeployments({ items, envName, loading = false }: { items: 
                   <Chip size="small" variant="outlined" label={s.label} color={s.color === 'default' ? undefined : s.color} />
                 </Stack>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
-                  {d.version ? `${d.version} · ` : ''}{formatDeployTime(d.deployedAt)}
+                  {d.version ? `${d.version} · ` : ''}
+                  {formatDeployTime(d.deployedAt)}
                 </Typography>
               </Box>
             );

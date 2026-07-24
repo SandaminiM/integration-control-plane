@@ -18,10 +18,14 @@
 
 import { type JSX } from 'react';
 
-export default function GitIcon({ size = 24 }: { size?: number }): JSX.Element {
+export default function NatsIcon({ size = 24 }: { size?: number }): JSX.Element {
   return (
-    <svg height={size} width={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M23.546 10.93L13.067.452a1.55 1.55 0 0 0-2.188 0L8.708 2.627l2.76 2.76a1.838 1.838 0 0 1 2.327 2.341l2.658 2.66a1.838 1.838 0 1 1-1.104 1.045L12.794 8.86v6.617a1.838 1.838 0 1 1-1.51-.072V8.743a1.838 1.838 0 0 1-.997-2.414L7.55 3.574 .45 10.672a1.55 1.55 0 0 0 0 2.187l10.478 10.478a1.55 1.55 0 0 0 2.189 0l10.43-10.43a1.55 1.55 0 0 0 0-1.977z" />
+    <svg height={size} width={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path fill="#34a574" d="M12 0.25h11.349775v9.20115H12V0.25Z" />
+      <path fill="#27aae1" d="M0.6501475 0.25H11.999925v9.20115H0.6501475V0.25Z" />
+      <path fill="#8dc63f" d="M23.34965 9.4596V18.66075H15.88425v5.089275L10.33155 18.6776l1.668325 -0.067425V9.4596h11.349775Z" />
+      <path fill="#375c93" d="M11.999925 9.4596v10.70045l-1.66835 -1.48245H0.6501475v-9.218H11.999925Z" />
+      <path fill="#ffffff" d="M16.701725 12.14745V4.5304h2.71315v9.84995H15.303025L7.00345 6.62845v7.760325H4.28185V4.5304h4.255125l8.16475 7.61705Z" />
     </svg>
   );
 }
