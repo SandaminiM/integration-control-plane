@@ -23,16 +23,6 @@ import type { IntegrationTypeOption } from '../types/import';
 
 export const INTEGRATION_TYPES: IntegrationTypeOption[] = [
   {
-    id: 'service',
-    title: 'Integration as API',
-    description: 'Expose your integration as a REST, GraphQL or WebSocket API',
-    docLink: 'https://wso2.com/integration-platform/docs/get-started/build-integration-api',
-    icons: [
-      { icon: <Globe size={16} />, label: 'REST' },
-      { icon: <Layers size={16} />, label: 'GraphQL' },
-    ],
-  },
-  {
     id: 'automation',
     title: 'Automation',
     description: 'Run integrations on a schedule or as a recurring task',
@@ -40,6 +30,16 @@ export const INTEGRATION_TYPES: IntegrationTypeOption[] = [
     icons: [
       { icon: <Clock size={16} />, label: 'Scheduled' },
       { icon: <Repeat size={16} />, label: 'Recurring' },
+    ],
+  },
+  {
+    id: 'service',
+    title: 'Integration as API',
+    description: 'Expose your integration as a REST, GraphQL or WebSocket API',
+    docLink: 'https://wso2.com/integration-platform/docs/get-started/build-integration-api',
+    icons: [
+      { icon: <Globe size={16} />, label: 'REST' },
+      { icon: <Layers size={16} />, label: 'GraphQL' },
     ],
   },
   {

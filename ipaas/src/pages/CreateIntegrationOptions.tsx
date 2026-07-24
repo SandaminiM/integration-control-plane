@@ -236,7 +236,7 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
           {/* Import Integration card */}
           <Box sx={{ flex: aiBuilderEnabled ? '0 0 auto' : 3 }}>
             {aiBuilderEnabled && (
-              <Typography variant="body2" sx={{ mb: 1.5, color: 'text.secondary', fontWeight: 500, mt: aiBuilderEnabled ? 1 : 0 }}>
+              <Typography variant="body2" sx={{ mb: 2.5, color: 'text.secondary', fontWeight: 500, mt: aiBuilderEnabled ? 1 : 0 }}>
                 Create it yourself
               </Typography>
             )}
@@ -246,9 +246,9 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  p: 3,
+                  p: 2.5,
                   gap: 3,
-                  '&:last-child': { pb: 3 },
+                  '&:last-child': { pb: 2.5 },
                 }}>
                 {aiBuilderEnabled ? (
                   <>
