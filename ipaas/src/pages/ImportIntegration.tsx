@@ -219,10 +219,16 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
     }
   }, [selectedRepo]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-select default branch when branches finish loading (cache miss path)
+  // Auto-select the default branch when branches load, and reconcile a stale
+  // selection after a refresh: replace an invalid branch with the default, or
+  // clear it when no branches remain.
   useEffect(() => {
-    if (!branches || branches.length === 0) return;
-    if (!selectedBranch) {
+    if (!branches) return;
+    if (branches.length === 0) {
+      if (selectedBranch) setSelectedBranch('');
+      return;
+    }
+    if (!selectedBranch || !branches.some((b) => b.name === selectedBranch)) {
       const def = branches.find((b) => b.isDefault);
       setSelectedBranch(def?.name ?? branches[0].name);
     }
@@ -289,6 +295,22 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
 
   const orgOptions = userRepos?.map((o) => o.orgName) ?? [];
   const reposForOrg = userRepos?.find((o) => o.orgName === selectedOrg)?.repositories.map((r) => r.name) ?? [];
+
+  // Reconcile the selected org/repo after a refresh: if the chosen org or repo no
+  // longer exists in the refreshed data, clear it and reset dependent state.
+  useEffect(() => {
+    if (isPublicRepo || !userRepos) return;
+    if (selectedOrg && !orgOptions.includes(selectedOrg)) {
+      setSelectedOrg('');
+      setSelectedRepo('');
+      resetDownstreamState({ includeDisplayName: true, includeTechnology: true });
+      return;
+    }
+    if (selectedRepo && !reposForOrg.includes(selectedRepo)) {
+      setSelectedRepo('');
+      resetDownstreamState({ includeDisplayName: true, includeTechnology: true });
+    }
+  }, [userRepos]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Submit handler
   //
