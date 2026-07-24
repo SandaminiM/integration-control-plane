@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, CircularProgress, Grid, IconButton, InputAdornment, MenuItem, PageContent, Skeleton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, FormHelperText, Grid, IconButton, InputAdornment, MenuItem, PageContent, Skeleton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, GitBranch, RefreshCw, GitHub } from '@wso2/oxygen-ui-icons-react';
 import { useState, useEffect, useMemo, useRef, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router';
@@ -48,6 +48,25 @@ import { toHandler, formatRepoNameToDisplayName } from '../utils/string';
 import { parseGitHubUrl } from '../utils/github';
 import { detectTechnology } from '../utils/technologyDetection';
 import { useProjectId } from '../hooks/useProjects';
+
+// Refresh icon sits beside the select (inside the same row), so the native dropdown
+// arrow stays clickable — nothing overlaps it. The helper/error text renders below
+// the row (see FIELD_HELPER_SX), so the icon centres on the input box.
+const FIELD_REFRESH_WRAP_SX = {
+  display: 'inline-flex',
+} as const;
+
+const FIELD_REFRESH_ICON_SX = {
+  color: 'primary.main',
+} as const;
+
+// Helper/error text rendered below the field+refresh row (not inside the field),
+// so the refresh icon stays centred on the input box. Matches MUI's default
+// helperText offset (14px left, 3px top).
+const FIELD_HELPER_SX = {
+  mx: 1.75,
+  mt: 0.5,
+} as const;
 
 export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   const navigate = useNavigate();
@@ -133,7 +152,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   const hasRepos = (userRepos?.length ?? 0) > 0;
   const isCheckingAuth = !isPublicRepo && reposEnabled && isReposLoading;
 
-  const { data: branches, isLoading: isBranchesLoading } = useRepoBranches(activeOrg, activeRepo, isPublicRepo, secretRef);
+  const { data: branches, isLoading: isBranchesLoading, refetch: refetchBranches } = useRepoBranches(activeOrg, activeRepo, isPublicRepo, secretRef);
 
   const showBranchAndSubPath = !!(activeOrg && activeRepo);
   const pathReady = !!(activeOrg && activeRepo && selectedBranch);
@@ -200,10 +219,16 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
     }
   }, [selectedRepo]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-select default branch when branches finish loading (cache miss path)
+  // Auto-select the default branch when branches load, and reconcile a stale
+  // selection after a refresh: replace an invalid branch with the default, or
+  // clear it when no branches remain.
   useEffect(() => {
-    if (!branches || branches.length === 0) return;
-    if (!selectedBranch) {
+    if (!branches) return;
+    if (branches.length === 0) {
+      if (selectedBranch) setSelectedBranch('');
+      return;
+    }
+    if (!selectedBranch || !branches.some((b) => b.name === selectedBranch)) {
       const def = branches.find((b) => b.isDefault);
       setSelectedBranch(def?.name ?? branches[0].name);
     }
@@ -270,6 +295,22 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
 
   const orgOptions = userRepos?.map((o) => o.orgName) ?? [];
   const reposForOrg = userRepos?.find((o) => o.orgName === selectedOrg)?.repositories.map((r) => r.name) ?? [];
+
+  // Reconcile the selected org/repo after a refresh: if the chosen org or repo no
+  // longer exists in the refreshed data, clear it and reset dependent state.
+  useEffect(() => {
+    if (isPublicRepo || !userRepos) return;
+    if (selectedOrg && !orgOptions.includes(selectedOrg)) {
+      setSelectedOrg('');
+      setSelectedRepo('');
+      resetDownstreamState({ includeDisplayName: true, includeTechnology: true });
+      return;
+    }
+    if (selectedRepo && !reposForOrg.includes(selectedRepo)) {
+      setSelectedRepo('');
+      resetDownstreamState({ includeDisplayName: true, includeTechnology: true });
+    }
+  }, [userRepos]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Submit handler
   //
@@ -497,137 +538,152 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
       ) : (
         <>
           <Grid size={{ xs: 12, md: 3 }}>
-            <TextField
-              label="Organization"
-              select
-              required
-              value={selectedOrg}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v === GH_SELECT_ACTION.addOrg) {
-                  openGitHubManage(githubInstallUrl, refetchRepos);
-                  return;
-                }
-                // Switching organizations should reset every downstream field —
-                // the user explicitly asked for a fresh start on org change.
-                setSelectedOrg(v);
-                setSelectedRepo('');
-                setSelectedBranch('');
-                setSubPath('/');
-                setDisplayName('');
-                setDescription('');
-                setSelectedTechnology(null);
-                setSelectedIntegrationType(null);
-                displayNameAutoRef.current = false;
-              }}
-              fullWidth
-              disabled={!isAuthenticated || isReposLoading}
-              error={authStatus === 'failed' || credentialAuthFailed}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Box sx={{ color: 'common.black', display: 'flex' }}>{isCredentialMode ? gitProviderIcon(credProvider!, 16) : <GitHub size={16} />}</Box>
-                    </InputAdornment>
-                  ),
-                  endAdornment:
-                    isAuthenticated && !isCredentialMode ? (
-                      <InputAdornment position="end" sx={{ mr: 2 }}>
-                        <Tooltip title="Reconnect" placement="top">
-                          <IconButton
-                            size="small"
-                            aria-label="Reconnect GitHub"
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              startGitHubAuth(refetchRepos);
-                            }}
-                            sx={{ color: 'text.secondary' }}>
-                            <RefreshCw size={14} />
-                          </IconButton>
-                        </Tooltip>
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <TextField
+                label="Organization"
+                select
+                required
+                value={selectedOrg}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === GH_SELECT_ACTION.addOrg) {
+                    openGitHubManage(githubInstallUrl, refetchRepos);
+                    return;
+                  }
+                  // Switching organizations should reset every downstream field —
+                  // the user explicitly asked for a fresh start on org change.
+                  setSelectedOrg(v);
+                  setSelectedRepo('');
+                  setSelectedBranch('');
+                  setSubPath('/');
+                  setDisplayName('');
+                  setDescription('');
+                  setSelectedTechnology(null);
+                  setSelectedIntegrationType(null);
+                  displayNameAutoRef.current = false;
+                }}
+                fullWidth
+                disabled={!isAuthenticated || isReposLoading}
+                error={authStatus === 'failed' || credentialAuthFailed}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Box sx={{ color: 'common.black', display: 'flex' }}>{isCredentialMode ? gitProviderIcon(credProvider!, 16) : <GitHub size={16} />}</Box>
                       </InputAdornment>
-                    ) : undefined,
-                },
-              }}
-              helperText={isCredentialMode ? `${providerLabel} organization` : 'GitHub organization'}>
-              {!isCredentialMode && organizationActionItems(!!githubInstallUrl)}
-              {orgOptions.map((org) => (
-                <MenuItem key={org} value={org}>
-                  {org}
-                </MenuItem>
-              ))}
-            </TextField>
+                    ),
+                  },
+                }}>
+                {!isCredentialMode && organizationActionItems(!!githubInstallUrl)}
+                {orgOptions.map((org) => (
+                  <MenuItem key={org} value={org}>
+                    {org}
+                  </MenuItem>
+                ))}
+              </TextField>
+              {isAuthenticated && !isCredentialMode && (
+                <Tooltip title="Reconnect" placement="top">
+                  <Box component="span" sx={FIELD_REFRESH_WRAP_SX}>
+                    <IconButton size="small" aria-label="Reconnect GitHub" onClick={() => startGitHubAuth(refetchRepos)} sx={FIELD_REFRESH_ICON_SX}>
+                      <RefreshCw size={14} />
+                    </IconButton>
+                  </Box>
+                </Tooltip>
+              )}
+            </Stack>
+            <FormHelperText error={authStatus === 'failed' || credentialAuthFailed} sx={FIELD_HELPER_SX}>
+              {isCredentialMode ? `${providerLabel} organization` : 'GitHub organization'}
+            </FormHelperText>
           </Grid>
 
           <Grid size={{ xs: 12, md: 3 }}>
-            <TextField
-              label="Repository"
-              select
-              required
-              value={selectedRepo}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v === GH_SELECT_ACTION.connectRepos) {
-                  openGitHubManage(githubInstallUrl, refetchRepos);
-                  return;
-                }
-                if (v === GH_SELECT_ACTION.createRepo) {
-                  openGitHubManage(external.githubNew, refetchRepos);
-                  return;
-                }
-                setSelectedRepo(v);
-              }}
-              fullWidth
-              disabled={!selectedOrg || isReposLoading}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Box sx={{ color: 'common.black', display: 'flex' }}>{isCredentialMode ? gitProviderIcon(credProvider!, 16) : <GitHub size={16} />}</Box>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-              helperText="Select repository">
-              {!isCredentialMode && repositoryActionItems(!!githubInstallUrl)}
-              {reposForOrg.map((repo) => (
-                <MenuItem key={repo} value={repo}>
-                  {repo}
-                </MenuItem>
-              ))}
-            </TextField>
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <TextField
+                label="Repository"
+                select
+                required
+                value={selectedRepo}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === GH_SELECT_ACTION.connectRepos) {
+                    openGitHubManage(githubInstallUrl, refetchRepos);
+                    return;
+                  }
+                  if (v === GH_SELECT_ACTION.createRepo) {
+                    openGitHubManage(external.githubNew, refetchRepos);
+                    return;
+                  }
+                  setSelectedRepo(v);
+                }}
+                fullWidth
+                disabled={!selectedOrg || isReposLoading}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Box sx={{ color: 'common.black', display: 'flex' }}>{isCredentialMode ? gitProviderIcon(credProvider!, 16) : <GitHub size={16} />}</Box>
+                      </InputAdornment>
+                    ),
+                  },
+                }}>
+                {!isCredentialMode && repositoryActionItems(!!githubInstallUrl)}
+                {reposForOrg.map((repo) => (
+                  <MenuItem key={repo} value={repo}>
+                    {repo}
+                  </MenuItem>
+                ))}
+              </TextField>
+              {isAuthenticated && !isCredentialMode && (
+                <Tooltip title="Refresh repositories" placement="top">
+                  <Box component="span" sx={FIELD_REFRESH_WRAP_SX}>
+                    <IconButton size="small" aria-label="Refresh repositories" disabled={isReposLoading} onClick={() => refetchRepos()} sx={FIELD_REFRESH_ICON_SX}>
+                      {isReposLoading ? <CircularProgress size={14} /> : <RefreshCw size={14} />}
+                    </IconButton>
+                  </Box>
+                </Tooltip>
+              )}
+            </Stack>
+            <FormHelperText sx={FIELD_HELPER_SX}>Select repository</FormHelperText>
           </Grid>
         </>
       )}
 
       {showBranchAndSubPath && (
         <Grid size={{ xs: 12, md: 3 }}>
-          <TextField
-            label="Branch"
-            select
-            required
-            value={selectedBranch}
-            onChange={(e) => setSelectedBranch(e.target.value)}
-            fullWidth
-            disabled={!activeRepo || isBranchesLoading}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <GitBranch size={18} />
-                  </InputAdornment>
-                ),
-              },
-            }}
-            helperText="Select branch">
-            {(branches ?? []).map((b) => (
-              <MenuItem key={b.name} value={b.name}>
-                {b.name}
-                {b.isDefault ? ' (default)' : ''}
-              </MenuItem>
-            ))}
-          </TextField>
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            <TextField
+              label="Branch"
+              select
+              required
+              value={selectedBranch}
+              onChange={(e) => setSelectedBranch(e.target.value)}
+              fullWidth
+              disabled={!activeRepo || isBranchesLoading}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <GitBranch size={18} />
+                    </InputAdornment>
+                  ),
+                },
+              }}>
+              {(branches ?? []).map((b) => (
+                <MenuItem key={b.name} value={b.name}>
+                  {b.name}
+                  {b.isDefault ? ' (default)' : ''}
+                </MenuItem>
+              ))}
+            </TextField>
+            <Tooltip title="Refresh branches" placement="top">
+              <Box component="span" sx={FIELD_REFRESH_WRAP_SX}>
+                <IconButton size="small" aria-label="Refresh branches" disabled={!activeRepo || isBranchesLoading} onClick={() => refetchBranches()} sx={FIELD_REFRESH_ICON_SX}>
+                  {isBranchesLoading ? <CircularProgress size={14} /> : <RefreshCw size={14} />}
+                </IconButton>
+              </Box>
+            </Tooltip>
+          </Stack>
+          <FormHelperText sx={FIELD_HELPER_SX}>Select branch</FormHelperText>
         </Grid>
       )}
 
@@ -728,7 +784,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
       <Typography variant="h1" sx={{ mb: 0.5 }}>
         Import an Integration
       </Typography>
-      <Typography color="text.secondary" sx={{ mb: 4 }}>
+      <Typography color="text.secondary" sx={{ mb: 6 }}>
         {isPublicRepo ? 'Paste a public GitHub repository URL to get started.' : isCredentialMode ? `Connect your ${providerLabel} repository to start building.` : 'Connect your GitHub repository to start building.'}
       </Typography>
 
