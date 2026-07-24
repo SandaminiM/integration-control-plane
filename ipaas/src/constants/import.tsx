@@ -55,7 +55,7 @@ export const INTEGRATION_TYPES: IntegrationTypeOption[] = [
       { icon: <Globe size={16} />, label: 'HTTP' },
       { icon: <GraphqlIcon size={16} />, label: 'GraphQL' },
       { icon: <GrpcIcon size={16} />, label: 'gRPC' },
-      { icon: <Cable size={16} />, label: 'Websocket' },
+      { icon: <Cable size={16} />, label: 'WebSocket' },
     ],
   },
   {
