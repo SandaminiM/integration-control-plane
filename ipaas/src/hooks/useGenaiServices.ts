@@ -39,9 +39,8 @@ import type { ConnectionConfigRequest, CreateGenAiServiceArgs, GenAiService, Gen
 
 const ROOT_KEY = 'genaiServices';
 
-/** Org admin GenAI Services is wip-only for now (cloud/icp API stubs throw). */
+/** Org admin GenAI Services: fully wired on wip; read-only on cloud (list API no-ops to empty; icp stubs throw). */
 export function isGenaiServicesEnabled(): boolean {
-  // cloud: read-only listing; backed by a no-op cloud service that returns empty.
   return IS_WIP || IS_CLOUD;
 }
 

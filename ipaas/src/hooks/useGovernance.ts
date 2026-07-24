@@ -47,9 +47,8 @@ import type { Ruleset, DocumentInfo, GovernancePolicyInfo } from '../types/gover
 
 const ROOT_KEY = 'governance';
 
-/** Org admin Governance is wip-only for now (cloud/icp API stubs throw). */
+/** Org admin Governance: fully wired on wip; read-only on cloud (list APIs no-op to empty; icp stubs throw). */
 export function isGovernanceEnabled(): boolean {
-  // cloud: read-only listing; backed by a no-op cloud service that returns empty.
   return IS_WIP || IS_CLOUD;
 }
 

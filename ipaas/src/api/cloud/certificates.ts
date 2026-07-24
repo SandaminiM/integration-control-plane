@@ -16,7 +16,9 @@
  * under the License.
  */
 
-// Certificates is a wip-only surface for now. Signatures mirror Contracts.CertificatesApi.
+// Certificates: the groups list endpoint no-ops to empty on cloud so the read-only
+// listing page renders; the remaining create/delete/usage functions stay ni() stubs
+// until the BFF exposes them. Signatures mirror Contracts.CertificatesApi.
 import type { Certificate, CreateCertificateInput } from '../../types/certificates';
 import type { ConfigGroup, ConfigGroupUsage } from '../../types/configGroups';
 

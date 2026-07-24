@@ -16,8 +16,11 @@
  * under the License.
  */
 
-// Managed databases are a wip-only feature (IS_WIP-gated). Signatures mirror
-// Contracts.PlatformServicesApi so _check.ts catches any drift.
+// Managed databases: availability + server-list endpoints no-op to empty on cloud
+// so the read-only listing pages (Databases / Vector Databases / Message Brokers)
+// render; the remaining server/Kafka functions stay ni() stubs until the BFF
+// exposes them. Signatures mirror Contracts.PlatformServicesApi so _check.ts catches
+// any drift.
 import type {
   AdminUser,
   AllowedIpsPayload,

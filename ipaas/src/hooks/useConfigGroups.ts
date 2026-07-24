@@ -24,9 +24,8 @@ import type { CreateConfigGroupRequest, EditConfigGroupRequest } from '../types/
 
 const ROOT_KEY = 'configGroups';
 
-/** Org admin Config Groups is wip-only for now (cloud/icp API stubs throw). */
+/** Org admin Config Groups: fully wired on wip; read-only on cloud (list API no-ops to empty; icp stubs throw). */
 export function isConfigGroupsEnabled(): boolean {
-  // cloud: read-only listing; backed by a no-op cloud service that returns empty.
   return IS_WIP || IS_CLOUD;
 }
 

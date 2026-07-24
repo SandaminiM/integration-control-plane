@@ -16,7 +16,9 @@
  * under the License.
  */
 
-// Org admin Config Groups is a wip-only surface for now. Signatures mirror Contracts.ConfigGroupsApi.
+// Config Groups: the list endpoint no-ops to empty on cloud so the read-only listing
+// page renders; the remaining get/create/update/delete functions stay ni() stubs
+// until the BFF exposes them. Signatures mirror Contracts.ConfigGroupsApi.
 import type { ConfigGroup, ConfigGroupNameAvailability, ConfigGroupUsage, CreateConfigGroupRequest, EditConfigGroupRequest } from '../../types/configGroups';
 
 const ni = (name: string): never => {

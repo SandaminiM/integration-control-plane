@@ -16,7 +16,9 @@
  * under the License.
  */
 
-// Org admin GenAI Services is a wip-only surface for now. Signatures mirror Contracts.GenaiServicesApi.
+// GenAI / Third-Party Services: the list endpoints no-op to empty on cloud so the
+// read-only listing pages render; the remaining detail/create/update functions stay
+// ni() stubs until the BFF exposes them. Signatures mirror Contracts.GenaiServicesApi.
 import type {
   ConnectionConfigRequest,
   ConnectionConfigResponse,

@@ -23,9 +23,8 @@ import type { CreateCertificateInput } from '../types/certificates';
 
 const ROOT_KEY = 'certificates';
 
-/** Certificates management is wip-only for now (cloud/icp API stubs throw). */
+/** Certificates management: fully wired on wip; read-only on cloud (list API no-ops to empty; icp stubs throw). */
 export function isCertificatesEnabled(): boolean {
-  // cloud: read-only listing; backed by a no-op cloud service that returns empty.
   return IS_WIP || IS_CLOUD;
 }
 

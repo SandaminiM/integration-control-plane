@@ -98,8 +98,7 @@ export function useCancelWorkflowInstance() {
   });
 }
 
-/** Approvals is a wip-only surface for now; matches the settings-side gating. */
+/** Approvals: fully wired on wip; read-only on cloud (instance-list APIs no-op to empty; icp stubs throw). */
 export function isApprovalsEnabled(): boolean {
-  // cloud: read-only listing; backed by a no-op cloud service that returns empty.
   return IS_WIP || IS_CLOUD;
 }

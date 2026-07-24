@@ -16,7 +16,9 @@
  * under the License.
  */
 
-// Governance is a wip-only surface for now. Signatures mirror Contracts.GovernanceApi.
+// Governance: the list endpoints no-op to empty on cloud so the read-only listing
+// pages render; the remaining get/create/update/delete/compliance functions stay
+// ni() stubs until the BFF exposes them. Signatures mirror Contracts.GovernanceApi.
 import type {
   Ruleset,
   RulesetList,

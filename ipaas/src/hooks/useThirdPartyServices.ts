@@ -26,9 +26,8 @@ import type { CreateThirdPartyServiceArgs } from '../types/thirdPartyServices';
 
 const ROOT_KEY = 'thirdPartyServices';
 
-/** Org/project admin Third Party Services is wip-only for now (cloud/icp API stubs throw). */
+/** Org/project admin Third Party Services: fully wired on wip; read-only on cloud (list API no-ops to empty; icp stubs throw). */
 export function isThirdPartyServicesEnabled(): boolean {
-  // cloud: read-only listing; backed by a no-op cloud service that returns empty.
   return IS_WIP || IS_CLOUD;
 }
 

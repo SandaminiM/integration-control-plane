@@ -16,7 +16,8 @@
  * under the License.
  */
 
-// Audit Logs is currently a wip-only admin surface. Signature mirrors Contracts.AuditLogsApi.
+// Audit Logs: fetchAuditLogs no-ops to empty on cloud so the read-only Audit Logs
+// page renders; wip has the real endpoint. Signature mirrors Contracts.AuditLogsApi.
 import type { AuditLogEntry, AuditLogsRequest } from '../../types/auditLogs';
 
 // awaits: audit logs endpoint. Empty default keeps the read-only Audit Logs page

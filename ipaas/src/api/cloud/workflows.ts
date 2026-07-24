@@ -18,7 +18,9 @@
 
 import type { OrgWorkflowConfig, ReviewerDecisionRequest, WorkflowConfigRequest, WorkflowDefinition, WorkflowInstanceResponse, WorkflowReviewData } from '../../types/workflow';
 
-// Intentionally a stub (the standard cloud-stub contract — see src/api/AGENTS.md).
+// Workflow instance lists no-op to empty on cloud so the read-only Approvals page
+// renders; the remaining definition/config/review functions stay ni() stubs until
+// the BFF exposes them (the standard cloud-stub contract — see src/api/AGENTS.md).
 const ni = (name: string): never => {
   throw new Error(`[cloud] workflows.${name}: not implemented`);
 };
