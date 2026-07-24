@@ -19,7 +19,7 @@
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Card, CircularProgress, InputAdornment, Link, Skeleton, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, ArrowUpRight, CheckCircle2, ChevronDown, Lock } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { BALLERINA_CENTRAL_TOKEN_INSTRUCTIONS } from '../../../constants/packageRegistries';
+import { BALLERINA_CENTRAL_TOKEN_INSTRUCTIONS, BALLERINA_CENTRAL_TOKEN_PANEL_COPY } from '../../../constants/packageRegistries';
 import { useBallerinaCentralToken, useRemoveBallerinaCentralToken, useSaveBallerinaCentralToken } from '../../../hooks/useBallerinaCentralToken';
 import { formatDateTime } from '../../../utils/time';
 
@@ -29,11 +29,17 @@ export default function BallerinaCentralPanel({ onBack }: { onBack: () => void }
   const removeToken = useRemoveBallerinaCentralToken();
   const [tokenInput, setTokenInput] = useState('');
   const [instructionsOpen, setInstructionsOpen] = useState(true);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const configured = !!tokenStatus?.configured;
 
   const handleSave = () => {
     if (!tokenInput.trim()) return;
-    saveToken.mutate(tokenInput.trim(), { onSuccess: () => setTokenInput('') });
+    saveToken.mutate(tokenInput.trim(), {
+      onSuccess: () => {
+        setTokenInput('');
+        setSaveSuccess(true);
+      },
+    });
   };
 
   return (
@@ -47,6 +53,12 @@ export default function BallerinaCentralPanel({ onBack }: { onBack: () => void }
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         {configured ? 'This token is used by every build in the organization to pull private packages.' : 'Add a Ballerina Central access token so builds in this organization can pull private packages.'}
       </Typography>
+
+      {saveSuccess && (
+        <Alert severity="success" onClose={() => setSaveSuccess(false)} sx={{ mb: 3, maxWidth: 640 }}>
+          {BALLERINA_CENTRAL_TOKEN_PANEL_COPY.saveSuccessMessage}
+        </Alert>
+      )}
 
       {isLoading ? (
         <Skeleton variant="rounded" height={160} sx={{ maxWidth: 640 }} />
@@ -127,7 +139,7 @@ export default function BallerinaCentralPanel({ onBack }: { onBack: () => void }
           {removeToken.isError && <Alert severity="error">{removeToken.error.message}</Alert>}
 
           <Stack direction="row" gap={1.5}>
-            <Button variant="outlined" color="error" disabled={removeToken.isPending} startIcon={removeToken.isPending ? <CircularProgress size={14} /> : undefined} onClick={() => removeToken.mutate()}>
+            <Button variant="outlined" color="error" disabled={removeToken.isPending} startIcon={removeToken.isPending ? <CircularProgress size={14} /> : undefined} onClick={() => removeToken.mutate(undefined, { onSuccess: () => setSaveSuccess(false) })}>
               Remove token
             </Button>
           </Stack>

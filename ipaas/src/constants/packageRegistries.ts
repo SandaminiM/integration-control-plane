@@ -20,11 +20,24 @@ import type { PackageRegistryCatalogEntry } from '../types/packageRegistries';
 
 export const BALLERINA_CENTRAL_ID = 'ballerina-central';
 
+export const BALLERINA_CENTRAL_TOKEN_PATH = '/ballerina-central/token';
+
 export const BALLERINA_CENTRAL_TOKEN_INSTRUCTIONS = {
   heading: 'How to generate a token',
   steps: ['Log in to your account on Ballerina Central.', 'Navigate to the Tokens menu in the left navigation bar.', 'Press the + Generate New Token button.', 'Copy the token and paste it below.'],
   linkLabel: 'Open Ballerina Central',
   linkUrl: 'https://central.ballerina.io',
+};
+
+export const BALLERINA_CENTRAL_TOKEN_PANEL_COPY = {
+  heading: 'Ballerina Central access token',
+  optionalTag: 'Optional',
+  warningPrefix:
+    "Required only if this repository uses private packages and the build will fail without a token in that case. If it does not apply to you, please ignore this. You can also add a token later by going to Settings > Package Registries from your organization's home view.",
+  accessTokenLabel: 'Access token',
+  tokenPlaceholder: 'Paste your token here',
+  saveLabel: 'Save token',
+  saveSuccessMessage: 'Token saved successfully.',
 };
 
 export const PACKAGE_REGISTRIES: PackageRegistryCatalogEntry[] = [

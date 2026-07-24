@@ -25,15 +25,27 @@
  * wip/icp have no Ballerina Central backend and carry no contract).
  */
 
-import { bff } from './_client';
+import { bff, BffError } from './_client';
+import { BALLERINA_CENTRAL_TOKEN_PATH } from '../../constants/packageRegistries';
 import type { BallerinaCentralTokenStatus } from '../../types/packageRegistries';
 
-const TOKEN_PATH = '/ballerina-central/token';
+function tryParseErrorMessage(body: string): string | undefined {
+  try {
+    return (JSON.parse(body) as { message?: string }).message;
+  } catch {
+    return undefined;
+  }
+}
 
-export const fetchBallerinaCentralToken = (): Promise<BallerinaCentralTokenStatus> => bff.get<BallerinaCentralTokenStatus>(TOKEN_PATH);
+function unwrapError(err: unknown): never {
+  const message = err instanceof BffError ? tryParseErrorMessage(err.body) : undefined;
+  throw message ? new Error(message) : err;
+}
+
+export const fetchBallerinaCentralToken = (): Promise<BallerinaCentralTokenStatus> => bff.get<BallerinaCentralTokenStatus>(BALLERINA_CENTRAL_TOKEN_PATH).catch(unwrapError);
 
 /** Verifies against Ballerina Central before saving; rotates the existing secret on repeat saves. */
-export const saveBallerinaCentralToken = (token: string): Promise<BallerinaCentralTokenStatus> => bff.put<BallerinaCentralTokenStatus>(TOKEN_PATH, { token });
+export const saveBallerinaCentralToken = (token: string): Promise<BallerinaCentralTokenStatus> => bff.put<BallerinaCentralTokenStatus>(BALLERINA_CENTRAL_TOKEN_PATH, { token }).catch(unwrapError);
 
 /** Idempotent — safe to call even if nothing's configured. */
-export const removeBallerinaCentralToken = (): Promise<void> => bff.delete<void>(TOKEN_PATH);
+export const removeBallerinaCentralToken = (): Promise<void> => bff.delete<void>(BALLERINA_CENTRAL_TOKEN_PATH).catch(unwrapError);

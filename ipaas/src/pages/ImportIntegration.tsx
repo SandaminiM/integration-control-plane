@@ -841,7 +841,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
           <TechnologySelector selected={selectedTechnology} detectedMode={detectedMode} enabled={showBranchAndSubPath} onSelect={setSelectedTechnology} />
           {IS_CLOUD && selectedTechnology === 'BI' && (
             <Box sx={{ mt: 3, width: { xs: '100%', md: 'calc(75% + 32px)' } }}>
-              <BallerinaCentralTokenPanel org={scope.org} tokenInput={ballerinaTokenInput} onTokenInputChange={setBallerinaTokenInput} />
+              <BallerinaCentralTokenPanel tokenInput={ballerinaTokenInput} onTokenInputChange={setBallerinaTokenInput} />
             </Box>
           )}
         </Box>
