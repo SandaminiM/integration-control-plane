@@ -42,14 +42,15 @@ import {
   fetchEndpointRulesetAdherence,
   fetchEndpointRuleAdherence,
 } from '#api/governance';
-import { IS_WIP } from '../features';
+import { IS_CLOUD, IS_WIP } from '../features';
 import type { Ruleset, DocumentInfo, GovernancePolicyInfo } from '../types/governance';
 
 const ROOT_KEY = 'governance';
 
 /** Org admin Governance is wip-only for now (cloud/icp API stubs throw). */
 export function isGovernanceEnabled(): boolean {
-  return IS_WIP;
+  // cloud: read-only listing; backed by a no-op cloud service that returns empty.
+  return IS_WIP || IS_CLOUD;
 }
 
 // Rulesets

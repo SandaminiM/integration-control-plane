@@ -54,7 +54,7 @@ import {
   updateKafkaTopic,
   updateMaintenanceWindow,
 } from '#api/platformServices';
-import { IS_WIP } from '../features';
+import { IS_CLOUD, IS_WIP } from '../features';
 import { useOrgUuid } from './useOrgUuid';
 import { deriveProviders, deriveRegions } from '../utils/platformServices';
 import type {
@@ -77,9 +77,13 @@ import type {
 
 const ROOT_KEY = 'platformServices';
 
-/** True only when the managed-databases feature is available (wip build + config flag on). */
+/**
+ * On wip, managed databases require the feature to be provisioned (build flag +
+ * runtime config). cloud: render the read-only listing regardless of those wip
+ * runtime flags, backed by no-op cloud services that return empty.
+ */
 export function isPlatformServicesEnabled(): boolean {
-  return IS_WIP && !!window.API_CONFIG?.enablePlatformServicesFeature && !!window.API_CONFIG?.platformServicesApiBaseUrl;
+  return (IS_WIP && !!window.API_CONFIG?.enablePlatformServicesFeature && !!window.API_CONFIG?.platformServicesApiBaseUrl) || IS_CLOUD;
 }
 
 /** Org entitlement: whether another service can be provisioned, plus the count limit + reason. */

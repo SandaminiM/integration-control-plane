@@ -24,7 +24,9 @@ const ni = (name: string): never => {
   throw new Error(`[cloud] certificates.${name}: not implemented`);
 };
 
-export const listCertificateGroups = (): Promise<ConfigGroup[]> => ni('listCertificateGroups');
+// awaits: certificate groups list endpoint. Empty default keeps the read-only
+// listing page rendering (with an empty state) instead of throwing on cloud.
+export const listCertificateGroups = (): Promise<ConfigGroup[]> => Promise.resolve([]);
 export const createCertificate = (_input: CreateCertificateInput): Promise<Certificate> => ni('createCertificate');
 export const deleteCertificate = (_certificateId: string): Promise<boolean> => ni('deleteCertificate');
 export const getCertificateUsage = (_certificateId: string): Promise<ConfigGroupUsage> => ni('getCertificateUsage');

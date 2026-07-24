@@ -32,7 +32,7 @@ import {
   updateGenaiService,
   updateGenaiServiceIdl,
 } from '#api/genaiServices';
-import { IS_WIP } from '../features';
+import { IS_CLOUD, IS_WIP } from '../features';
 import { buildConnectionConfigPayload, buildCreateServiceRequest, buildUpdateServiceRequest } from '../utils/genaiServices';
 import { useOrgUuid } from './useOrgUuid';
 import type { ConnectionConfigRequest, CreateGenAiServiceArgs, GenAiService, GenAiServiceEdit, GenAiServiceStatus } from '../types/genaiServices';
@@ -41,7 +41,8 @@ const ROOT_KEY = 'genaiServices';
 
 /** Org admin GenAI Services is wip-only for now (cloud/icp API stubs throw). */
 export function isGenaiServicesEnabled(): boolean {
-  return IS_WIP;
+  // cloud: read-only listing; backed by a no-op cloud service that returns empty.
+  return IS_WIP || IS_CLOUD;
 }
 
 export function useGenaiServices(params: { query: string; offset: number; limit: number; projectId?: string }, enabled = true) {

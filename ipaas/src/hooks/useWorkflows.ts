@@ -19,7 +19,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cancelWorkflowInstance, createWorkflowConfig, fetchPastWorkflowInstances, fetchWorkflowConfigs, fetchWorkflowDefinitions, fetchWorkflowInstances, fetchWorkflowReviewData, reviewWorkflowInstance, updateWorkflowConfig } from '#api/workflows';
 import type { OrgWorkflowConfig, ReviewerDecisionRequest, WorkflowConfigRequest, WorkflowDefinition, WorkflowInstanceResponse, WorkflowReviewData } from '../types/workflow';
-import { IS_WIP } from '../features';
+import { IS_CLOUD, IS_WIP } from '../features';
 
 const ROOT_KEY = 'workflows';
 
@@ -100,5 +100,6 @@ export function useCancelWorkflowInstance() {
 
 /** Approvals is a wip-only surface for now; matches the settings-side gating. */
 export function isApprovalsEnabled(): boolean {
-  return IS_WIP;
+  // cloud: read-only listing; backed by a no-op cloud service that returns empty.
+  return IS_WIP || IS_CLOUD;
 }

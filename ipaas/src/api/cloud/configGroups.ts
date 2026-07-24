@@ -23,7 +23,9 @@ const ni = (name: string): never => {
   throw new Error(`[cloud] configGroups.${name}: not implemented`);
 };
 
-export const listConfigGroups = (): Promise<ConfigGroup[]> => ni('listConfigGroups');
+// awaits: config groups list endpoint. Empty default keeps the read-only listing
+// page rendering (with an empty state) instead of throwing on cloud.
+export const listConfigGroups = (): Promise<ConfigGroup[]> => Promise.resolve([]);
 export const getConfigGroup = (_groupUuid: string): Promise<ConfigGroup> => ni('getConfigGroup');
 export const checkConfigGroupName = (_candidateGroupName: string): Promise<ConfigGroupNameAvailability> => ni('checkConfigGroupName');
 export const createConfigGroup = (_request: CreateConfigGroupRequest): Promise<ConfigGroup> => ni('createConfigGroup');

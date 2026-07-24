@@ -27,8 +27,10 @@ export const fetchWorkflowDefinitions = (): Promise<WorkflowDefinition[]> => ni(
 export const fetchWorkflowConfigs = (): Promise<OrgWorkflowConfig[]> => ni('fetchWorkflowConfigs');
 export const createWorkflowConfig = (_input: WorkflowConfigRequest): Promise<OrgWorkflowConfig> => ni('createWorkflowConfig');
 export const updateWorkflowConfig = (_configId: string, _input: WorkflowConfigRequest): Promise<OrgWorkflowConfig> => ni('updateWorkflowConfig');
-export const fetchWorkflowInstances = (): Promise<WorkflowInstanceResponse[]> => ni('fetchWorkflowInstances');
-export const fetchPastWorkflowInstances = (): Promise<WorkflowInstanceResponse[]> => ni('fetchPastWorkflowInstances');
+// awaits: workflow instance endpoints. Empty defaults keep the read-only Approvals
+// listing page rendering (with an empty state) instead of throwing on cloud.
+export const fetchWorkflowInstances = (): Promise<WorkflowInstanceResponse[]> => Promise.resolve([]);
+export const fetchPastWorkflowInstances = (): Promise<WorkflowInstanceResponse[]> => Promise.resolve([]);
 export const fetchWorkflowReviewData = (_workflowId: string): Promise<WorkflowReviewData> => ni('fetchWorkflowReviewData');
 export const reviewWorkflowInstance = (_workflowId: string, _input: ReviewerDecisionRequest): Promise<void> => ni('reviewWorkflowInstance');
 export const cancelWorkflowInstance = (_workflowId: string): Promise<void> => ni('cancelWorkflowInstance');
