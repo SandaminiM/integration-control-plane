@@ -18,7 +18,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { addConnectionConfig, createGenaiService, deleteGenaiService, getGenaiService, listThirdPartyServices, setGenaiServiceStatus } from '#api/genaiServices';
-import { IS_WIP } from '../features';
+import { IS_CLOUD, IS_WIP } from '../features';
 import { buildCreateThirdPartyRequest } from '../utils/thirdPartyServices';
 import { endpointsToConfigRequest } from '../utils/genaiServices';
 import { useOrgUuid } from './useOrgUuid';
@@ -26,9 +26,9 @@ import type { CreateThirdPartyServiceArgs } from '../types/thirdPartyServices';
 
 const ROOT_KEY = 'thirdPartyServices';
 
-/** Org/project admin Third Party Services is wip-only for now (cloud/icp API stubs throw). */
+/** Org/project admin Third Party Services: fully wired on wip; read-only on cloud (list API no-ops to empty; icp stubs throw). */
 export function isThirdPartyServicesEnabled(): boolean {
-  return IS_WIP;
+  return IS_WIP || IS_CLOUD;
 }
 
 export function useThirdPartyServices(params: { query: string; offset: number; limit: number; projectId?: string }, enabled = true) {

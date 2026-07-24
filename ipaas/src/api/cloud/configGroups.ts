@@ -16,14 +16,18 @@
  * under the License.
  */
 
-// Org admin Config Groups is a wip-only surface for now. Signatures mirror Contracts.ConfigGroupsApi.
+// Config Groups: the list endpoint no-ops to empty on cloud so the read-only listing
+// page renders; the remaining get/create/update/delete functions stay ni() stubs
+// until the BFF exposes them. Signatures mirror Contracts.ConfigGroupsApi.
 import type { ConfigGroup, ConfigGroupNameAvailability, ConfigGroupUsage, CreateConfigGroupRequest, EditConfigGroupRequest } from '../../types/configGroups';
 
 const ni = (name: string): never => {
   throw new Error(`[cloud] configGroups.${name}: not implemented`);
 };
 
-export const listConfigGroups = (): Promise<ConfigGroup[]> => ni('listConfigGroups');
+// awaits: config groups list endpoint. Empty default keeps the read-only listing
+// page rendering (with an empty state) instead of throwing on cloud.
+export const listConfigGroups = (): Promise<ConfigGroup[]> => Promise.resolve([]);
 export const getConfigGroup = (_groupUuid: string): Promise<ConfigGroup> => ni('getConfigGroup');
 export const checkConfigGroupName = (_candidateGroupName: string): Promise<ConfigGroupNameAvailability> => ni('checkConfigGroupName');
 export const createConfigGroup = (_request: CreateConfigGroupRequest): Promise<ConfigGroup> => ni('createConfigGroup');

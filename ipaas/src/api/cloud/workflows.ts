@@ -18,7 +18,9 @@
 
 import type { OrgWorkflowConfig, ReviewerDecisionRequest, WorkflowConfigRequest, WorkflowDefinition, WorkflowInstanceResponse, WorkflowReviewData } from '../../types/workflow';
 
-// Intentionally a stub (the standard cloud-stub contract — see src/api/AGENTS.md).
+// Workflow instance lists no-op to empty on cloud so the read-only Approvals page
+// renders; the remaining definition/config/review functions stay ni() stubs until
+// the BFF exposes them (the standard cloud-stub contract — see src/api/AGENTS.md).
 const ni = (name: string): never => {
   throw new Error(`[cloud] workflows.${name}: not implemented`);
 };
@@ -27,8 +29,10 @@ export const fetchWorkflowDefinitions = (): Promise<WorkflowDefinition[]> => ni(
 export const fetchWorkflowConfigs = (): Promise<OrgWorkflowConfig[]> => ni('fetchWorkflowConfigs');
 export const createWorkflowConfig = (_input: WorkflowConfigRequest): Promise<OrgWorkflowConfig> => ni('createWorkflowConfig');
 export const updateWorkflowConfig = (_configId: string, _input: WorkflowConfigRequest): Promise<OrgWorkflowConfig> => ni('updateWorkflowConfig');
-export const fetchWorkflowInstances = (): Promise<WorkflowInstanceResponse[]> => ni('fetchWorkflowInstances');
-export const fetchPastWorkflowInstances = (): Promise<WorkflowInstanceResponse[]> => ni('fetchPastWorkflowInstances');
+// awaits: workflow instance endpoints. Empty defaults keep the read-only Approvals
+// listing page rendering (with an empty state) instead of throwing on cloud.
+export const fetchWorkflowInstances = (): Promise<WorkflowInstanceResponse[]> => Promise.resolve([]);
+export const fetchPastWorkflowInstances = (): Promise<WorkflowInstanceResponse[]> => Promise.resolve([]);
 export const fetchWorkflowReviewData = (_workflowId: string): Promise<WorkflowReviewData> => ni('fetchWorkflowReviewData');
 export const reviewWorkflowInstance = (_workflowId: string, _input: ReviewerDecisionRequest): Promise<void> => ni('reviewWorkflowInstance');
 export const cancelWorkflowInstance = (_workflowId: string): Promise<void> => ni('cancelWorkflowInstance');

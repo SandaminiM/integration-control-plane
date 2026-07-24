@@ -16,7 +16,9 @@
  * under the License.
  */
 
-// Governance is a wip-only surface for now. Signatures mirror Contracts.GovernanceApi.
+// Governance: the list endpoints no-op to empty on cloud so the read-only listing
+// pages render; the remaining get/create/update/delete/compliance functions stay
+// ni() stubs until the BFF exposes them. Signatures mirror Contracts.GovernanceApi.
 import type {
   Ruleset,
   RulesetList,
@@ -37,20 +39,22 @@ const ni = (name: string): never => {
   throw new Error(`[cloud] governance.${name}: not implemented`);
 };
 
-export const listRulesets = (): Promise<RulesetList> => ni('listRulesets');
+// awaits: governance list endpoints. Empty defaults keep the read-only listing
+// pages rendering (with an empty state) instead of throwing on cloud.
+export const listRulesets = (): Promise<RulesetList> => Promise.resolve({ count: 0, list: [] });
 export const getRuleset = (_rulesetId: string): Promise<Ruleset> => ni('getRuleset');
 export const getRulesetContent = (_rulesetId: string): Promise<string> => ni('getRulesetContent');
 export const createRuleset = (_ruleset: Ruleset): Promise<Ruleset> => ni('createRuleset');
 export const updateRuleset = (_rulesetId: string, _ruleset: Ruleset): Promise<Ruleset> => ni('updateRuleset');
 export const deleteRuleset = (_rulesetId: string): Promise<void> => ni('deleteRuleset');
 
-export const listDocuments = (): Promise<DocumentList> => ni('listDocuments');
+export const listDocuments = (): Promise<DocumentList> => Promise.resolve({ count: 0, list: [] });
 export const getDocument = (_documentId: string): Promise<DocumentInfo> => ni('getDocument');
 export const createDocument = (_document: DocumentInfo): Promise<DocumentInfo> => ni('createDocument');
 export const updateDocument = (_documentId: string, _document: DocumentInfo): Promise<DocumentInfo> => ni('updateDocument');
 export const deleteDocument = (_documentId: string): Promise<void> => ni('deleteDocument');
 
-export const listPolicies = (): Promise<GovernancePolicyList> => ni('listPolicies');
+export const listPolicies = (): Promise<GovernancePolicyList> => Promise.resolve({ count: 0, list: [] });
 export const getPolicy = (_policyId: string): Promise<GovernancePolicyInfo> => ni('getPolicy');
 export const createPolicy = (_policy: GovernancePolicyInfo): Promise<GovernancePolicyInfo> => ni('createPolicy');
 export const updatePolicy = (_policyId: string, _policy: GovernancePolicyInfo): Promise<GovernancePolicyInfo> => ni('updatePolicy');

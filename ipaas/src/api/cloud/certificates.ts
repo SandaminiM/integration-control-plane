@@ -16,7 +16,9 @@
  * under the License.
  */
 
-// Certificates is a wip-only surface for now. Signatures mirror Contracts.CertificatesApi.
+// Certificates: the groups list endpoint no-ops to empty on cloud so the read-only
+// listing page renders; the remaining create/delete/usage functions stay ni() stubs
+// until the BFF exposes them. Signatures mirror Contracts.CertificatesApi.
 import type { Certificate, CreateCertificateInput } from '../../types/certificates';
 import type { ConfigGroup, ConfigGroupUsage } from '../../types/configGroups';
 
@@ -24,7 +26,9 @@ const ni = (name: string): never => {
   throw new Error(`[cloud] certificates.${name}: not implemented`);
 };
 
-export const listCertificateGroups = (): Promise<ConfigGroup[]> => ni('listCertificateGroups');
+// awaits: certificate groups list endpoint. Empty default keeps the read-only
+// listing page rendering (with an empty state) instead of throwing on cloud.
+export const listCertificateGroups = (): Promise<ConfigGroup[]> => Promise.resolve([]);
 export const createCertificate = (_input: CreateCertificateInput): Promise<Certificate> => ni('createCertificate');
 export const deleteCertificate = (_certificateId: string): Promise<boolean> => ni('deleteCertificate');
 export const getCertificateUsage = (_certificateId: string): Promise<ConfigGroupUsage> => ni('getCertificateUsage');

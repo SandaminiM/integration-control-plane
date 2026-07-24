@@ -16,12 +16,31 @@
  * under the License.
  */
 
-// Org admin Data Planes (Runtimes) is a wip-only surface for now. Signatures mirror Contracts.DataPlanesApi.
+// Org admin Data Planes (Runtimes). Signatures mirror Contracts.DataPlanesApi.
+//
+// Wired: GET /dataplanes -> { items: [{ name }] }. OpenChoreo exposes only the
+// data plane name (K8s resource name) through the BFF, so the richer Cluster
+// fields are left undefined; the listing page tolerates this (no labels renders
+// as a WSO2 Cloud Data Plane, no createdOn renders "—").
+//
+// listPdps has no cloud counterpart: private-data-plane provisioning is a wip-only
+// concept, so it returns an empty list.
 import type { Cluster, PdpManagerPdp } from '../../types/dataPlanes';
+import { bff, items, type ListResponse } from './_client';
 
-const ni = (name: string): never => {
-  throw new Error(`[cloud] dataPlanes.${name}: not implemented`);
-};
+interface BffDataPlane {
+  name: string;
+}
 
-export const listDataPlanes = (): Promise<Cluster[]> => ni('listDataPlanes');
-export const listPdps = (): Promise<PdpManagerPdp[]> => ni('listPdps');
+// A data plane surfaced by the BFF is always a live/registered runtime, so it maps
+// to an active Cluster keyed by its name.
+const toCluster = (dp: BffDataPlane): Cluster => ({
+  id: dp.name,
+  name: dp.name,
+  isActive: true,
+});
+
+export const listDataPlanes = (): Promise<Cluster[]> => bff.get<ListResponse<BffDataPlane>>('/dataplanes').then((r) => items(r).map(toCluster));
+
+// awaits: PDP manager endpoint — cloud has no private-data-plane provisioning.
+export const listPdps = (): Promise<PdpManagerPdp[]> => Promise.resolve([]);

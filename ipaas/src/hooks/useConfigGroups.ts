@@ -18,15 +18,15 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { checkConfigGroupName, createConfigGroup, deleteConfigGroup, getConfigGroup, getConfigGroupUsage, listConfigGroups, updateConfigGroup } from '#api/configGroups';
-import { IS_WIP } from '../features';
+import { IS_CLOUD, IS_WIP } from '../features';
 import { useOrgUuid } from './useOrgUuid';
 import type { CreateConfigGroupRequest, EditConfigGroupRequest } from '../types/configGroups';
 
 const ROOT_KEY = 'configGroups';
 
-/** Org admin Config Groups is wip-only for now (cloud/icp API stubs throw). */
+/** Org admin Config Groups: fully wired on wip; read-only on cloud (list API no-ops to empty; icp stubs throw). */
 export function isConfigGroupsEnabled(): boolean {
-  return IS_WIP;
+  return IS_WIP || IS_CLOUD;
 }
 
 export function useConfigGroups() {

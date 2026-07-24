@@ -18,13 +18,13 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchAuditLogs } from '#api/auditLogs';
-import { IS_WIP } from '../features';
+import { IS_CLOUD, IS_WIP } from '../features';
 import { useOrgUuid } from './useOrgUuid';
 import type { AuditLogEntry, AuditLogsRequest } from '../types/auditLogs';
 
-/** Audit Logs is wip-only for now (cloud/icp API stubs throw). */
+/** Audit Logs: fully wired on wip; read-only on cloud (list API no-ops to empty; icp stubs throw). */
 export function isAuditLogsEnabled(): boolean {
-  return IS_WIP;
+  return IS_WIP || IS_CLOUD;
 }
 
 /**
