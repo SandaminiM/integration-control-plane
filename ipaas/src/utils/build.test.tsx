@@ -19,10 +19,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@wso2/oxygen-ui-icons-react', () => ({
-  Bitbucket: () => null,
-  GitBranch: () => null,
-  Github: () => null,
-  Gitlab: () => null,
+  GitHub: () => null,
 }));
 
 vi.mock('@wso2/oxygen-ui', () => ({
@@ -31,8 +28,16 @@ vi.mock('@wso2/oxygen-ui', () => ({
   Typography: () => null,
 }));
 
-import { Bitbucket, GitBranch, Github, Gitlab } from '@wso2/oxygen-ui-icons-react';
-import AzureIcon from '../assets/icons/AzureIcon';
+vi.mock('../assets/icons/AzureDevOpsIcon', () => ({ default: () => null }));
+vi.mock('../assets/icons/GitLabIcon', () => ({ default: () => null }));
+vi.mock('../assets/icons/BitbucketIcon', () => ({ default: () => null }));
+vi.mock('../assets/icons/GitLogoIcon', () => ({ default: () => null }));
+
+import { GitHub } from '@wso2/oxygen-ui-icons-react';
+import AzureDevOpsIcon from '../assets/icons/AzureDevOpsIcon';
+import GitLabIcon from '../assets/icons/GitLabIcon';
+import BitbucketIcon from '../assets/icons/BitbucketIcon';
+import GitLogoIcon from '../assets/icons/GitLogoIcon';
 import { safeAtob, buildLogText, getStepStatus, formatBuildDate, gitProviderLabel, getGitProviderIcon, repoUrl, validateBuildEnvVar } from './build';
 import type { BuildRunLogs, BuildStage } from '../types/build';
 import type { Repository } from '../types/repository';
@@ -218,39 +223,39 @@ describe('gitProviderLabel', () => {
 
 describe('getGitProviderIcon', () => {
   it('maps github', () => {
-    expect(getGitProviderIcon('github')).toBe(Github);
+    expect(getGitProviderIcon('github')).toBe(GitHub);
   });
 
   it('maps gitlab', () => {
-    expect(getGitProviderIcon('gitlab')).toBe(Gitlab);
+    expect(getGitProviderIcon('gitlab')).toBe(GitLabIcon);
   });
 
   it('maps gitlab_self_managed to the same icon as gitlab', () => {
-    expect(getGitProviderIcon('gitlab_self_managed')).toBe(Gitlab);
+    expect(getGitProviderIcon('gitlab_self_managed')).toBe(GitLabIcon);
   });
 
   it('maps bitbucket', () => {
-    expect(getGitProviderIcon('bitbucket')).toBe(Bitbucket);
+    expect(getGitProviderIcon('bitbucket')).toBe(BitbucketIcon);
   });
 
   it('maps bitbucket_server to the same icon as bitbucket', () => {
-    expect(getGitProviderIcon('bitbucket_server')).toBe(Bitbucket);
+    expect(getGitProviderIcon('bitbucket_server')).toBe(BitbucketIcon);
   });
 
   it('maps azure_devops', () => {
-    expect(getGitProviderIcon('azure_devops')).toBe(AzureIcon);
+    expect(getGitProviderIcon('azure_devops')).toBe(AzureDevOpsIcon);
   });
 
   it('is case-insensitive', () => {
-    expect(getGitProviderIcon('GitHub')).toBe(Github);
+    expect(getGitProviderIcon('GitHub')).toBe(GitHub);
   });
 
-  it('falls back to the generic branch icon for unknown providers', () => {
-    expect(getGitProviderIcon('unknown')).toBe(GitBranch);
+  it('falls back to the generic git logo for unknown providers', () => {
+    expect(getGitProviderIcon('unknown')).toBe(GitLogoIcon);
   });
 
-  it('falls back to the generic branch icon when no provider is given', () => {
-    expect(getGitProviderIcon(undefined)).toBe(GitBranch);
+  it('falls back to the generic git logo when no provider is given', () => {
+    expect(getGitProviderIcon(undefined)).toBe(GitLogoIcon);
   });
 });
 
