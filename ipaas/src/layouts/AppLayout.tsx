@@ -47,7 +47,7 @@ import {
   useAppShell,
   useNotifications,
 } from '@wso2/oxygen-ui';
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { JSX } from 'react';
 import { useNavigate, Outlet, NavLink, useLocation } from 'react-router';
@@ -143,7 +143,7 @@ import { componentOverviewUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUr
 import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { CopilotProvider } from '../contexts/CopilotContext';
-import CopilotDrawer from '../components/AiCopilot/CopilotDrawer';
+const CopilotDrawer = lazy(() => import('../components/AiCopilot/CopilotDrawer'));
 import CopilotButton from '../components/CopilotButton';
 import UpgradeButton from '../components/UpgradeButton';
 import { useOrgUuid } from '../hooks/useOrgUuid';
@@ -1412,7 +1412,11 @@ function AppLayoutInner(): JSX.Element {
               <Outlet />
             </Suspense>
           </Box>
-          {IS_WIP && <CopilotDrawer />}
+          {IS_WIP && (
+            <Suspense fallback={null}>
+              <CopilotDrawer />
+            </Suspense>
+          )}
         </Box>
       </AppShell.Main>
 

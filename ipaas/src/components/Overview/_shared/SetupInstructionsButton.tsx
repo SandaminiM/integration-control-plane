@@ -18,8 +18,8 @@
 
 import { Box, Button, CircularProgress, Dialog, DialogContent, DialogTitle, IconButton, Stack, Typography } from '@wso2/oxygen-ui';
 import { Lightbulb, X } from '@wso2/oxygen-ui-icons-react';
-import { useState, type JSX } from 'react';
-import Markdown from '../../Markdown';
+import { lazy, Suspense, useState, type JSX } from 'react';
+const Markdown = lazy(() => import('../../Markdown'));
 import { usePrebuiltInstructions, usePrebuiltIntegrations } from '../../../hooks/usePrebuiltIntegrations';
 import { matchPrebuiltIntegration } from '../../../utils/prebuilt';
 import type { Repository } from '../../../types/repository';
@@ -60,7 +60,9 @@ export default function SetupInstructionsButton({ repository }: { repository: Re
               Unable to load setup instructions.
             </Typography>
           ) : (
-            <Markdown>{instructions}</Markdown>
+            <Suspense fallback={null}>
+              <Markdown>{instructions}</Markdown>
+            </Suspense>
           )}
         </DialogContent>
       </Dialog>

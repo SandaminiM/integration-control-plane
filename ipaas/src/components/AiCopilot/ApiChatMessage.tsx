@@ -20,8 +20,7 @@ import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Divider, St
 import { AlertCircle, CheckCircle2, ChevronDown, Terminal } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
 import type { JSX } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { SyntaxHighlighter, prism } from '../../utils/syntaxHighlighter';
 import type { ApiChatExecutionResult } from '../../types/copilot';
 
 interface ParsedResult {

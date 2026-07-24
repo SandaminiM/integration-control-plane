@@ -18,11 +18,11 @@
 
 import { Alert, Box, Button, PageContent, Skeleton, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, ArrowRight } from '@wso2/oxygen-ui-icons-react';
-import { useState, useMemo, type JSX } from 'react';
+import { lazy, Suspense, useState, useMemo, type JSX } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router';
 import AppIconsRow from '../components/AppIconsRow';
 import ImportConfigTomlButton from '../components/ImportConfigTomlButton';
-import Markdown from '../components/Markdown';
+const Markdown = lazy(() => import('../components/Markdown'));
 import PrebuiltConfigForm from '../components/PrebuiltConfigForm';
 import type { BaseType } from '../components/SchemaConfigForm';
 import { formatComponentType } from '../constants/integrations';
@@ -176,7 +176,9 @@ export default function PrebuiltIntegrationSetup(scope: ProjectScope): JSX.Eleme
           {isInstructionsLoading ? (
             <InstructionsSkeleton />
           ) : instructions ? (
-            <Markdown>{instructions}</Markdown>
+            <Suspense fallback={null}>
+              <Markdown>{instructions}</Markdown>
+            </Suspense>
           ) : (
             <Typography variant="body2" color="text.secondary">
               No setup instructions available.

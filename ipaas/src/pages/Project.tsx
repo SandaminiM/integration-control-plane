@@ -54,7 +54,6 @@ import {
 } from '@wso2/oxygen-ui';
 import { ArrowRight, Bitbucket, ChevronDown, ChevronUp, ExternalLink, FileText, Filter, GitHub, GitBranch, GitLab, Info, Link2, Pencil, Plus, PlugZap, RefreshCw, Search, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import EmptyListing from '../components/EmptyListing';
-import Markdown from '../components/Markdown';
 import IntegrationTypesCard from '../components/IntegrationTypesCard';
 import ArchitectureCard from '../components/ArchitectureCard';
 import ContributorsCard from '../components/ContributorsCard';
@@ -68,7 +67,7 @@ import GitIcon from '../assets/icons/GitIcon';
 import AzureIcon from '../assets/icons/AzureIcon';
 import IntegratorIcon from '../assets/icons/IntegratorIcon';
 import { useNavigate } from 'react-router';
-import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useProject, useProjectByHandler, useProjects, useUpdateProject, useGitHubReadme } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
 import { useOrgs, useOrgComponentLimits, useOrgSubscriptions } from '../hooks/useOrg';
@@ -95,6 +94,8 @@ import { UUID_RE, toHandler } from '../utils/string';
 import { useSamples } from '../hooks/useSamples';
 import { usePrebuiltIntegrations } from '../hooks/usePrebuiltIntegrations';
 import type { Sample } from '../types/samples';
+
+const Markdown = lazy(() => import('../components/Markdown'));
 
 const FREE_COMPONENT_LIMIT = 5;
 
@@ -1185,7 +1186,9 @@ export default function Project(scope: ProjectScope): JSX.Element {
                       README.md
                     </Typography>
                   </Stack>
-                  <Markdown>{readmeContent}</Markdown>
+                  <Suspense fallback={null}>
+                    <Markdown>{readmeContent}</Markdown>
+                  </Suspense>
                 </CardContent>
               </Card>
             )}

@@ -43,6 +43,8 @@ export default function ContributorsCard({ projectId }: { projectId: string }): 
             <Tooltip key={contributor.id} title={`${contributor.displayName || contributor.email} · ${contributor.totalContributions} contributions`}>
               <Avatar
                 src={contributor.pictureUrl || undefined}
+                alt={contributor.displayName || contributor.email}
+                role="img"
                 tabIndex={0}
                 aria-label={`${contributor.displayName || contributor.email}: ${contributor.totalContributions} contributions`}
                 sx={{ width: 32, height: 32, fontSize: 14, bgcolor: 'primary.main', color: 'primary.contrastText', cursor: 'default' }}>
