@@ -66,7 +66,7 @@ import type {
   InviteUsersInput,
 } from '../types/auth';
 import type { BuildRunLogs, DeployComponentInput, UpdateBuildpackConfigsInput } from '../types/build';
-import type { ContainerRegistry } from '../types/cloudEditor';
+import type { CodeServerInstance, ContainerRegistry } from '../types/cloudEditor';
 import type {
   Component,
   ComponentDetail,
@@ -306,7 +306,7 @@ export interface BuildsApi {
 
 export interface CloudEditorApi {
   getOrCreateSampleRegistry(orgUuid: string): Promise<ContainerRegistry>;
-  callCreateCodeServer(params: { userId: string; organizationId: string; projectId: string; componentId: string; orgHandle: string; imageUrl: string; registryId: string; sourceCommitHash?: string }): Promise<string>;
+  callCreateCodeServer(params: { userId: string; organizationId: string; projectId: string; componentId: string; orgHandle: string; imageUrl: string; registryId: string; sourceCommitHash?: string }): Promise<CodeServerInstance>;
 }
 
 // ---------------------------------------------------------------------------

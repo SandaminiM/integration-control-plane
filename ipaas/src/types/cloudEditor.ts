@@ -38,7 +38,23 @@ export interface ChoreoSampleImage {
   [key: string]: unknown;
 }
 
-export interface ProgressStep {
-  progress: number;
-  text: string;
+/** Result of createCodeServer — the editor URL plus the cluster coordinates needed to poll the pod. */
+export interface CodeServerInstance {
+  url: string;
+  clusterId: string;
+  releaseId: string;
+  namespace: string;
 }
+
+/** Ordered steps shown in the deployment wheel. */
+export type CloudEditorStepKey = 'initializing' | 'creating' | 'scheduling' | 'starting' | 'opening';
+
+export interface CloudEditorStep {
+  key: CloudEditorStepKey;
+  label: string;
+}
+
+// scheduling — until PodScheduled & Initialized are both True
+// starting   — until PodReadyToStartContainers, ContainersReady & Ready are all True
+// opening    — every condition above is True; waiting on the pod to reach Running
+export type PodPhase = 'scheduling' | 'starting' | 'opening';
