@@ -23,6 +23,7 @@ import { getOrgUuidFromToken } from '../auth/tokenManager';
 import { displayTypeFromSample } from '../constants/integrations';
 import { derivePrebuiltSlug } from '../utils/prebuilt';
 import { checkNameAvailability, fetchComponentDetail, fetchFirstEnvironment, fetchLatestCommitSha, savePrebuiltConfig } from '#api/prebuilt';
+import { IS_CLOUD } from '../features';
 import type { DeployPrebuiltIntegrationInput, DeployPrebuiltIntegrationState } from '../types/prebuilt';
 
 const IDLE_STATE: DeployPrebuiltIntegrationState = {
@@ -103,9 +104,11 @@ export function useDeployPrebuiltIntegration() {
         componentId: detail.id,
         imageUrl: integration.imageUrl,
         appBranch: integration.branch ?? 'main',
-        // Carry the config values so the cloud BFF can bake them onto the Workload
-        // at creation (config saved above is also kept for the Configure form).
-        configurations: configValues,
+        // Cloud-only: its BFF bakes these onto the Workload at creation (config
+        // saved above is also kept for the Configure form). Devant's deploy
+        // resolver doesn't ignore an unrecognized `configurations` field — it
+        // 500s — so this must stay omitted outside of cloud.
+        ...(IS_CLOUD ? { configurations: configValues } : {}),
       });
 
       setState((s) => ({ ...s, progress: 100, stepLabel: 'Deployed!', error: null, isDeploying: false, isSuccess: true, componentHandler: component.handler }));

@@ -74,8 +74,8 @@ export default function Component(scope: ComponentScope): JSX.Element {
   const projectId = project?.id ?? '';
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
   const { data: environments = [] } = useEnvironments(scope.org, projectId);
-  const { data: repository = null } = useComponentRepository(projectId, scope.component);
-  const { data: commits = [] } = useCommitHistory(component?.id ?? '', repository?.branch ?? '');
+  const { data: repository = null, isLoading: loadingRepository } = useComponentRepository(projectId, scope.component);
+  const { data: commits = [], isLoading: loadingCommits } = useCommitHistory(component?.id ?? '', repository?.branch ?? '');
 
   const tracks = useMemo(() => component?.deploymentTracks ?? [], [component?.deploymentTracks]);
   const [selectedTrackId, setSelectedTrackId] = useState('');
@@ -180,6 +180,8 @@ export default function Component(scope: ComponentScope): JSX.Element {
               apimId={apimId}
               module={overviewModule}
               hasSource={hasSource}
+              isRepositoryLoading={loadingRepository}
+              isLatestCommitLoading={loadingRepository || loadingCommits}
             />
           )}
 
