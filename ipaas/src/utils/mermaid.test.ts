@@ -67,8 +67,8 @@ describe('extractDefinition', () => {
     expect(extractDefinition('journey\ntitle My journey')).toBe('journey\ntitle My journey');
   });
 
-  it('does not recognise classDiagram due to the mixed-case keyword entry (known bug)', () => {
-    expect(extractDefinition('classDiagram\nA --> B')).toBe('flowchart TB\nclassDiagram\nA --> B');
+  it('recognises classDiagram as a valid diagram type', () => {
+    expect(extractDefinition('classDiagram\nA --> B')).toBe('classDiagram\nA --> B');
   });
 });
 
