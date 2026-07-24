@@ -18,11 +18,12 @@
 
 /* eslint-disable react-refresh/only-export-components */
 import { Box, Stack, Typography } from '@wso2/oxygen-ui';
-import { GitBranch, Github } from '@wso2/oxygen-ui-icons-react';
+import { GitHub } from '@wso2/oxygen-ui-icons-react';
 import type { JSX, ReactNode } from 'react';
 import AzureDevOpsIcon from '../assets/icons/AzureDevOpsIcon';
 import GitLabIcon from '../assets/icons/GitLabIcon';
 import BitbucketIcon from '../assets/icons/BitbucketIcon';
+import GitLogoIcon from '../assets/icons/GitLogoIcon';
 import type { BuildRunLogs } from '../types/build';
 import type { Repository } from '../types/repository';
 import { BUILD_STAGES } from '../constants/build';
@@ -125,11 +126,11 @@ export function gitProviderLabel(provider: string): string {
   }
 }
 
-/** Map a git provider to its brand icon (generic branch icon for unknown providers). */
+/** Map a git provider to its brand icon (generic Git logo for unknown/public providers). */
 export function getGitProviderIcon(provider?: string): (props: { size?: number }) => ReactNode {
   switch (provider?.toLowerCase()) {
     case 'github':
-      return Github;
+      return GitHub;
     case 'gitlab':
     case 'gitlab_self_managed':
       return GitLabIcon;
@@ -139,7 +140,7 @@ export function getGitProviderIcon(provider?: string): (props: { size?: number }
     case 'azure_devops':
       return AzureDevOpsIcon;
     default:
-      return GitBranch;
+      return GitLogoIcon;
   }
 }
 
