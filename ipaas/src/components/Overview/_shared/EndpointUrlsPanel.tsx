@@ -157,29 +157,13 @@ export default function EndpointUrlsPanel({ endpoints, selectedIdx, onSelect, co
 
       {/* Row 2 – Values (each cell top-aligned via alignSelf: 'start') */}
       <Box sx={{ alignSelf: 'start' }}>
-        {endpoints.length > 1 ? (
-          <Select size="small" value={safeIdx} onChange={(e) => onSelect(Number(e.target.value))} sx={{ fontSize: '13px', width: '100%' }}>
-            {endpoints.map((e, i) => (
-              <MenuItem key={e.id} value={i} sx={{ fontSize: '13px' }}>
-                {trimEndpointName(e.displayName)}
-              </MenuItem>
-            ))}
-          </Select>
-        ) : (
-          <Box
-            sx={{
-              bgcolor: 'action.hover',
-              border: '1px solid',
-              borderColor: 'divider',
-              borderRadius: 0.5,
-              px: 1.5,
-              py: 0.75,
-              fontSize: '13px',
-              fontWeight: 500,
-            }}>
-            {trimEndpointName(ep.displayName)}
-          </Box>
-        )}
+        <Select size="small" value={safeIdx} onChange={(e) => onSelect(Number(e.target.value))} disabled={endpoints.length <= 1} sx={{ fontSize: '13px', width: '100%' }}>
+          {endpoints.map((e, i) => (
+            <MenuItem key={e.id} value={i} sx={{ fontSize: '13px' }}>
+              {trimEndpointName(e.displayName)}
+            </MenuItem>
+          ))}
+        </Select>
       </Box>
 
       <Box sx={{ minWidth: 0, alignSelf: 'center' }}>
