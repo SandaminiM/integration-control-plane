@@ -17,7 +17,21 @@
  */
 
 import { governanceClient, governanceTextClient, withScopeRetry } from './httpClients';
-import type { Ruleset, RulesetList, DocumentInfo, DocumentList, GovernancePolicyInfo, GovernancePolicyList, ProjectComplianceResponse, PolicyAdherenceResponse, ProjectPolicyAdherenceResponse, ComponentComplianceResponse, EndpointPolicyAdherenceResponse, EndpointRulesetAdherenceResponse, RuleAdherenceResponse } from '../../types/governance';
+import type {
+  Ruleset,
+  RulesetList,
+  DocumentInfo,
+  DocumentList,
+  GovernancePolicyInfo,
+  GovernancePolicyList,
+  ProjectComplianceResponse,
+  PolicyAdherenceResponse,
+  ProjectPolicyAdherenceResponse,
+  ComponentComplianceResponse,
+  EndpointPolicyAdherenceResponse,
+  EndpointRulesetAdherenceResponse,
+  RuleAdherenceResponse,
+} from '../../types/governance';
 
 const BASE_RULESETS = '/rulesets';
 const BASE_DOCUMENTS = '/documents';

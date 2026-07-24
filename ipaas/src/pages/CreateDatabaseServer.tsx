@@ -157,7 +157,9 @@ export function CreateDatabaseServerView({ scope, kind }: { scope: OrgScope; kin
               )}
               <Grid container spacing={2} sx={{ mb: 3 }}>
                 {kind.serviceTypes.map((t) => {
-                  const card = <SelectableCard title={t.name} description={t.description} logo={assetUrl(t.logo)} selected={storageType === t.id} disabled={t.disabled} onSelect={() => setStorageType(t.id)} />;
+                  const card = (
+                    <SelectableCard title={t.name} description={t.description} logo={assetUrl(t.logo)} logoDark={t.logoDark ? assetUrl(t.logoDark) : undefined} selected={storageType === t.id} disabled={t.disabled} onSelect={() => setStorageType(t.id)} />
+                  );
                   return (
                     <Grid key={t.id} size={{ xs: 12, sm: 4 }}>
                       {t.disabled ? (

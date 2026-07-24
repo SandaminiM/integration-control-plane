@@ -143,56 +143,56 @@ export default function UsersTab({ brokerId }: { brokerId: string }): JSX.Elemen
         {users.length === 0 ? (
           <Alert severity="info">No users yet. Add a user to issue Kafka credentials.</Alert>
         ) : (
-        <ListingTable.Container elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-          <ListingTable size="small">
-            <ListingTable.Head>
-              <ListingTable.Row>
-                <ListingTable.Cell>Username</ListingTable.Cell>
-                <ListingTable.Cell>Certificate Validity</ListingTable.Cell>
-                <ListingTable.Cell>Certificate</ListingTable.Cell>
-                <ListingTable.Cell align="right">Actions</ListingTable.Cell>
-              </ListingTable.Row>
-            </ListingTable.Head>
-            <ListingTable.Body>
-              {users.map((user) => (
-                <ListingTable.Row key={user.username}>
-                  <ListingTable.Cell>{user.username}</ListingTable.Cell>
-                  <ListingTable.Cell>{user.access_cert_expiry ? new Date(user.access_cert_expiry).toLocaleString() : '—'}</ListingTable.Cell>
-                  <ListingTable.Cell>
-                    <Stack direction="row" gap={1}>
-                      <Button size="small" variant="text" startIcon={<Download size={14} />} onClick={() => downloadText('service.key', user.access_key ?? '')}>
-                        Access Key
-                      </Button>
-                      <Button size="small" variant="text" startIcon={<Download size={14} />} onClick={() => downloadText('service.cert', user.access_cert ?? '')}>
-                        Access Cert
-                      </Button>
-                    </Stack>
-                  </ListingTable.Cell>
-                  <ListingTable.Cell align="right">
-                    <Stack direction="row" gap={0.5}>
-                      <IconButton size="small" aria-label={`Reset credentials for ${user.username}`} onClick={() => handleResetClick(user.username)}>
-                        <RotateCcw size={16} />
-                      </IconButton>
-                      {user.username === 'avnadmin' ? (
-                        <Tooltip title="The default admin user cannot be deleted.">
-                          <span>
-                            <IconButton size="small" color="inherit" aria-label={`Delete ${user.username}`} disabled>
-                              <Trash2 size={16} />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                      ) : (
-                        <IconButton size="small" color="inherit" aria-label={`Delete ${user.username}`} onClick={() => handleDeleteClick(user.username)}>
-                          <Trash2 size={16} />
-                        </IconButton>
-                      )}
-                    </Stack>
-                  </ListingTable.Cell>
+          <ListingTable.Container elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+            <ListingTable size="small">
+              <ListingTable.Head>
+                <ListingTable.Row>
+                  <ListingTable.Cell>Username</ListingTable.Cell>
+                  <ListingTable.Cell>Certificate Validity</ListingTable.Cell>
+                  <ListingTable.Cell>Certificate</ListingTable.Cell>
+                  <ListingTable.Cell align="right">Actions</ListingTable.Cell>
                 </ListingTable.Row>
-              ))}
-            </ListingTable.Body>
-          </ListingTable>
-        </ListingTable.Container>
+              </ListingTable.Head>
+              <ListingTable.Body>
+                {users.map((user) => (
+                  <ListingTable.Row key={user.username}>
+                    <ListingTable.Cell>{user.username}</ListingTable.Cell>
+                    <ListingTable.Cell>{user.access_cert_expiry ? new Date(user.access_cert_expiry).toLocaleString() : '—'}</ListingTable.Cell>
+                    <ListingTable.Cell>
+                      <Stack direction="row" gap={1}>
+                        <Button size="small" variant="text" startIcon={<Download size={14} />} onClick={() => downloadText('service.key', user.access_key ?? '')}>
+                          Access Key
+                        </Button>
+                        <Button size="small" variant="text" startIcon={<Download size={14} />} onClick={() => downloadText('service.cert', user.access_cert ?? '')}>
+                          Access Cert
+                        </Button>
+                      </Stack>
+                    </ListingTable.Cell>
+                    <ListingTable.Cell align="right">
+                      <Stack direction="row" gap={0.5}>
+                        <IconButton size="small" aria-label={`Reset credentials for ${user.username}`} onClick={() => handleResetClick(user.username)}>
+                          <RotateCcw size={16} />
+                        </IconButton>
+                        {user.username === 'avnadmin' ? (
+                          <Tooltip title="The default admin user cannot be deleted.">
+                            <span>
+                              <IconButton size="small" color="inherit" aria-label={`Delete ${user.username}`} disabled>
+                                <Trash2 size={16} />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        ) : (
+                          <IconButton size="small" color="inherit" aria-label={`Delete ${user.username}`} onClick={() => handleDeleteClick(user.username)}>
+                            <Trash2 size={16} />
+                          </IconButton>
+                        )}
+                      </Stack>
+                    </ListingTable.Cell>
+                  </ListingTable.Row>
+                ))}
+              </ListingTable.Body>
+            </ListingTable>
+          </ListingTable.Container>
         )}
       </Stack>
 

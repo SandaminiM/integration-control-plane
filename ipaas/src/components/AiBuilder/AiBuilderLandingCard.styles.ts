@@ -22,35 +22,37 @@ import type { SxProps, Theme } from '@wso2/oxygen-ui';
 // Orange border + soft glow are always present; both intensify on focus, and a
 // traveling conic-gradient ring animates around the border (see index.css
 // @property --ai-glow-angle).
-export const landingCardSx = (focused: boolean): SxProps<Theme> => (theme) => {
-  const c = theme.palette.primary.main;
-  const cLight = theme.palette.primary.light;
-  return {
-    height: '100%',
-    position: 'relative',
-    borderRadius: 1,
-    p: 1,
-    border: '1.5px solid',
-    borderColor: focused ? 'transparent' : `${c}66`,
-    boxShadow: focused ? `0 0 18px 0 ${c}59` : `0 0 10px 0 ${c}26`,
-    transition: 'box-shadow 0.3s ease, border-color 0.3s ease',
-    '&::before': {
-      content: '""',
-      position: 'absolute',
-      inset: '-1.5px',
-      borderRadius: 'inherit',
-      padding: '1.5px',
-      background: `conic-gradient(from var(--ai-glow-angle), ${c}00 0%, ${c} 12%, ${cLight} 25%, ${c} 38%, ${c}00 50%, ${c}00 100%)`,
-      WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-      WebkitMaskComposite: 'xor',
-      maskComposite: 'exclude',
-      opacity: focused ? 1 : 0.5,
-      transition: 'opacity 0.3s ease',
-      animation: 'ai-glow-rotate 2.5s linear infinite',
-      pointerEvents: 'none',
-    },
+export const landingCardSx =
+  (focused: boolean): SxProps<Theme> =>
+  (theme) => {
+    const c = theme.palette.primary.main;
+    const cLight = theme.palette.primary.light;
+    return {
+      height: '100%',
+      position: 'relative',
+      borderRadius: 1,
+      p: 1,
+      border: '1.5px solid',
+      borderColor: focused ? 'transparent' : `${c}66`,
+      boxShadow: focused ? `0 0 18px 0 ${c}59` : `0 0 10px 0 ${c}26`,
+      transition: 'box-shadow 0.3s ease, border-color 0.3s ease',
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        inset: '-1.5px',
+        borderRadius: 'inherit',
+        padding: '1.5px',
+        background: `conic-gradient(from var(--ai-glow-angle), ${c}00 0%, ${c} 12%, ${cLight} 25%, ${c} 38%, ${c}00 50%, ${c}00 100%)`,
+        WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+        WebkitMaskComposite: 'xor',
+        maskComposite: 'exclude',
+        opacity: focused ? 1 : 0.5,
+        transition: 'opacity 0.3s ease',
+        animation: 'ai-glow-rotate 2.5s linear infinite',
+        pointerEvents: 'none',
+      },
+    };
   };
-};
 
 export const EXAMPLE_CHIP_SX: SxProps<Theme> = {
   textTransform: 'none',

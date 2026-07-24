@@ -16,9 +16,11 @@
  * under the License.
  */
 
-import { Bitbucket, GitLab, GitHub } from '@wso2/oxygen-ui-icons-react';
+import { GitHub } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import AzureIcon from '../assets/icons/AzureIcon';
+import AzureDevOpsIcon from '../assets/icons/AzureDevOpsIcon';
+import GitLabIcon from '../assets/icons/GitLabIcon';
+import BitbucketIcon from '../assets/icons/BitbucketIcon';
 import { GitProvider } from '../types/credentials';
 
 /** Human label per provider (credential-mode import UI). */
@@ -37,11 +39,11 @@ export function gitProviderIcon(provider: string, size = 16): JSX.Element | null
       return <GitHub size={size} />;
     case GitProvider.BITBUCKET_CLOUD:
     case GitProvider.BITBUCKET_SERVER:
-      return <Bitbucket size={size} />;
+      return <BitbucketIcon size={size} />;
     case GitProvider.GITLAB_SELF_MANAGED:
-      return <GitLab size={size} />;
+      return <GitLabIcon size={size} />;
     case GitProvider.AZURE_DEVOPS:
-      return <AzureIcon size={size} />;
+      return <AzureDevOpsIcon size={size} />;
     default:
       return null;
   }

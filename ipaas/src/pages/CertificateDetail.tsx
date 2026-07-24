@@ -56,8 +56,7 @@ export default function CertificateDetail(scope: OrgScope): JSX.Element {
             <Button color="inherit" size="small" onClick={() => navigate(orgCertificatesUrl(scope.org))}>
               Back
             </Button>
-          }
-        >
+          }>
           Couldn&apos;t load this certificate.
         </Alert>
       </PageContent>
@@ -70,11 +69,7 @@ export default function CertificateDetail(scope: OrgScope): JSX.Element {
 
   return (
     <PageContent>
-      <Button
-        startIcon={<ArrowLeft size={16} />}
-        onClick={() => navigate(orgCertificatesUrl(scope.org))}
-        sx={{ mb: 2 }}
-      >
+      <Button startIcon={<ArrowLeft size={16} />} onClick={() => navigate(orgCertificatesUrl(scope.org))} sx={{ mb: 2 }}>
         Certificates
       </Button>
 

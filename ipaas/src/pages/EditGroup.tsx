@@ -16,7 +16,34 @@
  * under the License.
  */
 
-import { Alert, Autocomplete, Avatar, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, IconButton, ListingTable, MenuItem, PageContent, Radio, RadioGroup, Stack, TablePagination, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@wso2/oxygen-ui';
+import {
+  Alert,
+  Autocomplete,
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  FormControlLabel,
+  IconButton,
+  ListingTable,
+  MenuItem,
+  PageContent,
+  Radio,
+  RadioGroup,
+  Stack,
+  TablePagination,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
+  Typography,
+} from '@wso2/oxygen-ui';
 import { ArrowLeft, Lock, Plus, Trash2, Users } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';

@@ -51,7 +51,12 @@ describe('escapeCsvCell', () => {
 
 describe('toCsv', () => {
   it('joins cells with commas and rows with CRLF', () => {
-    expect(toCsv([['a', 'b'], ['c', 'd']])).toBe('"a","b"\r\n"c","d"');
+    expect(
+      toCsv([
+        ['a', 'b'],
+        ['c', 'd'],
+      ]),
+    ).toBe('"a","b"\r\n"c","d"');
   });
 
   it('renders an empty row array as a blank line', () => {

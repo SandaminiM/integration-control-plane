@@ -39,14 +39,11 @@ export default function ComplianceRowIndicator({ row, failedWord }: ComplianceRo
     <Box sx={{ width: '100%', minWidth: 160 }}>
       <Typography variant="body2" noWrap sx={{ color: failed ? 'error.main' : success ? 'success.main' : 'text.secondary', fontWeight: 600 }}>
         {count}/{row.total}
-        <Box component="span" sx={{ ml: 1.5 }}>{word}</Box>
+        <Box component="span" sx={{ ml: 1.5 }}>
+          {word}
+        </Box>
       </Typography>
-      <LinearProgress
-        variant="determinate"
-        value={row.failed > 0 ? (row.failed / row.total) * 100 : 100}
-        color={failed ? 'error' : success ? 'success' : 'inherit'}
-        sx={{ mt: 0.5, height: 4, borderRadius: 2 }}
-      />
+      <LinearProgress variant="determinate" value={row.failed > 0 ? (row.failed / row.total) * 100 : 100} color={failed ? 'error' : success ? 'success' : 'inherit'} sx={{ mt: 0.5, height: 4, borderRadius: 2 }} />
     </Box>
   );
 }

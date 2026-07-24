@@ -29,29 +29,14 @@ import {
 } from './prompts';
 import { callLlm } from './llmClient';
 import { getConnectors } from './connectorsCache';
-import {
-  addGeneration,
-  updateGeneration,
-  getChatHistoryForLLM,
-  populateHistoryForLlm,
-} from './chatStorage';
+import { addGeneration, updateGeneration, getChatHistoryForLLM, populateHistoryForLlm } from './chatStorage';
 import { PIPELINE_STAGE, STEP_STATUS } from '../../constants/aiBuilder';
 import type { AiIntegrationBuilderResponse, StepEvent } from '../../types/aiBuilder';
-import type {
-  ValidationOutput,
-  PrebuiltMatchOutput,
-  ConnectorCheckOutput,
-  PlanOutput,
-  ModelMessage,
-  GenerationResponseType,
-} from './types';
+import type { ValidationOutput, PrebuiltMatchOutput, ConnectorCheckOutput, PlanOutput, ModelMessage, GenerationResponseType } from './types';
 
 type MessagePair = Array<{ role: 'user' | 'assistant'; content: string }>;
 
-function emit(
-  onStepEvent: ((e: StepEvent) => void) | undefined,
-  event: StepEvent
-): void {
+function emit(onStepEvent: ((e: StepEvent) => void) | undefined, event: StepEvent): void {
   onStepEvent?.(event);
 }
 
@@ -59,13 +44,7 @@ function buildMessages(history: MessagePair, userContent: string): MessagePair {
   return [...history, { role: 'user' as const, content: userContent }];
 }
 
-function saveGenerationMessages(
-  projectId: string,
-  generationId: string,
-  userQuery: string,
-  assistantText: string,
-  responseType: GenerationResponseType
-): void {
+function saveGenerationMessages(projectId: string, generationId: string, userQuery: string, assistantText: string, responseType: GenerationResponseType): void {
   const modelMessages: ModelMessage[] = [
     { role: 'user', content: userQuery },
     { role: 'assistant', content: assistantText },
@@ -73,9 +52,7 @@ function saveGenerationMessages(
   updateGeneration(projectId, generationId, { modelMessages, responseType });
 }
 
-function serializePrebuiltForLlm(
-  integrations: PrebuiltIntegration[]
-): Record<string, unknown>[] {
+function serializePrebuiltForLlm(integrations: PrebuiltIntegration[]): Record<string, unknown>[] {
   return integrations.map((integration) => ({
     displayName: integration.displayName,
     description: integration.description,
@@ -96,7 +73,7 @@ export async function runAiIntegrationPipeline(
   getToken: () => Promise<string>,
   prebuiltIntegrations: PrebuiltIntegration[],
   onStepEvent?: (event: StepEvent) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<AiIntegrationBuilderResponse> {
   // Stage 0: context
   emit(onStepEvent, {
@@ -109,11 +86,8 @@ export async function runAiIntegrationPipeline(
 
   // For follow-up messages, prepend the most recent user query so every pipeline
   // stage has explicit context about what is being refined, not just the short delta.
-  const lastUserQuery =
-    [...history].reverse().find((m) => m.role === 'user')?.content ?? '';
-  const contextualizedQuery = lastUserQuery
-    ? `${lastUserQuery}\n\nUser refinement: ${query}`
-    : query;
+  const lastUserQuery = [...history].reverse().find((m) => m.role === 'user')?.content ?? '';
+  const contextualizedQuery = lastUserQuery ? `${lastUserQuery}\n\nUser refinement: ${query}` : query;
 
   emit(onStepEvent, {
     stage: PIPELINE_STAGE.Context,
@@ -136,15 +110,8 @@ export async function runAiIntegrationPipeline(
     });
     checkAbort();
 
-    const validationUserContent =
-      buildValidationUserMessage(contextualizedQuery);
-    const { parsed: validation, rawContent: validationRaw } =
-      await callLlm<ValidationOutput>(
-        VALIDATION_SYSTEM_PROMPT,
-        buildMessages(history, validationUserContent),
-        getToken,
-        signal
-      );
+    const validationUserContent = buildValidationUserMessage(contextualizedQuery);
+    const { parsed: validation, rawContent: validationRaw } = await callLlm<ValidationOutput>(VALIDATION_SYSTEM_PROMPT, buildMessages(history, validationUserContent), getToken, signal);
 
     emit(onStepEvent, {
       stage: PIPELINE_STAGE.Validation,
@@ -152,13 +119,7 @@ export async function runAiIntegrationPipeline(
     });
 
     if (validation.type === 'invalid') {
-      saveGenerationMessages(
-        projectId,
-        generationId,
-        query,
-        validationRaw[0]?.text ?? '',
-        'invalid'
-      );
+      saveGenerationMessages(projectId, generationId, query, validationRaw[0]?.text ?? '', 'invalid');
       return { type: 'invalid', message: validation.message };
     }
 
@@ -170,37 +131,17 @@ export async function runAiIntegrationPipeline(
     checkAbort();
 
     const serializedPrebuilts = serializePrebuiltForLlm(prebuiltIntegrations);
-    const prebuiltUserContent = buildPrebuiltMatchUserMessage(
-      contextualizedQuery,
-      serializedPrebuilts
-    );
-    const { parsed: prebuiltMatch, rawContent: prebuiltRaw } =
-      await callLlm<PrebuiltMatchOutput>(
-        PREBUILT_MATCH_SYSTEM_PROMPT,
-        buildMessages(history, prebuiltUserContent),
-        getToken,
-        signal
-      );
+    const prebuiltUserContent = buildPrebuiltMatchUserMessage(contextualizedQuery, serializedPrebuilts);
+    const { parsed: prebuiltMatch, rawContent: prebuiltRaw } = await callLlm<PrebuiltMatchOutput>(PREBUILT_MATCH_SYSTEM_PROMPT, buildMessages(history, prebuiltUserContent), getToken, signal);
 
     emit(onStepEvent, {
       stage: PIPELINE_STAGE.Prebuilt,
       status: STEP_STATUS.Done,
     });
 
-    if (
-      prebuiltMatch.match &&
-      prebuiltMatch.selected_index != null &&
-      prebuiltMatch.selected_index >= 0 &&
-      prebuiltMatch.selected_index < prebuiltIntegrations.length
-    ) {
+    if (prebuiltMatch.match && prebuiltMatch.selected_index != null && prebuiltMatch.selected_index >= 0 && prebuiltMatch.selected_index < prebuiltIntegrations.length) {
       const matched = prebuiltIntegrations[prebuiltMatch.selected_index];
-      saveGenerationMessages(
-        projectId,
-        generationId,
-        query,
-        prebuiltRaw[0]?.text ?? '',
-        'prebuilt'
-      );
+      saveGenerationMessages(projectId, generationId, query, prebuiltRaw[0]?.text ?? '', 'prebuilt');
       return {
         type: 'prebuilt',
         message: prebuiltMatch.message,
@@ -216,17 +157,8 @@ export async function runAiIntegrationPipeline(
     checkAbort();
 
     const connectors = await getConnectors();
-    const connectorUserContent = buildConnectorCheckUserMessage(
-      contextualizedQuery,
-      connectors
-    );
-    const { parsed: connectorCheck, rawContent: connectorRaw } =
-      await callLlm<ConnectorCheckOutput>(
-        CONNECTOR_CHECK_SYSTEM_PROMPT,
-        buildMessages(history, connectorUserContent),
-        getToken,
-        signal
-      );
+    const connectorUserContent = buildConnectorCheckUserMessage(contextualizedQuery, connectors);
+    const { parsed: connectorCheck, rawContent: connectorRaw } = await callLlm<ConnectorCheckOutput>(CONNECTOR_CHECK_SYSTEM_PROMPT, buildMessages(history, connectorUserContent), getToken, signal);
 
     emit(onStepEvent, {
       stage: PIPELINE_STAGE.ConnectorCheck,
@@ -234,13 +166,7 @@ export async function runAiIntegrationPipeline(
     });
 
     if (!connectorCheck.is_doable) {
-      saveGenerationMessages(
-        projectId,
-        generationId,
-        query,
-        connectorRaw[0]?.text ?? '',
-        'unsupported'
-      );
+      saveGenerationMessages(projectId, generationId, query, connectorRaw[0]?.text ?? '', 'unsupported');
       return {
         type: 'unsupported',
         message: connectorCheck.reason,
@@ -258,14 +184,9 @@ export async function runAiIntegrationPipeline(
     const planUserContent = buildPlanGenerationUserMessage(
       contextualizedQuery,
       connectorCheck.required_connectors,
-      (connectorCheck.http_fallback_services ?? []).map((s) => s.service)
+      (connectorCheck.http_fallback_services ?? []).map((s) => s.service),
     );
-    const { parsed: plan, rawContent: planRaw } = await callLlm<PlanOutput>(
-      PLAN_GENERATION_SYSTEM_PROMPT,
-      buildMessages(history, planUserContent),
-      getToken,
-      signal
-    );
+    const { parsed: plan, rawContent: planRaw } = await callLlm<PlanOutput>(PLAN_GENERATION_SYSTEM_PROMPT, buildMessages(history, planUserContent), getToken, signal);
 
     emit(onStepEvent, {
       stage: PIPELINE_STAGE.Plan,
@@ -273,23 +194,11 @@ export async function runAiIntegrationPipeline(
     });
 
     if (plan.status === 'unsupported') {
-      saveGenerationMessages(
-        projectId,
-        generationId,
-        query,
-        planRaw[0]?.text ?? '',
-        'unsupported'
-      );
+      saveGenerationMessages(projectId, generationId, query, planRaw[0]?.text ?? '', 'unsupported');
       return { type: 'unsupported', message: plan.message };
     }
 
-    saveGenerationMessages(
-      projectId,
-      generationId,
-      query,
-      planRaw[0]?.text ?? '',
-      'custom'
-    );
+    saveGenerationMessages(projectId, generationId, query, planRaw[0]?.text ?? '', 'custom');
     return {
       type: 'custom',
       message: plan.message,

@@ -81,13 +81,7 @@ describe('runAiIntegrationPipeline', () => {
       rawContent: [{ type: 'text', text: 'Not an integration' }],
     });
 
-    await runAiIntegrationPipeline(
-      'help me with passwords',
-      testProjectId,
-      mockGetToken,
-      mockPrebuilts,
-      onStepEvent
-    );
+    await runAiIntegrationPipeline('help me with passwords', testProjectId, mockGetToken, mockPrebuilts, onStepEvent);
 
     expect(events.length).toBeGreaterThanOrEqual(2);
     expect(events[0].stage).toBe(PIPELINE_STAGE.Context);
@@ -104,12 +98,7 @@ describe('runAiIntegrationPipeline', () => {
       rawContent: [{ type: 'text', text: 'Not an integration scenario' }],
     });
 
-    const result = await runAiIntegrationPipeline(
-      'help me with passwords',
-      testProjectId,
-      mockGetToken,
-      mockPrebuilts
-    );
+    const result = await runAiIntegrationPipeline('help me with passwords', testProjectId, mockGetToken, mockPrebuilts);
 
     expect(result.type).toBe('invalid');
     expect(result.message).toBe('Not an integration scenario');
@@ -126,12 +115,7 @@ describe('runAiIntegrationPipeline', () => {
         rawContent: [{ type: 'text', text: '{"match":true,"selected_index":0}' }],
       });
 
-    const result = await runAiIntegrationPipeline(
-      'Send Slack notifications when Salesforce records update',
-      testProjectId,
-      mockGetToken,
-      mockPrebuilts
-    );
+    const result = await runAiIntegrationPipeline('Send Slack notifications when Salesforce records update', testProjectId, mockGetToken, mockPrebuilts);
 
     expect(result.type).toBe('prebuilt');
     if (result.type === 'prebuilt') {
@@ -179,12 +163,7 @@ describe('runAiIntegrationPipeline', () => {
       { organization: 'ballerinax', name: 'slack', summary: 'Slack integration' },
     ]);
 
-    const result = await runAiIntegrationPipeline(
-      'Send Slack notification when GitHub code is pushed',
-      testProjectId,
-      mockGetToken,
-      mockPrebuilts
-    );
+    const result = await runAiIntegrationPipeline('Send Slack notification when GitHub code is pushed', testProjectId, mockGetToken, mockPrebuilts);
 
     expect(result.type).toBe('custom');
     if (result.type === 'custom') {
@@ -214,16 +193,9 @@ describe('runAiIntegrationPipeline', () => {
         rawContent: [{ type: 'text', text: '{"is_doable":false}' }],
       });
 
-    vi.spyOn(connectorsCache, 'getConnectors').mockResolvedValueOnce([
-      { organization: 'ballerinax', name: 'github', summary: 'GitHub integration' },
-    ]);
+    vi.spyOn(connectorsCache, 'getConnectors').mockResolvedValueOnce([{ organization: 'ballerinax', name: 'github', summary: 'GitHub integration' }]);
 
-    const result = await runAiIntegrationPipeline(
-      'Send Slack notification when GitHub code is pushed',
-      testProjectId,
-      mockGetToken,
-      mockPrebuilts
-    );
+    const result = await runAiIntegrationPipeline('Send Slack notification when GitHub code is pushed', testProjectId, mockGetToken, mockPrebuilts);
 
     expect(result.type).toBe('unsupported');
     if (result.type === 'unsupported') {
@@ -245,14 +217,7 @@ describe('runAiIntegrationPipeline', () => {
 
     let caughtError: unknown;
     try {
-      await runAiIntegrationPipeline(
-        'test query',
-        testProjectId,
-        mockGetToken,
-        mockPrebuilts,
-        undefined,
-        controller.signal
-      );
+      await runAiIntegrationPipeline('test query', testProjectId, mockGetToken, mockPrebuilts, undefined, controller.signal);
     } catch (err) {
       caughtError = err;
     }

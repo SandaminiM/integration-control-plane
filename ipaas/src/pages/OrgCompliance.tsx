@@ -48,10 +48,7 @@ export default function OrgCompliance(scope: OrgScope): JSX.Element {
     if (policyId) navigate(orgGovernancePolicyEditorUrl(scope.org, policyId, policyTypeMap[policyId]));
   };
 
-  const complianceRows = useMemo<ComplianceRow[]>(
-    () => (compliance.data?.list ?? []).map((e) => complianceEntryToRow(e, e.projectId, projectMap.get(e.projectId)?.name ?? e.projectName)),
-    [compliance.data, projectMap],
-  );
+  const complianceRows = useMemo<ComplianceRow[]>(() => (compliance.data?.list ?? []).map((e) => complianceEntryToRow(e, e.projectId, projectMap.get(e.projectId)?.name ?? e.projectName)), [compliance.data, projectMap]);
 
   const adherenceRows = useMemo<ComplianceRow[]>(
     () =>
@@ -81,28 +78,13 @@ export default function OrgCompliance(scope: OrgScope): JSX.Element {
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-          <CompliancePie
-            title="Project Compliance"
-            count={compliance.data?.summary.project.total ?? 0}
-            slices={complianceSlices(compliance.data?.summary.project)}
-            isLoading={compliance.isLoading}
-          />
+          <CompliancePie title="Project Compliance" count={compliance.data?.summary.project.total ?? 0} slices={complianceSlices(compliance.data?.summary.project)} isLoading={compliance.isLoading} />
         </Grid>
         <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-          <CompliancePie
-            title="Policy Adherence"
-            count={adherence.data?.summary.policy.total ?? 0}
-            slices={adherenceSlices(adherence.data?.summary.policy)}
-            isLoading={adherence.isLoading}
-          />
+          <CompliancePie title="Policy Adherence" count={adherence.data?.summary.policy.total ?? 0} slices={adherenceSlices(adherence.data?.summary.policy)} isLoading={adherence.isLoading} />
         </Grid>
         <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-          <CompliancePie
-            title="Component Compliance"
-            count={compliance.data?.summary.component.total ?? 0}
-            slices={complianceSlices(compliance.data?.summary.component)}
-            isLoading={compliance.isLoading}
-          />
+          <CompliancePie title="Component Compliance" count={compliance.data?.summary.component.total ?? 0} slices={complianceSlices(compliance.data?.summary.component)} isLoading={compliance.isLoading} />
         </Grid>
       </Grid>
 

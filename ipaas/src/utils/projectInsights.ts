@@ -78,8 +78,26 @@ const SERVICE_LATENCY_SUBTYPES: { key: 'api' | 'agent' | 'mcp' | 'webhook'; labe
 
 function buildLatencyRows(raw: ProjectInsightsRaw): ProjectLatencyRow[] {
   const rows: ProjectLatencyRow[] = [
-    { key: 'automations', label: 'Automations', sub: 'Execution duration', color: KIND_DOT.auto, metrics: [{ label: 'Avg', value: formatDuration(raw.autoDurationByKind.auto.avgMs / 1000) }, { label: 'P95', value: formatDuration(raw.autoDurationByKind.auto.p95Ms / 1000) }] },
-    { key: 'rag', label: 'RAG Ingestions', sub: 'Execution duration', color: KIND_DOT.rag, metrics: [{ label: 'Avg', value: formatDuration(raw.autoDurationByKind.rag.avgMs / 1000) }, { label: 'P95', value: formatDuration(raw.autoDurationByKind.rag.p95Ms / 1000) }] },
+    {
+      key: 'automations',
+      label: 'Automations',
+      sub: 'Execution duration',
+      color: KIND_DOT.auto,
+      metrics: [
+        { label: 'Avg', value: formatDuration(raw.autoDurationByKind.auto.avgMs / 1000) },
+        { label: 'P95', value: formatDuration(raw.autoDurationByKind.auto.p95Ms / 1000) },
+      ],
+    },
+    {
+      key: 'rag',
+      label: 'RAG Ingestions',
+      sub: 'Execution duration',
+      color: KIND_DOT.rag,
+      metrics: [
+        { label: 'Avg', value: formatDuration(raw.autoDurationByKind.rag.avgMs / 1000) },
+        { label: 'P95', value: formatDuration(raw.autoDurationByKind.rag.p95Ms / 1000) },
+      ],
+    },
   ];
   SERVICE_LATENCY_SUBTYPES.forEach((t) => {
     rows.push({

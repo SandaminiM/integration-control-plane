@@ -32,5 +32,16 @@ export const PROVIDER_ICON_SX = {
   '&:hover': { color: 'primary.main', bgcolor: 'action.hover' },
 } as const;
 
+/**
+ * GitHub's brand guidelines require its mark to stay black/white — never
+ * recolored on hover — so this omits PROVIDER_ICON_SX's hover color swap.
+ */
+export const GITHUB_ICON_SX = {
+  width: 40,
+  height: 40,
+  color: 'text.primary',
+  '&:hover': { bgcolor: 'action.hover' },
+} as const;
+
 /** Colors a required TextField's asterisk red. */
 export const REQUIRED_FIELD_SX = { '& .MuiFormLabel-asterisk': { color: 'error.main' } } as const;

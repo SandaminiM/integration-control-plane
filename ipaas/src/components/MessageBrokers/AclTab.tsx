@@ -73,7 +73,7 @@ export default function AclTab({ brokerId }: { brokerId: string }): JSX.Element 
         onError: (err) => {
           setAddError(err instanceof Error ? err.message : 'Failed to create ACL entry');
         },
-      }
+      },
     );
   };
 
@@ -127,42 +127,42 @@ export default function AclTab({ brokerId }: { brokerId: string }): JSX.Element 
         {acls.length === 0 ? (
           <Alert severity="info">No access control entries. Add an entry to grant a user access to a topic.</Alert>
         ) : (
-        <ListingTable.Container elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-          <ListingTable size="small">
-            <ListingTable.Head>
-              <ListingTable.Row>
-                <ListingTable.Cell>Username</ListingTable.Cell>
-                <ListingTable.Cell>Topic</ListingTable.Cell>
-                <ListingTable.Cell>Permission</ListingTable.Cell>
-                <ListingTable.Cell align="right">Actions</ListingTable.Cell>
-              </ListingTable.Row>
-            </ListingTable.Head>
-            <ListingTable.Body>
-              {acls.map((acl) => (
-                <ListingTable.Row key={acl.id}>
-                  <ListingTable.Cell>{acl.username}</ListingTable.Cell>
-                  <ListingTable.Cell>{acl.topic}</ListingTable.Cell>
-                  <ListingTable.Cell>{PERMISSION_LABELS[acl.permission] || acl.permission}</ListingTable.Cell>
-                  <ListingTable.Cell align="right">
-                    {acl.username === 'avnadmin' ? (
-                      <Tooltip title="Default ACL entries cannot be deleted.">
-                        <span>
-                          <IconButton size="small" color="inherit" aria-label={`Delete ACL for ${acl.username}`} disabled>
-                            <Trash2 size={16} />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                    ) : (
-                      <IconButton size="small" color="inherit" aria-label={`Delete ACL for ${acl.username}`} onClick={() => handleDeleteClick(acl.id)}>
-                        <Trash2 size={16} />
-                      </IconButton>
-                    )}
-                  </ListingTable.Cell>
+          <ListingTable.Container elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+            <ListingTable size="small">
+              <ListingTable.Head>
+                <ListingTable.Row>
+                  <ListingTable.Cell>Username</ListingTable.Cell>
+                  <ListingTable.Cell>Topic</ListingTable.Cell>
+                  <ListingTable.Cell>Permission</ListingTable.Cell>
+                  <ListingTable.Cell align="right">Actions</ListingTable.Cell>
                 </ListingTable.Row>
-              ))}
-            </ListingTable.Body>
-          </ListingTable>
-        </ListingTable.Container>
+              </ListingTable.Head>
+              <ListingTable.Body>
+                {acls.map((acl) => (
+                  <ListingTable.Row key={acl.id}>
+                    <ListingTable.Cell>{acl.username}</ListingTable.Cell>
+                    <ListingTable.Cell>{acl.topic}</ListingTable.Cell>
+                    <ListingTable.Cell>{PERMISSION_LABELS[acl.permission] || acl.permission}</ListingTable.Cell>
+                    <ListingTable.Cell align="right">
+                      {acl.username === 'avnadmin' ? (
+                        <Tooltip title="Default ACL entries cannot be deleted.">
+                          <span>
+                            <IconButton size="small" color="inherit" aria-label={`Delete ACL for ${acl.username}`} disabled>
+                              <Trash2 size={16} />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      ) : (
+                        <IconButton size="small" color="inherit" aria-label={`Delete ACL for ${acl.username}`} onClick={() => handleDeleteClick(acl.id)}>
+                          <Trash2 size={16} />
+                        </IconButton>
+                      )}
+                    </ListingTable.Cell>
+                  </ListingTable.Row>
+                ))}
+              </ListingTable.Body>
+            </ListingTable>
+          </ListingTable.Container>
         )}
       </Stack>
 

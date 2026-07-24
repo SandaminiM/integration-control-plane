@@ -135,7 +135,21 @@ import type {
   RotateConnectionKeysByConnectionIdParams,
 } from '../types/connections';
 import type { AuditLogEntry, AuditLogsRequest } from '../types/auditLogs';
-import type { Ruleset, RulesetList, DocumentInfo, DocumentList, GovernancePolicyInfo, GovernancePolicyList, ProjectComplianceResponse, PolicyAdherenceResponse, ProjectPolicyAdherenceResponse, ComponentComplianceResponse, EndpointPolicyAdherenceResponse, EndpointRulesetAdherenceResponse, RuleAdherenceResponse as GovernanceRuleAdherenceResponse } from '../types/governance';
+import type {
+  Ruleset,
+  RulesetList,
+  DocumentInfo,
+  DocumentList,
+  GovernancePolicyInfo,
+  GovernancePolicyList,
+  ProjectComplianceResponse,
+  PolicyAdherenceResponse,
+  ProjectPolicyAdherenceResponse,
+  ComponentComplianceResponse,
+  EndpointPolicyAdherenceResponse,
+  EndpointRulesetAdherenceResponse,
+  RuleAdherenceResponse as GovernanceRuleAdherenceResponse,
+} from '../types/governance';
 import type {
   AdminUser,
   AllowedIpsPayload,

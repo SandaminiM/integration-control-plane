@@ -17,13 +17,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import {
-  addGeneration,
-  updateGeneration,
-  getChatHistoryForLLM,
-  populateHistoryForLlm,
-  clearChatHistory,
-} from './chatStorage';
+import { addGeneration, updateGeneration, getChatHistoryForLLM, populateHistoryForLlm, clearChatHistory } from './chatStorage';
 import type { ModelMessage } from './types';
 
 // Mock localStorage

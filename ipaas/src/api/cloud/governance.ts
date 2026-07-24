@@ -17,7 +17,21 @@
  */
 
 // Governance is a wip-only surface for now. Signatures mirror Contracts.GovernanceApi.
-import type { Ruleset, RulesetList, DocumentInfo, DocumentList, GovernancePolicyInfo, GovernancePolicyList, ProjectComplianceResponse, PolicyAdherenceResponse, ProjectPolicyAdherenceResponse, ComponentComplianceResponse, EndpointPolicyAdherenceResponse, EndpointRulesetAdherenceResponse, RuleAdherenceResponse as GovernanceRuleAdherenceResponse } from '../../types/governance';
+import type {
+  Ruleset,
+  RulesetList,
+  DocumentInfo,
+  DocumentList,
+  GovernancePolicyInfo,
+  GovernancePolicyList,
+  ProjectComplianceResponse,
+  PolicyAdherenceResponse,
+  ProjectPolicyAdherenceResponse,
+  ComponentComplianceResponse,
+  EndpointPolicyAdherenceResponse,
+  EndpointRulesetAdherenceResponse,
+  RuleAdherenceResponse as GovernanceRuleAdherenceResponse,
+} from '../../types/governance';
 
 const ni = (name: string): never => {
   throw new Error(`[cloud] governance.${name}: not implemented`);

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, CircularProgress, PageContent, Stack, Tab, Tabs, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, ColorSchemeImage, PageContent, Stack, Tab, Tabs, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useNavigate, useParams } from 'react-router';
@@ -24,7 +24,7 @@ import { isPlatformServicesEnabled, useDatabaseServer } from '../hooks/usePlatfo
 import { useSubscriptions } from '../hooks/useSubscription';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { PAID_SUBSCRIPTION_TYPE } from '../constants/subscription';
-import { MESSAGE_BROKER_KIND, BROKER_SERVICE_TYPES, serviceTypeLabel } from '../constants/platformServices';
+import { MESSAGE_BROKER_KIND, BROKER_SERVICE_TYPES, serviceTypeLabel, type ServiceTypeOption } from '../constants/platformServices';
 import ComingSoon from './ComingSoon';
 import BrokerOverviewTab from '../components/MessageBrokers/BrokerOverviewTab';
 import TopicsTab from '../components/MessageBrokers/TopicsTab';
@@ -47,7 +47,7 @@ const TABS: { value: DetailTab; label: string }[] = [
   { value: 'advanced', label: 'Advanced Settings' },
 ];
 
-const logoFor = (type: string): string | undefined => BROKER_SERVICE_TYPES.find((t) => t.id === type)?.logo;
+const logoFor = (type: string): ServiceTypeOption | undefined => BROKER_SERVICE_TYPES.find((t) => t.id === type);
 
 export default function MessageBrokerDetail(scope: OrgScope): JSX.Element {
   const navigate = useNavigate();
@@ -94,7 +94,11 @@ export default function MessageBrokerDetail(scope: OrgScope): JSX.Element {
         <>
           <Stack direction="row" alignItems="center" gap={2} sx={{ mb: 3 }}>
             {logo ? (
-              <Box component="img" src={`${import.meta.env.BASE_URL}${logo}`} alt="" sx={{ width: 40, height: 40, flexShrink: 0 }} />
+              logo.logoDark ? (
+                <ColorSchemeImage src={{ light: `${import.meta.env.BASE_URL}${logo.logo}`, dark: `${import.meta.env.BASE_URL}${logo.logoDark}` }} alt="" width={40} height={40} sx={{ flexShrink: 0 }} />
+              ) : (
+                <Box component="img" src={`${import.meta.env.BASE_URL}${logo.logo}`} alt="" sx={{ width: 40, height: 40, flexShrink: 0 }} />
+              )
             ) : (
               <Box sx={{ width: 40, height: 40, borderRadius: 1, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, textTransform: 'uppercase' }}>{service.name.charAt(0) || '?'}</Box>
             )}

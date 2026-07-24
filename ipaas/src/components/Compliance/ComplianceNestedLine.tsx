@@ -42,12 +42,7 @@ export default function ComplianceNestedLine({ line, onClick }: ComplianceNested
         <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: color === 'success' ? 'success.main' : 'text.disabled', mx: '4px' }} />
       )}
       {onClick && line.id ? (
-        <Typography
-          component="button"
-          type="button"
-          variant="body2"
-          onClick={onClick}
-          sx={{ background: 'none', border: 0, p: 0, cursor: 'pointer', color: 'inherit', textAlign: 'left', '&:hover': { textDecoration: 'underline' } }}>
+        <Typography component="button" type="button" variant="body2" onClick={onClick} sx={{ background: 'none', border: 0, p: 0, cursor: 'pointer', color: 'inherit', textAlign: 'left', '&:hover': { textDecoration: 'underline' } }}>
           {line.name}
         </Typography>
       ) : (

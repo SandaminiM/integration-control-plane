@@ -70,10 +70,7 @@ export default function RuleSeverityTable({ group }: RuleSeverityTableProps): JS
                       <ListingTable.Cell>
                         <Stack direction="row" spacing={0.5} alignItems="center">
                           {pathDetails.length > 0 && (
-                            <IconButton
-                              size="small"
-                              aria-label={`Expand rule ${rule.ruleName}`}
-                              onClick={() => setExpanded((prev) => ({ ...prev, [expandKey]: !prev[expandKey] }))}>
+                            <IconButton size="small" aria-label={`Expand rule ${rule.ruleName}`} onClick={() => setExpanded((prev) => ({ ...prev, [expandKey]: !prev[expandKey] }))}>
                               <ChevronDown size={16} style={{ transform: isOpen ? 'rotate(180deg)' : undefined, transition: 'transform 0.2s' }} />
                             </IconButton>
                           )}
