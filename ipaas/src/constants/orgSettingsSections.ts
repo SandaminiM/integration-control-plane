@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import { IS_CLOUD } from '../features';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from './permissions';
 
 /** A single org-Settings section: the tab label, its route, and the permissions that reveal it. */
@@ -36,6 +37,7 @@ export interface SettingsSectionDef {
  */
 export const SETTINGS_SECTIONS: readonly SettingsSectionDef[] = [
   { id: 'access-control', label: 'Access Control', path: 'access-control/users', permissions: ALL_USER_MGT_PERMISSIONS },
+  ...(IS_CLOUD ? [{ id: 'package-registries', label: 'Package Registries', path: 'package-registries', permissions: [Permissions.ENVIRONMENT_MANAGE] }] : []),
   { id: 'egress-control', label: 'Egress Control', path: 'egress-control', permissions: [Permissions.ENVIRONMENT_MANAGE] },
   { id: 'workflows', label: 'Workflows', path: 'workflows', permissions: [Permissions.USER_VIEW] },
   // Credentials is always available (no permission gate, matching Devant).
