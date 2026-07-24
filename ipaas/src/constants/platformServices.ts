@@ -41,6 +41,8 @@ export interface ServiceTypeOption {
   description: string;
   /** Logo path under {@link DB_LOGO_BASE}, resolved against the app base URL by the UI. */
   logo: string;
+  /** Dark-mode variant of `logo` — for monochrome brand marks (e.g. Kafka) that need a different color per theme. */
+  logoDark?: string;
   disabled?: boolean;
 }
 
@@ -99,7 +101,15 @@ export interface DbServerKind {
   serviceTypes: ServiceTypeOption[];
 }
 
-export const BROKER_SERVICE_TYPES: ServiceTypeOption[] = [{ id: 'kafka', name: 'Apache Kafka', description: 'A fully-managed distributed event streaming platform for high-performance data pipelines and pub/sub messaging.', logo: `${DB_LOGO_BASE}kafka.svg` }];
+export const BROKER_SERVICE_TYPES: ServiceTypeOption[] = [
+  {
+    id: 'kafka',
+    name: 'Apache Kafka',
+    description: 'A fully-managed distributed event streaming platform for high-performance data pipelines and pub/sub messaging.',
+    logo: `${DB_LOGO_BASE}kafka.svg`,
+    logoDark: `${DB_LOGO_BASE}kafka-dark.svg`,
+  },
+];
 
 export const DATABASE_KIND: DbServerKind = {
   isVector: false,
