@@ -51,7 +51,9 @@ export function useSchemaConfig(projectId: string, componentId: string, envId: s
   return useQuery({
     queryKey: ['schemaConfig', projectId, componentId, envId, deploymentTrackId, commitHash],
     queryFn: () => fetchSchemaConfig(projectId, componentId, envId, deploymentTrackId, commitHash),
-    enabled: !!projectId && !!componentId && !!envId && !!deploymentTrackId,
+    // The backend requires commitHash on this endpoint — firing before it resolves
+    // (it's usually sourced from a separate deployment/build query) gets a guaranteed 400.
+    enabled: !!projectId && !!componentId && !!envId && !!deploymentTrackId && !!commitHash,
     retry: false,
   });
 }

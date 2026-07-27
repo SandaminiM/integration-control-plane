@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Avatar, Box, Button, ButtonGroup, Chip, CircularProgress, ClickAwayListener, Grow, IconButton, InputBase, MenuList, MenuItem, Paper, Popper, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Avatar, Box, Button, ButtonGroup, Chip, CircularProgress, ClickAwayListener, Grow, IconButton, InputBase, MenuList, MenuItem, Paper, Popper, Skeleton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { Tag, Cloud, GitCommitHorizontal, Copy, Check, ChevronDown, Code2, Pencil, Globe, Lock } from '@wso2/oxygen-ui-icons-react';
 import type { ComponentDetail } from '../../../types/component';
@@ -73,9 +73,13 @@ interface ComponentHeaderProps {
    * integrations (e.g. MCP proxy) — hides Source/Commit + the editor entry.
    */
   hasSource?: boolean;
+  /** True while `repository` is still being fetched — shows a skeleton instead of the "—" empty state. */
+  isRepositoryLoading?: boolean;
+  /** True while `latestCommit` is still being fetched (including waiting on `repository` to resolve its branch first). */
+  isLatestCommitLoading?: boolean;
 }
 
-export default function ComponentHeader({ component, project, repository, latestCommit, orgHandler, projectId, projectHandler, apimId, module, hasSource = true }: ComponentHeaderProps) {
+export default function ComponentHeader({ component, project, repository, latestCommit, orgHandler, projectId, projectHandler, apimId, module, hasSource = true, isRepositoryLoading = false, isLatestCommitLoading = false }: ComponentHeaderProps) {
   const { userId } = useAuth();
   const [copied, setCopied] = useState(false);
   const [splitOpen, setSplitOpen] = useState(false);
@@ -465,6 +469,8 @@ export default function ComponentHeader({ component, project, repository, latest
                       </IconButton>
                     </Tooltip>
                   </>
+                ) : isRepositoryLoading ? (
+                  <Skeleton variant="text" width={240} height={20} />
                 ) : (
                   <Typography variant="body2" color="text.secondary">
                     —
@@ -494,6 +500,8 @@ export default function ComponentHeader({ component, project, repository, latest
                       {latestCommit.author.name}
                     </Typography>
                   </>
+                ) : isLatestCommitLoading ? (
+                  <Skeleton variant="text" width={320} height={20} />
                 ) : (
                   <Typography variant="body2" color="text.secondary">
                     —

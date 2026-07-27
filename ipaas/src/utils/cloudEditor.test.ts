@@ -54,7 +54,14 @@ describe('derivePodPhase', () => {
   });
 
   it('is starting once scheduled and initialized', () => {
-    expect(derivePodPhase(pod([{ type: 'PodScheduled', status: 'True' }, { type: 'Initialized', status: 'True' }]))).toBe('starting');
+    expect(
+      derivePodPhase(
+        pod([
+          { type: 'PodScheduled', status: 'True' },
+          { type: 'Initialized', status: 'True' },
+        ]),
+      ),
+    ).toBe('starting');
   });
 
   it('is opening once containers are ready', () => {

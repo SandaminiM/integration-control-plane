@@ -100,13 +100,7 @@ export default function GraphqlOperationsList({ activeEndpoint, isDeploymentRead
       {operations.map((operation) => {
         const colors = getGraphqlOperationColors(operation.name);
         return operation.fields.map((field) => (
-          <OperationTile
-            key={`${operation.name}-${field.name}`}
-            badgeLabel={operation.name}
-            label={field.name}
-            colors={colors}
-            drawerContent={<GraphqlOperationDrawer operationName={operation.name} field={field} colors={colors} />}
-          />
+          <OperationTile key={`${operation.name}-${field.name}`} badgeLabel={operation.name} label={field.name} colors={colors} drawerContent={<GraphqlOperationDrawer operationName={operation.name} field={field} colors={colors} />} />
         ));
       })}
     </Box>

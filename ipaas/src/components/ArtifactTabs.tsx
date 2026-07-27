@@ -39,7 +39,12 @@ export function ArtifactSource({ envId, componentId, artifactType, artifact }: T
   if (error || !source) return <Typography sx={emptySx}>No source content available.</Typography>;
 
   return (
-    <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>}>
+    <Suspense
+      fallback={
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress size={24} />
+        </Box>
+      }>
       <CodeViewer code={source} language="xml" />
     </Suspense>
   );
@@ -117,7 +122,12 @@ export function ArtifactWsdl({ envId, componentId, artifactType, artifact }: Tab
     );
   if (error || !wsdl) return <Typography sx={emptySx}>No WSDL content available.</Typography>;
   return (
-    <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>}>
+    <Suspense
+      fallback={
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress size={24} />
+        </Box>
+      }>
       <CodeViewer code={wsdl} language="xml" />
     </Suspense>
   );
@@ -133,7 +143,12 @@ export function ArtifactValue({ artifact, envId, componentId }: TabProps) {
     );
   if (!value) return <Typography sx={emptySx}>No value available.</Typography>;
   return (
-    <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>}>
+    <Suspense
+      fallback={
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress size={24} />
+        </Box>
+      }>
       <CodeViewer code={value} language="xml" />
     </Suspense>
   );

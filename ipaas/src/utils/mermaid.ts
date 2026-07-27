@@ -22,7 +22,7 @@ const MERMAID_TYPE_KEYWORDS = [
   'flowchart',
   'graph',
   'sequencediagram',
-  'classDiagram',
+  'classdiagram',
   'statediagram',
   'erdiagram',
   'journey',
