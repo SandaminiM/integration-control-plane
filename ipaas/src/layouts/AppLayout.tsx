@@ -52,6 +52,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { JSX } from 'react';
 import { useNavigate, Outlet, NavLink, useLocation } from 'react-router';
 import Logo from '../components/Logo';
+import NotFound from '../components/NotFound';
 import {
   Activity,
   Award,
@@ -139,7 +140,7 @@ import {
   type Scope,
 } from '../nav';
 import { isSettingsSectionVisible, type SettingsSectionDef } from '../constants/orgSettingsSections';
-import { componentOverviewUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, termsOfUseUrl } from '../paths';
+import { componentOverviewUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, profileUrl, registerOrgUrl, termsOfUseUrl } from '../paths';
 import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { CopilotProvider } from '../contexts/CopilotContext';
@@ -281,6 +282,50 @@ function AppLayoutInner(): JSX.Element {
       setOrgIdVersion((v) => v + 1); // trigger re-render so queries re-evaluate orgId()
     }
   }, [isOidcUser, userId, scope.org, orgsData]);
+
+  // Re-scope auth to the URL's org when it differs from the currently active one — e.g. a
+  // shared link to org A opened by someone whose stored token/org is still scoped to org B.
+  // Without this, breadcrumbs (URL-driven `scope.org`) show org A while every org-scoped query
+  // (useOrgUuid, orgId() in useProjects) keeps fetching org B's data.
+  //
+  // Two distinct failure shapes are both surfaced as "no access", since neither leaves us with
+  // a validly-scoped token to render org A's data with:
+  //  - `scope.org` isn't in this user's own org list at all (they were never a member).
+  //  - it IS in their list, but the STS re-scope call itself failed (e.g. revoked mid-session).
+  const orgSyncingRef = useRef<string | null>(null);
+  const [orgAccessDeniedFor, setOrgAccessDeniedFor] = useState<string | null>(null);
+  useEffect(() => {
+    if (!scope.org || !orgsData.length) return;
+    const activeOrgHandle = localStorage.getItem('org_handle');
+    if (activeOrgHandle === scope.org || orgSyncingRef.current === scope.org) return;
+    const match = orgsData.find((o) => o.handle === scope.org);
+    if (!match) {
+      setOrgAccessDeniedFor(scope.org);
+      return;
+    }
+    orgSyncingRef.current = scope.org;
+    switchOrgToken(scope.org)
+      .then(() => {
+        if (match.numericId > 0) {
+          window.API_CONFIG.asgardeoOrgNumericId = match.numericId;
+          localStorage.setItem('org_numeric_id', String(match.numericId));
+        }
+        setOrgAccessDeniedFor(null);
+        // invalidateQueries (not clear()) — components stay mounted here (no navigation follows,
+        // we're already on the right URL), so clear() would nuke the cache out from under their
+        // active subscriptions and leave them stuck loading. invalidateQueries refetches in place.
+        queryClient.invalidateQueries();
+        setOrgIdVersion((v) => v + 1);
+      })
+      .catch(() => {
+        orgSyncingRef.current = null;
+        setOrgAccessDeniedFor(scope.org);
+      });
+  }, [scope.org, orgsData, queryClient]);
+  const orgAccessDenied = orgAccessDeniedFor === scope.org;
+  // Where "back to your organizations" should land: the user's own first accessible org, or the
+  // create-an-org flow if they don't have one yet (both come from the same unscoped org list).
+  const ownOrgFallbackUrl = orgsData[0] ? orgHomeUrl(orgsData[0].handle) : registerOrgUrl();
 
   // Find component UUID for permission checks
   const currentComponent = hasComponent(scope) ? components.find((c) => c.handler === scope.component) : undefined;
@@ -1403,14 +1448,18 @@ function AppLayoutInner(): JSX.Element {
               overflowY: 'auto',
               overflowX: 'auto',
             }}>
-            <Suspense
-              fallback={
-                <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                  <CircularProgress color="primary" />
-                </Box>
-              }>
-              <Outlet />
-            </Suspense>
+            {orgAccessDenied ? (
+              <NotFound message={`You don't have access to "${scope.org}". Ask an admin for an invite, or switch to one of your own organizations.`} backTo={ownOrgFallbackUrl} backLabel="Back to your organizations" />
+            ) : (
+              <Suspense
+                fallback={
+                  <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                    <CircularProgress color="primary" />
+                  </Box>
+                }>
+                <Outlet />
+              </Suspense>
+            )}
           </Box>
           {IS_WIP && (
             <Suspense fallback={null}>
