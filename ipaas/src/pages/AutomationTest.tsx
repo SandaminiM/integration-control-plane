@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Card, CircularProgress, Divider, MenuItem, PageTitle, Select, Stack, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Card, CircularProgress, Divider, MenuItem, PageTitle, Select, Skeleton, Stack, Typography } from '@wso2/oxygen-ui';
 import { Activity, Play, RefreshCw } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -99,7 +99,7 @@ export default function AutomationTest({ org, project, component }: ComponentSco
   const [pendingExecution, setPendingExecution] = useState<TaskExecution | null>(null);
   const [applyRunId, setApplyRunId] = useState('');
 
-  const { data: executionCount } = useTaskExecutionCount(releaseId, comp?.id ?? '', envId, projectId);
+  const { data: executionCount, isLoading: loadingExecutionCount } = useTaskExecutionCount(releaseId, comp?.id ?? '', envId, projectId);
   const trigger = useTriggerComponent();
   const executionArgs = useMemo(() => buildExecutionArgumentsFromForm(runtimeArguments, formData), [runtimeArguments, formData]);
 
@@ -286,9 +286,13 @@ export default function AutomationTest({ org, project, component }: ComponentSco
                   (Last 30 days)
                 </Typography>
               </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-                {executionCount ?? 0}
-              </Typography>
+              {loadingExecutionCount ? (
+                <Skeleton variant="text" width={40} height={36} />
+              ) : (
+                <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                  {executionCount ?? 0}
+                </Typography>
+              )}
             </Box>
           </Stack>
           <Stack direction="row" gap={1}>

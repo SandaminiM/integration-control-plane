@@ -39,8 +39,7 @@ const ni = (name: string): never => {
 
 // awaits: GenAI / third-party service list endpoints. Empty defaults keep the
 // read-only listing pages rendering (with an empty state) instead of throwing.
-const emptyServiceList = (params: { offset: number; limit: number }): Promise<GenAiServiceListResponse> =>
-  Promise.resolve({ count: 0, pagination: { limit: params.limit, total: 0, offset: params.offset }, data: [] });
+const emptyServiceList = (params: { offset: number; limit: number }): Promise<GenAiServiceListResponse> => Promise.resolve({ count: 0, pagination: { limit: params.limit, total: 0, offset: params.offset }, data: [] });
 
 export const listGenaiServices = (params: { query?: string; offset: number; limit: number; projectId?: string }): Promise<GenAiServiceListResponse> => emptyServiceList(params);
 export const listThirdPartyServices = (params: { query?: string; offset: number; limit: number; projectId?: string }): Promise<GenAiServiceListResponse> => emptyServiceList(params);

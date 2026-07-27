@@ -197,6 +197,12 @@ export function useRedeployDeployment() {
 export function useDeployPrebuiltImage() {
   return useMutation({
     mutationFn: (input: DeployPrebuiltImageInput) => deployPrebuiltImage(input),
+    // This resolver occasionally times out upstream (504) under load. A couple of
+    // quick retries clear most of these without forcing the user to redo the whole
+    // prebuilt-integration flow (name check, component creation, config) — the caller's
+    // catch-and-rollback only kicks in once retries are exhausted.
+    retry: (failureCount, error) => failureCount < 2 && /HTTP 5\d\d/.test(error instanceof Error ? error.message : ''),
+    retryDelay: 1500,
   });
 }
 
