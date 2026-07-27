@@ -206,7 +206,7 @@ function AppLayoutInner(): JSX.Element {
   const [orgMenuAnchor, setOrgMenuAnchor] = useState<HTMLElement | null>(null);
   const [orgSearch, setOrgSearch] = useState('');
   const orgSearchRef = useRef<HTMLInputElement>(null);
-  const { data: orgsData = [] } = useOrgs();
+  const { data: orgsData = [], isLoading: orgsLoading } = useOrgs();
 
   const { notifications, actions: notifActions, unreadCount, unreadNotifications } = useNotifications({ initialNotifications: [...mockNotifications] });
   const alertNotifications = notifications.filter((n) => n.type === 'warning' || n.type === 'error');
@@ -293,9 +293,16 @@ function AppLayoutInner(): JSX.Element {
   //  - `scope.org` isn't in this user's own org list at all (they were never a member).
   //  - it IS in their list, but the STS re-scope call itself failed (e.g. revoked mid-session).
   const orgSyncingRef = useRef<string | null>(null);
+  // Aborts the in-flight exchange (if any) the moment a newer one starts, so a slow, now-stale
+  // request can't resolve later and persist an older org's token over the one that's since won.
+  const orgSyncAbortRef = useRef<AbortController | null>(null);
   const [orgAccessDeniedFor, setOrgAccessDeniedFor] = useState<string | null>(null);
+  const [isSyncingOrgToken, setIsSyncingOrgToken] = useState(false);
   useEffect(() => {
-    if (!scope.org || !orgsData.length) return;
+    // Wait for the org list to actually settle before judging membership — `orgsData` defaults to
+    // `[]` both while the query is still loading AND once it settles with a genuinely empty list,
+    // so gating on `orgsData.length` alone would let a zero-org user's mismatch go undetected forever.
+    if (!scope.org || orgsLoading) return;
     const activeOrgHandle = localStorage.getItem('org_handle');
     if (activeOrgHandle === scope.org || orgSyncingRef.current === scope.org) return;
     const match = orgsData.find((o) => o.handle === scope.org);
@@ -303,9 +310,14 @@ function AppLayoutInner(): JSX.Element {
       setOrgAccessDeniedFor(scope.org);
       return;
     }
+    orgSyncAbortRef.current?.abort();
+    const abortController = new AbortController();
+    orgSyncAbortRef.current = abortController;
     orgSyncingRef.current = scope.org;
-    switchOrgToken(scope.org)
+    setIsSyncingOrgToken(true);
+    switchOrgToken(scope.org, abortController.signal)
       .then(() => {
+        if (abortController.signal.aborted) return; // superseded — a newer switch already committed
         if (match.numericId > 0) {
           window.API_CONFIG.asgardeoOrgNumericId = match.numericId;
           localStorage.setItem('org_numeric_id', String(match.numericId));
@@ -318,14 +330,23 @@ function AppLayoutInner(): JSX.Element {
         setOrgIdVersion((v) => v + 1);
       })
       .catch(() => {
+        if (abortController.signal.aborted) return; // superseded, not a real failure — ignore
         orgSyncingRef.current = null;
         setOrgAccessDeniedFor(scope.org);
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) setIsSyncingOrgToken(false);
       });
-  }, [scope.org, orgsData, queryClient]);
+  }, [scope.org, orgsData, orgsLoading, queryClient]);
   const orgAccessDenied = orgAccessDeniedFor === scope.org;
+  // Hold scoped content (rather than render it against a possibly-still-wrong-org token) until
+  // membership is known and any resync above has finished — an unsettled org list or an in-flight
+  // token exchange both mean we can't yet tell whether `scope.org` is the right, active org.
+  const orgSyncUnresolved = !!scope.org && (orgsLoading || isSyncingOrgToken);
   // Where "back to your organizations" should land: the user's own first accessible org, or the
   // create-an-org flow if they don't have one yet (both come from the same unscoped org list).
-  const ownOrgFallbackUrl = orgsData[0] ? orgHomeUrl(orgsData[0].handle) : registerOrgUrl();
+  const alternativeOrg = orgsData.find((o) => o.handle !== scope.org);
+  const ownOrgFallbackUrl = alternativeOrg ? orgHomeUrl(alternativeOrg.handle) : registerOrgUrl();
 
   // Find component UUID for permission checks
   const currentComponent = hasComponent(scope) ? components.find((c) => c.handler === scope.component) : undefined;
@@ -1450,6 +1471,10 @@ function AppLayoutInner(): JSX.Element {
             }}>
             {orgAccessDenied ? (
               <NotFound message={`You don't have access to "${scope.org}". Ask an admin for an invite, or switch to one of your own organizations.`} backTo={ownOrgFallbackUrl} backLabel="Back to your organizations" />
+            ) : orgSyncUnresolved ? (
+              <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <CircularProgress color="primary" />
+              </Box>
             ) : (
               <Suspense
                 fallback={
