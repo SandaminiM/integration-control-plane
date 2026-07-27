@@ -78,16 +78,6 @@ export const INTEGRATION_TYPES: IntegrationTypeOption[] = [
     ],
   },
   {
-    id: 'service',
-    title: 'Integration as API',
-    description: 'Expose your integration as a REST, GraphQL or WebSocket API',
-    docLink: 'https://wso2.com/integration-platform/docs/get-started/build-integration-api',
-    icons: [
-      { icon: <Globe size={16} />, label: 'REST' },
-      { icon: <Layers size={16} />, label: 'GraphQL' },
-    ],
-  },
-  {
     id: 'file-integration',
     title: 'File Integration',
     description: 'Process files from storage systems like FTP or AWS S3 when they arrive',
