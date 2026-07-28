@@ -22,6 +22,8 @@ export const BALLERINA_CENTRAL_ID = 'ballerina-central';
 
 export const BALLERINA_CENTRAL_TOKEN_PATH = '/ballerina-central/token';
 
+export const BALLERINA_CENTRAL_TOKEN_EXPIRY_WARNING_DAYS = 90;
+
 export const BALLERINA_CENTRAL_TOKEN_INSTRUCTIONS = {
   heading: 'How to generate a token',
   steps: ['Log in to your account on Ballerina Central.', 'Navigate to the Tokens menu in the left navigation bar.', 'Press the + Generate New Token button.', 'Copy the token and paste it below.'],

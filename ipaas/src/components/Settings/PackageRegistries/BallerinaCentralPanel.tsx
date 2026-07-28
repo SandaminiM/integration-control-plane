@@ -19,9 +19,16 @@
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Card, CircularProgress, InputAdornment, Link, Skeleton, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, ArrowUpRight, CheckCircle2, ChevronDown, Lock } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { BALLERINA_CENTRAL_TOKEN_INSTRUCTIONS, BALLERINA_CENTRAL_TOKEN_PANEL_COPY } from '../../../constants/packageRegistries';
+import { BALLERINA_CENTRAL_TOKEN_EXPIRY_WARNING_DAYS, BALLERINA_CENTRAL_TOKEN_INSTRUCTIONS, BALLERINA_CENTRAL_TOKEN_PANEL_COPY } from '../../../constants/packageRegistries';
 import { useBallerinaCentralToken, useRemoveBallerinaCentralToken, useSaveBallerinaCentralToken } from '../../../hooks/useBallerinaCentralToken';
 import { formatDateTime } from '../../../utils/time';
+
+function daysUntilExpiry(expiresOn?: string): number | null {
+  if (!expiresOn) return null;
+  const expiresAt = new Date(expiresOn).getTime();
+  if (Number.isNaN(expiresAt)) return null;
+  return Math.floor((expiresAt - Date.now()) / 86_400_000);
+}
 
 export default function BallerinaCentralPanel({ onBack }: { onBack: () => void }): JSX.Element {
   const { data: tokenStatus, isLoading, isError, refetch } = useBallerinaCentralToken();
@@ -31,6 +38,8 @@ export default function BallerinaCentralPanel({ onBack }: { onBack: () => void }
   const [instructionsOpen, setInstructionsOpen] = useState(true);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const configured = !!tokenStatus?.configured;
+  const daysToExpiry = daysUntilExpiry(tokenStatus?.expiresOn);
+  const expiringSoon = daysToExpiry !== null && daysToExpiry <= BALLERINA_CENTRAL_TOKEN_EXPIRY_WARNING_DAYS;
 
   const handleSave = () => {
     if (!tokenInput.trim()) return;
@@ -51,7 +60,7 @@ export default function BallerinaCentralPanel({ onBack }: { onBack: () => void }
         Ballerina Central
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        {configured ? 'This token is used by every build in the organization to pull private packages.' : 'Add a Ballerina Central access token so builds in this organization can pull private packages.'}
+        {configured ? 'This token allows builds in the organization to access private packages when needed.' : 'Add a Ballerina Central access token to allow builds in this organization to access private packages.'}
       </Typography>
 
       {saveSuccess && (
@@ -70,7 +79,7 @@ export default function BallerinaCentralPanel({ onBack }: { onBack: () => void }
         <Stack gap={3} sx={{ maxWidth: 640 }}>
           <Accordion expanded={instructionsOpen} onChange={(_e, expanded) => setInstructionsOpen(expanded)} disableGutters sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, '&:before': { display: 'none' } }}>
             <AccordionSummary expandIcon={<ChevronDown size={16} />}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                 {BALLERINA_CENTRAL_TOKEN_INSTRUCTIONS.heading}
               </Typography>
             </AccordionSummary>
@@ -122,19 +131,35 @@ export default function BallerinaCentralPanel({ onBack }: { onBack: () => void }
           <Card variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
             <Stack direction="row" alignItems="center" gap={1} sx={{ color: 'success.main', mb: 3 }}>
               <CheckCircle2 size={20} />
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'success.main' }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'success.main' }}>
                 Token configured
               </Typography>
             </Stack>
-            <Stack gap={0.5}>
-              <Typography variant="body2" color="text.secondary">
-                Added on
-              </Typography>
-              <Typography variant="body1" sx={{ fontWeight: 700 }}>
-                {formatDateTime(tokenStatus?.addedOn)}
-              </Typography>
+            <Stack direction="row">
+              <Stack gap={0.5} sx={{ flex: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Added on
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                  {formatDateTime(tokenStatus?.addedOn)}
+                </Typography>
+              </Stack>
+              {tokenStatus?.expiresOn && (
+                <Stack gap={0.5} sx={{ flex: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Expires on
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    {formatDateTime(tokenStatus.expiresOn)}
+                  </Typography>
+                </Stack>
+              )}
             </Stack>
           </Card>
+
+          {expiringSoon && (
+            <Alert severity="warning">This token expires on {formatDateTime(tokenStatus?.expiresOn)}. Save a new token before then to avoid failed builds.</Alert>
+          )}
 
           {removeToken.isError && <Alert severity="error">{removeToken.error.message}</Alert>}
 
