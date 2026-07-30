@@ -21,9 +21,11 @@ import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useApiDefinition, useComponentDeployment, useEnvEndpoints } from '../../../hooks/useDeployments';
 import { useOrgUuid } from '../../../hooks/useOrgUuid';
+import { IS_CLOUD } from '../../../features';
 import type { EnvCardBodyProps } from '../../../types/integration';
 import EnvCardSkeleton from '../_shared/EnvCardSkeleton';
 import EndpointUrlsPanel from '../_shared/EndpointUrlsPanel';
+import ConsumersPanel from './ConsumersPanel';
 import ServiceInsights from './ServiceInsights';
 import SwaggerOperationsList, { type SwaggerDocument } from './SwaggerOperationsList';
 import GraphqlOperationsList from './GraphqlOperationsList';
@@ -113,6 +115,22 @@ export default function EnvCardBody({ component, env, prevEnv, projectId, versio
         <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
           This component has not been deployed to this environment yet.
         </Typography>
+      )}
+
+      {/* Cloud-only in-console API consumption: consumer apps, subscriptions, and
+          the exposed API's security config. Keyed by the BFF's
+          component/environment/endpoint triple — in cloud the component name is
+          the component id and the endpoint name is the endpoint id. */}
+      {IS_CLOUD && showEndpointPanel && deploymentStatusV2 !== 'IN_PROGRESS' && !!activeEndpoint && (
+        <ConsumersPanel
+          componentName={component.id}
+          projectName={projectId}
+          envName={env.name}
+          envLabel={env.name}
+          endpointName={activeEndpoint.id}
+          endpoints={envEndpoints.map((ep) => ({ name: ep.id, displayName: ep.displayName || ep.id }))}
+          endpointUrl={activeEndpoint.publicUrl || activeEndpoint.invokeUrl || ''}
+        />
       )}
 
       {showInsights && <ServiceInsights envName={env.name} envId={env.id} apimEnvId={env.apimEnvId} projectId={projectId} apiId={insightsApiId} />}

@@ -1,0 +1,58 @@
+/**
+ * Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { describe, expect, it } from 'vitest';
+import { friendlyApiError } from './apiSecurity';
+
+const FALLBACK = 'Failed to save the security configuration.';
+
+describe('friendlyApiError', () => {
+  it('never leaks the raw HTTP body', () => {
+    const message = friendlyApiError(new Error('HTTP 404: 404 page not found'), FALLBACK);
+    expect(message).not.toContain('404 page not found');
+    expect(message).not.toContain('HTTP');
+  });
+
+  it('explains a 404 as an unexposed endpoint', () => {
+    expect(friendlyApiError(new Error('HTTP 404: 404 page not found'), FALLBACK)).toBe(`${FALLBACK} This endpoint is not exposed as an API on the gateway yet.`);
+  });
+
+  it('explains a 409 as a missing exposure', () => {
+    expect(friendlyApiError(new Error('HTTP 409: not deployed'), FALLBACK)).toContain('expose it first');
+  });
+
+  it('maps auth statuses without the caller context', () => {
+    expect(friendlyApiError(new Error('HTTP 401: unauthorized'), FALLBACK)).toBe('Your session has expired. Sign in again and retry.');
+    expect(friendlyApiError(new Error('HTTP 403: forbidden'), FALLBACK)).toContain('do not have permission');
+  });
+
+  it('maps 503 and other 5xx separately', () => {
+    expect(friendlyApiError(new Error('HTTP 503: upstream down'), FALLBACK)).toContain('gateway is unavailable');
+    expect(friendlyApiError(new Error('HTTP 500: boom'), FALLBACK)).toBe('Something went wrong on the server. Try again in a moment.');
+  });
+
+  it('recognises a failed fetch', () => {
+    expect(friendlyApiError(new TypeError('Failed to fetch'), FALLBACK)).toContain('Could not reach the server');
+  });
+
+  it('falls back for unrecognised errors and non-errors', () => {
+    expect(friendlyApiError(new Error('something odd'), FALLBACK)).toBe(FALLBACK);
+    expect(friendlyApiError(undefined, FALLBACK)).toBe(FALLBACK);
+    expect(friendlyApiError('HTTP 400: bad body', FALLBACK)).toContain('check the values');
+  });
+});
