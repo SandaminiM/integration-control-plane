@@ -22,6 +22,7 @@ import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { useApimApi } from '../../../hooks/useApim';
 import { getDevPortalApiUrl } from '../../../config/runtimeConfig';
+import { IS_CLOUD } from '../../../features';
 import type { OverviewHeaderActionsProps } from '../../../types/integration';
 import SecurityDrawer from '../../SecurityDrawer';
 import ConfigureActionRow from './ConfigureActionRow';
@@ -76,8 +77,10 @@ export default function OverviewHeaderActions({ component, apimId, orgHandler, p
   return (
     <>
       <Stack gap={1} alignItems="flex-end">
-        {/* Configure Security (always) + any extra configure rows (e.g. MCP → Configure Policies) */}
-        <ConfigureActionRow Icon={ShieldCheck} label="Configure Security" onClick={() => setSecurityDrawerOpen(true)} />
+        {/* Configure Security + any extra configure rows (e.g. MCP → Configure Policies).
+            Cloud has no APIM behind this drawer — it configures security per
+            environment from the env card's own Configure Security action. */}
+        {!IS_CLOUD && <ConfigureActionRow Icon={ShieldCheck} label="Configure Security" onClick={() => setSecurityDrawerOpen(true)} />}
         {extraConfigureRows}
         {/* Lifecycle Status row */}
         <Stack direction="row" alignItems="center" gap={1}>
@@ -108,7 +111,7 @@ export default function OverviewHeaderActions({ component, apimId, orgHandler, p
           {extra}
         </Stack>
       </Stack>
-      <SecurityDrawer open={securityDrawerOpen} onClose={() => setSecurityDrawerOpen(false)} apimId={apimId} componentId={componentId} versionId={versionId} />
+      {!IS_CLOUD && <SecurityDrawer open={securityDrawerOpen} onClose={() => setSecurityDrawerOpen(false)} apimId={apimId} componentId={componentId} versionId={versionId} />}
     </>
   );
 }

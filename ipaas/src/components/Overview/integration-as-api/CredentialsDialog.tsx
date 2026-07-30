@@ -154,10 +154,6 @@ export default function CredentialsDialog({ open, onClose, projectName, endpoint
 
             <Typography sx={{ ...styles.fieldLabel, mt: 2.5 }}>Description (optional)</Typography>
             <TextField value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What calls this API?" size="small" fullWidth disabled={busy} />
-
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
-              The application is created in <strong>{projectName}</strong> and subscribed to this API. Subscription tokens are only enforced while subscription validation is on — turn it on under Security.
-            </Typography>
           </>
         ) : (
           <Stack gap={2}>
