@@ -122,15 +122,7 @@ export default function EnvCardBody({ component, env, prevEnv, projectId, versio
           component/environment/endpoint triple — in cloud the component name is
           the component id and the endpoint name is the endpoint id. */}
       {IS_CLOUD && showEndpointPanel && deploymentStatusV2 !== 'IN_PROGRESS' && !!activeEndpoint && (
-        <ConsumersPanel
-          componentName={component.id}
-          projectName={projectId}
-          envName={env.name}
-          envLabel={env.name}
-          endpointName={activeEndpoint.id}
-          endpoints={envEndpoints.map((ep) => ({ name: ep.id, displayName: ep.displayName || ep.id }))}
-          endpointUrl={activeEndpoint.publicUrl || activeEndpoint.invokeUrl || ''}
-        />
+        <ConsumersPanel componentName={component.id} projectName={projectId} envName={env.name} envLabel={env.name} endpointName={activeEndpoint.id} endpoints={envEndpoints.map((ep) => ({ name: ep.id, displayName: ep.displayName || ep.id }))} />
       )}
 
       {showInsights && <ServiceInsights envName={env.name} envId={env.id} apimEnvId={env.apimEnvId} projectId={projectId} apiId={insightsApiId} />}

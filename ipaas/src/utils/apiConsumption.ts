@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { SUBSCRIPTION_KEY_HEADER, TOKEN_PLACEHOLDER } from '../constants/apiConsumption';
+import { SUBSCRIPTION_KEY_HEADER } from '../constants/apiConsumption';
 import type { Consumer } from '../types/consumers';
 import { formatDate } from './time';
 
@@ -30,9 +30,4 @@ export function consumerSummary(consumer: Consumer): string {
   const { status, createdAt } = consumer.subscription;
   const created = formatDate(createdAt);
   return [SUBSCRIPTION_KEY_HEADER, status, created && `subscribed ${created}`].filter(Boolean).join(' · ');
-}
-
-/** Test-call snippet for an exposed API, authenticated with a subscription token. */
-export function subscriptionCurl(url: string, token: string): string {
-  return `curl '${url}' \\\n  -H '${SUBSCRIPTION_KEY_HEADER}: ${token || TOKEN_PLACEHOLDER}'`;
 }

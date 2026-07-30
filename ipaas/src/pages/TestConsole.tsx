@@ -21,8 +21,11 @@ import { Check, Copy, Eye, EyeOff, Key } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
+import { DEFAULT_API_KEY_HEADER } from '../constants/apiConsumption';
+import { IS_CLOUD } from '../features';
 import { useApimSwagger, useGenerateTestKey } from '../hooks/useApim';
 import { useComponentByHandler } from '../hooks/useComponents';
+import { useCreateEndpointTestKey } from '../hooks/useConsumers';
 import { useComponentDeployment, useEnvEndpoints } from '../hooks/useDeployments';
 import { useEnvironments } from '../hooks/useEnvironments';
 import type { EnvEndpoint } from '../types/component';
@@ -30,7 +33,13 @@ import { useOrgUuid } from '../hooks/useOrgUuid';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import NotFound from '../components/NotFound';
 import { useProjectId } from '../hooks/useProjects';
+import type { EndpointRef } from '../types/consumers';
+import { friendlyApiError } from '../utils/apiSecurity';
 import { broaden, resourceUrl, type ComponentScope } from '../nav';
+
+/** Header the APIM gateway reads the test key from. Cloud uses the api-key-auth header instead. */
+const APIM_TEST_KEY_HEADER = 'test-key';
+const TEST_KEY_HEADER = IS_CLOUD ? DEFAULT_API_KEY_HEADER : APIM_TEST_KEY_HEADER;
 
 const ENV_STATUS_DOT: Record<string, string> = {
   ACTIVE: 'success.main',
@@ -152,20 +161,28 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
 
   const generateKeyMutation = useGenerateTestKey();
 
+  // Cloud mints the key from the BFF's test-key route (component/environment/endpoint
+  // triple); wip/icp mint it from APIM against the endpoint's apimId.
+  const testKeyEndpointRef: EndpointRef | null = useMemo(
+    () => (IS_CLOUD && component && selectedEnv && selectedEndpoint ? { componentName: component.id, environmentName: selectedEnv.name, endpointName: selectedEndpoint.id } : null),
+    [component, selectedEnv, selectedEndpoint],
+  );
+  const endpointTestKeyMutation = useCreateEndpointTestKey(testKeyEndpointRef);
+  const canGetTestKey = IS_CLOUD ? !!testKeyEndpointRef : !!selectedEndpoint?.apimId;
+
   const handleGetTestKey = async () => {
-    if (!selectedEndpoint?.apimId) return;
-    const keyType = selectedEnv?.critical ? 'Production' : 'Development';
+    if (!canGetTestKey) return;
     setFetchingKey(true);
     setKeyError(null);
     try {
-      const result = await generateKeyMutation.mutateAsync({ apimId: selectedEndpoint.apimId, keyType });
-      if (result?.apikey) {
-        updateSecurityHeader(result.apikey);
+      const key = IS_CLOUD ? (await endpointTestKeyMutation.mutateAsync()).apiKey : (await generateKeyMutation.mutateAsync({ apimId: selectedEndpoint!.apimId!, keyType: selectedEnv?.critical ? 'Production' : 'Development' }))?.apikey;
+      if (key) {
+        updateSecurityHeader(key);
       } else {
         setKeyError('No test key available. Please check your permissions.');
       }
-    } catch {
-      setKeyError('Failed to fetch test key.');
+    } catch (err) {
+      setKeyError(IS_CLOUD ? friendlyApiError(err, 'Could not mint a test key.') : 'Failed to fetch test key.');
     } finally {
       setFetchingKey(false);
     }
@@ -318,6 +335,9 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
             <Stack direction="row" alignItems="flex-start" gap={2}>
               <Typography variant="body2" sx={{ minWidth: 140, fontWeight: 500, color: 'text.secondary', pt: 1 }}>
                 Security Header
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 400 }}>
+                  {TEST_KEY_HEADER}
+                </Typography>
               </Typography>
               <Stack direction="column" gap={0.5} sx={{ flex: 1 }}>
                 <Stack direction="row" alignItems="center" gap={1}>
@@ -354,7 +374,7 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
                     variant="outlined"
                     size="small"
                     startIcon={fetchingKey ? <CircularProgress size={14} color="inherit" /> : <Key size={14} />}
-                    disabled={fetchingKey || !selectedEndpoint?.apimId}
+                    disabled={fetchingKey || !canGetTestKey}
                     onClick={handleGetTestKey}
                     sx={{ whiteSpace: 'nowrap', textTransform: 'none' }}>
                     Get Test Key
@@ -390,7 +410,7 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
               docExpansion="list"
               requestInterceptor={(request) => {
                 if (securityHeaderRef.current) {
-                  request.headers['test-key'] = securityHeaderRef.current;
+                  request.headers[TEST_KEY_HEADER] = securityHeaderRef.current;
                 }
                 return request;
               }}

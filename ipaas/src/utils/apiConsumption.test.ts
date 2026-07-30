@@ -17,7 +17,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { consumerDisplayName, consumerSummary, subscriptionCurl } from './apiConsumption';
+import { consumerDisplayName, consumerSummary } from './apiConsumption';
 import type { Consumer } from '../types/consumers';
 
 const consumer = (over: { displayName?: string; status?: string; createdAt?: string } = {}): Consumer => ({
@@ -44,14 +44,5 @@ describe('consumerSummary', () => {
   });
   it('omits an unparseable date', () => {
     expect(consumerSummary(consumer({ status: 'ACTIVE', createdAt: 'not-a-date' }))).toBe('Subscription-Key · ACTIVE');
-  });
-});
-
-describe('subscriptionCurl', () => {
-  it('sends the token as the Subscription-Key header', () => {
-    expect(subscriptionCurl('https://gw/api', 'tok-123')).toBe("curl 'https://gw/api' \\\n  -H 'Subscription-Key: tok-123'");
-  });
-  it('falls back to a placeholder when no token is known', () => {
-    expect(subscriptionCurl('https://gw/api', '')).toContain('<subscription-token>');
   });
 });

@@ -16,12 +16,12 @@
  * under the License.
  */
 
-/** Shared styles for the cloud-only API Consumption UI (Consumers subcard, consumer dialog, security drawer). */
+/** Shared styles for the cloud-only API Consumption UI (Consumers subcard, consumer drawer, security drawer). */
 
 /** Sized and placed like the Build History drawer: below the top nav, full height beneath it. */
-export const securityDrawer = {
+export const rightDrawer = {
   '& .MuiDrawer-paper': {
-    width: { xs: '100%', sm: 480 },
+    width: { xs: '100%', sm: 560 },
     top: { xs: '56px', sm: '64px' },
     height: 'auto',
     bottom: 0,
@@ -55,6 +55,18 @@ export const drawerBody = {
 export const drawerFooter = {
   display: 'flex',
   justifyContent: 'flex-end',
+  gap: 1,
+  px: 3,
+  py: 2,
+  borderTop: '1px solid',
+  borderColor: 'divider',
+} as const;
+
+/** Footer with destructive/secondary actions on the left and the primary on the right. */
+export const drawerFooterSplit = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
   gap: 1,
   px: 3,
   py: 2,
@@ -100,17 +112,21 @@ export const endpointSelect = {
   minWidth: 200,
 } as const;
 
-export const dialogTitle = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: 1,
+/** Read-only look for the consumer name once its credentials exist. */
+export const lockedField = {
+  '& .MuiInputBase-input.Mui-disabled': {
+    WebkitTextFillColor: 'unset',
+  },
+  '& .MuiInputBase-root.Mui-disabled': {
+    bgcolor: 'action.hover',
+  },
 } as const;
 
-export const dialogActions = {
-  justifyContent: 'space-between',
-  px: 3,
-  py: 2,
+export const credentialsSection = {
+  mt: 3,
+  pt: 2.5,
+  borderTop: '1px solid',
+  borderColor: 'divider',
 } as const;
 
 export const envChip = {
@@ -127,10 +143,6 @@ export const centredRow = {
   display: 'flex',
   justifyContent: 'center',
   py: 1.5,
-} as const;
-
-export const subscribedNote = {
-  color: 'success.main',
 } as const;
 
 export const subCard = {
@@ -189,18 +201,33 @@ export const consumerRow = {
   alignItems: 'center',
   gap: 1.5,
   p: 1.25,
-  borderRadius: 1.5,
+  borderRadius: 0.75,
   border: '1px solid',
   borderColor: 'divider',
   bgcolor: 'background.paper',
 } as const;
 
+/** Black circle / white letter in light mode; inverted in dark mode. */
 export const consumerAvatar = {
-  width: 30,
-  height: 30,
-  borderRadius: 1.5,
-  fontSize: 13,
-  bgcolor: 'primary.main',
+  width: 28,
+  height: 28,
+  fontSize: 12,
+  fontWeight: 600,
+  bgcolor: 'text.primary',
+  color: 'background.paper',
+} as const;
+
+/** Status chip shown inline after the consumer name. */
+export const consumerStatusChip = {
+  height: 16,
+  fontSize: '0.6rem',
+  '& .MuiChip-label': {
+    px: 0.625,
+  },
+} as const;
+
+export const consumerNameRow = {
+  minWidth: 0,
 } as const;
 
 export const emptyState = {
@@ -233,7 +260,7 @@ export const fieldLabel = {
 /** `fieldLabel` for a field that follows another one. */
 export const nextFieldLabel = {
   ...fieldLabel,
-  mt: 2.5,
+  mt: 2,
 } as const;
 
 export const credField = {
@@ -256,33 +283,4 @@ export const credValue = {
   whiteSpace: 'nowrap',
   fontFamily: 'monospace',
   fontSize: 12.5,
-} as const;
-
-export const codeBox = {
-  borderRadius: 1,
-  overflow: 'hidden',
-  border: '1px solid',
-  borderColor: 'divider',
-  bgcolor: 'action.hover',
-} as const;
-
-export const codeHead = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  px: 1.5,
-  py: 1,
-  borderBottom: '1px solid',
-  borderColor: 'divider',
-} as const;
-
-export const codePre = {
-  m: 0,
-  px: 1.75,
-  py: 1.5,
-  fontFamily: 'monospace',
-  fontSize: 11.5,
-  lineHeight: 1.6,
-  whiteSpace: 'pre-wrap',
-  wordBreak: 'break-all',
 } as const;

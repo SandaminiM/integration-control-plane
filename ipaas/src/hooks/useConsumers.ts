@@ -17,8 +17,8 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createConsumer, fetchConsumers, fetchSubscription, regenerateConsumerToken, revokeConsumer, setEndpointApiKeyAuth } from '#api/consumers';
-import type { ApiKeyAuthOptions, Consumer, CreateConsumerInput, EndpointRef, Subscription } from '../types/consumers';
+import { createConsumer, createEndpointTestKey, fetchConsumers, fetchSubscription, regenerateConsumerToken, revokeConsumer, setEndpointApiKeyAuth } from '#api/consumers';
+import type { ApiKeyAuthOptions, ApiKeyResult, Consumer, CreateConsumerInput, EndpointRef, Subscription } from '../types/consumers';
 
 /** Endpoint refs are only usable once every segment is known. */
 const isCompleteRef = (ref: EndpointRef | null | undefined): ref is EndpointRef => !!ref?.componentName && !!ref.environmentName && !!ref.endpointName;
@@ -107,11 +107,22 @@ export function useRevokeConsumer(projectName: string | null | undefined, ref: E
  * policy state, so the caller owns the displayed state and applies the
  * server-echoed result on success.
  *
- * The other spec routes (jwt-auth, subscription-validation, expose/unexpose,
- * API keys, test key) exist in the API layer but no UI drives them yet.
+ * The remaining spec routes (jwt-auth, subscription-validation, expose/unexpose,
+ * long-lived API keys) exist in the API layer but no UI drives them yet.
  */
 export function useSetEndpointApiKeyAuth(ref: EndpointRef | null | undefined) {
   return useMutation<boolean, Error, { enabled: boolean; options?: ApiKeyAuthOptions }>({
     mutationFn: ({ enabled, options }) => setEndpointApiKeyAuth(ref!, enabled, options),
+  });
+}
+
+/**
+ * Mint a short-lived (1h) test key for the exposed API. The plaintext is
+ * returned once and is sent as the `api-key-auth` header, which this route also
+ * turns on if it is off.
+ */
+export function useCreateEndpointTestKey(ref: EndpointRef | null | undefined) {
+  return useMutation<ApiKeyResult, Error, void>({
+    mutationFn: () => createEndpointTestKey(ref!),
   });
 }

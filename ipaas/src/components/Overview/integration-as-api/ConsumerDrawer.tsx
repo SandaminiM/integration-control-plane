@@ -16,13 +16,13 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, IconButton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { Check, Eye, EyeOff, X } from '@wso2/oxygen-ui-icons-react';
+import { Alert, Box, Button, Chip, CircularProgress, Drawer, IconButton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Eye, EyeOff, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState, type JSX } from 'react';
-import { INVOKE_URL_PLACEHOLDER, REGENERATE_SUBSCRIPTION_WARNING, SUBSCRIPTION_KEY_HEADER, TOKEN_MASK, UNSUBSCRIBE_WARNING } from '../../../constants/apiConsumption';
+import { REGENERATE_SUBSCRIPTION_WARNING, SUBSCRIPTION_KEY_HEADER, TOKEN_MASK, UNSUBSCRIBE_WARNING } from '../../../constants/apiConsumption';
 import { useCreateConsumer, useRegenerateConsumerToken, useRevokeConsumer, useSubscription } from '../../../hooks/useConsumers';
 import type { Consumer, EndpointRef } from '../../../types/consumers';
-import { consumerDisplayName, subscriptionCurl } from '../../../utils/apiConsumption';
+import { consumerDisplayName } from '../../../utils/apiConsumption';
 import { friendlyApiError } from '../../../utils/apiSecurity';
 import ConfirmDeleteDialog from '../../ConfirmDeleteDialog';
 import CopyButton from './CopyButton';
@@ -30,7 +30,7 @@ import * as styles from './apiConsumption.styles';
 
 type ConfirmAction = 'regenerate' | 'unsubscribe';
 
-interface ConsumerDialogProps {
+interface ConsumerDrawerProps {
   open: boolean;
   onClose: () => void;
   /** Project handle the consumer application belongs to. */
@@ -41,21 +41,20 @@ interface ConsumerDialogProps {
   envLabel: string;
   /** Existing consumer to manage; `null` opens the create form. */
   consumer: Consumer | null;
-  /** Base invoke URL used to build the test call snippet. */
-  endpointUrl?: string;
 }
 
 /**
- * Create a consumer application subscribed to this API, or manage an existing
- * one. The credential is the subscription token, sent as `Subscription-Key`.
+ * Right drawer for creating a consumer application subscribed to this API, or
+ * managing an existing one. The name is captured first; generating credentials
+ * subscribes the application and reveals its key below, after which the name is
+ * fixed. The credential is the subscription token, sent as `Subscription-Key`.
  */
-export default function ConsumerDialog({ open, onClose, projectName, endpointRef, envLabel, consumer, endpointUrl }: ConsumerDialogProps): JSX.Element {
+export default function ConsumerDrawer({ open, onClose, projectName, endpointRef, envLabel, consumer }: ConsumerDrawerProps): JSX.Element {
   const createMutation = useCreateConsumer(projectName);
   const regenMutation = useRegenerateConsumerToken(projectName, endpointRef);
   const revokeMutation = useRevokeConsumer(projectName, endpointRef);
 
   const [appName, setAppName] = useState('');
-  const [description, setDescription] = useState('');
   const [revealToken, setRevealToken] = useState(false);
   const [confirm, setConfirm] = useState<ConfirmAction | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -72,8 +71,7 @@ export default function ConsumerDialog({ open, onClose, projectName, endpointRef
 
   useEffect(() => {
     if (!open) return;
-    setAppName('');
-    setDescription('');
+    setAppName(consumer ? consumerDisplayName(consumer) : '');
     setRevealToken(false);
     setConfirm(null);
     setError(null);
@@ -84,11 +82,11 @@ export default function ConsumerDialog({ open, onClose, projectName, endpointRef
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, consumer]);
 
-  const handleCreate = async () => {
+  const handleGenerate = async () => {
     if (!appName.trim()) return;
     setError(null);
     try {
-      await createMutation.mutateAsync({ ...endpointRef, projectName, appName: appName.trim(), description: description.trim() || undefined });
+      await createMutation.mutateAsync({ ...endpointRef, projectName, appName: appName.trim() });
     } catch (err) {
       setError(friendlyApiError(err, 'Could not create the consumer application.'));
     }
@@ -113,59 +111,65 @@ export default function ConsumerDialog({ open, onClose, projectName, endpointRef
   };
 
   const busy = createMutation.isPending || regenMutation.isPending || revokeMutation.isPending;
-  const isCreate = !consumerInView;
-  const name = consumerInView ? consumerDisplayName(consumerInView) : '';
-  const url = endpointUrl || INVOKE_URL_PLACEHOLDER;
-  // The snippet is in plain view, so it honours the reveal toggle; copy always
-  // carries the real token.
-  const curlDisplay = subscriptionCurl(url, token && !revealToken ? TOKEN_MASK : token);
-  const curlCopy = subscriptionCurl(url, token);
+  // Credentials exist once the application is subscribed — the name is fixed from then on.
+  const hasCredentials = !!consumerInView;
 
   return (
-    <Dialog open={open} onClose={busy ? undefined : onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={styles.dialogTitle}>
-        <Stack direction="row" alignItems="center" gap={1.25}>
-          <Typography variant="h6" component="span">
-            {isCreate ? 'New Consumer Application' : name}
-          </Typography>
-          <Chip label={envLabel} size="small" color="success" variant="outlined" sx={styles.envChip} />
-        </Stack>
-        <IconButton size="small" onClick={onClose} disabled={busy} aria-label="Close">
-          <X size={18} />
-        </IconButton>
-      </DialogTitle>
-      <Divider />
+    <Drawer anchor="right" open={open} onClose={busy ? undefined : onClose} variant="temporary" sx={styles.rightDrawer}>
+      <Box sx={styles.drawerFrame}>
+        <Box sx={styles.drawerHeader}>
+          <Stack direction="row" alignItems="center" gap={1.25}>
+            <Typography variant="subtitle1" fontWeight={600}>
+              {hasCredentials ? consumerDisplayName(consumerInView) : 'New Consumer Application'}
+            </Typography>
+            <Chip label={envLabel} size="small" color="success" variant="outlined" sx={styles.envChip} />
+          </Stack>
+          <IconButton size="small" onClick={onClose} disabled={busy} aria-label="Close">
+            <X size={16} />
+          </IconButton>
+        </Box>
 
-      <DialogContent>
-        {error && (
-          <Alert severity="error" sx={styles.dialogAlert}>
-            {error}
-          </Alert>
-        )}
+        <Box sx={styles.drawerBody}>
+          {error && (
+            <Alert severity="error" sx={styles.dialogAlert}>
+              {error}
+            </Alert>
+          )}
 
-        {isCreate ? (
-          <>
-            <Typography sx={styles.fieldLabel}>
-              {/* The label sits outside the field, so the required marker is rendered here. */}
-              <span>
-                Consumer Application Name
+          <Typography sx={styles.fieldLabel}>
+            {/* The label sits outside the field, so the required marker is rendered here. */}
+            <span>
+              Consumer Application Name
+              {!hasCredentials && (
                 <Box component="span" sx={styles.requiredMark} aria-hidden="true">
                   *
                 </Box>
-              </span>
-            </Typography>
-            <TextField value={appName} onChange={(e) => setAppName(e.target.value)} placeholder="e.g. my-greeting-client" size="small" fullWidth autoFocus required disabled={busy} />
+              )}
+            </span>
+          </Typography>
+          <TextField
+            value={hasCredentials ? consumerDisplayName(consumerInView) : appName}
+            onChange={(e) => setAppName(e.target.value)}
+            placeholder="e.g. my-greeting-client"
+            size="small"
+            fullWidth
+            autoFocus={!hasCredentials}
+            required={!hasCredentials}
+            disabled={hasCredentials || busy}
+            sx={hasCredentials ? styles.lockedField : undefined}
+          />
 
-            <Typography sx={styles.nextFieldLabel}>Description (optional)</Typography>
-            <TextField value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What calls this API?" size="small" fullWidth disabled={busy} />
-          </>
-        ) : (
-          <Stack gap={2}>
-            <Box>
-              <Typography sx={styles.fieldLabel}>
-                <span>Subscription Key</span>
-                <span>header: {SUBSCRIPTION_KEY_HEADER}</span>
-              </Typography>
+          {hasCredentials && (
+            <Box sx={styles.credentialsSection}>
+              <Typography sx={styles.fieldLabel}>Header</Typography>
+              <Box sx={styles.credField}>
+                <Typography component="span" sx={styles.credValue}>
+                  {SUBSCRIPTION_KEY_HEADER}
+                </Typography>
+                <CopyButton value={SUBSCRIPTION_KEY_HEADER} />
+              </Box>
+
+              <Typography sx={styles.nextFieldLabel}>API Key</Typography>
               {loadingToken ? (
                 <Box sx={styles.centredRow}>
                   <CircularProgress size={18} />
@@ -186,56 +190,36 @@ export default function ConsumerDialog({ open, onClose, projectName, endpointRef
                 <Alert severity="warning">{friendlyApiError(tokenError, 'The subscription key could not be read. Regenerate it to issue a new one.')}</Alert>
               )}
             </Box>
+          )}
+        </Box>
 
-            <Box sx={styles.codeBox}>
-              <Box sx={styles.codeHead}>
-                <Typography variant="caption" color="text.secondary">
-                  Test call · {envLabel}
-                </Typography>
-                <CopyButton value={curlCopy} />
-              </Box>
-              <Box component="pre" sx={styles.codePre}>
-                {curlDisplay}
-              </Box>
-            </Box>
-
-            <Stack direction="row" alignItems="center" gap={0.75} sx={styles.subscribedNote}>
-              <Check size={15} />
-              <Typography variant="body2">
-                {name} is subscribed to this API in {envLabel}.
-              </Typography>
-            </Stack>
-          </Stack>
-        )}
-      </DialogContent>
-
-      <Divider />
-      <DialogActions sx={styles.dialogActions}>
-        {isCreate ? (
-          <>
-            <Button variant="outlined" onClick={onClose} disabled={busy}>
-              Cancel
-            </Button>
-            <Button variant="contained" onClick={() => void handleCreate()} disabled={!appName.trim() || busy} startIcon={createMutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}>
-              Create &amp; subscribe
-            </Button>
-          </>
-        ) : (
-          <>
-            <Stack direction="row" gap={1}>
-              <Button variant="outlined" onClick={() => setConfirm('regenerate')} disabled={busy}>
-                Regenerate
+        <Box sx={hasCredentials ? styles.drawerFooterSplit : styles.drawerFooter}>
+          {hasCredentials ? (
+            <>
+              <Stack direction="row" gap={1}>
+                <Button variant="outlined" onClick={() => setConfirm('regenerate')} disabled={busy}>
+                  Regenerate
+                </Button>
+                <Button variant="outlined" color="error" onClick={() => setConfirm('unsubscribe')} disabled={busy}>
+                  Unsubscribe
+                </Button>
+              </Stack>
+              <Button variant="contained" onClick={onClose} disabled={busy}>
+                Done
               </Button>
-              <Button variant="outlined" color="error" onClick={() => setConfirm('unsubscribe')} disabled={busy}>
-                Unsubscribe
+            </>
+          ) : (
+            <>
+              <Button variant="outlined" onClick={onClose} disabled={busy}>
+                Cancel
               </Button>
-            </Stack>
-            <Button variant="contained" onClick={onClose} disabled={busy}>
-              Done
-            </Button>
-          </>
-        )}
-      </DialogActions>
+              <Button variant="contained" onClick={() => void handleGenerate()} disabled={!appName.trim() || busy} startIcon={createMutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}>
+                Generate Credentials
+              </Button>
+            </>
+          )}
+        </Box>
+      </Box>
 
       {confirm && (
         <ConfirmDeleteDialog
@@ -251,6 +235,6 @@ export default function ConsumerDialog({ open, onClose, projectName, endpointRef
           </Typography>
         </ConfirmDeleteDialog>
       )}
-    </Dialog>
+    </Drawer>
   );
 }
