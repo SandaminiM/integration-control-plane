@@ -42,6 +42,7 @@
  */
 
 import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, ConsumerApplication, CreateApiKeyInput, CreateConsumerInput, EndpointRef, Subscription } from '../../types/consumers';
+import { userFacingError } from '../../utils/apiSecurity';
 import { bff, items, q, seg, type ListResponse } from './_client';
 
 /** Tolerates both the bare-array (spec) and `{ items: [] }` (BFF house style) list shapes. */
@@ -131,6 +132,13 @@ const deleteSubscription = (applicationId: string, subscriptionId: string): Prom
  *
  * A per-application subscription read that fails (e.g. an application deleted
  * mid-flight) is skipped rather than failing the whole list.
+ *
+ * Scalability limitation: the BFF has no batch or `restApiId`-scoped
+ * subscriptions query, so this issues one subscriptions request per application
+ * in the project — N+1, all in flight at once. Fine for the handful of
+ * applications a project has today; if projects grow to hundreds, this needs a
+ * server-side filter (e.g. `GET /subscriptions?restApiId=…`) rather than a
+ * wider client-side fan-out.
  */
 export async function fetchConsumers(projectName: string, ref: EndpointRef): Promise<Consumer[]> {
   const restApiId = deriveRestApiId(ref);
@@ -160,7 +168,12 @@ export async function createConsumer(input: CreateConsumerInput): Promise<Consum
     const subscription = await createSubscription(application.id, { componentName, environmentName, endpointName });
     return { application, subscription };
   } catch (err) {
-    await deleteApplication(application.id).catch(() => undefined);
+    // A failed rollback leaves an unsubscribed application behind. The
+    // subscription error is what the user needs, so it still propagates — but
+    // the orphan is logged rather than discarded so it is diagnosable.
+    await deleteApplication(application.id).catch((rollbackErr: unknown) => {
+      console.error(`[cloud] createConsumer: rolling back application ${application.id} failed; it may be left unsubscribed:`, rollbackErr);
+    });
     throw err;
   }
 }
@@ -169,10 +182,24 @@ export async function createConsumer(input: CreateConsumerInput): Promise<Consum
  * Re-issue the subscription token. The BFF has no rotate route, so this
  * unsubscribes and resubscribes — the old `Subscription-Key` stops working the
  * moment the delete lands.
+ *
+ * The delete is not reversible, so a failed re-subscribe is retried once. If
+ * that also fails the application is left unsubscribed, which the caller must
+ * be told plainly: the generic "could not regenerate" wording would imply
+ * nothing changed while the old key is in fact already dead.
  */
 export async function regenerateConsumerToken(applicationId: string, subscriptionId: string, ref: EndpointRef): Promise<Subscription> {
   await deleteSubscription(applicationId, subscriptionId);
-  return createSubscription(applicationId, ref);
+  try {
+    return await createSubscription(applicationId, ref);
+  } catch (firstErr) {
+    try {
+      return await createSubscription(applicationId, ref);
+    } catch (retryErr) {
+      console.error(`[cloud] regenerateConsumerToken: re-subscribing application ${applicationId} failed twice; it is now unsubscribed:`, retryErr);
+      throw userFacingError(`The old subscription key was revoked, but a new one could not be issued — “${applicationId}” is now unsubscribed from this API. Close this dialog and subscribe it again.`, firstErr);
+    }
+  }
 }
 
 export const revokeConsumer = (applicationId: string, subscriptionId: string): Promise<void> => deleteSubscription(applicationId, subscriptionId);

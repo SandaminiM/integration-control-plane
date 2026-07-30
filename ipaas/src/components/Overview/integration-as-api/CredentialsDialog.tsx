@@ -25,6 +25,9 @@ import { friendlyApiError } from '../../../utils/apiSecurity';
 import CopyButton from './CopyButton';
 import * as styles from './apiConsumption.styles';
 
+/** Stand-in shown wherever the subscription token is hidden. */
+const MASK = '•'.repeat(28);
+
 interface ConsumerDialogProps {
   open: boolean;
   onClose: () => void;
@@ -114,7 +117,11 @@ export default function CredentialsDialog({ open, onClose, projectName, endpoint
   const isCreate = !issued;
   const name = issued?.application.displayName || issued?.application.id || '';
   const url = endpointUrl || 'https://<gateway-host>/<api-context>';
-  const curl = `curl '${url}' \\\n  -H 'Subscription-Key: ${token || '<subscription-token>'}'`;
+  // The snippet is rendered in plain view, so it honours the reveal toggle the
+  // same way the field above does. Copy always carries the real token.
+  const curlWith = (key: string): string => `curl '${url}' \\\n  -H 'Subscription-Key: ${key}'`;
+  const curlDisplay = curlWith(token ? (revealToken ? token : MASK) : '<subscription-token>');
+  const curlCopy = curlWith(token || '<subscription-token>');
 
   return (
     <Dialog open={open} onClose={busy ? undefined : onClose} maxWidth="sm" fullWidth>
@@ -169,7 +176,7 @@ export default function CredentialsDialog({ open, onClose, projectName, endpoint
               ) : token ? (
                 <Box sx={styles.credField}>
                   <Typography component="span" sx={styles.credValue}>
-                    {revealToken ? token : '•'.repeat(28)}
+                    {revealToken ? token : MASK}
                   </Typography>
                   <Tooltip title={revealToken ? 'Hide' : 'Reveal'}>
                     <IconButton size="small" onClick={() => setRevealToken((v) => !v)}>
@@ -188,10 +195,10 @@ export default function CredentialsDialog({ open, onClose, projectName, endpoint
                 <Typography variant="caption" color="text.secondary">
                   Test call · {envLabel}
                 </Typography>
-                <CopyButton value={curl} />
+                <CopyButton value={curlCopy} />
               </Box>
               <Box component="pre" sx={styles.codePre}>
-                {curl}
+                {curlDisplay}
               </Box>
             </Box>
 

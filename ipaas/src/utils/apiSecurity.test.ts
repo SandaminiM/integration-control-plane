@@ -17,7 +17,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { friendlyApiError } from './apiSecurity';
+import { friendlyApiError, userFacingError } from './apiSecurity';
 
 const FALLBACK = 'Failed to save the security configuration.';
 
@@ -48,6 +48,12 @@ describe('friendlyApiError', () => {
 
   it('recognises a failed fetch', () => {
     expect(friendlyApiError(new TypeError('Failed to fetch'), FALLBACK)).toContain('Could not reach the server');
+  });
+
+  it('passes a user-facing message through instead of the fallback', () => {
+    const err = userFacingError('The old key was revoked but a new one could not be issued.', new Error('HTTP 500: boom'));
+    expect(friendlyApiError(err, FALLBACK)).toBe('The old key was revoked but a new one could not be issued.');
+    expect(err.cause).toBeInstanceOf(Error);
   });
 
   it('falls back for unrecognised errors and non-errors', () => {

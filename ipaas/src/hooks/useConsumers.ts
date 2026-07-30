@@ -77,6 +77,12 @@ export function useRegenerateConsumerToken(projectName: string | null | undefine
       qc.setQueryData(['subscription', vars.applicationId, data.id], data);
       qc.invalidateQueries({ queryKey: consumersKey(projectName, ref) });
     },
+    // Regenerating deletes before it re-creates, so even on failure the old
+    // subscription is gone — the cached list must not keep showing it.
+    onError: (_err, vars) => {
+      qc.removeQueries({ queryKey: ['subscription', vars.applicationId, vars.subscriptionId] });
+      qc.invalidateQueries({ queryKey: consumersKey(projectName, ref) });
+    },
   });
 }
 
