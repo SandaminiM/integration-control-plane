@@ -19,23 +19,11 @@
 import { Alert, Box, Button, Checkbox, CircularProgress, Drawer, FormControlLabel, IconButton, MenuItem, Select, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
-import { useSetEndpointAuth } from '../../../hooks/useConsumers';
-import type { EndpointRef } from '../../../types/consumers';
+import { API_KEY_SCHEME_DESCRIPTION, COMING_SOON_OAUTH, COMING_SOON_UPSTREAM_ATTRS, DEFAULT_API_KEY_HEADER, OAUTH_HEADER, OAUTH_SCHEME_DESCRIPTION } from '../../../constants/apiConsumption';
+import { useSetEndpointApiKeyAuth } from '../../../hooks/useConsumers';
+import type { EndpointOption, EndpointRef } from '../../../types/consumers';
 import { friendlyApiError } from '../../../utils/apiSecurity';
-
-const DEFAULT_API_KEY_HEADER = 'X-API-Key';
-const OAUTH_COMING_SOON = 'Securing with OAuth coming soon';
-const UPSTREAM_ATTRS_COMING_SOON = 'Passing end-user attributes to upstream coming soon';
-
-const headerCell = { color: 'text.secondary', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' } as const;
-const schemeDescription = { display: 'block', mt: 0.75 } as const;
-
-/** One selectable endpoint of the environment in view. */
-export interface SecurityEndpointOption {
-  /** Endpoint name — the BFF's `endpointName` path segment. */
-  name: string;
-  displayName: string;
-}
+import * as styles from './apiConsumption.styles';
 
 interface ApiSecurityDrawerProps {
   open: boolean;
@@ -45,7 +33,7 @@ interface ApiSecurityDrawerProps {
   /** Environment name — the BFF's `environmentName` path segment. */
   envName: string;
   /** Endpoints of this environment; the drawer configures one at a time. */
-  endpoints: SecurityEndpointOption[];
+  endpoints: EndpointOption[];
   /** Endpoint selected when the drawer opens (the env card's active endpoint). */
   activeEndpointName?: string;
 }
@@ -56,8 +44,8 @@ interface ApiSecurityDrawerProps {
  * minus the Resources section, which has no cloud equivalent.
  *
  * Applying writes the `api-key-auth` gateway policy. OAuth is listed but not
- * selectable yet — the BFF's jwt-auth policy is not wired into this flow.
- * The gateway exposes no route to read the policies currently in force, so the
+ * selectable yet — the BFF's jwt-auth policy is not wired into this flow. The
+ * gateway exposes no route to read the policies currently in force, so the
  * checkboxes start from the documented post-expose default (API Key on).
  */
 export default function ApiSecurityDrawer({ open, onClose, componentName, envName, endpoints, activeEndpointName }: ApiSecurityDrawerProps): JSX.Element {
@@ -67,17 +55,7 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
   const [apiKeyHeader, setApiKeyHeader] = useState(DEFAULT_API_KEY_HEADER);
   const [error, setError] = useState<string | null>(null);
 
-  // Collapse any repeated endpoint names so the dropdown lists each API once.
-  const uniqueEndpoints = useMemo(() => {
-    const seen = new Set<string>();
-    return endpoints.filter((ep) => {
-      if (seen.has(ep.name)) return false;
-      seen.add(ep.name);
-      return true;
-    });
-  }, [endpoints]);
-
-  // Each open resets the selection to the env card's active endpoint (reset during render).
+  // Each open resets to the env card's active endpoint (reset during render).
   if (open !== wasOpen) {
     setWasOpen(open);
     if (open) {
@@ -89,22 +67,22 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
   }
 
   const matchedIdx = useMemo(() => {
-    const i = uniqueEndpoints.findIndex((ep) => ep.name === activeEndpointName);
+    const i = endpoints.findIndex((ep) => ep.name === activeEndpointName);
     return i >= 0 ? i : 0;
-  }, [uniqueEndpoints, activeEndpointName]);
+  }, [endpoints, activeEndpointName]);
   const selectedEndpointIdx = userSelectedIdx ?? matchedIdx;
-  const selectedEndpoint = uniqueEndpoints[selectedEndpointIdx] ?? null;
+  const selectedEndpoint = endpoints[selectedEndpointIdx] ?? null;
 
   const endpointRef: EndpointRef | null = useMemo(() => (selectedEndpoint ? { componentName, environmentName: envName, endpointName: selectedEndpoint.name } : null), [componentName, envName, selectedEndpoint]);
 
-  const authMutation = useSetEndpointAuth(endpointRef);
-  const saving = authMutation.isPending;
+  const apiKeyAuthMutation = useSetEndpointApiKeyAuth(endpointRef);
+  const saving = apiKeyAuthMutation.isPending;
 
   const handleApply = async () => {
     if (!endpointRef) return;
     setError(null);
     try {
-      await authMutation.mutateAsync({ kind: 'apiKey', enabled: isApiKey, options: { key: apiKeyHeader.trim() || DEFAULT_API_KEY_HEADER, in: 'header' } });
+      await apiKeyAuthMutation.mutateAsync({ enabled: isApiKey, options: { key: apiKeyHeader.trim() || DEFAULT_API_KEY_HEADER, in: 'header' } });
       onClose();
     } catch (err) {
       setError(friendlyApiError(err, 'Could not save the security configuration.'));
@@ -117,17 +95,10 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
   };
 
   return (
-    <Drawer
-      anchor="right"
-      open={open}
-      onClose={handleCancel}
-      variant="temporary"
-      // Sized and placed like the Build History drawer: below the top nav, full height beneath it.
-      sx={{ '& .MuiDrawer-paper': { width: { xs: '100%', sm: 480 }, top: { xs: '56px', sm: '64px' }, height: 'auto', bottom: 0 } }}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        {/* Header */}
-        <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+    <Drawer anchor="right" open={open} onClose={handleCancel} variant="temporary" sx={styles.securityDrawer}>
+      <Box sx={styles.drawerFrame}>
+        <Box sx={styles.drawerHeader}>
+          <Typography variant="subtitle1" fontWeight={600}>
             Configure Security
           </Typography>
           <IconButton size="small" aria-label="close" onClick={handleCancel}>
@@ -135,74 +106,69 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
           </IconButton>
         </Box>
 
-        {/* Content */}
-        <Box sx={{ flex: 1, overflow: 'auto', px: 2, py: 2 }}>
+        <Box sx={styles.drawerBody}>
           {!selectedEndpoint ? (
             <Alert severity="info">No endpoint associated with this component.</Alert>
           ) : (
             <Stack gap={2.5}>
               {error && <Alert severity="error">{error}</Alert>}
 
-              {/* Endpoints dropdown */}
               <Stack direction="row" alignItems="center" gap={2}>
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                <Typography variant="body2" fontWeight={500}>
                   Endpoints:
                 </Typography>
-                {uniqueEndpoints.length > 1 ? (
-                  <Select size="small" value={selectedEndpointIdx} onChange={(e) => setUserSelectedIdx(Number(e.target.value))} sx={{ minWidth: 200 }}>
-                    {uniqueEndpoints.map((ep, i) => (
+                {endpoints.length > 1 ? (
+                  <Select size="small" value={selectedEndpointIdx} onChange={(e) => setUserSelectedIdx(Number(e.target.value))} sx={styles.endpointSelect}>
+                    {endpoints.map((ep, i) => (
                       <MenuItem key={ep.name} value={i}>
                         {ep.displayName}
                       </MenuItem>
                     ))}
                   </Select>
                 ) : (
-                  <Box sx={{ minWidth: 200, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider', borderRadius: 0.5, px: 1.5, py: 0.75, fontSize: 13, fontWeight: 500 }}>{selectedEndpoint.displayName}</Box>
+                  <Box sx={styles.singleEndpointName}>{selectedEndpoint.displayName}</Box>
                 )}
               </Stack>
 
-              {/* Security Scheme Table — the description sits under each header field
-                  rather than in its own column, so the narrow drawer stays readable. */}
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={headerCell}>Security Scheme</TableCell>
-                    <TableCell sx={headerCell}>Security Header</TableCell>
+                    <TableCell sx={styles.tableHeadCell}>Security Scheme</TableCell>
+                    <TableCell sx={styles.tableHeadCell}>Security Header</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   <TableRow>
-                    <TableCell sx={{ verticalAlign: 'top' }}>
+                    <TableCell sx={styles.schemeCell}>
                       <FormControlLabel control={<Checkbox checked={isApiKey} onChange={() => setIsApiKey((v) => !v)} size="small" />} label="API Key" />
                     </TableCell>
                     <TableCell>
                       <TextField size="small" value={apiKeyHeader} onChange={(e) => setApiKeyHeader(e.target.value)} disabled={!isApiKey} fullWidth />
-                      <Typography variant="caption" color="text.secondary" sx={schemeDescription}>
-                        Secure your API with API Key protocol.
+                      <Typography variant="caption" color="text.secondary" sx={styles.schemeDescription}>
+                        {API_KEY_SCHEME_DESCRIPTION}
                       </Typography>
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell sx={{ verticalAlign: 'top' }}>
-                      <Tooltip title={OAUTH_COMING_SOON}>
-                        {/* A disabled control swallows pointer events, so the span carries the tooltip. */}
-                        <Box component="span" sx={{ display: 'inline-flex' }}>
+                    <TableCell sx={styles.schemeCell}>
+                      <Tooltip title={COMING_SOON_OAUTH}>
+                        <Box component="span" sx={styles.disabledTooltipTarget}>
                           <FormControlLabel control={<Checkbox checked={false} size="small" disabled />} label="OAuth" disabled />
                         </Box>
                       </Tooltip>
                     </TableCell>
                     <TableCell>
-                      <TextField size="small" value="Authorization" disabled fullWidth />
-                      <Typography variant="caption" color="text.secondary" sx={schemeDescription}>
-                        Secure your API with OAuth 2 protocol.
+                      <TextField size="small" value={OAUTH_HEADER} disabled fullWidth />
+                      <Typography variant="caption" color="text.secondary" sx={styles.schemeDescription}>
+                        {OAUTH_SCHEME_DESCRIPTION}
                       </Typography>
                     </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
 
-              <Tooltip title={UPSTREAM_ATTRS_COMING_SOON}>
-                <Box component="span" sx={{ alignSelf: 'flex-start' }}>
+              <Tooltip title={COMING_SOON_UPSTREAM_ATTRS}>
+                <Box component="span" sx={styles.disabledTooltipTarget}>
                   <FormControlLabel control={<Checkbox checked={false} size="small" disabled />} label="Pass end-user attributes to upstream" disabled />
                 </Box>
               </Tooltip>
@@ -210,8 +176,7 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
           )}
         </Box>
 
-        {/* Footer */}
-        <Box sx={{ px: 3, py: 2, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+        <Box sx={styles.drawerFooter}>
           <Button variant="outlined" onClick={handleCancel} disabled={saving}>
             Cancel
           </Button>

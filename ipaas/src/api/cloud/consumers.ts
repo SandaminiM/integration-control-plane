@@ -21,18 +21,7 @@
  * ("Integration Platform - API Security & Exposure"). Org context comes from
  * the JWT, so no org parameter appears on any of these calls.
  *
- * BFF routes used:
- *   POST/DELETE /components/{c}/environments/{e}/endpoints/{ep}/expose
- *   GET/POST    …/endpoints/{ep}/api-keys        (list masked / mint plaintext once)
- *   DELETE      …/endpoints/{ep}/api-keys/{keyName}
- *   POST        …/endpoints/{ep}/test-key        (1h key, forces api-key-auth on)
- *   PUT         …/endpoints/{ep}/security/{api-key|jwt|subscription}
- *   GET/POST    /applications                     (list is project-scoped)
- *   DELETE      /applications/{id}
- *   GET/POST    /applications/{id}/subscriptions
- *   GET/DELETE  /applications/{id}/subscriptions/{subId}
- *
- * Two shape notes:
+ * Two wire-shape notes:
  *   - The spec returns bare JSON arrays for the list routes, while most other
  *     BFF routes use the `{ items: [] }` envelope. `asList` accepts both so a
  *     server-side switch to the envelope does not break the UI.
@@ -57,7 +46,7 @@ const endpointPath = ({ componentName, environmentName, endpointName }: Endpoint
  * subscriptions to the endpoint in view before anything is exposed in-session.
  * Prefer the server-returned `handle` from `exposeEndpoint` whenever it is known.
  */
-export const deriveRestApiId = (ref: EndpointRef): string => `${ref.componentName}-${ref.endpointName}`;
+const deriveRestApiId = (ref: EndpointRef): string => `${ref.componentName}-${ref.endpointName}`;
 
 // ---------------------------------------------------------------------------
 // Exposure

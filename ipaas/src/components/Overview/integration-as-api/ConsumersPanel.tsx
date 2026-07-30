@@ -20,11 +20,15 @@ import { Alert, Avatar, Box, Button, Chip, CircularProgress, Stack, Typography }
 import { Plus, ShieldCheck, Users } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useConsumers } from '../../../hooks/useConsumers';
-import type { Consumer, EndpointRef } from '../../../types/consumers';
+import type { Consumer, EndpointOption, EndpointRef } from '../../../types/consumers';
+import { consumerDisplayName, consumerSummary } from '../../../utils/apiConsumption';
 import { friendlyApiError } from '../../../utils/apiSecurity';
-import ApiSecurityDrawer, { type SecurityEndpointOption } from './ApiSecurityDrawer';
-import CredentialsDialog from './CredentialsDialog';
+import ApiSecurityDrawer from './ApiSecurityDrawer';
+import ConsumerDialog from './ConsumerDialog';
 import * as styles from './apiConsumption.styles';
+
+/** `'new'` opens the create form; a `Consumer` opens it in manage mode. */
+type DialogTarget = Consumer | 'new' | null;
 
 interface ConsumersPanelProps {
   /** Component name — the BFF's `componentName` path segment. */
@@ -38,38 +42,25 @@ interface ConsumersPanelProps {
   /** Endpoint name — the BFF's `endpointName` path segment. */
   endpointName: string;
   /** All endpoints of this environment, for the security drawer's selector. */
-  endpoints: SecurityEndpointOption[];
+  endpoints: EndpointOption[];
   /** Base invoke URL used to build the test call snippet. */
   endpointUrl?: string;
 }
 
-const consumerName = (c: Consumer): string => c.application.displayName || c.application.id;
-
-const formatDate = (iso?: string): string => {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString();
-};
-
 /**
  * Cloud-only "Consumers" subcard rendered inside the API env card. Lists the
- * applications subscribed to this endpoint's exposed API, lets a user create
- * and manage subscriptions, and opens the API security drawer (exposure,
- * enforcement policies, API keys).
+ * applications subscribed to this endpoint's exposed API, lets a user create and
+ * manage subscriptions, and opens the security drawer for the API's gateway
+ * security configuration.
  */
 export default function ConsumersPanel({ componentName, projectName, envName, envLabel, endpointName, endpoints, endpointUrl }: ConsumersPanelProps): JSX.Element {
   const endpointRef: EndpointRef = useMemo(() => ({ componentName, environmentName: envName, endpointName }), [componentName, envName, endpointName]);
 
   const { data: consumers = [], isLoading, error } = useConsumers(projectName, endpointRef);
   const [securityOpen, setSecurityOpen] = useState(false);
-  const [dialog, setDialog] = useState<{ open: boolean; consumer: Consumer | null }>({ open: false, consumer: null });
+  const [dialogTarget, setDialogTarget] = useState<DialogTarget>(null);
 
   const count = consumers.length;
-
-  const consumerSub = (c: Consumer): string => {
-    const created = formatDate(c.subscription.createdAt);
-    return ['Subscription-Key', c.subscription.status, created && `subscribed ${created}`].filter(Boolean).join(' · ');
-  };
 
   return (
     <Box sx={styles.subCard}>
@@ -82,40 +73,40 @@ export default function ConsumersPanel({ componentName, projectName, envName, en
           </Typography>
         </Typography>
         <Stack direction="row" alignItems="center" gap={1.5}>
-          <Button variant="text" size="small" startIcon={<ShieldCheck size={14} />} onClick={() => setSecurityOpen(true)} sx={{ textTransform: 'none' }}>
+          <Button variant="text" size="small" startIcon={<ShieldCheck size={14} />} onClick={() => setSecurityOpen(true)} sx={styles.textAction}>
             Configure Security
           </Button>
-          <Button variant="contained" size="small" startIcon={<Plus size={14} />} onClick={() => setDialog({ open: true, consumer: null })}>
+          <Button variant="contained" size="small" startIcon={<Plus size={14} />} onClick={() => setDialogTarget('new')}>
             {count > 0 ? 'New Consumer' : 'Consume API'}
           </Button>
         </Stack>
       </Box>
 
       {isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2.5 }}>
+        <Box sx={styles.loadingRow}>
           <CircularProgress size={20} />
         </Box>
       ) : error ? (
-        <Alert severity="warning" sx={{ mt: 1.5 }}>
+        <Alert severity="warning" sx={styles.panelAlert}>
           {friendlyApiError(error, 'Could not load consumer applications.')}
         </Alert>
       ) : count > 0 ? (
-        <Stack gap={1} sx={{ mt: 1.5 }}>
+        <Stack gap={1} sx={styles.consumerList}>
           {consumers.map((c) => (
             <Box key={c.subscription.id} sx={styles.consumerRow}>
               <Avatar variant="rounded" sx={styles.consumerAvatar}>
-                {(consumerName(c)[0] ?? 'A').toUpperCase()}
+                {(consumerDisplayName(c)[0] ?? 'A').toUpperCase()}
               </Avatar>
-              <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Box sx={styles.consumerRowText}>
                 <Typography variant="body2" fontWeight={500} noWrap>
-                  {consumerName(c)}
+                  {consumerDisplayName(c)}
                 </Typography>
-                <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
-                  {consumerSub(c)}
+                <Typography variant="caption" color="text.secondary" noWrap sx={styles.consumerRowSubtitle}>
+                  {consumerSummary(c)}
                 </Typography>
               </Box>
-              <Chip label={c.subscription.status || 'ACTIVE'} size="small" color="success" variant="outlined" sx={{ height: 22, fontSize: '0.7rem' }} />
-              <Button variant="outlined" size="small" onClick={() => setDialog({ open: true, consumer: c })}>
+              <Chip label={c.subscription.status || 'ACTIVE'} size="small" color="success" variant="outlined" sx={styles.envChip} />
+              <Button variant="outlined" size="small" onClick={() => setDialogTarget(c)}>
                 Manage
               </Button>
             </Box>
@@ -130,7 +121,7 @@ export default function ConsumersPanel({ componentName, projectName, envName, en
       )}
 
       <ApiSecurityDrawer open={securityOpen} onClose={() => setSecurityOpen(false)} componentName={componentName} envName={envName} endpoints={endpoints} activeEndpointName={endpointName} />
-      <CredentialsDialog open={dialog.open} onClose={() => setDialog({ open: false, consumer: null })} projectName={projectName} endpointRef={endpointRef} envLabel={envLabel} consumer={dialog.consumer} endpointUrl={endpointUrl} />
+      <ConsumerDialog open={dialogTarget !== null} onClose={() => setDialogTarget(null)} projectName={projectName} endpointRef={endpointRef} envLabel={envLabel} consumer={dialogTarget === 'new' ? null : dialogTarget} endpointUrl={endpointUrl} />
     </Box>
   );
 }

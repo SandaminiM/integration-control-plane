@@ -19,14 +19,16 @@
 import { Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, IconButton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Check, Eye, EyeOff, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState, type JSX } from 'react';
+import { INVOKE_URL_PLACEHOLDER, REGENERATE_SUBSCRIPTION_WARNING, SUBSCRIPTION_KEY_HEADER, TOKEN_MASK, UNSUBSCRIBE_WARNING } from '../../../constants/apiConsumption';
 import { useCreateConsumer, useRegenerateConsumerToken, useRevokeConsumer, useSubscription } from '../../../hooks/useConsumers';
-import type { Consumer, EndpointRef, Subscription } from '../../../types/consumers';
+import type { Consumer, EndpointRef } from '../../../types/consumers';
+import { consumerDisplayName, subscriptionCurl } from '../../../utils/apiConsumption';
 import { friendlyApiError } from '../../../utils/apiSecurity';
+import ConfirmDeleteDialog from '../../ConfirmDeleteDialog';
 import CopyButton from './CopyButton';
 import * as styles from './apiConsumption.styles';
 
-/** Stand-in shown wherever the subscription token is hidden. */
-const MASK = '•'.repeat(28);
+type ConfirmAction = 'regenerate' | 'unsubscribe';
 
 interface ConsumerDialogProps {
   open: boolean;
@@ -45,92 +47,88 @@ interface ConsumerDialogProps {
 
 /**
  * Create a consumer application subscribed to this API, or manage an existing
- * one. The credential is the subscription token — sent as `Subscription-Key`.
+ * one. The credential is the subscription token, sent as `Subscription-Key`.
  */
-export default function CredentialsDialog({ open, onClose, projectName, endpointRef, envLabel, consumer, endpointUrl }: ConsumerDialogProps): JSX.Element {
+export default function ConsumerDialog({ open, onClose, projectName, endpointRef, envLabel, consumer, endpointUrl }: ConsumerDialogProps): JSX.Element {
   const createMutation = useCreateConsumer(projectName);
   const regenMutation = useRegenerateConsumerToken(projectName, endpointRef);
   const revokeMutation = useRevokeConsumer(projectName, endpointRef);
 
   const [appName, setAppName] = useState('');
   const [description, setDescription] = useState('');
-  /** The consumer being shown — the one passed in, or the one just created. */
-  const [issued, setIssued] = useState<Consumer | null>(consumer);
-  /** Token from create/regenerate; preferred over the fetched subscription. */
-  const [freshSubscription, setFreshSubscription] = useState<Subscription | null>(null);
   const [revealToken, setRevealToken] = useState(false);
-  const [confirm, setConfirm] = useState<'regen' | 'revoke' | null>(null);
+  const [confirm, setConfirm] = useState<ConfirmAction | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // The list route omits the token, so the single subscription is re-read here.
-  const needsFetch = !!issued && !freshSubscription;
-  const { data: fetchedSubscription, isLoading: loadingToken, error: tokenError } = useSubscription(issued?.application.id, issued?.subscription.id, open && needsFetch);
+  // The consumer in view and its subscription are server state, so they are
+  // derived from the mutations rather than mirrored into local state.
+  const consumerInView = consumer ?? createMutation.data ?? null;
+  const subscription = regenMutation.data ?? consumerInView?.subscription ?? null;
 
-  const subscription = freshSubscription ?? fetchedSubscription ?? issued?.subscription ?? null;
-  const token = subscription?.token ?? '';
+  // Create and regenerate return the token; the list route does not, so an
+  // existing consumer's token has to be re-read from the single subscription.
+  const { data: fetchedSubscription, isLoading: loadingToken, error: tokenError } = useSubscription(consumerInView?.application.id, subscription?.id, open && !!subscription && !subscription.token);
+  const token = subscription?.token ?? fetchedSubscription?.token ?? '';
 
-  // Reset the whole dialog whenever it (re)opens or targets a different consumer.
   useEffect(() => {
     if (!open) return;
-    setIssued(consumer);
-    setFreshSubscription(null);
     setAppName('');
     setDescription('');
     setRevealToken(false);
     setConfirm(null);
     setError(null);
+    createMutation.reset();
+    regenMutation.reset();
+    revokeMutation.reset();
+    // Mutation objects are new each render, so they cannot be dependencies.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, consumer]);
 
   const handleCreate = async () => {
     if (!appName.trim()) return;
     setError(null);
     try {
-      const created = await createMutation.mutateAsync({ ...endpointRef, projectName, appName: appName.trim(), description: description.trim() || undefined });
-      setIssued(created);
-      setFreshSubscription(created.subscription);
+      await createMutation.mutateAsync({ ...endpointRef, projectName, appName: appName.trim(), description: description.trim() || undefined });
     } catch (err) {
       setError(friendlyApiError(err, 'Could not create the consumer application.'));
     }
   };
 
   const handleConfirm = async () => {
-    if (!issued) return;
+    if (!consumerInView || !subscription) return;
+    const target = { applicationId: consumerInView.application.id, subscriptionId: subscription.id };
     setError(null);
     try {
-      if (confirm === 'regen') {
-        const updated = await regenMutation.mutateAsync({ applicationId: issued.application.id, subscriptionId: issued.subscription.id });
-        setIssued({ ...issued, subscription: updated });
-        setFreshSubscription(updated);
+      if (confirm === 'regenerate') {
+        await regenMutation.mutateAsync(target);
         setRevealToken(false);
-        setConfirm(null);
-      } else if (confirm === 'revoke') {
-        await revokeMutation.mutateAsync({ applicationId: issued.application.id, subscriptionId: issued.subscription.id });
-        setConfirm(null);
+      } else {
+        await revokeMutation.mutateAsync(target);
         onClose();
       }
+      setConfirm(null);
     } catch (err) {
-      setError(friendlyApiError(err, confirm === 'regen' ? 'Could not regenerate the subscription key.' : 'Could not unsubscribe this application.'));
+      setError(friendlyApiError(err, confirm === 'regenerate' ? 'Could not regenerate the subscription key.' : 'Could not unsubscribe this application.'));
     }
   };
 
   const busy = createMutation.isPending || regenMutation.isPending || revokeMutation.isPending;
-  const isCreate = !issued;
-  const name = issued?.application.displayName || issued?.application.id || '';
-  const url = endpointUrl || 'https://<gateway-host>/<api-context>';
-  // The snippet is rendered in plain view, so it honours the reveal toggle the
-  // same way the field above does. Copy always carries the real token.
-  const curlWith = (key: string): string => `curl '${url}' \\\n  -H 'Subscription-Key: ${key}'`;
-  const curlDisplay = curlWith(token ? (revealToken ? token : MASK) : '<subscription-token>');
-  const curlCopy = curlWith(token || '<subscription-token>');
+  const isCreate = !consumerInView;
+  const name = consumerInView ? consumerDisplayName(consumerInView) : '';
+  const url = endpointUrl || INVOKE_URL_PLACEHOLDER;
+  // The snippet is in plain view, so it honours the reveal toggle; copy always
+  // carries the real token.
+  const curlDisplay = subscriptionCurl(url, token && !revealToken ? TOKEN_MASK : token);
+  const curlCopy = subscriptionCurl(url, token);
 
   return (
     <Dialog open={open} onClose={busy ? undefined : onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+      <DialogTitle sx={styles.dialogTitle}>
         <Stack direction="row" alignItems="center" gap={1.25}>
           <Typography variant="h6" component="span">
             {isCreate ? 'New Consumer Application' : name}
           </Typography>
-          <Chip label={envLabel} size="small" color="success" variant="outlined" sx={{ height: 22, fontSize: '0.7rem' }} />
+          <Chip label={envLabel} size="small" color="success" variant="outlined" sx={styles.envChip} />
         </Stack>
         <IconButton size="small" onClick={onClose} disabled={busy} aria-label="Close">
           <X size={18} />
@@ -140,7 +138,7 @@ export default function CredentialsDialog({ open, onClose, projectName, endpoint
 
       <DialogContent>
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert severity="error" sx={styles.dialogAlert}>
             {error}
           </Alert>
         )}
@@ -148,18 +146,17 @@ export default function CredentialsDialog({ open, onClose, projectName, endpoint
         {isCreate ? (
           <>
             <Typography sx={styles.fieldLabel}>
-              {/* The label lives outside the field, so the required marker is rendered
-                  here rather than via MuiFormLabel-asterisk. */}
+              {/* The label sits outside the field, so the required marker is rendered here. */}
               <span>
                 Consumer Application Name
-                <Box component="span" sx={{ color: 'error.main', ml: 0.25 }} aria-hidden="true">
+                <Box component="span" sx={styles.requiredMark} aria-hidden="true">
                   *
                 </Box>
               </span>
             </Typography>
             <TextField value={appName} onChange={(e) => setAppName(e.target.value)} placeholder="e.g. my-greeting-client" size="small" fullWidth autoFocus required disabled={busy} />
 
-            <Typography sx={{ ...styles.fieldLabel, mt: 2.5 }}>Description (optional)</Typography>
+            <Typography sx={styles.nextFieldLabel}>Description (optional)</Typography>
             <TextField value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What calls this API?" size="small" fullWidth disabled={busy} />
           </>
         ) : (
@@ -167,16 +164,16 @@ export default function CredentialsDialog({ open, onClose, projectName, endpoint
             <Box>
               <Typography sx={styles.fieldLabel}>
                 <span>Subscription Key</span>
-                <span style={{ fontWeight: 400 }}>header: Subscription-Key</span>
+                <span>header: {SUBSCRIPTION_KEY_HEADER}</span>
               </Typography>
               {loadingToken ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 1.5 }}>
+                <Box sx={styles.centredRow}>
                   <CircularProgress size={18} />
                 </Box>
               ) : token ? (
                 <Box sx={styles.credField}>
                   <Typography component="span" sx={styles.credValue}>
-                    {revealToken ? token : MASK}
+                    {revealToken ? token : TOKEN_MASK}
                   </Typography>
                   <Tooltip title={revealToken ? 'Hide' : 'Reveal'}>
                     <IconButton size="small" onClick={() => setRevealToken((v) => !v)}>
@@ -202,7 +199,7 @@ export default function CredentialsDialog({ open, onClose, projectName, endpoint
               </Box>
             </Box>
 
-            <Stack direction="row" alignItems="center" gap={0.75} sx={{ color: 'success.main' }}>
+            <Stack direction="row" alignItems="center" gap={0.75} sx={styles.subscribedNote}>
               <Check size={15} />
               <Typography variant="body2">
                 {name} is subscribed to this API in {envLabel}.
@@ -213,23 +210,23 @@ export default function CredentialsDialog({ open, onClose, projectName, endpoint
       </DialogContent>
 
       <Divider />
-      <DialogActions sx={{ justifyContent: 'space-between', px: 3, py: 2 }}>
+      <DialogActions sx={styles.dialogActions}>
         {isCreate ? (
           <>
             <Button variant="outlined" onClick={onClose} disabled={busy}>
               Cancel
             </Button>
-            <Button variant="contained" onClick={handleCreate} disabled={!appName.trim() || busy} startIcon={createMutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}>
+            <Button variant="contained" onClick={() => void handleCreate()} disabled={!appName.trim() || busy} startIcon={createMutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}>
               Create &amp; subscribe
             </Button>
           </>
         ) : (
           <>
             <Stack direction="row" gap={1}>
-              <Button variant="outlined" onClick={() => setConfirm('regen')} disabled={busy}>
+              <Button variant="outlined" onClick={() => setConfirm('regenerate')} disabled={busy}>
                 Regenerate
               </Button>
-              <Button variant="outlined" color="error" onClick={() => setConfirm('revoke')} disabled={busy}>
+              <Button variant="outlined" color="error" onClick={() => setConfirm('unsubscribe')} disabled={busy}>
                 Unsubscribe
               </Button>
             </Stack>
@@ -240,25 +237,20 @@ export default function CredentialsDialog({ open, onClose, projectName, endpoint
         )}
       </DialogActions>
 
-      {/* Confirm dialog for regenerate / unsubscribe. */}
-      <Dialog open={confirm !== null} onClose={busy ? undefined : () => setConfirm(null)} maxWidth="xs" fullWidth>
-        <DialogTitle>{confirm === 'regen' ? 'Regenerate subscription key?' : 'Unsubscribe this application?'}</DialogTitle>
-        <DialogContent>
+      {confirm && (
+        <ConfirmDeleteDialog
+          title={confirm === 'regenerate' ? 'Regenerate subscription key?' : 'Unsubscribe this application?'}
+          onConfirm={() => void handleConfirm()}
+          onClose={() => setConfirm(null)}
+          isPending={busy}
+          confirmLabel={confirm === 'regenerate' ? 'Regenerate' : 'Unsubscribe'}
+          pendingLabel={confirm === 'regenerate' ? 'Regenerating…' : 'Unsubscribing…'}
+          maxWidth="xs">
           <Typography variant="body2" color="text.secondary">
-            {confirm === 'regen'
-              ? 'The subscription is revoked and re-created, so the current Subscription-Key stops working immediately. Any consumer using it must switch to the new value.'
-              : 'This revokes the subscription and its token. Calls using it will fail once subscription validation is enforced. The application itself is kept and can be subscribed again.'}
+            {confirm === 'regenerate' ? REGENERATE_SUBSCRIPTION_WARNING : UNSUBSCRIBE_WARNING}
           </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button variant="outlined" onClick={() => setConfirm(null)} disabled={busy}>
-            Cancel
-          </Button>
-          <Button variant="contained" color={confirm === 'revoke' ? 'error' : 'primary'} onClick={handleConfirm} disabled={busy} startIcon={busy ? <CircularProgress size={14} color="inherit" /> : undefined}>
-            {confirm === 'regen' ? 'Regenerate' : 'Unsubscribe'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </ConfirmDeleteDialog>
+      )}
     </Dialog>
   );
 }

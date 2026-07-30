@@ -42,6 +42,13 @@ export interface EndpointRef {
   endpointName: string;
 }
 
+/** One selectable endpoint in the security drawer's endpoint picker. */
+export interface EndpointOption {
+  /** Endpoint name — the BFF's `endpointName` path segment. */
+  name: string;
+  displayName: string;
+}
+
 /** A service endpoint exposed as a managed API on the API Platform gateway. */
 export interface ApiExposure {
   /** The API Platform REST API handle — also the subscription's `restApiId`. */
@@ -89,9 +96,6 @@ export interface ApiKeyAuthOptions {
   /** Where the key is read from. Defaults to `header`. */
   in?: string;
 }
-
-/** The three enforcement policies that can be toggled on an exposed API. */
-export type EndpointAuthKind = 'apiKey' | 'jwt' | 'subscription';
 
 /** A consumer application. Org-scoped and shared across the org. */
 export interface ConsumerApplication {

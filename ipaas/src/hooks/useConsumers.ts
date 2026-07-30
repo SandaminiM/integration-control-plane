@@ -17,8 +17,8 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createConsumer, fetchConsumers, fetchSubscription, regenerateConsumerToken, revokeConsumer, setEndpointApiKeyAuth, setEndpointJwtAuth, setEndpointSubscriptionValidation } from '#api/consumers';
-import type { ApiKeyAuthOptions, Consumer, CreateConsumerInput, EndpointAuthKind, EndpointRef, Subscription } from '../types/consumers';
+import { createConsumer, fetchConsumers, fetchSubscription, regenerateConsumerToken, revokeConsumer, setEndpointApiKeyAuth } from '#api/consumers';
+import type { ApiKeyAuthOptions, Consumer, CreateConsumerInput, EndpointRef, Subscription } from '../types/consumers';
 
 /** Endpoint refs are only usable once every segment is known. */
 const isCompleteRef = (ref: EndpointRef | null | undefined): ref is EndpointRef => !!ref?.componentName && !!ref.environmentName && !!ref.endpointName;
@@ -32,11 +32,11 @@ const consumersKey = (projectName: string | null | undefined, ref: EndpointRef |
 // ---------------------------------------------------------------------------
 
 /** Consumer applications in the project subscribed to this endpoint's API. */
-export function useConsumers(projectName: string | null | undefined, ref: EndpointRef | null | undefined, enabled = true) {
+export function useConsumers(projectName: string | null | undefined, ref: EndpointRef | null | undefined) {
   return useQuery<Consumer[]>({
     queryKey: consumersKey(projectName, ref),
     queryFn: () => fetchConsumers(projectName!, ref!),
-    enabled: enabled && !!projectName && isCompleteRef(ref),
+    enabled: !!projectName && isCompleteRef(ref),
     staleTime: 30_000,
     retry: false,
   });
@@ -103,19 +103,15 @@ export function useRevokeConsumer(projectName: string | null | undefined, ref: E
 // ---------------------------------------------------------------------------
 
 /**
- * Set one of the gateway enforcement policies. There is no route to read the
- * current policy state, so the caller owns the displayed state and applies the
+ * Apply the `api-key-auth` gateway policy. There is no route to read the current
+ * policy state, so the caller owns the displayed state and applies the
  * server-echoed result on success.
  *
- * The remaining spec routes (expose/unexpose, API keys, test key) are
- * implemented in the API layer but not wired to any UI yet.
+ * The other spec routes (jwt-auth, subscription-validation, expose/unexpose,
+ * API keys, test key) exist in the API layer but no UI drives them yet.
  */
-export function useSetEndpointAuth(ref: EndpointRef | null | undefined) {
-  return useMutation<boolean, Error, { kind: EndpointAuthKind; enabled: boolean; options?: ApiKeyAuthOptions }>({
-    mutationFn: ({ kind, enabled, options }) => {
-      if (kind === 'jwt') return setEndpointJwtAuth(ref!, enabled);
-      if (kind === 'subscription') return setEndpointSubscriptionValidation(ref!, enabled);
-      return setEndpointApiKeyAuth(ref!, enabled, options);
-    },
+export function useSetEndpointApiKeyAuth(ref: EndpointRef | null | undefined) {
+  return useMutation<boolean, Error, { enabled: boolean; options?: ApiKeyAuthOptions }>({
+    mutationFn: ({ enabled, options }) => setEndpointApiKeyAuth(ref!, enabled, options),
   });
 }

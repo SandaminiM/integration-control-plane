@@ -19,6 +19,7 @@
 import { Button } from '@wso2/oxygen-ui';
 import { Check, Copy } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
+import * as styles from './apiConsumption.styles';
 
 interface CopyButtonProps {
   /** Value written to the clipboard. */
@@ -30,7 +31,7 @@ interface CopyButtonProps {
 export default function CopyButton({ value, label = 'Copy' }: CopyButtonProps): JSX.Element {
   const [copied, setCopied] = useState(false);
 
-  // Only confirm after the write resolves — an unavailable clipboard (insecure
+  // Confirm only after the write resolves: an unavailable clipboard (insecure
   // context) or a denied permission must not read as a successful copy.
   const copy = async () => {
     try {
@@ -43,7 +44,7 @@ export default function CopyButton({ value, label = 'Copy' }: CopyButtonProps): 
   };
 
   return (
-    <Button size="small" variant="outlined" onClick={() => void copy()} startIcon={copied ? <Check size={13} /> : <Copy size={13} />} sx={{ minWidth: 0, whiteSpace: 'nowrap' }}>
+    <Button size="small" variant="outlined" onClick={() => void copy()} startIcon={copied ? <Check size={13} /> : <Copy size={13} />} sx={styles.copyButton}>
       {copied ? 'Copied' : label}
     </Button>
   );
