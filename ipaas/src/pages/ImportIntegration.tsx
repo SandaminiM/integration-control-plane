@@ -44,7 +44,6 @@ import CredentialSelectCard from '../components/Import/CredentialSelectCard';
 import { buildRepoUrl } from '../utils/gitProviderUrl';
 import { URL_DEBOUNCE_MS } from '../constants/project';
 import { resourceUrl, narrow, newComponentUrl, type ProjectScope } from '../nav';
-import { useSaveBallerinaCentralToken } from '../hooks/useBallerinaCentralToken';
 import { useGitHubAuth } from '../hooks/useGitHubAuth';
 import { toHandler, formatRepoNameToDisplayName } from '../utils/string';
 import { parseGitHubUrl } from '../utils/github';
@@ -112,7 +111,6 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   const activeRepo = isPublicRepo ? parsedRepo : selectedRepo;
 
   const createComponent = useCreateComponent();
-  const saveBallerinaToken = useSaveBallerinaCentralToken();
 
   const displayNameAutoRef = useRef(false);
 
@@ -309,9 +307,6 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   const canSubmit = Boolean(activeOrg && activeRepo && selectedBranch && selectedTechnology && selectedIntegrationType && displayName.trim() && handlerValid && projectId && (isPublicRepo || isAuthenticated));
 
   const handleSubmit = () => {
-    if (selectedTechnology === 'BI' && ballerinaTokenInput.trim()) {
-      saveBallerinaToken.mutate(ballerinaTokenInput.trim());
-    }
     createComponent.mutate(
       {
         displayName: displayName.trim(),
