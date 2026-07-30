@@ -36,6 +36,7 @@
 import type { AlertComponentType } from '../constants/alerts';
 import type { AlertHistoryResponse, AlertRule, AlertRuleCountUsage } from '../types/alerts';
 import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory, MarketplaceService } from '../types/apim';
+import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, ConsumerApplication, CreateApiKeyInput, CreateConsumerInput, EndpointRef, Subscription } from '../types/consumers';
 import type { ArtifactType, Artifact, ArtifactParam, ArtifactStatusInput, ListenerStateInput, ArtifactToggleStatusInput, ArtifactToggleKind, TriggerTaskInput } from '../types/artifact';
 import type {
   User,
@@ -239,6 +240,41 @@ export interface ApimApi {
   saveApimThumbnail(apimId: string, file: File): Promise<void>;
   fetchMarketplaceService(componentId: string, version: string, endpoint: EnvEndpoint): Promise<MarketplaceService | null>;
   saveMarketplaceService(serviceId: string, service: MarketplaceService): Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
+// API security & exposure (exposed API + policies + consumers) — cloud-only
+// ---------------------------------------------------------------------------
+
+export interface ConsumersApi {
+  // Exposure
+  exposeEndpoint(ref: EndpointRef): Promise<ApiExposure>;
+  unexposeEndpoint(ref: EndpointRef): Promise<void>;
+
+  // Endpoint security — API keys
+  listEndpointApiKeys(ref: EndpointRef): Promise<ApiKeySummary[]>;
+  createEndpointApiKey(ref: EndpointRef, input: CreateApiKeyInput): Promise<ApiKeyResult>;
+  revokeEndpointApiKey(ref: EndpointRef, keyName: string): Promise<void>;
+  createEndpointTestKey(ref: EndpointRef): Promise<ApiKeyResult>;
+
+  // Endpoint security — enforcement policies
+  setEndpointApiKeyAuth(ref: EndpointRef, enabled: boolean, options?: ApiKeyAuthOptions): Promise<boolean>;
+  setEndpointJwtAuth(ref: EndpointRef, enabled: boolean): Promise<boolean>;
+  setEndpointSubscriptionValidation(ref: EndpointRef, enabled: boolean, header?: string): Promise<boolean>;
+
+  // Consumer applications + subscriptions
+  fetchApplications(projectName: string): Promise<ConsumerApplication[]>;
+  fetchSubscriptions(applicationId: string): Promise<Subscription[]>;
+  fetchSubscription(applicationId: string, subscriptionId: string): Promise<Subscription>;
+  deleteApplication(applicationId: string): Promise<void>;
+
+  /** Applications in `projectName` that are subscribed to the API exposed for `ref`. */
+  fetchConsumers(projectName: string, ref: EndpointRef): Promise<Consumer[]>;
+  createConsumer(input: CreateConsumerInput): Promise<Consumer>;
+  /** Re-issue a consumer's subscription token (unsubscribe + resubscribe). */
+  regenerateConsumerToken(applicationId: string, subscriptionId: string, ref: EndpointRef): Promise<Subscription>;
+  /** Unsubscribe the application — the application itself is left in place. */
+  revokeConsumer(applicationId: string, subscriptionId: string): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -898,6 +934,7 @@ export interface AppApi {
   dataPlanes: DataPlanesApi;
   runtime: RuntimeApi;
   credentials: CredentialsApi;
+  consumers: ConsumersApi;
   workflows: WorkflowsApi;
   egressControl: EgressControlApi;
   environments: EnvironmentsApi;
