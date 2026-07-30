@@ -95,7 +95,7 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
   };
 
   return (
-    <Drawer anchor="right" open={open} onClose={handleCancel} variant="temporary" sx={styles.securityDrawer}>
+    <Drawer anchor="right" open={open} onClose={handleCancel} variant="temporary" sx={styles.rightDrawer}>
       <Box sx={styles.drawerFrame}>
         <Box sx={styles.drawerHeader}>
           <Typography variant="subtitle1" fontWeight={600}>

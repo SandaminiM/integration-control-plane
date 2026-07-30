@@ -24,7 +24,7 @@ import type { Consumer, EndpointOption, EndpointRef } from '../../../types/consu
 import { consumerDisplayName, consumerSummary } from '../../../utils/apiConsumption';
 import { friendlyApiError } from '../../../utils/apiSecurity';
 import ApiSecurityDrawer from './ApiSecurityDrawer';
-import ConsumerDialog from './ConsumerDialog';
+import ConsumerDrawer from './ConsumerDrawer';
 import * as styles from './apiConsumption.styles';
 
 /** `'new'` opens the create form; a `Consumer` opens it in manage mode. */
@@ -43,8 +43,6 @@ interface ConsumersPanelProps {
   endpointName: string;
   /** All endpoints of this environment, for the security drawer's selector. */
   endpoints: EndpointOption[];
-  /** Base invoke URL used to build the test call snippet. */
-  endpointUrl?: string;
 }
 
 /**
@@ -53,7 +51,7 @@ interface ConsumersPanelProps {
  * manage subscriptions, and opens the security drawer for the API's gateway
  * security configuration.
  */
-export default function ConsumersPanel({ componentName, projectName, envName, envLabel, endpointName, endpoints, endpointUrl }: ConsumersPanelProps): JSX.Element {
+export default function ConsumersPanel({ componentName, projectName, envName, envLabel, endpointName, endpoints }: ConsumersPanelProps): JSX.Element {
   const endpointRef: EndpointRef = useMemo(() => ({ componentName, environmentName: envName, endpointName }), [componentName, envName, endpointName]);
 
   const { data: consumers = [], isLoading, error } = useConsumers(projectName, endpointRef);
@@ -76,7 +74,7 @@ export default function ConsumersPanel({ componentName, projectName, envName, en
           <Button variant="text" size="small" startIcon={<ShieldCheck size={14} />} onClick={() => setSecurityOpen(true)} sx={styles.textAction}>
             Configure Security
           </Button>
-          <Button variant="contained" size="small" startIcon={<Plus size={14} />} onClick={() => setDialogTarget('new')}>
+          <Button variant="contained" size="small" startIcon={count > 0 ? <Plus size={14} /> : undefined} onClick={() => setDialogTarget('new')}>
             {count > 0 ? 'New Consumer' : 'Consume API'}
           </Button>
         </Stack>
@@ -94,18 +92,18 @@ export default function ConsumersPanel({ componentName, projectName, envName, en
         <Stack gap={1} sx={styles.consumerList}>
           {consumers.map((c) => (
             <Box key={c.subscription.id} sx={styles.consumerRow}>
-              <Avatar variant="rounded" sx={styles.consumerAvatar}>
-                {(consumerDisplayName(c)[0] ?? 'A').toUpperCase()}
-              </Avatar>
+              <Avatar sx={styles.consumerAvatar}>{(consumerDisplayName(c)[0] ?? 'A').toUpperCase()}</Avatar>
               <Box sx={styles.consumerRowText}>
-                <Typography variant="body2" fontWeight={500} noWrap>
-                  {consumerDisplayName(c)}
-                </Typography>
+                <Stack direction="row" alignItems="center" gap={0.75} sx={styles.consumerNameRow}>
+                  <Typography variant="body2" fontWeight={500} noWrap>
+                    {consumerDisplayName(c)}
+                  </Typography>
+                  <Chip label={c.subscription.status || 'ACTIVE'} size="small" color="success" variant="outlined" sx={styles.consumerStatusChip} />
+                </Stack>
                 <Typography variant="caption" color="text.secondary" noWrap sx={styles.consumerRowSubtitle}>
                   {consumerSummary(c)}
                 </Typography>
               </Box>
-              <Chip label={c.subscription.status || 'ACTIVE'} size="small" color="success" variant="outlined" sx={styles.envChip} />
               <Button variant="outlined" size="small" onClick={() => setDialogTarget(c)}>
                 Manage
               </Button>
@@ -121,7 +119,7 @@ export default function ConsumersPanel({ componentName, projectName, envName, en
       )}
 
       <ApiSecurityDrawer open={securityOpen} onClose={() => setSecurityOpen(false)} componentName={componentName} envName={envName} endpoints={endpoints} activeEndpointName={endpointName} />
-      <ConsumerDialog open={dialogTarget !== null} onClose={() => setDialogTarget(null)} projectName={projectName} endpointRef={endpointRef} envLabel={envLabel} consumer={dialogTarget === 'new' ? null : dialogTarget} endpointUrl={endpointUrl} />
+      <ConsumerDrawer open={dialogTarget !== null} onClose={() => setDialogTarget(null)} projectName={projectName} endpointRef={endpointRef} envLabel={envLabel} consumer={dialogTarget === 'new' ? null : dialogTarget} />
     </Box>
   );
 }

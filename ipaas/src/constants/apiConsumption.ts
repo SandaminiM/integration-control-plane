@@ -30,12 +30,6 @@ export const OAUTH_HEADER = 'Authorization';
 /** Stand-in shown wherever a subscription token is hidden. */
 export const TOKEN_MASK = '•'.repeat(28);
 
-/** Shown in the test-call snippet before a token is known. */
-export const TOKEN_PLACEHOLDER = '<subscription-token>';
-
-/** Shown in the test-call snippet when the endpoint has no resolvable URL. */
-export const INVOKE_URL_PLACEHOLDER = 'https://<gateway-host>/<api-context>';
-
 export const COMING_SOON_OAUTH = 'Securing with OAuth coming soon';
 export const COMING_SOON_UPSTREAM_ATTRS = 'Passing end-user attributes to upstream coming soon';
 
