@@ -167,7 +167,11 @@ function AppLayoutInner(): JSX.Element {
   const billingTrial = billingOrg?.subscription?.status === 'trial' ? billingOrg.subscription.trial : null;
   const trialEndLabel = billingTrial?.trial_end ? `Trial ends ${new Date(billingTrial.trial_end).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}` : '';
 
-  const { state: shell, actions } = useAppShell({ initialCollapsed: localStorage.getItem('sidebar:collapsed') !== 'false' });
+  // useAppShell's internal mobile-collapse effect keys off this options object's identity —
+  // a fresh literal here re-triggers it (and its setState) on every render, which on a
+  // sub-'md'-breakpoint viewport becomes an infinite render loop.
+  const appShellOptions = useMemo(() => ({ initialCollapsed: localStorage.getItem('sidebar:collapsed') !== 'false' }), []);
+  const { state: shell, actions } = useAppShell(appShellOptions);
 
   const handleToggleSidebar = () => {
     localStorage.setItem('sidebar:collapsed', String(!shell.sidebarCollapsed));
