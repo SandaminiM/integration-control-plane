@@ -461,7 +461,8 @@ function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { com
           // The backend blocks deletion (e.g. active API subscribers) without throwing — canDelete must be checked explicitly.
           if (result.encodedData) {
             try {
-              const [firstError]: ComponentDeletionError[] = JSON.parse(atob(result.encodedData));
+              const bytes = Uint8Array.from(atob(result.encodedData), (c) => c.charCodeAt(0));
+              const [firstError]: ComponentDeletionError[] = JSON.parse(new TextDecoder().decode(bytes));
               if (firstError?.code === APIM_SUBSCRIBERS_ERROR_CODE) {
                 setSubscribers(splitSubscribers(firstError.data));
                 return;
@@ -470,9 +471,15 @@ function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { com
               // Malformed encodedData — fall through to the generic message below.
             }
           }
+          // Not a subscriber block (or a stale one from a prior attempt) — drop the subscribers
+          // view so the generic error below is what actually renders.
+          setSubscribers(null);
           setDeleteError(result.message || 'Failed to delete integration. Please try again.');
         },
-        onError: (e) => setDeleteError(e instanceof Error ? e.message : 'Failed to delete integration. Please try again.'),
+        onError: (e) => {
+          setSubscribers(null);
+          setDeleteError(e instanceof Error ? e.message : 'Failed to delete integration. Please try again.');
+        },
       },
     );
   };
