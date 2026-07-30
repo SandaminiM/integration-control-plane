@@ -77,6 +77,7 @@ const OrgAuditLogs = lazy(() => import('../pages/OrgAuditLogs'));
 const ProjectCdPipelines = lazy(() => import('../pages/ProjectCdPipelines'));
 const OrgDatabases = lazy(() => import('../pages/OrgDatabases'));
 const OrgDataPlanes = lazy(() => import('../pages/OrgDataPlanes'));
+const OrgPackageRegistries = lazy(() => import('../pages/OrgPackageRegistries'));
 const ComponentRuntime = lazy(() => import('../pages/ComponentRuntime'));
 const OrgApprovals = lazy(() => import('../pages/OrgApprovals'));
 const CreateDatabaseServer = lazy(() => import('../pages/CreateDatabaseServer'));
@@ -260,6 +261,7 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/admin/certificates/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(CreateCertificate, ['organizations']))) },
               { path: 'organizations/:orgHandler/admin/certificates/:certificateId', element: createElement(RouteErrorBoundary, null, createElement(withScope(CertificateDetail, ['organizations']))) },
               { path: 'organizations/:orgHandler/settings', element: createElement(withScope(OrgSettings, ['organizations'])) },
+              ...(IS_CLOUD ? [{ path: 'organizations/:orgHandler/settings/package-registries', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgPackageRegistries, ['organizations']))) }] : []),
               { path: 'organizations/:orgHandler/settings/egress-control', element: createElement(withScope(EgressControl, ['organizations'])) },
               { path: 'organizations/:orgHandler/settings/workflows', element: createElement(withScope(Workflows, ['organizations'])) },
               { path: 'organizations/:orgHandler/settings/credentials', element: createElement(withScope(Credentials, ['organizations'])) },
