@@ -36,7 +36,7 @@
 import type { AlertComponentType } from '../constants/alerts';
 import type { AlertHistoryResponse, AlertRule, AlertRuleCountUsage } from '../types/alerts';
 import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory, MarketplaceService } from '../types/apim';
-import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, ConsumerApplication, CreateApiKeyInput, CreateConsumerInput, EndpointRef, Subscription } from '../types/consumers';
+import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, CreateApiKeyInput, CreateConsumerInput, EndpointRef, SecurityConfig, Subscription } from '../types/consumers';
 import type { ArtifactType, Artifact, ArtifactParam, ArtifactStatusInput, ListenerStateInput, ArtifactToggleStatusInput, ArtifactToggleKind, TriggerTaskInput } from '../types/artifact';
 import type {
   User,
@@ -260,21 +260,20 @@ export interface ConsumersApi {
   // Endpoint security — enforcement policies
   setEndpointApiKeyAuth(ref: EndpointRef, enabled: boolean, options?: ApiKeyAuthOptions): Promise<boolean>;
   setEndpointJwtAuth(ref: EndpointRef, enabled: boolean): Promise<boolean>;
-  setEndpointSubscriptionValidation(ref: EndpointRef, enabled: boolean, header?: string): Promise<boolean>;
+  /** Read the single active auth mode (+ options) of the exposed API. */
+  getEndpointSecurity(ref: EndpointRef): Promise<SecurityConfig>;
+  /** Set the single active auth mode (none/api-key/jwt); the BFF clears the other + redeploys. */
+  setEndpointSecurity(ref: EndpointRef, cfg: SecurityConfig): Promise<SecurityConfig>;
 
-  // Consumer applications + subscriptions
-  fetchApplications(projectName: string): Promise<ConsumerApplication[]>;
-  fetchSubscriptions(applicationId: string): Promise<Subscription[]>;
-  fetchSubscription(applicationId: string, subscriptionId: string): Promise<Subscription>;
-  deleteApplication(applicationId: string): Promise<void>;
-
-  /** Applications in `projectName` that are subscribed to the API exposed for `ref`. */
-  fetchConsumers(projectName: string, ref: EndpointRef): Promise<Consumer[]>;
+  // Consumers — a consumer is a named api-key on the exposed endpoint (no subscription-token flow).
+  /** Consumers (named api-keys) of the API exposed for `ref`. */
+  fetchConsumers(ref: EndpointRef): Promise<Consumer[]>;
+  /** Create a consumer: mint a named api-key on the endpoint. The plaintext key is returned once. */
   createConsumer(input: CreateConsumerInput): Promise<Consumer>;
-  /** Re-issue a consumer's subscription token (unsubscribe + resubscribe). */
-  regenerateConsumerToken(applicationId: string, subscriptionId: string, ref: EndpointRef): Promise<Subscription>;
-  /** Unsubscribe the application — the application itself is left in place. */
-  revokeConsumer(applicationId: string, subscriptionId: string): Promise<void>;
+  /** Re-issue a consumer's api-key (revoke + mint). The new plaintext key is returned once. */
+  regenerateConsumerToken(ref: EndpointRef, keyName: string, displayName: string): Promise<Subscription>;
+  /** Revoke a consumer's api-key. */
+  revokeConsumer(ref: EndpointRef, keyName: string): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------

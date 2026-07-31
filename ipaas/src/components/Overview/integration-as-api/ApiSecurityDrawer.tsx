@@ -18,10 +18,10 @@
 
 import { Alert, Box, Button, Checkbox, CircularProgress, Drawer, FormControlLabel, IconButton, MenuItem, Select, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
-import { useMemo, useState, type JSX } from 'react';
-import { API_KEY_SCHEME_DESCRIPTION, COMING_SOON_OAUTH, COMING_SOON_UPSTREAM_ATTRS, DEFAULT_API_KEY_HEADER, OAUTH_HEADER, OAUTH_SCHEME_DESCRIPTION } from '../../../constants/apiConsumption';
-import { useSetEndpointApiKeyAuth } from '../../../hooks/useConsumers';
-import type { EndpointOption, EndpointRef } from '../../../types/consumers';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import { API_KEY_SCHEME_DESCRIPTION, COMING_SOON_UPSTREAM_ATTRS, DEFAULT_API_KEY_HEADER, OAUTH_HEADER, OAUTH_SCHEME_DESCRIPTION } from '../../../constants/apiConsumption';
+import { useEndpointSecurity, useSetEndpointSecurity } from '../../../hooks/useConsumers';
+import type { EndpointOption, EndpointRef, SecurityConfig, SecurityMode } from '../../../types/consumers';
 import { friendlyApiError } from '../../../utils/apiSecurity';
 import * as styles from './apiConsumption.styles';
 
@@ -42,29 +42,18 @@ interface ApiSecurityDrawerProps {
  * Cloud-only "Configure Security" drawer for one exposed endpoint API. Mirrors
  * the APIM SecurityDrawer's layout (endpoint selector + security-scheme table)
  * minus the Resources section, which has no cloud equivalent.
- *
- * Applying writes the `api-key-auth` gateway policy. OAuth is listed but not
- * selectable yet — the BFF's jwt-auth policy is not wired into this flow. The
- * gateway exposes no route to read the policies currently in force, so the
- * checkboxes start from the documented post-expose default (API Key on).
  */
 export default function ApiSecurityDrawer({ open, onClose, componentName, envName, endpoints, activeEndpointName }: ApiSecurityDrawerProps): JSX.Element {
   const [userSelectedIdx, setUserSelectedIdx] = useState<number | null>(null);
-  const [wasOpen, setWasOpen] = useState(false);
-  const [isApiKey, setIsApiKey] = useState(true);
+  const [mode, setMode] = useState<SecurityMode>('none');
   const [apiKeyHeader, setApiKeyHeader] = useState(DEFAULT_API_KEY_HEADER);
   const [error, setError] = useState<string | null>(null);
 
-  // Each open resets to the env card's active endpoint (reset during render).
-  if (open !== wasOpen) {
-    setWasOpen(open);
-    if (open) {
-      setUserSelectedIdx(null);
-      setIsApiKey(true);
-      setApiKeyHeader(DEFAULT_API_KEY_HEADER);
-      setError(null);
-    }
-  }
+  // Drop the endpoint override when the drawer closes, so reopening derives the endpoint from
+  // activeEndpointName instead of a stale prior selection.
+  useEffect(() => {
+    if (!open) setUserSelectedIdx(null);
+  }, [open]);
 
   const matchedIdx = useMemo(() => {
     const i = endpoints.findIndex((ep) => ep.name === activeEndpointName);
@@ -75,14 +64,40 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
 
   const endpointRef: EndpointRef | null = useMemo(() => (selectedEndpoint ? { componentName, environmentName: envName, endpointName: selectedEndpoint.name } : null), [componentName, envName, selectedEndpoint]);
 
-  const apiKeyAuthMutation = useSetEndpointApiKeyAuth(endpointRef);
-  const saving = apiKeyAuthMutation.isPending;
+  const { data: security, isLoading: loadingSecurity, error: securityError } = useEndpointSecurity(endpointRef, open);
+  const setSecurityMutation = useSetEndpointSecurity(endpointRef);
+  const saving = setSecurityMutation.isPending;
+
+  // Seed the local checkboxes from the fetched state once per (endpoint, open) — later user edits
+  // stick even if the query re-settles.
+  const syncKey = JSON.stringify({ componentName, environmentName: envName, endpointName: selectedEndpoint?.name ?? '', open });
+  const syncedRef = useRef('');
+  useEffect(() => {
+    if (!open) {
+      syncedRef.current = '';
+      return;
+    }
+    if (security && syncedRef.current !== syncKey) {
+      syncedRef.current = syncKey;
+      setMode(security.mode);
+      setApiKeyHeader(security.apiKey?.header || DEFAULT_API_KEY_HEADER);
+      setError(null);
+    }
+  }, [open, security, syncKey]);
+
+  const isApiKey = mode === 'api-key';
+  const isOAuth = mode === 'jwt';
+
+  // Mutually exclusive: turning one scheme on turns the other off; turning it off opens the API.
+  const toggleApiKey = () => setMode((m) => (m === 'api-key' ? 'none' : 'api-key'));
+  const toggleOAuth = () => setMode((m) => (m === 'jwt' ? 'none' : 'jwt'));
 
   const handleApply = async () => {
     if (!endpointRef) return;
     setError(null);
+    const cfg: SecurityConfig = mode === 'api-key' ? { mode, apiKey: { header: apiKeyHeader.trim() || DEFAULT_API_KEY_HEADER } } : mode === 'jwt' ? { mode, jwt: {} } : { mode: 'none' };
     try {
-      await apiKeyAuthMutation.mutateAsync({ enabled: isApiKey, options: { key: apiKeyHeader.trim() || DEFAULT_API_KEY_HEADER, in: 'header' } });
+      await setSecurityMutation.mutateAsync(cfg);
       onClose();
     } catch (err) {
       setError(friendlyApiError(err, 'Could not save the security configuration.'));
@@ -112,6 +127,7 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
           ) : (
             <Stack gap={2.5}>
               {error && <Alert severity="error">{error}</Alert>}
+              {securityError && !error && <Alert severity="warning">{friendlyApiError(securityError, 'Could not read the current security configuration.')}</Alert>}
 
               <Stack direction="row" alignItems="center" gap={2}>
                 <Typography variant="body2" fontWeight={500}>
@@ -130,42 +146,44 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
                 )}
               </Stack>
 
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={styles.tableHeadCell}>Security Scheme</TableCell>
-                    <TableCell sx={styles.tableHeadCell}>Security Header</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  <TableRow>
-                    <TableCell sx={styles.schemeCell}>
-                      <FormControlLabel control={<Checkbox checked={isApiKey} onChange={() => setIsApiKey((v) => !v)} size="small" />} label="API Key" />
-                    </TableCell>
-                    <TableCell>
-                      <TextField size="small" value={apiKeyHeader} onChange={(e) => setApiKeyHeader(e.target.value)} disabled={!isApiKey} fullWidth />
-                      <Typography variant="caption" color="text.secondary" sx={styles.schemeDescription}>
-                        {API_KEY_SCHEME_DESCRIPTION}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell sx={styles.schemeCell}>
-                      <Tooltip title={COMING_SOON_OAUTH}>
-                        <Box component="span" sx={styles.disabledTooltipTarget}>
-                          <FormControlLabel control={<Checkbox checked={false} size="small" disabled />} label="OAuth" disabled />
-                        </Box>
-                      </Tooltip>
-                    </TableCell>
-                    <TableCell>
-                      <TextField size="small" value={OAUTH_HEADER} disabled fullWidth />
-                      <Typography variant="caption" color="text.secondary" sx={styles.schemeDescription}>
-                        {OAUTH_SCHEME_DESCRIPTION}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+              {loadingSecurity ? (
+                <Box sx={styles.loadingRow}>
+                  <CircularProgress size={20} />
+                </Box>
+              ) : (
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={styles.tableHeadCell}>Security Scheme</TableCell>
+                      <TableCell sx={styles.tableHeadCell}>Security Header</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell sx={styles.schemeCell}>
+                        <FormControlLabel control={<Checkbox checked={isApiKey} onChange={toggleApiKey} size="small" />} label="API Key" />
+                      </TableCell>
+                      <TableCell>
+                        <TextField size="small" value={apiKeyHeader} onChange={(e) => setApiKeyHeader(e.target.value)} disabled={!isApiKey} fullWidth />
+                        <Typography variant="caption" color="text.secondary" sx={styles.schemeDescription}>
+                          {API_KEY_SCHEME_DESCRIPTION}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell sx={styles.schemeCell}>
+                        <FormControlLabel control={<Checkbox checked={isOAuth} onChange={toggleOAuth} size="small" />} label="OAuth" />
+                      </TableCell>
+                      <TableCell>
+                        <TextField size="small" value={OAUTH_HEADER} disabled fullWidth />
+                        <Typography variant="caption" color="text.secondary" sx={styles.schemeDescription}>
+                          {OAUTH_SCHEME_DESCRIPTION}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              )}
 
               <Tooltip title={COMING_SOON_UPSTREAM_ATTRS}>
                 <Box component="span" sx={styles.disabledTooltipTarget}>
@@ -180,7 +198,7 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
           <Button variant="outlined" onClick={handleCancel} disabled={saving}>
             Cancel
           </Button>
-          <Button variant="contained" onClick={() => void handleApply()} disabled={saving || !selectedEndpoint}>
+          <Button variant="contained" onClick={() => void handleApply()} disabled={saving || !selectedEndpoint || loadingSecurity || Boolean(securityError)}>
             {saving ? <CircularProgress size={16} color="inherit" /> : 'Apply'}
           </Button>
         </Box>

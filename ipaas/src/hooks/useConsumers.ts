@@ -17,8 +17,8 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createConsumer, createEndpointTestKey, fetchConsumers, fetchSubscription, regenerateConsumerToken, revokeConsumer, setEndpointApiKeyAuth } from '#api/consumers';
-import type { ApiKeyAuthOptions, ApiKeyResult, Consumer, CreateConsumerInput, EndpointRef, Subscription } from '../types/consumers';
+import { createConsumer, createEndpointTestKey, fetchConsumers, getEndpointSecurity, regenerateConsumerToken, revokeConsumer, setEndpointSecurity } from '#api/consumers';
+import type { ApiKeyResult, Consumer, CreateConsumerInput, EndpointRef, SecurityConfig, Subscription } from '../types/consumers';
 
 /** Endpoint refs are only usable once every segment is known. */
 const isCompleteRef = (ref: EndpointRef | null | undefined): ref is EndpointRef => !!ref?.componentName && !!ref.environmentName && !!ref.endpointName;
@@ -28,35 +28,21 @@ const refKey = (ref: EndpointRef | null | undefined) => [ref?.componentName ?? '
 const consumersKey = (projectName: string | null | undefined, ref: EndpointRef | null | undefined) => ['consumers', projectName ?? '', ...refKey(ref)] as const;
 
 // ---------------------------------------------------------------------------
-// Consumers (applications subscribed to the exposed API)
+// Consumers (named api-keys on the exposed API)
 // ---------------------------------------------------------------------------
 
-/** Consumer applications in the project subscribed to this endpoint's API. */
+/** Consumers (named api-keys) of this endpoint's exposed API. */
 export function useConsumers(projectName: string | null | undefined, ref: EndpointRef | null | undefined) {
   return useQuery<Consumer[]>({
     queryKey: consumersKey(projectName, ref),
-    queryFn: () => fetchConsumers(projectName!, ref!),
-    enabled: !!projectName && isCompleteRef(ref),
+    queryFn: () => fetchConsumers(ref!),
+    enabled: isCompleteRef(ref),
     staleTime: 30_000,
     retry: false,
   });
 }
 
-/**
- * The subscription token is not returned by the list route, so the dialog
- * re-reads the single subscription to reveal the `Subscription-Key`.
- */
-export function useSubscription(applicationId: string | null | undefined, subscriptionId: string | null | undefined, enabled = true) {
-  return useQuery<Subscription>({
-    queryKey: ['subscription', applicationId ?? '', subscriptionId ?? ''],
-    queryFn: () => fetchSubscription(applicationId!, subscriptionId!),
-    enabled: enabled && !!applicationId && !!subscriptionId,
-    staleTime: 30_000,
-    retry: false,
-  });
-}
-
-/** Create a consumer application and subscribe it to this API in one step. */
+/** Create a consumer: mint a named api-key on this endpoint. The plaintext is returned once. */
 export function useCreateConsumer(projectName: string | null | undefined) {
   const qc = useQueryClient();
   return useMutation<Consumer, Error, CreateConsumerInput>({
@@ -67,52 +53,55 @@ export function useCreateConsumer(projectName: string | null | undefined) {
   });
 }
 
-/** Re-issue a consumer's subscription token (unsubscribe + resubscribe). */
+/** Re-issue a consumer's api-key (revoke + mint). The new plaintext is returned once. */
 export function useRegenerateConsumerToken(projectName: string | null | undefined, ref: EndpointRef | null | undefined) {
   const qc = useQueryClient();
-  return useMutation<Subscription, Error, { applicationId: string; subscriptionId: string }>({
-    mutationFn: ({ applicationId, subscriptionId }) => regenerateConsumerToken(applicationId, subscriptionId, ref!),
-    onSuccess: (data, vars) => {
-      qc.removeQueries({ queryKey: ['subscription', vars.applicationId, vars.subscriptionId] });
-      qc.setQueryData(['subscription', vars.applicationId, data.id], data);
-      qc.invalidateQueries({ queryKey: consumersKey(projectName, ref) });
-    },
-    // Regenerating deletes before it re-creates, so even on failure the old
-    // subscription is gone — the cached list must not keep showing it.
-    onError: (_err, vars) => {
-      qc.removeQueries({ queryKey: ['subscription', vars.applicationId, vars.subscriptionId] });
+  return useMutation<Subscription, Error, { keyName: string; displayName: string }>({
+    mutationFn: ({ keyName, displayName }) => regenerateConsumerToken(ref!, keyName, displayName),
+    // Regenerating revokes before it re-mints, so even on failure the old key is gone — the
+    // cached list must not keep showing it.
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: consumersKey(projectName, ref) });
     },
   });
 }
 
-/** Unsubscribe a consumer. The application itself is left in place. */
+/** Revoke a consumer's api-key. */
 export function useRevokeConsumer(projectName: string | null | undefined, ref: EndpointRef | null | undefined) {
   const qc = useQueryClient();
-  return useMutation<void, Error, { applicationId: string; subscriptionId: string }>({
-    mutationFn: ({ applicationId, subscriptionId }) => revokeConsumer(applicationId, subscriptionId),
-    onSuccess: (_data, vars) => {
-      qc.removeQueries({ queryKey: ['subscription', vars.applicationId, vars.subscriptionId] });
+  return useMutation<void, Error, { keyName: string }>({
+    mutationFn: ({ keyName }) => revokeConsumer(ref!, keyName),
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: consumersKey(projectName, ref) });
     },
   });
 }
 
 // ---------------------------------------------------------------------------
-// Endpoint security — enforcement policies
+// Endpoint security — single active auth mode
 // ---------------------------------------------------------------------------
 
-/**
- * Apply the `api-key-auth` gateway policy. There is no route to read the current
- * policy state, so the caller owns the displayed state and applies the
- * server-echoed result on success.
- *
- * The remaining spec routes (jwt-auth, subscription-validation, expose/unexpose,
- * long-lived API keys) exist in the API layer but no UI drives them yet.
- */
-export function useSetEndpointApiKeyAuth(ref: EndpointRef | null | undefined) {
-  return useMutation<boolean, Error, { enabled: boolean; options?: ApiKeyAuthOptions }>({
-    mutationFn: ({ enabled, options }) => setEndpointApiKeyAuth(ref!, enabled, options),
+const securityKey = (ref: EndpointRef | null | undefined) => ['endpoint-security', ...refKey(ref)] as const;
+
+/** Read the exposed API's active auth mode so the security drawer reflects real state. */
+export function useEndpointSecurity(ref: EndpointRef | null | undefined, enabled = true) {
+  return useQuery<SecurityConfig>({
+    queryKey: securityKey(ref),
+    queryFn: () => getEndpointSecurity(ref!),
+    enabled: enabled && isCompleteRef(ref),
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+/** Set the exposed API's active auth mode (none/api-key/jwt). */
+export function useSetEndpointSecurity(ref: EndpointRef | null | undefined) {
+  const qc = useQueryClient();
+  return useMutation<SecurityConfig, Error, SecurityConfig>({
+    mutationFn: (cfg) => setEndpointSecurity(ref!, cfg),
+    onSuccess: (data) => {
+      qc.setQueryData(securityKey(ref), data);
+    },
   });
 }
 

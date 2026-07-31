@@ -19,8 +19,8 @@
 import { Alert, Box, Button, Chip, CircularProgress, Drawer, IconButton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Eye, EyeOff, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState, type JSX } from 'react';
-import { REGENERATE_SUBSCRIPTION_WARNING, SUBSCRIPTION_KEY_HEADER, TOKEN_MASK, UNSUBSCRIBE_WARNING } from '../../../constants/apiConsumption';
-import { useCreateConsumer, useRegenerateConsumerToken, useRevokeConsumer, useSubscription } from '../../../hooks/useConsumers';
+import { DEFAULT_API_KEY_HEADER, REGENERATE_SUBSCRIPTION_WARNING, TOKEN_MASK, UNSUBSCRIBE_WARNING } from '../../../constants/apiConsumption';
+import { useCreateConsumer, useRegenerateConsumerToken, useRevokeConsumer } from '../../../hooks/useConsumers';
 import type { Consumer, EndpointRef } from '../../../types/consumers';
 import { consumerDisplayName } from '../../../utils/apiConsumption';
 import { friendlyApiError } from '../../../utils/apiSecurity';
@@ -64,10 +64,9 @@ export default function ConsumerDrawer({ open, onClose, projectName, endpointRef
   const consumerInView = consumer ?? createMutation.data ?? null;
   const subscription = regenMutation.data ?? consumerInView?.subscription ?? null;
 
-  // Create and regenerate return the token; the list route does not, so an
-  // existing consumer's token has to be re-read from the single subscription.
-  const { data: fetchedSubscription, isLoading: loadingToken, error: tokenError } = useSubscription(consumerInView?.application.id, subscription?.id, open && !!subscription && !subscription.token);
-  const token = subscription?.token ?? fetchedSubscription?.token ?? '';
+  // The plaintext api-key is returned only once (on create/regenerate). A consumer opened from
+  // the list has no retrievable key — the user regenerates to issue a fresh one.
+  const token = subscription?.token ?? '';
 
   useEffect(() => {
     if (!open) return;
@@ -94,19 +93,19 @@ export default function ConsumerDrawer({ open, onClose, projectName, endpointRef
 
   const handleConfirm = async () => {
     if (!consumerInView || !subscription) return;
-    const target = { applicationId: consumerInView.application.id, subscriptionId: subscription.id };
+    const keyName = subscription.id;
     setError(null);
     try {
       if (confirm === 'regenerate') {
-        await regenMutation.mutateAsync(target);
+        await regenMutation.mutateAsync({ keyName, displayName: consumerDisplayName(consumerInView) });
         setRevealToken(false);
       } else {
-        await revokeMutation.mutateAsync(target);
+        await revokeMutation.mutateAsync({ keyName });
         onClose();
       }
       setConfirm(null);
     } catch (err) {
-      setError(friendlyApiError(err, confirm === 'regenerate' ? 'Could not regenerate the subscription key.' : 'Could not unsubscribe this application.'));
+      setError(friendlyApiError(err, confirm === 'regenerate' ? 'Could not regenerate the API key.' : 'Could not revoke this API key.'));
     }
   };
 
@@ -164,17 +163,13 @@ export default function ConsumerDrawer({ open, onClose, projectName, endpointRef
               <Typography sx={styles.fieldLabel}>Header</Typography>
               <Box sx={styles.credField}>
                 <Typography component="span" sx={styles.credValue}>
-                  {SUBSCRIPTION_KEY_HEADER}
+                  {DEFAULT_API_KEY_HEADER}
                 </Typography>
-                <CopyButton value={SUBSCRIPTION_KEY_HEADER} />
+                <CopyButton value={DEFAULT_API_KEY_HEADER} />
               </Box>
 
               <Typography sx={styles.nextFieldLabel}>API Key</Typography>
-              {loadingToken ? (
-                <Box sx={styles.centredRow}>
-                  <CircularProgress size={18} />
-                </Box>
-              ) : token ? (
+              {token ? (
                 <Box sx={styles.credField}>
                   <Typography component="span" sx={styles.credValue}>
                     {revealToken ? token : TOKEN_MASK}
@@ -187,7 +182,7 @@ export default function ConsumerDrawer({ open, onClose, projectName, endpointRef
                   <CopyButton value={token} />
                 </Box>
               ) : (
-                <Alert severity="warning">{friendlyApiError(tokenError, 'The subscription key could not be read. Regenerate it to issue a new one.')}</Alert>
+                <Alert severity="info">The API key is shown only once, when it is created. Regenerate to issue a new key.</Alert>
               )}
             </Box>
           )}
@@ -201,7 +196,7 @@ export default function ConsumerDrawer({ open, onClose, projectName, endpointRef
                   Regenerate
                 </Button>
                 <Button variant="outlined" color="error" onClick={() => setConfirm('unsubscribe')} disabled={busy}>
-                  Unsubscribe
+                  Revoke
                 </Button>
               </Stack>
               <Button variant="contained" onClick={onClose} disabled={busy}>
@@ -223,12 +218,12 @@ export default function ConsumerDrawer({ open, onClose, projectName, endpointRef
 
       {confirm && (
         <ConfirmDeleteDialog
-          title={confirm === 'regenerate' ? 'Regenerate subscription key?' : 'Unsubscribe this application?'}
+          title={confirm === 'regenerate' ? 'Regenerate API key?' : 'Revoke this API key?'}
           onConfirm={() => void handleConfirm()}
           onClose={() => setConfirm(null)}
           isPending={busy}
-          confirmLabel={confirm === 'regenerate' ? 'Regenerate' : 'Unsubscribe'}
-          pendingLabel={confirm === 'regenerate' ? 'Regenerating…' : 'Unsubscribing…'}
+          confirmLabel={confirm === 'regenerate' ? 'Regenerate' : 'Revoke'}
+          pendingLabel={confirm === 'regenerate' ? 'Regenerating…' : 'Revoking…'}
           maxWidth="xs">
           <Typography variant="body2" color="text.secondary">
             {confirm === 'regenerate' ? REGENERATE_SUBSCRIPTION_WARNING : UNSUBSCRIBE_WARNING}
