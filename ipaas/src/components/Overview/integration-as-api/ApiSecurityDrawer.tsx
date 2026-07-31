@@ -49,6 +49,12 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
   const [apiKeyHeader, setApiKeyHeader] = useState(DEFAULT_API_KEY_HEADER);
   const [error, setError] = useState<string | null>(null);
 
+  // Drop the endpoint override when the drawer closes, so reopening derives the endpoint from
+  // activeEndpointName instead of a stale prior selection.
+  useEffect(() => {
+    if (!open) setUserSelectedIdx(null);
+  }, [open]);
+
   const matchedIdx = useMemo(() => {
     const i = endpoints.findIndex((ep) => ep.name === activeEndpointName);
     return i >= 0 ? i : 0;
@@ -64,7 +70,7 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
 
   // Seed the local checkboxes from the fetched state once per (endpoint, open) — later user edits
   // stick even if the query re-settles.
-  const syncKey = `${selectedEndpoint?.name ?? ''}:${open ? 1 : 0}`;
+  const syncKey = JSON.stringify({ componentName, environmentName: envName, endpointName: selectedEndpoint?.name ?? '', open });
   const syncedRef = useRef('');
   useEffect(() => {
     if (!open) {
@@ -192,7 +198,7 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
           <Button variant="outlined" onClick={handleCancel} disabled={saving}>
             Cancel
           </Button>
-          <Button variant="contained" onClick={() => void handleApply()} disabled={saving || !selectedEndpoint || loadingSecurity}>
+          <Button variant="contained" onClick={() => void handleApply()} disabled={saving || !selectedEndpoint || loadingSecurity || Boolean(securityError)}>
             {saving ? <CircularProgress size={16} color="inherit" /> : 'Apply'}
           </Button>
         </Box>

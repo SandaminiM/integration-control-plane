@@ -105,7 +105,9 @@ export const setEndpointSecurity = (ref: EndpointRef, cfg: SecurityConfig): Prom
 /** A masked api-key mapped onto the Consumer view-model (application = the key's identity). */
 const keyToConsumer = (k: ApiKeySummary, restApiId: string): Consumer => ({
   application: { id: k.name, displayName: k.displayName ?? k.name },
-  subscription: { id: k.name, applicationId: k.name, restApiId, status: k.status, createdAt: k.expiresAt },
+  // ApiKeySummary has no creation timestamp; leave createdAt unset rather than
+  // mislabelling the key's expiry as its creation time.
+  subscription: { id: k.name, applicationId: k.name, restApiId, status: k.status },
 });
 
 /** A freshly-minted key mapped onto a Subscription — `token` carries the plaintext api-key (once). */
