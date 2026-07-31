@@ -157,9 +157,7 @@ export default function BallerinaCentralPanel({ onBack }: { onBack: () => void }
             </Stack>
           </Card>
 
-          {expiringSoon && (
-            <Alert severity="warning">This token expires on {formatDateTime(tokenStatus?.expiresOn)}. Save a new token before then to avoid failed builds.</Alert>
-          )}
+          {expiringSoon && <Alert severity="warning">This token expires on {formatDateTime(tokenStatus?.expiresOn)}. Save a new token before then to avoid failed builds.</Alert>}
 
           {removeToken.isError && <Alert severity="error">{removeToken.error.message}</Alert>}
 
