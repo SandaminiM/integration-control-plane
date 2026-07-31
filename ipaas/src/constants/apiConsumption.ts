@@ -21,7 +21,11 @@
 /** Header a consumer sends its subscription token in. */
 export const SUBSCRIPTION_KEY_HEADER = 'Subscription-Key';
 
-/** Gateway default for the `api-key-auth` policy's key header. */
+/**
+ * Header the `api-key-auth` policy reads the key from. `X-API-Key` is the
+ * gateway default (`SetAPIKeyAuthRequest.key`) and the header the spec's
+ * test-key flow tells consumers to send.
+ */
 export const DEFAULT_API_KEY_HEADER = 'X-API-Key';
 
 /** Header OAuth would use once the jwt-auth policy is wired up. */
