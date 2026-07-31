@@ -408,7 +408,7 @@ function AppLayoutInner(): JSX.Element {
                 onChange={() => {}}
                 onOpen={() => {}}
                 size="small"
-                sx={{ minWidth: 180, '& .MuiListItemText-root': { minWidth: 0, overflow: 'hidden' } }}
+                sx={{ minWidth: 180, maxWidth: 220, '& .MuiListItemText-root': { minWidth: 0, overflow: 'hidden' } }}
                 IconComponent={
                   IS_CLOUD
                     ? () => null
