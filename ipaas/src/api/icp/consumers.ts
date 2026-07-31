@@ -20,7 +20,7 @@
 // owns it); the icp UI is gated on IS_CLOUD and never reaches these. They throw
 // via ni() so an unsupported call can never look successful.
 // TODO: implement using icp APIs
-import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, ConsumerApplication, CreateApiKeyInput, CreateConsumerInput, EndpointRef, Subscription } from '../../types/consumers';
+import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, CreateApiKeyInput, CreateConsumerInput, EndpointRef, SecurityConfig, Subscription } from '../../types/consumers';
 
 const ni = (name: string): never => {
   throw new Error(`[icp] consumers.${name}: not implemented`);
@@ -36,14 +36,10 @@ export const createEndpointTestKey = (_ref: EndpointRef): Promise<ApiKeyResult> 
 
 export const setEndpointApiKeyAuth = (_ref: EndpointRef, _enabled: boolean, _options?: ApiKeyAuthOptions): Promise<boolean> => ni('setEndpointApiKeyAuth');
 export const setEndpointJwtAuth = (_ref: EndpointRef, _enabled: boolean): Promise<boolean> => ni('setEndpointJwtAuth');
-export const setEndpointSubscriptionValidation = (_ref: EndpointRef, _enabled: boolean, _header?: string): Promise<boolean> => ni('setEndpointSubscriptionValidation');
+export const getEndpointSecurity = (_ref: EndpointRef): Promise<SecurityConfig> => ni('getEndpointSecurity');
+export const setEndpointSecurity = (_ref: EndpointRef, _cfg: SecurityConfig): Promise<SecurityConfig> => ni('setEndpointSecurity');
 
-export const fetchApplications = (_projectName: string): Promise<ConsumerApplication[]> => ni('fetchApplications');
-export const fetchSubscriptions = (_applicationId: string): Promise<Subscription[]> => ni('fetchSubscriptions');
-export const fetchSubscription = (_applicationId: string, _subscriptionId: string): Promise<Subscription> => ni('fetchSubscription');
-export const deleteApplication = (_applicationId: string): Promise<void> => ni('deleteApplication');
-
-export const fetchConsumers = (_projectName: string, _ref: EndpointRef): Promise<Consumer[]> => ni('fetchConsumers');
+export const fetchConsumers = (_ref: EndpointRef): Promise<Consumer[]> => ni('fetchConsumers');
 export const createConsumer = (_input: CreateConsumerInput): Promise<Consumer> => ni('createConsumer');
-export const regenerateConsumerToken = (_applicationId: string, _subscriptionId: string, _ref: EndpointRef): Promise<Subscription> => ni('regenerateConsumerToken');
-export const revokeConsumer = (_applicationId: string, _subscriptionId: string): Promise<void> => ni('revokeConsumer');
+export const regenerateConsumerToken = (_ref: EndpointRef, _keyName: string, _displayName: string): Promise<Subscription> => ni('regenerateConsumerToken');
+export const revokeConsumer = (_ref: EndpointRef, _keyName: string): Promise<void> => ni('revokeConsumer');

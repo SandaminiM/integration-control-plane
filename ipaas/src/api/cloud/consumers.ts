@@ -30,9 +30,9 @@
  *     the token re-read the subscription (see `fetchSubscription`).
  */
 
-import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, ConsumerApplication, CreateApiKeyInput, CreateConsumerInput, EndpointRef, Subscription } from '../../types/consumers';
+import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, CreateApiKeyInput, CreateConsumerInput, EndpointRef, SecurityConfig, Subscription } from '../../types/consumers';
 import { userFacingError } from '../../utils/apiSecurity';
-import { bff, items, q, seg, type ListResponse } from './_client';
+import { bff, items, seg, type ListResponse } from './_client';
 
 /** Tolerates both the bare-array (spec) and `{ items: [] }` (BFF house style) list shapes. */
 const asList = <T>(r: T[] | ListResponse<T> | null | undefined): T[] => (Array.isArray(r) ? r : items(r));
@@ -88,107 +88,63 @@ export const setEndpointApiKeyAuth = (ref: EndpointRef, enabled: boolean, option
 
 export const setEndpointJwtAuth = (ref: EndpointRef, enabled: boolean): Promise<boolean> => bff.put<AuthToggleResponse>(`${endpointPath(ref)}/security/jwt`, { enabled }).then(toggled(enabled));
 
-export const setEndpointSubscriptionValidation = (ref: EndpointRef, enabled: boolean, header?: string): Promise<boolean> =>
-  bff.put<AuthToggleResponse>(`${endpointPath(ref)}/security/subscription`, { enabled, ...(header ? { header } : {}) }).then(toggled(enabled));
+/** Read the single active auth mode (+ options) of the exposed API. */
+export const getEndpointSecurity = (ref: EndpointRef): Promise<SecurityConfig> => bff.get<SecurityConfig>(`${endpointPath(ref)}/security`);
+
+/** Set the single active auth mode. The BFF clears the other mode + redeploys. */
+export const setEndpointSecurity = (ref: EndpointRef, cfg: SecurityConfig): Promise<SecurityConfig> => bff.put<SecurityConfig>(`${endpointPath(ref)}/security`, cfg);
 
 // ---------------------------------------------------------------------------
-// Consumer applications + subscriptions
+// Consumers — a consumer is a named api-key on the exposed endpoint.
+//
+// There is no subscription-token flow. The gateway enforces the api-key when the
+// endpoint's security mode is "api-key"; the plaintext key is shown once at
+// creation and is the credential the consumer sends (default header X-API-Key).
 // ---------------------------------------------------------------------------
 
-export const fetchApplications = (projectName: string): Promise<ConsumerApplication[]> => bff.get<ConsumerApplication[] | ListResponse<ConsumerApplication>>(`/applications${q({ projectName })}`).then(asList);
+/** A masked api-key mapped onto the Consumer view-model (application = the key's identity). */
+const keyToConsumer = (k: ApiKeySummary, restApiId: string): Consumer => ({
+  application: { id: k.name, displayName: k.displayName ?? k.name },
+  subscription: { id: k.name, applicationId: k.name, restApiId, status: k.status, createdAt: k.expiresAt },
+});
 
-export const fetchSubscriptions = (applicationId: string): Promise<Subscription[]> => bff.get<Subscription[] | ListResponse<Subscription>>(`/applications/${seg(applicationId)}/subscriptions`).then(asList);
+/** A freshly-minted key mapped onto a Subscription — `token` carries the plaintext api-key (once). */
+const resultToSubscription = (r: ApiKeyResult, restApiId: string): Subscription => ({
+  id: r.keyId,
+  applicationId: r.keyId,
+  restApiId,
+  token: r.apiKey,
+  status: 'active',
+});
 
-export const fetchSubscription = (applicationId: string, subscriptionId: string): Promise<Subscription> => bff.get<Subscription>(`/applications/${seg(applicationId)}/subscriptions/${seg(subscriptionId)}`);
-
-export const deleteApplication = (applicationId: string): Promise<void> => bff.delete<void>(`/applications/${seg(applicationId)}`);
-
-const createApplication = (input: { displayName: string; projectName: string; description?: string }): Promise<ConsumerApplication> => bff.post<ConsumerApplication>('/applications', input);
-
-/** Subscribe by the component/environment/endpoint triple — the BFF derives the handle. */
-const createSubscription = (applicationId: string, ref: EndpointRef): Promise<Subscription> => bff.post<Subscription>(`/applications/${seg(applicationId)}/subscriptions`, ref);
-
-const deleteSubscription = (applicationId: string, subscriptionId: string): Promise<void> => bff.delete<void>(`/applications/${seg(applicationId)}/subscriptions/${seg(subscriptionId)}`);
-
-// ---------------------------------------------------------------------------
-// Composite reads/writes backing the Consumers panel
-// ---------------------------------------------------------------------------
-
-/**
- * Applications in the project that are subscribed to this endpoint's API.
- * Applications are org-scoped and can subscribe to many APIs, so the panel
- * shows the ones whose subscription targets this endpoint's handle.
- *
- * A per-application subscription read that fails (e.g. an application deleted
- * mid-flight) is skipped rather than failing the whole list.
- *
- * Scalability limitation: the BFF has no batch or `restApiId`-scoped
- * subscriptions query, so this issues one subscriptions request per application
- * in the project — N+1, all in flight at once. Fine for the handful of
- * applications a project has today; if projects grow to hundreds, this needs a
- * server-side filter (e.g. `GET /subscriptions?restApiId=…`) rather than a
- * wider client-side fan-out.
- */
-export async function fetchConsumers(projectName: string, ref: EndpointRef): Promise<Consumer[]> {
+export async function fetchConsumers(ref: EndpointRef): Promise<Consumer[]> {
   const restApiId = deriveRestApiId(ref);
-  const applications = await fetchApplications(projectName);
-  const perApp = await Promise.all(
-    applications.map(async (application): Promise<Consumer[]> => {
-      try {
-        const subscriptions = await fetchSubscriptions(application.id);
-        return subscriptions.filter((s) => s.restApiId === restApiId).map((subscription) => ({ application, subscription }));
-      } catch {
-        return [];
-      }
-    }),
-  );
-  return perApp.flat();
+  const keys = await listEndpointApiKeys(ref);
+  return keys.map((k) => keyToConsumer(k, restApiId));
 }
 
-/**
- * Create the consumer application and subscribe it to this API. If the
- * subscription fails the just-created application is removed, so a half-created
- * consumer never shows up in the list.
- */
 export async function createConsumer(input: CreateConsumerInput): Promise<Consumer> {
-  const { projectName, appName, description, componentName, environmentName, endpointName } = input;
-  const application = await createApplication({ displayName: appName, projectName, description });
-  try {
-    const subscription = await createSubscription(application.id, { componentName, environmentName, endpointName });
-    return { application, subscription };
-  } catch (err) {
-    // A failed rollback leaves an unsubscribed application behind. The
-    // subscription error is what the user needs, so it still propagates — but
-    // the orphan is logged rather than discarded so it is diagnosable.
-    await deleteApplication(application.id).catch((rollbackErr: unknown) => {
-      console.error(`[cloud] createConsumer: rolling back application ${application.id} failed; it may be left unsubscribed:`, rollbackErr);
-    });
-    throw err;
-  }
+  const { appName, description, componentName, environmentName, endpointName } = input;
+  const ref: EndpointRef = { componentName, environmentName, endpointName };
+  const result = await createEndpointApiKey(ref, { displayName: appName });
+  return {
+    application: { id: result.keyId, displayName: appName, description },
+    subscription: resultToSubscription(result, deriveRestApiId(ref)),
+  };
 }
 
 /**
- * Re-issue the subscription token. The BFF has no rotate route, so this
- * unsubscribes and resubscribes — the old `Subscription-Key` stops working the
- * moment the delete lands.
- *
- * The delete is not reversible, so a failed re-subscribe is retried once. If
- * that also fails the application is left unsubscribed, which the caller must
- * be told plainly: the generic "could not regenerate" wording would imply
- * nothing changed while the old key is in fact already dead.
+ * Re-issue a consumer's api-key: revoke the old key, then mint a new one under the same name.
+ * The old key stops working the moment the revoke lands; the new plaintext is returned once.
  */
-export async function regenerateConsumerToken(applicationId: string, subscriptionId: string, ref: EndpointRef): Promise<Subscription> {
-  await deleteSubscription(applicationId, subscriptionId);
+export async function regenerateConsumerToken(ref: EndpointRef, keyName: string, displayName: string): Promise<Subscription> {
+  await revokeEndpointApiKey(ref, keyName);
   try {
-    return await createSubscription(applicationId, ref);
-  } catch (firstErr) {
-    try {
-      return await createSubscription(applicationId, ref);
-    } catch (retryErr) {
-      console.error(`[cloud] regenerateConsumerToken: re-subscribing application ${applicationId} failed twice; it is now unsubscribed:`, retryErr);
-      throw userFacingError(`The old subscription key was revoked, but a new one could not be issued — “${applicationId}” is now unsubscribed from this API. Close this dialog and subscribe it again.`, firstErr);
-    }
+    const result = await createEndpointApiKey(ref, { displayName });
+    return resultToSubscription(result, deriveRestApiId(ref));
+  } catch (err) {
+    throw userFacingError(`The old API key was revoked, but a new one could not be issued for “${displayName}”. Close this dialog and create the consumer again.`, err);
   }
 }
 
-export const revokeConsumer = (applicationId: string, subscriptionId: string): Promise<void> => deleteSubscription(applicationId, subscriptionId);
+export const revokeConsumer = (ref: EndpointRef, keyName: string): Promise<void> => revokeEndpointApiKey(ref, keyName);

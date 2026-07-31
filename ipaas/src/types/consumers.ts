@@ -97,6 +97,29 @@ export interface ApiKeyAuthOptions {
   in?: string;
 }
 
+/**
+ * The single active auth mode of an exposed API. The gateway ANDs auth policies with no
+ * fallback, so exactly one mode is active at a time (they are mutually exclusive):
+ *  - `none`    — open, no auth.
+ *  - `api-key` — api-key-auth (the default for a newly exposed endpoint).
+ *  - `jwt`     — jwt-auth (OAuth2 bearer, validated against the org key manager).
+ */
+export type SecurityMode = 'none' | 'api-key' | 'jwt';
+
+/** The active security configuration of an exposed endpoint API (GET/PUT `.../security`). */
+export interface SecurityConfig {
+  mode: SecurityMode;
+  apiKey?: {
+    /** Request header carrying the key (default `X-API-Key`). */
+    header?: string;
+  };
+  jwt?: {
+    /** Gateway key-manager names to trust; empty defaults to the org key manager. */
+    issuers?: string[];
+    audiences?: string[];
+  };
+}
+
 /** A consumer application. Org-scoped and shared across the org. */
 export interface ConsumerApplication {
   id: string;
