@@ -21,6 +21,7 @@ import { Check, Copy, Eye, EyeOff, Key } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
+import '../swagger-ui-overrides.scss';
 import { DEFAULT_API_KEY_HEADER } from '../constants/apiConsumption';
 import { IS_CLOUD } from '../features';
 import { useApimSwagger, useGenerateTestKey } from '../hooks/useApim';
@@ -188,8 +189,12 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
     }
   };
 
-  // Swagger spec for selected endpoint
-  const { data: swaggerRaw, isLoading: loadingSwagger } = useApimSwagger(selectedEndpoint?.apimId ?? null);
+  // Swagger spec for the selected endpoint. Cloud carries the endpoint's base64
+  // OpenAPI in `apimRevisionId` (there is no APIM behind it); wip resolves an
+  // APIM revision from the same field.
+  // `||`, not `??`: an empty revision id is as unusable as a missing one and must
+  // still fall through to the apimId.
+  const { data: swaggerRaw, isLoading: loadingSwagger } = useApimSwagger(selectedEndpoint?.apimRevisionId || selectedEndpoint?.apimId || null);
   const swagger = swaggerRaw ?? null;
 
   // Override the swagger spec's server URL with the selected invoke URL so

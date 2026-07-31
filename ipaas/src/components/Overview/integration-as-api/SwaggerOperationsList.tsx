@@ -20,7 +20,7 @@ import { Box, Typography } from '@wso2/oxygen-ui';
 import { useMemo } from 'react';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
-import './swagger-ui-overrides.scss';
+import '../../../swagger-ui-overrides.scss';
 import { getHttpMethodColors } from '../../../utils/httpMethods';
 import OperationTile from '../_shared/bodies/OperationTile';
 import OperationHeader from '../_shared/bodies/OperationHeader';
