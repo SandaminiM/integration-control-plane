@@ -201,3 +201,24 @@ export interface DeleteComponentResult {
   message: string;
   encodedData: string;
 }
+
+export interface SubscriptionApplicationInfo {
+  applicationId: string;
+  name: string;
+}
+
+export interface ComponentSubscription {
+  subscriptionId: string;
+  applicationInfo: SubscriptionApplicationInfo;
+}
+
+export interface SubscriptionInfo {
+  count: number;
+  list: ComponentSubscription[];
+}
+
+export interface ComponentDeletionError {
+  code: string;
+  message: string;
+  data: SubscriptionInfo[];
+}
