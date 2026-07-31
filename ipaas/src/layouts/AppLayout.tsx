@@ -412,7 +412,7 @@ function AppLayoutInner(): JSX.Element {
                 onChange={() => {}}
                 onOpen={() => {}}
                 size="small"
-                sx={{ minWidth: 180 }}
+                sx={{ minWidth: 180, maxWidth: 220, '& .MuiListItemText-root': { minWidth: 0, overflow: 'hidden' } }}
                 IconComponent={
                   IS_CLOUD
                     ? () => null
@@ -439,10 +439,10 @@ function AppLayoutInner(): JSX.Element {
                       )
                 }
                 SelectDisplayProps={{ 'aria-label': 'Select organization' }}
-                renderValue={() => <ComplexSelect.MenuItem.Text primary={scope.org} secondary="Organization" />}
+                renderValue={() => <ComplexSelect.MenuItem.Text primary={scope.org} secondary="Organization" primaryTypographyProps={{ noWrap: true, title: scope.org }} />}
                 label="Organization">
                 <ComplexSelect.MenuItem value={scope.org}>
-                  <ComplexSelect.MenuItem.Text primary={scope.org} secondary="Organization" />
+                  <ComplexSelect.MenuItem.Text primary={scope.org} secondary="Organization" primaryTypographyProps={{ noWrap: true, title: scope.org }} />
                 </ComplexSelect.MenuItem>
               </ComplexSelect>
             </Box>
@@ -616,7 +616,7 @@ function AppLayoutInner(): JSX.Element {
                     onChange={() => {}}
                     onOpen={() => {}}
                     size="small"
-                    sx={{ minWidth: 160 }}
+                    sx={{ minWidth: 160, maxWidth: 220, '& .MuiListItemText-root': { minWidth: 0, overflow: 'hidden' } }}
                     IconComponent={({ ownerState: _ownerState, ...props }) => (
                       <span
                         {...props}
@@ -641,16 +641,16 @@ function AppLayoutInner(): JSX.Element {
                       </span>
                     )}
                     SelectDisplayProps={{ 'aria-label': 'Select project' }}
-                    renderValue={() => <ComplexSelect.MenuItem.Text primary={getProjectDisplayName()} secondary="Project" />}
+                    renderValue={() => <ComplexSelect.MenuItem.Text primary={getProjectDisplayName()} secondary="Project" primaryTypographyProps={{ noWrap: true, title: getProjectDisplayName() }} />}
                     label="Project">
                     {/* Hidden items ensure renderValue always fires — ComplexSelect skips renderValue when value matches a visible item,
                         so all items are hidden. The dropdown is handled by the Popover, not ComplexSelect's own open state. */}
                     <ComplexSelect.MenuItem key="__project_placeholder__" value={scope.project} sx={{ display: 'none' }}>
-                      <ComplexSelect.MenuItem.Text primary={getProjectDisplayName()} secondary="Project" />
+                      <ComplexSelect.MenuItem.Text primary={getProjectDisplayName()} secondary="Project" primaryTypographyProps={{ noWrap: true, title: getProjectDisplayName() }} />
                     </ComplexSelect.MenuItem>
                     {projects.map((p) => (
                       <ComplexSelect.MenuItem key={p.handler} value={p.handler} sx={{ display: 'none' }}>
-                        <ComplexSelect.MenuItem.Text primary={p.name} secondary={p.description} />
+                        <ComplexSelect.MenuItem.Text primary={p.name} secondary={p.description} primaryTypographyProps={{ noWrap: true, title: p.name }} />
                       </ComplexSelect.MenuItem>
                     ))}
                   </ComplexSelect>
@@ -776,7 +776,7 @@ function AppLayoutInner(): JSX.Element {
                   onChange={() => {}}
                   onOpen={() => {}}
                   size="small"
-                  sx={{ minWidth: 160 }}
+                  sx={{ minWidth: 160, maxWidth: 220, '& .MuiListItemText-root': { minWidth: 0, overflow: 'hidden' } }}
                   IconComponent={({ ownerState: _ownerState, ...props }) => (
                     <span
                       {...props}
@@ -801,17 +801,17 @@ function AppLayoutInner(): JSX.Element {
                     </span>
                   )}
                   SelectDisplayProps={{ 'aria-label': 'Select integration' }}
-                  renderValue={() => <ComplexSelect.MenuItem.Text primary={getComponentDisplayName()} secondary="Integration" />}
+                  renderValue={() => <ComplexSelect.MenuItem.Text primary={getComponentDisplayName()} secondary="Integration" primaryTypographyProps={{ noWrap: true, title: getComponentDisplayName() }} />}
                   label="Integration">
                   {/* Fallback keeps the value valid while components are loading */}
                   {!components.some((c) => c.handler === scope.component) && (
                     <ComplexSelect.MenuItem key="__current" value={scope.component} sx={{ display: 'none' }}>
-                      <ComplexSelect.MenuItem.Text primary={getComponentDisplayName()} secondary="Integration" />
+                      <ComplexSelect.MenuItem.Text primary={getComponentDisplayName()} secondary="Integration" primaryTypographyProps={{ noWrap: true, title: getComponentDisplayName() }} />
                     </ComplexSelect.MenuItem>
                   )}
                   {components.map((c) => (
                     <ComplexSelect.MenuItem key={c.id} value={c.handler}>
-                      <ComplexSelect.MenuItem.Text primary={c.displayName} secondary={c.displayType} />
+                      <ComplexSelect.MenuItem.Text primary={c.displayName} secondary={c.displayType} primaryTypographyProps={{ noWrap: true, title: c.displayName }} />
                     </ComplexSelect.MenuItem>
                   ))}
                 </ComplexSelect>

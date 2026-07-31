@@ -76,7 +76,10 @@ export default function OverviewHeaderActions({ component, apimId, orgHandler, p
 
   return (
     <>
-      <Stack gap={1} alignItems="flex-end">
+      {/* alignItems switches to left-aligned under the same narrow-container threshold as the
+          HeaderShell block this renders inside (see HeaderShell's NARROW_HEADER_QUERY) — this is a
+          separate component, but container queries key off DOM ancestry, not component boundaries. */}
+      <Stack gap={1} alignItems="flex-end" sx={{ '@container (max-width: 768px)': { alignItems: 'flex-start' } }}>
         {/* Configure Security + any extra configure rows (e.g. MCP → Configure Policies).
             Cloud has no APIM behind this drawer — it configures security per
             environment from the env card's own Configure Security action. */}
