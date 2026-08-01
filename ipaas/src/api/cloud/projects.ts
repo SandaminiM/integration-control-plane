@@ -92,7 +92,10 @@ const toBffCreateMonoRepoProjectBody = async (input: CreateMonoRepoProjectInput)
 
 export const createProject = async (input: CreateProjectInput): Promise<Project> => bff.post<Project>('/projects', await toBffCreateProjectBody(input));
 
-export const updateProject = (input: UpdateProjectInput): Promise<Project> => bff.put<Project>(`/projects/${seg(input.id)}`, { name: input.name, description: input.description, version: input.version });
+// The BFF update takes `displayName` — `name` is the immutable K8s metadata.name
+// and is not a settable field, so sending it here silently dropped the rename.
+// `version` has no OpenChoreo counterpart and is ignored upstream.
+export const updateProject = (input: UpdateProjectInput): Promise<Project> => bff.put<Project>(`/projects/${seg(input.id)}`, { displayName: input.name, description: input.description });
 
 export const deleteProject = (projectId: string): Promise<void> => bff.delete<void>(`/projects/${seg(projectId)}`);
 

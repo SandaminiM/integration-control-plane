@@ -23,6 +23,7 @@ import { useNavigate } from 'react-router';
 import { useDataPlanes } from '../hooks/useDataPlanes';
 import { useAddEnvironment } from '../hooks/useEnvironments';
 import { useOrgUuid } from '../hooks/useOrgUuid';
+import { IS_CLOUD } from '../features';
 import { buildEnvironmentVhost, EnvironmentValidationError } from '../utils/environment';
 import { resourceUrl, type OrgScope } from '../nav';
 
@@ -34,6 +35,7 @@ export default function CreateEnvironment(scope: OrgScope): JSX.Element {
   const create = useAddEnvironment();
 
   const [name, setName] = useState('My-New-Environment');
+  const [description, setDescription] = useState('');
   const [dnsPrefix, setDnsPrefix] = useState('my-env');
   const [dataplaneId, setDataplaneId] = useState('');
   const [critical, setCritical] = useState(false);
@@ -44,8 +46,10 @@ export default function CreateEnvironment(scope: OrgScope): JSX.Element {
     if (dataPlanes.length) setDataplaneId((prev) => (prev && dataPlanes.some((d) => d.id === prev) ? prev : dataPlanes[0].id));
   }, [dataPlanes]);
 
+  // OpenChoreo derives no per-environment hostname — the gateway host is fixed at
+  // deploy time — so cloud collects a description instead of a DNS prefix.
   const selectedDataPlane = useMemo(() => dataPlanes.find((d) => d.id === dataplaneId), [dataPlanes, dataplaneId]);
-  const vhostPreview = orgUuid && dnsPrefix.trim() ? buildEnvironmentVhost(orgUuid, dnsPrefix.trim(), selectedDataPlane?.externalGatewayVirtualHost) : '';
+  const vhostPreview = !IS_CLOUD && orgUuid && dnsPrefix.trim() ? buildEnvironmentVhost(orgUuid, dnsPrefix.trim(), selectedDataPlane?.externalGatewayVirtualHost) : '';
 
   const submit = () => {
     setError(null);
@@ -54,7 +58,15 @@ export default function CreateEnvironment(scope: OrgScope): JSX.Element {
       return;
     }
     create.mutate(
-      { orgUuid, name: name.trim(), dataplaneId, dnsPrefix: dnsPrefix.trim(), isProd: critical, vhost: buildEnvironmentVhost(orgUuid, dnsPrefix.trim(), selectedDataPlane?.externalGatewayVirtualHost) },
+      {
+        orgUuid,
+        name: name.trim(),
+        dataplaneId,
+        dnsPrefix: dnsPrefix.trim(),
+        isProd: critical,
+        vhost: IS_CLOUD ? '' : buildEnvironmentVhost(orgUuid, dnsPrefix.trim(), selectedDataPlane?.externalGatewayVirtualHost),
+        ...(IS_CLOUD ? { description: description.trim() } : {}),
+      },
       {
         onSuccess: () => navigate(listUrl, { state: { success: true, environmentName: name.trim() } }),
         onError: (err) => {
@@ -68,7 +80,7 @@ export default function CreateEnvironment(scope: OrgScope): JSX.Element {
     );
   };
 
-  const canSubmit = !!name.trim() && !!dnsPrefix.trim() && !!dataplaneId && !create.isPending;
+  const canSubmit = !!name.trim() && (IS_CLOUD || !!dnsPrefix.trim()) && !!dataplaneId && !create.isPending;
 
   return (
     <PageContent>
@@ -117,14 +129,18 @@ export default function CreateEnvironment(scope: OrgScope): JSX.Element {
             </Select>
           )}
         </Box>
-        <Box>
-          <TextField label="DNS Prefix" required placeholder="e.g., staging" value={dnsPrefix} onChange={(e) => setDnsPrefix(e.target.value)} fullWidth />
-          {vhostPreview && (
-            <Alert severity="info" sx={{ mt: 1.5 }}>
-              DNS for the environment will be created as {vhostPreview}. URL customization will be enabled for the new environment after provisioning, which can take about 5 minutes.
-            </Alert>
-          )}
-        </Box>
+        {IS_CLOUD ? (
+          <TextField label="Description" placeholder="What this environment is for" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline minRows={2} />
+        ) : (
+          <Box>
+            <TextField label="DNS Prefix" required placeholder="e.g., staging" value={dnsPrefix} onChange={(e) => setDnsPrefix(e.target.value)} fullWidth />
+            {vhostPreview && (
+              <Alert severity="info" sx={{ mt: 1.5 }}>
+                DNS for the environment will be created as {vhostPreview}. URL customization will be enabled for the new environment after provisioning, which can take about 5 minutes.
+              </Alert>
+            )}
+          </Box>
+        )}
         <FormControlLabel control={<Checkbox checked={critical} onChange={(_, v) => setCritical(v)} />} label="Mark as Critical Environment" />
       </Stack>
 

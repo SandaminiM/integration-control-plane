@@ -108,15 +108,47 @@ const promotionPathsToTree = (paths: BffPromotionPath[]): PromotionTreeNode => {
   return { name: 'Root', children: roots.map((r) => build(r, new Set())) };
 };
 
+// OpenChoreo has no default flag; the well-known "default" pipeline stands in.
+const DEFAULT_PIPELINE_NAME = 'default';
+
 const toDeploymentPipeline = (p: BffDeploymentPipeline): DeploymentPipeline => ({
   id: p.name,
   created_at: p.createdAt ?? '',
   organization_uuid: '',
   name: p.displayName || p.name,
   promotion_tree: promotionPathsToTree(p.promotionPaths ?? []),
-  // OpenChoreo has no default flag; the well-known "default" pipeline stands in.
-  is_default: p.name === 'default',
+  is_default: p.name === DEFAULT_PIPELINE_NAME,
 });
+
+/**
+ * Append `envSlug` to the end of the default pipeline's promotion chain, so a
+ * freshly created environment is actually deployable — an environment that sits
+ * outside every promotion path can never be promoted into.
+ *
+ * The insertion point is the chain's terminal environment: the one promoted *to*
+ * but never *from*. A pipeline with no paths, or a branching chain with several
+ * terminals, is left untouched — there is no single correct place to insert and
+ * guessing would rewrite a topology someone built deliberately.
+ *
+ * Returns whether the pipeline was updated.
+ */
+export const appendEnvironmentToDefaultPipeline = async (envSlug: string): Promise<boolean> => {
+  const pipeline = items(await bff.get<ListResponse<BffDeploymentPipeline>>('/deploymentpipelines')).find((p) => p.name === DEFAULT_PIPELINE_NAME);
+  if (!pipeline) return false;
+
+  const paths = pipeline.promotionPaths ?? [];
+  const sources = new Set(paths.map((p) => p.sourceEnvironment));
+  const targets = new Set(paths.flatMap((p) => p.targetEnvironments));
+  if (sources.has(envSlug) || targets.has(envSlug)) return false; // already in the chain
+
+  const terminals = [...targets].filter((t) => !sources.has(t));
+  if (terminals.length !== 1) return false;
+
+  await bff.put<BffDeploymentPipeline>(`/deploymentpipelines/${seg(pipeline.name)}`, {
+    promotionPaths: [...paths, { sourceEnvironment: terminals[0], targetEnvironments: [envSlug] }],
+  });
+  return true;
+};
 
 // OpenChoreo models no environment templates — the promotion chain is built over
 // environments directly, so each environment is projected into an EnvTemplate.
