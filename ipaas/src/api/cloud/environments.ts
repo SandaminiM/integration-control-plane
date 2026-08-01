@@ -145,29 +145,70 @@ export const deleteEnvironmentTemplate = async (_orgUuid: string, templateId: st
   await deleteEnvironment(templateId);
 };
 
+/** A `{ name, displayName }` BFF row — projects and components share the shape here. */
+interface BffNamed {
+  name: string;
+  displayName?: string;
+}
+
+/**
+ * Stands in for a component whose deployment state could not be read. It has to
+ * be a real entry in `deployedComponentsDetails`, not just `deletable: false`,
+ * because the delete dialog gates its confirm button on that list alone.
+ */
+const UNVERIFIED_COMPONENT = 'unknown (deployment state could not be read)';
+
+/** Components of `project` deployed to `environmentId`. Never rejects. */
+const deployedInProject = async (project: BffNamed, environmentId: string): Promise<ProjectDeployedComponents> => {
+  const detail = { projectId: project.name, projectName: project.displayName || project.name };
+
+  let components: BffNamed[];
+  try {
+    components = items(await bff.get<ListResponse<BffNamed>>(`/projects/${seg(project.name)}/components`));
+  } catch {
+    return { ...detail, components: [{ componentName: UNVERIFIED_COMPONENT }] };
+  }
+
+  const deployed = await Promise.all(
+    components.map(async (component) => {
+      const entry = { componentId: component.name, componentName: component.displayName || component.name };
+      try {
+        // "Not deployed" is 200 with a null body, so only a genuine failure lands
+        // in the catch — an unreadable component is unknown, not empty.
+        return (await bff.get<unknown>(`/components/${seg(component.name)}/deployments${q({ environmentId })}`)) ? entry : null;
+      } catch {
+        return entry;
+      }
+    }),
+  );
+  return { ...detail, components: deployed.filter((c) => c != null) };
+};
+
 // OpenChoreo has no "what is deployed here" query, so eligibility is derived by
 // walking projects -> components -> that component's deployment in this
 // environment. That is O(projects + components) requests, which is acceptable on
-// a settings page opened on demand. Deleting an Environment cascades and takes
-// running workloads with it, so a component that fails to report is treated as
-// deployed rather than waved through.
+// a settings page opened on demand.
+//
+// Deleting an Environment cascades and takes running workloads with it, so this
+// fails closed: anything that cannot be verified is reported as deployed. That
+// also means the function must never reject — a rejected query leaves the dialog
+// with no data at all, which it reads as "nothing deployed" and enables delete.
 export const getEnvDeleteEligibility = async (_orgUuid: string, templateId: string): Promise<EnvDeletionEligibility> => {
-  const projects = items(await bff.get<ListResponse<{ name: string; displayName?: string }>>('/projects'));
+  const blockAll = (reason: string): EnvDeletionEligibility => ({
+    templateId,
+    envName: templateId,
+    deletable: false,
+    deployedComponentsDetails: [{ projectName: reason, components: [{ componentName: UNVERIFIED_COMPONENT }] }],
+  });
 
-  const deployedComponentsDetails = (
-    await Promise.all(
-      projects.map(async (project): Promise<ProjectDeployedComponents> => {
-        const components = items(await bff.get<ListResponse<{ name: string; displayName?: string }>>(`/projects/${seg(project.name)}/components`));
-        const deployed = await Promise.all(
-          components.map(async (component) => {
-            const deployment = await bff.get<{ environmentId?: string } | null>(`/components/${seg(component.name)}/deployments${q({ environmentId: templateId })}`);
-            return deployment ? { componentId: component.name, componentName: component.displayName || component.name } : null;
-          }),
-        );
-        return { projectId: project.name, projectName: project.displayName || project.name, components: deployed.filter((c) => c != null) };
-      }),
-    )
-  ).filter((p) => (p.components?.length ?? 0) > 0);
+  let projects: BffNamed[];
+  try {
+    projects = items(await bff.get<ListResponse<BffNamed>>('/projects'));
+  } catch {
+    return blockAll('All projects');
+  }
+
+  const deployedComponentsDetails = (await Promise.all(projects.map((project) => deployedInProject(project, templateId)))).filter((p) => (p.components?.length ?? 0) > 0);
 
   return { templateId, envName: templateId, deletable: deployedComponentsDetails.length === 0, deployedComponentsDetails };
 };
