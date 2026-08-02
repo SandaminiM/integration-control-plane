@@ -22,6 +22,7 @@ import type { ReactNode } from 'react';
 import { useComponentDeployment } from '../../hooks/useDeployments';
 import { usePromote } from '../../hooks/useDeployments';
 import { useOrgUuid } from '../../hooks/useOrgUuid';
+import { IS_CLOUD } from '../../features';
 import Authorized from '../Authorized';
 import { Permissions } from '../../constants/permissions';
 
@@ -48,14 +49,19 @@ export default function PromoteButton({ orgHandler, componentId, versionId, depl
   const sourceReleaseId = sourceDeployment?.releaseId;
   const alreadyPromoted = !deploymentsLoading && !!buildId && buildId === targetDeployment?.build?.buildId;
 
+  const missingPipeline = IS_CLOUD && !deploymentPipelineId;
+  const canPromote = !!buildId && !!sourceReleaseId && !missingPipeline && !alreadyPromoted;
+
   const handlePromote = () => {
-    if (!buildId || !sourceReleaseId || alreadyPromoted) return;
+    if (!canPromote || !sourceReleaseId) return;
     onPromoteStarted?.();
     promote.mutate(
       {
         componentId,
         apiVersionId: versionId,
         sourceReleaseId,
+        // The BFF validates this source→target hop against the pipeline's promotion paths.
+        sourceEnvironmentId: sourceEnvId,
         targetEnvironmentId: targetEnvId,
         deploymentPipelineId,
       },
@@ -63,13 +69,13 @@ export default function PromoteButton({ orgHandler, componentId, versionId, depl
     );
   };
 
-  const tooltipTitle = !buildId ? 'No build available to promote' : alreadyPromoted ? 'Already deployed in target environment' : '';
+  const tooltipTitle = !buildId ? 'No build available to promote' : alreadyPromoted ? 'Already deployed in target environment' : missingPipeline ? 'No deployment pipeline configured for this project' : '';
 
   return (
     <Authorized permissions={Permissions.ENVIRONMENT_MANAGE}>
       <Tooltip title={tooltipTitle}>
         <span>
-          <Button variant="outlined" size="small" startIcon={icon ?? <ArrowDown size={14} />} disabled={deploymentsLoading || !buildId || !sourceReleaseId || alreadyPromoted || promote.isPending} onClick={handlePromote}>
+          <Button variant="outlined" size="small" startIcon={icon ?? <ArrowDown size={14} />} disabled={deploymentsLoading || !canPromote || promote.isPending} onClick={handlePromote}>
             {promote.isPending ? 'Promoting…' : 'Promote'}
           </Button>
         </span>
