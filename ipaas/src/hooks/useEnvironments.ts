@@ -92,7 +92,13 @@ export function useAddEnvironment() {
       const { orgUuid, ...request } = input;
       return createOrgEnvironment(orgUuid, request);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['environment-templates'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['environment-templates'] });
+      // In cloud a template *is* an environment, so the environment lists and the
+      // pipeline the new environment was appended to go stale too.
+      qc.invalidateQueries({ queryKey: ['environments'] });
+      qc.invalidateQueries({ queryKey: ['deploymentPipelines'] });
+    },
   });
 }
 
@@ -109,6 +115,9 @@ export function useDeleteEnvironmentTemplate() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { orgUuid: string; templateId: string }) => deleteEnvironmentTemplate(input.orgUuid, input.templateId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['environment-templates'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['environment-templates'] });
+      qc.invalidateQueries({ queryKey: ['environments'] });
+    },
   });
 }
