@@ -48,13 +48,12 @@ export default function McpPolicies(scope: ComponentScope): JSX.Element {
   const { projectId, isLoading: loadingProject } = useProjectId(scope.project);
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
 
-  // Track → endpoint → APIM id (same resolution as the overview/lifecycle pages).
+  // Track → endpoint → APIM id (same resolution as the overview/lifecycle pages). Derived
+  // rather than synced via an effect — an effect+render round trip here would delay
+  // useComponentEndpoints below from becoming enabled.
   const tracks = useMemo(() => component?.deploymentTracks ?? [], [component?.deploymentTracks]);
-  const [selectedTrackId, setSelectedTrackId] = useState('');
-  useEffect(() => {
-    if (!tracks.length) return;
-    setSelectedTrackId((prev) => (prev && tracks.some((t) => t.id === prev) ? prev : (tracks.find((t) => t.latest)?.id ?? tracks[0].id)));
-  }, [component?.id, tracks]);
+  const [selectedTrackIdState, setSelectedTrackId] = useState('');
+  const selectedTrackId = tracks.some((t) => t.id === selectedTrackIdState) ? selectedTrackIdState : (tracks.find((t) => t.latest)?.id ?? tracks[0]?.id ?? '');
 
   const { data: endpoints = [], isLoading: loadingEndpoints } = useComponentEndpoints(component?.id ?? '', selectedTrackId);
   const apimId = useMemo(() => endpoints.find((e) => e.apimId)?.apimId ?? null, [endpoints]);

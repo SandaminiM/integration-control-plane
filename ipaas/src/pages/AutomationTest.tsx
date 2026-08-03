@@ -58,17 +58,15 @@ export default function AutomationTest({ org, project, component }: ComponentSco
   const { projectId } = useProjectId(project);
   const { data: comp, isLoading } = useComponentByHandler(projectId, component);
 
+  // Derived rather than synced via an effect — an effect+render round trip here would delay
+  // useComponentDeployment/useRuntimeArguments/useTaskExecutions below from becoming enabled.
   const tracks = useMemo(() => comp?.deploymentTracks ?? [], [comp?.deploymentTracks]);
-  const [trackId, setTrackId] = useState('');
-  useEffect(() => {
-    if (tracks.length) setTrackId((prev) => (prev && tracks.some((t) => t.id === prev) ? prev : (tracks.find((t) => t.latest)?.id ?? tracks[0].id)));
-  }, [tracks]);
+  const [trackIdState, setTrackId] = useState('');
+  const trackId = tracks.some((t) => t.id === trackIdState) ? trackIdState : (tracks.find((t) => t.latest)?.id ?? tracks[0]?.id ?? '');
 
   const { data: environments = [] } = useEnvironments(org, projectId);
-  const [envId, setEnvId] = useState('');
-  useEffect(() => {
-    if (environments.length) setEnvId((prev) => (prev && environments.some((e) => e.id === prev) ? prev : environments[0].id));
-  }, [environments]);
+  const [envIdState, setEnvId] = useState('');
+  const envId = environments.some((e) => e.id === envIdState) ? envIdState : (environments[0]?.id ?? '');
 
   const { data: deployment } = useComponentDeployment(org, orgUuid ?? '', comp?.id ?? '', trackId, envId);
   const releaseId = deployment?.releaseId ?? '';

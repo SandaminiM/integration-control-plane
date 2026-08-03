@@ -102,23 +102,15 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
   const { data: environments = [] } = useEnvironments(scope.org, projectId);
 
-  // Deployment track selection (default to latest)
+  // Deployment track selection (default to latest) — derived rather than synced via an effect,
+  // since an effect+render round trip here would delay useComponentDeployment/useEnvEndpoints below.
   const tracks = useMemo(() => component?.deploymentTracks ?? [], [component?.deploymentTracks]);
-  const [selectedTrackId, setSelectedTrackId] = useState('');
-  useEffect(() => {
-    if (!tracks.length) return;
-    setSelectedTrackId((prev) => {
-      if (prev && tracks.some((t) => t.id === prev)) return prev;
-      return tracks.find((t) => t.latest)?.id ?? tracks[0].id;
-    });
-  }, [component?.id, tracks]);
+  const [selectedTrackIdState, setSelectedTrackId] = useState('');
+  const selectedTrackId = tracks.some((t) => t.id === selectedTrackIdState) ? selectedTrackIdState : (tracks.find((t) => t.latest)?.id ?? tracks[0]?.id ?? '');
 
-  // Environment selection (by ID for stability across refetches)
-  const [selectedEnvId, setSelectedEnvId] = useState('');
-  useEffect(() => {
-    if (!environments.length) return;
-    setSelectedEnvId((prev) => (prev && environments.some((e) => e.id === prev) ? prev : environments[0].id));
-  }, [environments]);
+  // Environment selection (by ID for stability across refetches) — same reasoning.
+  const [selectedEnvIdState, setSelectedEnvId] = useState('');
+  const selectedEnvId = environments.some((e) => e.id === selectedEnvIdState) ? selectedEnvIdState : (environments[0]?.id ?? '');
   const selectedEnv = environments.find((e) => e.id === selectedEnvId) ?? null;
 
   // Deployment for selected env (provides releaseId)
@@ -128,13 +120,10 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
   // Endpoints for the selected env + track
   const { data: endpoints = [], isLoading: loadingEndpoints } = useEnvEndpoints(component?.id ?? '', selectedTrackId, releaseId);
 
-  // Selected endpoint
-  const [selectedEndpointId, setSelectedEndpointId] = useState('');
-  useEffect(() => {
-    if (endpoints.length > 0 && (!selectedEndpointId || !endpoints.find((e) => e.id === selectedEndpointId))) {
-      setSelectedEndpointId(endpoints[0].id);
-    }
-  }, [endpoints, selectedEndpointId]);
+  // Selected endpoint — derived rather than synced via an effect, since useApimSwagger below
+  // keys off selectedEndpoint and an effect+render round trip would delay it becoming enabled.
+  const [selectedEndpointIdState, setSelectedEndpointId] = useState('');
+  const selectedEndpointId = endpoints.some((e) => e.id === selectedEndpointIdState) ? selectedEndpointIdState : (endpoints[0]?.id ?? '');
   const selectedEndpoint = endpoints.find((e) => e.id === selectedEndpointId) ?? null;
 
   // Visibility options for selected endpoint
