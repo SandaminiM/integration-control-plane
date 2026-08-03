@@ -118,8 +118,7 @@ interface BffWorkflowRun {
   completedAt?: string;
   componentName?: string;
   commit?: string;
-  isAutoBuild?: boolean;
-  isTriggeredAtCreation?: boolean;
+  trigger?: 'initial' | 'manual' | 'automatic';
 }
 
 // OpenChoreo workflow-run status -> the build vocabulary the build card expects
@@ -159,8 +158,8 @@ function toBuildRun(run: BffWorkflowRun): BuildRun {
     status,
     conclusion,
     conclusionV2: conclusion,
-    isAutoDeploy: run.isAutoBuild ?? false,
-    isTriggeredAtCreation: run.isTriggeredAtCreation ?? false,
+    isAutoDeploy: run.trigger === 'automatic',
+    isTriggeredAtCreation: run.trigger === 'initial',
     name,
     failureReason: 0,
     sourceCommitId: run.commit ?? '',
