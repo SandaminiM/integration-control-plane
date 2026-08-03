@@ -118,7 +118,7 @@ interface BffWorkflowRun {
   completedAt?: string;
   componentName?: string;
   commit?: string;
-  isAutoDeploy?: boolean;
+  isAutoBuild?: boolean;
   isTriggeredAtCreation?: boolean;
 }
 
@@ -159,7 +159,7 @@ function toBuildRun(run: BffWorkflowRun): BuildRun {
     status,
     conclusion,
     conclusionV2: conclusion,
-    isAutoDeploy: run.isAutoDeploy ?? false,
+    isAutoDeploy: run.isAutoBuild ?? false,
     isTriggeredAtCreation: run.isTriggeredAtCreation ?? false,
     name,
     failureReason: 0,
