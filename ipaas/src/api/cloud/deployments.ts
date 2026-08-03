@@ -109,14 +109,17 @@ function toEnvEndpoint(ep: BffEndpointResources, releaseId: string): EnvEndpoint
 export const fetchEnvEndpoints = (componentId: string, _versionId: string, releaseId: string): Promise<EnvEndpoint[]> =>
   bff.get<{ endpoints?: BffEndpointResources[] }>(`/components/${seg(componentId)}/releases/${seg(releaseId)}/endpoints`).then((r) => (r?.endpoints ?? []).map((ep) => toEnvEndpoint(ep, releaseId)));
 
-// Shape of a build run from GET /components/{name}/builds (BFF WorkflowRun).
+// The fields read from GET /components/{name}/builds (BFF WorkflowRun).
 // Newest-first per the BFF, so items[0] is the latest build.
 interface BffWorkflowRun {
   name?: string;
   status?: string;
   startedAt?: string;
   completedAt?: string;
+  componentName?: string;
   commit?: string;
+  isAutoDeploy?: boolean;
+  isTriggeredAtCreation?: boolean;
 }
 
 // OpenChoreo workflow-run status -> the build vocabulary the build card expects
@@ -128,27 +131,36 @@ const WORKFLOW_STATUS_MAP: Record<string, { status: string; conclusion: string }
   Pending: { status: 'queued', conclusion: '' },
 };
 
-// Stable per-run numeric id so the consumer's per-build state (keyed on id)
-// resets between builds; BuildRun.id is numeric in the contract.
+// Fallback id for runs whose name carries no millisecond stamp.
 function hashRunName(name: string): number {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (Math.imul(31, h) + name.charCodeAt(i)) | 0;
   return Math.abs(h);
 }
 
+// The Build ID: the unixMillis suffix of a `{componentName}-{unixMillis}` run
+// name. The BFF sends no numeric id, and BuildRun.id is numeric in the contract.
+function runStamp(name: string, componentName?: string): number | null {
+  const stamp = componentName && name.startsWith(`${componentName}-`) ? name.slice(componentName.length + 1) : name.slice(name.lastIndexOf('-') + 1);
+  if (!/^\d+$/.test(stamp)) return null;
+  const n = Number(stamp);
+  return Number.isSafeInteger(n) ? n : null;
+}
+
 function toBuildRun(run: BffWorkflowRun): BuildRun {
   const name = run.name ?? '';
   const { status, conclusion } = WORKFLOW_STATUS_MAP[run.status ?? ''] ?? WORKFLOW_STATUS_MAP.Pending;
+  const stamp = runStamp(name, run.componentName);
   return {
-    id: hashRunName(name),
+    id: stamp ?? hashRunName(name),
     sha: run.commit ?? '',
     startedAt: run.startedAt ?? '',
     completedAt: run.completedAt ?? '',
     status,
     conclusion,
     conclusionV2: conclusion,
-    isAutoDeploy: false,
-    isTriggeredAtCreation: false,
+    isAutoDeploy: run.isAutoDeploy ?? false,
+    isTriggeredAtCreation: run.isTriggeredAtCreation ?? false,
     name,
     failureReason: 0,
     sourceCommitId: run.commit ?? '',
