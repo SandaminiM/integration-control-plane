@@ -146,8 +146,12 @@ function runStamp(name: string, componentName?: string): number | null {
   return Number.isSafeInteger(n) ? n : null;
 }
 
-function toBuildRun(run: BffWorkflowRun): BuildRun {
-  const name = run.name ?? '';
+// A run is addressed by name — for logs, and for the Build ID. Runs without one
+// are dropped rather than mapped to a nameless BuildRun.
+const hasRunName = (run: BffWorkflowRun): run is BffWorkflowRun & { name: string } => !!run.name;
+
+function toBuildRun(run: BffWorkflowRun & { name: string }): BuildRun {
+  const name = run.name;
   const { status, conclusion } = WORKFLOW_STATUS_MAP[run.status ?? ''] ?? WORKFLOW_STATUS_MAP.Pending;
   const stamp = runStamp(name, run.componentName);
   return {
@@ -175,7 +179,7 @@ export const fetchDeploymentStatus = (componentId: string, _versionId: string): 
   bff
     .get<ListResponse<BffWorkflowRun>>(`/components/${seg(componentId)}/builds`)
     .then(items)
-    .then((runs) => runs.map(toBuildRun));
+    .then((runs) => runs.filter(hasRunName).map(toBuildRun));
 
 // Shape of GET /components/{name}/release-mgt-deployments items (BFF
 // ReleaseMgtDeployment): the BFF serializes these in snake_case, but the
