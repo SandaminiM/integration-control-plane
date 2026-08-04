@@ -40,6 +40,7 @@
 import type { CreateDeploymentPipelineRequest, DeploymentPipeline, EnvTemplate, PipelineDeletionEligibility, PromotionTreeNode } from '../../types/deploymentPipeline';
 import { toHandler } from '../../utils/string';
 import { bff, items, seg, type ListResponse } from './_client';
+import { toEnvironment, type BffEnvironment } from './_environmentShape';
 
 // _orgUuid / _orgNumericId are kept for devant contract parity; cloud derives
 // the org from the access token instead of taking an id from the caller.
@@ -68,7 +69,14 @@ interface BffProject {
   deploymentPipeline?: string;
 }
 
-/** Walk the promotion tree, emitting a path per node that has children. */
+/**
+ * Walk the promotion tree, emitting a path per node that has children.
+ *
+ * Refs come from `env_template_id`, which carries the environment slug. The
+ * `?? env_name` fallback exists only for trees that predate the id — `env_name`
+ * holds a *display label*, so anything resolved through the fallback is written to
+ * the CR as-is and will not match an Environment.
+ */
 const treeToPromotionPaths = (tree: PromotionTreeNode | null | undefined): BffPromotionPath[] => {
   const paths: BffPromotionPath[] = [];
   const walk = (nodes: PromotionTreeNode[] | undefined): void => {
@@ -152,23 +160,19 @@ export const appendEnvironmentToDefaultPipeline = async (envSlug: string): Promi
 
 // OpenChoreo models no environment templates — the promotion chain is built over
 // environments directly, so each environment is projected into an EnvTemplate.
-interface BffEnvironmentTemplateSource {
-  name: string;
-  displayName?: string;
-  isProduction?: boolean;
-}
-
 export const fetchEnvTemplates = (_orgNumericId: number): Promise<EnvTemplate[]> =>
-  bff.get<ListResponse<BffEnvironmentTemplateSource>>('/environments').then((r) =>
-    items(r).map((e) => ({
-      id: e.name,
-      env_name: e.displayName || e.name,
-      critical: e.isProduction ?? false,
-      region: '',
-      choreo_env: '',
-      cluster_id: '',
-      dns_prefix: '',
-    })),
+  bff.get<ListResponse<BffEnvironment>>('/environments').then((r) =>
+    items(r)
+      .map(toEnvironment)
+      .map((e) => ({
+        id: e.id,
+        env_name: e.name,
+        critical: e.critical,
+        region: '',
+        choreo_env: '',
+        cluster_id: '',
+        dns_prefix: '',
+      })),
   );
 
 export const fetchOrgDeploymentPipelines = (_orgUuid: string): Promise<DeploymentPipeline[]> => bff.get<ListResponse<BffDeploymentPipeline>>('/deploymentpipelines').then((r) => items(r).map(toDeploymentPipeline));
