@@ -30,7 +30,14 @@ import { bff, items, q, seg, type ListResponse, type MessageResponse } from './_
 // promotion refs, while the human label lives in `displayName`. The frontend
 // Environment carries `id` (slug) and `name` (label) and expresses "production"
 // as `critical`, so we translate between the two shapes at the boundary.
-interface BffEnvironment {
+//
+// Exported because deploymentPipelines.ts projects environments into promotion-chain
+// templates and must use this same mapping. Keeping a second, hand-rolled copy there
+// is what caused pipelines to be written with display names instead of slugs: the
+// duplicate read `name` as the slug, so every promotion ref pointed at a label
+// ("Development") rather than an environment ("development"). Add fields here, not in
+// a local interface.
+export interface BffEnvironment {
   // The BFF serves the RFC 1123 slug as `id` and the human label as `name`, and
   // flags production via `critical` with the dataplane in `dpId`. The
   // slug/displayName/isProduction/dataPlaneRef aliases are tolerated as fallbacks.
@@ -46,10 +53,11 @@ interface BffEnvironment {
   createdAt?: string;
 }
 
-// `id` must be the slug used in every path (`/environments/{name}`) and in the
-// immutable ReleaseBinding `spec.environment` — NOT the display label, or deploys
-// mismatch the binding (e.g. label "Development" vs slug "development").
-const toEnvironment = (e: BffEnvironment): Environment => ({
+// `id` must be the slug used in every path (`/environments/{name}`), in a pipeline's
+// promotion refs, and in the immutable ReleaseBinding `spec.environment` — NOT the
+// display label, or deploys mismatch the binding (e.g. label "Development" vs slug
+// "development").
+export const toEnvironment = (e: BffEnvironment): Environment => ({
   id: e.id || e.name,
   name: e.displayName || e.name,
   critical: e.critical ?? e.isProduction ?? false,
