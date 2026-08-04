@@ -40,15 +40,16 @@ function NameCell({ name }: { name: string }): JSX.Element {
 }
 
 function RegisteredTimeCell({ date }: { date?: string }): JSX.Element {
-  if (!date)
+  const isValidDate = !!date && !Number.isNaN(new Date(date).getTime());
+  if (!isValidDate)
     return (
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" component="span" color="text.secondary">
         {'—'}
       </Typography>
     );
   return (
     <Tooltip title={formatDateTime(date)}>
-      <Stack direction="row" alignItems="center" gap={0.5} sx={{ width: 'fit-content' }}>
+      <Stack direction="row" alignItems="center" gap={0.5} sx={{ display: 'inline-flex' }}>
         <Clock size={14} />
         <Typography variant="body2">{formatDistanceToNow(date)}</Typography>
       </Stack>
@@ -137,7 +138,7 @@ export default function OrgDataPlanes(_scope: OrgScope): JSX.Element {
                   <ListingTable.Cell>Name</ListingTable.Cell>
                   <ListingTable.Cell>Type</ListingTable.Cell>
                   <ListingTable.Cell>Status</ListingTable.Cell>
-                  <ListingTable.Cell>Registered Time</ListingTable.Cell>
+                  <ListingTable.Cell align="right">Registered Time</ListingTable.Cell>
                 </ListingTable.Row>
               </ListingTable.Head>
               <ListingTable.Body>
@@ -160,7 +161,7 @@ export default function OrgDataPlanes(_scope: OrgScope): JSX.Element {
                           )}
                         </Stack>
                       </ListingTable.Cell>
-                      <ListingTable.Cell>
+                      <ListingTable.Cell align="right">
                         <RegisteredTimeCell date={pdp.createdAt} />
                       </ListingTable.Cell>
                     </ListingTable.Row>
@@ -177,7 +178,7 @@ export default function OrgDataPlanes(_scope: OrgScope): JSX.Element {
                       <ListingTable.Cell>
                         <Chip size="small" variant="outlined" color={dp.isActive ? 'success' : 'error'} label={dp.isActive ? 'Active' : 'Disconnected'} />
                       </ListingTable.Cell>
-                      <ListingTable.Cell>
+                      <ListingTable.Cell align="right">
                         <RegisteredTimeCell date={isPrivate ? dp.createdOn : undefined} />
                       </ListingTable.Cell>
                     </ListingTable.Row>
