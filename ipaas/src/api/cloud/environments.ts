@@ -22,49 +22,11 @@ import type { CloudDataPlane, CreateEnvironmentData, EnvDeletionEligibility, Env
 import { toHandler } from '../../utils/string';
 import { appendEnvironmentToDefaultPipeline } from './deploymentPipelines';
 import { bff, items, q, seg, type ListResponse, type MessageResponse } from './_client';
+// The wire shape and its mapper live in their own module so this file and
+// deploymentPipelines.ts can share one definition without importing each other.
+import { toEnvironment, type BffEnvironment } from './_environmentShape';
 
 // _orgUuid is kept for devant contract parity; cloud derives the org from the token.
-
-// OpenChoreo Environments are K8s resources: `name` is an RFC 1123 slug and the
-// identity used in every path (`/environments/{name}`) and in a pipeline's
-// promotion refs, while the human label lives in `displayName`. The frontend
-// Environment carries `id` (slug) and `name` (label) and expresses "production"
-// as `critical`, so we translate between the two shapes at the boundary.
-//
-// Exported because deploymentPipelines.ts projects environments into promotion-chain
-// templates and must use this same mapping. Keeping a second, hand-rolled copy there
-// is what caused pipelines to be written with display names instead of slugs: the
-// duplicate read `name` as the slug, so every promotion ref pointed at a label
-// ("Development") rather than an environment ("development"). Add fields here, not in
-// a local interface.
-export interface BffEnvironment {
-  // The BFF serves the RFC 1123 slug as `id` and the human label as `name`, and
-  // flags production via `critical` with the dataplane in `dpId`. The
-  // slug/displayName/isProduction/dataPlaneRef aliases are tolerated as fallbacks.
-  id?: string;
-  uid?: string;
-  name: string;
-  displayName?: string;
-  description?: string;
-  dataPlaneRef?: string;
-  dpId?: string;
-  isProduction?: boolean;
-  critical?: boolean;
-  createdAt?: string;
-}
-
-// `id` must be the slug used in every path (`/environments/{name}`), in a pipeline's
-// promotion refs, and in the immutable ReleaseBinding `spec.environment` — NOT the
-// display label, or deploys mismatch the binding (e.g. label "Development" vs slug
-// "development").
-export const toEnvironment = (e: BffEnvironment): Environment => ({
-  id: e.id || e.name,
-  name: e.displayName || e.name,
-  critical: e.critical ?? e.isProduction ?? false,
-  description: e.description,
-  createdAt: e.createdAt,
-  dpId: e.dpId ?? e.dataPlaneRef,
-});
 
 export const fetchEnvironments = (_orgUuid: string, projectId: string): Promise<Environment[]> => bff.get<ListResponse<BffEnvironment>>(`/environments${q({ project: projectId })}`).then((r) => items(r).map(toEnvironment));
 

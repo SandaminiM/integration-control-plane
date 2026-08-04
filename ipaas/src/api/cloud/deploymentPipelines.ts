@@ -40,11 +40,7 @@
 import type { CreateDeploymentPipelineRequest, DeploymentPipeline, EnvTemplate, PipelineDeletionEligibility, PromotionTreeNode } from '../../types/deploymentPipeline';
 import { toHandler } from '../../utils/string';
 import { bff, items, seg, type ListResponse } from './_client';
-// environments.ts imports appendEnvironmentToDefaultPipeline from here, so this edge
-// closes an import cycle. It is safe because both sides are referenced only inside
-// function bodies, never at module scope — ESM live bindings are initialised by the
-// time either is called. Do not move these references to module scope.
-import { toEnvironment, type BffEnvironment } from './environments';
+import { toEnvironment, type BffEnvironment } from './_environmentShape';
 
 // _orgUuid / _orgNumericId are kept for devant contract parity; cloud derives
 // the org from the access token instead of taking an id from the caller.
