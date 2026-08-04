@@ -16,17 +16,45 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Chip, CircularProgress, IconButton, ListingTable, PageContent, PageTitle, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { Network, RefreshCw } from '@wso2/oxygen-ui-icons-react';
+import { Alert, Avatar, Box, Button, Chip, CircularProgress, IconButton, ListingTable, PageContent, PageTitle, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Clock, Network, RefreshCw } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import EmptyListing from '../components/EmptyListing';
 import PdpProgressDrawer from '../components/DataPlanes/PdpProgressDrawer';
 import ComingSoon from './ComingSoon';
 import { displayPdpProgress, pdpStatusChip } from '../constants/dataPlanes';
 import { isDataPlanesEnabled, useDataPlanes, usePdps } from '../hooks/useDataPlanes';
-import { formatDateTime } from '../utils/time';
+import { formatDateTime, formatDistanceToNow } from '../utils/time';
 import type { Cluster, PdpManagerPdp } from '../types/dataPlanes';
 import type { OrgScope } from '../nav';
+
+function NameCell({ name }: { name: string }): JSX.Element {
+  return (
+    <Stack direction="row" alignItems="center" gap={1.5}>
+      <Avatar sx={{ width: 24, height: 24, fontSize: 12, bgcolor: 'action.hover', color: 'text.primary' }}>{name[0]?.toUpperCase()}</Avatar>
+      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+        {name}
+      </Typography>
+    </Stack>
+  );
+}
+
+function RegisteredTimeCell({ date }: { date?: string }): JSX.Element {
+  if (!date)
+    return (
+      <Typography variant="body2" color="text.secondary">
+        {'—'}
+      </Typography>
+    );
+  return (
+    <Tooltip title={formatDateTime(date)}>
+      <Stack direction="row" alignItems="center" gap={0.5} sx={{ width: 'fit-content' }}>
+        <Clock size={14} />
+        <Typography variant="body2">{formatDistanceToNow(date)}</Typography>
+      </Stack>
+    </Tooltip>
+  );
+}
 
 export default function OrgDataPlanes(_scope: OrgScope): JSX.Element {
   const { data: clusters, isLoading, isFetching, isError, refetch } = useDataPlanes();
@@ -109,7 +137,7 @@ export default function OrgDataPlanes(_scope: OrgScope): JSX.Element {
                   <ListingTable.Cell>Name</ListingTable.Cell>
                   <ListingTable.Cell>Type</ListingTable.Cell>
                   <ListingTable.Cell>Status</ListingTable.Cell>
-                  <ListingTable.Cell align="right">Registered</ListingTable.Cell>
+                  <ListingTable.Cell>Registered Time</ListingTable.Cell>
                 </ListingTable.Row>
               </ListingTable.Head>
               <ListingTable.Body>
@@ -119,9 +147,7 @@ export default function OrgDataPlanes(_scope: OrgScope): JSX.Element {
                   return (
                     <ListingTable.Row key={`pdp-${pdp.name}`}>
                       <ListingTable.Cell>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {pdp.name}
-                        </Typography>
+                        <NameCell name={pdp.name} />
                       </ListingTable.Cell>
                       <ListingTable.Cell>Private Data Plane</ListingTable.Cell>
                       <ListingTable.Cell>
@@ -134,7 +160,9 @@ export default function OrgDataPlanes(_scope: OrgScope): JSX.Element {
                           )}
                         </Stack>
                       </ListingTable.Cell>
-                      <ListingTable.Cell align="right">{formatDateTime(pdp.createdAt)}</ListingTable.Cell>
+                      <ListingTable.Cell>
+                        <RegisteredTimeCell date={pdp.createdAt} />
+                      </ListingTable.Cell>
                     </ListingTable.Row>
                   );
                 })}
@@ -143,15 +171,15 @@ export default function OrgDataPlanes(_scope: OrgScope): JSX.Element {
                   return (
                     <ListingTable.Row key={`dp-${dp.id}`}>
                       <ListingTable.Cell>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {dp.name}
-                        </Typography>
+                        <NameCell name={dp.name} />
                       </ListingTable.Cell>
                       <ListingTable.Cell>{isPrivate ? 'Private Data Plane' : 'WSO2 Cloud Data Plane'}</ListingTable.Cell>
                       <ListingTable.Cell>
                         <Chip size="small" variant="outlined" color={dp.isActive ? 'success' : 'error'} label={dp.isActive ? 'Active' : 'Disconnected'} />
                       </ListingTable.Cell>
-                      <ListingTable.Cell align="right">{isPrivate ? formatDateTime(dp.createdOn) : '—'}</ListingTable.Cell>
+                      <ListingTable.Cell>
+                        <RegisteredTimeCell date={isPrivate ? dp.createdOn : undefined} />
+                      </ListingTable.Cell>
                     </ListingTable.Row>
                   );
                 })}
