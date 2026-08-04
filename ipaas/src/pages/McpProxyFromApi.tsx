@@ -55,15 +55,12 @@ export default function McpProxyFromApi(scope: ProjectScope): JSX.Element {
   const { data: sourceDetail, isLoading: loadingSource } = useComponentByHandler(projectId, sourceHandler ?? undefined);
   const versions = useMemo(() => sourceDetail?.apiVersions ?? [], [sourceDetail]);
 
-  // Which version of the source API to convert → its APIM API id. Defaults to
-  // the latest version, falling back to the one the flow was launched from.
-  const [selectedApiId, setSelectedApiId] = useState('');
-  useEffect(() => {
-    if (selectedApiId) return;
-    const pick = versions.find((v) => v.latest) ?? versions.find((v) => v.id === apimIdParam) ?? versions[0];
-    if (pick) setSelectedApiId(pick.id);
-    else if (apimIdParam) setSelectedApiId(apimIdParam);
-  }, [versions, apimIdParam, selectedApiId]);
+  // Which version of the source API to convert → its APIM API id. Defaults to the latest
+  // version, falling back to the one the flow was launched from. Derived rather than synced
+  // via an effect — an effect+render round trip here would delay useApimApi below.
+  const [selectedApiIdState, setSelectedApiId] = useState('');
+  const defaultApiId = (versions.find((v) => v.latest) ?? versions.find((v) => v.id === apimIdParam) ?? versions[0])?.id ?? apimIdParam ?? '';
+  const selectedApiId = selectedApiIdState || defaultApiId;
 
   const apimId = selectedApiId || apimIdParam || sourceDetail?.apiId || null;
   const { data: apiInfo, isLoading: loadingApi } = useApimApi(apimId);

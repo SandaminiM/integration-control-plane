@@ -35,24 +35,15 @@ export default function Lifecycle(scope: ComponentScope): JSX.Element {
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
 
   const tracks = useMemo(() => component?.deploymentTracks ?? [], [component?.deploymentTracks]);
-  const [selectedTrackId, setSelectedTrackId] = useState('');
-  useEffect(() => {
-    if (!tracks.length) return;
-    setSelectedTrackId((prev) => {
-      if (prev && tracks.some((t) => t.id === prev)) return prev;
-      return tracks.find((t) => t.latest)?.id ?? tracks[0].id;
-    });
-  }, [component?.id, tracks]);
+  // Derived rather than synced via an effect — an effect+render round trip here would delay
+  // useComponentEndpoints and the four hooks gated on selectedApimId below from becoming enabled.
+  const [selectedTrackIdState, setSelectedTrackId] = useState('');
+  const selectedTrackId = tracks.some((t) => t.id === selectedTrackIdState) ? selectedTrackIdState : (tracks.find((t) => t.latest)?.id ?? tracks[0]?.id ?? '');
 
   const { data: endpoints = [], isLoading: loadingEndpoints } = useComponentEndpoints(component?.id ?? '', selectedTrackId);
 
-  const [selectedApimId, setSelectedApimId] = useState<string | null>(null);
-  useEffect(() => {
-    setSelectedApimId((prev) => {
-      if (prev && endpoints.some((e) => e.apimId === prev)) return prev;
-      return endpoints.find((e) => e.apimId)?.apimId ?? null;
-    });
-  }, [endpoints]);
+  const [selectedApimIdState, setSelectedApimId] = useState<string | null>(null);
+  const selectedApimId = endpoints.some((e) => e.apimId === selectedApimIdState) ? selectedApimIdState : (endpoints.find((e) => e.apimId)?.apimId ?? null);
 
   const endpointsWithApim = useMemo(() => {
     const seen = new Set<string>();
