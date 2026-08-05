@@ -70,6 +70,8 @@ export interface CreateEnvironmentData {
   dataplaneId: string;
   dnsPrefix: string;
   isProd: boolean;
+  /** Cloud only — OpenChoreo stores it as an annotation; the devops API has no such field. */
+  description?: string;
 }
 
 export interface DeployedComponent {

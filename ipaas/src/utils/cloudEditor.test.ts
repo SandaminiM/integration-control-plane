@@ -17,7 +17,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildCloudEditorUrl } from './cloudEditor';
+import { buildCloudEditorUrl, derivePodPhase, highestPodPhase } from './cloudEditor';
+import type { ClusterPod } from '../types/runtime';
 
 const base = {
   userId: 'u1',
@@ -41,5 +42,55 @@ describe('buildCloudEditorUrl', () => {
     expect(new URL(buildCloudEditorUrl(base, 'https://example.com')).searchParams.has('scaffoldKey')).toBe(false);
     const withKey = new URL(buildCloudEditorUrl({ ...base, scaffoldKey: 'ai-scaffold-9' }, 'https://example.com'));
     expect(withKey.searchParams.get('scaffoldKey')).toBe('ai-scaffold-9');
+  });
+});
+
+const pod = (conditions: Array<{ type: string; status: string }>): ClusterPod => ({ status: { phase: 'Pending', conditions } }) as ClusterPod;
+
+describe('derivePodPhase', () => {
+  it('is scheduling with no pod or no conditions met', () => {
+    expect(derivePodPhase(undefined)).toBe('scheduling');
+    expect(derivePodPhase(pod([]))).toBe('scheduling');
+  });
+
+  it('is starting once scheduled and initialized', () => {
+    expect(
+      derivePodPhase(
+        pod([
+          { type: 'PodScheduled', status: 'True' },
+          { type: 'Initialized', status: 'True' },
+        ]),
+      ),
+    ).toBe('starting');
+  });
+
+  it('is opening once containers are ready', () => {
+    expect(
+      derivePodPhase(
+        pod([
+          { type: 'PodScheduled', status: 'True' },
+          { type: 'Initialized', status: 'True' },
+          { type: 'PodReadyToStartContainers', status: 'True' },
+          { type: 'ContainersReady', status: 'True' },
+          { type: 'Ready', status: 'True' },
+        ]),
+      ),
+    ).toBe('opening');
+  });
+});
+
+describe('highestPodPhase', () => {
+  it('returns scheduling for an empty pod list', () => {
+    expect(highestPodPhase([])).toBe('scheduling');
+  });
+
+  it('returns the furthest-along phase across pods', () => {
+    const scheduling = pod([]);
+    const opening = pod([
+      { type: 'PodReadyToStartContainers', status: 'True' },
+      { type: 'ContainersReady', status: 'True' },
+      { type: 'Ready', status: 'True' },
+    ]);
+    expect(highestPodPhase([scheduling, opening])).toBe('opening');
   });
 });

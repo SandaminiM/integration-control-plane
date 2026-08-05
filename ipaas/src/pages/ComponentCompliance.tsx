@@ -153,22 +153,11 @@ export default function ComponentCompliance(scope: ComponentScope): JSX.Element 
             </Grid>
 
             <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-              <CompliancePie
-                title="Ruleset Adherence"
-                count={rulesetAdherence.data?.summary.ruleset.total ?? 0}
-                slices={adherenceSlices(rulesetAdherence.data?.summary.ruleset)}
-                isLoading={rulesetAdherence.isLoading}
-              />
+              <CompliancePie title="Ruleset Adherence" count={rulesetAdherence.data?.summary.ruleset.total ?? 0} slices={adherenceSlices(rulesetAdherence.data?.summary.ruleset)} isLoading={rulesetAdherence.isLoading} />
             </Grid>
 
             <Grid size={{ xs: 12, md: 6, lg: 8 }}>
-              <RulesetsAdherenceSummaryCard
-                data={ruleDetails.data}
-                isLoading={ruleDetails.isLoading}
-                error={ruleDetails.isError}
-                onRetry={() => void ruleDetails.refetch()}
-                onRulesetClick={(id) => navigate(orgGovernanceRulesetUrl(scope.org, id))}
-              />
+              <RulesetsAdherenceSummaryCard data={ruleDetails.data} isLoading={ruleDetails.isLoading} error={ruleDetails.isError} onRetry={() => void ruleDetails.refetch()} onRulesetClick={(id) => navigate(orgGovernanceRulesetUrl(scope.org, id))} />
             </Grid>
           </Grid>
         )}

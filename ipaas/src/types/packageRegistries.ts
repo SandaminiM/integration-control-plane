@@ -16,12 +16,17 @@
  * under the License.
  */
 
-import { type JSX } from 'react';
+/** GET/PUT response shape for `/ballerina-central/token`. `addedOn` is only present when `configured`. */
+export interface BallerinaCentralTokenStatus {
+  configured: boolean;
+  addedOn?: string;
+  expiresOn?: string;
+}
 
-export default function GitIcon({ size = 24 }: { size?: number }): JSX.Element {
-  return (
-    <svg height={size} width={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M23.546 10.93L13.067.452a1.55 1.55 0 0 0-2.188 0L8.708 2.627l2.76 2.76a1.838 1.838 0 0 1 2.327 2.341l2.658 2.66a1.838 1.838 0 1 1-1.104 1.045L12.794 8.86v6.617a1.838 1.838 0 1 1-1.51-.072V8.743a1.838 1.838 0 0 1-.997-2.414L7.55 3.574 .45 10.672a1.55 1.55 0 0 0 0 2.187l10.478 10.478a1.55 1.55 0 0 0 2.189 0l10.43-10.43a1.55 1.55 0 0 0 0-1.977z" />
-    </svg>
-  );
+/** A card in the Package Registries catalog (Settings > Package Registries). */
+export interface PackageRegistryCatalogEntry {
+  id: string;
+  name: string;
+  description: string;
+  iconType: 'ballerina';
 }

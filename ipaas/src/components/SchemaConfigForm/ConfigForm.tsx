@@ -49,7 +49,7 @@ function SectionAccordion({ title, defaultExpanded = false, children, contentSx,
   const [open, setOpen] = useState(defaultExpanded);
   return (
     <Box sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" onClick={() => setOpen((p) => !p)} sx={{ px: 2, py: 1.25, cursor: 'pointer', userSelect: 'none', borderBottom: open ? 1 : 0, borderColor: 'divider' }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" onClick={() => setOpen((p) => !p)} sx={{ px: 2, py: 1.25, cursor: 'pointer', userSelect: 'none', bgcolor: 'action.hover', borderBottom: open ? 1 : 0, borderColor: 'divider' }}>
         {subAccordion ? (
           <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
             {title}

@@ -61,14 +61,7 @@ export function useAiIntegrationBuilder(projectId: string, initialQuery: string)
       setIsLoading(true);
       setCurrentStage(null);
 
-      runAiIntegrationPipeline(
-        query,
-        projectId,
-        getToken,
-        prebuiltRef.current,
-        (step: StepEvent) => setCurrentStage(step.status === 'started' ? step.stage : null),
-        controller.signal,
-      )
+      runAiIntegrationPipeline(query, projectId, getToken, prebuiltRef.current, (step: StepEvent) => setCurrentStage(step.status === 'started' ? step.stage : null), controller.signal)
         .then((response: AiIntegrationBuilderResponse) => {
           setTurns((prev) => [...prev, { id: crypto.randomUUID(), query, response }]);
           setActiveQuery('');
@@ -76,8 +69,7 @@ export function useAiIntegrationBuilder(projectId: string, initialQuery: string)
         })
         .catch((err: Error) => {
           if (err.name === 'AbortError') return;
-          const message =
-            err.name === 'UsageLimitError' ? 'Usage limit exceeded. Please try again later.' : err.message || 'Something went wrong. Please try again.';
+          const message = err.name === 'UsageLimitError' ? 'Usage limit exceeded. Please try again later.' : err.message || 'Something went wrong. Please try again.';
           setTurns((prev) => [...prev, { id: crypto.randomUUID(), query, response: { type: 'error', message } }]);
           setActiveQuery('');
           setIsLoading(false);

@@ -17,7 +17,7 @@
  */
 
 import { Alert, Box, Button, Card, CardContent, Chip, CircularProgress, IconButton, PageContent, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { ArrowLeft, ArrowRight, GitHub, GitLab, Bitbucket, Plus, GitBranch } from '@wso2/oxygen-ui-icons-react';
+import { ArrowLeft, ArrowRight, GitHub, Plus, GitBranch } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
 import { useCreateComponent } from '../hooks/useComponents';
@@ -33,12 +33,14 @@ import PillTabs from '../components/PillTabs';
 import PrebuiltCard from '../components/PrebuiltCard';
 import SampleRowCard from '../components/SampleRowCard';
 import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
-import GitIcon from '../assets/icons/GitIcon';
-import AzureIcon from '../assets/icons/AzureIcon';
+import GitLogoIcon from '../assets/icons/GitLogoIcon';
+import GitLabIcon from '../assets/icons/GitLabIcon';
+import BitbucketIcon from '../assets/icons/BitbucketIcon';
+import AzureDevOpsIcon from '../assets/icons/AzureDevOpsIcon';
 import { GitProvider } from '../types/credentials';
 import { componentSubTypeFromSample, displayTypeFromSample } from '../constants/integrations';
 import { GITHUB_AUTH } from '../constants/github';
-import { CARD_HOVER_SX, PROVIDER_ICON_SX } from '../constants/styles';
+import { CARD_HOVER_SX, PROVIDER_ICON_SX, GITHUB_ICON_SX } from '../constants/styles';
 import { resourceUrl, narrow, type ProjectScope } from '../nav';
 import { importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, componentsNewAiBuilderUrl, buildGitHubOAuthUrl } from '../paths';
 import type { Sample } from '../types/samples';
@@ -184,9 +186,7 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
       )}
 
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h1">
-          {aiBuilderEnabled ? 'How would you like to create your integration?' : 'Create an Integration'}
-        </Typography>
+        <Typography variant="h1">{aiBuilderEnabled ? 'How would you like to create your integration?' : 'Create an Integration'}</Typography>
       </Box>
 
       <Box
@@ -253,12 +253,7 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                 {aiBuilderEnabled ? (
                   <>
                     {/* Create on Cloud affordance (view1: folded into the "Create it yourself" row) */}
-                    <Button
-                      variant="text"
-                      onClick={handleOpenCloudEditor}
-                      data-cyid="create-on-cloud-btn"
-                      startIcon={<Plus size={20} />}
-                      sx={{ flexShrink: 0, color: 'primary.main', fontWeight: 500, textTransform: 'none', '&:hover': { opacity: 0.85 } }}>
+                    <Button variant="text" onClick={handleOpenCloudEditor} data-cyid="create-on-cloud-btn" startIcon={<Plus size={20} />} sx={{ flexShrink: 0, color: 'primary.main', fontWeight: 500, textTransform: 'none', '&:hover': { opacity: 0.85 } }}>
                       Create on Cloud
                     </Button>
 
@@ -268,7 +263,9 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                     {/* Import label */}
                     <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
                       <GitBranch size={18} />
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>Import a repository from</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        Import a repository from
+                      </Typography>
                     </Box>
                   </>
                 ) : (
@@ -301,27 +298,27 @@ export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Eleme
                             navigate(importUrl, { state: { mode: 'public' } });
                           }}
                           sx={PROVIDER_ICON_SX}>
-                          <GitIcon size={aiBuilderEnabled ? 24 : 25} />
+                          <GitLogoIcon size={aiBuilderEnabled ? 24 : 25} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from GitHub" placement="top">
-                        <IconButton aria-label="Import from GitHub" onClick={handleImportClick} sx={PROVIDER_ICON_SX}>
+                        <IconButton aria-label="Import from GitHub" onClick={handleImportClick} sx={GITHUB_ICON_SX}>
                           <GitHub size={aiBuilderEnabled ? 23 : 24} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from GitLab" placement="top">
                         <IconButton aria-label="Import from GitLab" onClick={() => navigate(importUrl, { state: { provider: GitProvider.GITLAB_SELF_MANAGED } })} sx={PROVIDER_ICON_SX}>
-                          <GitLab size={aiBuilderEnabled ? 21 : 22} />
+                          <GitLabIcon size={aiBuilderEnabled ? 21 : 22} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from Bitbucket" placement="top">
                         <IconButton aria-label="Import from Bitbucket" onClick={() => navigate(importUrl, { state: { provider: GitProvider.BITBUCKET_CLOUD } })} sx={PROVIDER_ICON_SX}>
-                          <Bitbucket size={aiBuilderEnabled ? 21 : 22} />
+                          <BitbucketIcon size={aiBuilderEnabled ? 21 : 22} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Import from Azure" placement="top">
                         <IconButton aria-label="Import from Azure" onClick={() => navigate(importUrl, { state: { provider: GitProvider.AZURE_DEVOPS } })} sx={PROVIDER_ICON_SX}>
-                          <AzureIcon size={aiBuilderEnabled ? 21 : 22} />
+                          <AzureDevOpsIcon size={aiBuilderEnabled ? 21 : 22} />
                         </IconButton>
                       </Tooltip>
                     </>

@@ -16,8 +16,10 @@
  * under the License.
  */
 
+import { useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { callCreateCodeServer, getOrCreateSampleRegistry } from '#api/cloudEditor';
+import { CLOUD_EDITOR_POLL_MS } from '../constants/cloudEditor';
 
 export function useGetOrCreateSampleRegistry() {
   return useMutation({
@@ -29,4 +31,23 @@ export function useCreateCodeServer() {
   return useMutation({
     mutationFn: (params: { userId: string; organizationId: string; projectId: string; componentId: string; orgHandle: string; imageUrl: string; registryId: string; sourceCommitHash?: string }) => callCreateCodeServer(params),
   });
+}
+
+/** Pings the editor URL on an interval while enabled, so the scale-to-zero timer doesn't evict the pod before redirect. */
+export function useEditorKeepAlive(url: string | undefined, enabled: boolean) {
+  useEffect(() => {
+    if (!enabled || !url) return undefined;
+    let pingUrl = url;
+    try {
+      const u = new URL(url);
+      u.searchParams.delete('tkn');
+      pingUrl = u.toString();
+    } catch {
+      // fall back to the raw URL
+    }
+    const ping = () => void fetch(pingUrl, { method: 'GET', mode: 'no-cors', credentials: 'omit', cache: 'no-store' }).catch(() => {});
+    ping();
+    const id = window.setInterval(ping, CLOUD_EDITOR_POLL_MS);
+    return () => clearInterval(id);
+  }, [url, enabled]);
 }

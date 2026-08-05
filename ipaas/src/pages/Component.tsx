@@ -74,22 +74,18 @@ export default function Component(scope: ComponentScope): JSX.Element {
   const projectId = project?.id ?? '';
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
   const { data: environments = [] } = useEnvironments(scope.org, projectId);
-  const { data: repository = null } = useComponentRepository(projectId, scope.component);
-  const { data: commits = [] } = useCommitHistory(component?.id ?? '', repository?.branch ?? '');
+  const { data: repository = null, isLoading: loadingRepository } = useComponentRepository(projectId, scope.component);
+  const { data: commits = [], isLoading: loadingCommits } = useCommitHistory(component?.id ?? '', repository?.branch ?? '');
 
   const tracks = useMemo(() => component?.deploymentTracks ?? [], [component?.deploymentTracks]);
   const [selectedTrackId, setSelectedTrackId] = useState('');
 
-  // Initialise / sync selected track when component loads or tracks change
-  useEffect(() => {
-    if (!tracks.length) return;
-    setSelectedTrackId((prev) => {
-      if (prev && tracks.some((t) => t.id === prev)) return prev;
-      return tracks.find((t) => t.latest)?.id ?? tracks[0].id;
-    });
-  }, [component?.id, tracks]);
-
-  const versionId = selectedTrackId;
+  // Derived rather than synced via an effect: the version-scoped queries below (endpoints,
+  // deployment status) key off this, and waiting for an effect + extra render to set it would
+  // add a full round trip to the waterfall before those queries could even become enabled.
+  // Falls back to the latest track whenever the current selection isn't valid for these tracks
+  // (initial mount, or a stale id left over from a previously viewed component).
+  const versionId = tracks.some((t) => t.id === selectedTrackId) ? selectedTrackId : (tracks.find((t) => t.latest)?.id ?? tracks[0]?.id ?? '');
 
   const { data: endpoints = [] } = useComponentEndpoints(component?.id ?? '', versionId);
   const apimId = IS_WIP ? (endpoints.find((e) => e.apimId)?.apimId ?? null) : null;
@@ -180,6 +176,8 @@ export default function Component(scope: ComponentScope): JSX.Element {
               apimId={apimId}
               module={overviewModule}
               hasSource={hasSource}
+              isRepositoryLoading={loadingRepository}
+              isLatestCommitLoading={loadingRepository || loadingCommits}
             />
           )}
 

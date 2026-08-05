@@ -94,10 +94,7 @@ export function adherenceEntryToRow(entry: { policyId: string; policyName: strin
  * policyId → policyType, merged from every response list in scope. The type
  * decides which governance editor route a policy link opens.
  */
-export function buildPolicyTypeMap(
-  policyEntries: { policyId: string | null; policyType?: string }[],
-  complianceEntries: { policies: { list: CompliancePolicyEntry[] } }[],
-): Record<string, string> {
+export function buildPolicyTypeMap(policyEntries: { policyId: string | null; policyType?: string }[], complianceEntries: { policies: { list: CompliancePolicyEntry[] } }[]): Record<string, string> {
   const map: Record<string, string> = {};
   for (const p of policyEntries) {
     if (p.policyId && p.policyType) map[p.policyId] = p.policyType;
@@ -113,8 +110,7 @@ export function buildPolicyTypeMap(
 /** Buckets a rule-adherence response into error/warn/info/passed groups, filtered by a search phrase. */
 export function groupRulesBySeverity(rulesets: RuleAdherenceRulesetEntry[], searchText: string): ComplianceRuleGroup[] {
   const needle = searchText.trim().toLowerCase();
-  const matches = (ruleName: string, message: string, rulesetName: string) =>
-    !needle || ruleName.toLowerCase().includes(needle) || message.toLowerCase().includes(needle) || rulesetName.toLowerCase().includes(needle);
+  const matches = (ruleName: string, message: string, rulesetName: string) => !needle || ruleName.toLowerCase().includes(needle) || message.toLowerCase().includes(needle) || rulesetName.toLowerCase().includes(needle);
 
   const groups: ComplianceRuleGroup[] = [
     { severity: 'error', rules: [] },

@@ -16,14 +16,15 @@
  * under the License.
  */
 
-import { Alert, Avatar, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
-import { useState, type JSX } from 'react';
+import { Alert, Avatar, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { useEffect, useRef, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
 import Authorized from '../components/Authorized';
 import InlineEditField from '../components/InlineEditField';
 import ProjectSettingsTabs from '../components/Settings/ProjectSettingsTabs';
 import { Permissions } from '../constants/permissions';
 import { useAccessControl } from '../contexts/AccessControlContext';
+import { useComponents } from '../hooks/useComponents';
 import { useProjectId, useProjects, useUpdateProject, useDeleteProject } from '../hooks/useProjects';
 import type { Project } from '../types/project';
 import { projectsRedirectUrl } from '../paths';
@@ -35,9 +36,17 @@ function ProjectOverviewForm({ org, project }: { org: string; project: Project }
   const { hasAnyPermission } = useAccessControl();
   const update = useUpdateProject();
   const remove = useDeleteProject();
+  const { data: components = [], isLoading: loadingComponents } = useComponents(org, project.id);
+  const hasComponents = components.length > 0;
   const [deleting, setDeleting] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const alertRef = useRef<HTMLDivElement>(null);
+
+  // Move focus to the alert whenever an error appears, so the message isn't missed.
+  useEffect(() => {
+    if (alert?.type === 'error') alertRef.current?.focus();
+  }, [alert]);
 
   const canManage = hasAnyPermission([Permissions.PROJECT_MANAGE], project.id);
 
@@ -52,24 +61,26 @@ function ProjectOverviewForm({ org, project }: { org: string; project: Project }
     update.mutateAsync({ id: project.id, name: patch.name ?? project.name, description: patch.description ?? project.description ?? '', version: project.version }).then(
       () => setAlert({ type: 'success', message: 'Project updated.' }),
       (e) => {
-        setAlert({ type: 'error', message: e instanceof Error ? e.message : 'Failed to update the project.' });
+        console.error('Failed to update project', e);
+        setAlert({ type: 'error', message: 'Failed to update the project. Please try again.' });
         throw e;
       },
     );
 
   const handleDelete = () =>
     remove.mutate(project.id, {
-      onSuccess: () => navigate(projectsRedirectUrl(org)),
+      onSuccess: () => navigate(projectsRedirectUrl(org), { state: { projectDeleted: true, projectName: project.name } }),
       onError: (e) => {
+        console.error('Failed to delete project', e);
         setDeleting(false);
-        setAlert({ type: 'error', message: e instanceof Error ? e.message : 'Failed to delete the project.' });
+        setAlert({ type: 'error', message: 'Failed to delete the project. Please try again.' });
       },
     });
 
   return (
     <>
       {alert && (
-        <Alert severity={alert.type} onClose={() => setAlert(null)} sx={{ mb: 4 }}>
+        <Alert ref={alertRef} tabIndex={-1} severity={alert.type} onClose={() => setAlert(null)} sx={{ mb: 4 }}>
           {alert.message}
         </Alert>
       )}
@@ -104,9 +115,13 @@ function ProjectOverviewForm({ org, project }: { org: string; project: Project }
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Permanently delete the project and all its integrations. This cannot be undone.
           </Typography>
-          <Button variant="outlined" color="error" onClick={() => setDeleting(true)}>
-            Delete Project
-          </Button>
+          <Tooltip title={hasComponents ? 'To remove a project, you must delete all integrations in it.' : ''}>
+            <span>
+              <Button variant="outlined" color="error" onClick={() => setDeleting(true)} disabled={loadingComponents || hasComponents}>
+                Delete Project
+              </Button>
+            </span>
+          </Tooltip>
         </Box>
       </Authorized>
 
@@ -119,15 +134,16 @@ function ProjectOverviewForm({ org, project }: { org: string; project: Project }
           }}
           maxWidth="sm"
           fullWidth>
-          <DialogTitle>Delete &lsquo;{project.name}&rsquo;?</DialogTitle>
+          <DialogTitle>
+            Are you sure you want to remove the project &lsquo;<strong>{project.name}</strong>&rsquo; ?
+          </DialogTitle>
           <DialogContent>
-            <DialogContentText sx={{ mb: 2 }}>
-              This permanently deletes the project and everything in it. Type <strong>{project.name}</strong> to confirm.
-            </DialogContentText>
-            <TextField value={confirmText} onChange={(e) => setConfirmText(e.target.value)} fullWidth placeholder={project.name} autoFocus />
+            <DialogContentText sx={{ mb: 2 }}>This action will be irreversible and all related details will be lost. Please type in the project name below to confirm.</DialogContentText>
+            <TextField value={confirmText} onChange={(e) => setConfirmText(e.target.value)} fullWidth placeholder="Enter project name to confirm" autoFocus />
           </DialogContent>
           <DialogActions>
             <Button
+              variant="outlined"
               onClick={() => {
                 setDeleting(false);
                 setConfirmText('');
@@ -136,7 +152,7 @@ function ProjectOverviewForm({ org, project }: { org: string; project: Project }
               Cancel
             </Button>
             <Button variant="contained" color="error" onClick={handleDelete} disabled={confirmText.trim() !== project.name || remove.isPending} startIcon={remove.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}>
-              {remove.isPending ? 'Deleting…' : 'Delete Project'}
+              {remove.isPending ? 'Deleting…' : 'Delete'}
             </Button>
           </DialogActions>
         </Dialog>

@@ -113,20 +113,12 @@ function integrationFilename(meta: IntegrationCsvMeta): string {
 }
 
 export function downloadApiInsightsCsv(meta: IntegrationCsvMeta, data: { kpis: { label: string; value: string }[]; trend: ApiTrendPoint[] }): void {
-  const lines: unknown[][] = [
-    ...integrationReportHeader(meta, data.kpis),
-    ['Bucket', 'Requests', 'Errors', 'Latency (ms)'],
-    ...data.trend.map((p) => [p.label, p.requests, p.errors, p.latency ?? '']),
-  ];
+  const lines: unknown[][] = [...integrationReportHeader(meta, data.kpis), ['Bucket', 'Requests', 'Errors', 'Latency (ms)'], ...data.trend.map((p) => [p.label, p.requests, p.errors, p.latency ?? ''])];
   downloadCsv(integrationFilename(meta), toCsv(lines));
 }
 
 export function downloadAutomationInsightsCsv(meta: IntegrationCsvMeta, data: { kpis: { label: string; value: string }[]; trend: AutomationTrendPoint[] }): void {
-  const lines: unknown[][] = [
-    ...integrationReportHeader(meta, data.kpis),
-    ['Bucket', 'Success', 'Failed', 'Timeout'],
-    ...data.trend.map((p) => [p.label, p.success, p.failure, p.timeout]),
-  ];
+  const lines: unknown[][] = [...integrationReportHeader(meta, data.kpis), ['Bucket', 'Success', 'Failed', 'Timeout'], ...data.trend.map((p) => [p.label, p.success, p.failure, p.timeout])];
   downloadCsv(integrationFilename(meta), toCsv(lines));
 }
 

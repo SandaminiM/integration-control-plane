@@ -16,11 +16,20 @@
  * under the License.
  */
 
-import type { ProgressStep } from '../types/cloudEditor';
+import type { CloudEditorStep } from '../types/cloudEditor';
 
-export const CLOUD_EDITOR_STEPS: Record<string, ProgressStep> = {
-  initializing: { progress: 10, text: 'Initializing...' },
-  creatingEditor: { progress: 30, text: 'Creating Cloud Editor instance...' },
-  configuring: { progress: 55, text: 'Configuring...' },
-  redirecting: { progress: 75, text: 'Redirecting to editor...' },
-};
+/** Ordered deployment steps shown in the wheel. A `PodPhase` value is also a step key. */
+export const CLOUD_EDITOR_STEPS: CloudEditorStep[] = [
+  { key: 'initializing', label: 'Getting things ready' },
+  { key: 'creating', label: 'Setting up your editor' },
+  { key: 'scheduling', label: 'Allocating resources' },
+  { key: 'starting', label: 'Starting your editor' },
+  { key: 'opening', label: 'Opening editor' },
+];
+
+/** Height of one wheel row in px. */
+export const CLOUD_EDITOR_WHEEL_ROW_HEIGHT = 40;
+/** Pod poll + keep-alive ping interval (ms). */
+export const CLOUD_EDITOR_POLL_MS = 3_000;
+/** Give up waiting for the pod after this (ms). */
+export const CLOUD_EDITOR_TIMEOUT_MS = 3 * 60 * 1000;

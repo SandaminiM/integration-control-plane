@@ -358,10 +358,14 @@ export async function authenticatedFetch(url: string, options: RequestInit = {})
   return res;
 }
 
-export async function switchOrgToken(orgHandle: string): Promise<void> {
+export async function switchOrgToken(orgHandle: string, signal?: AbortSignal): Promise<void> {
   const currentToken = getAccessToken();
   const { stsTokenEndpoint, stsClientId, stsScope } = window.API_CONFIG;
-  if (!currentToken || !stsTokenEndpoint || !stsClientId) return;
+  // Callers treat a resolved promise as "the token is now scoped to `orgHandle`" — silently
+  // resolving here (as this used to) would make that true when nothing was actually persisted.
+  if (!currentToken || !stsTokenEndpoint || !stsClientId) {
+    throw new Error('Org token exchange unavailable: missing auth token or STS configuration');
+  }
 
   const res = await fetch(stsTokenEndpoint, {
     method: 'POST',
@@ -375,6 +379,10 @@ export async function switchOrgToken(orgHandle: string): Promise<void> {
       ...(stsScope ? { scope: stsScope } : {}),
       orgHandle,
     }).toString(),
+    // Lets a caller cancel this exchange if it's been superseded by a newer one before it
+    // resolves — otherwise, whichever request resolves last wins and persists its (possibly
+    // stale) token/org_handle regardless of request order.
+    signal,
   });
 
   if (!res.ok) throw new Error(`Org token exchange failed (${res.status})`);

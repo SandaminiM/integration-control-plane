@@ -118,8 +118,7 @@ export default function OrgCertificates(scope: OrgScope): JSX.Element {
             setPage(0);
           }}
           inputProps={{ 'aria-label': 'Filter by validity' }}
-          sx={{ minWidth: 150 }}
-        >
+          sx={{ minWidth: 150 }}>
           <MenuItem value="all">All</MenuItem>
           <MenuItem value="VALID">Valid</MenuItem>
           <MenuItem value="EXPIRING_SOON">Expiring Soon</MenuItem>
@@ -136,8 +135,7 @@ export default function OrgCertificates(scope: OrgScope): JSX.Element {
             <Button color="inherit" size="small" onClick={() => void refetch()}>
               Retry
             </Button>
-          }
-        >
+          }>
           Failed to load certificates.
         </Alert>
       ) : !groups?.length ? (
@@ -169,12 +167,7 @@ export default function OrgCertificates(scope: OrgScope): JSX.Element {
                   const v = certificateValidity(g.properties?.notAfter);
                   const name = g.groupDisplayName ?? g.groupName;
                   return (
-                    <ListingTable.Row
-                      key={g.groupUuid}
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => navigate(orgCertificateUrl(scope.org, g.groupUuid))}
-                    >
+                    <ListingTable.Row key={g.groupUuid} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(orgCertificateUrl(scope.org, g.groupUuid))}>
                       <ListingTable.Cell>
                         <Stack>
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
@@ -194,12 +187,7 @@ export default function OrgCertificates(scope: OrgScope): JSX.Element {
                       <ListingTable.Cell>{g.createdAt ? new Date(g.createdAt).toLocaleDateString() : '—'}</ListingTable.Cell>
                       <ListingTable.Cell align="right">
                         <Tooltip title="Delete">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            aria-label={`Delete ${name}`}
-                            onClick={(e) => handleDeleteClick(e, g)}
-                          >
+                          <IconButton size="small" color="error" aria-label={`Delete ${name}`} onClick={(e) => handleDeleteClick(e, g)}>
                             <Trash2 size={16} />
                           </IconButton>
                         </Tooltip>
@@ -220,8 +208,7 @@ export default function OrgCertificates(scope: OrgScope): JSX.Element {
                     setRowsPerPage(Number(e.target.value));
                     setPage(0);
                   }}
-                  sx={{ width: 80 }}
-                >
+                  sx={{ width: 80 }}>
                   <MenuItem value={5}>5</MenuItem>
                   <MenuItem value={10}>10</MenuItem>
                   <MenuItem value={25}>25</MenuItem>
@@ -229,18 +216,10 @@ export default function OrgCertificates(scope: OrgScope): JSX.Element {
                 <Typography variant="body2" color="text.secondary">
                   {safePage * rowsPerPage + 1}–{Math.min((safePage + 1) * rowsPerPage, filtered.length)} of {filtered.length}
                 </Typography>
-                <Button
-                  size="small"
-                  disabled={safePage === 0}
-                  onClick={() => setPage(safePage - 1)}
-                >
+                <Button size="small" disabled={safePage === 0} onClick={() => setPage(safePage - 1)}>
                   Previous
                 </Button>
-                <Button
-                  size="small"
-                  disabled={safePage >= maxPage}
-                  onClick={() => setPage(safePage + 1)}
-                >
+                <Button size="small" disabled={safePage >= maxPage} onClick={() => setPage(safePage + 1)}>
                   Next
                 </Button>
               </Stack>
@@ -265,13 +244,7 @@ export default function OrgCertificates(scope: OrgScope): JSX.Element {
           <Button onClick={closeDeleteDialog} disabled={del.isPending}>
             Cancel
           </Button>
-          <Button
-            variant="contained"
-            color="error"
-            disabled={del.isPending}
-            startIcon={del.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
-            onClick={handleDelete}
-          >
+          <Button variant="contained" color="error" disabled={del.isPending} startIcon={del.isPending ? <CircularProgress size={16} color="inherit" /> : undefined} onClick={handleDelete}>
             Delete
           </Button>
         </DialogActions>

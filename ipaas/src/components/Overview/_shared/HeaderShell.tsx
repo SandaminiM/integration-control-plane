@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Avatar, Box, Button, ButtonGroup, Chip, CircularProgress, ClickAwayListener, Grow, IconButton, InputBase, MenuList, MenuItem, Paper, Popper, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Avatar, Box, Button, ButtonGroup, Chip, CircularProgress, ClickAwayListener, Grow, IconButton, InputBase, MenuList, MenuItem, Paper, Popper, Skeleton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { Tag, Cloud, GitCommitHorizontal, Copy, Check, ChevronDown, Code2, Pencil, Globe, Lock } from '@wso2/oxygen-ui-icons-react';
 import type { ComponentDetail } from '../../../types/component';
@@ -73,9 +73,13 @@ interface ComponentHeaderProps {
    * integrations (e.g. MCP proxy) — hides Source/Commit + the editor entry.
    */
   hasSource?: boolean;
+  /** True while `repository` is still being fetched — shows a skeleton instead of the "—" empty state. */
+  isRepositoryLoading?: boolean;
+  /** True while `latestCommit` is still being fetched (including waiting on `repository` to resolve its branch first). */
+  isLatestCommitLoading?: boolean;
 }
 
-export default function ComponentHeader({ component, project, repository, latestCommit, orgHandler, projectId, projectHandler, apimId, module, hasSource = true }: ComponentHeaderProps) {
+export default function ComponentHeader({ component, project, repository, latestCommit, orgHandler, projectId, projectHandler, apimId, module, hasSource = true, isRepositoryLoading = false, isLatestCommitLoading = false }: ComponentHeaderProps) {
   const { userId } = useAuth();
   const [copied, setCopied] = useState(false);
   const [splitOpen, setSplitOpen] = useState(false);
@@ -92,6 +96,26 @@ export default function ComponentHeader({ component, project, repository, latest
   const [descValue, setDescValue] = useState(component.description?.trim() ?? '');
   const descInputRef = useRef<HTMLInputElement>(null);
   const updateDesc = useUpdateComponent();
+
+  // Only show a hover tooltip for the name/description when the 2-line clamp is actually
+  // truncating them — a tooltip that fires on text that already fits is just a useless hover target.
+  const titleRef = useRef<HTMLElement>(null);
+  const descRef = useRef<HTMLElement>(null);
+  const [titleOverflowing, setTitleOverflowing] = useState(false);
+  const [descOverflowing, setDescOverflowing] = useState(false);
+
+  useEffect(() => {
+    const els = [titleRef.current, descRef.current].filter((el): el is HTMLElement => !!el);
+    if (!els.length || typeof ResizeObserver === 'undefined') return;
+    const check = () => {
+      if (titleRef.current) setTitleOverflowing(titleRef.current.scrollHeight > titleRef.current.clientHeight + 1);
+      if (descRef.current) setDescOverflowing(descRef.current.scrollHeight > descRef.current.clientHeight + 1);
+    };
+    check();
+    const observer = new ResizeObserver(check);
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [nameValue, descValue]);
 
   useEffect(() => {
     setNameValue(component.displayName ?? component.handler);
@@ -237,19 +261,37 @@ export default function ComponentHeader({ component, project, repository, latest
     setSplitOpen(false);
   };
 
+  // The header sits in a content column of variable width (next to the app sidebar), which can be
+  // narrow even on a wide viewport — so a container query (keyed to this component's own rendered
+  // width) is used for the stacked layout below, not a viewport media query (`sx={{ sm: ... }}`),
+  // which would key off the window width and could disagree with the space actually available here.
+  const NARROW_HEADER_QUERY = '@container (max-width: 768px)';
+
   return (
-    <>
-      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" flexWrap="wrap" sx={{ mb: 3 }} gap={2}>
+    <Box sx={{ containerType: 'inline-size' }}>
+      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" flexWrap="wrap" sx={{ mb: 3, [NARROW_HEADER_QUERY]: { flexDirection: 'column' } }} gap={2}>
         {/* LEFT COLUMN */}
-        <Stack gap={1} sx={{ flex: 1, minWidth: 0 }}>
+        <Stack gap={1} sx={{ flex: 1, minWidth: 0, maxWidth: '60%', [NARROW_HEADER_QUERY]: { maxWidth: '100%' } }}>
           <Stack direction="row" alignItems="center" gap={2}>
             <Avatar sx={{ width: 48, height: 48, fontSize: 22, bgcolor: 'text.primary', color: 'background.paper' }}>{nameValue?.[0]?.toUpperCase() ?? 'C'}</Avatar>
-            <Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
               <Stack direction="row" alignItems="center" gap={0.5} sx={{ mb: 0.25, cursor: 'text', columnGap: nameEditing ? 1.5 : 0.5, '&:hover .pencil-btn': { opacity: 1 } }} onClick={() => !nameEditing && setNameEditing(true)}>
                 {/* The Typography always stays in the DOM and determines the layout size.
                   The InputBase is absolutely overlaid on top when editing — zero layout shift. */}
-                <Box sx={{ position: 'relative', display: 'inline-flex', minWidth: 200 }}>
-                  <Typography variant="h1" sx={{ visibility: nameEditing ? 'hidden' : 'visible', whiteSpace: 'pre' }}>
+                <Box sx={{ position: 'relative', display: 'flex', flex: 1, minWidth: 200 }}>
+                  <Typography
+                    ref={titleRef}
+                    variant="h1"
+                    title={!nameEditing && titleOverflowing ? nameValue : undefined}
+                    sx={{
+                      visibility: nameEditing ? 'hidden' : 'visible',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      wordBreak: 'break-word',
+                      width: '100%',
+                    }}>
                     {nameValue || '\u200b'}
                   </Typography>
                   {nameEditing && (
@@ -327,17 +369,23 @@ export default function ComponentHeader({ component, project, repository, latest
             </Box>
           </Stack>
           <Stack direction="row" alignItems="flex-start" gap={1} onMouseEnter={() => setDescHovered(true)} onMouseLeave={() => setDescHovered(false)}>
-            <Box sx={{ position: 'relative', flex: 1, cursor: descEditing ? 'text' : descValue ? 'text' : 'pointer' }} onClick={() => !descEditing && setDescEditing(true)}>
+            <Box sx={{ position: 'relative', flex: 1, minWidth: 0, cursor: descEditing ? 'text' : descValue ? 'text' : 'pointer' }} onClick={() => !descEditing && setDescEditing(true)}>
               {/* Ghost text determines height; pencil sits inline after last word */}
               <Typography
+                ref={descRef}
                 variant="body2"
                 component="div"
+                title={!descEditing && descOverflowing && descValue ? descValue : undefined}
                 sx={{
                   visibility: descEditing ? 'hidden' : 'visible',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
                   color: descValue ? 'text.secondary' : 'primary.main',
                   minHeight: '1.4em',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
                 }}>
                 {descEditing ? (
                   descValue || '\u200b'
@@ -465,35 +513,45 @@ export default function ComponentHeader({ component, project, repository, latest
                       </IconButton>
                     </Tooltip>
                   </>
+                ) : isRepositoryLoading ? (
+                  <Skeleton variant="text" width={240} height={20} />
                 ) : (
                   <Typography variant="body2" color="text.secondary">
                     —
                   </Typography>
                 )}
               </Stack>
-              <Stack direction="row" alignItems="center" gap={1}>
-                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 110 }}>
-                  Latest Commit:
-                </Typography>
-                <GitCommitHorizontal size={12} />
-                {latestCommit ? (
-                  <>
+              <Stack direction="row" flexWrap="wrap" alignItems="center" gap={1}>
+                <Stack direction="row" alignItems="center" gap={1}>
+                  <Typography variant="body2" color="text.secondary" sx={{ minWidth: 110 }}>
+                    Latest Commit:
+                  </Typography>
+                  <GitCommitHorizontal size={12} />
+                  {latestCommit && (
                     <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
                       {latestCommit.sha.substring(0, 7)}
                     </Typography>
+                  )}
+                </Stack>
+                {latestCommit ? (
+                  <>
                     <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={latestCommit.message}>
                       {latestCommit.message}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {formatDistanceToNow(latestCommit.author.date)}
-                    </Typography>
-                    <Avatar src={latestCommit.author.avatarUrl} alt={latestCommit.author.name ?? 'Commit author'} sx={{ width: 16, height: 16, fontSize: 10 }}>
-                      {latestCommit.author.name?.[0]?.toUpperCase()}
-                    </Avatar>
-                    <Typography variant="body2" color="text.secondary">
-                      {latestCommit.author.name}
-                    </Typography>
+                    <Stack direction="row" alignItems="center" gap={1} flexWrap="nowrap">
+                      <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                        {formatDistanceToNow(latestCommit.author.date)}
+                      </Typography>
+                      <Avatar src={latestCommit.author.avatarUrl} alt={latestCommit.author.name ?? 'Commit author'} sx={{ width: 16, height: 16, fontSize: 10, flexShrink: 0 }}>
+                        {latestCommit.author.name?.[0]?.toUpperCase()}
+                      </Avatar>
+                      <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                        {latestCommit.author.name}
+                      </Typography>
+                    </Stack>
                   </>
+                ) : isLatestCommitLoading ? (
+                  <Skeleton variant="text" width={320} height={20} />
                 ) : (
                   <Typography variant="body2" color="text.secondary">
                     —
@@ -505,7 +563,7 @@ export default function ComponentHeader({ component, project, repository, latest
         </Stack>
 
         {/* RIGHT COLUMN */}
-        <Stack direction="column" gap={1.5} alignItems="flex-end" sx={{ mt: 1, flexShrink: 0, width: 'auto' }}>
+        <Stack direction="column" gap={1.5} alignItems="flex-end" sx={{ mt: 1, flexShrink: 0, width: 'auto', [NARROW_HEADER_QUERY]: { alignItems: 'flex-start', width: '100%' } }}>
           {/* Open in Cloud / VS Code — hidden for repo-less / MCP components */}
           {showOpenInEditor && (
             <Box sx={{ position: 'relative' }}>
@@ -554,6 +612,6 @@ export default function ComponentHeader({ component, project, repository, latest
           {HeaderActions && <HeaderActions component={component} apimId={apimId} orgHandler={orgHandler} projectHandler={projectHandler} />}
         </Stack>
       </Stack>
-    </>
+    </Box>
   );
 }

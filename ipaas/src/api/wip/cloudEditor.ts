@@ -18,7 +18,7 @@
 
 import { gql } from './graphql';
 import { choreoClient } from './httpClients';
-import type { ContainerRegistry } from '../../types/cloudEditor';
+import type { CodeServerInstance, ContainerRegistry } from '../../types/cloudEditor';
 
 const CHOREO_SAMPLES_REGISTRY_HOST = 'choreoanonymouspullable.azurecr.io';
 
@@ -52,7 +52,7 @@ export async function getOrCreateSampleRegistry(orgUuid: string): Promise<Contai
   }
 }
 
-export async function callCreateCodeServer(params: { userId: string; organizationId: string; projectId: string; componentId: string; orgHandle: string; imageUrl: string; registryId: string; sourceCommitHash?: string }): Promise<string> {
+export async function callCreateCodeServer(params: { userId: string; organizationId: string; projectId: string; componentId: string; orgHandle: string; imageUrl: string; registryId: string; sourceCommitHash?: string }): Promise<CodeServerInstance> {
   const { userId, organizationId, projectId, componentId, orgHandle, imageUrl, registryId, sourceCommitHash } = params;
   // `createCodeServer` returns an object; a selection set is required and the URL is on `.url`.
   const result = await gql<{ createCodeServer: { url: string; clusterId: string; releaseId: string; namespace: string } }>(
@@ -67,7 +67,7 @@ export async function callCreateCodeServer(params: { userId: string; organizatio
       ${sourceCommitHash ? `sourceCommitHash: "${sourceCommitHash}",` : ''}
     }){ url clusterId releaseId namespace }}`,
   );
-  const url = result.createCodeServer?.url;
-  if (!url) throw new Error('No editor URL returned from server');
-  return url;
+  const created = result.createCodeServer;
+  if (!created?.url) throw new Error('No editor URL returned from server');
+  return { url: created.url, clusterId: created.clusterId ?? '', releaseId: created.releaseId ?? '', namespace: created.namespace ?? '' };
 }

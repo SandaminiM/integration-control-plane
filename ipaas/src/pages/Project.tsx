@@ -52,7 +52,7 @@ import {
   Tooltip,
   Typography,
 } from '@wso2/oxygen-ui';
-import { ArrowRight, Bitbucket, ChevronDown, ChevronUp, ExternalLink, FileText, Filter, GitHub, GitBranch, GitLab, Info, Link2, Pencil, Plus, PlugZap, RefreshCw, Search, Trash2 } from '@wso2/oxygen-ui-icons-react';
+import { ArrowRight, ChevronDown, ChevronUp, ExternalLink, FileText, Filter, GitHub, GitBranch, Info, Link2, Pencil, Plus, PlugZap, RefreshCw, Search, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import EmptyListing from '../components/EmptyListing';
 import IntegrationTypesCard from '../components/IntegrationTypesCard';
 import ArchitectureCard from '../components/ArchitectureCard';
@@ -63,8 +63,10 @@ import PrebuiltCard from '../components/PrebuiltCard';
 import SampleRowCard from '../components/SampleRowCard';
 import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
 import LinkRepositoryDialog from '../components/ProjectCreate/LinkRepositoryDialog';
-import GitIcon from '../assets/icons/GitIcon';
-import AzureIcon from '../assets/icons/AzureIcon';
+import GitLogoIcon from '../assets/icons/GitLogoIcon';
+import GitLabIcon from '../assets/icons/GitLabIcon';
+import BitbucketIcon from '../assets/icons/BitbucketIcon';
+import AzureDevOpsIcon from '../assets/icons/AzureDevOpsIcon';
 import IntegratorIcon from '../assets/icons/IntegratorIcon';
 import { useNavigate } from 'react-router';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type JSX } from 'react';
@@ -72,7 +74,7 @@ import { useProject, useProjectByHandler, useProjects, useUpdateProject, useGitH
 import { useComponents } from '../hooks/useComponents';
 import { useOrgs, useOrgComponentLimits, useOrgSubscriptions } from '../hooks/useOrg';
 import { useChoreoSampleImages } from '../hooks/useRepository';
-import type { Component } from '../types/component';
+import type { Component, ComponentDeletionError, ComponentSubscription, SubscriptionInfo } from '../types/component';
 import { useDeleteComponent, useCreateComponent } from '../hooks/useComponents';
 import NotFound from '../components/NotFound';
 import { formatDistanceToNow } from '../utils/time';
@@ -85,7 +87,7 @@ import { componentOverviewUrl, importComponentUrl, browseSamplesUrl, prebuiltInt
 import { Permissions } from '../constants/permissions';
 import { isSupportedIntegration, getDisplayLabel, displayTypeFromSample, getNonIntegrationPlatform } from '../constants/integrations';
 import { GITHUB_AUTH } from '../constants/github';
-import { CARD_HOVER_SX, PROVIDER_ICON_SX } from '../constants/styles';
+import { CARD_HOVER_SX, PROVIDER_ICON_SX, GITHUB_ICON_SX } from '../constants/styles';
 import Authorized from '../components/Authorized';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { useFeaturePreview } from '../contexts/FeaturePreviewContext';
@@ -311,27 +313,27 @@ function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId
                               navigate(importUrl, { state: { mode: 'public' } });
                             }}
                             sx={PROVIDER_ICON_SX}>
-                            <GitIcon size={25} />
+                            <GitLogoIcon size={25} />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Import from GitHub" placement="top">
-                          <IconButton aria-label="Import from GitHub" onClick={handleImportClick} sx={PROVIDER_ICON_SX}>
+                          <IconButton aria-label="Import from GitHub" onClick={handleImportClick} sx={GITHUB_ICON_SX}>
                             <GitHub size={24} />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Import from GitLab" placement="top">
                           <IconButton aria-label="Import from GitLab" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
-                            <GitLab size={22} />
+                            <GitLabIcon size={22} />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Import from Bitbucket" placement="top">
                           <IconButton aria-label="Import from Bitbucket" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
-                            <Bitbucket size={22} />
+                            <BitbucketIcon size={22} />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Import from Azure" placement="top">
                           <IconButton aria-label="Import from Azure" onClick={() => navigate(importComingSoonUrl(scope.org, scope.project))} sx={PROVIDER_ICON_SX}>
-                            <AzureIcon size={22} />
+                            <AzureDevOpsIcon size={22} />
                           </IconButton>
                         </Tooltip>
                       </>
@@ -421,14 +423,101 @@ function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId
   );
 }
 
-function DeleteDialog({ component, scope, projectId, onClose }: { component: Component; scope: ProjectScope; projectId: string; onClose: () => void }) {
+const APIM_SUBSCRIBERS_ERROR_CODE = 'APIM_SUBSCRIBERS';
+
+/** Splits an integration's active API subscribers into internal (Choreo-managed test apps) vs external, deduped by application. */
+function splitSubscribers(data: SubscriptionInfo[]): { internal: ComponentSubscription[]; external: ComponentSubscription[] } {
+  const seen = new Set<string>();
+  const internal: ComponentSubscription[] = [];
+  const external: ComponentSubscription[] = [];
+  data.forEach((info) => {
+    info.list.forEach((sub) => {
+      const { applicationId, name } = sub.applicationInfo;
+      if (seen.has(applicationId)) return;
+      seen.add(applicationId);
+      (name.startsWith('_internal') ? internal : external).push(sub);
+    });
+  });
+  return { internal, external };
+}
+
+function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { component: Component; scope: ProjectScope; projectId: string; onClose: () => void; onDeleted: (name: string) => void }) {
   const [confirmation, setConfirmation] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [subscribers, setSubscribers] = useState<{ internal: ComponentSubscription[]; external: ComponentSubscription[] } | null>(null);
   const mutation = useDeleteComponent();
   const confirmed = confirmation === component.displayName;
 
   const handleDelete = () => {
-    mutation.mutate({ orgHandler: scope.org, componentId: component.id, projectId }, { onSuccess: onClose });
+    setDeleteError(null);
+    mutation.mutate(
+      { orgHandler: scope.org, componentId: component.id, projectId },
+      {
+        onSuccess: (result) => {
+          if (result.canDelete) {
+            onDeleted(component.displayName);
+            return;
+          }
+          // The backend blocks deletion (e.g. active API subscribers) without throwing — canDelete must be checked explicitly.
+          if (result.encodedData) {
+            try {
+              const bytes = Uint8Array.from(atob(result.encodedData), (c) => c.charCodeAt(0));
+              const [firstError]: ComponentDeletionError[] = JSON.parse(new TextDecoder().decode(bytes));
+              if (firstError?.code === APIM_SUBSCRIBERS_ERROR_CODE) {
+                setSubscribers(splitSubscribers(firstError.data));
+                return;
+              }
+            } catch {
+              // Malformed encodedData — fall through to the generic message below.
+            }
+          }
+          // Not a subscriber block (or a stale one from a prior attempt) — drop the subscribers
+          // view so the generic error below is what actually renders.
+          setSubscribers(null);
+          setDeleteError(result.message || 'Failed to delete integration. Please try again.');
+        },
+        onError: (e) => {
+          setSubscribers(null);
+          setDeleteError(e instanceof Error ? e.message : 'Failed to delete integration. Please try again.');
+        },
+      },
+    );
   };
+
+  if (subscribers) {
+    const { internal, external } = subscribers;
+    return (
+      <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
+        <DialogTitle>Integration &lsquo;{component.displayName}&rsquo; has endpoints with active subscribers</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>This integration cannot be deleted as it has the following subscribers:</DialogContentText>
+          {external.length > 0 && (
+            <Box component="ul" sx={{ m: 0, mb: 1, pl: 3 }}>
+              {external.map((s) => (
+                <Typography key={s.applicationInfo.applicationId} component="li" variant="body2">
+                  {s.applicationInfo.name}
+                </Typography>
+              ))}
+            </Box>
+          )}
+          {internal.length > 0 && (
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {internal.length} internal usage{internal.length === 1 ? '' : 's'}
+            </Typography>
+          )}
+          <Typography variant="body2">Please remove them before proceeding.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="outlined" onClick={onClose} disabled={mutation.isPending}>
+            Cancel
+          </Button>
+          <Button variant="contained" color="error" onClick={handleDelete} disabled={mutation.isPending} startIcon={mutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}>
+            {mutation.isPending ? 'Retrying…' : 'Retry Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
@@ -437,9 +526,9 @@ function DeleteDialog({ component, scope, projectId, onClose }: { component: Com
       </DialogTitle>
       <DialogContent>
         <DialogContentText sx={{ mb: 2 }}>This action will be irreversible and all related details will be lost. Please type in the integration name below to confirm.</DialogContentText>
-        {mutation.error && (
+        {deleteError && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {mutation.error.message || 'Failed to delete integration. Please try again.'}
+            {deleteError}
           </Alert>
         )}
         <TextField autoFocus fullWidth placeholder="Enter integration name to confirm" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />
@@ -546,6 +635,7 @@ function IntegrationsTable({
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleting, setDeleting] = useState<Component | null>(null);
+  const [deleteAlert, setDeleteAlert] = useState<string | null>(null);
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [labelAnchor, setLabelAnchor] = useState<HTMLElement | null>(null);
   const quotaReached = orgDevantComponentCount >= FREE_COMPONENT_LIMIT;
@@ -656,6 +746,12 @@ function IntegrationsTable({
           </Tooltip>
         </Authorized>
       </Stack>
+
+      {deleteAlert && (
+        <Alert severity="success" onClose={() => setDeleteAlert(null)} sx={{ mb: 2 }}>
+          {deleteAlert}
+        </Alert>
+      )}
 
       {isLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -825,7 +921,18 @@ function IntegrationsTable({
         </>
       )}
 
-      {deleting && <DeleteDialog component={deleting} scope={scope} projectId={projectId} onClose={() => setDeleting(null)} />}
+      {deleting && (
+        <DeleteDialog
+          component={deleting}
+          scope={scope}
+          projectId={projectId}
+          onClose={() => setDeleting(null)}
+          onDeleted={(name) => {
+            setDeleting(null);
+            setDeleteAlert(`Integration '${name}' deleted successfully.`);
+          }}
+        />
+      )}
     </section>
   );
 }

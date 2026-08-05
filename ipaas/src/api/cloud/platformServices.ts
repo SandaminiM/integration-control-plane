@@ -16,8 +16,11 @@
  * under the License.
  */
 
-// Managed databases are a wip-only feature (IS_WIP-gated). Signatures mirror
-// Contracts.PlatformServicesApi so _check.ts catches any drift.
+// Managed databases: availability + server-list endpoints no-op to empty on cloud
+// so the read-only listing pages (Databases / Vector Databases / Message Brokers)
+// render; the remaining server/Kafka functions stay ni() stubs until the BFF
+// exposes them. Signatures mirror Contracts.PlatformServicesApi so _check.ts catches
+// any drift.
 import type {
   AdminUser,
   AllowedIpsPayload,
@@ -50,8 +53,12 @@ const ni = (name: string): never => {
   throw new Error(`[cloud] platformServices.${name}: not implemented`);
 };
 
-export const getAvailability = (_orgUuid: string): Promise<OrgServiceAvailability> => ni('getAvailability');
-export const listServers = (_orgUuid: string, _variant?: ServerVariant): Promise<DatabaseServer[]> => ni('listServers');
+// awaits: managed-database endpoints. Empty/neutral defaults keep the read-only
+// listing pages (Databases / Vector Databases / Message Brokers) rendering with an
+// empty state instead of throwing. reason 'UNKNOWN' yields the plain empty state
+// (not the allow-list or upgrade banners); is_available: false keeps create gated.
+export const getAvailability = (_orgUuid: string): Promise<OrgServiceAvailability> => Promise.resolve({ is_available: false, service_count_limit: 0, reason: 'UNKNOWN' });
+export const listServers = (_orgUuid: string, _variant?: ServerVariant): Promise<DatabaseServer[]> => Promise.resolve([]);
 export const getServer = (_serverId: string, _variant?: ServerVariant): Promise<DatabaseServerDetail> => ni('getServer');
 export const deleteServer = (_serverId: string, _variant?: ServerVariant): Promise<void> => ni('deleteServer');
 export const getServicePlans = (_type: ServiceType): Promise<ServicePlan[]> => ni('getServicePlans');

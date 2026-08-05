@@ -21,8 +21,12 @@ import { Check, Copy, Eye, EyeOff, Key } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
+import '../swagger-ui-overrides.scss';
+import { DEFAULT_API_KEY_HEADER } from '../constants/apiConsumption';
+import { IS_CLOUD } from '../features';
 import { useApimSwagger, useGenerateTestKey } from '../hooks/useApim';
 import { useComponentByHandler } from '../hooks/useComponents';
+import { useCreateEndpointTestKey } from '../hooks/useConsumers';
 import { useComponentDeployment, useEnvEndpoints } from '../hooks/useDeployments';
 import { useEnvironments } from '../hooks/useEnvironments';
 import type { EnvEndpoint } from '../types/component';
@@ -30,7 +34,13 @@ import { useOrgUuid } from '../hooks/useOrgUuid';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import NotFound from '../components/NotFound';
 import { useProjectId } from '../hooks/useProjects';
+import type { EndpointRef } from '../types/consumers';
+import { friendlyApiError } from '../utils/apiSecurity';
 import { broaden, resourceUrl, type ComponentScope } from '../nav';
+
+/** Header the APIM gateway reads the test key from. Cloud uses the api-key-auth header instead. */
+const APIM_TEST_KEY_HEADER = 'test-key';
+const TEST_KEY_HEADER = IS_CLOUD ? DEFAULT_API_KEY_HEADER : APIM_TEST_KEY_HEADER;
 
 const ENV_STATUS_DOT: Record<string, string> = {
   ACTIVE: 'success.main',
@@ -92,23 +102,15 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
   const { data: environments = [] } = useEnvironments(scope.org, projectId);
 
-  // Deployment track selection (default to latest)
+  // Deployment track selection (default to latest) — derived rather than synced via an effect,
+  // since an effect+render round trip here would delay useComponentDeployment/useEnvEndpoints below.
   const tracks = useMemo(() => component?.deploymentTracks ?? [], [component?.deploymentTracks]);
-  const [selectedTrackId, setSelectedTrackId] = useState('');
-  useEffect(() => {
-    if (!tracks.length) return;
-    setSelectedTrackId((prev) => {
-      if (prev && tracks.some((t) => t.id === prev)) return prev;
-      return tracks.find((t) => t.latest)?.id ?? tracks[0].id;
-    });
-  }, [component?.id, tracks]);
+  const [selectedTrackIdState, setSelectedTrackId] = useState('');
+  const selectedTrackId = tracks.some((t) => t.id === selectedTrackIdState) ? selectedTrackIdState : (tracks.find((t) => t.latest)?.id ?? tracks[0]?.id ?? '');
 
-  // Environment selection (by ID for stability across refetches)
-  const [selectedEnvId, setSelectedEnvId] = useState('');
-  useEffect(() => {
-    if (!environments.length) return;
-    setSelectedEnvId((prev) => (prev && environments.some((e) => e.id === prev) ? prev : environments[0].id));
-  }, [environments]);
+  // Environment selection (by ID for stability across refetches) — same reasoning.
+  const [selectedEnvIdState, setSelectedEnvId] = useState('');
+  const selectedEnvId = environments.some((e) => e.id === selectedEnvIdState) ? selectedEnvIdState : (environments[0]?.id ?? '');
   const selectedEnv = environments.find((e) => e.id === selectedEnvId) ?? null;
 
   // Deployment for selected env (provides releaseId)
@@ -118,13 +120,10 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
   // Endpoints for the selected env + track
   const { data: endpoints = [], isLoading: loadingEndpoints } = useEnvEndpoints(component?.id ?? '', selectedTrackId, releaseId);
 
-  // Selected endpoint
-  const [selectedEndpointId, setSelectedEndpointId] = useState('');
-  useEffect(() => {
-    if (endpoints.length > 0 && (!selectedEndpointId || !endpoints.find((e) => e.id === selectedEndpointId))) {
-      setSelectedEndpointId(endpoints[0].id);
-    }
-  }, [endpoints, selectedEndpointId]);
+  // Selected endpoint — derived rather than synced via an effect, since useApimSwagger below
+  // keys off selectedEndpoint and an effect+render round trip would delay it becoming enabled.
+  const [selectedEndpointIdState, setSelectedEndpointId] = useState('');
+  const selectedEndpointId = endpoints.some((e) => e.id === selectedEndpointIdState) ? selectedEndpointIdState : (endpoints[0]?.id ?? '');
   const selectedEndpoint = endpoints.find((e) => e.id === selectedEndpointId) ?? null;
 
   // Visibility options for selected endpoint
@@ -152,27 +151,39 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
 
   const generateKeyMutation = useGenerateTestKey();
 
+  // Cloud mints the key from the BFF's test-key route (component/environment/endpoint
+  // triple); wip/icp mint it from APIM against the endpoint's apimId.
+  const testKeyEndpointRef: EndpointRef | null = useMemo(
+    () => (IS_CLOUD && component && selectedEnv && selectedEndpoint ? { componentName: component.id, environmentName: selectedEnv.name, endpointName: selectedEndpoint.id } : null),
+    [component, selectedEnv, selectedEndpoint],
+  );
+  const endpointTestKeyMutation = useCreateEndpointTestKey(testKeyEndpointRef);
+  const canGetTestKey = IS_CLOUD ? !!testKeyEndpointRef : !!selectedEndpoint?.apimId;
+
   const handleGetTestKey = async () => {
-    if (!selectedEndpoint?.apimId) return;
-    const keyType = selectedEnv?.critical ? 'Production' : 'Development';
+    if (!canGetTestKey) return;
     setFetchingKey(true);
     setKeyError(null);
     try {
-      const result = await generateKeyMutation.mutateAsync({ apimId: selectedEndpoint.apimId, keyType });
-      if (result?.apikey) {
-        updateSecurityHeader(result.apikey);
+      const key = IS_CLOUD ? (await endpointTestKeyMutation.mutateAsync()).apiKey : (await generateKeyMutation.mutateAsync({ apimId: selectedEndpoint!.apimId!, keyType: selectedEnv?.critical ? 'Production' : 'Development' }))?.apikey;
+      if (key) {
+        updateSecurityHeader(key);
       } else {
         setKeyError('No test key available. Please check your permissions.');
       }
-    } catch {
-      setKeyError('Failed to fetch test key.');
+    } catch (err) {
+      setKeyError(IS_CLOUD ? friendlyApiError(err, 'Could not mint a test key.') : 'Failed to fetch test key.');
     } finally {
       setFetchingKey(false);
     }
   };
 
-  // Swagger spec for selected endpoint
-  const { data: swaggerRaw, isLoading: loadingSwagger } = useApimSwagger(selectedEndpoint?.apimId ?? null);
+  // Swagger spec for the selected endpoint. Cloud carries the endpoint's base64
+  // OpenAPI in `apimRevisionId` (there is no APIM behind it); wip resolves an
+  // APIM revision from the same field.
+  // `||`, not `??`: an empty revision id is as unusable as a missing one and must
+  // still fall through to the apimId.
+  const { data: swaggerRaw, isLoading: loadingSwagger } = useApimSwagger(selectedEndpoint?.apimRevisionId || selectedEndpoint?.apimId || null);
   const swagger = swaggerRaw ?? null;
 
   // Override the swagger spec's server URL with the selected invoke URL so
@@ -318,6 +329,9 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
             <Stack direction="row" alignItems="flex-start" gap={2}>
               <Typography variant="body2" sx={{ minWidth: 140, fontWeight: 500, color: 'text.secondary', pt: 1 }}>
                 Security Header
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 400 }}>
+                  {TEST_KEY_HEADER}
+                </Typography>
               </Typography>
               <Stack direction="column" gap={0.5} sx={{ flex: 1 }}>
                 <Stack direction="row" alignItems="center" gap={1}>
@@ -354,7 +368,7 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
                     variant="outlined"
                     size="small"
                     startIcon={fetchingKey ? <CircularProgress size={14} color="inherit" /> : <Key size={14} />}
-                    disabled={fetchingKey || !selectedEndpoint?.apimId}
+                    disabled={fetchingKey || !canGetTestKey}
                     onClick={handleGetTestKey}
                     sx={{ whiteSpace: 'nowrap', textTransform: 'none' }}>
                     Get Test Key
@@ -390,7 +404,7 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
               docExpansion="list"
               requestInterceptor={(request) => {
                 if (securityHeaderRef.current) {
-                  request.headers['test-key'] = securityHeaderRef.current;
+                  request.headers[TEST_KEY_HEADER] = securityHeaderRef.current;
                 }
                 return request;
               }}

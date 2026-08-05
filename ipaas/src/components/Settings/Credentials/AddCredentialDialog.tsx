@@ -17,9 +17,11 @@
  */
 
 import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { Bitbucket, Eye, EyeOff, Gitlab, X } from '@wso2/oxygen-ui-icons-react';
+import { Eye, EyeOff, X } from '@wso2/oxygen-ui-icons-react';
 import { useState, type ComponentType, type JSX, type ReactNode } from 'react';
-import AzureIcon from '../../../assets/icons/AzureIcon';
+import AzureDevOpsIcon from '../../../assets/icons/AzureDevOpsIcon';
+import GitLabIcon from '../../../assets/icons/GitLabIcon';
+import BitbucketIcon from '../../../assets/icons/BitbucketIcon';
 import { useCreateGitCredential } from '../../../hooks/useCredentials';
 import { GitProvider, type CreateGitCredentialInput, type GitCredential } from '../../../types/credentials';
 
@@ -42,7 +44,7 @@ const PROVIDERS: ProviderDef[] = [
   {
     value: GitProvider.BITBUCKET_CLOUD,
     label: 'Bitbucket',
-    Icon: Bitbucket,
+    Icon: BitbucketIcon,
     f1: { label: 'Username', placeholder: 'Enter Bitbucket Username' },
     f2: { label: 'App password', placeholder: 'Enter Bitbucket App password', secret: true },
     howTo: { text: 'How to create an App password?', url: 'https://support.atlassian.com/bitbucket-cloud/docs/create-an-app-password/' },
@@ -63,7 +65,7 @@ const PROVIDERS: ProviderDef[] = [
   {
     value: GitProvider.GITLAB_SELF_MANAGED,
     label: 'GitLab',
-    Icon: Gitlab,
+    Icon: GitLabIcon,
     f1: { label: 'Server URL', placeholder: 'Enter server URL' },
     f2: { label: 'Access Token', placeholder: 'Enter personal access token', secret: true },
     howTo: { text: 'How to create a personal access token?', url: 'https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#create-a-personal-access-token' },
@@ -72,7 +74,7 @@ const PROVIDERS: ProviderDef[] = [
   {
     value: GitProvider.AZURE_DEVOPS,
     label: 'Azure DevOps',
-    Icon: AzureIcon,
+    Icon: AzureDevOpsIcon,
     f1: { label: 'Organization Name', placeholder: 'Enter Azure DevOps Organization Name' },
     f2: { label: 'Personal Access Token', placeholder: 'Enter Personal Access Token', secret: true },
     howTo: { text: 'How to create a personal access token?', url: 'https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate' },

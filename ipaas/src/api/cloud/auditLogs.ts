@@ -16,9 +16,10 @@
  * under the License.
  */
 
-// Audit Logs is currently a wip-only admin surface. Signature mirrors Contracts.AuditLogsApi.
+// Audit Logs: fetchAuditLogs no-ops to empty on cloud so the read-only Audit Logs
+// page renders; wip has the real endpoint. Signature mirrors Contracts.AuditLogsApi.
 import type { AuditLogEntry, AuditLogsRequest } from '../../types/auditLogs';
 
-export const fetchAuditLogs = (_orgUuid: string, _request: AuditLogsRequest): Promise<AuditLogEntry[]> => {
-  throw new Error('[cloud] auditLogs.fetchAuditLogs: not implemented');
-};
+// awaits: audit logs endpoint. Empty default keeps the read-only Audit Logs page
+// rendering (with an empty state) instead of throwing on cloud.
+export const fetchAuditLogs = (_orgUuid: string, _request: AuditLogsRequest): Promise<AuditLogEntry[]> => Promise.resolve([]);

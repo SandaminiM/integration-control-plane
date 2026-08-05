@@ -18,7 +18,7 @@
 
 import { Alert, Box, Button, CircularProgress, Grid, IconButton, InputAdornment, MenuItem, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Building2, Check, CheckCircle2, Edit, GitHub, GitBranch } from '@wso2/oxygen-ui-icons-react';
-import GitIcon from '../assets/icons/GitIcon';
+import GitLogoIcon from '../assets/icons/GitLogoIcon';
 import GitProviderCards from '../components/ProjectCreate/GitProviderCards';
 import GitHubAuthArea from '../components/Import/GitHubAuthArea';
 import { useState, useLayoutEffect, type JSX } from 'react';
@@ -228,7 +228,7 @@ export default function ImportProject(scope: OrgScope): JSX.Element {
               input: {
                 startAdornment: (
                   <InputAdornment position="start">
-                    <GitIcon size={16} />
+                    <GitLogoIcon size={16} />
                   </InputAdornment>
                 ),
                 endAdornment:

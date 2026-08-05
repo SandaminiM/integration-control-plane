@@ -17,7 +17,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { getAge, formatDistanceToNow } from './time';
+import { getAge, formatDate, formatDistanceToNow } from './time';
 
 describe('getAge', () => {
   it('returns empty string when to is before from', () => {
@@ -56,6 +56,19 @@ describe('getAge', () => {
   it('returns years', () => {
     expect(getAge(0, 400 * 86_400_000)).toBe('1 year');
     expect(getAge(0, 800 * 86_400_000)).toBe('2 years');
+  });
+});
+
+describe('formatDate', () => {
+  it('formats a valid ISO date', () => {
+    expect(formatDate('2026-07-30T10:00:00Z')).toBe(new Date('2026-07-30T10:00:00Z').toLocaleDateString());
+  });
+
+  it('returns an empty string for missing or invalid input', () => {
+    expect(formatDate(undefined)).toBe('');
+    expect(formatDate(null)).toBe('');
+    expect(formatDate('')).toBe('');
+    expect(formatDate('not-a-date')).toBe('');
   });
 });
 

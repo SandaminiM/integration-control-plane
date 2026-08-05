@@ -50,10 +50,7 @@ export function DatabaseServersListView({ scope, kind }: { scope: OrgScope; kind
 
   // The db-servers list is shared org-wide between Databases and Vector Databases;
   // each page shows only its own flavour. Brokers arrive from their own endpoint.
-  const kindServers = useMemo(
-    () => (kind.variant === 'brokers' ? (servers.data ?? []) : (servers.data ?? []).filter((s) => (kind.isVector ? s.is_vector_enabled : !s.is_vector_enabled))),
-    [servers.data, kind.isVector, kind.variant],
-  );
+  const kindServers = useMemo(() => (kind.variant === 'brokers' ? (servers.data ?? []) : (servers.data ?? []).filter((s) => (kind.isVector ? s.is_vector_enabled : !s.is_vector_enabled))), [servers.data, kind.isVector, kind.variant]);
 
   if (!isPlatformServicesEnabled()) {
     return <ComingSoon title="Coming Soon" description={`${kind.listTitle} management is currently under development.`} />;

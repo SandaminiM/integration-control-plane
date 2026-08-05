@@ -18,50 +18,15 @@
 
 /** Cloud (OpenChoreo) environment / dataplane API. Calls the ipaas-service BFF. */
 
-import type { CloudDataPlane, CreateEnvironmentData, EnvDeletionEligibility, EnvironmentTemplate, Environment, EnvironmentInput, Logger, UpdateLogLevelInput } from '../../types/environment';
+import type { CloudDataPlane, CreateEnvironmentData, EnvDeletionEligibility, EnvironmentTemplate, Environment, EnvironmentInput, Logger, ProjectDeployedComponents, UpdateLogLevelInput } from '../../types/environment';
 import { toHandler } from '../../utils/string';
+import { appendEnvironmentToDefaultPipeline } from './deploymentPipelines';
 import { bff, items, q, seg, type ListResponse, type MessageResponse } from './_client';
-
-// The devops REST template/create/delete flow is a wip-only surface; cloud manages
-// environments through the BFF functions above.
-const ni = (name: string): never => {
-  throw new Error(`[cloud] environments.${name}: not implemented`);
-};
+// The wire shape and its mapper live in their own module so this file and
+// deploymentPipelines.ts can share one definition without importing each other.
+import { toEnvironment, type BffEnvironment } from './_environmentShape';
 
 // _orgUuid is kept for devant contract parity; cloud derives the org from the token.
-
-// OpenChoreo Environments are K8s resources: `name` is an RFC 1123 slug and the
-// identity used in every path (`/environments/{name}`) and in a pipeline's
-// promotion refs, while the human label lives in `displayName`. The frontend
-// Environment carries `id` (slug) and `name` (label) and expresses "production"
-// as `critical`, so we translate between the two shapes at the boundary.
-interface BffEnvironment {
-  // The BFF serves the RFC 1123 slug as `id` and the human label as `name`, and
-  // flags production via `critical` with the dataplane in `dpId`. The
-  // slug/displayName/isProduction/dataPlaneRef aliases are tolerated as fallbacks.
-  id?: string;
-  uid?: string;
-  name: string;
-  displayName?: string;
-  description?: string;
-  dataPlaneRef?: string;
-  dpId?: string;
-  isProduction?: boolean;
-  critical?: boolean;
-  createdAt?: string;
-}
-
-// `id` must be the slug used in every path (`/environments/{name}`) and in the
-// immutable ReleaseBinding `spec.environment` — NOT the display label, or deploys
-// mismatch the binding (e.g. label "Development" vs slug "development").
-const toEnvironment = (e: BffEnvironment): Environment => ({
-  id: e.id || e.name,
-  name: e.displayName || e.name,
-  critical: e.critical ?? e.isProduction ?? false,
-  description: e.description,
-  createdAt: e.createdAt,
-  dpId: e.dpId ?? e.dataPlaneRef,
-});
 
 export const fetchEnvironments = (_orgUuid: string, projectId: string): Promise<Environment[]> => bff.get<ListResponse<BffEnvironment>>(`/environments${q({ project: projectId })}`).then((r) => items(r).map(toEnvironment));
 
@@ -93,15 +58,34 @@ export const fetchLoggers = (environmentId: string, componentId: string): Promis
 
 export const updateLogLevel = (input: UpdateLogLevelInput): Promise<{ success: boolean; message: string; commandIds: string[] }> => bff.put<{ success: boolean; message: string; commandIds: string[] }>(`/components/${seg(input.componentName)}/loggers`, input);
 
-// Every environment must bind to a data plane. This deployment registers data
-// planes cluster-scoped (ClusterDataPlane); there is no namespaced DataPlane for
-// OpenChoreo's empty-ref default to resolve, so omitting the ref fails with
-// "DataPlane not found". We name the conventional cluster data plane explicitly;
-// the BFF maps this name onto a ClusterDataPlane ref. Name is slugged to satisfy
-// the RFC 1123 metadata.name rule.
+// Every environment must bind to a data plane. Omitting the ref makes OpenChoreo
+// look for a DataPlane named "default" in the namespace and fail with "DataPlane
+// not found" when it is absent, so the name is always sent explicitly; the BFF
+// wraps it in a namespaced DataPlane ref (the kind `GET /dataplanes` lists). The
+// ref is immutable once set, so an environment bound to the wrong plane can only
+// be fixed by recreating it. Name is slugged to satisfy the RFC 1123
+// metadata.name rule.
 const DEFAULT_DATA_PLANE = 'default';
-export const createEnvironment = (input: EnvironmentInput): Promise<Environment> =>
-  bff.post<BffEnvironment>('/environments', { name: toHandler(input.name), displayName: input.name, description: input.description, isProduction: input.critical, dataPlaneRef: DEFAULT_DATA_PLANE }).then(toEnvironment);
+export const createEnvironment = async (input: EnvironmentInput, dataPlaneName?: string): Promise<Environment> => {
+  const created = await bff.post<BffEnvironment>('/environments', {
+    name: toHandler(input.name),
+    displayName: input.name,
+    description: input.description,
+    isProduction: input.critical,
+    dataPlaneRef: dataPlaneName || DEFAULT_DATA_PLANE,
+  });
+  const environment = toEnvironment(created);
+
+  // Best effort: an environment outside every promotion chain cannot be deployed
+  // to. The environment itself already exists at this point and the CD Pipelines
+  // editor is the recovery path, so a failure here must not read as a failed create.
+  try {
+    await appendEnvironmentToDefaultPipeline(environment.id);
+  } catch (err) {
+    console.warn(`[cloud] environment '${environment.id}' created but not added to the default pipeline`, err);
+  }
+  return environment;
+};
 
 // The BFF update accepts only displayName/description/isProduction — the slug
 // (name) is the immutable identity, so a rename edits the label only.
@@ -118,6 +102,83 @@ export const fetchEnvironmentTemplates = (_orgId: string): Promise<EnvironmentTe
     }),
   );
 
-export const createOrgEnvironment = (_orgUuid: string, _input: CreateEnvironmentData & { vhost: string }): Promise<void> => ni('createOrgEnvironment');
-export const getEnvDeleteEligibility = (_orgUuid: string, _templateId: string): Promise<EnvDeletionEligibility> => ni('getEnvDeleteEligibility');
-export const deleteEnvironmentTemplate = (_orgUuid: string, _templateId: string): Promise<void> => ni('deleteEnvironmentTemplate');
+// The org-environment surface is what the Environments settings page drives. In
+// cloud it is the same BFF environment, so this maps onto createEnvironment
+// rather than the devops REST flow. `dnsPrefix`/`vhost` have no OpenChoreo
+// counterpart — the gateway host is fixed at deploy time — and are ignored.
+export const createOrgEnvironment = async (_orgUuid: string, input: CreateEnvironmentData & { vhost: string }): Promise<void> => {
+  await createEnvironment({ name: input.name, description: input.description ?? '', critical: input.isProd }, input.dataplaneId);
+};
+
+// An environment template id is the environment slug (see fetchEnvironmentTemplates).
+export const deleteEnvironmentTemplate = async (_orgUuid: string, templateId: string): Promise<void> => {
+  await deleteEnvironment(templateId);
+};
+
+/** A `{ name, displayName }` BFF row — projects and components share the shape here. */
+interface BffNamed {
+  name: string;
+  displayName?: string;
+}
+
+/**
+ * Stands in for a component whose deployment state could not be read. It has to
+ * be a real entry in `deployedComponentsDetails`, not just `deletable: false`,
+ * because the delete dialog gates its confirm button on that list alone.
+ */
+const UNVERIFIED_COMPONENT = 'unknown (deployment state could not be read)';
+
+/** Components of `project` deployed to `environmentId`. Never rejects. */
+const deployedInProject = async (project: BffNamed, environmentId: string): Promise<ProjectDeployedComponents> => {
+  const detail = { projectId: project.name, projectName: project.displayName || project.name };
+
+  let components: BffNamed[];
+  try {
+    components = items(await bff.get<ListResponse<BffNamed>>(`/projects/${seg(project.name)}/components`));
+  } catch {
+    return { ...detail, components: [{ componentName: UNVERIFIED_COMPONENT }] };
+  }
+
+  const deployed = await Promise.all(
+    components.map(async (component) => {
+      const entry = { componentId: component.name, componentName: component.displayName || component.name };
+      try {
+        // "Not deployed" is 200 with a null body, so only a genuine failure lands
+        // in the catch — an unreadable component is unknown, not empty.
+        return (await bff.get<unknown>(`/components/${seg(component.name)}/deployments${q({ environmentId })}`)) ? entry : null;
+      } catch {
+        return entry;
+      }
+    }),
+  );
+  return { ...detail, components: deployed.filter((c) => c != null) };
+};
+
+// OpenChoreo has no "what is deployed here" query, so eligibility is derived by
+// walking projects -> components -> that component's deployment in this
+// environment. That is O(projects + components) requests, which is acceptable on
+// a settings page opened on demand.
+//
+// Deleting an Environment cascades and takes running workloads with it, so this
+// fails closed: anything that cannot be verified is reported as deployed. That
+// also means the function must never reject — a rejected query leaves the dialog
+// with no data at all, which it reads as "nothing deployed" and enables delete.
+export const getEnvDeleteEligibility = async (_orgUuid: string, templateId: string): Promise<EnvDeletionEligibility> => {
+  const blockAll = (reason: string): EnvDeletionEligibility => ({
+    templateId,
+    envName: templateId,
+    deletable: false,
+    deployedComponentsDetails: [{ projectName: reason, components: [{ componentName: UNVERIFIED_COMPONENT }] }],
+  });
+
+  let projects: BffNamed[];
+  try {
+    projects = items(await bff.get<ListResponse<BffNamed>>('/projects'));
+  } catch {
+    return blockAll('All projects');
+  }
+
+  const deployedComponentsDetails = (await Promise.all(projects.map((project) => deployedInProject(project, templateId)))).filter((p) => (p.components?.length ?? 0) > 0);
+
+  return { templateId, envName: templateId, deletable: deployedComponentsDetails.length === 0, deployedComponentsDetails };
+};

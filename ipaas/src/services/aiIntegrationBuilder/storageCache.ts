@@ -27,9 +27,7 @@ interface CacheEntry<T> {
  * Return `{ notModified: true }` when the server responds with HTTP 304
  * so the cache can extend the TTL without replacing the stored data.
  */
-export type FetchResult<T> =
-  | { notModified: true }
-  | { notModified?: false; data: T; etag?: string };
+export type FetchResult<T> = { notModified: true } | { notModified?: false; data: T; etag?: string };
 
 /**
  * Creates a localStorage-backed, in-memory cache with:
@@ -77,9 +75,7 @@ export function createStorageCache<T>(options: {
    * `fetcher` receives the current stored entry (useful for ETag headers)
    * and must resolve to a `FetchResult<T>`.
    */
-  function get(
-    fetcher: (stored: CacheEntry<T> | null) => Promise<FetchResult<T>>
-  ): Promise<T> {
+  function get(fetcher: (stored: CacheEntry<T> | null) => Promise<FetchResult<T>>): Promise<T> {
     if (memCache && !isStale(memCache)) return Promise.resolve(memCache.data);
 
     const stored = loadFromStorage();
@@ -94,9 +90,7 @@ export function createStorageCache<T>(options: {
       .then((result) => {
         if (result.notModified) {
           if (!stored) {
-            throw new Error(
-              'Fetcher returned notModified without an existing cache entry'
-            );
+            throw new Error('Fetcher returned notModified without an existing cache entry');
           }
           // HTTP 304 — refresh TTL, keep existing data
           const refreshed: CacheEntry<T> = { ...stored, cachedAt: Date.now() };

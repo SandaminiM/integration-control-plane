@@ -60,7 +60,13 @@ export default function RuleViolationsTabs({ data, isLoading, error, onRetry }: 
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search"
             inputProps={{ 'aria-label': 'Search rule violations' }}
-            InputProps={{ startAdornment: <InputAdornment position="start"><Search size={16} /></InputAdornment> }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search size={16} />
+                </InputAdornment>
+              ),
+            }}
             sx={{ maxWidth: 260 }}
           />
           {error ? (

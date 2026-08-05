@@ -45,11 +45,7 @@ async function exchangeToken(stsToken: string): Promise<CopilotTokenCache> {
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(
-      body?.message ||
-        body?.reason ||
-        `Token exchange failed (${response.status})`
-    );
+    throw new Error(body?.message || body?.reason || `Token exchange failed (${response.status})`);
   }
 
   const json = await response.json();
@@ -60,9 +56,7 @@ async function exchangeToken(stsToken: string): Promise<CopilotTokenCache> {
 }
 
 /** Returns a valid Copilot token, refreshing within the expiry buffer and deduping concurrent calls. */
-export async function getCopilotToken(
-  getToken: () => Promise<string>
-): Promise<string> {
+export async function getCopilotToken(getToken: () => Promise<string>): Promise<string> {
   if (tokenCache && !isExpired(tokenCache)) {
     return tokenCache.accessToken;
   }

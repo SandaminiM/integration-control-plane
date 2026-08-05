@@ -30,7 +30,7 @@
  */
 
 import { bff, q } from './_client';
-import type { ContainerRegistry } from '../../types/cloudEditor';
+import type { CodeServerInstance, ContainerRegistry } from '../../types/cloudEditor';
 
 interface CodeServerResponse {
   editorUrl?: string;
@@ -45,7 +45,11 @@ export async function getOrCreateSampleRegistry(_orgUuid: string): Promise<Conta
   return { id: 'openchoreo-default', host: '', name: 'OpenChoreo Registry' };
 }
 
-export async function callCreateCodeServer(params: { userId: string; organizationId: string; projectId: string; componentId: string; orgHandle: string; imageUrl: string; registryId: string; sourceCommitHash?: string }): Promise<string> {
+// OpenChoreo does not expose the editor's cluster/release/namespace, so the
+// pod-status wheel can't poll here — the page falls back to timed steps.
+const asInstance = (url: string): CodeServerInstance => ({ url, clusterId: '', releaseId: '', namespace: '' });
+
+export async function callCreateCodeServer(params: { userId: string; organizationId: string; projectId: string; componentId: string; orgHandle: string; imageUrl: string; registryId: string; sourceCommitHash?: string }): Promise<CodeServerInstance> {
   const { userId, projectId, componentId, imageUrl, sourceCommitHash } = params;
 
   // organizationId/orgHandle are accepted for signature parity with the wip
@@ -59,14 +63,14 @@ export async function callCreateCodeServer(params: { userId: string; organizatio
     imageUrl,
     sourceCommitHash,
   });
-  if (created.editorUrl) return created.editorUrl;
+  if (created.editorUrl) return asInstance(created.editorUrl);
 
   // First-time provisioning: poll until the editor's gateway route is live.
   const deadline = Date.now() + POLL_TIMEOUT_MS;
   while (Date.now() < deadline) {
     await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
     const current = await bff.get<CodeServerResponse>(`/code-server${q({ userId, projectId, componentId })}`);
-    if (current.editorUrl) return current.editorUrl;
+    if (current.editorUrl) return asInstance(current.editorUrl);
   }
   throw new Error('Timed out waiting for the Cloud Editor to become ready');
 }

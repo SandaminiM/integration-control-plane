@@ -112,17 +112,13 @@ export default function CreateCertificate(scope: OrgScope): JSX.Element {
         onSuccess: () => {
           navigate(orgCertificatesUrl(scope.org));
         },
-      }
+      },
     );
   };
 
   return (
     <PageContent sx={REQUIRED_FIELD_SX}>
-      <Button
-        variant="text"
-        onClick={() => navigate(orgCertificatesUrl(scope.org))}
-        sx={{ mb: 2 }}
-      >
+      <Button variant="text" onClick={() => navigate(orgCertificatesUrl(scope.org))} sx={{ mb: 2 }}>
         ← Back
       </Button>
 
@@ -139,8 +135,7 @@ export default function CreateCertificate(scope: OrgScope): JSX.Element {
                 borderColor: 'primary.main',
                 cursor: 'pointer',
                 opacity: 1,
-              }}
-            >
+              }}>
               <CardActionArea sx={{ p: 2 }}>
                 <Typography variant="subtitle2">Verify External Server</Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -155,8 +150,7 @@ export default function CreateCertificate(scope: OrgScope): JSX.Element {
                 borderColor: 'divider',
                 opacity: 0.55,
                 pointerEvents: 'none',
-              }}
-            >
+              }}>
               <Stack sx={{ p: 2 }}>
                 <Typography variant="subtitle2">Secure Website Domain (Coming Soon)</Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -167,25 +161,9 @@ export default function CreateCertificate(scope: OrgScope): JSX.Element {
           </Stack>
         </Stack>
 
-        <TextField
-          required
-          label="Name"
-          value={certName}
-          onChange={(e) => setCertName(e.target.value)}
-          onBlur={() => setNameTouched(true)}
-          error={nameError}
-          helperText={nameError ? 'Certificate name is required.' : ' '}
-          fullWidth
-        />
+        <TextField required label="Name" value={certName} onChange={(e) => setCertName(e.target.value)} onBlur={() => setNameTouched(true)} error={nameError} helperText={nameError ? 'Certificate name is required.' : ' '} fullWidth />
 
-        <TextField
-          label="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          multiline
-          minRows={2}
-          fullWidth
-        />
+        <TextField label="Description" value={description} onChange={(e) => setDescription(e.target.value)} multiline minRows={2} fullWidth />
 
         <Stack gap={1}>
           <Typography variant="subtitle2">Certificate file</Typography>
@@ -193,28 +171,13 @@ export default function CreateCertificate(scope: OrgScope): JSX.Element {
             PEM-encoded public certificate (.pem, max {MAX_FILE_MB} MB)
           </Typography>
           {!selectedFile ? (
-            <Button
-              variant="outlined"
-              startIcon={<Upload size={16} />}
-              sx={{ maxWidth: '25%' }}
-              onClick={() => fileInputRef.current?.click()}
-            >
+            <Button variant="outlined" startIcon={<Upload size={16} />} sx={{ maxWidth: '25%' }} onClick={() => fileInputRef.current?.click()}>
               Upload certificate
             </Button>
           ) : (
-            <Chip
-              label={selectedFile.name}
-              onDelete={handleClearFile}
-              sx={{ width: 'fit-content' }}
-            />
+            <Chip label={selectedFile.name} onDelete={handleClearFile} sx={{ width: 'fit-content' }} />
           )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pem"
-            hidden
-            onChange={handleFileSelect}
-          />
+          <input ref={fileInputRef} type="file" accept=".pem" hidden onChange={handleFileSelect} />
           {fileError && (
             <Typography variant="caption" color="error.main">
               {fileError}
@@ -222,26 +185,13 @@ export default function CreateCertificate(scope: OrgScope): JSX.Element {
           )}
         </Stack>
 
-        {createMutation.isError && (
-          <Alert severity="error">
-            Failed to add the certificate. Check that the file is a valid PEM certificate.
-          </Alert>
-        )}
+        {createMutation.isError && <Alert severity="error">Failed to add the certificate. Check that the file is a valid PEM certificate.</Alert>}
 
         <Stack direction="row" gap={1.5} sx={{ mt: 2 }}>
-          <Button
-            variant="text"
-            onClick={() => navigate(orgCertificatesUrl(scope.org))}
-            disabled={createMutation.isPending}
-          >
+          <Button variant="text" onClick={() => navigate(orgCertificatesUrl(scope.org))} disabled={createMutation.isPending}>
             Cancel
           </Button>
-          <Button
-            variant="contained"
-            disabled={!canSubmit}
-            startIcon={createMutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
-            onClick={handleAdd}
-          >
+          <Button variant="contained" disabled={!canSubmit} startIcon={createMutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined} onClick={handleAdd}>
             Add
           </Button>
         </Stack>

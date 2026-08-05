@@ -16,22 +16,22 @@
  * under the License.
  */
 
-import { Avatar, Box, Button, Card, CardContent, CircularProgress, Grid, IconButton, ListingTable, PageContent, PageTitle, Stack, TablePagination, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
+import { Alert, Avatar, Box, Button, Card, CardContent, CircularProgress, Grid, IconButton, ListingTable, PageContent, PageTitle, Stack, TablePagination, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
 import { Clock, Folder, FolderInput, LayoutGrid, List, Plus, RefreshCw, Settings } from '@wso2/oxygen-ui-icons-react';
 import SearchField from '../components/SearchField';
-import { useNavigate } from 'react-router';
-import { useState, type JSX } from 'react';
+import { useLocation, useNavigate } from 'react-router';
+import { useEffect, useState, type JSX } from 'react';
 import { useProjectsByOrg } from '../hooks/useProjects';
 import type { Project } from '../types/project';
 import EmptyListing from '../components/EmptyListing';
 import { formatDistanceToNow } from '../utils/time';
-import { newProjectUrl, importProjectUrl, type OrgScope } from '../nav';
+import { newProjectUrl, importProjectUrl, projectSettingsSectionUrl, type OrgScope } from '../nav';
 import { projectHomeUrl } from '../paths';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { Permissions } from '../constants/permissions';
 import Authorized from '../components/Authorized';
 
-function ProjectCard({ project, onClick }: { project: Project; onClick: () => void }) {
+function ProjectCard({ project, onClick, onSettingsClick }: { project: Project; onClick: () => void; onSettingsClick: () => void }) {
   return (
     <Card variant="outlined" sx={{ cursor: 'pointer', '&:hover': { boxShadow: 2 } }} onClick={onClick}>
       <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2.5 }}>
@@ -50,6 +50,7 @@ function ProjectCard({ project, onClick }: { project: Project; onClick: () => vo
           aria-label={`Settings for ${project.name}`}
           onClick={(e) => {
             e.stopPropagation();
+            onSettingsClick();
           }}>
           <Settings size={16} />
         </IconButton>
@@ -60,13 +61,23 @@ function ProjectCard({ project, onClick }: { project: Project; onClick: () => vo
 
 export default function Projects(scope: OrgScope): JSX.Element {
   const navigate = useNavigate();
+  const location = useLocation();
   const [query, setQuery] = useState('');
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [alert, setAlert] = useState<string | null>(null);
   const { hasOrgPermission } = useAccessControl();
   const canCreateProject = hasOrgPermission(Permissions.PROJECT_MANAGE);
   const { data: projects, isLoading, refetch } = useProjectsByOrg(scope.org);
+
+  useEffect(() => {
+    const state = location.state as { projectDeleted?: boolean; projectName?: string } | null;
+    if (state?.projectDeleted) {
+      setAlert(state.projectName ? `Project '${state.projectName}' deleted successfully.` : 'Project deleted successfully.');
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location, navigate]);
 
   if (isLoading) {
     return (
@@ -119,7 +130,13 @@ export default function Projects(scope: OrgScope): JSX.Element {
                   </Typography>
                 </ListingTable.Cell>
                 <ListingTable.Cell>
-                  <IconButton size="small" aria-label={`Settings for ${p.name}`} onClick={(e) => e.stopPropagation()}>
+                  <IconButton
+                    size="small"
+                    aria-label={`Settings for ${p.name}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(projectSettingsSectionUrl({ org: scope.org, project: p.handler }, 'project-overview'));
+                    }}>
                     <Settings size={16} />
                   </IconButton>
                 </ListingTable.Cell>
@@ -132,7 +149,7 @@ export default function Projects(scope: OrgScope): JSX.Element {
       <Grid container spacing={2}>
         {paginated.map((p) => (
           <Grid key={p.id} size={{ xs: 12, sm: 6, md: 4 }}>
-            <ProjectCard project={p} onClick={() => navigate(projectHomeUrl(scope.org, p.handler))} />
+            <ProjectCard project={p} onClick={() => navigate(projectHomeUrl(scope.org, p.handler))} onSettingsClick={() => navigate(projectSettingsSectionUrl({ org: scope.org, project: p.handler }, 'project-overview'))} />
           </Grid>
         ))}
       </Grid>
@@ -172,6 +189,12 @@ export default function Projects(scope: OrgScope): JSX.Element {
           </Button>
         </Authorized>
       </Stack>
+
+      {alert && (
+        <Alert severity="success" onClose={() => setAlert(null)} sx={{ mb: 3 }}>
+          {alert}
+        </Alert>
+      )}
 
       {filtered.length === 0 ? (
         <EmptyListing

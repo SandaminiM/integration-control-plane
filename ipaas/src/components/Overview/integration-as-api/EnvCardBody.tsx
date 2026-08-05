@@ -21,11 +21,14 @@ import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useApiDefinition, useComponentDeployment, useEnvEndpoints } from '../../../hooks/useDeployments';
 import { useOrgUuid } from '../../../hooks/useOrgUuid';
+import { IS_CLOUD } from '../../../features';
 import type { EnvCardBodyProps } from '../../../types/integration';
 import EnvCardSkeleton from '../_shared/EnvCardSkeleton';
 import EndpointUrlsPanel from '../_shared/EndpointUrlsPanel';
+import ConsumersPanel from './ConsumersPanel';
 import ServiceInsights from './ServiceInsights';
 import SwaggerOperationsList, { type SwaggerDocument } from './SwaggerOperationsList';
+import GraphqlOperationsList from './GraphqlOperationsList';
 
 /**
  * Integration-as-API's content-only body: a deployment-in-progress spinner, the
@@ -47,15 +50,17 @@ export default function EnvCardBody({ component, env, prevEnv, projectId, versio
 
   const [selectedEpIdx, setSelectedEpIdx] = useState(0);
   const activeEndpoint = envEndpoints[selectedEpIdx] ?? envEndpoints[0];
+  const isGraphql = activeEndpoint?.type === 'GraphQL';
 
-  const { data: swagger } = useApiDefinition(hasDeployment ? activeEndpoint?.apimRevisionId : null);
+  // GraphQL is introspected live (GraphqlOperationsList) — the swagger/contract path is REST-only.
+  const { data: swagger } = useApiDefinition(hasDeployment && !isGraphql ? activeEndpoint?.apimRevisionId : null);
 
   const prevEndpoint = useMemo(() => {
     if (!prevEnvEndpoints.length || !activeEndpoint) return null;
     return prevEnvEndpoints.find((ep) => ep.displayName === activeEndpoint.displayName) ?? null;
   }, [prevEnvEndpoints, activeEndpoint]);
 
-  const { data: prevSwagger, isLoading: loadingPrevSwagger } = useApiDefinition(hasDeployment ? prevEndpoint?.apimRevisionId : null);
+  const { data: prevSwagger, isLoading: loadingPrevSwagger } = useApiDefinition(hasDeployment && !isGraphql ? prevEndpoint?.apimRevisionId : null);
 
   // Compare swagger omitting the 'security' field (same logic as devant).
   const isSwaggerChanged = useMemo(() => {
@@ -92,20 +97,32 @@ export default function EnvCardBody({ component, env, prevEnv, projectId, versio
 
       {hasDeployment &&
         deploymentStatusV2 !== 'IN_PROGRESS' &&
-        (isSwaggerChanged
-          ? !!swagger && <SwaggerOperationsList swagger={swagger as SwaggerDocument} />
-          : !!prevEnv?.name && (
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, mb: 1.5, p: 1, bgcolor: 'action.selected', borderLeft: '3px solid', borderColor: 'primary.main', minWidth: 200 }}>
-                <Typography variant="body2">
-                  The contract is same as the <strong>{prevEnv.name}</strong> environment&apos;s matching endpoint.
-                </Typography>
-              </Box>
-            ))}
+        (isGraphql ? (
+          <GraphqlOperationsList activeEndpoint={activeEndpoint} isDeploymentReady envCritical={!!env.critical} />
+        ) : isSwaggerChanged ? (
+          !!swagger && <SwaggerOperationsList swagger={swagger as SwaggerDocument} />
+        ) : (
+          !!prevEnv?.name && (
+            <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, mb: 1.5, p: 1, bgcolor: 'action.selected', borderLeft: '3px solid', borderColor: 'primary.main', minWidth: 200 }}>
+              <Typography variant="body2">
+                The contract is same as the <strong>{prevEnv.name}</strong> environment&apos;s matching endpoint.
+              </Typography>
+            </Box>
+          )
+        ))}
 
       {serviceNotDeployed && deploymentStatusV2 !== 'IN_PROGRESS' && (
         <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
           This component has not been deployed to this environment yet.
         </Typography>
+      )}
+
+      {/* Cloud-only in-console API consumption: consumer apps, subscriptions, and
+          the exposed API's security config. Keyed by the BFF's
+          component/environment/endpoint triple — in cloud the component name is
+          the component id and the endpoint name is the endpoint id. */}
+      {IS_CLOUD && showEndpointPanel && deploymentStatusV2 !== 'IN_PROGRESS' && !!activeEndpoint && (
+        <ConsumersPanel componentName={component.id} projectName={projectId} envName={env.name} envLabel={env.name} endpointName={activeEndpoint.id} endpoints={envEndpoints.map((ep) => ({ name: ep.id, displayName: ep.displayName || ep.id }))} />
       )}
 
       {showInsights && <ServiceInsights envName={env.name} envId={env.id} apimEnvId={env.apimEnvId} projectId={projectId} apiId={insightsApiId} />}

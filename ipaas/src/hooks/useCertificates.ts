@@ -18,14 +18,14 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createCertificate, deleteCertificate, getCertificateUsage, listCertificateGroups } from '#api/certificates';
-import { IS_WIP } from '../features';
+import { IS_CLOUD, IS_WIP } from '../features';
 import type { CreateCertificateInput } from '../types/certificates';
 
 const ROOT_KEY = 'certificates';
 
-/** Certificates management is wip-only for now (cloud/icp API stubs throw). */
+/** Certificates management: fully wired on wip; read-only on cloud (list API no-ops to empty; icp stubs throw). */
 export function isCertificatesEnabled(): boolean {
-  return IS_WIP;
+  return IS_WIP || IS_CLOUD;
 }
 
 export function useCertificateGroups() {

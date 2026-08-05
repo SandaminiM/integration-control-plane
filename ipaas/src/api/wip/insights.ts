@@ -213,7 +213,11 @@ function buildTrend(
 // getTotalTraffic/getTotalErrors count ALL gateway traffic for the project
 // across the given environments, and getSuccessSummary/getErrorSummary carry
 // the requests/errors trend series over the same scope.
-async function fetchProjectOverview(queryApiUrl: string, dataFilter: Record<string, unknown>, time: { from: string; to: string; queryGranularity: string }): Promise<{
+async function fetchProjectOverview(
+  queryApiUrl: string,
+  dataFilter: Record<string, unknown>,
+  time: { from: string; to: string; queryGranularity: string },
+): Promise<{
   totalTraffic: number;
   totalErrors: number;
   successSummary: { timeSpan: string; requestCount: number }[];
@@ -340,7 +344,16 @@ function toComponentStat(ref: InsightsApiRef, ins: ComponentInsights | null): Pr
 // the Latency & duration filter surfaces each on its own.
 const LATENCY_FETCH_KINDS = new Set<InsightsApiRef['kind']>(['api', 'mcp', 'webhook', 'agent']);
 
-export async function fetchProjectInsights(orgUuid: string, projectId: string, insightsEnv: InsightsEnvironment, apis: InsightsApiRef[], automations: InsightsAutomationRef[], eventApis: InsightsApiRef[], range: InsightsRange, queryApiUrl: string): Promise<ProjectInsightsRaw> {
+export async function fetchProjectInsights(
+  orgUuid: string,
+  projectId: string,
+  insightsEnv: InsightsEnvironment,
+  apis: InsightsApiRef[],
+  automations: InsightsAutomationRef[],
+  eventApis: InsightsApiRef[],
+  range: InsightsRange,
+  queryApiUrl: string,
+): Promise<ProjectInsightsRaw> {
   const time = rangeToTimeFilter(range);
   const dataFilter = { orgId: orgUuid, environmentIds: getEnvironmentIds(insightsEnv), tenant: 'carbon.super', projectId };
 
@@ -549,7 +562,21 @@ export async function fetchProjectInsights(orgUuid: string, projectId: string, i
   }
   const automationActivity = activity.map((a) => ({ label: a.label, auto: Math.round(a.automations * autoFrac), rag: Math.round(a.automations * ragFrac) }));
 
-  return { totalRequests, totalErrors, totalTraffic: overview.totalTraffic, totalTrafficErrors: overview.totalErrors, trend, activity, serviceActivity, eventActivity, automationActivity, serviceLatencyByKind, autoDurationByKind, components: [...apiStats, ...eventStats, ...autoStats, ...deletedStats], taskStats: automationOverview.stats };
+  return {
+    totalRequests,
+    totalErrors,
+    totalTraffic: overview.totalTraffic,
+    totalTrafficErrors: overview.totalErrors,
+    trend,
+    activity,
+    serviceActivity,
+    eventActivity,
+    automationActivity,
+    serviceLatencyByKind,
+    autoDurationByKind,
+    components: [...apiStats, ...eventStats, ...autoStats, ...deletedStats],
+    taskStats: automationOverview.stats,
+  };
 }
 
 // Project-level latency trend — devant's getLatencySummary series
@@ -706,7 +733,11 @@ export async function fetchApiUsageOverTime(queryApiUrl: string, dataFilter: Rec
         usage { timeSpan count }
       }
     }`,
-    { timeFilter: { from: time.from, to: time.to }, apiUsageOvertimeFilter: { apiIds: [...new Set([apiId, ...apiAliases])], appIds: [], granularity: time.queryGranularity, trafficType: 'ALL', apiIdVersionPairs: apiVersion ? [{ id: apiId, version: apiVersion }] : [] }, dataFilter },
+    {
+      timeFilter: { from: time.from, to: time.to },
+      apiUsageOvertimeFilter: { apiIds: [...new Set([apiId, ...apiAliases])], appIds: [], granularity: time.queryGranularity, trafficType: 'ALL', apiIdVersionPairs: apiVersion ? [{ id: apiId, version: apiVersion }] : [] },
+      dataFilter,
+    },
   );
   const entries = asArray(result?.data?.getAPIUsageOverTime);
   const accepted = new Set([apiId, ...apiAliases].filter(Boolean));
@@ -737,7 +768,11 @@ export async function fetchApiUsageByApp(
         usage { applicationId applicationName usage { timeSpan count } }
       }
     }`,
-    { timeFilter: { from: time.from, to: time.to }, apiUsageOvertimeFilter: { apiIds: [...new Set([apiId, ...apiAliases])], appIds: [], granularity: time.queryGranularity, trafficType: 'ALL', apiIdVersionPairs: apiVersion ? [{ id: apiId, version: apiVersion }] : [] }, dataFilter },
+    {
+      timeFilter: { from: time.from, to: time.to },
+      apiUsageOvertimeFilter: { apiIds: [...new Set([apiId, ...apiAliases])], appIds: [], granularity: time.queryGranularity, trafficType: 'ALL', apiIdVersionPairs: apiVersion ? [{ id: apiId, version: apiVersion }] : [] },
+      dataFilter,
+    },
   );
   return (result?.data?.getAPIUsageByAppOverTime?.usage ?? []).map((u) => ({ applicationName: u.applicationName, usage: u.usage ?? [] }));
 }
@@ -1071,7 +1106,11 @@ export async function fetchApiInsights(orgUuid: string, projectId: string, insig
   };
 
   if (tab === 'traffic') {
-    const [byApp, byBackend, resources] = await Promise.all([fetchApiUsageByApp(queryApiUrl, dataFilter, apiId, apiVersion, apiAliases, time), fetchUsageByBackend(queryApiUrl, dataFilter, apiId, apiAliases, time), fetchResourceUsage(queryApiUrl, dataFilter, apiId, apiAliases, time)]);
+    const [byApp, byBackend, resources] = await Promise.all([
+      fetchApiUsageByApp(queryApiUrl, dataFilter, apiId, apiVersion, apiAliases, time),
+      fetchUsageByBackend(queryApiUrl, dataFilter, apiId, apiAliases, time),
+      fetchResourceUsage(queryApiUrl, dataFilter, apiId, apiAliases, time),
+    ]);
     return {
       ...base,
       byApplication: byApp.map((a) => ({ label: a.applicationName, value: a.usage.reduce((s, p) => s + (p.count || 0), 0) })),

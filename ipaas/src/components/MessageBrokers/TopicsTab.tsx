@@ -96,49 +96,49 @@ export default function TopicsTab({ brokerId }: { brokerId: string }): JSX.Eleme
         {topics.length === 0 ? (
           <Alert severity="info">No topics yet. Create a topic to start producing and consuming events.</Alert>
         ) : (
-        <ListingTable.Container elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-          <ListingTable size="small">
-            <ListingTable.Head>
-              <ListingTable.Row>
-                <ListingTable.Cell>Topic</ListingTable.Cell>
-                <ListingTable.Cell>Partitions</ListingTable.Cell>
-                <ListingTable.Cell>Replication</ListingTable.Cell>
-                <ListingTable.Cell>Min In-Sync Replicas</ListingTable.Cell>
-                <ListingTable.Cell>Retention Hours</ListingTable.Cell>
-                <ListingTable.Cell>Retention Bytes</ListingTable.Cell>
-                <ListingTable.Cell>Cleanup Policy</ListingTable.Cell>
-                <ListingTable.Cell>Status</ListingTable.Cell>
-                <ListingTable.Cell align="right">Actions</ListingTable.Cell>
-              </ListingTable.Row>
-            </ListingTable.Head>
-            <ListingTable.Body>
-              {topics.map((topic) => (
-                <ListingTable.Row key={topic.topic_name}>
-                  <ListingTable.Cell>{topic.topic_name}</ListingTable.Cell>
-                  <ListingTable.Cell>{topic.partitions ?? '—'}</ListingTable.Cell>
-                  <ListingTable.Cell>{topic.replication ?? '—'}</ListingTable.Cell>
-                  <ListingTable.Cell>{topic.minimum_in_sync_replicas ?? '—'}</ListingTable.Cell>
-                  <ListingTable.Cell>{topic.retention_hours ?? '—'}</ListingTable.Cell>
-                  <ListingTable.Cell>{topic.retention_bytes ?? '—'}</ListingTable.Cell>
-                  <ListingTable.Cell>{topic.cleanup_policy ?? '—'}</ListingTable.Cell>
-                  <ListingTable.Cell>
-                    <Chip size="small" variant="outlined" label={topic.state ?? '—'} color={topic.state === 'ACTIVE' ? 'success' : 'default'} />
-                  </ListingTable.Cell>
-                  <ListingTable.Cell align="right">
-                    <Stack direction="row" gap={0.5}>
-                      <IconButton size="small" aria-label={`Edit ${topic.topic_name}`} onClick={() => handleEditClick(topic)}>
-                        <Pencil size={16} />
-                      </IconButton>
-                      <IconButton size="small" color="inherit" aria-label={`Delete ${topic.topic_name}`} onClick={() => handleDeleteClick(topic.topic_name)}>
-                        <Trash2 size={16} />
-                      </IconButton>
-                    </Stack>
-                  </ListingTable.Cell>
+          <ListingTable.Container elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+            <ListingTable size="small">
+              <ListingTable.Head>
+                <ListingTable.Row>
+                  <ListingTable.Cell>Topic</ListingTable.Cell>
+                  <ListingTable.Cell>Partitions</ListingTable.Cell>
+                  <ListingTable.Cell>Replication</ListingTable.Cell>
+                  <ListingTable.Cell>Min In-Sync Replicas</ListingTable.Cell>
+                  <ListingTable.Cell>Retention Hours</ListingTable.Cell>
+                  <ListingTable.Cell>Retention Bytes</ListingTable.Cell>
+                  <ListingTable.Cell>Cleanup Policy</ListingTable.Cell>
+                  <ListingTable.Cell>Status</ListingTable.Cell>
+                  <ListingTable.Cell align="right">Actions</ListingTable.Cell>
                 </ListingTable.Row>
-              ))}
-            </ListingTable.Body>
-          </ListingTable>
-        </ListingTable.Container>
+              </ListingTable.Head>
+              <ListingTable.Body>
+                {topics.map((topic) => (
+                  <ListingTable.Row key={topic.topic_name}>
+                    <ListingTable.Cell>{topic.topic_name}</ListingTable.Cell>
+                    <ListingTable.Cell>{topic.partitions ?? '—'}</ListingTable.Cell>
+                    <ListingTable.Cell>{topic.replication ?? '—'}</ListingTable.Cell>
+                    <ListingTable.Cell>{topic.minimum_in_sync_replicas ?? '—'}</ListingTable.Cell>
+                    <ListingTable.Cell>{topic.retention_hours ?? '—'}</ListingTable.Cell>
+                    <ListingTable.Cell>{topic.retention_bytes ?? '—'}</ListingTable.Cell>
+                    <ListingTable.Cell>{topic.cleanup_policy ?? '—'}</ListingTable.Cell>
+                    <ListingTable.Cell>
+                      <Chip size="small" variant="outlined" label={topic.state ?? '—'} color={topic.state === 'ACTIVE' ? 'success' : 'default'} />
+                    </ListingTable.Cell>
+                    <ListingTable.Cell align="right">
+                      <Stack direction="row" gap={0.5}>
+                        <IconButton size="small" aria-label={`Edit ${topic.topic_name}`} onClick={() => handleEditClick(topic)}>
+                          <Pencil size={16} />
+                        </IconButton>
+                        <IconButton size="small" color="inherit" aria-label={`Delete ${topic.topic_name}`} onClick={() => handleDeleteClick(topic.topic_name)}>
+                          <Trash2 size={16} />
+                        </IconButton>
+                      </Stack>
+                    </ListingTable.Cell>
+                  </ListingTable.Row>
+                ))}
+              </ListingTable.Body>
+            </ListingTable>
+          </ListingTable.Container>
         )}
       </Stack>
 

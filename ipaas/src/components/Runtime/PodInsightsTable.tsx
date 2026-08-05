@@ -68,7 +68,7 @@ interface PodInsightsTableProps {
 }
 
 export default function PodInsightsTable({ pods, metrics, replicas, isLoading, isError, isFetching, onRefresh }: PodInsightsTableProps): JSX.Element {
-  const rows = pods ?? [];
+  const rows = useMemo(() => pods ?? [], [pods]);
   const runningCount = useMemo(() => rows.filter(isPodReady).length, [rows]);
 
   return (

@@ -51,47 +51,43 @@ export default function PolicyTable({ policies, onEdit, onDelete, emptyMessage =
               const id = policy.id;
               if (!id) return null;
               return (
-              <ListingTable.Row
-                key={id}
-                hover
-                sx={{ cursor: 'pointer' }}
-                onClick={() => onEdit(id)}>
-                <ListingTable.Cell>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {policy.name}
-                  </Typography>
-                </ListingTable.Cell>
-                <ListingTable.Cell>
-                  <Typography variant="body2" color="text.secondary">
-                    {policy.description || '—'}
-                  </Typography>
-                </ListingTable.Cell>
-                <ListingTable.Cell align="right">
-                  <Stack direction="row" gap={0.5} justifyContent="flex-end">
-                    <Tooltip title="Edit">
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEdit(id);
-                        }}>
-                        <Pencil size={16} />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete(policy);
-                        }}>
-                        <Trash2 size={16} />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                </ListingTable.Cell>
-              </ListingTable.Row>
+                <ListingTable.Row key={id} hover sx={{ cursor: 'pointer' }} onClick={() => onEdit(id)}>
+                  <ListingTable.Cell>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {policy.name}
+                    </Typography>
+                  </ListingTable.Cell>
+                  <ListingTable.Cell>
+                    <Typography variant="body2" color="text.secondary">
+                      {policy.description || '—'}
+                    </Typography>
+                  </ListingTable.Cell>
+                  <ListingTable.Cell align="right">
+                    <Stack direction="row" gap={0.5} justifyContent="flex-end">
+                      <Tooltip title="Edit">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(id);
+                          }}>
+                          <Pencil size={16} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete">
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(policy);
+                          }}>
+                          <Trash2 size={16} />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  </ListingTable.Cell>
+                </ListingTable.Row>
               );
             })
           )}

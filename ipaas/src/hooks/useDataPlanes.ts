@@ -18,14 +18,14 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { listDataPlanes, listPdps } from '#api/dataPlanes';
-import { IS_WIP } from '../features';
+import { IS_CLOUD, IS_WIP } from '../features';
 import { useOrgUuid } from './useOrgUuid';
 
 const ROOT_KEY = 'dataPlanes';
 
-/** Org admin Data Planes (Runtimes) is wip-only for now (cloud/icp API stubs throw). */
+// cloud: GET /dataplanes is wired; the PDP list is an empty safe-default.
 export function isDataPlanesEnabled(): boolean {
-  return IS_WIP;
+  return IS_WIP || IS_CLOUD;
 }
 
 /** All data planes for the org (Cloud + Private). */

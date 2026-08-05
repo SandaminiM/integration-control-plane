@@ -28,6 +28,7 @@ import DirectoryPickerField from '../components/DirectoryPicker';
 import IntegrationTypeSelector from '../components/IntegrationCreate/IntegrationTypeSelector';
 import TechnologySelector from '../components/IntegrationCreate/TechnologySelector';
 import TechDetectionIcon from '../components/IntegrationCreate/TechDetectionIcon';
+import BallerinaCentralTokenPanel from '../components/IntegrationCreate/BallerinaCentralTokenPanel';
 import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
 import type { IntegrationType, SourceMode, LocationState } from '../types/import';
 import { SAMPLE_REPO_URL } from '../constants/github';
@@ -35,6 +36,7 @@ import { external } from '../paths';
 import { GH_SELECT_ACTION, organizationActionItems, repositoryActionItems } from '../components/Import/gitHubSelectActions';
 import { GitProvider, type GitCredential } from '../types/credentials';
 import AddCredentialDialog from '../components/Settings/Credentials/AddCredentialDialog';
+import { IS_CLOUD } from '../features';
 import { gitProviderIcon, GIT_PROVIDER_LABEL } from '../constants/gitProviders';
 import { credentialsForProvider } from '../utils/gitCredentials';
 import { useGitCredentials } from '../hooks/useCredentials';
@@ -43,7 +45,6 @@ import { buildRepoUrl } from '../utils/gitProviderUrl';
 import { URL_DEBOUNCE_MS } from '../constants/project';
 import { resourceUrl, narrow, newComponentUrl, type ProjectScope } from '../nav';
 import { useGitHubAuth } from '../hooks/useGitHubAuth';
-import { IS_CLOUD } from '../features';
 import { toHandler, formatRepoNameToDisplayName } from '../utils/string';
 import { parseGitHubUrl } from '../utils/github';
 import { detectTechnology } from '../utils/technologyDetection';
@@ -123,6 +124,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   const [detectedMode, setDetectedMode] = useState<DetectedMode>(null);
   const [selectedTechnology, setSelectedTechnology] = useState<'MI' | 'BI' | null>(null);
   const [selectedIntegrationType, setSelectedIntegrationType] = useState<IntegrationType | null>(null);
+  const [ballerinaTokenInput, setBallerinaTokenInput] = useState('');
 
   const activeOrg = isPublicRepo ? parsedOrg : selectedOrg;
   const activeRepo = isPublicRepo ? parsedRepo : selectedRepo;
@@ -888,6 +890,11 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
             Technology
           </Typography>
           <TechnologySelector selected={selectedTechnology} detectedMode={detectedMode} enabled={showBranchAndSubPath} onSelect={setSelectedTechnology} />
+          {IS_CLOUD && selectedTechnology === 'BI' && (
+            <Box sx={{ mt: 3, width: { xs: '100%', md: 'calc(75% + 32px)' } }}>
+              <BallerinaCentralTokenPanel tokenInput={ballerinaTokenInput} onTokenInputChange={setBallerinaTokenInput} />
+            </Box>
+          )}
         </Box>
 
         {/* Integration Type */}

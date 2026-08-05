@@ -37,14 +37,14 @@ export function useReleaseDetails(projectId: string, componentId: string, releas
   });
 }
 
-export function useComponentPods(projectId: string, clusterId: string, releaseId: string, namespace: string) {
+export function useComponentPods(projectId: string, clusterId: string, releaseId: string, namespace: string, pollMs: number = POLL_MS) {
   return useQuery({
     queryKey: [ROOT_KEY, 'pods', clusterId, releaseId, namespace],
     queryFn: () => fetchComponentPods(projectId, clusterId, releaseId, namespace),
     enabled: isRuntimeEnabled() && !!projectId && !!clusterId && !!releaseId && !!namespace,
     retry: false,
-    staleTime: POLL_MS,
-    refetchInterval: POLL_MS,
+    staleTime: pollMs,
+    refetchInterval: pollMs,
     placeholderData: (prev) => prev,
   });
 }

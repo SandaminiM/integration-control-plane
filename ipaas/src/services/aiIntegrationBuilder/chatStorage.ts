@@ -16,12 +16,7 @@
  * under the License.
  */
 
-import type {
-  AiIntegrationPlanGeneration,
-  AiIntegrationBuilderWorkspaceState,
-  AiIntegrationBuilderThreadState,
-  ModelMessage,
-} from './types';
+import type { AiIntegrationPlanGeneration, AiIntegrationBuilderWorkspaceState, AiIntegrationBuilderThreadState, ModelMessage } from './types';
 
 const STORAGE_PREFIX = 'ai-integration-builder-workspace-';
 const THREAD_ID = 'default';
@@ -39,10 +34,7 @@ function loadWorkspace(projectId: string): AiIntegrationBuilderWorkspaceState {
     const raw = localStorage.getItem(storageKey(projectId));
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (
-        parsed?.thread?.generations &&
-        Array.isArray(parsed.thread.generations)
-      ) {
+      if (parsed?.thread?.generations && Array.isArray(parsed.thread.generations)) {
         return parsed;
       }
     }
@@ -86,21 +78,13 @@ export function addGeneration(projectId: string, userPrompt: string): string {
 }
 
 /** Updates a generation's messages/responseType after the pipeline completes or aborts. */
-export function updateGeneration(
-  projectId: string,
-  generationId: string,
-  updates: Partial<
-    Pick<AiIntegrationPlanGeneration, 'modelMessages' | 'responseType'>
-  >
-): void {
+export function updateGeneration(projectId: string, generationId: string, updates: Partial<Pick<AiIntegrationPlanGeneration, 'modelMessages' | 'responseType'>>): void {
   const state = loadWorkspace(projectId);
   const gen = state.thread.generations.find((g) => g.id === generationId);
   if (!gen) return;
 
-  if (updates.modelMessages !== undefined)
-    gen.modelMessages = updates.modelMessages;
-  if (updates.responseType !== undefined)
-    gen.responseType = updates.responseType;
+  if (updates.modelMessages !== undefined) gen.modelMessages = updates.modelMessages;
+  if (updates.responseType !== undefined) gen.responseType = updates.responseType;
 
   state.thread.updatedAt = Date.now();
   saveWorkspace(state);
@@ -121,20 +105,12 @@ export function getChatHistoryForLLM(projectId: string): ModelMessage[] {
 }
 
 /** Maps stored messages to the Anthropic array shape, keeping only user/assistant roles. */
-export function populateHistoryForLlm(
-  history: ModelMessage[]
-): Array<{ role: 'user' | 'assistant'; content: string }> {
+export function populateHistoryForLlm(history: ModelMessage[]): Array<{ role: 'user' | 'assistant'; content: string }> {
   return history
-    .filter(
-      (m): m is ModelMessage & { role: 'user' | 'assistant' } =>
-        m.role === 'user' || m.role === 'assistant'
-    )
+    .filter((m): m is ModelMessage & { role: 'user' | 'assistant' } => m.role === 'user' || m.role === 'assistant')
     .map((m) => ({
       role: m.role,
-      content:
-        typeof m.content === 'string'
-          ? m.content
-          : m.content.map((b) => b.text).join(''),
+      content: typeof m.content === 'string' ? m.content : m.content.map((b) => b.text).join(''),
     }));
 }
 

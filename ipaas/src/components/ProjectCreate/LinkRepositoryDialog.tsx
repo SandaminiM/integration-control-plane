@@ -17,9 +17,11 @@
  */
 
 import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, MenuItem, Stack, TextField, Typography } from '@wso2/oxygen-ui';
-import { ArrowLeft, Bitbucket, GitBranch, GitHub, GitLab, X } from '@wso2/oxygen-ui-icons-react';
+import { ArrowLeft, GitBranch, GitHub, X } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
-import GitIcon from '../../assets/icons/GitIcon';
+import GitLogoIcon from '../../assets/icons/GitLogoIcon';
+import GitLabIcon from '../../assets/icons/GitLabIcon';
+import BitbucketIcon from '../../assets/icons/BitbucketIcon';
 import { useGitHubAuth } from '../../hooks/useGitHubAuth';
 import { useGitHubUserRepos, useRepoBranches } from '../../hooks/useRepository';
 import { useLinkProjectRepository } from '../../hooks/useProjects';
@@ -37,9 +39,9 @@ const CREDENTIAL_PROVIDERS = [GitProvider.BITBUCKET_CLOUD, GitProvider.GITLAB_SE
 
 const PROVIDER_CARDS: { key: LinkProvider; label: string; icon: JSX.Element }[] = [
   { key: GitProvider.GITHUB, label: 'Authorize with GitHub', icon: <GitHub size={26} /> },
-  { key: GitProvider.BITBUCKET_CLOUD, label: 'Authorize with Bitbucket', icon: <Bitbucket size={26} /> },
-  { key: GitProvider.GITLAB_SELF_MANAGED, label: 'Authorize with GitLab', icon: <GitLab size={26} /> },
-  { key: 'public', label: 'Use Public Git Repository', icon: <GitIcon size={26} /> },
+  { key: GitProvider.BITBUCKET_CLOUD, label: 'Authorize with Bitbucket', icon: <BitbucketIcon size={26} /> },
+  { key: GitProvider.GITLAB_SELF_MANAGED, label: 'Authorize with GitLab', icon: <GitLabIcon size={26} /> },
+  { key: 'public', label: 'Use Public Git Repository', icon: <GitLogoIcon size={26} /> },
 ];
 
 const CARD_SX = {
@@ -116,7 +118,7 @@ export default function LinkRepositoryDialog({ open, onClose, project, orgHandle
     else if (key != null && key !== 'public') setShowCredModal(true);
   };
 
-  const providerIcon = isPublic ? <GitIcon size={16} /> : provider ? gitProviderIcon(provider, 16) : null;
+  const providerIcon = isPublic ? <GitLogoIcon size={16} /> : provider ? gitProviderIcon(provider, 16) : null;
 
   const canLink = !!activeOrg && !!activeRepo && !!selectedBranch && !link.isPending;
 
@@ -183,13 +185,7 @@ export default function LinkRepositoryDialog({ open, onClose, project, orgHandle
               </Button>
 
               {showGitHubAuthArea ? (
-                <GitHubAuthArea
-                  authStatus={authStatus}
-                  isCheckingAuth={authStatus === 'done' && reposLoading}
-                  isAuthenticated={false}
-                  onAuthorize={() => startGitHubAuth(refetchRepos)}
-                  onInstall={() => startGitHubAppInstall(refetchRepos)}
-                />
+                <GitHubAuthArea authStatus={authStatus} isCheckingAuth={authStatus === 'done' && reposLoading} isAuthenticated={false} onAuthorize={() => startGitHubAuth(refetchRepos)} onInstall={() => startGitHubAppInstall(refetchRepos)} />
               ) : isCredential && !secretRef ? (
                 <Button variant="outlined" size="small" startIcon={providerIcon} onClick={() => setShowCredModal(true)} sx={{ alignSelf: 'flex-start' }}>
                   Authorize

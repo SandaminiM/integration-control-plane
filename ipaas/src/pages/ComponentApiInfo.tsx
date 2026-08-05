@@ -17,7 +17,7 @@
  */
 
 import { Alert, Box, CircularProgress, Divider, MenuItem, PageContent, Select, Tab, Tabs, Typography } from '@wso2/oxygen-ui';
-import { useEffect, useMemo, useState, type JSX } from 'react';
+import { useMemo, useState, type JSX } from 'react';
 import NotFound from '../components/NotFound';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import MarketplaceTab from '../components/ApiInfo/MarketplaceTab';
@@ -66,31 +66,17 @@ export default function ComponentApiInfo(scope: ComponentScope): JSX.Element {
 
   const tracks = useMemo(() => component?.deploymentTracks ?? [], [component?.deploymentTracks]);
   const aggregatedTracks = useMemo(() => aggregateByMajorVersion(tracks), [tracks]);
-  const [selectedTrackId, setSelectedTrackId] = useState('');
-
-  useEffect(() => {
-    if (!tracks.length) return;
-    setSelectedTrackId((prev) => {
-      if (prev && tracks.some((t) => t.id === prev)) return prev;
-      return tracks.find((t) => t.latest)?.id ?? tracks[0].id;
-    });
-  }, [component?.id, tracks]);
+  // Derived rather than synced via an effect — an effect+render round trip here would delay
+  // useComponentEndpoints/useApimApi below from becoming enabled. Falls back to the latest
+  // track/first endpoint whenever the current selection isn't valid for the current list.
+  const [selectedTrackIdState, setSelectedTrackId] = useState('');
+  const selectedTrackId = tracks.some((t) => t.id === selectedTrackIdState) ? selectedTrackIdState : (tracks.find((t) => t.latest)?.id ?? tracks[0]?.id ?? '');
 
   const { data: endpoints = [] } = useComponentEndpoints(component?.id ?? '', selectedTrackId);
   const apimEndpoints = useMemo(() => Array.from(new Map(endpoints.filter((e) => e.apimId).map((e) => [e.apimId, e])).values()), [endpoints]);
 
-  const [selectedApimId, setSelectedApimId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!apimEndpoints.length) {
-      setSelectedApimId(null);
-      return;
-    }
-    setSelectedApimId((prev) => {
-      if (prev && apimEndpoints.some((e) => e.apimId === prev)) return prev;
-      return apimEndpoints[0].apimId ?? null;
-    });
-  }, [apimEndpoints]);
+  const [selectedApimIdState, setSelectedApimId] = useState<string | null>(null);
+  const selectedApimId = apimEndpoints.some((e) => e.apimId === selectedApimIdState) ? selectedApimIdState : (apimEndpoints[0]?.apimId ?? null);
 
   const selectedEndpoint = apimEndpoints.find((e) => e.apimId === selectedApimId) ?? null;
   const selectedTrack = tracks.find((t) => t.id === selectedTrackId) ?? null;

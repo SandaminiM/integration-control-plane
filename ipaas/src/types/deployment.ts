@@ -128,6 +128,7 @@ export interface PromoteInput {
   componentId: string;
   apiVersionId: string;
   sourceReleaseId: string;
+  sourceEnvironmentId: string;
   targetEnvironmentId: string;
   deploymentPipelineId: string;
 }

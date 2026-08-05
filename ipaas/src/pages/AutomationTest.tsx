@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Card, CircularProgress, Divider, MenuItem, PageTitle, Select, Stack, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Card, CircularProgress, Divider, MenuItem, PageTitle, Select, Skeleton, Stack, Typography } from '@wso2/oxygen-ui';
 import { Activity, Play, RefreshCw } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -58,17 +58,15 @@ export default function AutomationTest({ org, project, component }: ComponentSco
   const { projectId } = useProjectId(project);
   const { data: comp, isLoading } = useComponentByHandler(projectId, component);
 
+  // Derived rather than synced via an effect — an effect+render round trip here would delay
+  // useComponentDeployment/useRuntimeArguments/useTaskExecutions below from becoming enabled.
   const tracks = useMemo(() => comp?.deploymentTracks ?? [], [comp?.deploymentTracks]);
-  const [trackId, setTrackId] = useState('');
-  useEffect(() => {
-    if (tracks.length) setTrackId((prev) => (prev && tracks.some((t) => t.id === prev) ? prev : (tracks.find((t) => t.latest)?.id ?? tracks[0].id)));
-  }, [tracks]);
+  const [trackIdState, setTrackId] = useState('');
+  const trackId = tracks.some((t) => t.id === trackIdState) ? trackIdState : (tracks.find((t) => t.latest)?.id ?? tracks[0]?.id ?? '');
 
   const { data: environments = [] } = useEnvironments(org, projectId);
-  const [envId, setEnvId] = useState('');
-  useEffect(() => {
-    if (environments.length) setEnvId((prev) => (prev && environments.some((e) => e.id === prev) ? prev : environments[0].id));
-  }, [environments]);
+  const [envIdState, setEnvId] = useState('');
+  const envId = environments.some((e) => e.id === envIdState) ? envIdState : (environments[0]?.id ?? '');
 
   const { data: deployment } = useComponentDeployment(org, orgUuid ?? '', comp?.id ?? '', trackId, envId);
   const releaseId = deployment?.releaseId ?? '';
@@ -99,7 +97,7 @@ export default function AutomationTest({ org, project, component }: ComponentSco
   const [pendingExecution, setPendingExecution] = useState<TaskExecution | null>(null);
   const [applyRunId, setApplyRunId] = useState('');
 
-  const { data: executionCount } = useTaskExecutionCount(releaseId, comp?.id ?? '', envId, projectId);
+  const { data: executionCount, isLoading: loadingExecutionCount } = useTaskExecutionCount(releaseId, comp?.id ?? '', envId, projectId);
   const trigger = useTriggerComponent();
   const executionArgs = useMemo(() => buildExecutionArgumentsFromForm(runtimeArguments, formData), [runtimeArguments, formData]);
 
@@ -286,9 +284,13 @@ export default function AutomationTest({ org, project, component }: ComponentSco
                   (Last 30 days)
                 </Typography>
               </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-                {executionCount ?? 0}
-              </Typography>
+              {loadingExecutionCount ? (
+                <Skeleton variant="text" width={40} height={36} />
+              ) : (
+                <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                  {executionCount ?? 0}
+                </Typography>
+              )}
             </Box>
           </Stack>
           <Stack direction="row" gap={1}>

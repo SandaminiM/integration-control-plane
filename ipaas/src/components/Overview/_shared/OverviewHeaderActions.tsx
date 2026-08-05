@@ -22,6 +22,7 @@ import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { useApimApi } from '../../../hooks/useApim';
 import { getDevPortalApiUrl } from '../../../config/runtimeConfig';
+import { IS_CLOUD } from '../../../features';
 import type { OverviewHeaderActionsProps } from '../../../types/integration';
 import SecurityDrawer from '../../SecurityDrawer';
 import ConfigureActionRow from './ConfigureActionRow';
@@ -75,9 +76,14 @@ export default function OverviewHeaderActions({ component, apimId, orgHandler, p
 
   return (
     <>
-      <Stack gap={1} alignItems="flex-end">
-        {/* Configure Security (always) + any extra configure rows (e.g. MCP → Configure Policies) */}
-        <ConfigureActionRow Icon={ShieldCheck} label="Configure Security" onClick={() => setSecurityDrawerOpen(true)} />
+      {/* alignItems switches to left-aligned under the same narrow-container threshold as the
+          HeaderShell block this renders inside (see HeaderShell's NARROW_HEADER_QUERY) — this is a
+          separate component, but container queries key off DOM ancestry, not component boundaries. */}
+      <Stack gap={1} alignItems="flex-end" sx={{ '@container (max-width: 768px)': { alignItems: 'flex-start' } }}>
+        {/* Configure Security + any extra configure rows (e.g. MCP → Configure Policies).
+            Cloud has no APIM behind this drawer — it configures security per
+            environment from the env card's own Configure Security action. */}
+        {!IS_CLOUD && <ConfigureActionRow Icon={ShieldCheck} label="Configure Security" onClick={() => setSecurityDrawerOpen(true)} />}
         {extraConfigureRows}
         {/* Lifecycle Status row */}
         <Stack direction="row" alignItems="center" gap={1}>
@@ -108,7 +114,7 @@ export default function OverviewHeaderActions({ component, apimId, orgHandler, p
           {extra}
         </Stack>
       </Stack>
-      <SecurityDrawer open={securityDrawerOpen} onClose={() => setSecurityDrawerOpen(false)} apimId={apimId} componentId={componentId} versionId={versionId} />
+      {!IS_CLOUD && <SecurityDrawer open={securityDrawerOpen} onClose={() => setSecurityDrawerOpen(false)} apimId={apimId} componentId={componentId} versionId={versionId} />}
     </>
   );
 }

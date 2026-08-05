@@ -36,6 +36,7 @@
 import type { AlertComponentType } from '../constants/alerts';
 import type { AlertHistoryResponse, AlertRule, AlertRuleCountUsage } from '../types/alerts';
 import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory, MarketplaceService } from '../types/apim';
+import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, CreateApiKeyInput, CreateConsumerInput, EndpointRef, SecurityConfig, Subscription } from '../types/consumers';
 import type { ArtifactType, Artifact, ArtifactParam, ArtifactStatusInput, ListenerStateInput, ArtifactToggleStatusInput, ArtifactToggleKind, TriggerTaskInput } from '../types/artifact';
 import type {
   User,
@@ -66,7 +67,7 @@ import type {
   InviteUsersInput,
 } from '../types/auth';
 import type { BuildRunLogs, DeployComponentInput, UpdateBuildpackConfigsInput } from '../types/build';
-import type { ContainerRegistry } from '../types/cloudEditor';
+import type { CodeServerInstance, ContainerRegistry } from '../types/cloudEditor';
 import type {
   Component,
   ComponentDetail,
@@ -135,7 +136,21 @@ import type {
   RotateConnectionKeysByConnectionIdParams,
 } from '../types/connections';
 import type { AuditLogEntry, AuditLogsRequest } from '../types/auditLogs';
-import type { Ruleset, RulesetList, DocumentInfo, DocumentList, GovernancePolicyInfo, GovernancePolicyList, ProjectComplianceResponse, PolicyAdherenceResponse, ProjectPolicyAdherenceResponse, ComponentComplianceResponse, EndpointPolicyAdherenceResponse, EndpointRulesetAdherenceResponse, RuleAdherenceResponse as GovernanceRuleAdherenceResponse } from '../types/governance';
+import type {
+  Ruleset,
+  RulesetList,
+  DocumentInfo,
+  DocumentList,
+  GovernancePolicyInfo,
+  GovernancePolicyList,
+  ProjectComplianceResponse,
+  PolicyAdherenceResponse,
+  ProjectPolicyAdherenceResponse,
+  ComponentComplianceResponse,
+  EndpointPolicyAdherenceResponse,
+  EndpointRulesetAdherenceResponse,
+  RuleAdherenceResponse as GovernanceRuleAdherenceResponse,
+} from '../types/governance';
 import type {
   AdminUser,
   AllowedIpsPayload,
@@ -228,6 +243,40 @@ export interface ApimApi {
 }
 
 // ---------------------------------------------------------------------------
+// API security & exposure (exposed API + policies + consumers) — cloud-only
+// ---------------------------------------------------------------------------
+
+export interface ConsumersApi {
+  // Exposure
+  exposeEndpoint(ref: EndpointRef): Promise<ApiExposure>;
+  unexposeEndpoint(ref: EndpointRef): Promise<void>;
+
+  // Endpoint security — API keys
+  listEndpointApiKeys(ref: EndpointRef): Promise<ApiKeySummary[]>;
+  createEndpointApiKey(ref: EndpointRef, input: CreateApiKeyInput): Promise<ApiKeyResult>;
+  revokeEndpointApiKey(ref: EndpointRef, keyName: string): Promise<void>;
+  createEndpointTestKey(ref: EndpointRef): Promise<ApiKeyResult>;
+
+  // Endpoint security — enforcement policies
+  setEndpointApiKeyAuth(ref: EndpointRef, enabled: boolean, options?: ApiKeyAuthOptions): Promise<boolean>;
+  setEndpointJwtAuth(ref: EndpointRef, enabled: boolean): Promise<boolean>;
+  /** Read the single active auth mode (+ options) of the exposed API. */
+  getEndpointSecurity(ref: EndpointRef): Promise<SecurityConfig>;
+  /** Set the single active auth mode (none/api-key/jwt); the BFF clears the other + redeploys. */
+  setEndpointSecurity(ref: EndpointRef, cfg: SecurityConfig): Promise<SecurityConfig>;
+
+  // Consumers — a consumer is a named api-key on the exposed endpoint (no subscription-token flow).
+  /** Consumers (named api-keys) of the API exposed for `ref`. */
+  fetchConsumers(ref: EndpointRef): Promise<Consumer[]>;
+  /** Create a consumer: mint a named api-key on the endpoint. The plaintext key is returned once. */
+  createConsumer(input: CreateConsumerInput): Promise<Consumer>;
+  /** Re-issue a consumer's api-key (revoke + mint). The new plaintext key is returned once. */
+  regenerateConsumerToken(ref: EndpointRef, keyName: string, displayName: string): Promise<Subscription>;
+  /** Revoke a consumer's api-key. */
+  revokeConsumer(ref: EndpointRef, keyName: string): Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
 // Artifact toggle mutations
 // ---------------------------------------------------------------------------
 
@@ -306,7 +355,7 @@ export interface BuildsApi {
 
 export interface CloudEditorApi {
   getOrCreateSampleRegistry(orgUuid: string): Promise<ContainerRegistry>;
-  callCreateCodeServer(params: { userId: string; organizationId: string; projectId: string; componentId: string; orgHandle: string; imageUrl: string; registryId: string; sourceCommitHash?: string }): Promise<string>;
+  callCreateCodeServer(params: { userId: string; organizationId: string; projectId: string; componentId: string; orgHandle: string; imageUrl: string; registryId: string; sourceCommitHash?: string }): Promise<CodeServerInstance>;
 }
 
 // ---------------------------------------------------------------------------
@@ -884,6 +933,7 @@ export interface AppApi {
   dataPlanes: DataPlanesApi;
   runtime: RuntimeApi;
   credentials: CredentialsApi;
+  consumers: ConsumersApi;
   workflows: WorkflowsApi;
   egressControl: EgressControlApi;
   environments: EnvironmentsApi;
