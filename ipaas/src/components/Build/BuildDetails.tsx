@@ -38,8 +38,9 @@ export default function BuildDetails({ componentId, versionId, build, onLogsTogg
   const isInProgress = build.status === 'in_progress';
   const { data: logs = null, isLoading: logsLoading } = useBuildLogs(componentId, versionId, workflowName, isInProgress);
 
+  // Copy the full identifier; the displayed `#id` is only its numeric suffix.
   const handleCopyBuildId = () => {
-    void navigator.clipboard.writeText(String(build.id));
+    void navigator.clipboard.writeText(workflowName);
     setBuildIdCopied(true);
     setTimeout(() => setBuildIdCopied(false), 1500);
   };
@@ -74,7 +75,7 @@ export default function BuildDetails({ componentId, versionId, build, onLogsTogg
               <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
                 #{build.id}
               </Typography>
-              <Tooltip title={buildIdCopied ? 'Copied!' : 'Copy build ID'}>
+              <Tooltip title={buildIdCopied ? 'Copied!' : 'Copy full build ID'}>
                 <IconButton size="small" onClick={handleCopyBuildId} sx={{ p: 0.25 }}>
                   {buildIdCopied ? <Check size={13} /> : <Copy size={13} />}
                 </IconButton>
