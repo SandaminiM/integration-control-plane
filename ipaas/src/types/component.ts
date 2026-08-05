@@ -176,7 +176,7 @@ export interface UpdateComponentInput {
   version: string;
   projectId: string;
   handler: string;
-  labels?: string;
+  labels?: string[];
 }
 
 export interface UpdateAutoDeployInput {
