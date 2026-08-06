@@ -22,6 +22,8 @@ export const actions = { mb: 2 } as const;
 
 export const sinceSecondsInput = { width: 160 } as const;
 
+export const containerSelect = { minWidth: 180 } as const;
+
 export const helpIcon = { display: 'flex', color: 'text.secondary', cursor: 'help' } as const;
 
 export const search = {

@@ -18,23 +18,38 @@
 
 import { describe, expect, it } from 'vitest';
 import { getPodStatus, humanizePodStatus, podStatusPalette, runningPodCount } from './pods';
-import type { ClusterPod } from '../types/scaling';
+import type { ClusterPod, PodContainerStatus } from '../types/runtime';
+
+const container = (over: Partial<PodContainerStatus>): PodContainerStatus => ({ name: 'main', ready: false, restartCount: 0, ...over });
 
 const pod = (over: Partial<ClusterPod> & { name: string }): ClusterPod => ({
-  metadata: { name: over.name, ...over.metadata },
-  spec: over.spec,
-  status: over.status,
+  metadata: { name: over.name, uid: over.name, ...over.metadata },
+  spec: over.spec ?? { containers: [] },
+  status: over.status ?? { phase: 'Running' },
 });
 
 describe('getPodStatus', () => {
   it('deletionTimestamp → Terminating', () => {
-    expect(getPodStatus(pod({ name: 'p', metadata: { name: 'p', deletionTimestamp: '2026-01-01' } }))).toEqual({ status: 'Terminating', isRunning: false });
+    expect(getPodStatus(pod({ name: 'p', metadata: { name: 'p', uid: 'p', deletionTimestamp: '2026-01-01' } }))).toEqual({ status: 'Terminating', isRunning: false });
   });
   it('waiting reason is humanized', () => {
-    expect(getPodStatus(pod({ name: 'p', status: { containerStatuses: [{ state: { waiting: { reason: 'PodInitializing' } } }] } })).status).toBe('Pod Initializing');
+    expect(getPodStatus(pod({ name: 'p', status: { phase: 'Pending', containerStatuses: [container({ state: { waiting: { reason: 'PodInitializing' } } })] } })).status).toBe('Pod Initializing');
+  });
+  it('a terminated container → Terminated', () => {
+    expect(getPodStatus(pod({ name: 'p', status: { phase: 'Running', containerStatuses: [container({ state: { terminated: { reason: 'Completed', exitCode: 0 } } })] } }))).toEqual({
+      status: 'Terminated',
+      isRunning: false,
+    });
+  });
+  it('a waiting container wins over a terminated one', () => {
+    const statuses = [container({ name: 'a', state: { terminated: { exitCode: 1 } } }), container({ name: 'b', state: { waiting: { reason: 'CrashLoopBackOff' } } })];
+    expect(getPodStatus(pod({ name: 'p', status: { phase: 'Running', containerStatuses: statuses } })).status).toBe('Crash Loop Back Off');
   });
   it('Running phase → isRunning', () => {
     expect(getPodStatus(pod({ name: 'p', status: { phase: 'Running' } }))).toEqual({ status: 'Running', isRunning: true });
+  });
+  it('missing phase → Unknown', () => {
+    expect(getPodStatus({ metadata: { name: 'p', uid: 'p' }, spec: { containers: [] }, status: {} } as unknown as ClusterPod)).toEqual({ status: 'Unknown', isRunning: false });
   });
 });
 

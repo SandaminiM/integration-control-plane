@@ -125,7 +125,12 @@ export function podRestartCount(pod: ClusterPod): number {
   return (pod.status.containerStatuses ?? []).reduce((total, s) => total + (s.restartCount ?? 0), 0);
 }
 
-/** When the pod (or its running container) last started, for the table's Last Activity column. */
+/**
+ * Last activity for the pod table: the most recent container start, since a restart is
+ * newer than the pod's own start time. Falls back to when the pod started.
+ */
 export function podLastActivity(pod: ClusterPod): string | undefined {
-  return pod.status.startTime ?? pod.status.containerStatuses?.find((s) => s.state?.running?.startedAt)?.state?.running?.startedAt;
+  const started = (pod.status.containerStatuses ?? []).map((s) => s.state?.running?.startedAt).filter((t): t is string => !!t);
+  const latest = started.length ? started.reduce((a, b) => (new Date(b) > new Date(a) ? b : a)) : undefined;
+  return latest ?? pod.status.startTime;
 }

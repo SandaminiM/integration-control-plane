@@ -51,7 +51,7 @@ export default function PodConditionsStepper({ pod }: { pod: ClusterPod | null }
                 {info.displayName}
               </Typography>
               <Tooltip title={info.description}>
-                <Box component="span" sx={styles.helpIcon}>
+                <Box component="span" tabIndex={0} role="note" aria-label={`${info.displayName}: ${info.description}`} sx={styles.helpIcon}>
                   <HelpCircle size={13} />
                 </Box>
               </Tooltip>

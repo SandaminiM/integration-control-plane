@@ -16,10 +16,9 @@
  * under the License.
  */
 
-// Pod helpers shared by the Runtime and Scaling surfaces. `ClusterPod` here is the
-// minimal pod shape both surfaces satisfy.
+// Pod helpers shared by the Runtime and Scaling surfaces.
 import type { PaletteColor } from '../config/statusColors';
-import type { ClusterPod } from '../types/scaling';
+import type { ClusterPod } from '../types/runtime';
 
 /** `PodInitializing` → `Pod Initializing`. */
 export function humanizePodStatus(status: string): string {

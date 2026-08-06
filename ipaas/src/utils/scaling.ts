@@ -17,7 +17,8 @@
  */
 
 import { getPodStatus } from './pods';
-import type { ClusterPod, PodMetrics, PodRow } from '../types/scaling';
+import type { PodRow } from '../types/scaling';
+import type { ClusterPod, PodMetrics } from '../types/runtime';
 
 /** Sum a pod's per-container CPU / memory usage (raw k8s quantity strings, joined for display). */
 function podUsage(name: string, metrics: PodMetrics[]): { cpu?: string; memory?: string } {

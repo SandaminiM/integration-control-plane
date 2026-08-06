@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, Button, Chip, CircularProgress, Stack } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Chip, CircularProgress, Stack } from '@wso2/oxygen-ui';
 import { useEffect, useState, type JSX } from 'react';
 import RangeInput from '../Scaling/RangeInput';
 import { CLOUD_DP_MAX_REPLICAS } from '../../constants/scaling';
@@ -27,6 +27,9 @@ interface ReplicaRangeControlProps {
   /** Absent when the release scales by a fixed replica count rather than an HPA. */
   hpa: Hpa | undefined;
   isLoading: boolean;
+  /** The lookup failed, so the fixed replica count would be a guess rather than the truth. */
+  isError: boolean;
+  onRetry: () => void;
   replicas: number;
   orgUuid: string;
   projectId: string;
@@ -42,7 +45,7 @@ interface ReplicaRangeControlProps {
  * value differs from what the server holds, so the row stays quiet at rest.
  * Without an HPA there is nothing to edit and the fixed replica count is shown instead.
  */
-export default function ReplicaRangeControl({ hpa, isLoading, replicas, orgUuid, projectId, path, version, canManage, onSaved, onError }: ReplicaRangeControlProps): JSX.Element {
+export default function ReplicaRangeControl({ hpa, isLoading, isError, onRetry, replicas, orgUuid, projectId, path, version, canManage, onSaved, onError }: ReplicaRangeControlProps): JSX.Element {
   const [min, setMin] = useState(hpa?.min ?? 1);
   const [max, setMax] = useState(hpa?.max ?? 1);
   const updateHpa = useUpdateHpa(projectId);
@@ -55,6 +58,20 @@ export default function ReplicaRangeControl({ hpa, isLoading, replicas, orgUuid,
 
   if (isLoading) {
     return <CircularProgress size={16} />;
+  }
+
+  if (isError) {
+    return (
+      <Alert
+        severity="error"
+        action={
+          <Button color="inherit" size="small" onClick={onRetry}>
+            Retry
+          </Button>
+        }>
+        Failed to load the scaling configuration.
+      </Alert>
+    );
   }
 
   if (!hpa) {

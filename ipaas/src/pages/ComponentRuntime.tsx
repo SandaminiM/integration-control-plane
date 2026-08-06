@@ -70,7 +70,7 @@ export default function ComponentRuntime({ org, project, component }: ComponentS
   const usage = useMemo(() => calculateAggregateUsage(pods.data ?? [], metrics.data ?? []), [pods.data, metrics.data]);
 
   // Min/max replicas above the pod table edit the same HPA the Scaling page owns.
-  const { data: hpa, isLoading: loadingHpa } = useHpa(projectId, componentId, releaseId);
+  const { data: hpa, isLoading: loadingHpa, isError: hpaError, refetch: refetchHpa } = useHpa(projectId, componentId, releaseId);
   const { data: scalingState } = useScalingState(projectId, componentId, releaseId);
   const scalingPath = useMemo(() => ({ componentId, releaseId }), [componentId, releaseId]);
   const podScope = useMemo(
@@ -175,6 +175,8 @@ export default function ComponentRuntime({ org, project, component }: ComponentS
                 <ReplicaRangeControl
                   hpa={hpa ?? undefined}
                   isLoading={loadingHpa}
+                  isError={hpaError}
+                  onRetry={() => refetchHpa()}
                   replicas={release?.replicas ?? 0}
                   orgUuid={orgUuid ?? ''}
                   projectId={projectId}

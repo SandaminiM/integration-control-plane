@@ -44,7 +44,8 @@ export const POD_DRAWER_WIDTH = 960;
 /**
  * Human-readable names, help text and display order for the pod conditions the stepper
  * shows. Conditions outside this map are dropped — Kubernetes reports others, but these
- * five are the startup sequence a user can act on.
+ * five are the startup sequence a user can act on. `order` follows the lifecycle: init
+ * containers complete before readiness probes run.
  */
 export const POD_CONDITION_DEFINITIONS: Record<string, PodConditionInfo> = {
   PodScheduled: {
@@ -62,12 +63,12 @@ export const POD_CONDITION_DEFINITIONS: Record<string, PodConditionInfo> = {
   ContainersReady: {
     displayName: 'Readiness Checks Passed',
     description: 'This condition is met when the container has passed the readiness probe checks (if configured). The container is almost ready to serve external traffic.',
-    order: 3,
+    order: 4,
   },
   Initialized: {
     displayName: 'Init-Containers Completed',
     description: 'All prerequisite (init) tasks required to start the main container have completed. The main container is ready to start.',
-    order: 4,
+    order: 3,
   },
   Ready: {
     displayName: 'Pod Ready',

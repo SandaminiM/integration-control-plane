@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, CircularProgress, IconButton, InputAdornment, Link, OutlinedInput, Stack, Switch, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, IconButton, InputAdornment, Link, MenuItem, OutlinedInput, Select, Stack, Switch, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { HelpCircle, RefreshCw, Search, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import { Link as RouterLink } from 'react-router';
@@ -27,6 +27,7 @@ import { usePodLogs } from '../../hooks/useRuntime';
 import { componentUrl } from '../../paths';
 import { filterLogLines } from '../../utils/logs';
 import { highlightText } from '../../utils/highlight';
+import { podRestartCount } from '../../utils/podMetrics';
 import type { ClusterPod, PodLogOptions, PodScope } from '../../types/runtime';
 
 interface PodLogsDrawerProps {
@@ -39,13 +40,19 @@ interface PodLogsDrawerProps {
 
 export default function PodLogsDrawer({ open, onClose, onExited, pod, scope }: PodLogsDrawerProps): JSX.Element {
   const podName = pod?.metadata.name ?? '';
-  const containerName = pod?.spec.containers[0]?.name;
+  const containers = useMemo(() => pod?.spec.containers ?? [], [pod]);
 
+  const [containerName, setContainerName] = useState<string | undefined>();
   const [previous, setPrevious] = useState(false);
   const [sinceInput, setSinceInput] = useState('');
   const [sinceSeconds, setSinceSeconds] = useState<number | undefined>();
   const [search, setSearch] = useState('');
   const [filterMode, setFilterMode] = useState(false);
+
+  // Follow the pod: a drawer reopened on a different pod must not keep the old container.
+  useEffect(() => {
+    setContainerName(containers[0]?.name);
+  }, [containers]);
 
   useEffect(() => {
     const parsed = parseInt(sinceInput, 10);
@@ -57,6 +64,8 @@ export default function PodLogsDrawer({ open, onClose, onExited, pod, scope }: P
   const { data: logs = '', isLoading, isFetching, isError, error, refetch } = usePodLogs(scope.projectId, scope.clusterId, pod?.metadata.namespace ?? scope.namespace, podName, options, open);
 
   const lines = useMemo(() => filterLogLines(logs, search, filterMode), [logs, search, filterMode]);
+  // `previous` reads the prior instance of a container, which only exists after a restart.
+  const hasPreviousLogs = pod ? podRestartCount(pod) > 0 : false;
   const runtimeLogsUrl = `${componentUrl(scope.orgHandler, scope.projectHandler, scope.componentHandler)}/logs`;
 
   return (
@@ -72,21 +81,34 @@ export default function PodLogsDrawer({ open, onClose, onExited, pod, scope }: P
         <Stack direction="row" alignItems="center" gap={1}>
           <Typography variant="body2">Since Seconds</Typography>
           <Tooltip title={POD_LOGS_TOOLTIPS.sinceSeconds}>
-            <Box component="span" sx={styles.helpIcon}>
+            <Box component="span" tabIndex={0} role="note" aria-label={POD_LOGS_TOOLTIPS.sinceSeconds} sx={styles.helpIcon}>
               <HelpCircle size={13} />
             </Box>
           </Tooltip>
           <TextField size="small" type="number" value={sinceInput} onChange={(e) => setSinceInput(e.target.value)} inputProps={{ min: 1, 'aria-label': 'Since seconds' }} sx={styles.sinceSecondsInput} />
         </Stack>
 
+        {containers.length > 1 && (
+          <Stack direction="row" alignItems="center" gap={1}>
+            <Typography variant="body2">Container</Typography>
+            <Select size="small" value={containerName ?? ''} onChange={(e) => setContainerName(e.target.value as string)} inputProps={{ 'aria-label': 'Container' }} sx={styles.containerSelect}>
+              {containers.map((c) => (
+                <MenuItem key={c.name} value={c.name}>
+                  {c.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </Stack>
+        )}
+
         <Stack direction="row" alignItems="center" gap={1}>
           <Typography variant="body2">Show Previous Logs</Typography>
           <Tooltip title={POD_LOGS_TOOLTIPS.previousLogs}>
-            <Box component="span" sx={styles.helpIcon}>
+            <Box component="span" tabIndex={0} role="note" aria-label={POD_LOGS_TOOLTIPS.previousLogs} sx={styles.helpIcon}>
               <HelpCircle size={13} />
             </Box>
           </Tooltip>
-          <Switch size="small" checked={previous} onChange={(e) => setPrevious(e.target.checked)} inputProps={{ 'aria-label': 'Show previous logs' }} />
+          <Switch size="small" checked={previous} disabled={!hasPreviousLogs} onChange={(e) => setPrevious(e.target.checked)} inputProps={{ 'aria-label': 'Show previous logs' }} />
         </Stack>
 
         <Button size="small" variant="text" startIcon={isFetching ? <CircularProgress size={14} /> : <RefreshCw size={14} />} onClick={() => refetch()} disabled={isFetching}>

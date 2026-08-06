@@ -68,7 +68,7 @@ export default function PodEventsTable({ events, isLoading, isError }: PodEvents
               <Stack direction="row" alignItems="center" gap={0.5}>
                 Count
                 <Tooltip title={POD_EVENT_COUNT_TOOLTIP}>
-                  <Box component="span" sx={styles.helpIcon}>
+                  <Box component="span" tabIndex={0} role="note" aria-label={POD_EVENT_COUNT_TOOLTIP} sx={styles.helpIcon}>
                     <HelpCircle size={13} />
                   </Box>
                 </Tooltip>
