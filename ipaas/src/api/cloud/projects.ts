@@ -38,7 +38,7 @@ export const fetchProjectContributors = (_orgId: number, projectId: string): Pro
 
 // The BFF has no project-wide labels endpoint — labels are per-Integration
 // (`GET /components/{name}/labels`). LabelDialog falls back to LABEL_OPTIONS.
-export const fetchProjectComponentLabels = (_orgId: number, _projectId: string): Promise<string[]> => Promise.resolve([]);
+export const fetchProjectComponentLabels = (_orgId: number, _projectId: string): Promise<string[]> => ni('fetchProjectComponentLabels');
 
 export const fetchProjectHandlerAvailability = (_orgId: number, candidate: string): Promise<ProjectHandlerAvailability> => bff.get<ProjectHandlerAvailability>(`/projects/handler-availability${q({ candidate })}`);
 

@@ -1176,9 +1176,7 @@ function AppLayoutInner(): JSX.Element {
                           </Sidebar.Item>
                         </Sidebar.Item>
                       ) : (
-                        /* API Chat is WIP-only, so Console is Test's sole child here —
-                           surface it as Test itself rather than a one-item group. */
-                        <Sidebar.Item id="console">
+                        <Sidebar.Item id="test">
                           <Sidebar.ItemIcon>
                             <FlaskConical size={20} />
                           </Sidebar.ItemIcon>
