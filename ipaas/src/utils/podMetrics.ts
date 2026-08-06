@@ -120,13 +120,12 @@ export function calculatePodUsage(pod: ClusterPod, metric?: PodMetrics): Calcula
   return calculateAggregateUsage([pod], metric ? [metric] : []);
 }
 
-/** Whether all of a pod's containers report ready. */
-export function isPodReady(pod: ClusterPod): boolean {
-  const statuses = pod.status.containerStatuses ?? [];
-  return statuses.length > 0 && statuses.every((s) => s.ready);
-}
-
 /** Total restarts across a pod's containers. */
 export function podRestartCount(pod: ClusterPod): number {
   return (pod.status.containerStatuses ?? []).reduce((total, s) => total + (s.restartCount ?? 0), 0);
+}
+
+/** When the pod (or its running container) last started, for the table's Last Activity column. */
+export function podLastActivity(pod: ClusterPod): string | undefined {
+  return pod.status.startTime ?? pod.status.containerStatuses?.find((s) => s.state?.running?.startedAt)?.state?.running?.startedAt;
 }

@@ -68,7 +68,7 @@ export default function RuntimeOverview({ componentName, status, lastDeployedAt,
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             {componentName}
           </Typography>
-          <Chip size="small" color={meta.color} label={meta.label} sx={{ height: 20, fontSize: '0.68rem', fontWeight: 500 }} />
+          <Chip size="small" variant="outlined" color={meta.color} label={meta.label} sx={{ height: 20, fontSize: '0.68rem', fontWeight: 500 }} />
         </Stack>
         <Typography variant="body2" color="text.secondary">
           Last deployed {lastDeployedAt ? formatDistanceToNow(lastDeployedAt) : '—'}

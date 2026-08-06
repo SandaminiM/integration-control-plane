@@ -17,7 +17,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import { copyLog, downloadLogs, formatValue, LEVEL_COLORS, levelColor, statusCodeColor, toLocalInput } from './logs';
+import { copyLog, downloadLogs, filterLogLines, formatValue, LEVEL_COLORS, levelColor, statusCodeColor, toLocalInput } from './logs';
 import type { LogRow } from '../types/logs';
 
 const makeLogRow = (overrides: Partial<LogRow> = {}): LogRow => ({
@@ -164,5 +164,17 @@ describe('downloadLogs', () => {
     expect(() => downloadLogs([])).not.toThrow();
 
     clickSpy.mockRestore();
+  });
+});
+
+describe('filterLogLines', () => {
+  it('splits on both newline styles and returns every line when not filtering', () => {
+    expect(filterLogLines('a\r\nb\nc', '', false)).toEqual(['a', 'b', 'c']);
+    expect(filterLogLines('', 'x', true)).toEqual([]);
+  });
+
+  it('keeps only matching lines, case-insensitively, when filtering', () => {
+    expect(filterLogLines('INFO ready\nERROR boom', 'error', true)).toEqual(['ERROR boom']);
+    expect(filterLogLines('INFO ready\nERROR boom', '   ', true)).toEqual(['INFO ready', 'ERROR boom']);
   });
 });

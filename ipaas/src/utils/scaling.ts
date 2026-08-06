@@ -16,23 +16,8 @@
  * under the License.
  */
 
+import { getPodStatus } from './pods';
 import type { ClusterPod, PodMetrics, PodRow } from '../types/scaling';
-
-/** `PodInitializing` → `Pod Initializing`. */
-function humanize(status: string): string {
-  return status.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase());
-}
-
-/** Kubernetes pod phase → display status. Mirrors Devant's `getPodStatus`. */
-export function getPodStatus(pod: ClusterPod): { status: string; isRunning: boolean } {
-  if (pod.metadata.deletionTimestamp) return { status: 'Terminating', isRunning: false };
-  const containers = pod.status?.containerStatuses ?? [];
-  const waiting = containers.find((c) => c.state?.waiting?.reason)?.state?.waiting?.reason;
-  if (waiting) return { status: humanize(waiting), isRunning: false };
-  if (containers.some((c) => c.state?.terminated)) return { status: 'Terminated', isRunning: false };
-  const phase = pod.status?.phase ?? 'Unknown';
-  return { status: phase, isRunning: phase === 'Running' };
-}
 
 /** Sum a pod's per-container CPU / memory usage (raw k8s quantity strings, joined for display). */
 function podUsage(name: string, metrics: PodMetrics[]): { cpu?: string; memory?: string } {
@@ -69,12 +54,6 @@ export function derivePodRows(pods: ClusterPod[], metrics: PodMetrics[]): PodRow
       memory: usage.memory,
     };
   });
-}
-
-/** `{healthy}/{total}` where healthy pods are Running or Succeeded. Mirrors Devant's running count. */
-export function runningPodCount(pods: ClusterPod[]): { running: number; total: number } {
-  const running = pods.filter((p) => p.status?.phase === 'Running' || p.status?.phase === 'Succeeded').length;
-  return { running, total: pods.length };
 }
 
 export function componentScalingBase(org: string, project: string, component: string): string {

@@ -17,7 +17,7 @@
  */
 
 // Component runtime (pods/metrics/redeploy) is a wip-only surface for now. Signatures mirror Contracts.RuntimeApi.
-import type { ClusterPod, PodMetrics, RuntimeReleaseDetails } from '../../types/runtime';
+import type { ClusterPod, PodEvent, PodLogOptions, PodMetrics, RuntimeReleaseDetails } from '../../types/runtime';
 
 const ni = (name: string): never => {
   throw new Error(`[cloud] runtime.${name}: not implemented`);
@@ -27,3 +27,5 @@ export const fetchReleaseDetails = (_projectId: string, _componentId: string, _r
 export const fetchComponentPods = (_projectId: string, _clusterId: string, _releaseId: string, _namespace: string): Promise<ClusterPod[]> => ni('fetchComponentPods');
 export const fetchComponentPodMetrics = (_projectId: string, _clusterId: string, _releaseId: string, _namespace: string): Promise<PodMetrics[]> => ni('fetchComponentPodMetrics');
 export const redeployRelease = (_projectId: string, _componentId: string, _releaseId: string, _message?: string): Promise<void> => ni('redeployRelease');
+export const fetchPodEvents = (_projectId: string, _clusterId: string, _namespace: string, _podName: string): Promise<PodEvent[]> => ni('fetchPodEvents');
+export const fetchPodLogs = (_projectId: string, _clusterId: string, _namespace: string, _podName: string, _options: PodLogOptions): Promise<string> => ni('fetchPodLogs');

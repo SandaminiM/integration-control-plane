@@ -21,6 +21,7 @@ import { RefreshCcw, Search, X } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useExecutionLogs } from '../../hooks/useExecutions';
+import { highlightText } from '../../utils/highlight';
 
 interface LogsDrawerProps {
   open: boolean;
@@ -29,21 +30,6 @@ interface LogsDrawerProps {
   componentId: string;
   deploymentTrackId: string;
   environmentId: string;
-}
-
-function highlightText(text: string, keyword: string): React.ReactNode {
-  if (!keyword) return text;
-  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
-  return parts.map((part, i) =>
-    part.toLowerCase() === keyword.toLowerCase() ? (
-      <mark key={i} style={{ background: '#fde68a', color: 'inherit', borderRadius: 2, padding: '0 1px' }}>
-        {part}
-      </mark>
-    ) : (
-      part
-    ),
-  );
 }
 
 const drawerSx = {
