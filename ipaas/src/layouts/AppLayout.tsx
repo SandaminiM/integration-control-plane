@@ -18,7 +18,6 @@
 
 import {
   AppShell,
-  Badge,
   Button,
   Chip,
   ColorSchemeToggle,
@@ -30,12 +29,10 @@ import {
   DialogTitle,
   Divider,
   Footer,
-  formatRelativeTime,
   Header,
   IconButton,
   InputAdornment,
   MenuItem,
-  NotificationPanel,
   Box,
   CircularProgress,
   Popover,
@@ -45,7 +42,6 @@ import {
   Typography,
   UserMenu,
   useAppShell,
-  useNotifications,
 } from '@wso2/oxygen-ui';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -58,7 +54,6 @@ import {
   Award,
   BarChart3,
   Bell,
-  Binoculars,
   Boxes,
   Brain,
   ChevronDown,
@@ -120,7 +115,6 @@ import { PAID_SUBSCRIPTION_TYPE } from '../constants/subscription';
 import { identifyIntegration } from '../utils/identifyIntegration';
 import { useOrgPermissions } from '../hooks/useAuth';
 import { switchOrgToken } from '../auth/tokenManager';
-import { mockNotifications } from '../mock-data/mockNotifications';
 import {
   useScope,
   broaden,
@@ -190,7 +184,6 @@ function AppLayoutInner(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeNavId]);
 
-  const [tabIndex, setTabIndex] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [featurePreviewOpen, setFeaturePreviewOpen] = useState(false);
   const orgUuid = useOrgUuid();
@@ -211,14 +204,6 @@ function AppLayoutInner(): JSX.Element {
   const [orgSearch, setOrgSearch] = useState('');
   const orgSearchRef = useRef<HTMLInputElement>(null);
   const { data: orgsData = [], isLoading: orgsLoading } = useOrgs();
-
-  const { notifications, actions: notifActions, unreadCount, unreadNotifications } = useNotifications({ initialNotifications: [...mockNotifications] });
-  const alertNotifications = notifications.filter((n) => n.type === 'warning' || n.type === 'error');
-  const getFilteredNotifications = () => {
-    if (tabIndex === 1) return unreadNotifications;
-    if (tabIndex === 2) return alertNotifications;
-    return notifications;
-  };
 
   const projectParam = hasProject(scope) ? scope.project : '';
   const isProjectUuid = UUID_RE.test(projectParam);
@@ -839,13 +824,6 @@ function AppLayoutInner(): JSX.Element {
               </Tooltip>
             )}
             <ColorSchemeToggle />
-            <Tooltip title="Notifications">
-              <IconButton onClick={actions.toggleNotificationPanel} size="small" sx={{ color: 'text.secondary' }}>
-                <Badge badgeContent={unreadCount ?? 0} color="error" max={99} invisible={(unreadCount ?? 0) === 0}>
-                  <Bell size={20} />
-                </Badge>
-              </IconButton>
-            </Tooltip>
             {IS_WIP && <CopilotButton />}
             {IS_WIP && <UpgradeButton orgUuid={orgUuid ?? ''} />}
             <Divider orientation="vertical" flexItem sx={{ mx: 1, display: { xs: 'none', sm: 'block' } }} />
@@ -886,12 +864,14 @@ function AppLayoutInner(): JSX.Element {
                   <Sidebar.ItemLabel>Overview</Sidebar.ItemLabel>
                 </Sidebar.Item>
 
-                <Sidebar.Item id="org-develop">
-                  <Sidebar.ItemIcon>
-                    <Lightbulb size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>Develop</Sidebar.ItemLabel>
-                </Sidebar.Item>
+                {!IS_CLOUD && (
+                  <Sidebar.Item id="org-develop">
+                    <Sidebar.ItemIcon>
+                      <Lightbulb size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Develop</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                )}
 
                 <Sidebar.Item id="build">
                   <Sidebar.ItemIcon>
@@ -914,34 +894,36 @@ function AppLayoutInner(): JSX.Element {
                   <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
                 </Sidebar.Item>
 
-                <Sidebar.Item id="org-insights">
-                  <Sidebar.ItemIcon>
-                    <BarChart3 size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
-                  <Sidebar.Item id="org-usage">
+                {!IS_CLOUD && (
+                  <Sidebar.Item id="org-insights">
                     <Sidebar.ItemIcon>
-                      <Activity size={20} />
+                      <BarChart3 size={20} />
                     </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
+                    <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
+                    <Sidebar.Item id="org-usage">
+                      <Sidebar.ItemIcon>
+                        <Activity size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                    <Sidebar.Item id="org-delivery">
+                      <Sidebar.ItemIcon>
+                        <Truck size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                    <Sidebar.Item id="org-compliance">
+                      <Sidebar.ItemIcon>
+                        <ShieldCheck size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
+                    </Sidebar.Item>
                   </Sidebar.Item>
-                  <Sidebar.Item id="org-delivery">
-                    <Sidebar.ItemIcon>
-                      <Truck size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                  <Sidebar.Item id="org-compliance">
-                    <Sidebar.ItemIcon>
-                      <ShieldCheck size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                </Sidebar.Item>
+                )}
 
                 <Sidebar.Item id="org-observability">
                   <Sidebar.ItemIcon>
-                    <Binoculars size={20} />
+                    <Eye size={20} />
                   </Sidebar.ItemIcon>
                   <Sidebar.ItemLabel>Observability</Sidebar.ItemLabel>
                   <Sidebar.Item id="org-logs">
@@ -1099,6 +1081,7 @@ function AppLayoutInner(): JSX.Element {
                     </Sidebar.Category>
 
                     <Sidebar.Category>
+                      {!IS_CLOUD && (
                       <Sidebar.Item id="develop">
                         <Sidebar.ItemIcon>
                           <Lightbulb size={20} />
@@ -1143,6 +1126,7 @@ function AppLayoutInner(): JSX.Element {
                           </Sidebar.Item>
                         )}
                       </Sidebar.Item>
+                      )}
 
                       <Sidebar.Item id="build">
                         <Sidebar.ItemIcon>
@@ -1172,7 +1156,7 @@ function AppLayoutInner(): JSX.Element {
                           </Sidebar.ItemIcon>
                           <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
                         </Sidebar.Item>
-                      ) : (
+                      ) : IS_WIP ? (
                         <Sidebar.Item id="test">
                           <Sidebar.ItemIcon>
                             <FlaskConical size={20} />
@@ -1184,53 +1168,64 @@ function AppLayoutInner(): JSX.Element {
                             </Sidebar.ItemIcon>
                             <Sidebar.ItemLabel>Console</Sidebar.ItemLabel>
                           </Sidebar.Item>
-                          {IS_WIP && (
-                            <Sidebar.Item id="api-chat">
-                              <Sidebar.ItemIcon>
-                                <MessageSquare size={20} />
-                              </Sidebar.ItemIcon>
-                              <Sidebar.ItemLabel>API Chat</Sidebar.ItemLabel>
-                            </Sidebar.Item>
-                          )}
+                          <Sidebar.Item id="api-chat">
+                            <Sidebar.ItemIcon>
+                              <MessageSquare size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>API Chat</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        </Sidebar.Item>
+                      ) : (
+                        /* API Chat is WIP-only, so Console is Test's sole child here —
+                           surface it as Test itself rather than a one-item group. */
+                        <Sidebar.Item id="console">
+                          <Sidebar.ItemIcon>
+                            <FlaskConical size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
                         </Sidebar.Item>
                       )}
 
-                      <Sidebar.Item id="insights">
-                        <Sidebar.ItemIcon>
-                          <BarChart3 size={20} />
-                        </Sidebar.ItemIcon>
-                        <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
-                        <Sidebar.Item id="usage">
+                      {!IS_CLOUD && (
+                        <Sidebar.Item id="insights">
                           <Sidebar.ItemIcon>
-                            <Activity size={20} />
+                            <BarChart3 size={20} />
                           </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
+                          <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
+                          <Sidebar.Item id="usage">
+                            <Sidebar.ItemIcon>
+                              <Activity size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                          <Sidebar.Item id="delivery">
+                            <Sidebar.ItemIcon>
+                              <Truck size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                          <Sidebar.Item id="compliance">
+                            <Sidebar.ItemIcon>
+                              <ShieldCheck size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
+                          </Sidebar.Item>
                         </Sidebar.Item>
-                        <Sidebar.Item id="delivery">
-                          <Sidebar.ItemIcon>
-                            <Truck size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
-                        </Sidebar.Item>
-                        <Sidebar.Item id="compliance">
-                          <Sidebar.ItemIcon>
-                            <ShieldCheck size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
-                        </Sidebar.Item>
-                      </Sidebar.Item>
+                      )}
 
                       <Sidebar.Item id="observability">
                         <Sidebar.ItemIcon>
                           <Eye size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>Observability</Sidebar.ItemLabel>
-                        <Sidebar.Item id="alerts">
-                          <Sidebar.ItemIcon>
-                            <Bell size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Alerts</Sidebar.ItemLabel>
-                        </Sidebar.Item>
+                        {!IS_CLOUD && (
+                          <Sidebar.Item id="alerts">
+                            <Sidebar.ItemIcon>
+                              <Bell size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Alerts</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        )}
                         <Sidebar.Item id="logs">
                           <Sidebar.ItemIcon>
                             <ScrollText size={20} />
@@ -1250,12 +1245,14 @@ function AppLayoutInner(): JSX.Element {
                           <Settings2 size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
-                        <Sidebar.Item id="connections">
-                          <Sidebar.ItemIcon>
-                            <Link2 size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Connections</Sidebar.ItemLabel>
-                        </Sidebar.Item>
+                        {!IS_CLOUD && (
+                          <Sidebar.Item id="connections">
+                            <Sidebar.ItemIcon>
+                              <Link2 size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Connections</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        )}
                         <Sidebar.Item id="runtime">
                           <Sidebar.ItemIcon>
                             <Server size={20} />
@@ -1290,12 +1287,14 @@ function AppLayoutInner(): JSX.Element {
                             <Sidebar.ItemLabel>Scaling</Sidebar.ItemLabel>
                           </Sidebar.Item>
                         )}
-                        <Sidebar.Item id="storage">
-                          <Sidebar.ItemIcon>
-                            <HardDrive size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Storage</Sidebar.ItemLabel>
-                        </Sidebar.Item>
+                        {!IS_CLOUD && (
+                          <Sidebar.Item id="storage">
+                            <Sidebar.ItemIcon>
+                              <HardDrive size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Storage</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        )}
                         {showExternalCI && (
                           <Sidebar.Item id="external-ci">
                             <Sidebar.ItemIcon>
@@ -1304,7 +1303,7 @@ function AppLayoutInner(): JSX.Element {
                             <Sidebar.ItemLabel>External CI</Sidebar.ItemLabel>
                           </Sidebar.Item>
                         )}
-                        {canSeeAccessControl && (
+                        {!IS_CLOUD && canSeeAccessControl && (
                           <Sidebar.Item id="component-settings">
                             <Sidebar.ItemIcon>
                               <Cog size={20} />
@@ -1327,12 +1326,14 @@ function AppLayoutInner(): JSX.Element {
                   <Sidebar.ItemLabel>Overview</Sidebar.ItemLabel>
                 </Sidebar.Item>
 
-                <Sidebar.Item id="proj-develop">
-                  <Sidebar.ItemIcon>
-                    <Lightbulb size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>Develop</Sidebar.ItemLabel>
-                </Sidebar.Item>
+                {!IS_CLOUD && (
+                  <Sidebar.Item id="proj-develop">
+                    <Sidebar.ItemIcon>
+                      <Lightbulb size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Develop</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+                )}
 
                 <Sidebar.Item id="proj-build">
                   <Sidebar.ItemIcon>
@@ -1355,34 +1356,36 @@ function AppLayoutInner(): JSX.Element {
                   <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
                 </Sidebar.Item>
 
-                <Sidebar.Item id="proj-insights">
-                  <Sidebar.ItemIcon>
-                    <BarChart3 size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
-                  <Sidebar.Item id="proj-usage">
+                {!IS_CLOUD && (
+                  <Sidebar.Item id="proj-insights">
                     <Sidebar.ItemIcon>
-                      <Activity size={20} />
+                      <BarChart3 size={20} />
                     </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
+                    <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
+                    <Sidebar.Item id="proj-usage">
+                      <Sidebar.ItemIcon>
+                        <Activity size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                    <Sidebar.Item id="proj-delivery">
+                      <Sidebar.ItemIcon>
+                        <Truck size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                    <Sidebar.Item id="proj-compliance">
+                      <Sidebar.ItemIcon>
+                        <ShieldCheck size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
+                    </Sidebar.Item>
                   </Sidebar.Item>
-                  <Sidebar.Item id="proj-delivery">
-                    <Sidebar.ItemIcon>
-                      <Truck size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                  <Sidebar.Item id="proj-compliance">
-                    <Sidebar.ItemIcon>
-                      <ShieldCheck size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                </Sidebar.Item>
+                )}
 
                 <Sidebar.Item id="proj-observability">
                   <Sidebar.ItemIcon>
-                    <Binoculars size={20} />
+                    <Eye size={20} />
                   </Sidebar.ItemIcon>
                   <Sidebar.ItemLabel>Observability</Sidebar.ItemLabel>
                   <Sidebar.Item id="proj-logs">
@@ -1404,12 +1407,14 @@ function AppLayoutInner(): JSX.Element {
                     <Settings2 size={20} />
                   </Sidebar.ItemIcon>
                   <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
-                  <Sidebar.Item id="proj-connections">
-                    <Sidebar.ItemIcon>
-                      <Link2 size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Connections</Sidebar.ItemLabel>
-                  </Sidebar.Item>
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="proj-connections">
+                      <Sidebar.ItemIcon>
+                        <Link2 size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Connections</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  )}
                   <Sidebar.Item id="proj-third-party">
                     <Sidebar.ItemIcon>
                       <Puzzle size={20} />
@@ -1518,51 +1523,9 @@ function AppLayoutInner(): JSX.Element {
         </Footer>
       </AppShell.Footer>
 
+      {/* Notifications removed console-wide; this slot is kept as the mount point for
+          the app-level modals below. */}
       <AppShell.NotificationPanel>
-        <NotificationPanel open={shell.notificationPanelOpen} onClose={actions.toggleNotificationPanel}>
-          <NotificationPanel.Header>
-            <NotificationPanel.HeaderIcon>
-              <Bell size={20} />
-            </NotificationPanel.HeaderIcon>
-            <NotificationPanel.HeaderTitle>Notifications</NotificationPanel.HeaderTitle>
-            {unreadCount > 0 && <NotificationPanel.HeaderBadge>{unreadCount}</NotificationPanel.HeaderBadge>}
-            <NotificationPanel.HeaderClose />
-          </NotificationPanel.Header>
-          <NotificationPanel.Tabs
-            tabs={[
-              { label: 'All', count: notifications.length },
-              {
-                label: 'Unread',
-                count: unreadNotifications.length,
-                color: 'primary',
-              },
-              {
-                label: 'Alerts',
-                count: alertNotifications.length,
-                color: 'warning',
-              },
-            ]}
-            value={tabIndex}
-            onChange={setTabIndex}
-          />
-          {notifications.length > 0 && <NotificationPanel.Actions hasUnread={unreadNotifications.length > 0} onMarkAllRead={notifActions.markAllRead} onClearAll={notifActions.clearAll} />}
-          {getFilteredNotifications().length === 0 ? (
-            <NotificationPanel.EmptyState />
-          ) : (
-            <NotificationPanel.List>
-              {getFilteredNotifications().map((notification) => (
-                <NotificationPanel.Item key={notification.id} id={notification.id} type={notification.type ?? 'info'} read={notification.read} onMarkRead={notifActions.markRead} onDismiss={notifActions.dismiss}>
-                  <NotificationPanel.ItemAvatar>{notification.avatar}</NotificationPanel.ItemAvatar>
-                  <NotificationPanel.ItemTitle>{notification.title}</NotificationPanel.ItemTitle>
-                  <NotificationPanel.ItemMessage>{notification.message}</NotificationPanel.ItemMessage>
-                  <NotificationPanel.ItemTimestamp>{formatRelativeTime(notification.timestamp)}</NotificationPanel.ItemTimestamp>
-                  {notification.actionLabel && <NotificationPanel.ItemAction>{notification.actionLabel}</NotificationPanel.ItemAction>}
-                </NotificationPanel.Item>
-              ))}
-            </NotificationPanel.List>
-          )}
-        </NotificationPanel>
-
         <FeaturePreviewModal open={featurePreviewOpen} onClose={() => setFeaturePreviewOpen(false)} />
 
         {/* Confirm Dialog - managed locally */}

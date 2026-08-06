@@ -18,9 +18,11 @@
 
 import { Box, CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
+import AgentChatConsole from './AgentChatConsole';
 import AutomationTest from './AutomationTest';
 import ComingSoon from './ComingSoon';
 import McpTest from './McpTest';
+import TestConsole from './TestConsole';
 import { useComponentByHandler } from '../hooks/useComponents';
 import { useIntegrationIdentity } from '../hooks/useIntegrationIdentity';
 import { useProjectId } from '../hooks/useProjects';
@@ -28,8 +30,8 @@ import type { ComponentScope } from '../nav';
 
 /**
  * The component "Test" page dispatches by integration type (identified once via
- * `useIntegrationIdentity`): Automation → AutomationTest, MCP → McpTest, everything
- * else → Coming Soon. Mirrors the per-type rendering used across Integration surfaces.
+ * `useIntegrationIdentity`), so `/test` is correct however it was reached — sidebar
+ * tile, bookmark, or a scope switch that preserved the `test` resource key.
  */
 export default function ComponentTest(scope: ComponentScope): JSX.Element {
   const { projectId } = useProjectId(scope.project);
@@ -58,5 +60,7 @@ export default function ComponentTest(scope: ComponentScope): JSX.Element {
   // RAG ingestion is a scheduled task — it uses the same Automation test view.
   if (identity?.type === 'automation' || identity?.type === 'rag-ingestion') return <AutomationTest {...scope} />;
   if (identity?.type === 'mcp-server' || identity?.type === 'mcp-proxy') return <McpTest {...scope} />;
+  if (identity?.type === 'integration-as-api') return <TestConsole {...scope} />;
+  if (identity?.type === 'ai-agent') return <AgentChatConsole {...scope} />;
   return <ComingSoon title="Coming Soon" description="Testing tools are currently under development." />;
 }
