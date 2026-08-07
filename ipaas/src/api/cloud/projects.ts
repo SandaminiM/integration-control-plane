@@ -20,6 +20,7 @@
 
 import type { Project, ProjectContributor, ProjectHandlerAvailability, CreateProjectInput, CreateMonoRepoProjectInput, LinkProjectRepositoryInput, UpdateProjectInput } from '../../types/project';
 import { bff, items, q, seg, type ListResponse } from './_client';
+import { fetchComponents } from './components';
 
 const ni = (name: string): never => {
   throw new Error(`[cloud] projects.${name}: not implemented`);
@@ -36,7 +37,17 @@ export const fetchProjectByHandler = (_orgId: number, projectHandler: string): P
 
 export const fetchProjectContributors = (_orgId: number, projectId: string): Promise<ProjectContributor[]> => bff.get<ListResponse<ProjectContributor>>(`/projects/${seg(projectId)}/contributors`).then(items);
 
-export const fetchProjectComponentLabels = (_orgId: number, projectId: string): Promise<string[]> => bff.get<ListResponse<string>>(`/projects/${seg(projectId)}/labels`).then(items);
+// Derived client-side rather than from GET /projects/{p}/labels: OpenChoreo has
+// no label index, so the BFF would have to list every component and union the
+// labels itself — exactly what this does, one hop later.
+export const fetchProjectComponentLabels = async (_orgId: number, projectId: string): Promise<string[]> => {
+  const components = await fetchComponents('', projectId);
+  const labels = new Set<string>();
+  for (const c of components) {
+    if (Array.isArray(c.labels)) c.labels.forEach((l) => labels.add(l));
+  }
+  return [...labels].sort();
+};
 
 export const fetchProjectHandlerAvailability = (_orgId: number, candidate: string): Promise<ProjectHandlerAvailability> => bff.get<ProjectHandlerAvailability>(`/projects/handler-availability${q({ candidate })}`);
 

@@ -138,7 +138,7 @@ export default function LabelDialog({ open, onClose, component, projectId, curre
         displayName: component.displayName ?? component.handler,
         description: component.description ?? ' ',
         version: component.version ?? 'v1.0',
-        labels: labels.join(','),
+        labels,
         projectId,
         handler: component.handler,
       },
