@@ -29,6 +29,10 @@ import EmptyListing from '../components/EmptyListing';
 import PipelineAccordionCard from '../components/CdPipelines/PipelineAccordionCard';
 import DeletePipelineDialog from '../components/CdPipelines/DeletePipelineDialog';
 
+// Cloud cannot create pipelines, so the empty state describes them instead of
+// pointing at an action that isn't there.
+const EMPTY_DESCRIPTION = IS_CLOUD ? 'Deployment pipelines define how integrations promote across environments.' : 'Create a pipeline to define how integrations promote across environments.';
+
 export default function OrgCdPipelines(scope: OrgScope): JSX.Element {
   const navigate = useNavigate();
   const { data: pipelines, isLoading, isError, refetch } = useOrgDeploymentPipelines();
@@ -74,7 +78,7 @@ export default function OrgCdPipelines(scope: OrgScope): JSX.Element {
         <EmptyListing
           icon={<GitBranch size={48} />}
           title="No deployment pipelines"
-          description="Create a pipeline to define how integrations promote across environments."
+          description={EMPTY_DESCRIPTION}
           showAction={!IS_CLOUD}
           actionLabel="Create Pipeline"
           onAction={() => navigate(cdPipelineEditorUrl(scope))}

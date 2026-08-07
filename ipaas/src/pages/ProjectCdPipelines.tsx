@@ -31,6 +31,10 @@ import AddProjectPipelineDialog from '../components/CdPipelines/AddProjectPipeli
 import RemoveProjectPipelineDialog from '../components/CdPipelines/RemoveProjectPipelineDialog';
 import SetDefaultPipelineDialog from '../components/CdPipelines/SetDefaultPipelineDialog';
 
+// Cloud cannot add pipelines, so the empty state describes them instead of
+// pointing at an action that isn't there.
+const EMPTY_DESCRIPTION = IS_CLOUD ? 'Deployment pipelines define how integrations promote across environments.' : 'Add an organization pipeline to define how integrations promote across environments.';
+
 export default function ProjectCdPipelines(scope: ProjectScope): JSX.Element {
   const { projectId, isLoading: resolvingProject } = useProjectId(scope.project);
   const { data: pipelines, isLoading, isError, refetch } = useProjectDeploymentPipelines(projectId);
@@ -78,7 +82,7 @@ export default function ProjectCdPipelines(scope: ProjectScope): JSX.Element {
           Failed to load deployment pipelines.
         </Alert>
       ) : !pipelines?.length ? (
-        <EmptyListing icon={<GitBranch size={48} />} title="No deployment pipelines" description="Add an organization pipeline to define how integrations promote across environments." showAction={!IS_CLOUD} actionLabel="Add Pipeline" onAction={() => setAddOpen(true)} />
+        <EmptyListing icon={<GitBranch size={48} />} title="No deployment pipelines" description={EMPTY_DESCRIPTION} showAction={!IS_CLOUD} actionLabel="Add Pipeline" onAction={() => setAddOpen(true)} />
       ) : (
         <Stack gap={3}>
           {orderedPipelines?.map((pipeline) => (

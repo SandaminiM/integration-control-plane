@@ -103,6 +103,10 @@ function DeleteDialog({ template, orgUuid, onClose, onSuccess, onError }: { temp
   );
 }
 
+// Cloud cannot create environments, so the empty state describes them instead of
+// pointing at an action that isn't there.
+const EMPTY_DESCRIPTION = IS_CLOUD ? 'Environments are the deployment targets for your integrations.' : 'Create your first environment to get started';
+
 export default function Environments(scope: OrgScope | ProjectScope): JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
@@ -164,7 +168,7 @@ export default function Environments(scope: OrgScope | ProjectScope): JSX.Elemen
           Failed to load environments.
         </Alert>
       ) : !templates?.length ? (
-        <EmptyListing icon={<Layers size={48} />} title="No environments found" description="Create your first environment to get started" showAction={canManageEnv && !IS_CLOUD} actionLabel="Create Environment" onAction={() => navigate(newEnvironmentUrl(scope))} />
+        <EmptyListing icon={<Layers size={48} />} title="No environments found" description={EMPTY_DESCRIPTION} showAction={canManageEnv && !IS_CLOUD} actionLabel="Create Environment" onAction={() => navigate(newEnvironmentUrl(scope))} />
       ) : (
         <>
           {alert && (
