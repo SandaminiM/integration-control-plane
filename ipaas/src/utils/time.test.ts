@@ -113,4 +113,8 @@ describe('formatDistanceToNow', () => {
     const date = new Date(NOW - 3 * 86_400_000).toISOString();
     expect(formatDistanceToNow(date)).toBe('3 days ago');
   });
+
+  it('returns an empty string for an invalid timestamp', () => {
+    expect(formatDistanceToNow('not-a-date')).toBe('');
+  });
 });
