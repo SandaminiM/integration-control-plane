@@ -32,7 +32,15 @@ export default function HiddenPageRedirect({ level }: { level: Level }): JSX.Ele
   return <Navigate to={to} replace />;
 }
 
-/** Level-bound form for the resource MATRIX, whose `pages` slots take a page component. */
+/** Level-bound forms for the resource MATRIX, whose `pages` slots take a page component. */
+export function HiddenOrgPage(): JSX.Element {
+  return <HiddenPageRedirect level="organizations" />;
+}
+
+export function HiddenProjectPage(): JSX.Element {
+  return <HiddenPageRedirect level="projects" />;
+}
+
 export function HiddenIntegrationPage(): JSX.Element {
   return <HiddenPageRedirect level="components" />;
 }

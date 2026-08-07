@@ -20,6 +20,7 @@ import { Alert, Box, Button, CircularProgress, IconButton, PageContent, PageTitl
 import { GitBranch, Pencil, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
+import { IS_CLOUD } from '../features';
 import { useEnvTemplates, useOrgDeploymentPipelines } from '../hooks/useDeploymentPipelines';
 import type { DeploymentPipeline } from '../types/deploymentPipeline';
 import { pinDefaultFirst } from '../utils/deploymentPipeline';
@@ -27,6 +28,10 @@ import { cdPipelineEditorUrl, type OrgScope } from '../nav';
 import EmptyListing from '../components/EmptyListing';
 import PipelineAccordionCard from '../components/CdPipelines/PipelineAccordionCard';
 import DeletePipelineDialog from '../components/CdPipelines/DeletePipelineDialog';
+
+// Cloud cannot create pipelines, so the empty state describes them instead of
+// pointing at an action that isn't there.
+const EMPTY_DESCRIPTION = IS_CLOUD ? 'Deployment pipelines define how integrations promote across environments.' : 'Create a pipeline to define how integrations promote across environments.';
 
 export default function OrgCdPipelines(scope: OrgScope): JSX.Element {
   const navigate = useNavigate();
@@ -42,7 +47,7 @@ export default function OrgCdPipelines(scope: OrgScope): JSX.Element {
         <PageTitle>
           <PageTitle.Header>Continuous Deployment Pipelines</PageTitle.Header>
         </PageTitle>
-        {!!pipelines?.length && (
+        {!IS_CLOUD && !!pipelines?.length && (
           <Button variant="contained" startIcon={<Plus size={20} />} onClick={() => navigate(cdPipelineEditorUrl(scope))} sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
             Create Pipeline
           </Button>
@@ -73,8 +78,8 @@ export default function OrgCdPipelines(scope: OrgScope): JSX.Element {
         <EmptyListing
           icon={<GitBranch size={48} />}
           title="No deployment pipelines"
-          description="Create a pipeline to define how integrations promote across environments."
-          showAction
+          description={EMPTY_DESCRIPTION}
+          showAction={!IS_CLOUD}
           actionLabel="Create Pipeline"
           onAction={() => navigate(cdPipelineEditorUrl(scope))}
         />

@@ -35,16 +35,22 @@ export interface SettingsSectionDef {
  * gates, translated to the nearest ICP permission: user-mgt → user view,
  * deployment-manage → environment manage. Credentials + APIM arrive in Phase 1b.
  */
-export const SETTINGS_SECTIONS: readonly SettingsSectionDef[] = [
-  { id: 'access-control', label: 'Access Control', path: 'access-control/users', permissions: ALL_USER_MGT_PERMISSIONS },
-  ...(IS_CLOUD ? [{ id: 'package-registries', label: 'Package Registries', path: 'package-registries', permissions: [Permissions.ENVIRONMENT_MANAGE] }] : []),
-  { id: 'egress-control', label: 'Egress Control', path: 'egress-control', permissions: [Permissions.ENVIRONMENT_MANAGE] },
-  { id: 'workflows', label: 'Workflows', path: 'workflows', permissions: [Permissions.USER_VIEW] },
-  // Credentials is always available (no permission gate, matching Devant).
-  { id: 'credentials', label: 'Credentials', path: 'credentials', permissions: [] },
-  { id: 'on-prem-keys', label: 'On-Prem Keys', path: 'on-prem-keys', permissions: [Permissions.ENVIRONMENT_MANAGE] },
-  { id: 'application-security', label: 'Application Security', path: 'application-security/identity-providers', permissions: [Permissions.USER_VIEW] },
-];
+export const SETTINGS_SECTIONS: readonly SettingsSectionDef[] = IS_CLOUD
+  ? [
+      // Cloud supports neither the user-management nor the security sections yet, so
+      // Settings carries only the org identity block and the package registries.
+      { id: 'org-details', label: 'Org Details', path: 'org-details', permissions: [] },
+      { id: 'package-registries', label: 'Package Registries', path: 'package-registries', permissions: [Permissions.ENVIRONMENT_MANAGE] },
+    ]
+  : [
+      { id: 'access-control', label: 'Access Control', path: 'access-control/users', permissions: ALL_USER_MGT_PERMISSIONS },
+      { id: 'egress-control', label: 'Egress Control', path: 'egress-control', permissions: [Permissions.ENVIRONMENT_MANAGE] },
+      { id: 'workflows', label: 'Workflows', path: 'workflows', permissions: [Permissions.USER_VIEW] },
+      // Credentials is always available (no permission gate, matching Devant).
+      { id: 'credentials', label: 'Credentials', path: 'credentials', permissions: [] },
+      { id: 'on-prem-keys', label: 'On-Prem Keys', path: 'on-prem-keys', permissions: [Permissions.ENVIRONMENT_MANAGE] },
+      { id: 'application-security', label: 'Application Security', path: 'application-security/identity-providers', permissions: [Permissions.USER_VIEW] },
+    ];
 
 /** A section is visible if it has no gate or the user holds one of its permissions. */
 export function isSettingsSectionVisible(s: SettingsSectionDef, hasAnyPermission: (perms: string[]) => boolean): boolean {
