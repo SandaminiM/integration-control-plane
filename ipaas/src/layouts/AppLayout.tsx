@@ -970,48 +970,62 @@ function AppLayoutInner(): JSX.Element {
                     <Settings2 size={20} />
                   </Sidebar.ItemIcon>
                   <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
-                  <Sidebar.Item id="org-databases">
-                    <Sidebar.ItemIcon>
-                      <Database size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Databases</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                  <Sidebar.Item id="org-vector-databases">
-                    <Sidebar.ItemIcon>
-                      <DatabaseZap size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Vector Databases</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                  <Sidebar.Item id="org-message-brokers">
-                    <Sidebar.ItemIcon>
-                      <MessageSquare size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Message Brokers</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                  <Sidebar.Item id="org-third-party">
-                    <Sidebar.ItemIcon>
-                      <Puzzle size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Third Party Services</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                  <Sidebar.Item id="org-genai-services">
-                    <Sidebar.ItemIcon>
-                      <Sparkles size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>GenAI Services</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                  <Sidebar.Item id="org-config-groups">
-                    <Sidebar.ItemIcon>
-                      <SlidersHorizontal size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Config Groups</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                  <Sidebar.Item id="org-governance">
-                    <Sidebar.ItemIcon>
-                      <Scale size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Governance</Sidebar.ItemLabel>
-                  </Sidebar.Item>
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="org-databases">
+                      <Sidebar.ItemIcon>
+                        <Database size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Databases</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  )}
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="org-vector-databases">
+                      <Sidebar.ItemIcon>
+                        <DatabaseZap size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Vector Databases</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  )}
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="org-message-brokers">
+                      <Sidebar.ItemIcon>
+                        <MessageSquare size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Message Brokers</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  )}
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="org-third-party">
+                      <Sidebar.ItemIcon>
+                        <Puzzle size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Third Party Services</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  )}
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="org-genai-services">
+                      <Sidebar.ItemIcon>
+                        <Sparkles size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>GenAI Services</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  )}
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="org-config-groups">
+                      <Sidebar.ItemIcon>
+                        <SlidersHorizontal size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Config Groups</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  )}
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="org-governance">
+                      <Sidebar.ItemIcon>
+                        <Scale size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Governance</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  )}
                   <Sidebar.Item id="org-cd-pipelines">
                     <Sidebar.ItemIcon>
                       <GitBranch size={20} />
@@ -1030,25 +1044,32 @@ function AppLayoutInner(): JSX.Element {
                     </Sidebar.ItemIcon>
                     <Sidebar.ItemLabel>Environments</Sidebar.ItemLabel>
                   </Sidebar.Item>
-                  <Sidebar.Item id="org-audit-logs">
-                    <Sidebar.ItemIcon>
-                      <ClipboardList size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Audit Logs</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                  <Sidebar.Item id="org-approvals">
-                    <Sidebar.ItemIcon>
-                      <ClipboardCheck size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Approvals</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                  <Sidebar.Item id="org-certificates">
-                    <Sidebar.ItemIcon>
-                      <Award size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Certificates</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                  {canSeeAccessControl && (
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="org-audit-logs">
+                      <Sidebar.ItemIcon>
+                        <ClipboardList size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Audit Logs</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  )}
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="org-approvals">
+                      <Sidebar.ItemIcon>
+                        <ClipboardCheck size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Approvals</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  )}
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="org-certificates">
+                      <Sidebar.ItemIcon>
+                        <Award size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Certificates</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  )}
+                  {/* Cloud has no Access Control, but Settings still carries Org Details + Package Registries. */}
+                  {(IS_CLOUD || canSeeAccessControl) && (
                     <Sidebar.Item id="org-settings">
                       <Sidebar.ItemIcon>
                         <Cog size={20} />
@@ -1413,18 +1434,22 @@ function AppLayoutInner(): JSX.Element {
                       <Sidebar.ItemLabel>Connections</Sidebar.ItemLabel>
                     </Sidebar.Item>
                   )}
-                  <Sidebar.Item id="proj-third-party">
-                    <Sidebar.ItemIcon>
-                      <Puzzle size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Third Party Services</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                  <Sidebar.Item id="proj-genai-services">
-                    <Sidebar.ItemIcon>
-                      <Sparkles size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>GenAI Services</Sidebar.ItemLabel>
-                  </Sidebar.Item>
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="proj-third-party">
+                      <Sidebar.ItemIcon>
+                        <Puzzle size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Third Party Services</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  )}
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="proj-genai-services">
+                      <Sidebar.ItemIcon>
+                        <Sparkles size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>GenAI Services</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  )}
                   <Sidebar.Item id="proj-cd-pipelines">
                     <Sidebar.ItemIcon>
                       <GitBranch size={20} />

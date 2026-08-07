@@ -19,6 +19,7 @@
 import { Alert, Box, Button, CircularProgress, IconButton, PageContent, PageTitle, Stack, Tooltip } from '@wso2/oxygen-ui';
 import { GitBranch, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
+import { IS_CLOUD } from '../features';
 import { useEnvTemplates, useProjectDeploymentPipelines } from '../hooks/useDeploymentPipelines';
 import { useProjectId } from '../hooks/useProjects';
 import type { DeploymentPipeline } from '../types/deploymentPipeline';
@@ -49,7 +50,7 @@ export default function ProjectCdPipelines(scope: ProjectScope): JSX.Element {
         <PageTitle>
           <PageTitle.Header>Continuous Deployment Pipelines</PageTitle.Header>
         </PageTitle>
-        {!!pipelines?.length && (
+        {!IS_CLOUD && !!pipelines?.length && (
           <Button variant="contained" startIcon={<Plus size={20} />} onClick={() => setAddOpen(true)} sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
             Add Pipeline
           </Button>
@@ -77,7 +78,7 @@ export default function ProjectCdPipelines(scope: ProjectScope): JSX.Element {
           Failed to load deployment pipelines.
         </Alert>
       ) : !pipelines?.length ? (
-        <EmptyListing icon={<GitBranch size={48} />} title="No deployment pipelines" description="Add an organization pipeline to define how integrations promote across environments." showAction actionLabel="Add Pipeline" onAction={() => setAddOpen(true)} />
+        <EmptyListing icon={<GitBranch size={48} />} title="No deployment pipelines" description="Add an organization pipeline to define how integrations promote across environments." showAction={!IS_CLOUD} actionLabel="Add Pipeline" onAction={() => setAddOpen(true)} />
       ) : (
         <Stack gap={3}>
           {orderedPipelines?.map((pipeline) => (

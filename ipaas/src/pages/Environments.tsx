@@ -20,6 +20,7 @@ import { Alert, Avatar, Box, Button, CircularProgress, IconButton, ListingTable,
 import { Clock, Layers, Plus, Trash2, AlertTriangle } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useEffect, type JSX } from 'react';
 import { useNavigate, useLocation } from 'react-router';
+import { IS_CLOUD } from '../features';
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog';
 import { useDeleteEnvironmentTemplate, useEnvDeleteEligibility, useEnvironmentTemplates } from '../hooks/useEnvironments';
 import { useOrgs } from '../hooks/useOrg';
@@ -163,7 +164,7 @@ export default function Environments(scope: OrgScope | ProjectScope): JSX.Elemen
           Failed to load environments.
         </Alert>
       ) : !templates?.length ? (
-        <EmptyListing icon={<Layers size={48} />} title="No environments found" description="Create your first environment to get started" showAction={canManageEnv} actionLabel="Create Environment" onAction={() => navigate(newEnvironmentUrl(scope))} />
+        <EmptyListing icon={<Layers size={48} />} title="No environments found" description="Create your first environment to get started" showAction={canManageEnv && !IS_CLOUD} actionLabel="Create Environment" onAction={() => navigate(newEnvironmentUrl(scope))} />
       ) : (
         <>
           {alert && (
@@ -175,11 +176,13 @@ export default function Environments(scope: OrgScope | ProjectScope): JSX.Elemen
             <ListingTable.Toolbar
               searchSlot={<SearchField value={search} onChange={setSearch} />}
               actions={
-                <Authorized permissions={Permissions.ENVIRONMENT_MANAGE}>
-                  <Button variant="contained" startIcon={<Plus size={20} />} onClick={() => navigate(newEnvironmentUrl(scope))}>
-                    Create
-                  </Button>
-                </Authorized>
+                !IS_CLOUD && (
+                  <Authorized permissions={Permissions.ENVIRONMENT_MANAGE}>
+                    <Button variant="contained" startIcon={<Plus size={20} />} onClick={() => navigate(newEnvironmentUrl(scope))}>
+                      Create
+                    </Button>
+                  </Authorized>
+                )
               }
             />
             <ListingTable>

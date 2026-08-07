@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import { IS_CLOUD } from '../features';
 import { Permissions } from './permissions';
 import { isSettingsSectionVisible, type SettingsSectionDef } from './orgSettingsSections';
 
@@ -26,10 +27,15 @@ import { isSettingsSectionVisible, type SettingsSectionDef } from './orgSettings
  */
 export const PROJECT_SETTINGS_SECTIONS: readonly SettingsSectionDef[] = [
   { id: 'project-overview', label: 'Project', path: 'project-overview', permissions: [Permissions.PROJECT_MANAGE, Permissions.PROJECT_EDIT] },
-  { id: 'access-control', label: 'Access Control', path: 'access-control/roles', permissions: [Permissions.PROJECT_MANAGE, Permissions.PROJECT_EDIT] },
-  { id: 'application-security', label: 'Application Security', path: 'application-security', permissions: [Permissions.PROJECT_MANAGE] },
-  { id: 'egress-control', label: 'Egress Control', path: 'egress-control', permissions: [Permissions.ENVIRONMENT_MANAGE] },
-  { id: 'vpn-configuration', label: 'VPN Configuration', path: 'vpn-configuration', permissions: [Permissions.PROJECT_MANAGE] },
+  // Cloud keeps only the Project section; the rest are unsupported there.
+  ...(IS_CLOUD
+    ? []
+    : [
+        { id: 'access-control', label: 'Access Control', path: 'access-control/roles', permissions: [Permissions.PROJECT_MANAGE, Permissions.PROJECT_EDIT] },
+        { id: 'application-security', label: 'Application Security', path: 'application-security', permissions: [Permissions.PROJECT_MANAGE] },
+        { id: 'egress-control', label: 'Egress Control', path: 'egress-control', permissions: [Permissions.ENVIRONMENT_MANAGE] },
+        { id: 'vpn-configuration', label: 'VPN Configuration', path: 'vpn-configuration', permissions: [Permissions.PROJECT_MANAGE] },
+      ]),
 ];
 
 /** The first project section the user is allowed to see, or `null` if none. */
