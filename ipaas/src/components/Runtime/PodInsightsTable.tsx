@@ -17,80 +17,78 @@
  */
 
 import { Alert, Box, Button, Chip, CircularProgress, IconButton, ListingTable, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { RefreshCw } from '@wso2/oxygen-ui-icons-react';
-import { useMemo, type JSX } from 'react';
-import { calculatePodUsage, formatBytes, formatVcpu, isPodReady, podRestartCount } from '../../utils/podMetrics';
+import { Activity, Check, CircleCheck, Info, RefreshCw, ScrollText } from '@wso2/oxygen-ui-icons-react';
+import { useMemo, useState, type JSX, type ReactNode } from 'react';
+import * as styles from './PodInsightsTable.styles';
+import PodEventsDrawer from './PodEventsDrawer';
+import PodLogsDrawer from './PodLogsDrawer';
+import PodUsageCell from './PodUsageCell';
+import { DATA_PLANE_LABEL, POD_ACTION_LABELS } from '../../constants/runtime';
+import { calculatePodUsage, formatBytes, formatVcpu, podLastActivity, podRestartCount } from '../../utils/podMetrics';
+import { getPodStatus, podStatusPalette, runningPodCount } from '../../utils/pods';
 import { formatDistanceToNow } from '../../utils/time';
-import type { PaletteColor } from '../../config/statusColors';
-import type { ClusterPod, PodMetrics } from '../../types/runtime';
-import UsageBar from './UsageBar';
-
-function phaseColor(phase: string): PaletteColor {
-  switch (phase) {
-    case 'Running':
-      return 'success';
-    case 'Pending':
-      return 'info';
-    case 'Failed':
-      return 'error';
-    case 'Succeeded':
-      return 'default';
-    default:
-      return 'secondary';
-  }
-}
-
-function lastActivity(pod: ClusterPod): string {
-  const started = pod.status.startTime ?? pod.status.containerStatuses?.find((s) => s.state?.running?.startedAt)?.state?.running?.startedAt;
-  return started ? formatDistanceToNow(started) : '—';
-}
-
-function PodMetricCell({ used, limit, display }: { used: number; limit: number; display: string }): JSX.Element {
-  const percent = limit > 0 ? Math.round((used / limit) * 100) : 0;
-  return (
-    <Box sx={{ minWidth: 140 }}>
-      <Typography variant="caption" color="text.secondary">
-        {display}
-      </Typography>
-      <UsageBar percent={percent} />
-    </Box>
-  );
-}
+import type { ClusterPod, PodMetrics, PodScope } from '../../types/runtime';
 
 interface PodInsightsTableProps {
   pods: ClusterPod[] | undefined;
   metrics: PodMetrics[] | undefined;
-  replicas: number;
   isLoading: boolean;
   isError: boolean;
   isFetching: boolean;
   onRefresh: () => void;
+  scope: PodScope;
+  /** Replica count or min/max steppers, owned by the page since it holds the scaling state. */
+  replicasControl: ReactNode;
+  /** Both row actions read live cluster state, so they follow the Integration manage grant. */
+  canManage: boolean;
 }
 
-export default function PodInsightsTable({ pods, metrics, replicas, isLoading, isError, isFetching, onRefresh }: PodInsightsTableProps): JSX.Element {
+export default function PodInsightsTable({ pods, metrics, isLoading, isError, isFetching, onRefresh, scope, replicasControl, canManage }: PodInsightsTableProps): JSX.Element {
   const rows = useMemo(() => pods ?? [], [pods]);
-  const runningCount = useMemo(() => rows.filter(isPodReady).length, [rows]);
+  const { running, total } = runningPodCount(rows);
+  // The pod outlives its `open` flag so the drawer can finish sliding out before unmounting.
+  const [eventsPod, setEventsPod] = useState<ClusterPod | null>(null);
+  const [eventsOpen, setEventsOpen] = useState(false);
+  const [logsPod, setLogsPod] = useState<ClusterPod | null>(null);
+  const [logsOpen, setLogsOpen] = useState(false);
+
+  const openEvents = (pod: ClusterPod) => {
+    setEventsPod(pod);
+    setEventsOpen(true);
+  };
+  const openLogs = (pod: ClusterPod) => {
+    setLogsPod(pod);
+    setLogsOpen(true);
+  };
 
   return (
-    <Box sx={{ mt: 6 }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" gap={2} sx={{ mb: 1.5 }}>
-        <Stack direction="row" alignItems="center" gap={2}>
-          <Chip variant="outlined" label={`Replicas ${replicas}`} />
-          <Typography variant="body2" color="text.secondary">
-            {runningCount}/{rows.length} Running
-          </Typography>
+    <Box sx={styles.root}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" gap={2} sx={styles.header}>
+        {replicasControl}
+
+        <Stack direction="row" alignItems="center" gap={1}>
+          {total > 0 && (
+            <>
+              <Box component="span" sx={styles.healthIcon(running === total)}>
+                {running === total ? <CircleCheck size={18} fill="currentColor" stroke="#fff" /> : <Info size={18} />}
+              </Box>
+              <Typography variant="body2">
+                {running}/{total} Running
+              </Typography>
+            </>
+          )}
+          <Tooltip title="Refresh">
+            <span>
+              <IconButton size="small" aria-label="Refresh pods" onClick={onRefresh} disabled={isFetching}>
+                <RefreshCw size={18} />
+              </IconButton>
+            </span>
+          </Tooltip>
         </Stack>
-        <Tooltip title="Refresh">
-          <span>
-            <IconButton size="small" aria-label="Refresh pods" onClick={onRefresh} disabled={isFetching}>
-              <RefreshCw size={18} />
-            </IconButton>
-          </span>
-        </Tooltip>
       </Stack>
 
       {isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+        <Box sx={styles.loading}>
           <CircularProgress />
         </Box>
       ) : isError ? (
@@ -104,7 +102,7 @@ export default function PodInsightsTable({ pods, metrics, replicas, isLoading, i
           Failed to load pods.
         </Alert>
       ) : (
-        <ListingTable.Container elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflowX: 'auto' }}>
+        <ListingTable.Container elevation={0} sx={styles.container}>
           <ListingTable size="small">
             <ListingTable.Head>
               <ListingTable.Row>
@@ -121,7 +119,7 @@ export default function PodInsightsTable({ pods, metrics, replicas, isLoading, i
             <ListingTable.Body>
               {rows.length === 0 ? (
                 <ListingTable.Row>
-                  <ListingTable.Cell colSpan={8} align="center" sx={{ py: 5, color: 'text.secondary' }}>
+                  <ListingTable.Cell colSpan={8} align="center" sx={styles.emptyRow}>
                     All pods are currently scaled down.
                   </ListingTable.Cell>
                 </ListingTable.Row>
@@ -130,29 +128,53 @@ export default function PodInsightsTable({ pods, metrics, replicas, isLoading, i
                   const metric = metrics?.find((m) => m.metadata.name === pod.metadata.name);
                   const usage = calculatePodUsage(pod, metric);
                   const statuses = pod.status.containerStatuses ?? [];
-                  const readyContainers = statuses.filter((s) => s.ready).length;
+                  const { status, isRunning } = getPodStatus(pod);
+                  const palette = podStatusPalette(status, isRunning);
+                  const lastActivity = podLastActivity(pod);
                   return (
                     <ListingTable.Row key={pod.metadata.uid}>
-                      <ListingTable.Cell>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                          {pod.metadata.name}
+                      <ListingTable.Cell sx={styles.podCell}>
+                        <Tooltip title={pod.metadata.name}>
+                          <Typography variant="body2" sx={styles.podName}>
+                            {pod.metadata.name}
+                          </Typography>
+                        </Tooltip>
+                        <Typography variant="caption" color="text.secondary" sx={styles.dataPlane}>
+                          {DATA_PLANE_LABEL}
                         </Typography>
                       </ListingTable.Cell>
                       <ListingTable.Cell>
-                        <PodMetricCell used={usage.cpu.used} limit={usage.cpu.limits} display={`${formatVcpu(usage.cpu.used)} / ${formatVcpu(usage.cpu.limits)} vCPU`} />
+                        <PodUsageCell used={usage.cpu.used} limit={usage.cpu.limits} display={`${formatVcpu(usage.cpu.used)} / ${formatVcpu(usage.cpu.limits)} vCPU`} />
                       </ListingTable.Cell>
                       <ListingTable.Cell>
-                        <PodMetricCell used={usage.memory.used} limit={usage.memory.limits} display={`${formatBytes(usage.memory.used)} / ${formatBytes(usage.memory.limits)}`} />
+                        <PodUsageCell used={usage.memory.used} limit={usage.memory.limits} display={`${formatBytes(usage.memory.used)} / ${formatBytes(usage.memory.limits)}`} />
                       </ListingTable.Cell>
                       <ListingTable.Cell>
-                        <Chip size="small" variant="outlined" color={phaseColor(pod.status.phase)} label={pod.status.phase} />
+                        <Chip size="small" variant="outlined" color={palette.chip} icon={isRunning ? <Check size={13} /> : <Info size={13} />} label={status} sx={styles.statusChip(palette.text)} />
                       </ListingTable.Cell>
                       <ListingTable.Cell>
-                        {readyContainers}/{statuses.length || pod.spec.containers.length}
+                        {statuses.filter((s) => s.ready).length}/{statuses.length || pod.spec.containers.length}
                       </ListingTable.Cell>
                       <ListingTable.Cell>{podRestartCount(pod)}</ListingTable.Cell>
-                      <ListingTable.Cell>{lastActivity(pod)}</ListingTable.Cell>
-                      <ListingTable.Cell align="right">—</ListingTable.Cell>
+                      <ListingTable.Cell>{lastActivity ? formatDistanceToNow(lastActivity) : '—'}</ListingTable.Cell>
+                      <ListingTable.Cell align="right">
+                        <Stack direction="row" justifyContent="flex-end" gap={0.5}>
+                          <Tooltip title={canManage ? POD_ACTION_LABELS.events : POD_ACTION_LABELS.noPermission}>
+                            <span>
+                              <IconButton size="small" aria-label={POD_ACTION_LABELS.events} disabled={!canManage} onClick={() => openEvents(pod)}>
+                                <Activity size={18} />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip title={canManage ? POD_ACTION_LABELS.logs : POD_ACTION_LABELS.noPermission}>
+                            <span>
+                              <IconButton size="small" aria-label={POD_ACTION_LABELS.logs} disabled={!canManage} onClick={() => openLogs(pod)}>
+                                <ScrollText size={18} />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        </Stack>
+                      </ListingTable.Cell>
                     </ListingTable.Row>
                   );
                 })
@@ -161,6 +183,10 @@ export default function PodInsightsTable({ pods, metrics, replicas, isLoading, i
           </ListingTable>
         </ListingTable.Container>
       )}
+
+      {/* Kept mounted so both drawers animate in and out; the queries idle while closed. */}
+      <PodEventsDrawer open={eventsOpen} onClose={() => setEventsOpen(false)} onExited={() => setEventsPod(null)} pod={eventsPod} scope={scope} />
+      <PodLogsDrawer open={logsOpen} onClose={() => setLogsOpen(false)} onExited={() => setLogsPod(null)} pod={logsPod} scope={scope} />
     </Box>
   );
 }

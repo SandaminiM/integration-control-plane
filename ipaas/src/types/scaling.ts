@@ -90,21 +90,9 @@ export interface ClusterQueryResponse<T> {
   status?: string;
 }
 
-/** Minimal Kubernetes Pod shape used by the replicas table. */
-export interface ClusterPod {
-  metadata: { name: string; creationTimestamp?: string; deletionTimestamp?: string };
-  spec?: { containers?: unknown[] };
-  status?: {
-    phase?: string;
-    startTime?: string;
-    containerStatuses?: Array<{ ready?: boolean; restartCount?: number; state?: { waiting?: { reason?: string }; terminated?: unknown } }>;
-  };
-}
-
-export interface PodMetrics {
-  metadata: { name: string };
-  containers?: Array<{ usage?: { cpu?: string; memory?: string } }>;
-}
+// Pods and their metrics come from the same data-plane query proxy the Runtime surface
+// uses, so both surfaces share one shape.
+export type { ClusterPod, PodMetrics } from './runtime';
 
 /** A row in the replicas table (derived from a pod + optional metrics). */
 export interface PodRow {

@@ -17,11 +17,14 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchComponentPodMetrics, fetchComponentPods, fetchReleaseDetails, redeployRelease } from '#api/runtime';
+import { fetchComponentPodMetrics, fetchComponentPods, fetchPodEvents, fetchPodLogs, fetchReleaseDetails, redeployRelease } from '#api/runtime';
 import { IS_WIP } from '../features';
+import type { PodLogOptions } from '../types/runtime';
 
 const ROOT_KEY = 'runtime';
 const POLL_MS = 30_000;
+/** Pod logs refresh faster than the pod list — the drawer is a near-live view. */
+const LOGS_POLL_MS = 10_000;
 
 /** Component runtime (pods/metrics/redeploy) is wip-only for now (cloud/icp API stubs throw). */
 export function isRuntimeEnabled(): boolean {
@@ -58,6 +61,29 @@ export function useComponentPodMetrics(projectId: string, clusterId: string, rel
     staleTime: POLL_MS,
     refetchInterval: POLL_MS,
     placeholderData: (prev) => prev,
+  });
+}
+
+export function usePodEvents(projectId: string, clusterId: string, namespace: string, podName: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [ROOT_KEY, 'podEvents', clusterId, namespace, podName],
+    queryFn: () => fetchPodEvents(projectId, clusterId, namespace, podName),
+    enabled: enabled && isRuntimeEnabled() && !!projectId && !!clusterId && !!namespace && !!podName,
+    retry: false,
+    // The cluster returns events in no particular order.
+    select: (events) => [...events].sort((a, b) => new Date(b.timestamp ?? 0).getTime() - new Date(a.timestamp ?? 0).getTime()),
+  });
+}
+
+export function usePodLogs(projectId: string, clusterId: string, namespace: string, podName: string, options: PodLogOptions, enabled: boolean) {
+  return useQuery({
+    // `previous` and `sinceSeconds` change what the server returns, so they belong in the key.
+    queryKey: [ROOT_KEY, 'podLogs', clusterId, namespace, podName, options.containerName, options.previous, options.sinceSeconds],
+    queryFn: () => fetchPodLogs(projectId, clusterId, namespace, podName, options),
+    enabled: enabled && isRuntimeEnabled() && !!projectId && !!clusterId && !!namespace && !!podName,
+    retry: false,
+    refetchInterval: LOGS_POLL_MS,
+    staleTime: LOGS_POLL_MS,
   });
 }
 

@@ -70,7 +70,8 @@ export interface PodSpecContainer {
 
 /** A Kubernetes Pod as returned by the data-plane resource query proxy. */
 export interface ClusterPod {
-  metadata: { name: string; uid: string; namespace?: string; creationTimestamp?: string };
+  /** `deletionTimestamp` is set the moment a pod starts terminating — the phase still reads "Running". */
+  metadata: { name: string; uid: string; namespace?: string; creationTimestamp?: string; deletionTimestamp?: string };
   spec: { containers: PodSpecContainer[]; nodeName?: string };
   status: {
     phase: string;
@@ -91,6 +92,46 @@ export interface PodMetrics {
   timestamp?: string;
   window?: string;
   containers: PodMetricsContainer[];
+}
+
+/**
+ * An event the cluster published about a pod. The cluster keeps these for roughly an
+ * hour, so an empty list is normal.
+ */
+export interface PodEvent {
+  id: string;
+  /** Kind of the object the event is about ("Pod"), shown as a chip beside the reason. */
+  kind?: string;
+  reason: string;
+  message: string;
+  count?: number;
+  timestamp?: string;
+}
+
+/** Display metadata for one pod condition in the startup stepper. */
+export interface PodConditionInfo {
+  displayName: string;
+  description: string;
+  order: number;
+}
+
+/** Everything the pod drawers need to query one pod and link back to its Integration. */
+export interface PodScope {
+  projectId: string;
+  clusterId: string;
+  namespace: string;
+  orgHandler: string;
+  projectHandler: string;
+  componentHandler: string;
+}
+
+/** Query options for a single pod-logs fetch. */
+export interface PodLogOptions {
+  /** Logs from the previous container instance, available once the pod has restarted. */
+  previous: boolean;
+  sinceSeconds?: number;
+  maxTailLines?: number;
+  containerName?: string;
 }
 
 /** Aggregate usage vs. allocated, computed client-side from pods + pod metrics. */

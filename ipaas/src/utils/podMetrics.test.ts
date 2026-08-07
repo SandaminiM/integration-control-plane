@@ -17,7 +17,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { calculateAggregateUsage, formatBytes, formatMillicores, isPodReady, parseCpuToMillicores, parseMemoryToBytes, podRestartCount } from './podMetrics';
+import { calculateAggregateUsage, formatBytes, formatMillicores, parseCpuToMillicores, parseMemoryToBytes, podLastActivity, podRestartCount } from './podMetrics';
 import type { ClusterPod, PodMetrics } from '../types/runtime';
 
 describe('parseCpuToMillicores', () => {
@@ -92,10 +92,31 @@ describe('pod status helpers', () => {
       ],
     },
   };
-  it('isPodReady requires all containers ready', () => {
-    expect(isPodReady(pod)).toBe(false);
-  });
   it('podRestartCount sums restarts', () => {
     expect(podRestartCount(pod)).toBe(4);
+  });
+});
+
+describe('podLastActivity', () => {
+  const base = { metadata: { name: 'a', uid: 'a' }, spec: { containers: [] } };
+
+  it('prefers the latest running container start over the pod start time', () => {
+    const pod = {
+      ...base,
+      status: {
+        phase: 'Running',
+        startTime: '2026-01-01T00:00:00Z',
+        containerStatuses: [
+          { name: 'a', ready: true, restartCount: 0, state: { running: { startedAt: '2026-02-02T00:00:00Z' } } },
+          { name: 'b', ready: true, restartCount: 1, state: { running: { startedAt: '2026-03-03T00:00:00Z' } } },
+        ],
+      },
+    } as ClusterPod;
+    expect(podLastActivity(pod)).toBe('2026-03-03T00:00:00Z');
+  });
+
+  it('falls back to the pod start time, then to undefined', () => {
+    expect(podLastActivity({ ...base, status: { phase: 'Running', startTime: '2026-01-01T00:00:00Z' } } as ClusterPod)).toBe('2026-01-01T00:00:00Z');
+    expect(podLastActivity({ ...base, status: { phase: 'Pending' } } as ClusterPod)).toBeUndefined();
   });
 });
