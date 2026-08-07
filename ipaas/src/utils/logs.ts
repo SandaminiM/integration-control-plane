@@ -106,3 +106,11 @@ export function downloadLogs(logs: LogRow[]) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+/** Splits a raw container log into lines, optionally keeping only those matching `keyword`. */
+export function filterLogLines(logs: string, keyword: string, filterMode: boolean): string[] {
+  const lines = logs ? logs.split(/\r?\n/) : [];
+  if (!filterMode || !keyword.trim()) return lines;
+  const lower = keyword.toLowerCase();
+  return lines.filter((line) => line.toLowerCase().includes(lower));
+}

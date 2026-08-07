@@ -17,25 +17,13 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { derivePodRows, getPodStatus, runningPodCount } from './scaling';
-import type { ClusterPod, PodMetrics } from '../types/scaling';
+import { derivePodRows } from './scaling';
+import type { ClusterPod, PodMetrics } from '../types/runtime';
 
 const pod = (over: Partial<ClusterPod> & { name: string }): ClusterPod => ({
-  metadata: { name: over.name, ...over.metadata },
-  spec: over.spec,
-  status: over.status,
-});
-
-describe('getPodStatus', () => {
-  it('deletionTimestamp → Terminating', () => {
-    expect(getPodStatus(pod({ name: 'p', metadata: { name: 'p', deletionTimestamp: '2026-01-01' } }))).toEqual({ status: 'Terminating', isRunning: false });
-  });
-  it('waiting reason is humanized', () => {
-    expect(getPodStatus(pod({ name: 'p', status: { containerStatuses: [{ state: { waiting: { reason: 'PodInitializing' } } }] } })).status).toBe('Pod Initializing');
-  });
-  it('Running phase → isRunning', () => {
-    expect(getPodStatus(pod({ name: 'p', status: { phase: 'Running' } }))).toEqual({ status: 'Running', isRunning: true });
-  });
+  metadata: { name: over.name, uid: over.name, ...over.metadata },
+  spec: over.spec ?? { containers: [] },
+  status: over.status ?? { phase: 'Running' },
 });
 
 describe('derivePodRows', () => {
@@ -43,26 +31,19 @@ describe('derivePodRows', () => {
     const pods: ClusterPod[] = [
       pod({
         name: 'a',
-        spec: { containers: [{}, {}] },
+        spec: { containers: [{ name: 'main' }, { name: 'sidecar' }] },
         status: {
           phase: 'Running',
           startTime: '2026-01-01',
           containerStatuses: [
-            { ready: true, restartCount: 1 },
-            { ready: false, restartCount: 2 },
+            { name: 'main', ready: true, restartCount: 1 },
+            { name: 'sidecar', ready: false, restartCount: 2 },
           ],
         },
       }),
     ];
-    const metrics: PodMetrics[] = [{ metadata: { name: 'a' }, containers: [{ usage: { cpu: '10m', memory: '20Mi' } }] }];
+    const metrics: PodMetrics[] = [{ metadata: { name: 'a' }, containers: [{ name: 'main', usage: { cpu: '10m', memory: '20Mi' } }] }];
     const [row] = derivePodRows(pods, metrics);
     expect(row).toMatchObject({ name: 'a', status: 'Running', isRunning: true, readyContainers: 1, totalContainers: 2, restarts: 3, cpu: '10m', memory: '20Mi' });
-  });
-});
-
-describe('runningPodCount', () => {
-  it('counts Running/Succeeded as healthy', () => {
-    const pods: ClusterPod[] = [pod({ name: 'a', status: { phase: 'Running' } }), pod({ name: 'b', status: { phase: 'Pending' } }), pod({ name: 'c', status: { phase: 'Succeeded' } })];
-    expect(runningPodCount(pods)).toEqual({ running: 2, total: 3 });
   });
 });

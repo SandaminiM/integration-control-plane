@@ -46,8 +46,11 @@ export function formatDateTime(value?: string | null): string {
   return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString();
 }
 
+/** Relative time (e.g. "3 days ago"). Returns '' for missing/invalid input. */
 export function formatDistanceToNow(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  const time = new Date(dateStr).getTime();
+  if (Number.isNaN(time)) return '';
+  const diff = Date.now() - time;
   const minutes = Math.floor(diff / 60000);
   if (minutes < 1) return 'Just now';
   if (minutes < 60) return `${minutes} min ago`;

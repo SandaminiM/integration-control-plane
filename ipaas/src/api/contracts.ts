@@ -113,7 +113,7 @@ import type { CreateUrlMappingInput, CustomDomain, CustomDomainType, CustomUrlMa
 import type { OrgWorkflowConfig, ReviewerDecisionRequest, WorkflowConfigRequest, WorkflowDefinition, WorkflowInstanceResponse, WorkflowReviewData } from '../types/workflow';
 import type { Dataplane, IdentityProvider, IdentityProviderRequest, RoleGroupMappingResponse } from '../types/appSecurity';
 import type { Cluster, PdpManagerPdp } from '../types/dataPlanes';
-import type { ClusterPod as RuntimeClusterPod, PodMetrics as RuntimePodMetrics, RuntimeReleaseDetails } from '../types/runtime';
+import type { ClusterPod as RuntimeClusterPod, PodEvent as RuntimePodEvent, PodLogOptions as RuntimePodLogOptions, PodMetrics as RuntimePodMetrics, RuntimeReleaseDetails } from '../types/runtime';
 import type { CreateGitCredentialInput, CredentialDeleteEligibility, GitCredential } from '../types/credentials';
 import type { Environment, CloudDataPlane, EnvironmentInput, EnvironmentTemplate, CreateEnvironmentData, EnvDeletionEligibility } from '../types/environment';
 import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../types/executions';
@@ -913,6 +913,8 @@ export interface RuntimeApi {
   fetchComponentPods(projectId: string, clusterId: string, releaseId: string, namespace: string): Promise<RuntimeClusterPod[]>;
   fetchComponentPodMetrics(projectId: string, clusterId: string, releaseId: string, namespace: string): Promise<RuntimePodMetrics[]>;
   redeployRelease(projectId: string, componentId: string, releaseId: string, message?: string): Promise<void>;
+  fetchPodEvents(projectId: string, clusterId: string, namespace: string, podName: string): Promise<RuntimePodEvent[]>;
+  fetchPodLogs(projectId: string, clusterId: string, namespace: string, podName: string, options: RuntimePodLogOptions): Promise<string>;
 }
 
 export interface AppApi {
