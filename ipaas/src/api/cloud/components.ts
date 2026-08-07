@@ -257,10 +257,18 @@ export const deleteComponent = (input: { orgHandler: string; componentId: string
   bff.delete<DeleteComponentResult | null>(`/projects/${seg(input.projectId)}/components/${seg(input.componentId)}`).then((r) => r ?? { status: 'success', canDelete: true, message: '', encodedData: '' });
 
 // OpenChoreo addresses components by name (== handler == id here), and the BFF
-// UpdateComponent only consumes displayName/description. Use the handler so the
-// name segment is never empty, and send just the mutable fields.
-export const updateComponent = (input: UpdateComponentInput): Promise<Component> =>
-  bff.put<Component>(`/projects/${seg(input.projectId)}/components/${seg(input.handler || input.id)}`, { displayName: input.displayName, description: input.description }).then(withFrontendDisplayType);
+// UpdateComponent only consumes displayName/description/labels. Use the handler
+// so the name segment is never empty, and send just the mutable fields.
+export const updateComponent = (input: UpdateComponentInput): Promise<Component> => {
+  // labels is omitted rather than sent empty when unset, so a name or
+  // description edit leaves the stored labels alone instead of clearing them.
+  const body = {
+    displayName: input.displayName,
+    description: input.description,
+    ...(input.labels !== undefined && { labels: input.labels }),
+  };
+  return bff.put<Component>(`/projects/${seg(input.projectId)}/components/${seg(input.handler || input.id)}`, body).then(withFrontendDisplayType);
+};
 
 export const updateAutoDeployEnabled = (input: UpdateAutoDeployInput): Promise<{ id: string; autoDeployEnabled: boolean }> => bff.patch<{ id: string; autoDeployEnabled: boolean }>(`/components/${seg(input.componentId)}/auto-deploy`, input);
 

@@ -397,7 +397,8 @@ export async function updateComponent(input: UpdateComponentInput): Promise<Comp
     displayName: input.displayName,
     description: input.description,
     version: input.version,
-    labels: input.labels ?? '',
+    // The GraphQL mutation takes labels as a comma-joined String!.
+    labels: (input.labels ?? []).join(','),
   }).then((d) => d.updateComponent);
 }
 
