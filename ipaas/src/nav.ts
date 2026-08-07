@@ -22,6 +22,7 @@ import { capitalize } from './utils/string';
 import { SETTINGS_SECTIONS, type SettingsSectionDef } from './constants/orgSettingsSections';
 import { PROJECT_SETTINGS_SECTIONS } from './constants/projectSettingsSections';
 import { COMPONENT_SETTINGS_SECTIONS } from './constants/componentSettingsSections';
+import { IS_CLOUD } from './features';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -264,7 +265,7 @@ export interface NavEntry {
   sidebar?: boolean;
 }
 
-const NAV: Record<Level, NavEntry[]> = {
+const NAV_ALL: Record<Level, NavEntry[]> = {
   organizations: [
     { key: 'overview', navId: 'overview', segment: 'home' },
     { key: 'develop', navId: 'org-develop', segment: 'develop' },
@@ -343,6 +344,44 @@ const NAV: Record<Level, NavEntry[]> = {
     { key: 'settings', navId: 'component-settings', segment: 'settings', parent: 'admin' },
   ],
 };
+
+// Pages Cloud hides
+const CLOUD_HIDDEN_NAV_IDS = new Set([
+  // Admin
+  'proj-connections',
+  'connections',
+  'storage',
+  'component-settings',
+  // Develop
+  'org-develop',
+  'proj-develop',
+  'integration',
+  'api-info',
+  'lifecycle',
+  'documents',
+  'plans',
+  'policies',
+  // Alerts
+  'alerts',
+  // Insights
+  'org-usage',
+  'org-delivery',
+  'org-compliance',
+  'proj-usage',
+  'proj-delivery',
+  'proj-compliance',
+  'usage',
+  'delivery',
+  'compliance',
+]);
+
+const NAV: Record<Level, NavEntry[]> = IS_CLOUD
+  ? {
+      organizations: NAV_ALL.organizations.filter((e) => !CLOUD_HIDDEN_NAV_IDS.has(e.navId)),
+      projects: NAV_ALL.projects.filter((e) => !CLOUD_HIDDEN_NAV_IDS.has(e.navId)),
+      components: NAV_ALL.components.filter((e) => !CLOUD_HIDDEN_NAV_IDS.has(e.navId)),
+    }
+  : NAV_ALL;
 
 // Keys that exist only for generic (deployable) service types — switching to a
 // non-generic integration must fall back to overview instead of a dead tab.

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, CircularProgress, Divider, PageContent } from '@wso2/oxygen-ui';
+import { Box, CircularProgress, PageContent } from '@wso2/oxygen-ui';
 import { Fragment, useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjects';
@@ -181,11 +181,10 @@ export default function Component(scope: ComponentScope): JSX.Element {
             />
           )}
 
-          {/* Latest build card — hidden for prebuilt + no-source-repo (MCP proxy) + full-surface types */}
+          {/* Latest build card */}
           {!hasCustomOverview && showBuildCard && (
             <>
               <BuildCard componentId={component.id} versionId={versionId} latestCommit={latestCommit} />
-              <Divider sx={{ mb: 3 }} />
             </>
           )}
 

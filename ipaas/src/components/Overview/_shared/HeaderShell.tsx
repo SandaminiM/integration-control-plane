@@ -100,7 +100,7 @@ export default function ComponentHeader({ component, project, repository, latest
   // Only show a hover tooltip for the name/description when the 2-line clamp is actually
   // truncating them — a tooltip that fires on text that already fits is just a useless hover target.
   const titleRef = useRef<HTMLElement>(null);
-  const descRef = useRef<HTMLElement>(null);
+  const descRef = useRef<HTMLDivElement>(null);
   const [titleOverflowing, setTitleOverflowing] = useState(false);
   const [descOverflowing, setDescOverflowing] = useState(false);
 
@@ -368,7 +368,7 @@ export default function ComponentHeader({ component, project, repository, latest
               )}
             </Box>
           </Stack>
-          <Stack direction="row" alignItems="flex-start" gap={1} onMouseEnter={() => setDescHovered(true)} onMouseLeave={() => setDescHovered(false)}>
+          <Stack direction="row" alignItems="flex-start" gap={1} sx={{ pt: 1 }} onMouseEnter={() => setDescHovered(true)} onMouseLeave={() => setDescHovered(false)}>
             <Box sx={{ position: 'relative', flex: 1, minWidth: 0, cursor: descEditing ? 'text' : descValue ? 'text' : 'pointer' }} onClick={() => !descEditing && setDescEditing(true)}>
               {/* Ghost text determines height; pencil sits inline after last word */}
               <Typography
@@ -451,8 +451,9 @@ export default function ComponentHeader({ component, project, repository, latest
             const labelList: string[] = Array.isArray(raw) ? raw : raw ? raw.split(',').filter(Boolean) : [];
             return (
               <>
-                <LabelDialog open={labelDialogOpen} onClose={() => setLabelDialogOpen(false)} component={component} projectId={projectId} currentLabels={labelList} />
-                <Stack direction="row" alignItems="center" gap={0.5} flexWrap="wrap" sx={{ '&:hover .pencil-btn': { opacity: 1 } }}>
+                {/* Mounted only while open — the dialog fetches label suggestions on mount. */}
+                {labelDialogOpen && <LabelDialog open onClose={() => setLabelDialogOpen(false)} component={component} projectId={projectId} currentLabels={labelList} />}
+                <Stack direction="row" alignItems="center" gap={0.5} flexWrap="wrap" sx={{ pb: 1, '&:hover .pencil-btn': { opacity: 1 } }}>
                   <Tag size={12} />
                   {labelList.length === 0 ? (
                     <Typography variant="body2" color="primary" sx={{ cursor: 'pointer' }} onClick={() => setLabelDialogOpen(true)}>
@@ -494,9 +495,9 @@ export default function ComponentHeader({ component, project, repository, latest
                 <Typography variant="body2" color="text.secondary" sx={{ minWidth: 110 }}>
                   Source:
                 </Typography>
-                <ProviderIcon size={12} />
                 {repoUrl ? (
                   <>
+                    <ProviderIcon size={12} />
                     <Typography
                       variant="body2"
                       component="a"
@@ -513,12 +514,8 @@ export default function ComponentHeader({ component, project, repository, latest
                       </IconButton>
                     </Tooltip>
                   </>
-                ) : isRepositoryLoading ? (
-                  <Skeleton variant="text" width={240} height={20} />
                 ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    —
-                  </Typography>
+                  isRepositoryLoading && <Skeleton variant="text" width={240} height={20} />
                 )}
               </Stack>
               <Stack direction="row" flexWrap="wrap" alignItems="center" gap={1}>
@@ -526,11 +523,13 @@ export default function ComponentHeader({ component, project, repository, latest
                   <Typography variant="body2" color="text.secondary" sx={{ minWidth: 110 }}>
                     Latest Commit:
                   </Typography>
-                  <GitCommitHorizontal size={12} />
                   {latestCommit && (
-                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                      {latestCommit.sha.substring(0, 7)}
-                    </Typography>
+                    <>
+                      <GitCommitHorizontal size={12} />
+                      <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                        {latestCommit.sha.substring(0, 7)}
+                      </Typography>
+                    </>
                   )}
                 </Stack>
                 {latestCommit ? (
@@ -550,12 +549,8 @@ export default function ComponentHeader({ component, project, repository, latest
                       </Typography>
                     </Stack>
                   </>
-                ) : isLatestCommitLoading ? (
-                  <Skeleton variant="text" width={320} height={20} />
                 ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    —
-                  </Typography>
+                  isLatestCommitLoading && <Skeleton variant="text" width={320} height={20} />
                 )}
               </Stack>
             </Stack>

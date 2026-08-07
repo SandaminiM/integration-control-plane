@@ -21,6 +21,7 @@ import { GitBranch, HelpCircle, Plus } from '@wso2/oxygen-ui-icons-react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import type { DeploymentTrack } from '../types/component';
+import { IS_CLOUD } from '../features';
 
 interface DeploymentTrackBarProps {
   tracks: DeploymentTrack[];
@@ -61,6 +62,10 @@ function TrackLabel({ track, versionView }: { track: DeploymentTrack; versionVie
 
 export default function DeploymentTrackBar({ tracks, selectedId, onChange, orgHandler, projectHandler, componentHandler, versionView, extra }: DeploymentTrackBarProps) {
   const navigate = useNavigate();
+
+  // Cloud has no deployment tracks yet.
+  if (IS_CLOUD) return null;
+
   const basePath = `/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/settings/deployment-tracks`;
 
   return (

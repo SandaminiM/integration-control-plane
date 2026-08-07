@@ -19,7 +19,8 @@
 import { lazy } from 'react';
 import { type RouteProps, Navigate, Outlet } from 'react-router';
 import { cookiePolicyUrl, loginUrl, orgRoleDetailUrl, projectRoleDetailUrl, componentRoleDetailUrl, projectGroupDetailUrl, componentGroupDetailUrl, signupUrl, registerOrgUrl } from '../paths';
-import { ScopeResolver, generateMatrixRoutes, withScope, type Matrix } from '../nav';
+import { ScopeResolver, generateMatrixRoutes, withScope, type Level, type Matrix } from '../nav';
+import HiddenPageRedirect, { HiddenIntegrationPage } from '../components/HiddenPageRedirect';
 import { IS_WIP, IS_CLOUD } from '../features';
 import { createElement } from 'react';
 const PrebuiltIntegrationConfigProvider = lazy(() => import('../contexts/PrebuiltIntegrationConfigContext').then((m) => ({ default: m.PrebuiltIntegrationConfigProvider })));
@@ -173,11 +174,18 @@ export interface AppRoute extends Omit<RouteProps, 'children'> {
   children?: AppRoute[];
 }
 
+/** Registers `paths` as real routes, or as redirects when `hidden`. */
+function hideable(hidden: boolean, level: Level, routes: AppRoute[]): AppRoute[] {
+  if (!hidden) return routes;
+  return routes.map((r) => ({ path: r.path, element: <HiddenPageRedirect level={level} /> }));
+}
+
 const MATRIX: Matrix = {
   overview: { segment: '', pages: { organizations: Projects, projects: Project, components: Component } },
   build: { segment: 'build', pages: { organizations: OrgBuild, projects: ProjectBuild, components: Build } },
   deploy: { segment: 'deploy', pages: { organizations: OrgDeploy, projects: ProjectDeploy, components: Deploy } },
-  alerts: { segment: 'alerts', pages: { components: Alerts } },
+  // Hidden on cloud; the matrix slot still needs a page, so it redirects.
+  alerts: { segment: 'alerts', pages: { components: IS_CLOUD ? HiddenIntegrationPage : Alerts } },
   logs: { segment: 'logs', pages: { projects: RuntimeLogsProject, components: RuntimeLogsIntegration } },
 
   environments: { segment: 'environments', pages: { organizations: Environments, projects: Environments } },
@@ -212,13 +220,15 @@ const routes: AppRoute[] = [
             element: <AppLayout />,
             children: [
               { path: 'organizations/:orgHandler', element: <OrgHomeRedirect /> },
-              { path: 'organizations/:orgHandler/develop', element: <ComingSoon title="Coming Soon" description="Development tools are currently under development." /> },
+              ...hideable(IS_CLOUD, 'organizations', [{ path: 'organizations/:orgHandler/develop', element: <ComingSoon title="Coming Soon" description="Development tools are currently under development." /> }]),
               { path: 'organizations/:orgHandler/deploy', element: <ComingSoon title="Coming Soon" description="Deployment management is currently under development." /> },
               { path: 'organizations/:orgHandler/test', element: <ComingSoon title="Coming Soon" description="Testing tools are currently under development." /> },
-              { path: 'organizations/:orgHandler/insights/usage', element: createElement(withScope(OrgInsights, ['organizations'])) },
-              { path: 'organizations/:orgHandler/insights/delivery', element: createElement(withScope(DeliveryInsights, ['organizations'])) },
-              { path: 'organizations/:orgHandler/insights/delivery/configure', element: createElement(withScope(ConfigureDelivery, ['organizations'])) },
-              { path: 'organizations/:orgHandler/insights/compliance', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgCompliance, ['organizations']))) },
+              ...hideable(IS_CLOUD, 'organizations', [
+                { path: 'organizations/:orgHandler/insights/usage', element: createElement(withScope(OrgInsights, ['organizations'])) },
+                { path: 'organizations/:orgHandler/insights/delivery', element: createElement(withScope(DeliveryInsights, ['organizations'])) },
+                { path: 'organizations/:orgHandler/insights/delivery/configure', element: createElement(withScope(ConfigureDelivery, ['organizations'])) },
+                { path: 'organizations/:orgHandler/insights/compliance', element: createElement(RouteErrorBoundary, null, createElement(withScope(OrgCompliance, ['organizations']))) },
+              ]),
               { path: 'organizations/:orgHandler/logs', element: <ComingSoon title="Coming Soon" description="Organization-level logs are currently under development." /> },
               { path: 'organizations/:orgHandler/metrics', element: <ComingSoon title="Coming Soon" description="Organization-level metrics are currently under development." /> },
               { path: 'organizations/:orgHandler/rag/scheduled-ingestion', element: createElement(withScope(SetupRagIngestion, ['organizations'])) },
@@ -268,20 +278,24 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/settings/on-prem-keys', element: createElement(withScope(OnPremKeys, ['organizations'])) },
               { path: 'organizations/:orgHandler/settings/application-security/:tab', element: createElement(withScope(ApplicationSecurity, ['organizations'])) },
               ...generateMatrixRoutes(MATRIX),
-              { path: 'organizations/:orgHandler/projects/:projectHandler/develop', element: <ComingSoon title="Coming Soon" description="Development tools are currently under development." /> },
+              ...hideable(IS_CLOUD, 'projects', [{ path: 'organizations/:orgHandler/projects/:projectHandler/develop', element: <ComingSoon title="Coming Soon" description="Development tools are currently under development." /> }]),
               { path: 'organizations/:orgHandler/projects/:projectHandler/deploy', element: <ComingSoon title="Coming Soon" description="Deployment management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/test', element: <ComingSoon title="Coming Soon" description="Testing tools are currently under development." /> },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/insights/usage', element: createElement(withScope(ProjectInsights, ['projects'])) },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/insights/delivery', element: createElement(withScope(DeliveryInsights, ['projects'])) },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/insights/delivery/configure', element: createElement(withScope(ConfigureDelivery, ['projects'])) },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/insights/compliance', element: createElement(RouteErrorBoundary, null, createElement(withScope(ProjectCompliance, ['projects']))) },
+              ...hideable(IS_CLOUD, 'projects', [
+                { path: 'organizations/:orgHandler/projects/:projectHandler/insights/usage', element: createElement(withScope(ProjectInsights, ['projects'])) },
+                { path: 'organizations/:orgHandler/projects/:projectHandler/insights/delivery', element: createElement(withScope(DeliveryInsights, ['projects'])) },
+                { path: 'organizations/:orgHandler/projects/:projectHandler/insights/delivery/configure', element: createElement(withScope(ConfigureDelivery, ['projects'])) },
+                { path: 'organizations/:orgHandler/projects/:projectHandler/insights/compliance', element: createElement(RouteErrorBoundary, null, createElement(withScope(ProjectCompliance, ['projects']))) },
+              ]),
               { path: 'organizations/:orgHandler/projects/:projectHandler/runtimes', element: <ComingSoon title="Coming Soon" description="Runtime management is currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/metrics', element: <ComingSoon title="Coming Soon" description="Metrics are currently under development." /> },
               { path: 'organizations/:orgHandler/projects/:projectHandler/observe/runtimelogs', element: createElement(withScope(RuntimeLogsProject, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/observe/metrics', element: createElement(withScope(ProjectMetrics, ['projects'])) },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections', element: createElement(RouteErrorBoundary, null, createElement(withScope(ProjectConnections, ['projects']))) },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(NewConnection, ['projects']))) },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections/:connectionId', element: createElement(RouteErrorBoundary, null, createElement(withScope(ConnectionDetail, ['projects']))) },
+              ...hideable(IS_CLOUD, 'projects', [
+                { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections', element: createElement(RouteErrorBoundary, null, createElement(withScope(ProjectConnections, ['projects']))) },
+                { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(NewConnection, ['projects']))) },
+                { path: 'organizations/:orgHandler/projects/:projectHandler/admin/connections/:connectionId', element: createElement(RouteErrorBoundary, null, createElement(withScope(ConnectionDetail, ['projects']))) },
+              ]),
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/third-party-services', element: createElement(RouteErrorBoundary, null, createElement(withScope(ThirdPartyServices, ['projects']))) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/third-party-services/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(RegisterThirdPartyService, ['projects']))) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/admin/third-party-services/:serviceId', element: createElement(RouteErrorBoundary, null, createElement(withScope(ThirdPartyServiceDetail, ['projects']))) },
@@ -299,8 +313,10 @@ const routes: AppRoute[] = [
               { path: 'organizations/:orgHandler/home', element: createElement(withScope(OrgHome, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/home', element: createElement(withScope(Project, ['projects'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/overview', element: createElement(withScope(Component, ['components'])) },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/develop/integration', element: createElement(withScope(ComponentIntegration, ['components'])) },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/api-info', element: createElement(withScope(ComponentApiInfo, ['components'])) },
+              ...hideable(IS_CLOUD, 'components', [
+                { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/develop/integration', element: createElement(withScope(ComponentIntegration, ['components'])) },
+                { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/api-info', element: createElement(withScope(ComponentApiInfo, ['components'])) },
+              ]),
               { path: 'organizations/:orgHandler/projects/new', element: createElement(withScope(CreateProject, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/import', element: createElement(withScope(ImportProject, ['organizations'])) },
               { path: 'organizations/:orgHandler/projects/:projectHandler/components/new', element: createElement(withScope(CreateIntegrationOptions, ['projects'])) },
@@ -359,48 +375,54 @@ const routes: AppRoute[] = [
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test/api-chat',
                 element: <ComingSoon title="Coming Soon" description="API Chat is currently under development." />,
               },
-              {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/lifecycle',
-                element: createElement(withScope(Lifecycle, ['components'])),
-              },
-              {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/policies',
-                element: createElement(withScope(McpPolicies, ['components'])),
-              },
-              {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/document',
-                element: createElement(withScope(ComponentDocuments, ['components'])),
-              },
-              {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/usage',
-                element: createElement(withScope(ComponentPlans, ['components'])),
-              },
+              ...hideable(IS_CLOUD, 'components', [
+                {
+                  path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/lifecycle',
+                  element: createElement(withScope(Lifecycle, ['components'])),
+                },
+                {
+                  path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/policies',
+                  element: createElement(withScope(McpPolicies, ['components'])),
+                },
+                {
+                  path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/document',
+                  element: createElement(withScope(ComponentDocuments, ['components'])),
+                },
+                {
+                  path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/manage/usage',
+                  element: createElement(withScope(ComponentPlans, ['components'])),
+                },
+              ]),
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/deploy',
                 element: <ComingSoon title="Coming Soon" description="Deployment management is currently under development." />,
               },
-              {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/insights/usage',
-                element: createElement(withScope(ComponentInsightsUsage, ['components'])),
-              },
-              {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/insights/delivery',
-                element: <ComingSoon title="Coming Soon" description="Component delivery insights will be available soon. In the meantime, you can check project delivery insights." />,
-              },
-              {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/insights/compliance',
-                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentCompliance, ['components']))),
-              },
+              ...hideable(IS_CLOUD, 'components', [
+                {
+                  path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/insights/usage',
+                  element: createElement(withScope(ComponentInsightsUsage, ['components'])),
+                },
+                {
+                  path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/insights/delivery',
+                  element: <ComingSoon title="Coming Soon" description="Component delivery insights will be available soon. In the meantime, you can check project delivery insights." />,
+                },
+                {
+                  path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/insights/compliance',
+                  element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentCompliance, ['components']))),
+                },
+              ]),
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/metrics',
                 element: createElement(withScope(ComponentMetrics, ['components'])),
               },
-              {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/connections',
-                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentConnections, ['components']))),
-              },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/connections/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(NewConnection, ['components']))) },
-              { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/connections/:connectionId', element: createElement(RouteErrorBoundary, null, createElement(withScope(ConnectionDetail, ['components']))) },
+              ...hideable(IS_CLOUD, 'components', [
+                {
+                  path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/connections',
+                  element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentConnections, ['components']))),
+                },
+                { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/connections/new', element: createElement(RouteErrorBoundary, null, createElement(withScope(NewConnection, ['components']))) },
+                { path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/connections/:connectionId', element: createElement(RouteErrorBoundary, null, createElement(withScope(ConnectionDetail, ['components']))) },
+              ]),
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/runtimes',
                 element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentRuntime, ['components']))),
@@ -421,30 +443,34 @@ const routes: AppRoute[] = [
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/scaling',
                 element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentScaling, ['components']))),
               },
-              {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/storage',
-                element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentStorage, ['components']))),
-              },
+              ...hideable(IS_CLOUD, 'components', [
+                {
+                  path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/storage',
+                  element: createElement(RouteErrorBoundary, null, createElement(withScope(ComponentStorage, ['components']))),
+                },
+              ]),
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/admin/external-ci',
                 element: createElement(withScope(ComponentExternalCI, ['components'])),
               },
-              {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings',
-                element: createElement(withScope(ComponentSettings, ['components'])),
-              },
-              {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings/deployment-tracks',
-                element: createElement(withScope(ComponentDeploymentTracks, ['components'])),
-              },
-              {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings/proxy-versions',
-                element: createElement(withScope(ComponentProxyVersions, ['components'])),
-              },
-              {
-                path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings/url-settings',
-                element: createElement(withScope(ComponentUrlSettings, ['components'])),
-              },
+              ...hideable(IS_CLOUD, 'components', [
+                {
+                  path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings',
+                  element: createElement(withScope(ComponentSettings, ['components'])),
+                },
+                {
+                  path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings/deployment-tracks',
+                  element: createElement(withScope(ComponentDeploymentTracks, ['components'])),
+                },
+                {
+                  path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings/proxy-versions',
+                  element: createElement(withScope(ComponentProxyVersions, ['components'])),
+                },
+                {
+                  path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/settings/url-settings',
+                  element: createElement(withScope(ComponentUrlSettings, ['components'])),
+                },
+              ]),
             ],
           },
         ],

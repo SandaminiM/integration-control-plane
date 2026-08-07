@@ -173,7 +173,7 @@ export default function BuildCard({ componentId, versionId, latestCommit }: Buil
 
   if (!lastBuild) {
     return (
-      <Box sx={{ mb: 3, border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2 }}>
+      <Box sx={{ mt: 2, mb: 3, border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2 }}>
         <Typography variant="h5" component="h2" sx={{ fontWeight: 600, textTransform: 'capitalize', mb: 1 }}>
           Latest Build
         </Typography>
@@ -215,7 +215,7 @@ export default function BuildCard({ componentId, versionId, latestCommit }: Buil
   const logText = buildLogText(logs);
 
   return (
-    <Box sx={{ mb: 3, border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2 }}>
+    <Box sx={{ mt: 2, mb: 3, border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2 }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: expanded ? 1.5 : 0 }}>
         <Stack direction="row" alignItems="center" gap={1.5} sx={{ minWidth: 0 }}>
