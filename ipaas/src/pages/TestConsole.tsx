@@ -142,8 +142,9 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
   // gateway, offer that host first and select it by default so try-it-out (with the minted test key)
   // exercises the secured API rather than the open raw URL.
   const visibilityOptions: VisibilityOption[] = useMemo(() => {
-    const base = selectedEndpoint ? getVisibilityOptions(selectedEndpoint) : [];
-    return gatewayInvokeUrl ? [{ label: 'API Gateway', url: gatewayInvokeUrl }, ...base] : base;
+    // When the endpoint is exposed on the API Platform gateway, that is the URL to call
+    if (gatewayInvokeUrl) return [{ label: 'API Gateway', url: gatewayInvokeUrl }];
+    return selectedEndpoint ? getVisibilityOptions(selectedEndpoint) : [];
   }, [selectedEndpoint, gatewayInvokeUrl]);
   const [selectedVisibility, setSelectedVisibility] = useState<VisibilityOption | null>(null);
   useEffect(() => {

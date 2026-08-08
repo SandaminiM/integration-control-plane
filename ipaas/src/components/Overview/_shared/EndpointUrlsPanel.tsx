@@ -102,6 +102,13 @@ interface EndpointUrlsPanelProps {
   onSelect: (idx: number) => void;
   componentId: string;
   deploymentTrackId: string;
+  /**
+   * For an externally-exposed endpoint managed on the API Platform gateway, the enforcing gateway
+   * invoke URL for the currently selected endpoint. When set, the "Public" row shows this (labelled
+   * "API Gateway") instead of the component's raw OpenChoreo external URL. Opt-in: only the
+   * integration-as-api env card passes it; other component types leave it undefined (unchanged).
+   */
+  externalUrlOverride?: string;
 }
 
 /**
@@ -109,7 +116,7 @@ interface EndpointUrlsPanelProps {
  * invoke URLs (with copy), and the API-spec download. Shared by the env-card
  * bodies of integration-as-api and ai-agent
  */
-export default function EndpointUrlsPanel({ endpoints, selectedIdx, onSelect, componentId, deploymentTrackId }: EndpointUrlsPanelProps) {
+export default function EndpointUrlsPanel({ endpoints, selectedIdx, onSelect, componentId, deploymentTrackId, externalUrlOverride }: EndpointUrlsPanelProps) {
   const fetchSpecMutation = useFetchComponentEndpointSpec();
   // Clamp a stale/out-of-bounds selection (e.g. the endpoint list shrank) to a
   // valid index so the panel stays visible and the selector stays consistent,
@@ -118,7 +125,19 @@ export default function EndpointUrlsPanel({ endpoints, selectedIdx, onSelect, co
   const ep = endpoints[safeIdx];
   if (!ep) return null;
 
-  const urlRows = VISIBILITY_ROWS.map((row) => ({ ...row, url: row.getUrl(ep) })).filter((r) => !!r.url && (!ep.networkVisibilities?.length || ep.networkVisibilities.includes(r.label)));
+  // For an exposed external endpoint, surface the enforcing API Platform gateway URL in place of the
+  // raw OpenChoreo external URL (the raw route is open and not what callers should use). Filter on the
+  // original visibility label so the row still matches networkVisibilities ("Public").
+  const urlRows = VISIBILITY_ROWS.map((row) => {
+    const usePublicOverride = row.key === 'public' && !!externalUrlOverride;
+    return {
+      key: row.key,
+      Icon: row.Icon,
+      visLabel: row.label,
+      label: usePublicOverride ? 'API Gateway' : row.label,
+      url: usePublicOverride ? externalUrlOverride! : row.getUrl(ep),
+    };
+  }).filter((r) => !!r.url && (!ep.networkVisibilities?.length || ep.networkVisibilities.includes(r.visLabel)));
   // Fallback to invokeUrl if no visibility-specific URL
   const fallbackUrl = urlRows.length === 0 ? ep.invokeUrl || '' : '';
 
