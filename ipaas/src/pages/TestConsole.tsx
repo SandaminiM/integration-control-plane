@@ -147,10 +147,12 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
     return selectedEndpoint ? getVisibilityOptions(selectedEndpoint) : [];
   }, [selectedEndpoint, gatewayInvokeUrl]);
   const [selectedVisibility, setSelectedVisibility] = useState<VisibilityOption | null>(null);
+  // Re-seed whenever the available URL options change (endpoint, env/track, or apip-exposure change) —
+  // visibilityOptions is memoized, so this only fires when the options actually change, and it avoids
+  // a stale selection when a different env reuses the same endpoint id.
   useEffect(() => {
     setSelectedVisibility(visibilityOptions[0] ?? null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedEndpointId, gatewayInvokeUrl]);
+  }, [visibilityOptions]);
   const invokeUrl = selectedVisibility?.url ?? '';
 
   // Security header / test key
