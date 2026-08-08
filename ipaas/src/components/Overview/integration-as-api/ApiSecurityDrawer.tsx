@@ -23,6 +23,7 @@ import { API_KEY_SCHEME_DESCRIPTION, COMING_SOON_UPSTREAM_ATTRS, DEFAULT_API_KEY
 import { useEndpointSecurity, useSetEndpointSecurity } from '../../../hooks/useConsumers';
 import type { EndpointOption, EndpointRef, SecurityConfig, SecurityMode } from '../../../types/consumers';
 import { friendlyApiError } from '../../../utils/apiSecurity';
+import CopyButton from './CopyButton';
 import * as styles from './apiConsumption.styles';
 
 interface ApiSecurityDrawerProps {
@@ -183,6 +184,21 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
                     </TableRow>
                   </TableBody>
                 </Table>
+              )}
+
+              {!loadingSecurity && security?.publicUrl && (
+                <Stack gap={0.5}>
+                  <Typography variant="body2" fontWeight={500}>
+                    Invoke URL
+                  </Typography>
+                  <Stack direction="row" alignItems="center" gap={1}>
+                    <TextField size="small" value={security.publicUrl} fullWidth InputProps={{ readOnly: true }} />
+                    <CopyButton value={security.publicUrl} />
+                  </Stack>
+                  <Typography variant="caption" color="text.secondary">
+                    Call this URL through the API Platform gateway — it enforces the security selected above. The component's raw endpoint URL is not secured.
+                  </Typography>
+                </Stack>
               )}
 
               <Tooltip title={COMING_SOON_UPSTREAM_ATTRS}>

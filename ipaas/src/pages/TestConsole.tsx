@@ -26,7 +26,7 @@ import { DEFAULT_API_KEY_HEADER } from '../constants/apiConsumption';
 import { IS_CLOUD } from '../features';
 import { useApimSwagger, useGenerateTestKey } from '../hooks/useApim';
 import { useComponentByHandler } from '../hooks/useComponents';
-import { useCreateEndpointTestKey } from '../hooks/useConsumers';
+import { useCreateEndpointTestKey, useEndpointSecurity } from '../hooks/useConsumers';
 import { useComponentDeployment, useEnvEndpoints } from '../hooks/useDeployments';
 import { useEnvironments } from '../hooks/useEnvironments';
 import type { EnvEndpoint } from '../types/component';
@@ -126,13 +126,30 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
   const selectedEndpointId = endpoints.some((e) => e.id === selectedEndpointIdState) ? selectedEndpointIdState : (endpoints[0]?.id ?? '');
   const selectedEndpoint = endpoints.find((e) => e.id === selectedEndpointId) ?? null;
 
-  // Visibility options for selected endpoint
-  const visibilityOptions = selectedEndpoint ? getVisibilityOptions(selectedEndpoint) : [];
+  // Cloud mints the test key from the BFF's test-key route (component/environment/endpoint triple)
+  // and exposes the enforcing API Platform gateway URL via the endpoint's security config; wip/icp
+  // mint from APIM against apimId (below).
+  const testKeyEndpointRef: EndpointRef | null = useMemo(
+    () => (IS_CLOUD && component && selectedEnv && selectedEndpoint ? { componentName: component.id, environmentName: selectedEnv.name, endpointName: selectedEndpoint.id } : null),
+    [component, selectedEnv, selectedEndpoint],
+  );
+  const { data: apiSecurity } = useEndpointSecurity(testKeyEndpointRef, IS_CLOUD && !!testKeyEndpointRef);
+  // The apip gateway host is where the api-key/JWT is actually enforced; the raw visibility URLs are
+  // open (policy-engine not in path), so a test key means nothing there.
+  const gatewayInvokeUrl = apiSecurity?.publicUrl ?? '';
+
+  // Visibility options for selected endpoint. When the endpoint is exposed on the API Platform
+  // gateway, offer that host first and select it by default so try-it-out (with the minted test key)
+  // exercises the secured API rather than the open raw URL.
+  const visibilityOptions: VisibilityOption[] = useMemo(() => {
+    const base = selectedEndpoint ? getVisibilityOptions(selectedEndpoint) : [];
+    return gatewayInvokeUrl ? [{ label: 'API Gateway', url: gatewayInvokeUrl }, ...base] : base;
+  }, [selectedEndpoint, gatewayInvokeUrl]);
   const [selectedVisibility, setSelectedVisibility] = useState<VisibilityOption | null>(null);
   useEffect(() => {
     setSelectedVisibility(visibilityOptions[0] ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedEndpointId]);
+  }, [selectedEndpointId, gatewayInvokeUrl]);
   const invokeUrl = selectedVisibility?.url ?? '';
 
   // Security header / test key
@@ -151,12 +168,7 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
 
   const generateKeyMutation = useGenerateTestKey();
 
-  // Cloud mints the key from the BFF's test-key route (component/environment/endpoint
-  // triple); wip/icp mint it from APIM against the endpoint's apimId.
-  const testKeyEndpointRef: EndpointRef | null = useMemo(
-    () => (IS_CLOUD && component && selectedEnv && selectedEndpoint ? { componentName: component.id, environmentName: selectedEnv.name, endpointName: selectedEndpoint.id } : null),
-    [component, selectedEnv, selectedEndpoint],
-  );
+  // testKeyEndpointRef is defined above (it also drives the gateway invoke URL via useEndpointSecurity).
   const endpointTestKeyMutation = useCreateEndpointTestKey(testKeyEndpointRef);
   const canGetTestKey = IS_CLOUD ? !!testKeyEndpointRef : !!selectedEndpoint?.apimId;
 

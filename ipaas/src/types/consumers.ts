@@ -118,6 +118,11 @@ export interface SecurityConfig {
     issuers?: string[];
     audiences?: string[];
   };
+  /**
+   * The exposed API's invoke URL on the API Platform gateway (the enforcing endpoint to call),
+   * distinct from the component's open raw route. Read-only: populated on GET, ignored on PUT.
+   */
+  publicUrl?: string;
 }
 
 /** A consumer application. Org-scoped and shared across the org. */
