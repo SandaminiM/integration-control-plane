@@ -20,6 +20,7 @@ import { Box, CircularProgress, Divider, Typography } from '@wso2/oxygen-ui';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useApiDefinition, useComponentDeployment, useEnvEndpoints } from '../../../hooks/useDeployments';
+import { useEndpointSecurity } from '../../../hooks/useConsumers';
 import { useOrgUuid } from '../../../hooks/useOrgUuid';
 import { IS_CLOUD } from '../../../features';
 import type { EnvCardBodyProps } from '../../../types/integration';
@@ -51,6 +52,12 @@ export default function EnvCardBody({ component, env, prevEnv, projectId, versio
   const [selectedEpIdx, setSelectedEpIdx] = useState(0);
   const activeEndpoint = envEndpoints[selectedEpIdx] ?? envEndpoints[0];
   const isGraphql = activeEndpoint?.type === 'GraphQL';
+
+  // The enforcing API Platform gateway URL for the selected endpoint (cloud-only; the hook throws in
+  // wip/icp). Passed to EndpointUrlsPanel so an exposed external endpoint shows the apip URL instead
+  // of the raw OpenChoreo external route.
+  const securityRef = IS_CLOUD && activeEndpoint ? { componentName: component.id, environmentName: env.name, endpointName: activeEndpoint.id } : null;
+  const { data: apiSecurity } = useEndpointSecurity(securityRef, IS_CLOUD && !!activeEndpoint);
 
   // GraphQL is introspected live (GraphqlOperationsList) — the swagger/contract path is REST-only.
   const { data: swagger } = useApiDefinition(hasDeployment && !isGraphql ? activeEndpoint?.apimRevisionId : null);
@@ -93,7 +100,7 @@ export default function EnvCardBody({ component, env, prevEnv, projectId, versio
         </Box>
       )}
 
-      {showEndpointPanel && deploymentStatusV2 !== 'IN_PROGRESS' && <EndpointUrlsPanel endpoints={envEndpoints} selectedIdx={selectedEpIdx} onSelect={setSelectedEpIdx} componentId={component.id} deploymentTrackId={versionId} />}
+      {showEndpointPanel && deploymentStatusV2 !== 'IN_PROGRESS' && <EndpointUrlsPanel endpoints={envEndpoints} selectedIdx={selectedEpIdx} onSelect={setSelectedEpIdx} componentId={component.id} deploymentTrackId={versionId} externalUrlOverride={apiSecurity?.publicUrl || undefined} />}
 
       {hasDeployment &&
         deploymentStatusV2 !== 'IN_PROGRESS' &&
