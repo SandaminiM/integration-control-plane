@@ -17,24 +17,17 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { consumerDisplayName, consumerSummary, isConsumerNameTaken, normalizeConsumerStatus } from './apiConsumption';
+import { consumerSummary, isConsumerNameTaken, normalizeConsumerStatus } from './apiConsumption';
 import type { Consumer, ConsumerStatus } from '../types/consumers';
 
-const consumer = (over: { displayName?: string; status?: ConsumerStatus; createdAt?: string; revokedAt?: string } = {}): Consumer => ({
-  application: { id: 'my-app', displayName: over.displayName },
+const consumer = (over: { status?: ConsumerStatus; createdAt?: string; appCreatedAt?: string; revokedAt?: string } = {}): Consumer => ({
+  id: 'my-app',
+  displayName: 'My App',
+  application: { id: 'my-app', displayName: 'My App', createdAt: over.appCreatedAt },
   credential: { id: 'key-1', applicationId: 'my-app', restApiId: 'greeter-greeter-http', createdAt: over.createdAt },
   status: over.status ?? 'active',
   revokedAt: over.revokedAt,
   credentialIds: ['key-1'],
-});
-
-describe('consumerDisplayName', () => {
-  it('prefers the display name', () => {
-    expect(consumerDisplayName(consumer({ displayName: 'My App' }))).toBe('My App');
-  });
-  it('falls back to the handle', () => {
-    expect(consumerDisplayName(consumer())).toBe('my-app');
-  });
 });
 
 describe('normalizeConsumerStatus', () => {
@@ -51,6 +44,9 @@ describe('normalizeConsumerStatus', () => {
 describe('consumerSummary', () => {
   it('dates an active consumer from its creation', () => {
     expect(consumerSummary(consumer({ createdAt: '2026-07-30T10:00:00Z' })).startsWith('Active since ')).toBe(true);
+  });
+  it('falls back to the application timestamp when the credential carries none', () => {
+    expect(consumerSummary(consumer({ appCreatedAt: '2026-07-30T10:00:00Z' })).startsWith('Active since ')).toBe(true);
   });
   it('dates a revoked consumer from its revocation, not its creation', () => {
     const summary = consumerSummary(consumer({ status: 'revoked', createdAt: '2026-07-30T10:00:00Z', revokedAt: '2026-08-01T09:30:00Z' }));

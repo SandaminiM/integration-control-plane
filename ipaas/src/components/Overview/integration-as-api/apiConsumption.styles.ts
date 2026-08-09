@@ -231,7 +231,6 @@ export const dialogAlert = {
   mb: 2,
 } as const;
 
-/** Destructive row action — reads as destructive before it is hovered, not after. */
 export const consumerDeleteButton = {
   color: 'error.main',
   '&:hover': {
@@ -239,21 +238,14 @@ export const consumerDeleteButton = {
   },
 } as const;
 
-/**
- * Rule between the Consumers count and the security-scheme readout. `divider`
- * is tuned for separating large surfaces and disappears at this length, so this
- * borrows the (theme-aware) disabled-text tone instead.
- */
+/** `divider` disappears at this length, so it borrows the disabled-text tone. */
 export const titleDivider = {
   mx: 0.5,
   my: 0.25,
   borderColor: 'text.disabled',
 } as const;
 
-/**
- * Icon actions inside a credential field (copy, reveal). Branded at rest so they
- * read as the field's affordance, tinted on hover like the row's delete action.
- */
+/** Icon actions inside a credential field (copy, reveal). */
 export const credIconButton = {
   color: 'primary.main',
   '&:hover': {
@@ -261,12 +253,10 @@ export const credIconButton = {
   },
 } as const;
 
-/** Keeps `Security Scheme: X` on one line next to the panel title. */
 export const securityModeGroup = {
   whiteSpace: 'nowrap',
 } as const;
 
-/** The scheme itself — the part of the readout worth reading. */
 export const securityModeValue = {
   fontWeight: 600,
   color: 'text.primary',

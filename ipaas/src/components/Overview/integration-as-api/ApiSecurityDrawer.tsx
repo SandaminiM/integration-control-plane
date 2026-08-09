@@ -88,9 +88,7 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
   const isApiKey = mode === 'api-key';
   const isOAuth = mode === 'jwt';
 
-  // The schemes are mutually exclusive at the gateway, so they are radios: picking
-  // one is what turns the other off. Clicking the selected radio again clears it
-  // back to `none`, which is the only way to open the API from here.
+  // Clicking the selected radio again clears back to `none` — the only way to open the API.
   const selectScheme = (scheme: Exclude<SecurityMode, 'none'>) => setMode((m) => (m === scheme ? 'none' : scheme));
 
   const handleApply = async () => {
@@ -134,8 +132,6 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
                 <Typography variant="body2" fontWeight={500}>
                   Endpoints:
                 </Typography>
-                {/* A lone endpoint is still shown as a dropdown, disabled — matching
-                    the env card's endpoint picker, so the two read as one control. */}
                 <Select size="small" value={selectedEndpointIdx} onChange={(e) => setUserSelectedIdx(Number(e.target.value))} disabled={endpoints.length <= 1} sx={styles.endpointSelect}>
                   {endpoints.map((ep, i) => (
                     <MenuItem key={ep.name} value={i}>
@@ -170,8 +166,7 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
                           </Typography>
                         </TableCell>
                       </TableRow>
-                      {/* OAuth is off until jwt-auth is wired end to end; the row stays
-                          visible so the choice is discoverable, but is not selectable. */}
+                      {/* Visible but unselectable until jwt-auth is wired end to end. */}
                       <TableRow>
                         <TableCell sx={styles.schemeCell}>
                           <Tooltip title={COMING_SOON_OAUTH}>

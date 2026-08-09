@@ -28,10 +28,9 @@ const refKey = (ref: EndpointRef | null | undefined) => [ref?.componentName ?? '
 const consumersKey = (projectName: string | null | undefined, ref: EndpointRef | null | undefined) => ['consumers', projectName ?? '', ...refKey(ref)] as const;
 
 // ---------------------------------------------------------------------------
-// Consumers — one row per consumer application, revoked ones included
+// Consumers
 // ---------------------------------------------------------------------------
 
-/** Consumer applications of this endpoint's exposed API. */
 export function useConsumers(projectName: string | null | undefined, ref: EndpointRef | null | undefined) {
   return useQuery<Consumer[]>({
     queryKey: consumersKey(projectName, ref),
@@ -42,7 +41,7 @@ export function useConsumers(projectName: string | null | undefined, ref: Endpoi
   });
 }
 
-/** Create a consumer application and mint its api-key. The plaintext is returned once. */
+/** The plaintext key is returned once. */
 export function useCreateConsumer(projectName: string | null | undefined) {
   const qc = useQueryClient();
   return useMutation<Consumer, Error, CreateConsumerInput>({
@@ -53,37 +52,36 @@ export function useCreateConsumer(projectName: string | null | undefined) {
   });
 }
 
-/** Re-issue a consumer's api-key in place (revoke + mint). The new plaintext is returned once. */
+/** Re-issue the api-key in place. The new plaintext is returned once. */
 export function useRegenerateConsumerToken(projectName: string | null | undefined, ref: EndpointRef | null | undefined) {
   const qc = useQueryClient();
   return useMutation<ConsumerCredential, Error, Consumer>({
     mutationFn: (consumer) => regenerateConsumerToken(ref!, consumer),
-    // Regenerating revokes before it re-mints, so even on failure the old key is gone — the
-    // cached list must not keep showing it.
+    // The revoke lands before the re-mint, so the old key is gone even on failure.
     onSettled: () => {
       qc.invalidateQueries({ queryKey: consumersKey(projectName, ref) });
     },
   });
 }
 
-/** Revoke a consumer's api-key, keeping the consumer itself in the list. */
+/** Revoke the api-key, keeping the consumer in the list. */
 export function useRevokeConsumer(projectName: string | null | undefined, ref: EndpointRef | null | undefined) {
   const qc = useQueryClient();
   return useMutation<void, Error, Consumer>({
     mutationFn: (consumer) => revokeConsumer(ref!, consumer),
-    onSuccess: () => {
+    // Keys are revoked in parallel, so a partial failure still changes server state.
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: consumersKey(projectName, ref) });
     },
   });
 }
 
-/** Delete a consumer: revoke its api-key *and* remove the consumer application. */
+/** Revoke the api-key *and* remove the application. */
 export function useDeleteConsumer(projectName: string | null | undefined, ref: EndpointRef | null | undefined) {
   const qc = useQueryClient();
   return useMutation<void, Error, Consumer>({
     mutationFn: (consumer) => deleteConsumer(ref!, consumer),
-    // The revoke lands before the application delete, so a partial failure still
-    // changes server state — refetch either way.
+    // A partial failure still changes server state.
     onSettled: () => {
       qc.invalidateQueries({ queryKey: consumersKey(projectName, ref) });
     },

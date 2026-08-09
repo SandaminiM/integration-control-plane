@@ -20,14 +20,9 @@
 
 import type { SecurityMode } from '../types/consumers';
 
-/**
- * Header the `api-key-auth` policy reads the key from. `X-API-Key` is the
- * gateway default (`SetAPIKeyAuthRequest.key`) and the header the spec's
- * test-key flow tells consumers to send.
- */
+/** Gateway default for the `api-key-auth` policy. */
 export const DEFAULT_API_KEY_HEADER = 'X-API-Key';
 
-/** Header OAuth would use once the jwt-auth policy is wired up. */
 export const OAUTH_HEADER = 'Authorization';
 
 /** Stand-in shown wherever a consumer's credential is hidden. */
@@ -43,16 +38,12 @@ export const REGENERATE_KEY_WARNING = 'The current key is revoked immediately an
 export const REVOKE_KEY_WARNING = 'The key is revoked immediately and requests presenting it will be rejected. The consumer application is retained and can be issued a new key.';
 export const DELETE_CONSUMER_WARNING = 'The key is revoked and the consumer application is permanently removed. This action cannot be undone.';
 
-/** Shown next to a freshly minted key — it is the only time the plaintext exists. */
 export const TOKEN_ONE_TIME_WARNING = 'This key is displayed once and is not stored in retrievable form. Copy it to a secure location before closing this panel.';
 
-/** Shown in place of the key when managing a consumer whose plaintext is gone. */
 export const TOKEN_NOT_RETRIEVABLE_NOTICE = 'This key was displayed once at creation and cannot be retrieved. Regenerate to issue a replacement.';
 
-/** Rejection message for a consumer name already used on this endpoint. */
 export const CONSUMER_NAME_TAKEN = 'A consumer with this name already exists for this endpoint.';
 
-/** Short, user-facing name of each security mode — the Consumers header badge. */
 export const SECURITY_MODE_LABEL: Record<SecurityMode, string> = {
   none: 'No Auth',
   'api-key': 'API Key',

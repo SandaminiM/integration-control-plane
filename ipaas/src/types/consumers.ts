@@ -17,24 +17,12 @@
  */
 
 /**
- * API security & exposure domain, mirroring the ipaas-service BFF surface
- * ("Integration Platform - API Security & Exposure").
+ * API security & exposure domain, mirroring the ipaas-service BFF surface.
+ * Cloud-only today; `wip`/`icp` stub it.
  *
- * Two orthogonal concerns live here:
- *
- *  1. **The exposed API** — a deployed endpoint registered as a managed REST
- *     API on the WSO2 API Platform gateway, plus its enforcement policies
- *     (`api-key-auth`, `jwt-auth`, `subscription-validation`) and its API keys.
- *     Everything in this group is addressed by the
- *     component / environment / endpoint triple ({@link EndpointRef}).
- *
- *  2. **Consumers** — a consumer *application* (org-scoped, created against a
- *     project) that holds a credential for an exposed API. The spec models that
- *     credential as a subscription token, but the BFF implements `/applications`
- *     without the `/subscriptions` routes, so it is an endpoint api-key sent as
- *     `X-API-Key` — see {@link ConsumerCredential}.
- *
- * The surface is cloud-only today; `wip`/`icp` stub it.
+ * The spec models a consumer's credential as a subscription token, but the BFF
+ * implements `/applications` without the `/subscriptions` routes, so it is an
+ * endpoint api-key sent as `X-API-Key` — see {@link ConsumerCredential}.
  */
 
 /** Identifies one deployed endpoint — the path triple every security call takes. */
@@ -99,13 +87,7 @@ export interface ApiKeyAuthOptions {
   in?: string;
 }
 
-/**
- * The single active auth mode of an exposed API. The gateway ANDs auth policies with no
- * fallback, so exactly one mode is active at a time (they are mutually exclusive):
- *  - `none`    — open, no auth.
- *  - `api-key` — api-key-auth (the default for a newly exposed endpoint).
- *  - `jwt`     — jwt-auth (OAuth2 bearer, validated against the org key manager).
- */
+/** The gateway ANDs auth policies with no fallback, so exactly one mode is active at a time. */
 export type SecurityMode = 'none' | 'api-key' | 'jwt';
 
 /** The active security configuration of an exposed endpoint API (GET/PUT `.../security`). */
@@ -120,18 +102,11 @@ export interface SecurityConfig {
     issuers?: string[];
     audiences?: string[];
   };
-  /**
-   * The exposed API's invoke URL on the API Platform gateway (the enforcing endpoint to call),
-   * distinct from the component's open raw route. Read-only: populated on GET, ignored on PUT.
-   */
+  /** Gateway invoke URL, distinct from the component's open raw route. Populated on GET, ignored on PUT. */
   publicUrl?: string;
 }
 
-/**
- * Lifecycle state of a consumer, normalised from the credential's raw status.
- * A consumer whose credential has been revoked keeps its row — it can be
- * regenerated back into `active`, or deleted outright.
- */
+/** Normalised from the credential's raw status. A revoked consumer keeps its row. */
 export type ConsumerStatus = 'active' | 'revoked';
 
 /** A consumer application. Org-scoped and shared across the org. */
@@ -158,37 +133,24 @@ export interface ConsumerCredential {
   applicationId: string;
   /** Handle of the exposed API this credential grants access to. */
   restApiId: string;
-  /**
-   * Plaintext credential, sent as the `X-API-Key` header. Populated only by the
-   * call that mints it — creating or regenerating a consumer — and never
-   * retrievable afterwards.
-   */
+  /** Plaintext, sent as `X-API-Key`. Populated only by the call that mints it. */
   token?: string;
   status?: string;
   createdAt?: string;
 }
 
-/**
- * View model for the Consumers panel: exactly one row per consumer application
- * of the API in view, whatever its credential history. Regenerating a
- * credential re-uses the row; only creating a new application adds one.
- */
+/** One row per consumer, whatever its credential history. */
 export interface Consumer {
-  application: ConsumerApplication;
+  /** Application id when one backs this row, else the api-key group the row was built from. */
+  id: string;
+  displayName: string;
+  /** Absent for key-only rows — api-keys minted before applications were used. */
+  application?: ConsumerApplication;
   credential: ConsumerCredential;
-  /** Normalised lifecycle state — drives the row's status chip. */
   status: ConsumerStatus;
-  /**
-   * When the credential was revoked, for the row's `Revoked …` subtitle. Only
-   * set while `status` is `revoked`, and only when the server reports it — the
-   * cloud api-key summary carries no revocation timestamp.
-   */
+  /** Set only while revoked, and only when the server reports it. */
   revokedAt?: string;
-  /**
-   * Names of every credential (api-key) backing this consumer, including
-   * already-revoked ones. Revoking or deleting the consumer revokes them all,
-   * so a stale key can never outlive the row it belongs to.
-   */
+  /** Every api-key backing this consumer, revoked ones included — all are revoked together. */
   credentialIds: string[];
 }
 

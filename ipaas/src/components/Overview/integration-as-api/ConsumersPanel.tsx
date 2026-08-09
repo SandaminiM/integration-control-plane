@@ -22,7 +22,7 @@ import { useMemo, useState, type JSX } from 'react';
 import { DELETE_CONSUMER_WARNING, SECURITY_MODE_LABEL } from '../../../constants/apiConsumption';
 import { useConsumers, useDeleteConsumer, useEndpointSecurity } from '../../../hooks/useConsumers';
 import type { Consumer, EndpointOption, EndpointRef } from '../../../types/consumers';
-import { consumerDisplayName, consumerSummary } from '../../../utils/apiConsumption';
+import { consumerSummary } from '../../../utils/apiConsumption';
 import { friendlyApiError } from '../../../utils/apiSecurity';
 import ConfirmDeleteDialog from '../../ConfirmDeleteDialog';
 import ApiSecurityDrawer from './ApiSecurityDrawer';
@@ -47,12 +47,7 @@ interface ConsumersPanelProps {
   endpoints: EndpointOption[];
 }
 
-/**
- * Cloud-only "Consumers" subcard rendered inside the API env card. Lists the
- * consumer applications of this endpoint's exposed API — one row each, revoked
- * ones included — and lets a user create, manage and delete them. Also reports
- * the API's active security scheme and opens the drawer that configures it.
- */
+/** Cloud-only "Consumers" subcard inside the API env card. */
 export default function ConsumersPanel({ componentName, projectName, envName, envLabel, endpointName, endpoints }: ConsumersPanelProps): JSX.Element {
   const endpointRef: EndpointRef = useMemo(() => ({ componentName, environmentName: envName, endpointName }), [componentName, envName, endpointName]);
 
@@ -66,9 +61,7 @@ export default function ConsumersPanel({ componentName, projectName, envName, en
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const count = consumers.length;
-  // Names are unique per endpoint only, so the create form validates against
-  // this endpoint's list and nothing wider.
-  const existingNames = useMemo(() => consumers.map(consumerDisplayName), [consumers]);
+  const existingNames = useMemo(() => consumers.map((c) => c.displayName), [consumers]);
 
   const handleDelete = async () => {
     if (!pendingDelete) return;
@@ -77,7 +70,7 @@ export default function ConsumersPanel({ componentName, projectName, envName, en
       await deleteMutation.mutateAsync(pendingDelete);
       setPendingDelete(null);
     } catch (err) {
-      setDeleteError(friendlyApiError(err, `Could not delete “${consumerDisplayName(pendingDelete)}”.`));
+      setDeleteError(friendlyApiError(err, `Could not delete “${pendingDelete.displayName}”.`));
     }
   };
 
@@ -123,12 +116,12 @@ export default function ConsumersPanel({ componentName, projectName, envName, en
       ) : count > 0 ? (
         <Stack gap={1} sx={styles.consumerList}>
           {consumers.map((c) => (
-            <Box key={c.application.id} sx={styles.consumerRow}>
-              <Avatar sx={styles.consumerAvatar}>{(consumerDisplayName(c)[0] ?? 'A').toUpperCase()}</Avatar>
+            <Box key={c.id} sx={styles.consumerRow}>
+              <Avatar sx={styles.consumerAvatar}>{(c.displayName[0] ?? 'A').toUpperCase()}</Avatar>
               <Box sx={styles.consumerRowText}>
                 <Stack direction="row" alignItems="center" gap={0.75} sx={styles.consumerNameRow}>
                   <Typography variant="body2" fontWeight={500} noWrap>
-                    {consumerDisplayName(c)}
+                    {c.displayName}
                   </Typography>
                   <Chip label={c.status === 'revoked' ? 'Revoked' : 'Active'} size="small" color={c.status === 'revoked' ? 'error' : 'success'} variant="outlined" sx={styles.consumerStatusChip} />
                 </Stack>
@@ -140,7 +133,7 @@ export default function ConsumersPanel({ componentName, projectName, envName, en
                 Manage
               </Button>
               <Tooltip title="Delete Consumer">
-                <IconButton size="small" aria-label={`Delete ${consumerDisplayName(c)}`} onClick={() => setPendingDelete(c)} sx={styles.consumerDeleteButton}>
+                <IconButton size="small" aria-label={`Delete ${c.displayName}`} onClick={() => setPendingDelete(c)} sx={styles.consumerDeleteButton}>
                   <Trash2 size={15} />
                 </IconButton>
               </Tooltip>
@@ -160,7 +153,7 @@ export default function ConsumersPanel({ componentName, projectName, envName, en
 
       {pendingDelete && (
         <ConfirmDeleteDialog
-          title={`Delete “${consumerDisplayName(pendingDelete)}”?`}
+          title={`Delete “${pendingDelete.displayName}”?`}
           onConfirm={() => void handleDelete()}
           onClose={() => {
             setPendingDelete(null);

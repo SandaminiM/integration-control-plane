@@ -28,16 +28,11 @@ interface CopyButtonProps {
   label?: string;
 }
 
-/**
- * Icon-only copy-to-clipboard button that flips to a tick for ~1.4s. It sits
- * inside credential fields whose value is already the subject of the row, so a
- * text label would only repeat what the field says.
- */
+/** Icon-only copy-to-clipboard button that flips to a tick for ~1.4s. */
 export default function CopyButton({ value, label = 'Copy' }: CopyButtonProps): JSX.Element {
   const [copied, setCopied] = useState(false);
 
-  // Confirm only after the write resolves: an unavailable clipboard (insecure
-  // context) or a denied permission must not read as a successful copy.
+  // Confirm only after the write resolves — a blocked clipboard must not read as a copy.
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(value);
