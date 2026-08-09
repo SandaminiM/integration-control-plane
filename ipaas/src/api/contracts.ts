@@ -36,7 +36,7 @@
 import type { AlertComponentType } from '../constants/alerts';
 import type { AlertHistoryResponse, AlertRule, AlertRuleCountUsage } from '../types/alerts';
 import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory, MarketplaceService } from '../types/apim';
-import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, CreateApiKeyInput, CreateConsumerInput, EndpointRef, SecurityConfig, Subscription } from '../types/consumers';
+import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, CreateApiKeyInput, CreateConsumerInput, EndpointRef, SecurityConfig, ConsumerCredential } from '../types/consumers';
 import type { ArtifactType, Artifact, ArtifactParam, ArtifactStatusInput, ListenerStateInput, ArtifactToggleStatusInput, ArtifactToggleKind, TriggerTaskInput } from '../types/artifact';
 import type {
   User,
@@ -265,15 +265,18 @@ export interface ConsumersApi {
   /** Set the single active auth mode (none/api-key/jwt); the BFF clears the other + redeploys. */
   setEndpointSecurity(ref: EndpointRef, cfg: SecurityConfig): Promise<SecurityConfig>;
 
-  // Consumers — a consumer is a named api-key on the exposed endpoint (no subscription-token flow).
-  /** Consumers (named api-keys) of the API exposed for `ref`. */
-  fetchConsumers(ref: EndpointRef): Promise<Consumer[]>;
-  /** Create a consumer: mint a named api-key on the endpoint. The plaintext key is returned once. */
+  // Consumers — a consumer application holding an api-key on the exposed endpoint (no
+  // subscription-token flow; the BFF implements /applications but no /subscriptions).
+  /** One row per consumer application of the API exposed for `ref`, revoked ones included. */
+  fetchConsumers(ref: EndpointRef, projectName?: string): Promise<Consumer[]>;
+  /** Create a consumer application and mint its api-key. The plaintext key is returned once. */
   createConsumer(input: CreateConsumerInput): Promise<Consumer>;
-  /** Re-issue a consumer's api-key (revoke + mint). The new plaintext key is returned once. */
-  regenerateConsumerToken(ref: EndpointRef, keyName: string, displayName: string): Promise<Subscription>;
-  /** Revoke a consumer's api-key. */
-  revokeConsumer(ref: EndpointRef, keyName: string): Promise<void>;
+  /** Re-issue a consumer's api-key (revoke + mint) in place. The new plaintext is returned once. */
+  regenerateConsumerToken(ref: EndpointRef, consumer: Consumer): Promise<ConsumerCredential>;
+  /** Revoke a consumer's api-key, keeping the consumer application so it can be regenerated. */
+  revokeConsumer(ref: EndpointRef, consumer: Consumer): Promise<void>;
+  /** Revoke the api-key *and* remove the consumer application. Not the same as revoking. */
+  deleteConsumer(ref: EndpointRef, consumer: Consumer): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------

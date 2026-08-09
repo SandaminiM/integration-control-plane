@@ -96,18 +96,6 @@ export const disabledTooltipTarget = {
   display: 'inline-flex',
 } as const;
 
-export const singleEndpointName = {
-  minWidth: 200,
-  px: 1.5,
-  py: 0.75,
-  borderRadius: 0.5,
-  border: '1px solid',
-  borderColor: 'divider',
-  bgcolor: 'action.hover',
-  fontSize: 13,
-  fontWeight: 500,
-} as const;
-
 export const endpointSelect = {
   minWidth: 200,
 } as const;
@@ -243,9 +231,45 @@ export const dialogAlert = {
   mb: 2,
 } as const;
 
-export const copyButton = {
-  minWidth: 0,
+/** Destructive row action — reads as destructive before it is hovered, not after. */
+export const consumerDeleteButton = {
+  color: 'error.main',
+  '&:hover': {
+    bgcolor: 'error.lighter',
+  },
+} as const;
+
+/**
+ * Rule between the Consumers count and the security-scheme readout. `divider`
+ * is tuned for separating large surfaces and disappears at this length, so this
+ * borrows the (theme-aware) disabled-text tone instead.
+ */
+export const titleDivider = {
+  mx: 0.5,
+  my: 0.25,
+  borderColor: 'text.disabled',
+} as const;
+
+/**
+ * Icon actions inside a credential field (copy, reveal). Branded at rest so they
+ * read as the field's affordance, tinted on hover like the row's delete action.
+ */
+export const credIconButton = {
+  color: 'primary.main',
+  '&:hover': {
+    bgcolor: 'primary.lighter',
+  },
+} as const;
+
+/** Keeps `Security Scheme: X` on one line next to the panel title. */
+export const securityModeGroup = {
   whiteSpace: 'nowrap',
+} as const;
+
+/** The scheme itself — the part of the readout worth reading. */
+export const securityModeValue = {
+  fontWeight: 600,
+  color: 'text.primary',
 } as const;
 
 export const fieldLabel = {

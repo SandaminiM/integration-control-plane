@@ -18,8 +18,7 @@
 
 /** Static copy and defaults for the cloud API consumption + security surface. */
 
-/** Header a consumer sends its subscription token in. */
-export const SUBSCRIPTION_KEY_HEADER = 'Subscription-Key';
+import type { SecurityMode } from '../types/consumers';
 
 /**
  * Header the `api-key-auth` policy reads the key from. `X-API-Key` is the
@@ -31,7 +30,7 @@ export const DEFAULT_API_KEY_HEADER = 'X-API-Key';
 /** Header OAuth would use once the jwt-auth policy is wired up. */
 export const OAUTH_HEADER = 'Authorization';
 
-/** Stand-in shown wherever a subscription token is hidden. */
+/** Stand-in shown wherever a consumer's credential is hidden. */
 export const TOKEN_MASK = '•'.repeat(28);
 
 export const COMING_SOON_OAUTH = 'Securing with OAuth coming soon';
@@ -40,5 +39,22 @@ export const COMING_SOON_UPSTREAM_ATTRS = 'Passing end-user attributes to upstre
 export const API_KEY_SCHEME_DESCRIPTION = 'Secure your API with API Key protocol.';
 export const OAUTH_SCHEME_DESCRIPTION = 'Secure your API with OAuth 2 protocol.';
 
-export const REGENERATE_SUBSCRIPTION_WARNING = 'The subscription is revoked and re-created, so the current Subscription-Key stops working immediately. Any consumer using it must switch to the new value.';
-export const UNSUBSCRIBE_WARNING = 'This revokes the subscription and its token. Calls using it will fail once subscription validation is enforced. The application itself is kept and can be subscribed again.';
+export const REGENERATE_KEY_WARNING = 'The current key is revoked immediately and replaced. Any client still presenting the previous key will be rejected until it is updated.';
+export const REVOKE_KEY_WARNING = 'The key is revoked immediately and requests presenting it will be rejected. The consumer application is retained and can be issued a new key.';
+export const DELETE_CONSUMER_WARNING = 'The key is revoked and the consumer application is permanently removed. This action cannot be undone.';
+
+/** Shown next to a freshly minted key — it is the only time the plaintext exists. */
+export const TOKEN_ONE_TIME_WARNING = 'This key is displayed once and is not stored in retrievable form. Copy it to a secure location before closing this panel.';
+
+/** Shown in place of the key when managing a consumer whose plaintext is gone. */
+export const TOKEN_NOT_RETRIEVABLE_NOTICE = 'This key was displayed once at creation and cannot be retrieved. Regenerate to issue a replacement.';
+
+/** Rejection message for a consumer name already used on this endpoint. */
+export const CONSUMER_NAME_TAKEN = 'A consumer with this name already exists for this endpoint.';
+
+/** Short, user-facing name of each security mode — the Consumers header badge. */
+export const SECURITY_MODE_LABEL: Record<SecurityMode, string> = {
+  none: 'No Auth',
+  'api-key': 'API Key',
+  jwt: 'OAuth',
+};

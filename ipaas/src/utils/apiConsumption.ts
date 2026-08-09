@@ -16,18 +16,47 @@
  * under the License.
  */
 
-import { SUBSCRIPTION_KEY_HEADER } from '../constants/apiConsumption';
-import type { Consumer } from '../types/consumers';
-import { formatDate } from './time';
+import type { Consumer, ConsumerStatus } from '../types/consumers';
+import { formatDateTime } from './time';
+
+/** Raw credential statuses that mean "this credential no longer authenticates". */
+const REVOKED_STATUSES = new Set(['revoked', 'inactive', 'expired', 'deleted', 'disabled']);
+
+/**
+ * Normalise a credential's raw status into the two states the UI models.
+ * Unknown values read as `active`: a credential the gateway still honours must
+ * never be shown as revoked just because its label is unfamiliar.
+ */
+export function normalizeConsumerStatus(raw?: string): ConsumerStatus {
+  return raw && REVOKED_STATUSES.has(raw.trim().toLowerCase()) ? 'revoked' : 'active';
+}
 
 /** Consumer applications carry an optional display name; fall back to the handle. */
 export function consumerDisplayName(consumer: Consumer): string {
   return consumer.application.displayName || consumer.application.id;
 }
 
-/** Row subtitle for a consumer: credential kind, subscription status, subscribed date. */
+/**
+ * Row subtitle for a consumer: how long it has been in its current state.
+ * `Active since …` counts from creation, `Revoked …` from the revoke. The
+ * timestamp is dropped when the server does not report one — a bare state
+ * beats "since —".
+ */
 export function consumerSummary(consumer: Consumer): string {
-  const { status, createdAt } = consumer.subscription;
-  const created = formatDate(createdAt);
-  return [SUBSCRIPTION_KEY_HEADER, status, created && `subscribed ${created}`].filter(Boolean).join(' · ');
+  const revoked = consumer.status === 'revoked';
+  const at = revoked ? consumer.revokedAt : (consumer.credential.createdAt ?? consumer.application.createdAt);
+  const when = at ? formatDateTime(at) : '';
+  if (!when || when === '—') return revoked ? 'Revoked' : 'Active';
+  return revoked ? `Revoked ${when}` : `Active since ${when}`;
+}
+
+/**
+ * Case-insensitive duplicate check for a consumer name. Names only have to be
+ * unique within one endpoint of one environment, so `existing` is always the
+ * list already rendered for that endpoint — the same name on a sibling endpoint
+ * is fine and must stay allowed.
+ */
+export function isConsumerNameTaken(name: string, existing: readonly string[]): boolean {
+  const candidate = name.trim().toLowerCase();
+  return candidate !== '' && existing.some((n) => n.trim().toLowerCase() === candidate);
 }

@@ -19,16 +19,16 @@
 import { Alert, Box, Button, Chip, CircularProgress, Drawer, IconButton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Eye, EyeOff, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState, type JSX } from 'react';
-import { DEFAULT_API_KEY_HEADER, REGENERATE_SUBSCRIPTION_WARNING, TOKEN_MASK, UNSUBSCRIBE_WARNING } from '../../../constants/apiConsumption';
+import { CONSUMER_NAME_TAKEN, DEFAULT_API_KEY_HEADER, REGENERATE_KEY_WARNING, REVOKE_KEY_WARNING, TOKEN_MASK, TOKEN_NOT_RETRIEVABLE_NOTICE, TOKEN_ONE_TIME_WARNING } from '../../../constants/apiConsumption';
 import { useCreateConsumer, useRegenerateConsumerToken, useRevokeConsumer } from '../../../hooks/useConsumers';
 import type { Consumer, EndpointRef } from '../../../types/consumers';
-import { consumerDisplayName } from '../../../utils/apiConsumption';
+import { consumerDisplayName, isConsumerNameTaken } from '../../../utils/apiConsumption';
 import { friendlyApiError } from '../../../utils/apiSecurity';
 import ConfirmDeleteDialog from '../../ConfirmDeleteDialog';
 import CopyButton from './CopyButton';
 import * as styles from './apiConsumption.styles';
 
-type ConfirmAction = 'regenerate' | 'unsubscribe';
+type ConfirmAction = 'regenerate' | 'revoke';
 
 interface ConsumerDrawerProps {
   open: boolean;
@@ -41,15 +41,21 @@ interface ConsumerDrawerProps {
   envLabel: string;
   /** Existing consumer to manage; `null` opens the create form. */
   consumer: Consumer | null;
+  /**
+   * Names already taken on this endpoint. Uniqueness is per endpoint, so the
+   * same name on a sibling endpoint is fine and must not be rejected here.
+   */
+  existingNames: readonly string[];
 }
 
 /**
- * Right drawer for creating a consumer application subscribed to this API, or
- * managing an existing one. The name is captured first; generating credentials
- * subscribes the application and reveals its key below, after which the name is
- * fixed. The credential is the subscription token, sent as `Subscription-Key`.
+ * Right drawer for creating a consumer application for this API, or managing an
+ * existing one. The name is captured first — rejected here if another consumer
+ * of the same endpoint already uses it — then generating credentials mints the
+ * key and reveals it below, after which the name is fixed. The credential is an
+ * api-key, sent as `X-API-Key`, and its plaintext exists only on this screen.
  */
-export default function ConsumerDrawer({ open, onClose, projectName, endpointRef, envLabel, consumer }: ConsumerDrawerProps): JSX.Element {
+export default function ConsumerDrawer({ open, onClose, projectName, endpointRef, envLabel, consumer, existingNames }: ConsumerDrawerProps): JSX.Element {
   const createMutation = useCreateConsumer(projectName);
   const regenMutation = useRegenerateConsumerToken(projectName, endpointRef);
   const revokeMutation = useRevokeConsumer(projectName, endpointRef);
@@ -59,14 +65,18 @@ export default function ConsumerDrawer({ open, onClose, projectName, endpointRef
   const [confirm, setConfirm] = useState<ConfirmAction | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // The consumer in view and its subscription are server state, so they are
+  // The consumer in view and its credential are server state, so they are
   // derived from the mutations rather than mirrored into local state.
   const consumerInView = consumer ?? createMutation.data ?? null;
-  const subscription = regenMutation.data ?? consumerInView?.subscription ?? null;
+  const credential = regenMutation.data ?? consumerInView?.credential ?? null;
 
   // The plaintext api-key is returned only once (on create/regenerate). A consumer opened from
   // the list has no retrievable key — the user regenerates to issue a fresh one.
-  const token = subscription?.token ?? '';
+  const token = credential?.token ?? '';
+  // The key was minted in this session, so this is the only time it can be copied.
+  const tokenIsFresh = !!token && (createMutation.isSuccess || regenMutation.isSuccess);
+
+  const nameTaken = isConsumerNameTaken(appName, existingNames);
 
   useEffect(() => {
     if (!open) return;
@@ -82,7 +92,7 @@ export default function ConsumerDrawer({ open, onClose, projectName, endpointRef
   }, [open, consumer]);
 
   const handleGenerate = async () => {
-    if (!appName.trim()) return;
+    if (!appName.trim() || nameTaken) return;
     setError(null);
     try {
       await createMutation.mutateAsync({ ...endpointRef, projectName, appName: appName.trim() });
@@ -92,15 +102,14 @@ export default function ConsumerDrawer({ open, onClose, projectName, endpointRef
   };
 
   const handleConfirm = async () => {
-    if (!consumerInView || !subscription) return;
-    const keyName = subscription.id;
+    if (!consumerInView) return;
     setError(null);
     try {
       if (confirm === 'regenerate') {
-        await regenMutation.mutateAsync({ keyName, displayName: consumerDisplayName(consumerInView) });
+        await regenMutation.mutateAsync(consumerInView);
         setRevealToken(false);
       } else {
-        await revokeMutation.mutateAsync({ keyName });
+        await revokeMutation.mutateAsync(consumerInView);
         onClose();
       }
       setConfirm(null);
@@ -110,8 +119,11 @@ export default function ConsumerDrawer({ open, onClose, projectName, endpointRef
   };
 
   const busy = createMutation.isPending || regenMutation.isPending || revokeMutation.isPending;
-  // Credentials exist once the application is subscribed — the name is fixed from then on.
+  // Credentials exist once the application has a key — the name is fixed from then on.
   const hasCredentials = !!consumerInView;
+  // `consumer` is the snapshot the row was opened with, so a regenerate in this
+  // session has to override it: the consumer is active again.
+  const isRevoked = consumerInView?.status === 'revoked' && !regenMutation.isSuccess;
 
   return (
     <Drawer anchor="right" open={open} onClose={busy ? undefined : onClose} variant="temporary" sx={styles.rightDrawer}>
@@ -155,17 +167,27 @@ export default function ConsumerDrawer({ open, onClose, projectName, endpointRef
             autoFocus={!hasCredentials}
             required={!hasCredentials}
             disabled={hasCredentials || busy}
+            error={!hasCredentials && nameTaken}
+            helperText={!hasCredentials && nameTaken ? CONSUMER_NAME_TAKEN : undefined}
             sx={hasCredentials ? styles.lockedField : undefined}
           />
 
           {hasCredentials && (
             <Box sx={styles.credentialsSection}>
+              {/* The one-time nature of the key is stated while it is on screen, not
+                  only on the later visit when it is already gone. */}
+              {tokenIsFresh && (
+                <Alert severity="warning" sx={styles.dialogAlert}>
+                  {TOKEN_ONE_TIME_WARNING}
+                </Alert>
+              )}
+
               <Typography sx={styles.fieldLabel}>Header</Typography>
               <Box sx={styles.credField}>
                 <Typography component="span" sx={styles.credValue}>
                   {DEFAULT_API_KEY_HEADER}
                 </Typography>
-                <CopyButton value={DEFAULT_API_KEY_HEADER} />
+                <CopyButton value={DEFAULT_API_KEY_HEADER} label="Copy header name" />
               </Box>
 
               <Typography sx={styles.nextFieldLabel}>API Key</Typography>
@@ -175,14 +197,14 @@ export default function ConsumerDrawer({ open, onClose, projectName, endpointRef
                     {revealToken ? token : TOKEN_MASK}
                   </Typography>
                   <Tooltip title={revealToken ? 'Hide' : 'Reveal'}>
-                    <IconButton size="small" onClick={() => setRevealToken((v) => !v)}>
+                    <IconButton size="small" onClick={() => setRevealToken((v) => !v)} sx={styles.credIconButton}>
                       {revealToken ? <EyeOff size={15} /> : <Eye size={15} />}
                     </IconButton>
                   </Tooltip>
-                  <CopyButton value={token} />
+                  <CopyButton value={token} label="Copy API key" />
                 </Box>
               ) : (
-                <Alert severity="info">The API key is shown only once, when it is created. Regenerate to issue a new key.</Alert>
+                <Alert severity="info">{TOKEN_NOT_RETRIEVABLE_NOTICE}</Alert>
               )}
             </Box>
           )}
@@ -191,24 +213,27 @@ export default function ConsumerDrawer({ open, onClose, projectName, endpointRef
         <Box sx={hasCredentials ? styles.drawerFooterSplit : styles.drawerFooter}>
           {hasCredentials ? (
             <>
+              {/* Revoke is destructive, so it sits alone on the far left, away from
+                  the two actions a user reaches for on the way out. Disabled once
+                  revoked — regenerating is the only way back. */}
+              <Button variant="outlined" color="error" onClick={() => setConfirm('revoke')} disabled={busy || isRevoked}>
+                Revoke
+              </Button>
               <Stack direction="row" gap={1}>
                 <Button variant="outlined" onClick={() => setConfirm('regenerate')} disabled={busy}>
                   Regenerate
                 </Button>
-                <Button variant="outlined" color="error" onClick={() => setConfirm('unsubscribe')} disabled={busy}>
-                  Revoke
+                <Button variant="contained" onClick={onClose} disabled={busy}>
+                  Done
                 </Button>
               </Stack>
-              <Button variant="contained" onClick={onClose} disabled={busy}>
-                Done
-              </Button>
             </>
           ) : (
             <>
               <Button variant="outlined" onClick={onClose} disabled={busy}>
                 Cancel
               </Button>
-              <Button variant="contained" onClick={() => void handleGenerate()} disabled={!appName.trim() || busy} startIcon={createMutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}>
+              <Button variant="contained" onClick={() => void handleGenerate()} disabled={!appName.trim() || nameTaken || busy} startIcon={createMutation.isPending ? <CircularProgress size={14} color="inherit" /> : undefined}>
                 Generate Credentials
               </Button>
             </>
@@ -226,7 +251,7 @@ export default function ConsumerDrawer({ open, onClose, projectName, endpointRef
           pendingLabel={confirm === 'regenerate' ? 'Regenerating…' : 'Revoking…'}
           maxWidth="xs">
           <Typography variant="body2" color="text.secondary">
-            {confirm === 'regenerate' ? REGENERATE_SUBSCRIPTION_WARNING : UNSUBSCRIBE_WARNING}
+            {confirm === 'regenerate' ? REGENERATE_KEY_WARNING : REVOKE_KEY_WARNING}
           </Typography>
         </ConfirmDeleteDialog>
       )}

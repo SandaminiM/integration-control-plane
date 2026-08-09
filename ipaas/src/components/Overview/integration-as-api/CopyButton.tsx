@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Button } from '@wso2/oxygen-ui';
+import { IconButton, Tooltip } from '@wso2/oxygen-ui';
 import { Check, Copy } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import * as styles from './apiConsumption.styles';
@@ -24,10 +24,15 @@ import * as styles from './apiConsumption.styles';
 interface CopyButtonProps {
   /** Value written to the clipboard. */
   value: string;
+  /** Tooltip text; also the accessible name. */
   label?: string;
 }
 
-/** Copy-to-clipboard button that flips to a "Copied" state for ~1.4s. */
+/**
+ * Icon-only copy-to-clipboard button that flips to a tick for ~1.4s. It sits
+ * inside credential fields whose value is already the subject of the row, so a
+ * text label would only repeat what the field says.
+ */
 export default function CopyButton({ value, label = 'Copy' }: CopyButtonProps): JSX.Element {
   const [copied, setCopied] = useState(false);
 
@@ -44,8 +49,10 @@ export default function CopyButton({ value, label = 'Copy' }: CopyButtonProps): 
   };
 
   return (
-    <Button size="small" variant="outlined" onClick={() => void copy()} startIcon={copied ? <Check size={13} /> : <Copy size={13} />} sx={styles.copyButton}>
-      {copied ? 'Copied' : label}
-    </Button>
+    <Tooltip title={copied ? 'Copied' : label}>
+      <IconButton size="small" onClick={() => void copy()} aria-label={label} sx={styles.credIconButton}>
+        {copied ? <Check size={15} /> : <Copy size={15} />}
+      </IconButton>
+    </Tooltip>
   );
 }

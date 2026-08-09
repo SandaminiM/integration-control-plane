@@ -29,8 +29,10 @@
  *     component / environment / endpoint triple ({@link EndpointRef}).
  *
  *  2. **Consumers** — a consumer *application* (org-scoped, created against a
- *     project) subscribed to an exposed API. The subscription carries an opaque
- *     token the consumer sends as the `Subscription-Key` header.
+ *     project) that holds a credential for an exposed API. The spec models that
+ *     credential as a subscription token, but the BFF implements `/applications`
+ *     without the `/subscriptions` routes, so it is an endpoint api-key sent as
+ *     `X-API-Key` — see {@link ConsumerCredential}.
  *
  * The surface is cloud-only today; `wip`/`icp` stub it.
  */
@@ -51,7 +53,7 @@ export interface EndpointOption {
 
 /** A service endpoint exposed as a managed API on the API Platform gateway. */
 export interface ApiExposure {
-  /** The API Platform REST API handle — also the subscription's `restApiId`. */
+  /** The API Platform REST API handle — also the credential's `restApiId`. */
   handle: string;
   /** Gateway context path. */
   context?: string;
@@ -125,6 +127,13 @@ export interface SecurityConfig {
   publicUrl?: string;
 }
 
+/**
+ * Lifecycle state of a consumer, normalised from the credential's raw status.
+ * A consumer whose credential has been revoked keeps its row — it can be
+ * regenerated back into `active`, or deleted outright.
+ */
+export type ConsumerStatus = 'active' | 'revoked';
+
 /** A consumer application. Org-scoped and shared across the org. */
 export interface ConsumerApplication {
   id: string;
@@ -143,15 +152,16 @@ export interface CreateApplicationInput {
   description?: string;
 }
 
-/** An application's subscription to an exposed API. */
-export interface Subscription {
+/** A consumer application's credential for an exposed API. */
+export interface ConsumerCredential {
   id: string;
   applicationId: string;
-  /** Handle of the exposed API this subscription grants access to. */
+  /** Handle of the exposed API this credential grants access to. */
   restApiId: string;
   /**
-   * Opaque subscription token, sent as the `Subscription-Key` header. Returned
-   * on create and on a single-subscription GET — not on the list endpoint.
+   * Plaintext credential, sent as the `X-API-Key` header. Populated only by the
+   * call that mints it — creating or regenerating a consumer — and never
+   * retrievable afterwards.
    */
   token?: string;
   status?: string;
@@ -159,19 +169,33 @@ export interface Subscription {
 }
 
 /**
- * View model for the Consumers panel: an application paired with its
- * subscription to the API currently in view.
+ * View model for the Consumers panel: exactly one row per consumer application
+ * of the API in view, whatever its credential history. Regenerating a
+ * credential re-uses the row; only creating a new application adds one.
  */
 export interface Consumer {
   application: ConsumerApplication;
-  subscription: Subscription;
+  credential: ConsumerCredential;
+  /** Normalised lifecycle state — drives the row's status chip. */
+  status: ConsumerStatus;
+  /**
+   * When the credential was revoked, for the row's `Revoked …` subtitle. Only
+   * set while `status` is `revoked`, and only when the server reports it — the
+   * cloud api-key summary carries no revocation timestamp.
+   */
+  revokedAt?: string;
+  /**
+   * Names of every credential (api-key) backing this consumer, including
+   * already-revoked ones. Revoking or deleting the consumer revokes them all,
+   * so a stale key can never outlive the row it belongs to.
+   */
+  credentialIds: string[];
 }
 
-/** Payload for creating a consumer application and subscribing it in one step. */
+/** Payload for creating a consumer application and minting its credential in one step. */
 export interface CreateConsumerInput extends EndpointRef {
   /** Project handle the new application belongs to. */
   projectName: string;
   /** Display name of the consumer application. */
   appName: string;
-  description?: string;
 }

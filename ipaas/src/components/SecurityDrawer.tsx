@@ -217,17 +217,15 @@ export default function SecurityDrawer({ open, onClose, apimId, componentId, ver
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     Endpoints:
                   </Typography>
-                  {uniqueEndpoints.length > 1 ? (
-                    <Select size="small" value={selectedEndpointIdx} onChange={(e) => setUserSelectedIdx(Number(e.target.value))} sx={{ minWidth: 200 }}>
-                      {uniqueEndpoints.map((ep, i) => (
-                        <MenuItem key={ep.apimId ?? ep.displayName} value={i}>
-                          {ep.displayName}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  ) : (
-                    <Box sx={{ minWidth: 200, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider', borderRadius: 0.5, px: 1.5, py: 0.75, fontSize: 13, fontWeight: 500 }}>{uniqueEndpoints[0].displayName}</Box>
-                  )}
+                  {/* A lone endpoint is still shown as a dropdown, disabled — matching
+                      the env card's endpoint picker, so the two read as one control. */}
+                  <Select size="small" value={selectedEndpointIdx} onChange={(e) => setUserSelectedIdx(Number(e.target.value))} disabled={uniqueEndpoints.length <= 1} sx={{ minWidth: 200 }}>
+                    {uniqueEndpoints.map((ep, i) => (
+                      <MenuItem key={ep.apimId ?? ep.displayName} value={i}>
+                        {ep.displayName}
+                      </MenuItem>
+                    ))}
+                  </Select>
                 </Stack>
               )}
 

@@ -16,13 +16,15 @@
  * under the License.
  */
 
-import { Alert, Avatar, Box, Button, Chip, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
-import { Plus, ShieldCheck, Users } from '@wso2/oxygen-ui-icons-react';
+import { Alert, Avatar, Box, Button, Chip, CircularProgress, Divider, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Plus, ShieldCheck, Trash2, Users } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
-import { useConsumers } from '../../../hooks/useConsumers';
+import { DELETE_CONSUMER_WARNING, SECURITY_MODE_LABEL } from '../../../constants/apiConsumption';
+import { useConsumers, useDeleteConsumer, useEndpointSecurity } from '../../../hooks/useConsumers';
 import type { Consumer, EndpointOption, EndpointRef } from '../../../types/consumers';
 import { consumerDisplayName, consumerSummary } from '../../../utils/apiConsumption';
 import { friendlyApiError } from '../../../utils/apiSecurity';
+import ConfirmDeleteDialog from '../../ConfirmDeleteDialog';
 import ApiSecurityDrawer from './ApiSecurityDrawer';
 import ConsumerDrawer from './ConsumerDrawer';
 import * as styles from './apiConsumption.styles';
@@ -47,18 +49,37 @@ interface ConsumersPanelProps {
 
 /**
  * Cloud-only "Consumers" subcard rendered inside the API env card. Lists the
- * applications subscribed to this endpoint's exposed API, lets a user create and
- * manage subscriptions, and opens the security drawer for the API's gateway
- * security configuration.
+ * consumer applications of this endpoint's exposed API — one row each, revoked
+ * ones included — and lets a user create, manage and delete them. Also reports
+ * the API's active security scheme and opens the drawer that configures it.
  */
 export default function ConsumersPanel({ componentName, projectName, envName, envLabel, endpointName, endpoints }: ConsumersPanelProps): JSX.Element {
   const endpointRef: EndpointRef = useMemo(() => ({ componentName, environmentName: envName, endpointName }), [componentName, envName, endpointName]);
 
   const { data: consumers = [], isLoading, error } = useConsumers(projectName, endpointRef);
+  const { data: security } = useEndpointSecurity(endpointRef);
+  const deleteMutation = useDeleteConsumer(projectName, endpointRef);
+
   const [securityOpen, setSecurityOpen] = useState(false);
   const [dialogTarget, setDialogTarget] = useState<DialogTarget>(null);
+  const [pendingDelete, setPendingDelete] = useState<Consumer | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const count = consumers.length;
+  // Names are unique per endpoint only, so the create form validates against
+  // this endpoint's list and nothing wider.
+  const existingNames = useMemo(() => consumers.map(consumerDisplayName), [consumers]);
+
+  const handleDelete = async () => {
+    if (!pendingDelete) return;
+    setDeleteError(null);
+    try {
+      await deleteMutation.mutateAsync(pendingDelete);
+      setPendingDelete(null);
+    } catch (err) {
+      setDeleteError(friendlyApiError(err, `Could not delete “${consumerDisplayName(pendingDelete)}”.`));
+    }
+  };
 
   return (
     <Box sx={styles.subCard}>
@@ -69,6 +90,17 @@ export default function ConsumersPanel({ componentName, projectName, envName, en
           <Typography component="span" variant="caption" color="text.secondary">
             ({count})
           </Typography>
+          {security && (
+            <>
+              <Divider orientation="vertical" flexItem sx={styles.titleDivider} />
+              <Typography component="span" variant="body2" color="text.secondary" sx={styles.securityModeGroup}>
+                Security Scheme:{' '}
+                <Box component="span" sx={styles.securityModeValue}>
+                  {SECURITY_MODE_LABEL[security.mode]}
+                </Box>
+              </Typography>
+            </>
+          )}
         </Typography>
         <Stack direction="row" alignItems="center" gap={1.5}>
           <Button variant="text" size="small" startIcon={<ShieldCheck size={14} />} onClick={() => setSecurityOpen(true)} sx={styles.textAction}>
@@ -91,14 +123,14 @@ export default function ConsumersPanel({ componentName, projectName, envName, en
       ) : count > 0 ? (
         <Stack gap={1} sx={styles.consumerList}>
           {consumers.map((c) => (
-            <Box key={c.subscription.id} sx={styles.consumerRow}>
+            <Box key={c.application.id} sx={styles.consumerRow}>
               <Avatar sx={styles.consumerAvatar}>{(consumerDisplayName(c)[0] ?? 'A').toUpperCase()}</Avatar>
               <Box sx={styles.consumerRowText}>
                 <Stack direction="row" alignItems="center" gap={0.75} sx={styles.consumerNameRow}>
                   <Typography variant="body2" fontWeight={500} noWrap>
                     {consumerDisplayName(c)}
                   </Typography>
-                  <Chip label={c.subscription.status || 'ACTIVE'} size="small" color="success" variant="outlined" sx={styles.consumerStatusChip} />
+                  <Chip label={c.status === 'revoked' ? 'Revoked' : 'Active'} size="small" color={c.status === 'revoked' ? 'error' : 'success'} variant="outlined" sx={styles.consumerStatusChip} />
                 </Stack>
                 <Typography variant="caption" color="text.secondary" noWrap sx={styles.consumerRowSubtitle}>
                   {consumerSummary(c)}
@@ -107,6 +139,11 @@ export default function ConsumersPanel({ componentName, projectName, envName, en
               <Button variant="outlined" size="small" onClick={() => setDialogTarget(c)}>
                 Manage
               </Button>
+              <Tooltip title="Delete Consumer">
+                <IconButton size="small" aria-label={`Delete ${consumerDisplayName(c)}`} onClick={() => setPendingDelete(c)} sx={styles.consumerDeleteButton}>
+                  <Trash2 size={15} />
+                </IconButton>
+              </Tooltip>
             </Box>
           ))}
         </Stack>
@@ -119,7 +156,30 @@ export default function ConsumersPanel({ componentName, projectName, envName, en
       )}
 
       <ApiSecurityDrawer open={securityOpen} onClose={() => setSecurityOpen(false)} componentName={componentName} envName={envName} endpoints={endpoints} activeEndpointName={endpointName} />
-      <ConsumerDrawer open={dialogTarget !== null} onClose={() => setDialogTarget(null)} projectName={projectName} endpointRef={endpointRef} envLabel={envLabel} consumer={dialogTarget === 'new' ? null : dialogTarget} />
+      <ConsumerDrawer open={dialogTarget !== null} onClose={() => setDialogTarget(null)} projectName={projectName} endpointRef={endpointRef} envLabel={envLabel} consumer={dialogTarget === 'new' ? null : dialogTarget} existingNames={existingNames} />
+
+      {pendingDelete && (
+        <ConfirmDeleteDialog
+          title={`Delete “${consumerDisplayName(pendingDelete)}”?`}
+          onConfirm={() => void handleDelete()}
+          onClose={() => {
+            setPendingDelete(null);
+            setDeleteError(null);
+          }}
+          isPending={deleteMutation.isPending}
+          confirmLabel="Delete"
+          pendingLabel="Deleting…"
+          maxWidth="xs">
+          {deleteError && (
+            <Alert severity="error" sx={styles.dialogAlert}>
+              {deleteError}
+            </Alert>
+          )}
+          <Typography variant="body2" color="text.secondary">
+            {DELETE_CONSUMER_WARNING}
+          </Typography>
+        </ConfirmDeleteDialog>
+      )}
     </Box>
   );
 }
