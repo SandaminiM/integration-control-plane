@@ -20,13 +20,12 @@ import { describe, expect, it } from 'vitest';
 import { consumerSummary, isConsumerNameTaken, normalizeConsumerStatus } from './apiConsumption';
 import type { Consumer, ConsumerStatus } from '../types/consumers';
 
-const consumer = (over: { status?: ConsumerStatus; createdAt?: string; appCreatedAt?: string; revokedAt?: string } = {}): Consumer => ({
+const consumer = (over: { status?: ConsumerStatus; createdAt?: string; appCreatedAt?: string } = {}): Consumer => ({
   id: 'my-app',
   displayName: 'My App',
   application: { id: 'my-app', displayName: 'My App', createdAt: over.appCreatedAt },
   credential: { id: 'key-1', applicationId: 'my-app', restApiId: 'greeter-greeter-http', createdAt: over.createdAt },
   status: over.status ?? 'active',
-  revokedAt: over.revokedAt,
   credentialIds: ['key-1'],
 });
 
@@ -42,23 +41,23 @@ describe('normalizeConsumerStatus', () => {
 });
 
 describe('consumerSummary', () => {
-  it('dates an active consumer from its creation', () => {
-    expect(consumerSummary(consumer({ createdAt: '2026-07-30T10:00:00Z' })).startsWith('Active since ')).toBe(true);
+  it('reports when the consumer application was created', () => {
+    expect(consumerSummary(consumer({ appCreatedAt: '2026-07-30T10:00:00Z' })).startsWith('Created at ')).toBe(true);
   });
-  it('falls back to the application timestamp when the credential carries none', () => {
-    expect(consumerSummary(consumer({ appCreatedAt: '2026-07-30T10:00:00Z' })).startsWith('Active since ')).toBe(true);
+  it('reads the same regardless of whether the credential is revoked', () => {
+    const active = consumerSummary(consumer({ appCreatedAt: '2026-07-30T10:00:00Z' }));
+    const revoked = consumerSummary(consumer({ status: 'revoked', appCreatedAt: '2026-07-30T10:00:00Z' }));
+    expect(revoked).toBe(active);
   });
-  it('dates a revoked consumer from its revocation, not its creation', () => {
-    const summary = consumerSummary(consumer({ status: 'revoked', createdAt: '2026-07-30T10:00:00Z', revokedAt: '2026-08-01T09:30:00Z' }));
-    expect(summary.startsWith('Revoked ')).toBe(true);
-    expect(summary).not.toContain('Active');
+  it('falls back to the credential timestamp when there is no application', () => {
+    expect(consumerSummary(consumer({ createdAt: '2026-07-30T10:00:00Z' })).startsWith('Created at ')).toBe(true);
   });
-  it('falls back to the bare state when no timestamp is reported', () => {
-    expect(consumerSummary(consumer())).toBe('Active');
-    expect(consumerSummary(consumer({ status: 'revoked' }))).toBe('Revoked');
+  it('is empty with no timestamp, leaving the status to the chip alone', () => {
+    expect(consumerSummary(consumer())).toBe('');
+    expect(consumerSummary(consumer({ status: 'revoked' }))).toBe('');
   });
-  it('falls back to the bare state for an unparseable timestamp', () => {
-    expect(consumerSummary(consumer({ createdAt: 'not-a-date' }))).toBe('Active');
+  it('is empty for an unparseable timestamp', () => {
+    expect(consumerSummary(consumer({ appCreatedAt: 'not-a-date' }))).toBe('');
   });
 });
 

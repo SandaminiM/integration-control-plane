@@ -27,13 +27,11 @@ export function normalizeConsumerStatus(raw?: string): ConsumerStatus {
   return raw && REVOKED_STATUSES.has(raw.trim().toLowerCase()) ? 'revoked' : 'active';
 }
 
-/** Row subtitle: `Active since <when>` / `Revoked <when>`, or the bare state when undated. */
+/** Row subtitle. The application's creation time is the only timestamp the platform reports. */
 export function consumerSummary(consumer: Consumer): string {
-  const revoked = consumer.status === 'revoked';
-  const at = revoked ? consumer.revokedAt : (consumer.credential.createdAt ?? consumer.application?.createdAt);
+  const at = consumer.application?.createdAt ?? consumer.credential.createdAt;
   const when = at ? formatDateTime(at) : '';
-  if (!when || when === '—') return revoked ? 'Revoked' : 'Active';
-  return revoked ? `Revoked ${when}` : `Active since ${when}`;
+  return !when || when === '—' ? '' : `Created at ${when}`;
 }
 
 /** Names are unique per endpoint only, so `existing` is always that one endpoint's list. */

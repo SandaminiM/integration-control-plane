@@ -59,9 +59,8 @@ export default function ConsumerDrawer({ open, onClose, projectName, endpointRef
   const [confirm, setConfirm] = useState<ConfirmAction | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // `consumer` is the snapshot the row was opened with, so a regenerate in this
-  // session has to replace it — otherwise a second regenerate, or a revoke, would
-  // act on the credential ids that regenerate already revoked.
+  // `consumer` is the snapshot the row was opened with; a regenerate must replace
+  // it, else the next action targets credential ids it already revoked.
   const [regenerated, setRegenerated] = useState<Consumer | null>(null);
   const consumerInView = regenerated ?? consumer ?? createMutation.data ?? null;
   const credential = consumerInView?.credential ?? null;
@@ -102,7 +101,7 @@ export default function ConsumerDrawer({ open, onClose, projectName, endpointRef
     try {
       if (confirm === 'regenerate') {
         const next = await regenMutation.mutateAsync(consumerInView);
-        setRegenerated({ ...consumerInView, credential: next, status: 'active', revokedAt: undefined, credentialIds: [next.id] });
+        setRegenerated({ ...consumerInView, credential: next, status: 'active', credentialIds: [next.id] });
         setRevealToken(false);
       } else {
         await revokeMutation.mutateAsync(consumerInView);

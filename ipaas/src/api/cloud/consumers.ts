@@ -90,13 +90,8 @@ const createApplication = (input: CreateApplicationInput): Promise<ConsumerAppli
 const deleteApplication = (applicationId: string): Promise<void> => bff.delete<void>(`/applications/${seg(applicationId)}`);
 
 // ---------------------------------------------------------------------------
-// Consumers
-//
-// The BFF implements /applications but not the spec's /subscriptions routes, so
-// the credential is an endpoint api-key while the application is the consumer's
-// durable identity — which is what lets revoke (key only) and delete (key +
-// application) differ. Applications carry no endpoint reference, so the endpoint
-// is tagged into `description`.
+// Consumers — an application (durable identity, tagged with its endpoint in
+// `description`) plus an endpoint api-key; the BFF has no /subscriptions routes.
 // ---------------------------------------------------------------------------
 
 const ENDPOINT_TAG_PREFIX = 'endpoint:';
@@ -116,12 +111,14 @@ function groupKeysByConsumer(keys: ApiKeySummary[]): Map<string, ApiKeySummary[]
 }
 
 function toConsumer(row: { id: string; displayName: string; application?: ConsumerApplication }, keys: ApiKeySummary[], restApiId: string): Consumer {
-  const activeKey = keys.find((k) => normalizeConsumerStatus(k.status) === 'active');
+  // Revoke only flips status; the key stays listed forever. Carrying dead keys
+  // would re-DELETE the whole history on every action.
+  const activeKeys = keys.filter((k) => normalizeConsumerStatus(k.status) === 'active');
   return {
     ...row,
-    credential: { id: activeKey?.name ?? keys[0]?.name ?? row.id, applicationId: row.id, restApiId, createdAt: row.application?.createdAt },
-    status: activeKey ? 'active' : 'revoked',
-    credentialIds: keys.map((k) => k.name),
+    credential: { id: activeKeys[0]?.name ?? keys[0]?.name ?? row.id, applicationId: row.id, restApiId, createdAt: row.application?.createdAt },
+    status: activeKeys.length > 0 ? 'active' : 'revoked',
+    credentialIds: activeKeys.map((k) => k.name),
   };
 }
 
@@ -148,6 +145,9 @@ export async function fetchConsumers(ref: EndpointRef, projectName?: string): Pr
   const claimed = new Set(ofThisEndpoint.map((app) => app.id));
   for (const [consumerId, group] of groups) {
     if (claimed.has(consumerId)) continue;
+    // Revoked-only groups are already-deleted consumers; listing them would also
+    // resurrect an application-backed row once its application is deleted.
+    if (!group.some((k) => normalizeConsumerStatus(k.status) === 'active')) continue;
     rows.push(toConsumer({ id: consumerId, displayName: group[0].displayName || consumerId }, group, restApiId));
   }
   return rows;
@@ -157,8 +157,7 @@ export async function createConsumer(input: CreateConsumerInput): Promise<Consum
   const { appName, projectName, componentName, environmentName, endpointName } = input;
   const ref: EndpointRef = { componentName, environmentName, endpointName };
 
-  // Application first so the key can be minted under its id; rolled back below if
-  // the key fails, else the panel shows a consumer that never had a credential.
+  // Application first so the key can be minted under its id; rolled back on failure.
   const application = await createApplication({ displayName: appName, projectName, description: endpointTag(ref) });
 
   let result: ApiKeyResult;
@@ -190,18 +189,15 @@ export async function regenerateConsumerToken(ref: EndpointRef, consumer: Consum
   }
 }
 
-// An empty list is a no-op: `credential.id` falls back to the application id, which
-// is not a key name, so revoking it would 404 and take delete down with it.
+// Empty means nothing left to revoke. Must stay a no-op: `credential.id` falls
+// back to the application id, which is not a key name and would 404.
 async function revokeConsumerKeys(ref: EndpointRef, consumer: Consumer): Promise<void> {
   await Promise.all(consumer.credentialIds.map((keyName) => revokeEndpointApiKey(ref, keyName)));
 }
 
 export const revokeConsumer = (ref: EndpointRef, consumer: Consumer): Promise<void> => revokeConsumerKeys(ref, consumer);
 
-/**
- * Revoke runs first — a failed application delete must not leave a live key behind an
- * invisible row. A key-only row has no application to delete; revoking is the whole job.
- */
+/** Revoke first — a failed application delete must not leave a live key behind an invisible row. */
 export async function deleteConsumer(ref: EndpointRef, consumer: Consumer): Promise<void> {
   await revokeConsumerKeys(ref, consumer);
   if (consumer.application) await deleteApplication(consumer.application.id);
