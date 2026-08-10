@@ -19,16 +19,25 @@
 import { Divider, Stack, Typography } from '@wso2/oxygen-ui';
 import { Sparkles } from '@wso2/oxygen-ui-icons-react';
 import { useState, type ReactNode } from 'react';
+import { IS_CLOUD } from '../../../features';
+import { useEndpointSecurity } from '../../../hooks/useConsumers';
 import { useEnvEndpoints } from '../../../hooks/useDeployments';
 import type { EnvCardBodyProps } from '../../../types/integration';
 import AgentChat from '../../AgentChat';
 import EndpointUrlsPanel from '../_shared/EndpointUrlsPanel';
 
 //AI Agent env-card body
-export default function EnvCardBody({ component, env, versionId, releaseId, hasDeployment }: EnvCardBodyProps): ReactNode {
+export default function EnvCardBody({ component, env, versionId, releaseId, hasDeployment, deploymentStatusV2 }: EnvCardBodyProps): ReactNode {
   // Per-env endpoints for the current release (drives the URLs/Download-Spec panel).
   const { data: endpoints = [] } = useEnvEndpoints(component.id, versionId, releaseId);
   const [selectedEpIdx, setSelectedEpIdx] = useState(0);
+  const selectedEndpoint = endpoints[selectedEpIdx] ?? endpoints[0];
+
+  // The enforcing API Platform gateway URL for the selected endpoint (cloud-only; the hook is
+  // disabled elsewhere). Shown in place of the raw OpenChoreo external route, as the
+  // integration-as-api card does.
+  const securityRef = IS_CLOUD && selectedEndpoint ? { componentName: component.id, environmentName: env.name, endpointName: selectedEndpoint.id } : null;
+  const { data: apiSecurity } = useEndpointSecurity(securityRef, IS_CLOUD && !!selectedEndpoint);
 
   if (!hasDeployment) {
     return (
@@ -46,12 +55,24 @@ export default function EnvCardBody({ component, env, versionId, releaseId, hasD
 
   // Show the deployed endpoint URLs whenever the agent is deployed
   const showEndpoints = endpoints.length > 0;
+  // A rollout in flight has no reachable chat endpoint yet — the same gate the MCP
+  // and integration-as-api cards apply before talking to the deployment.
+  const isDeploymentReady = deploymentStatusV2 !== 'IN_PROGRESS';
 
   return (
     <>
       <Divider sx={{ my: 2 }} />
-      {showEndpoints && <EndpointUrlsPanel endpoints={endpoints} selectedIdx={selectedEpIdx} onSelect={setSelectedEpIdx} componentId={component.id} deploymentTrackId={versionId} />}
-      <AgentChat componentId={component.id} versionId={versionId} releaseId={releaseId} envCritical={!!env.critical} />
+      {showEndpoints && <EndpointUrlsPanel endpoints={endpoints} selectedIdx={selectedEpIdx} onSelect={setSelectedEpIdx} componentId={component.id} deploymentTrackId={versionId} externalUrlOverride={apiSecurity?.publicUrl || undefined} />}
+      {isDeploymentReady ? (
+        <AgentChat componentId={component.id} versionId={versionId} releaseId={releaseId} environmentName={env.name} envCritical={!!env.critical} />
+      ) : (
+        <Stack alignItems="center" justifyContent="center" gap={1} sx={{ py: 4 }}>
+          <Sparkles size={24} style={{ opacity: 0.4 }} />
+          <Typography variant="body2" color="text.secondary">
+            Deployment in progress — chat will be available once the agent is running.
+          </Typography>
+        </Stack>
+      )}
     </>
   );
 }

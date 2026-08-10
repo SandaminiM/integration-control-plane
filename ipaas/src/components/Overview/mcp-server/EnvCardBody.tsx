@@ -19,11 +19,14 @@
 import { Alert, Box, Button, CircularProgress, Divider, Stack, Typography } from '@wso2/oxygen-ui';
 import { MCP } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { IS_CLOUD } from '../../../features';
 import { useEnvEndpoints } from '../../../hooks/useDeployments';
+import { useEndpointTestAccess } from '../../../hooks/useEndpointTestAccess';
 import { useGenerateTestKey } from '../../../hooks/useApim';
 import { useMcpTools } from '../../../hooks/useMcpTools';
 import type { EnvCardBodyProps } from '../../../types/integration';
 import { isDeploymentHealthy } from '../../../utils/deploymentStatus';
+import type { EndpointRef } from '../../../types/consumers';
 import EnvCardSkeleton from '../_shared/EnvCardSkeleton';
 import EndpointUrlsPanel from '../_shared/EndpointUrlsPanel';
 import McpToolTile from './McpToolTile';
@@ -31,9 +34,11 @@ import McpToolTile from './McpToolTile';
 /**
  * MCP Server env-card body: the list of tools the deployed MCP server exposes.
  *
- * Discovers the deployed endpoint (with an APIM id), generates a test key for
- * it, then lists tools over the MCP SDK (`useMcpTools`) — mirroring devant's
- * MCP overview, which replaces the swagger/operations view with a tools list.
+ * Discovers the deployed endpoint, obtains a test credential for it, then lists
+ * tools over the MCP SDK (`useMcpTools`) — mirroring devant's MCP overview, which
+ * replaces the swagger/operations view with a tools list. Cloud takes the
+ * credential and the enforcing gateway URL from the API Platform
+ * (`useEndpointTestAccess`); the APIM products mint against the endpoint's apimId.
  * Shared by both MCP flavors (server-from-source and proxy) via the registry.
  */
 export default function EnvCardBody({ component, env, versionId, releaseId, hasDeployment, loadingDeployment, deploymentStatusV2 }: EnvCardBodyProps): ReactNode {
@@ -43,29 +48,37 @@ export default function EnvCardBody({ component, env, versionId, releaseId, hasD
   const isDeploymentReady = hasDeployment && isDeploymentHealthy(deploymentStatusV2);
   const { data: endpoints = [] } = useEnvEndpoints(component.id, versionId, releaseId);
 
-  // Default to the MCP-capable endpoint (one with a public URL + APIM id — the
-  // test key is minted per APIM API, and tools are listed at `${publicUrl}/mcp`),
-  // but let the user switch endpoints in the panel.
+  // Default to the MCP-capable endpoint (tools are listed at `${baseUrl}/mcp`). On the
+  // APIM products it must also carry an apimId, since the test key is minted per APIM
+  // API; cloud has no APIM, so requiring one there would reject every endpoint. The
+  // user can still switch endpoints in the panel.
   const mcpIdx = useMemo(() => {
-    const i = endpoints.findIndex((e) => e.publicUrl && e.apimId);
+    const i = endpoints.findIndex((e) => e.publicUrl && (IS_CLOUD || e.apimId));
     return i >= 0 ? i : 0;
   }, [endpoints]);
   const [selectedEpIdx, setSelectedEpIdx] = useState<number | null>(null);
   const activeIdx = selectedEpIdx ?? mcpIdx;
   const activeEndpoint = endpoints[activeIdx] ?? endpoints[0];
-  const baseUrl = activeEndpoint?.publicUrl ?? '';
   const apimId = activeEndpoint?.apimId ?? null;
 
-  // Test key for the `test-key` header (same flow as the AI agent chat).
+  // Cloud: enforcing gateway URL + a short-lived api-key from the API Platform.
+  const accessRef: EndpointRef | null = useMemo(() => (IS_CLOUD && activeEndpoint ? { componentName: component.id, environmentName: env.name, endpointName: activeEndpoint.id } : null), [component.id, env.name, activeEndpoint]);
+  const access = useEndpointTestAccess(accessRef, IS_CLOUD && !!accessRef && isDeploymentReady);
+
+  // The raw external route is open (no policy engine in its path), so prefer the
+  // gateway URL the credential is actually enforced on.
+  const baseUrl = (IS_CLOUD ? access.gatewayUrl : '') || activeEndpoint?.publicUrl || '';
+
+  // APIM products: mint the test key against the endpoint's APIM API.
   const generateKey = useGenerateTestKey();
-  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [apimKey, setApimKey] = useState<string | null>(null);
   useEffect(() => {
-    if (!apimId || !isDeploymentReady) return undefined;
+    if (IS_CLOUD || !apimId || !isDeploymentReady) return undefined;
     let cancelled = false;
     generateKey
       .mutateAsync({ apimId, keyType: env.critical ? 'Production' : 'Development' })
       .then((r) => {
-        if (!cancelled) setApiKey(r?.apikey ?? null);
+        if (!cancelled) setApimKey(r?.apikey ?? null);
       })
       .catch(() => {
         /* surfaced via the tools error below */
@@ -77,7 +90,21 @@ export default function EnvCardBody({ component, env, versionId, releaseId, hasD
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apimId, env.critical, isDeploymentReady]);
 
-  const { tools, isLoading, error, isForbidden, refetch } = useMcpTools({ baseUrl, apiKey, enabled: isDeploymentReady && !!baseUrl });
+  const apiKey = IS_CLOUD ? access.apiKey : apimKey;
+  // Wait for the credential before connecting — except on a cloud `none`-mode
+  // endpoint, which is open and needs none.
+  const isAuthorized = IS_CLOUD ? access.isAuthorized : !!apimKey;
+  const keyError = IS_CLOUD ? access.keyError : null;
+  // jwt-secured endpoints are not auto-minted — the test-key route would flip
+  // enforcement to api-key auth, which must be a deliberate choice.
+  const needsManualKey = IS_CLOUD && access.mode === 'jwt' && !access.apiKey;
+
+  const { tools, isLoading, error, isForbidden, refetch } = useMcpTools({
+    baseUrl,
+    apiKey,
+    authHeader: IS_CLOUD ? access.authHeader : undefined,
+    enabled: isDeploymentReady && !!baseUrl && isAuthorized,
+  });
 
   if (loadingDeployment) return <EnvCardSkeleton />;
 
@@ -101,21 +128,38 @@ export default function EnvCardBody({ component, env, versionId, releaseId, hasD
     <>
       <Divider sx={{ my: 2 }} />
 
-      {showEndpointPanel && <EndpointUrlsPanel endpoints={endpoints} selectedIdx={activeIdx} onSelect={setSelectedEpIdx} componentId={component.id} deploymentTrackId={versionId} />}
+      {showEndpointPanel && <EndpointUrlsPanel endpoints={endpoints} selectedIdx={activeIdx} onSelect={setSelectedEpIdx} componentId={component.id} deploymentTrackId={versionId} externalUrlOverride={access.gatewayUrl || undefined} />}
 
       {!isDeploymentReady ? (
         <Alert severity="info" sx={{ mt: 1.5 }}>
           Deploy to view MCP tools.
         </Alert>
+      ) : keyError ? (
+        // Without a credential the tools call is never attempted, so surface the
+        // minting failure rather than letting it read as "No tools available".
+        <Alert severity="warning" sx={{ mt: 1.5 }}>
+          {keyError}
+        </Alert>
+      ) : needsManualKey ? (
+        <Alert
+          severity="info"
+          sx={{ mt: 1.5 }}
+          action={
+            <Button color="inherit" size="small" onClick={() => void access.mintKey()} disabled={access.isMinting}>
+              Use a test key
+            </Button>
+          }>
+          This MCP server is secured with OAuth. Listing its tools needs a test key, which switches the endpoint to API Key authentication.
+        </Alert>
       ) : (
         <>
-          {isLoading && (
+          {(isLoading || !isAuthorized) && (
             <Stack alignItems="center" sx={{ py: 3 }}>
               <CircularProgress size={20} />
             </Stack>
           )}
 
-          {!isLoading && error && (
+          {isAuthorized && !isLoading && error && (
             <Alert
               severity={isForbidden ? 'warning' : 'error'}
               action={
@@ -129,13 +173,13 @@ export default function EnvCardBody({ component, env, versionId, releaseId, hasD
             </Alert>
           )}
 
-          {!isLoading && !error && tools.length === 0 && (
+          {isAuthorized && !isLoading && !error && tools.length === 0 && (
             <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
               No tools available.
             </Typography>
           )}
 
-          {!isLoading && !error && tools.length > 0 && (
+          {isAuthorized && !isLoading && !error && tools.length > 0 && (
             <Box sx={{ mt: 1.5 }}>
               {tools.map((tool) => (
                 <McpToolTile key={tool.name} tool={tool} />
