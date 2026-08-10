@@ -17,8 +17,8 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createConsumer, createEndpointTestKey, fetchConsumers, getEndpointSecurity, regenerateConsumerToken, revokeConsumer, setEndpointSecurity } from '#api/consumers';
-import type { ApiKeyResult, Consumer, CreateConsumerInput, EndpointRef, SecurityConfig, Subscription } from '../types/consumers';
+import { createConsumer, createEndpointTestKey, deleteConsumer, fetchConsumers, getEndpointSecurity, regenerateConsumerToken, revokeConsumer, setEndpointSecurity } from '#api/consumers';
+import type { ApiKeyResult, Consumer, CreateConsumerInput, EndpointRef, SecurityConfig, ConsumerCredential } from '../types/consumers';
 
 /** Endpoint refs are only usable once every segment is known. */
 const isCompleteRef = (ref: EndpointRef | null | undefined): ref is EndpointRef => !!ref?.componentName && !!ref.environmentName && !!ref.endpointName;
@@ -28,21 +28,20 @@ const refKey = (ref: EndpointRef | null | undefined) => [ref?.componentName ?? '
 const consumersKey = (projectName: string | null | undefined, ref: EndpointRef | null | undefined) => ['consumers', projectName ?? '', ...refKey(ref)] as const;
 
 // ---------------------------------------------------------------------------
-// Consumers (named api-keys on the exposed API)
+// Consumers
 // ---------------------------------------------------------------------------
 
-/** Consumers (named api-keys) of this endpoint's exposed API. */
 export function useConsumers(projectName: string | null | undefined, ref: EndpointRef | null | undefined) {
   return useQuery<Consumer[]>({
     queryKey: consumersKey(projectName, ref),
-    queryFn: () => fetchConsumers(ref!),
+    queryFn: () => fetchConsumers(ref!, projectName ?? undefined),
     enabled: isCompleteRef(ref),
     staleTime: 30_000,
     retry: false,
   });
 }
 
-/** Create a consumer: mint a named api-key on this endpoint. The plaintext is returned once. */
+/** The plaintext key is returned once. */
 export function useCreateConsumer(projectName: string | null | undefined) {
   const qc = useQueryClient();
   return useMutation<Consumer, Error, CreateConsumerInput>({
@@ -53,25 +52,37 @@ export function useCreateConsumer(projectName: string | null | undefined) {
   });
 }
 
-/** Re-issue a consumer's api-key (revoke + mint). The new plaintext is returned once. */
+/** Re-issue the api-key in place. The new plaintext is returned once. */
 export function useRegenerateConsumerToken(projectName: string | null | undefined, ref: EndpointRef | null | undefined) {
   const qc = useQueryClient();
-  return useMutation<Subscription, Error, { keyName: string; displayName: string }>({
-    mutationFn: ({ keyName, displayName }) => regenerateConsumerToken(ref!, keyName, displayName),
-    // Regenerating revokes before it re-mints, so even on failure the old key is gone — the
-    // cached list must not keep showing it.
+  return useMutation<ConsumerCredential, Error, Consumer>({
+    mutationFn: (consumer) => regenerateConsumerToken(ref!, consumer),
+    // The revoke lands before the re-mint, so the old key is gone even on failure.
     onSettled: () => {
       qc.invalidateQueries({ queryKey: consumersKey(projectName, ref) });
     },
   });
 }
 
-/** Revoke a consumer's api-key. */
+/** Revoke the api-key, keeping the consumer in the list. */
 export function useRevokeConsumer(projectName: string | null | undefined, ref: EndpointRef | null | undefined) {
   const qc = useQueryClient();
-  return useMutation<void, Error, { keyName: string }>({
-    mutationFn: ({ keyName }) => revokeConsumer(ref!, keyName),
-    onSuccess: () => {
+  return useMutation<void, Error, Consumer>({
+    mutationFn: (consumer) => revokeConsumer(ref!, consumer),
+    // Keys are revoked in parallel, so a partial failure still changes server state.
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: consumersKey(projectName, ref) });
+    },
+  });
+}
+
+/** Revoke the api-key *and* remove the application. */
+export function useDeleteConsumer(projectName: string | null | undefined, ref: EndpointRef | null | undefined) {
+  const qc = useQueryClient();
+  return useMutation<void, Error, Consumer>({
+    mutationFn: (consumer) => deleteConsumer(ref!, consumer),
+    // A partial failure still changes server state.
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: consumersKey(projectName, ref) });
     },
   });

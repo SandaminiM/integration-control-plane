@@ -16,10 +16,10 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Checkbox, CircularProgress, Drawer, FormControlLabel, IconButton, MenuItem, Select, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Checkbox, CircularProgress, Drawer, FormControlLabel, IconButton, MenuItem, Radio, RadioGroup, Select, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { API_KEY_SCHEME_DESCRIPTION, COMING_SOON_UPSTREAM_ATTRS, DEFAULT_API_KEY_HEADER, OAUTH_HEADER, OAUTH_SCHEME_DESCRIPTION } from '../../../constants/apiConsumption';
+import { API_KEY_SCHEME_DESCRIPTION, COMING_SOON_OAUTH, COMING_SOON_UPSTREAM_ATTRS, DEFAULT_API_KEY_HEADER, OAUTH_HEADER, OAUTH_SCHEME_DESCRIPTION } from '../../../constants/apiConsumption';
 import { useEndpointSecurity, useSetEndpointSecurity } from '../../../hooks/useConsumers';
 import type { EndpointOption, EndpointRef, SecurityConfig, SecurityMode } from '../../../types/consumers';
 import { friendlyApiError } from '../../../utils/apiSecurity';
@@ -68,7 +68,7 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
   const setSecurityMutation = useSetEndpointSecurity(endpointRef);
   const saving = setSecurityMutation.isPending;
 
-  // Seed the local checkboxes from the fetched state once per (endpoint, open) — later user edits
+  // Seed the local selection from the fetched state once per (endpoint, open) — later user edits
   // stick even if the query re-settles.
   const syncKey = JSON.stringify({ componentName, environmentName: envName, endpointName: selectedEndpoint?.name ?? '', open });
   const syncedRef = useRef('');
@@ -88,9 +88,8 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
   const isApiKey = mode === 'api-key';
   const isOAuth = mode === 'jwt';
 
-  // Mutually exclusive: turning one scheme on turns the other off; turning it off opens the API.
-  const toggleApiKey = () => setMode((m) => (m === 'api-key' ? 'none' : 'api-key'));
-  const toggleOAuth = () => setMode((m) => (m === 'jwt' ? 'none' : 'jwt'));
+  // Clicking the selected radio again clears back to `none` — the only way to open the API.
+  const selectScheme = (scheme: Exclude<SecurityMode, 'none'>) => setMode((m) => (m === scheme ? 'none' : scheme));
 
   const handleApply = async () => {
     if (!endpointRef) return;
@@ -133,17 +132,13 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
                 <Typography variant="body2" fontWeight={500}>
                   Endpoints:
                 </Typography>
-                {endpoints.length > 1 ? (
-                  <Select size="small" value={selectedEndpointIdx} onChange={(e) => setUserSelectedIdx(Number(e.target.value))} sx={styles.endpointSelect}>
-                    {endpoints.map((ep, i) => (
-                      <MenuItem key={ep.name} value={i}>
-                        {ep.displayName}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                ) : (
-                  <Box sx={styles.singleEndpointName}>{selectedEndpoint.displayName}</Box>
-                )}
+                <Select size="small" value={selectedEndpointIdx} onChange={(e) => setUserSelectedIdx(Number(e.target.value))} disabled={endpoints.length <= 1} sx={styles.endpointSelect}>
+                  {endpoints.map((ep, i) => (
+                    <MenuItem key={ep.name} value={i}>
+                      {ep.displayName}
+                    </MenuItem>
+                  ))}
+                </Select>
               </Stack>
 
               {loadingSecurity ? (
@@ -151,38 +146,45 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
                   <CircularProgress size={20} />
                 </Box>
               ) : (
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={styles.tableHeadCell}>Security Scheme</TableCell>
-                      <TableCell sx={styles.tableHeadCell}>Security Header</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell sx={styles.schemeCell}>
-                        <FormControlLabel control={<Checkbox checked={isApiKey} onChange={toggleApiKey} size="small" />} label="API Key" />
-                      </TableCell>
-                      <TableCell>
-                        <TextField size="small" value={apiKeyHeader} onChange={(e) => setApiKeyHeader(e.target.value)} disabled={!isApiKey} fullWidth />
-                        <Typography variant="caption" color="text.secondary" sx={styles.schemeDescription}>
-                          {API_KEY_SCHEME_DESCRIPTION}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell sx={styles.schemeCell}>
-                        <FormControlLabel control={<Checkbox checked={isOAuth} onChange={toggleOAuth} size="small" />} label="OAuth" />
-                      </TableCell>
-                      <TableCell>
-                        <TextField size="small" value={OAUTH_HEADER} disabled fullWidth />
-                        <Typography variant="caption" color="text.secondary" sx={styles.schemeDescription}>
-                          {OAUTH_SCHEME_DESCRIPTION}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                <RadioGroup value={mode} name="security-scheme">
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={styles.tableHeadCell}>Security Scheme</TableCell>
+                        <TableCell sx={styles.tableHeadCell}>Security Header</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell sx={styles.schemeCell}>
+                          <FormControlLabel value="api-key" control={<Radio checked={isApiKey} onClick={() => selectScheme('api-key')} size="small" />} label="API Key" />
+                        </TableCell>
+                        <TableCell>
+                          <TextField size="small" value={apiKeyHeader} onChange={(e) => setApiKeyHeader(e.target.value)} disabled={!isApiKey} fullWidth />
+                          <Typography variant="caption" color="text.secondary" sx={styles.schemeDescription}>
+                            {API_KEY_SCHEME_DESCRIPTION}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                      {/* Visible but unselectable until jwt-auth is wired end to end. */}
+                      <TableRow>
+                        <TableCell sx={styles.schemeCell}>
+                          <Tooltip title={COMING_SOON_OAUTH}>
+                            <Box component="span" sx={styles.disabledTooltipTarget}>
+                              <FormControlLabel value="jwt" control={<Radio checked={isOAuth} size="small" disabled />} label="OAuth" disabled />
+                            </Box>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell>
+                          <TextField size="small" value={OAUTH_HEADER} disabled fullWidth />
+                          <Typography variant="caption" color="text.secondary" sx={styles.schemeDescription}>
+                            {OAUTH_SCHEME_DESCRIPTION}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </RadioGroup>
               )}
 
               <Tooltip title={COMING_SOON_UPSTREAM_ATTRS}>

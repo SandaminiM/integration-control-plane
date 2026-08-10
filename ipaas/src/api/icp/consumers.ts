@@ -20,7 +20,7 @@
 // owns it); the icp UI is gated on IS_CLOUD and never reaches these. They throw
 // via ni() so an unsupported call can never look successful.
 // TODO: implement using icp APIs
-import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, CreateApiKeyInput, CreateConsumerInput, EndpointRef, SecurityConfig, Subscription } from '../../types/consumers';
+import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, CreateApiKeyInput, CreateConsumerInput, EndpointRef, SecurityConfig, ConsumerCredential } from '../../types/consumers';
 
 const ni = (name: string): never => {
   throw new Error(`[icp] consumers.${name}: not implemented`);
@@ -39,7 +39,8 @@ export const setEndpointJwtAuth = (_ref: EndpointRef, _enabled: boolean): Promis
 export const getEndpointSecurity = (_ref: EndpointRef): Promise<SecurityConfig> => ni('getEndpointSecurity');
 export const setEndpointSecurity = (_ref: EndpointRef, _cfg: SecurityConfig): Promise<SecurityConfig> => ni('setEndpointSecurity');
 
-export const fetchConsumers = (_ref: EndpointRef): Promise<Consumer[]> => ni('fetchConsumers');
+export const fetchConsumers = (_ref: EndpointRef, _projectName?: string): Promise<Consumer[]> => ni('fetchConsumers');
 export const createConsumer = (_input: CreateConsumerInput): Promise<Consumer> => ni('createConsumer');
-export const regenerateConsumerToken = (_ref: EndpointRef, _keyName: string, _displayName: string): Promise<Subscription> => ni('regenerateConsumerToken');
-export const revokeConsumer = (_ref: EndpointRef, _keyName: string): Promise<void> => ni('revokeConsumer');
+export const regenerateConsumerToken = (_ref: EndpointRef, _consumer: Consumer): Promise<ConsumerCredential> => ni('regenerateConsumerToken');
+export const revokeConsumer = (_ref: EndpointRef, _consumer: Consumer): Promise<void> => ni('revokeConsumer');
+export const deleteConsumer = (_ref: EndpointRef, _consumer: Consumer): Promise<void> => ni('deleteConsumer');

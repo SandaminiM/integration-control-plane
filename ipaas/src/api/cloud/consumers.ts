@@ -17,35 +17,21 @@
  */
 
 /**
- * Cloud (OpenChoreo) API security & exposure API. Calls the ipaas-service BFF
- * ("Integration Platform - API Security & Exposure"). Org context comes from
- * the JWT, so no org parameter appears on any of these calls.
- *
- * Two wire-shape notes:
- *   - The spec returns bare JSON arrays for the list routes, while most other
- *     BFF routes use the `{ items: [] }` envelope. `asList` accepts both so a
- *     server-side switch to the envelope does not break the UI.
- *   - The list-subscriptions route documents `token`, but only create and the
- *     single-subscription GET are guaranteed to populate it. Callers that need
- *     the token re-read the subscription (see `fetchSubscription`).
+ * Cloud API security & exposure, against the ipaas-service BFF. Org context comes
+ * from the JWT, so no call takes an org parameter.
  */
 
-import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, CreateApiKeyInput, CreateConsumerInput, EndpointRef, SecurityConfig, Subscription } from '../../types/consumers';
+import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, ConsumerApplication, CreateApiKeyInput, CreateApplicationInput, CreateConsumerInput, EndpointRef, SecurityConfig, ConsumerCredential } from '../../types/consumers';
+import { normalizeConsumerStatus } from '../../utils/apiConsumption';
 import { userFacingError } from '../../utils/apiSecurity';
 import { bff, items, seg, type ListResponse } from './_client';
 
-/** Tolerates both the bare-array (spec) and `{ items: [] }` (BFF house style) list shapes. */
+/** List routes return a bare array; other BFF routes use `{ items: [] }`. Accept both. */
 const asList = <T>(r: T[] | ListResponse<T> | null | undefined): T[] => (Array.isArray(r) ? r : items(r));
 
 const endpointPath = ({ componentName, environmentName, endpointName }: EndpointRef): string => `/components/${seg(componentName)}/environments/${seg(environmentName)}/endpoints/${seg(endpointName)}`;
 
-/**
- * The exposed API's handle is `{componentName}-{endpointName}` (per the spec's
- * `APIExposure.handle` / `CreateSubscriptionRequest.restApiId` examples). There
- * is no "get exposure" route, so this derivation is how the UI matches existing
- * subscriptions to the endpoint in view before anything is exposed in-session.
- * Prefer the server-returned `handle` from `exposeEndpoint` whenever it is known.
- */
+/** No "get exposure" route exists, so the handle is derived. Prefer `exposeEndpoint`'s when known. */
 const deriveRestApiId = (ref: EndpointRef): string => `${ref.componentName}-${ref.endpointName}`;
 
 // ---------------------------------------------------------------------------
@@ -77,8 +63,7 @@ interface AuthToggleResponse {
   enabled?: boolean;
 }
 
-// The BFF echoes the applied state; fall back to the requested value when the
-// body is empty so a 200 with no payload does not read as "toggle failed".
+// A 200 with an empty body must not read as "toggle failed".
 const toggled =
   (requested: boolean) =>
   (r: AuthToggleResponse | null | undefined): boolean =>
@@ -95,58 +80,130 @@ export const getEndpointSecurity = (ref: EndpointRef): Promise<SecurityConfig> =
 export const setEndpointSecurity = (ref: EndpointRef, cfg: SecurityConfig): Promise<SecurityConfig> => bff.put<SecurityConfig>(`${endpointPath(ref)}/security`, cfg);
 
 // ---------------------------------------------------------------------------
-// Consumers — a consumer is a named api-key on the exposed endpoint.
-//
-// There is no subscription-token flow. The gateway enforces the api-key when the
-// endpoint's security mode is "api-key"; the plaintext key is shown once at
-// creation and is the credential the consumer sends (default header X-API-Key).
+// Consumer applications
 // ---------------------------------------------------------------------------
 
-/** A masked api-key mapped onto the Consumer view-model (application = the key's identity). */
-const keyToConsumer = (k: ApiKeySummary, restApiId: string): Consumer => ({
-  application: { id: k.name, displayName: k.displayName ?? k.name },
-  // ApiKeySummary has no creation timestamp; leave createdAt unset rather than
-  // mislabelling the key's expiry as its creation time.
-  subscription: { id: k.name, applicationId: k.name, restApiId, status: k.status },
-});
+const listApplications = (projectName: string): Promise<ConsumerApplication[]> => bff.get<ConsumerApplication[] | ListResponse<ConsumerApplication>>(`/applications?projectName=${encodeURIComponent(projectName)}`).then(asList);
 
-/** A freshly-minted key mapped onto a Subscription — `token` carries the plaintext api-key (once). */
-const resultToSubscription = (r: ApiKeyResult, restApiId: string): Subscription => ({
-  id: r.keyId,
-  applicationId: r.keyId,
-  restApiId,
-  token: r.apiKey,
-  status: 'active',
-});
+const createApplication = (input: CreateApplicationInput): Promise<ConsumerApplication> => bff.post<ConsumerApplication>('/applications', input);
 
-export async function fetchConsumers(ref: EndpointRef): Promise<Consumer[]> {
-  const restApiId = deriveRestApiId(ref);
-  const keys = await listEndpointApiKeys(ref);
-  return keys.map((k) => keyToConsumer(k, restApiId));
+const deleteApplication = (applicationId: string): Promise<void> => bff.delete<void>(`/applications/${seg(applicationId)}`);
+
+// ---------------------------------------------------------------------------
+// Consumers
+//
+// The BFF implements /applications but not the spec's /subscriptions routes, so
+// the credential is an endpoint api-key while the application is the consumer's
+// durable identity — which is what lets revoke (key only) and delete (key +
+// application) differ. Applications carry no endpoint reference, so the endpoint
+// is tagged into `description`.
+// ---------------------------------------------------------------------------
+
+const ENDPOINT_TAG_PREFIX = 'endpoint:';
+
+const endpointTag = (ref: EndpointRef): string => `${ENDPOINT_TAG_PREFIX}${ref.componentName}/${ref.environmentName}/${ref.endpointName}`;
+
+/** Keys minted here carry the application id as `displayName`; older keys group under their own name. */
+function groupKeysByConsumer(keys: ApiKeySummary[]): Map<string, ApiKeySummary[]> {
+  const groups = new Map<string, ApiKeySummary[]>();
+  for (const key of keys) {
+    const consumerId = key.displayName || key.name;
+    const group = groups.get(consumerId);
+    if (group) group.push(key);
+    else groups.set(consumerId, [key]);
+  }
+  return groups;
 }
 
-export async function createConsumer(input: CreateConsumerInput): Promise<Consumer> {
-  const { appName, description, componentName, environmentName, endpointName } = input;
-  const ref: EndpointRef = { componentName, environmentName, endpointName };
-  const result = await createEndpointApiKey(ref, { displayName: appName });
+function toConsumer(row: { id: string; displayName: string; application?: ConsumerApplication }, keys: ApiKeySummary[], restApiId: string): Consumer {
+  const activeKey = keys.find((k) => normalizeConsumerStatus(k.status) === 'active');
   return {
-    application: { id: result.keyId, displayName: appName, description },
-    subscription: resultToSubscription(result, deriveRestApiId(ref)),
+    ...row,
+    credential: { id: activeKey?.name ?? keys[0]?.name ?? row.id, applicationId: row.id, restApiId, createdAt: row.application?.createdAt },
+    status: activeKey ? 'active' : 'revoked',
+    credentialIds: keys.map((k) => k.name),
   };
 }
 
-/**
- * Re-issue a consumer's api-key: revoke the old key, then mint a new one under the same name.
- * The old key stops working the moment the revoke lands; the new plaintext is returned once.
- */
-export async function regenerateConsumerToken(ref: EndpointRef, keyName: string, displayName: string): Promise<Subscription> {
-  await revokeEndpointApiKey(ref, keyName);
+const resultToCredential = (r: ApiKeyResult, restApiId: string, applicationId: string): ConsumerCredential => ({
+  id: r.keyId,
+  applicationId,
+  restApiId,
+  token: r.apiKey,
+});
+
+export async function fetchConsumers(ref: EndpointRef, projectName?: string): Promise<Consumer[]> {
+  const restApiId = deriveRestApiId(ref);
+  const [keys, applications] = await Promise.all([
+    listEndpointApiKeys(ref),
+    // A failed application list must not take the whole panel down.
+    projectName ? listApplications(projectName).catch(() => [] as ConsumerApplication[]) : Promise.resolve([] as ConsumerApplication[]),
+  ]);
+
+  const groups = groupKeysByConsumer(keys);
+  const tag = endpointTag(ref);
+  const ofThisEndpoint = applications.filter((app) => app.description === tag);
+
+  const rows = ofThisEndpoint.map((app) => toConsumer({ id: app.id, displayName: app.displayName || app.id, application: app }, groups.get(app.id) ?? [], restApiId));
+  const claimed = new Set(ofThisEndpoint.map((app) => app.id));
+  for (const [consumerId, group] of groups) {
+    if (claimed.has(consumerId)) continue;
+    rows.push(toConsumer({ id: consumerId, displayName: group[0].displayName || consumerId }, group, restApiId));
+  }
+  return rows;
+}
+
+export async function createConsumer(input: CreateConsumerInput): Promise<Consumer> {
+  const { appName, projectName, componentName, environmentName, endpointName } = input;
+  const ref: EndpointRef = { componentName, environmentName, endpointName };
+
+  // Application first so the key can be minted under its id; rolled back below if
+  // the key fails, else the panel shows a consumer that never had a credential.
+  const application = await createApplication({ displayName: appName, projectName, description: endpointTag(ref) });
+
+  let result: ApiKeyResult;
   try {
-    const result = await createEndpointApiKey(ref, { displayName });
-    return resultToSubscription(result, deriveRestApiId(ref));
+    result = await createEndpointApiKey(ref, { displayName: application.id });
   } catch (err) {
-    throw userFacingError(`The old API key was revoked, but a new one could not be issued for “${displayName}”. Close this dialog and create the consumer again.`, err);
+    await deleteApplication(application.id).catch(() => undefined);
+    throw err;
+  }
+
+  return {
+    id: application.id,
+    displayName: appName,
+    application,
+    credential: resultToCredential(result, deriveRestApiId(ref), application.id),
+    status: 'active',
+    credentialIds: [result.keyId],
+  };
+}
+
+/** Revoke every key, then mint a fresh one under the same application — never adds a row. */
+export async function regenerateConsumerToken(ref: EndpointRef, consumer: Consumer): Promise<ConsumerCredential> {
+  await revokeConsumerKeys(ref, consumer);
+  try {
+    const result = await createEndpointApiKey(ref, { displayName: consumer.id });
+    return resultToCredential(result, deriveRestApiId(ref), consumer.id);
+  } catch (err) {
+    throw userFacingError(`The old API key was revoked, but a new one could not be issued for “${consumer.displayName}”. Close this dialog and regenerate again.`, err);
   }
 }
 
-export const revokeConsumer = (ref: EndpointRef, keyName: string): Promise<void> => revokeEndpointApiKey(ref, keyName);
+// An empty list is a no-op: `credential.id` falls back to the application id, which
+// is not a key name, so revoking it would 404 and take delete down with it.
+async function revokeConsumerKeys(ref: EndpointRef, consumer: Consumer): Promise<void> {
+  await Promise.all(consumer.credentialIds.map((keyName) => revokeEndpointApiKey(ref, keyName)));
+}
+
+export const revokeConsumer = (ref: EndpointRef, consumer: Consumer): Promise<void> => revokeConsumerKeys(ref, consumer);
+
+/**
+ * Revoke runs first — a failed application delete must not leave a live key behind an
+ * invisible row. A key-only row has no application to delete; revoking is the whole job.
+ */
+export async function deleteConsumer(ref: EndpointRef, consumer: Consumer): Promise<void> {
+  await revokeConsumerKeys(ref, consumer);
+  if (consumer.application) await deleteApplication(consumer.application.id);
+}
+

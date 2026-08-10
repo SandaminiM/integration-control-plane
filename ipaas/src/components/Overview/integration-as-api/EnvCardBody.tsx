@@ -124,8 +124,8 @@ export default function EnvCardBody({ component, env, prevEnv, projectId, versio
         </Typography>
       )}
 
-      {/* Cloud-only in-console API consumption: consumer apps, subscriptions, and
-          the exposed API's security config. Keyed by the BFF's
+      {/* Cloud-only in-console API consumption: consumer applications and the
+          exposed API's security config. Keyed by the BFF's
           component/environment/endpoint triple — in cloud the component name is
           the component id and the endpoint name is the endpoint id. */}
       {IS_CLOUD && showEndpointPanel && deploymentStatusV2 !== 'IN_PROGRESS' && !!activeEndpoint && (

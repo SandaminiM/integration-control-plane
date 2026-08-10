@@ -96,18 +96,6 @@ export const disabledTooltipTarget = {
   display: 'inline-flex',
 } as const;
 
-export const singleEndpointName = {
-  minWidth: 200,
-  px: 1.5,
-  py: 0.75,
-  borderRadius: 0.5,
-  border: '1px solid',
-  borderColor: 'divider',
-  bgcolor: 'action.hover',
-  fontSize: 13,
-  fontWeight: 500,
-} as const;
-
 export const endpointSelect = {
   minWidth: 200,
 } as const;
@@ -243,9 +231,35 @@ export const dialogAlert = {
   mb: 2,
 } as const;
 
-export const copyButton = {
-  minWidth: 0,
+export const consumerDeleteButton = {
+  color: 'error.main',
+  '&:hover': {
+    bgcolor: 'error.lighter',
+  },
+} as const;
+
+/** `divider` disappears at this length, so it borrows the disabled-text tone. */
+export const titleDivider = {
+  mx: 0.5,
+  my: 0.25,
+  borderColor: 'text.disabled',
+} as const;
+
+/** Icon actions inside a credential field (copy, reveal). */
+export const credIconButton = {
+  color: 'primary.main',
+  '&:hover': {
+    bgcolor: 'primary.lighter',
+  },
+} as const;
+
+export const securityModeGroup = {
   whiteSpace: 'nowrap',
+} as const;
+
+export const securityModeValue = {
+  fontWeight: 600,
+  color: 'text.primary',
 } as const;
 
 export const fieldLabel = {

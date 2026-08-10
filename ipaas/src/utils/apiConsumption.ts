@@ -16,18 +16,28 @@
  * under the License.
  */
 
-import { SUBSCRIPTION_KEY_HEADER } from '../constants/apiConsumption';
-import type { Consumer } from '../types/consumers';
-import { formatDate } from './time';
+import type { Consumer, ConsumerStatus } from '../types/consumers';
+import { formatDateTime } from './time';
 
-/** Consumer applications carry an optional display name; fall back to the handle. */
-export function consumerDisplayName(consumer: Consumer): string {
-  return consumer.application.displayName || consumer.application.id;
+/** Raw statuses meaning the credential no longer authenticates. */
+const REVOKED_STATUSES = new Set(['revoked', 'inactive', 'expired', 'deleted', 'disabled']);
+
+/** Unknown values read as `active` — a live credential must not look revoked on an unfamiliar label. */
+export function normalizeConsumerStatus(raw?: string): ConsumerStatus {
+  return raw && REVOKED_STATUSES.has(raw.trim().toLowerCase()) ? 'revoked' : 'active';
 }
 
-/** Row subtitle for a consumer: credential kind, subscription status, subscribed date. */
+/** Row subtitle: `Active since <when>` / `Revoked <when>`, or the bare state when undated. */
 export function consumerSummary(consumer: Consumer): string {
-  const { status, createdAt } = consumer.subscription;
-  const created = formatDate(createdAt);
-  return [SUBSCRIPTION_KEY_HEADER, status, created && `subscribed ${created}`].filter(Boolean).join(' · ');
+  const revoked = consumer.status === 'revoked';
+  const at = revoked ? consumer.revokedAt : (consumer.credential.createdAt ?? consumer.application?.createdAt);
+  const when = at ? formatDateTime(at) : '';
+  if (!when || when === '—') return revoked ? 'Revoked' : 'Active';
+  return revoked ? `Revoked ${when}` : `Active since ${when}`;
+}
+
+/** Names are unique per endpoint only, so `existing` is always that one endpoint's list. */
+export function isConsumerNameTaken(name: string, existing: readonly string[]): boolean {
+  const candidate = name.trim().toLowerCase();
+  return candidate !== '' && existing.some((n) => n.trim().toLowerCase() === candidate);
 }

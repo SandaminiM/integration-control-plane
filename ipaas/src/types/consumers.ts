@@ -17,22 +17,12 @@
  */
 
 /**
- * API security & exposure domain, mirroring the ipaas-service BFF surface
- * ("Integration Platform - API Security & Exposure").
+ * API security & exposure domain, mirroring the ipaas-service BFF surface.
+ * Cloud-only today; `wip`/`icp` stub it.
  *
- * Two orthogonal concerns live here:
- *
- *  1. **The exposed API** — a deployed endpoint registered as a managed REST
- *     API on the WSO2 API Platform gateway, plus its enforcement policies
- *     (`api-key-auth`, `jwt-auth`, `subscription-validation`) and its API keys.
- *     Everything in this group is addressed by the
- *     component / environment / endpoint triple ({@link EndpointRef}).
- *
- *  2. **Consumers** — a consumer *application* (org-scoped, created against a
- *     project) subscribed to an exposed API. The subscription carries an opaque
- *     token the consumer sends as the `Subscription-Key` header.
- *
- * The surface is cloud-only today; `wip`/`icp` stub it.
+ * The spec models a consumer's credential as a subscription token, but the BFF
+ * implements `/applications` without the `/subscriptions` routes, so it is an
+ * endpoint api-key sent as `X-API-Key` — see {@link ConsumerCredential}.
  */
 
 /** Identifies one deployed endpoint — the path triple every security call takes. */
@@ -51,7 +41,7 @@ export interface EndpointOption {
 
 /** A service endpoint exposed as a managed API on the API Platform gateway. */
 export interface ApiExposure {
-  /** The API Platform REST API handle — also the subscription's `restApiId`. */
+  /** The API Platform REST API handle — also the credential's `restApiId`. */
   handle: string;
   /** Gateway context path. */
   context?: string;
@@ -97,13 +87,7 @@ export interface ApiKeyAuthOptions {
   in?: string;
 }
 
-/**
- * The single active auth mode of an exposed API. The gateway ANDs auth policies with no
- * fallback, so exactly one mode is active at a time (they are mutually exclusive):
- *  - `none`    — open, no auth.
- *  - `api-key` — api-key-auth (the default for a newly exposed endpoint).
- *  - `jwt`     — jwt-auth (OAuth2 bearer, validated against the org key manager).
- */
+/** The gateway ANDs auth policies with no fallback, so exactly one mode is active at a time. */
 export type SecurityMode = 'none' | 'api-key' | 'jwt';
 
 /** The active security configuration of an exposed endpoint API (GET/PUT `.../security`). */
@@ -118,12 +102,12 @@ export interface SecurityConfig {
     issuers?: string[];
     audiences?: string[];
   };
-  /**
-   * The exposed API's invoke URL on the API Platform gateway (the enforcing endpoint to call),
-   * distinct from the component's open raw route. Read-only: populated on GET, ignored on PUT.
-   */
+  /** Gateway invoke URL, distinct from the component's open raw route. Populated on GET, ignored on PUT. */
   publicUrl?: string;
 }
+
+/** Normalised from the credential's raw status. A revoked consumer keeps its row. */
+export type ConsumerStatus = 'active' | 'revoked';
 
 /** A consumer application. Org-scoped and shared across the org. */
 export interface ConsumerApplication {
@@ -143,35 +127,37 @@ export interface CreateApplicationInput {
   description?: string;
 }
 
-/** An application's subscription to an exposed API. */
-export interface Subscription {
+/** A consumer application's credential for an exposed API. */
+export interface ConsumerCredential {
   id: string;
   applicationId: string;
-  /** Handle of the exposed API this subscription grants access to. */
+  /** Handle of the exposed API this credential grants access to. */
   restApiId: string;
-  /**
-   * Opaque subscription token, sent as the `Subscription-Key` header. Returned
-   * on create and on a single-subscription GET — not on the list endpoint.
-   */
+  /** Plaintext, sent as `X-API-Key`. Populated only by the call that mints it. */
   token?: string;
   status?: string;
   createdAt?: string;
 }
 
-/**
- * View model for the Consumers panel: an application paired with its
- * subscription to the API currently in view.
- */
+/** One row per consumer, whatever its credential history. */
 export interface Consumer {
-  application: ConsumerApplication;
-  subscription: Subscription;
+  /** Application id when one backs this row, else the api-key group the row was built from. */
+  id: string;
+  displayName: string;
+  /** Absent for key-only rows — api-keys minted before applications were used. */
+  application?: ConsumerApplication;
+  credential: ConsumerCredential;
+  status: ConsumerStatus;
+  /** Set only while revoked, and only when the server reports it. */
+  revokedAt?: string;
+  /** Every api-key backing this consumer, revoked ones included — all are revoked together. */
+  credentialIds: string[];
 }
 
-/** Payload for creating a consumer application and subscribing it in one step. */
+/** Payload for creating a consumer application and minting its credential in one step. */
 export interface CreateConsumerInput extends EndpointRef {
   /** Project handle the new application belongs to. */
   projectName: string;
   /** Display name of the consumer application. */
   appName: string;
-  description?: string;
 }
