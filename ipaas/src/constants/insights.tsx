@@ -174,6 +174,9 @@ export const ACTIVITY_SERIES: { key: IntegrationKind; label: string; color: stri
   { key: 'rag', label: 'RAG Ingestion', color: INSIGHTS_CHART_COLORS.amber },
 ];
 
+/** Kinds that run as jobs rather than serving traffic — the automation insights path. */
+export const AUTOMATION_KINDS: readonly IntegrationKind[] = ['auto', 'rag'];
+
 /** Native unit per integration kind, used by the "Top integrations by volume" rows. */
 export const UNIT_BY_KIND: Record<IntegrationKind, string> = {
   api: 'requests',

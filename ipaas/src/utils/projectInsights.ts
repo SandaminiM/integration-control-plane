@@ -17,7 +17,7 @@
  */
 
 import { formatCount as fmt, formatDuration, formatLatencyMs } from './insightsFormat';
-import { ACTIVITY_SERIES, INSIGHTS_KIND_DESC, KIND_DOT, UNIT_BY_KIND } from '../constants/insights';
+import { ACTIVITY_SERIES, AUTOMATION_KINDS, INSIGHTS_KIND_DESC, KIND_DOT, UNIT_BY_KIND } from '../constants/insights';
 import type { InsightsApiRef, InsightsAutomationRef, ProjectComponentStat, ProjectFailingRow, ProjectInsightsData, ProjectInsightsRaw, ProjectLatencyRow, ProjectVolumeRow } from '../types/insights';
 
 const TYPE_MIX_KINDS = ['api', 'auto', 'rag', 'agent', 'mcp', 'webhook', 'event', 'file'] as const;
@@ -76,29 +76,31 @@ const SERVICE_LATENCY_SUBTYPES: { key: 'api' | 'agent' | 'mcp' | 'webhook'; labe
   { key: 'webhook', label: 'Webhooks' },
 ];
 
-function buildLatencyRows(raw: ProjectInsightsRaw): ProjectLatencyRow[] {
-  const rows: ProjectLatencyRow[] = [
-    {
-      key: 'automations',
-      label: 'Automations',
-      sub: 'Execution duration',
-      color: KIND_DOT.auto,
-      metrics: [
-        { label: 'Avg', value: formatDuration(raw.autoDurationByKind.auto.avgMs / 1000) },
-        { label: 'P95', value: formatDuration(raw.autoDurationByKind.auto.p95Ms / 1000) },
-      ],
-    },
-    {
-      key: 'rag',
-      label: 'RAG Ingestions',
-      sub: 'Execution duration',
-      color: KIND_DOT.rag,
-      metrics: [
-        { label: 'Avg', value: formatDuration(raw.autoDurationByKind.rag.avgMs / 1000) },
-        { label: 'P95', value: formatDuration(raw.autoDurationByKind.rag.p95Ms / 1000) },
-      ],
-    },
-  ];
+function buildLatencyRows(raw: ProjectInsightsRaw, includeAutomations: boolean): ProjectLatencyRow[] {
+  const rows: ProjectLatencyRow[] = !includeAutomations
+    ? []
+    : [
+        {
+          key: 'automations',
+          label: 'Automations',
+          sub: 'Execution duration',
+          color: KIND_DOT.auto,
+          metrics: [
+            { label: 'Avg', value: formatDuration(raw.autoDurationByKind.auto.avgMs / 1000) },
+            { label: 'P95', value: formatDuration(raw.autoDurationByKind.auto.p95Ms / 1000) },
+          ],
+        },
+        {
+          key: 'rag',
+          label: 'RAG Ingestions',
+          sub: 'Execution duration',
+          color: KIND_DOT.rag,
+          metrics: [
+            { label: 'Avg', value: formatDuration(raw.autoDurationByKind.rag.avgMs / 1000) },
+            { label: 'P95', value: formatDuration(raw.autoDurationByKind.rag.p95Ms / 1000) },
+          ],
+        },
+      ];
   SERVICE_LATENCY_SUBTYPES.forEach((t) => {
     rows.push({
       key: t.key,
@@ -112,7 +114,8 @@ function buildLatencyRows(raw: ProjectInsightsRaw): ProjectLatencyRow[] {
 }
 
 /** Shape the raw project aggregate into the display model the Insights page renders. */
-export function toProjectInsightsData(raw: ProjectInsightsRaw): ProjectInsightsData {
+export function toProjectInsightsData(raw: ProjectInsightsRaw, options?: { includeAutomations?: boolean }): ProjectInsightsData {
+  const includeAutomations = options?.includeAutomations ?? true;
   const stats = raw.taskStats;
   const active = raw.components.filter((c) => !c.deleted);
   const okCount = Math.max(0, raw.totalRequests - raw.totalErrors) + (stats?.successfulJobs ?? 0);
@@ -132,7 +135,9 @@ export function toProjectInsightsData(raw: ProjectInsightsRaw): ProjectInsightsD
     // four raw activity series (service / event / automation sub-splits + the
     // agent aggregate) are all bucket-aligned, so index i lines up across them.
     activityChart: {
-      series: ACTIVITY_SERIES,
+      // The series list drives the chart's type dropdown, so dropping the
+      // automation kinds here is what removes them as filter options.
+      series: includeAutomations ? ACTIVITY_SERIES : ACTIVITY_SERIES.filter((s) => !AUTOMATION_KINDS.includes(s.key)),
       points: raw.activity.map((p, i) => ({
         label: p.label,
         api: raw.serviceActivity[i]?.api ?? 0,
@@ -147,7 +152,7 @@ export function toProjectInsightsData(raw: ProjectInsightsRaw): ProjectInsightsD
     },
     topByVolume: buildTopByVolume(active),
     topFailing: buildTopFailing(active),
-    latencyRows: buildLatencyRows(raw),
+    latencyRows: buildLatencyRows(raw, includeAutomations),
     integrations: raw.components.map((c) => ({
       id: c.id,
       name: c.name,

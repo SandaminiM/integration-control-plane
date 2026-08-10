@@ -75,4 +75,22 @@ describe('toProjectInsightsData', () => {
     const rows = toProjectInsightsData(baseRaw({ components: [stat({ id: 'a', type: 'api' })] })).latencyRows;
     expect(rows.map((r) => r.key)).toEqual(['automations', 'rag', 'api', 'agent', 'mcp', 'webhook']);
   });
+
+  it('offers every activity series, automation kinds included, by default', () => {
+    const keys = toProjectInsightsData(baseRaw()).activityChart.series.map((s) => s.key);
+    expect(keys).toContain('auto');
+    expect(keys).toContain('rag');
+  });
+
+  it('drops the automation kinds from the activity series when automations are excluded', () => {
+    const keys = toProjectInsightsData(baseRaw(), { includeAutomations: false }).activityChart.series.map((s) => s.key);
+    expect(keys).not.toContain('auto');
+    expect(keys).not.toContain('rag');
+    expect(keys).toEqual(['api', 'agent', 'mcp', 'webhook', 'event', 'file']);
+  });
+
+  it('drops the automation and RAG latency rows when automations are excluded', () => {
+    const rows = toProjectInsightsData(baseRaw({ components: [stat({ id: 'a', type: 'api' })] }), { includeAutomations: false }).latencyRows;
+    expect(rows.map((r) => r.key)).toEqual(['api', 'agent', 'mcp', 'webhook']);
+  });
 });

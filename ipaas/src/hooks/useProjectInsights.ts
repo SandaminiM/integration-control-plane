@@ -23,7 +23,17 @@ import { useInsightsQueryUrl } from './useInsights';
 import { emptyProjectInsightsRaw, toProjectInsightsData } from '../utils/projectInsights';
 import type { InsightsApiRef, InsightsAutomationRef, InsightsEnvironment, InsightsRange, ProjectInsightsRaw } from '../types/insights';
 
-export function useProjectInsights(orgUuid: string, projectId: string, insightsEnv: InsightsEnvironment | null, apis: InsightsApiRef[], automations: InsightsAutomationRef[], eventApis: InsightsApiRef[], range: InsightsRange) {
+export function useProjectInsights(
+  orgUuid: string,
+  projectId: string | null,
+  insightsEnv: InsightsEnvironment | null,
+  apis: InsightsApiRef[],
+  automations: InsightsAutomationRef[],
+  eventApis: InsightsApiRef[],
+  range: InsightsRange,
+  options?: { includeAutomations?: boolean },
+) {
+  const includeAutomations = options?.includeAutomations ?? true;
   const apiKey = apis.map((a) => a.apiId).join(',');
   const autoKey = automations.map((a) => a.id).join(',');
   const eventKey = eventApis.map((a) => a.id).join(',');
@@ -32,8 +42,8 @@ export function useProjectInsights(orgUuid: string, projectId: string, insightsE
   const enabled = !!orgUuid && !!insightsEnv && hasIntegrations && !!queryApiUrl;
 
   const query = useQuery({
-    queryKey: ['projectInsights', orgUuid, projectId, insightsEnv?.id ?? null, range, apiKey, autoKey, eventKey, queryApiUrl],
-    queryFn: () => fetchProjectInsights(orgUuid, projectId, insightsEnv!, apis, automations, eventApis, range, queryApiUrl!),
+    queryKey: ['projectInsights', orgUuid, projectId, insightsEnv?.id ?? null, range, apiKey, autoKey, eventKey, includeAutomations, queryApiUrl],
+    queryFn: () => fetchProjectInsights(orgUuid, projectId, insightsEnv!, apis, automations, eventApis, range, queryApiUrl!, { includeAutomations }),
     enabled,
     staleTime: 60_000,
   });
@@ -43,7 +53,7 @@ export function useProjectInsights(orgUuid: string, projectId: string, insightsE
   // query's real per-component stats override these by id once it resolves.
   const raw = useMemo<ProjectInsightsRaw>(() => query.data ?? emptyProjectInsightsRaw(apis, automations, eventApis), [query.data, apis, automations, eventApis]);
 
-  const data = useMemo(() => toProjectInsightsData(raw), [raw]);
+  const data = useMemo(() => toProjectInsightsData(raw, { includeAutomations }), [raw, includeAutomations]);
   return { data, isLoading: query.isLoading, isError: query.isError, enabled, hasIntegrations };
 }
 

@@ -292,6 +292,8 @@ function resolveApi(ref: InsightsApiRef, projectApis: { id: string; name: string
 // `interval: null` matches the captured request; the backend picks the bucket
 // size itself (e.g. 12h buckets over a 7d window), and `buildTrend` re-buckets
 // to the display granularity anyway.
+const EMPTY_AUTOMATION_OVERVIEW: Awaited<ReturnType<typeof fetchProjectAutomationOverview>> = { stats: null, trend: [], summary: [], duration: [] };
+
 async function fetchProjectAutomationOverview(
   queryApiUrl: string,
   dataFilter: Record<string, unknown>,
@@ -346,18 +348,28 @@ const LATENCY_FETCH_KINDS = new Set<InsightsApiRef['kind']>(['api', 'mcp', 'webh
 
 export async function fetchProjectInsights(
   orgUuid: string,
-  projectId: string,
+  projectId: string | null,
   insightsEnv: InsightsEnvironment,
   apis: InsightsApiRef[],
   automations: InsightsAutomationRef[],
   eventApis: InsightsApiRef[],
   range: InsightsRange,
   queryApiUrl: string,
+  options?: { includeAutomations?: boolean },
 ): Promise<ProjectInsightsRaw> {
   const time = rangeToTimeFilter(range);
-  const dataFilter = { orgId: orgUuid, environmentIds: getEnvironmentIds(insightsEnv), tenant: 'carbon.super', projectId };
+  // A null projectId widens the same queries to the whole org (see fetchOrgInsights).
+  const dataFilter = { orgId: orgUuid, environmentIds: getEnvironmentIds(insightsEnv), tenant: 'carbon.super', ...(projectId ? { projectId } : {}) };
 
-  const [projectApis, automationOverview, overview] = await Promise.all([fetchAllProjectApis(queryApiUrl, dataFilter), fetchProjectAutomationOverview(queryApiUrl, dataFilter, time), fetchProjectOverview(queryApiUrl, dataFilter, time)]);
+  // Skipping the automation overview is what actually excludes automations: its
+  // totals otherwise reach the trend, the activity buckets, the task-stat KPIs
+  // and the deleted-integrations aggregate regardless of the `automations` list.
+  const includeAutomations = options?.includeAutomations ?? true;
+  const [projectApis, automationOverview, overview] = await Promise.all([
+    fetchAllProjectApis(queryApiUrl, dataFilter),
+    includeAutomations ? fetchProjectAutomationOverview(queryApiUrl, dataFilter, time) : Promise.resolve(EMPTY_AUTOMATION_OVERVIEW),
+    fetchProjectOverview(queryApiUrl, dataFilter, time),
+  ]);
 
   // Per-API table rows need a per-component breakdown; resolve each
   // component's real apiId (+version) against `listAllAPI` rather than

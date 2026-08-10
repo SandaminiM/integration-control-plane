@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   fetchComponents,
   fetchComponentByHandler,
@@ -34,6 +34,7 @@ import {
   deleteDeploymentTrack,
   checkDeploymentTrackDeletable,
 } from '#api/components';
+import { useProjectsByOrg } from './useProjects';
 import type { CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, CreateDeploymentTrackInput } from '../types/component';
 
 export function useComponents(orgHandler: string, projectId: string) {
@@ -42,6 +43,29 @@ export function useComponents(orgHandler: string, projectId: string) {
     queryFn: () => fetchComponents(orgHandler, projectId),
     enabled: !!orgHandler && !!projectId,
   });
+}
+
+/**
+ * Every component in the org, by fanning `useComponents` out over the org's
+ * projects — there is no org-wide components endpoint. Query keys match
+ * `useComponents` exactly, so a project page visited before or after this shares
+ * the same cache entries rather than refetching.
+ */
+export function useOrgComponents(orgHandler: string) {
+  const { data: projects, isLoading: projectsLoading } = useProjectsByOrg(orgHandler);
+  const components = useQueries({
+    queries: (projects ?? []).map((p) => ({
+      queryKey: ['components', orgHandler, p.id],
+      queryFn: () => fetchComponents(orgHandler, p.id),
+      enabled: !!orgHandler,
+      staleTime: 60_000,
+    })),
+    combine: (results) => ({
+      data: results.flatMap((r) => r.data ?? []),
+      isLoading: results.some((r) => r.isLoading),
+    }),
+  });
+  return { data: components.data, isLoading: projectsLoading || components.isLoading };
 }
 
 export function useComponentByHandler(projectId: string, handler: string | undefined) {
