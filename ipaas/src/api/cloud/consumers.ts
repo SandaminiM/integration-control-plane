@@ -131,11 +131,9 @@ const resultToCredential = (r: ApiKeyResult, restApiId: string, applicationId: s
 
 export async function fetchConsumers(ref: EndpointRef, projectName?: string): Promise<Consumer[]> {
   const restApiId = deriveRestApiId(ref);
-  const [keys, applications] = await Promise.all([
-    listEndpointApiKeys(ref),
-    // A failed application list must not take the whole panel down.
-    projectName ? listApplications(projectName).catch(() => [] as ConsumerApplication[]) : Promise.resolve([] as ConsumerApplication[]),
-  ]);
+  // Must propagate: swallowing it drops every row to the key-only path, where
+  // delete skips the application and silently only revokes.
+  const [keys, applications] = await Promise.all([listEndpointApiKeys(ref), projectName ? listApplications(projectName) : Promise.resolve([] as ConsumerApplication[])]);
 
   const groups = groupKeysByConsumer(keys);
   const tag = endpointTag(ref);
