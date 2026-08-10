@@ -24,9 +24,12 @@ import { friendlyApiError } from '../utils/apiSecurity';
 
 export interface EndpointTestAccess {
   /**
-   * The enforcing API Platform gateway invoke URL for the endpoint. Empty until
-   * resolved — callers should fall back to the endpoint's own external URL,
-   * which is open (the policy engine is not in its path).
+   * The enforcing API Platform gateway invoke URL for the endpoint — the ONLY URL
+   * a cloud caller may invoke. Empty until resolved, and empty forever if the
+   * endpoint is not exposed; never substitute the endpoint's own external route,
+   * which is open (the policy engine is not in its path), because presenting a
+   * credential there discloses it to a host that does not validate it and makes an
+   * unenforced call look like a secured one. Wait, or report `isUnavailable`.
    */
   gatewayUrl: string;
   /** Active auth mode of the exposed API; `null` until it is known. */
@@ -41,8 +44,13 @@ export interface EndpointTestAccess {
   isMinting: boolean;
   /** Minting failed, as a message the user can act on. */
   keyError: string | null;
-  /** The security config could not be read — usually "not exposed as an API yet". */
-  isSecurityUnavailable: boolean;
+  /**
+   * The endpoint cannot be reached through the gateway: its security config could
+   * not be read (usually "not exposed as an API yet"), or it is exposed but
+   * advertises no gateway URL. Distinct from "still resolving", so callers can show
+   * a terminal state instead of an endless spinner.
+   */
+  isUnavailable: boolean;
   /** Mint (or replace) the test key. Resolves to the plaintext, or `null` on failure. */
   mintKey: () => Promise<string | null>;
 }
@@ -67,7 +75,7 @@ const keyOf = (ref: EndpointRef | null | undefined): string => `${ref?.component
  * switches the endpoint to api-key auth as a side effect.
  */
 export function useEndpointTestAccess(ref: EndpointRef | null | undefined, enabled = true): EndpointTestAccess {
-  const { data: security, isError: isSecurityUnavailable } = useEndpointSecurity(ref, enabled);
+  const { data: security, isError: isSecurityError } = useEndpointSecurity(ref, enabled);
   const createTestKey = useCreateEndpointTestKey(ref);
 
   // The minted key and any failure are stored against the endpoint they belong
@@ -107,8 +115,10 @@ export function useEndpointTestAccess(ref: EndpointRef | null | undefined, enabl
     void mintKey();
   }, [enabled, mode, mintKey]);
 
+  const gatewayUrl = security?.publicUrl ?? '';
+
   return {
-    gatewayUrl: security?.publicUrl ?? '',
+    gatewayUrl,
     mode,
     authHeader: security?.apiKey?.header || DEFAULT_API_KEY_HEADER,
     apiKey,
@@ -116,7 +126,9 @@ export function useEndpointTestAccess(ref: EndpointRef | null | undefined, enabl
     isAuthorized: mode === 'none' || !!apiKey,
     isMinting: createTestKey.isPending,
     keyError,
-    isSecurityUnavailable,
+    // A disabled/incomplete ref leaves both terms false, so an idle hook never
+    // reports unavailable — only a real answer does.
+    isUnavailable: isSecurityError || (mode !== null && !gatewayUrl),
     mintKey,
   };
 }

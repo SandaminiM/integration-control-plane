@@ -65,9 +65,10 @@ export default function EnvCardBody({ component, env, versionId, releaseId, hasD
   const accessRef: EndpointRef | null = useMemo(() => (IS_CLOUD && activeEndpoint ? { componentName: component.id, environmentName: env.name, endpointName: activeEndpoint.id } : null), [component.id, env.name, activeEndpoint]);
   const access = useEndpointTestAccess(accessRef, IS_CLOUD && !!accessRef && isDeploymentReady);
 
-  // The raw external route is open (no policy engine in its path), so prefer the
-  // gateway URL the credential is actually enforced on.
-  const baseUrl = (IS_CLOUD ? access.gatewayUrl : '') || activeEndpoint?.publicUrl || '';
+  // Cloud lists tools through the apip gateway and nothing else. The raw external
+  // route is open (no policy engine in its path), so falling back to it would hand
+  // the test key to a host that never validates it.
+  const baseUrl = IS_CLOUD ? access.gatewayUrl : (activeEndpoint?.publicUrl ?? '');
 
   // APIM products: mint the test key against the endpoint's APIM API.
   const generateKey = useGenerateTestKey();
@@ -133,6 +134,12 @@ export default function EnvCardBody({ component, env, versionId, releaseId, hasD
       {!isDeploymentReady ? (
         <Alert severity="info" sx={{ mt: 1.5 }}>
           Deploy to view MCP tools.
+        </Alert>
+      ) : IS_CLOUD && access.isUnavailable ? (
+        // Terminal: with no gateway URL the tools call is never attempted, so this
+        // must not fall through to the authorization spinner and hang there.
+        <Alert severity="warning" sx={{ mt: 1.5 }}>
+          This MCP server&apos;s endpoint isn&apos;t exposed on the API gateway yet, so its tools can&apos;t be listed. Redeploy the server, or check that its endpoint is exposed as an API.
         </Alert>
       ) : keyError ? (
         // Without a credential the tools call is never attempted, so surface the

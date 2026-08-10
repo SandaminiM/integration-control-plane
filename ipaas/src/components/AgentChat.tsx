@@ -79,9 +79,11 @@ export default function AgentChat({ componentId, versionId, releaseId, environme
   const { data: chatSpec } = useApiDefinition(IS_CLOUD ? candidate?.apimRevisionId : null);
   const hasChatOperation = IS_CLOUD ? !!(chatSpec as { paths?: Record<string, unknown> } | null)?.paths?.['/chat'] : (apimApi?.operations?.some((op) => op.target === '/chat') ?? false);
 
-  // Prefer the apip gateway URL: the endpoint's own external route is open (the
-  // policy engine is not in its path), so a test key means nothing there.
-  const chatUrl = (IS_CLOUD ? access.gatewayUrl : '') || candidate?.publicUrl || '';
+  // Cloud invokes the apip gateway and nothing else. The endpoint's own external
+  // route is open (the policy engine is not in its path), so falling back to it
+  // would hand the test key to a host that never validates it and would make an
+  // unenforced call look like a secured one.
+  const chatUrl = IS_CLOUD ? access.gatewayUrl : (candidate?.publicUrl ?? '');
 
   const generateKey = useGenerateTestKey();
   const [apimKey, setApimKey] = useState<string | null>(null);
@@ -121,8 +123,10 @@ export default function AgentChat({ componentId, versionId, releaseId, environme
   // enforcement to api-key auth, which must be a deliberate choice.
   const needsManualKey = IS_CLOUD && access.mode === 'jwt' && !access.apiKey;
 
-  // Connection status, reported up to the host (Test page shows it as a chip).
-  const connectionStatus: AgentConnectionStatus = authError ? 'error' : isAuthorized && chatUrl ? 'connected' : 'connecting';
+  // Connection status, reported up to the host (Test page shows it as a chip). An
+  // unreachable endpoint is terminal, so it reports `error` rather than spinning on
+  // `connecting` forever.
+  const connectionStatus: AgentConnectionStatus = authError || (IS_CLOUD && access.isUnavailable) ? 'error' : isAuthorized && chatUrl ? 'connected' : 'connecting';
   useEffect(() => {
     onConnectionChange?.(connectionStatus);
   }, [connectionStatus, onConnectionChange]);
@@ -163,7 +167,11 @@ export default function AgentChat({ componentId, versionId, releaseId, environme
         body: JSON.stringify({ sessionId, message }),
       });
 
-      if (response.status === 401 && allowKeyRefresh && (IS_CLOUD ? !!accessRef : !!apimId)) {
+      // Only re-mint where a key is what the endpoint expects. On a cloud `none` or
+      // `jwt` endpoint a 401 is not a stale key, and minting would silently switch
+      // enforcement to api-key auth — that stays an explicit user action.
+      const canRefreshKey = IS_CLOUD ? access.mode === 'api-key' : !!apimId;
+      if (response.status === 401 && allowKeyRefresh && canRefreshKey) {
         // Key likely expired — regenerate once and retry with the fresh key
         // passed directly; a setApiKey state update wouldn't reach this
         // closure in time. If we can't refresh, fall through to surface the 401.
@@ -207,11 +215,11 @@ export default function AgentChat({ componentId, versionId, releaseId, environme
     return <Alert severity="info">AI agent chat isn&apos;t available in production environments. Test your agent in a non-critical environment such as Development.</Alert>;
   }
 
-  const noEndpoint = endpoints.length > 0 && !chatUrl;
-  // Cloud: an endpoint exists and is reachable, but is not (yet) fronted by the
-  // API Platform gateway — messages fall back to the open deployment route, so say
-  // so rather than letting an unsecured call look like the intended path.
-  const notExposed = IS_CLOUD && !noEndpoint && !!candidate && (access.isSecurityUnavailable || (access.mode !== null && !access.gatewayUrl));
+  // Cloud: a reachable endpoint exists, but it is not fronted by the API Platform
+  // gateway — the only URL chat may invoke — so name that cause instead of the
+  // generic "no endpoint", which would send the user looking in the wrong place.
+  const notExposed = IS_CLOUD && !!candidate && access.isUnavailable;
+  const noEndpoint = endpoints.length > 0 && !chatUrl && !notExposed;
   const isPage = variant === 'page';
 
   return (
@@ -223,7 +231,7 @@ export default function AgentChat({ componentId, versionId, releaseId, environme
       )}
       {authError && <Alert severity="warning">{(IS_CLOUD && access.keyError) || 'Could not authenticate with the agent. Check your permissions and try again.'}</Alert>}
       {noEndpoint && <Alert severity="info">No chat endpoint found for this agent.</Alert>}
-      {notExposed && <Alert severity="warning">This agent&apos;s endpoint isn&apos;t exposed on the API gateway yet, so messages go to its unsecured deployment URL.</Alert>}
+      {notExposed && <Alert severity="warning">This agent&apos;s endpoint isn&apos;t exposed on the API gateway yet, so it can&apos;t be chat-tested. Redeploy the agent, or check that its endpoint is exposed as an API.</Alert>}
       {needsManualKey && (
         <Alert
           severity="info"
