@@ -22,7 +22,7 @@ import { useState, type JSX } from 'react';
 import { copyValueBox, fieldLabel } from './CopyField.styles';
 
 /** A labelled, read-only monospace value with a copy-to-clipboard button. */
-export default function CopyField({ label, value }: { label: string; value: string }): JSX.Element {
+export default function CopyField({ label, value, emptyText = '—' }: { label: string; value: string; emptyText?: string }): JSX.Element {
   const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false);
   const onCopy = () => {
@@ -47,8 +47,8 @@ export default function CopyField({ label, value }: { label: string; value: stri
       </Grid>
       <Grid size={{ xs: 12, sm: 9 }}>
         <Stack direction="row" alignItems="center" gap={0.5}>
-          <Box sx={copyValueBox} title={value}>
-            {value || '—'}
+          <Box sx={copyValueBox} title={value || undefined}>
+            {value || emptyText}
           </Box>
           <Tooltip title={copied ? 'Copied' : failed ? 'Copy failed' : 'Copy'}>
             <span>

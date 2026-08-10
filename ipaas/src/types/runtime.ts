@@ -43,6 +43,9 @@ export interface RuntimeReleaseDetails {
     namespace?: string;
   };
   containers?: ReleaseContainerSpec[];
+  /** OpenChoreo component UUID and deployed image ref (cloud only — not on the wip devops shape). */
+  componentId?: string;
+  image?: string;
 }
 
 export interface PodResourceQuantities {
@@ -95,6 +98,25 @@ export interface PodMetrics {
 }
 
 /**
+ * Server-computed cpu/memory aggregate for a release (cloud only). cpu in whole
+ * cores (0.5 = 500m), memory in bytes — unlike PodMetrics, no quantity-string parsing needed.
+ */
+export interface ComponentLevelMetrics {
+  cpu: { usedCores: number; limitCores: number };
+  memory: { usedBytes: number; limitBytes: number };
+}
+
+/**
+ * Pod-level metrics plus an optional pre-aggregated total. OpenChoreo has no
+ * pod-level metrics source, so cloud always sends `podLevelMetrics: []` and
+ * relies on `componentLevelMetrics` instead; WIP only ever fills podLevelMetrics.
+ */
+export interface RuntimeMetrics {
+  podLevelMetrics: PodMetrics[];
+  componentLevelMetrics?: ComponentLevelMetrics;
+}
+
+/**
  * An event the cluster published about a pod. The cluster keeps these for roughly an
  * hour, so an empty list is normal.
  */
@@ -120,6 +142,7 @@ export interface PodScope {
   projectId: string;
   clusterId: string;
   namespace: string;
+  releaseId: string;
   orgHandler: string;
   projectHandler: string;
   componentHandler: string;

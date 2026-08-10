@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import type { CalculatedUsage, ClusterPod, PodMetrics } from '../types/runtime';
+import type { CalculatedUsage, ClusterPod, ComponentLevelMetrics, PodMetrics } from '../types/runtime';
 
 /**
  * Parse a Kubernetes CPU quantity into millicores.
@@ -98,6 +98,16 @@ function sumMetricsUsage(metrics: PodMetrics[]): { cpu: number; memory: number }
 function percent(used: number, limits: number): number {
   if (limits <= 0) return 0;
   return Math.min(100, Math.round((used / limits) * 100));
+}
+
+/** Cloud's server-computed aggregate (whole cores/bytes) in the same shape as calculateAggregateUsage. */
+export function usageFromComponentLevelMetrics(agg: ComponentLevelMetrics): CalculatedUsage {
+  const cpuUsed = agg.cpu.usedCores * 1000;
+  const cpuLimits = agg.cpu.limitCores * 1000;
+  return {
+    cpu: { limits: cpuLimits, used: cpuUsed, usagePercent: percent(cpuUsed, cpuLimits) },
+    memory: { limits: agg.memory.limitBytes, used: agg.memory.usedBytes, usagePercent: percent(agg.memory.usedBytes, agg.memory.limitBytes) },
+  };
 }
 
 /** Aggregate CPU/memory used vs. allocated across all pods of a release. */

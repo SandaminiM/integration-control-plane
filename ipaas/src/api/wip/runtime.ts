@@ -18,7 +18,7 @@
 
 import { getOrgUuidFromToken } from '../../auth/tokenManager';
 import { choreoClient, withScopeRetry } from './httpClients';
-import type { ClusterPod, PodEvent, PodLogOptions, PodMetrics, RuntimeReleaseDetails } from '../../types/runtime';
+import type { ClusterPod, PodEvent, PodLogOptions, PodMetrics, RuntimeMetrics, RuntimeReleaseDetails } from '../../types/runtime';
 
 // Component runtime data lives on the choreo gateway devops service; REST calls
 // carry organization_id + project_id query params (org UUID comes from the token).
@@ -29,7 +29,7 @@ function commonParams(projectId: string): URLSearchParams {
 }
 
 /** Full runtime detail for a deployed release (replicas, namespace, cluster, last-deployed). */
-export function fetchReleaseDetails(projectId: string, componentId: string, releaseId: string): Promise<RuntimeReleaseDetails> {
+export function fetchReleaseDetails(projectId: string, componentId: string, _componentName: string, releaseId: string): Promise<RuntimeReleaseDetails> {
   return withScopeRetry(async () => {
     const res = await choreoClient.get<{ data: RuntimeReleaseDetails }>(`${BASE}/components/${encodeURIComponent(componentId)}/release/${encodeURIComponent(releaseId)}?${commonParams(projectId).toString()}`);
     return res.data;
@@ -49,13 +49,15 @@ async function queryDpResources<T>(projectId: string, clusterId: string, apiVers
 }
 
 /** Pods for a release (labelSelector release_id=…). */
-export function fetchComponentPods(projectId: string, clusterId: string, releaseId: string, namespace: string): Promise<ClusterPod[]> {
+export function fetchComponentPods(projectId: string, _componentName: string, clusterId: string, releaseId: string, namespace: string): Promise<ClusterPod[]> {
   return withScopeRetry(() => queryDpResources<ClusterPod>(projectId, clusterId, 'v1', 'Pod', { namespace, labelSelector: `release_id=${releaseId}` }));
 }
 
-/** Live cpu/memory metrics for a release's pods. */
-export function fetchComponentPodMetrics(projectId: string, clusterId: string, releaseId: string, namespace: string): Promise<PodMetrics[]> {
-  return withScopeRetry(() => queryDpResources<PodMetrics>(projectId, clusterId, encodeURIComponent('metrics.k8s.io/v1beta1'), 'PodMetrics', { namespace, labelSelector: `release_id=${releaseId}` }));
+/** Live cpu/memory metrics for a release's pods. There's no component-level aggregate on this backend — the caller computes it from pods + podLevelMetrics. */
+export function fetchComponentPodMetrics(projectId: string, _componentName: string, clusterId: string, releaseId: string, namespace: string): Promise<RuntimeMetrics> {
+  return withScopeRetry(async () => ({
+    podLevelMetrics: await queryDpResources<PodMetrics>(projectId, clusterId, encodeURIComponent('metrics.k8s.io/v1beta1'), 'PodMetrics', { namespace, labelSelector: `release_id=${releaseId}` }),
+  }));
 }
 
 interface RawPodEvent {
@@ -83,7 +85,7 @@ function toPodEvent(raw: RawPodEvent): PodEvent {
 }
 
 /** Events the cluster published about one pod. */
-export async function fetchPodEvents(projectId: string, clusterId: string, namespace: string, podName: string): Promise<PodEvent[]> {
+export async function fetchPodEvents(projectId: string, _componentName: string, _releaseId: string, clusterId: string, namespace: string, podName: string): Promise<PodEvent[]> {
   const raw = await withScopeRetry(() => queryDpResources<RawPodEvent>(projectId, clusterId, 'v1', 'Event', { namespace, fieldSelector: `involvedObject.name=${podName}` }));
   return raw.map(toPodEvent);
 }
@@ -110,7 +112,7 @@ function podLogsError(error: unknown): Error {
  * Container logs for one pod. The devops proxy answers with the whole log as a single
  * string; `stream: false` keeps it a plain request rather than a live tail.
  */
-export function fetchPodLogs(projectId: string, clusterId: string, namespace: string, podName: string, options: PodLogOptions): Promise<string> {
+export function fetchPodLogs(projectId: string, _componentName: string, _releaseId: string, clusterId: string, namespace: string, podName: string, options: PodLogOptions): Promise<string> {
   const body = { stream: false, namespace, podName, containerName: options.containerName, previous: options.previous, sinceSeconds: options.sinceSeconds, maxTailLines: options.maxTailLines };
   return withScopeRetry(async () => {
     try {
@@ -123,6 +125,6 @@ export function fetchPodLogs(projectId: string, clusterId: string, namespace: st
 }
 
 /** Redeploy the currently deployed release ("Redeploy Release" button). */
-export function redeployRelease(projectId: string, componentId: string, releaseId: string, message = 'Manually redeployed'): Promise<void> {
+export function redeployRelease(projectId: string, componentId: string, _componentName: string, releaseId: string, message = 'Manually redeployed'): Promise<void> {
   return withScopeRetry(() => choreoClient.post<void>(`${BASE}/components/${encodeURIComponent(componentId)}/release/${encodeURIComponent(releaseId)}/deploy-deployment?${commonParams(projectId).toString()}`, { message }));
 }
