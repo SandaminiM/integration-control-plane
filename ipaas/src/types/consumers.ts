@@ -17,12 +17,9 @@
  */
 
 /**
- * API security & exposure domain, mirroring the ipaas-service BFF surface.
- * Cloud-only today; `wip`/`icp` stub it.
- *
- * The spec models a consumer's credential as a subscription token, but the BFF
- * implements `/applications` without the `/subscriptions` routes, so it is an
- * endpoint api-key sent as `X-API-Key` — see {@link ConsumerCredential}.
+ * API security & exposure domain. Cloud-only; `wip`/`icp` stub it. The spec calls
+ * the credential a subscription token, but the BFF ships no `/subscriptions`
+ * routes, so it is an endpoint api-key sent as `X-API-Key`.
  */
 
 /** Identifies one deployed endpoint — the path triple every security call takes. */
@@ -148,9 +145,7 @@ export interface Consumer {
   application?: ConsumerApplication;
   credential: ConsumerCredential;
   status: ConsumerStatus;
-  /** Set only while revoked, and only when the server reports it. */
-  revokedAt?: string;
-  /** Every api-key backing this consumer, revoked ones included — all are revoked together. */
+  /** The consumer's live api-keys — revoked ones are excluded, having nothing left to revoke. */
   credentialIds: string[];
 }
 

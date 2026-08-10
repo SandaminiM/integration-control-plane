@@ -115,30 +115,36 @@ export default function ConsumersPanel({ componentName, projectName, envName, en
         </Alert>
       ) : count > 0 ? (
         <Stack gap={1} sx={styles.consumerList}>
-          {consumers.map((c) => (
-            <Box key={c.id} sx={styles.consumerRow}>
-              <Avatar sx={styles.consumerAvatar}>{(c.displayName[0] ?? 'A').toUpperCase()}</Avatar>
-              <Box sx={styles.consumerRowText}>
-                <Stack direction="row" alignItems="center" gap={0.75} sx={styles.consumerNameRow}>
-                  <Typography variant="body2" fontWeight={500} noWrap>
-                    {c.displayName}
-                  </Typography>
-                  <Chip label={c.status === 'revoked' ? 'Revoked' : 'Active'} size="small" color={c.status === 'revoked' ? 'error' : 'success'} variant="outlined" sx={styles.consumerStatusChip} />
-                </Stack>
-                <Typography variant="caption" color="text.secondary" noWrap sx={styles.consumerRowSubtitle}>
-                  {consumerSummary(c)}
-                </Typography>
+          {consumers.map((c) => {
+            // Empty for a key-only row; rendering it would leave a blank line.
+            const summary = consumerSummary(c);
+            return (
+              <Box key={c.id} sx={styles.consumerRow}>
+                <Avatar sx={styles.consumerAvatar}>{(c.displayName[0] ?? 'A').toUpperCase()}</Avatar>
+                <Box sx={styles.consumerRowText}>
+                  <Stack direction="row" alignItems="center" gap={0.75} sx={styles.consumerNameRow}>
+                    <Typography variant="body2" fontWeight={500} noWrap>
+                      {c.displayName}
+                    </Typography>
+                    <Chip label={c.status === 'revoked' ? 'Revoked' : 'Active'} size="small" color={c.status === 'revoked' ? 'error' : 'success'} variant="outlined" sx={styles.consumerStatusChip} />
+                  </Stack>
+                  {!!summary && (
+                    <Typography variant="caption" color="text.secondary" noWrap sx={styles.consumerRowSubtitle}>
+                      {summary}
+                    </Typography>
+                  )}
+                </Box>
+                <Button variant="outlined" size="small" onClick={() => setDialogTarget(c)}>
+                  Manage
+                </Button>
+                <Tooltip title="Delete Consumer">
+                  <IconButton size="small" aria-label={`Delete ${c.displayName}`} onClick={() => setPendingDelete(c)} sx={styles.consumerDeleteButton}>
+                    <Trash2 size={15} />
+                  </IconButton>
+                </Tooltip>
               </Box>
-              <Button variant="outlined" size="small" onClick={() => setDialogTarget(c)}>
-                Manage
-              </Button>
-              <Tooltip title="Delete Consumer">
-                <IconButton size="small" aria-label={`Delete ${c.displayName}`} onClick={() => setPendingDelete(c)} sx={styles.consumerDeleteButton}>
-                  <Trash2 size={15} />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          ))}
+            );
+          })}
         </Stack>
       ) : (
         <Box sx={styles.emptyState}>
