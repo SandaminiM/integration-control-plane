@@ -67,8 +67,11 @@ export default function ComponentRuntime({ org, project, component }: ComponentS
 
   // Cloud's runtime-details response is the authoritative source for these (OpenChoreo IDs,
   // deployed image) — wip keeps using its existing component/deployment-derived values.
-  const displayComponentId = IS_CLOUD ? release?.componentId ?? componentId : componentId;
-  const displayReleaseId = IS_CLOUD ? release?.ID ?? releaseId : releaseId;
+  // Falling back to componentId/releaseId while `release` is still loading would flash a
+  // handler-shaped value that then flips to the real OpenChoreo UUID once it arrives —
+  // show nothing until the authoritative value is in, rather than a mismatched one first.
+  const displayComponentId = IS_CLOUD ? release?.componentId ?? '' : componentId;
+  const displayReleaseId = IS_CLOUD ? release?.ID ?? '' : releaseId;
   const displayImageUrl = IS_CLOUD ? release?.image : deployment?.imageUrl ?? undefined;
 
   const pods = useComponentPods(projectId, component, clusterId, releaseId, namespace);
