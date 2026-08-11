@@ -27,6 +27,7 @@ import { useExecutionConfigs } from '../../../hooks/useExecutions';
 import { useGetConfigMgt, useSchemaConfig } from '../../../hooks/useConfiguration';
 import { useRedeployDeployment, useStopDeployment } from '../../../hooks/useDeployments';
 import { nextCronRunMs, formatTimeUntil, describeCron } from '../../../utils/cronUtils';
+import { deploymentPollInterval } from '../../../utils/deploymentStatus';
 import ConfigureDrawer from '../../EnvironmentCard/ConfigureDrawer';
 import ScheduleDialog from '../../Overview/_shared/ScheduleDialog';
 import PromoteButton from '../../EnvironmentCard/PromoteButton';
@@ -76,7 +77,8 @@ export default function DeployEnvironmentCard({
     isFetching,
   } = useComponentDeployment(orgHandler, orgUuid, componentId, versionId, env.id, {
     refetchInterval: (query) => {
-      if (query.state.data?.deploymentStatusV2 === 'IN_PROGRESS') return 5000;
+      const interval = deploymentPollInterval(query.state.data?.deploymentStatusV2, 5000);
+      if (interval) return interval;
       if (Date.now() < postMutationPollingUntil.current) return 2000;
       return false;
     },

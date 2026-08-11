@@ -31,6 +31,7 @@ import { useTriggerComponent } from '../../hooks/useExecutions';
 import { useStopDeployment, useRedeployDeployment } from '../../hooks/useDeployments';
 import { GENERIC_SERVICE_TYPES } from '../../constants/integrations';
 import { nextCronRunMs, formatTimeUntil, describeCron } from '../../utils/cronUtils';
+import { deploymentPollInterval } from '../../utils/deploymentStatus';
 import EnvironmentCardHeader from './EnvironmentCardHeader';
 import EnvironmentCardBody from './EnvironmentCardBody';
 import RunWithArgsDialog from '../Overview/automation/RunWithArgsDialog';
@@ -87,13 +88,14 @@ export default function Environment({ env, prevEnv, componentId, projectId, comp
 
   const deploymentStatusV2 = envDeployment?.deploymentStatusV2 ?? null;
 
-  // Poll only while transitional (IN_PROGRESS) or briefly after explicit user actions
+  // Poll only while unsettled (progressing, or failed but still able to recover) or
+  // briefly after explicit user actions
   useEffect(() => {
     if (!isGenericService) return;
-    const isTransitional = deploymentStatusV2 === 'IN_PROGRESS';
-    setServiceRefetchInterval(isTransitional || shouldPollOnce ? 8000 : false);
+    const interval = deploymentPollInterval(deploymentStatusV2, 8000);
+    setServiceRefetchInterval(interval || (shouldPollOnce ? 8000 : false));
     // Clear the once-flag when status has settled to a stable state
-    if (shouldPollOnce && !isTransitional) {
+    if (shouldPollOnce && !interval) {
       setShouldPollOnce(false);
     }
   }, [isGenericService, deploymentStatusV2, shouldPollOnce]);
