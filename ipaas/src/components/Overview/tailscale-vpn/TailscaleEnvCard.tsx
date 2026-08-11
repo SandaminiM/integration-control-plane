@@ -51,6 +51,7 @@ import { useByoiEndpointsYaml, useRedeployTailscale, useSaveAndDeployTailscale, 
 import { OAUTH_CLIENT_SECRET } from '../../../constants/tailscale';
 import type { TailscaleAuthMethod, TailscalePortMapping } from '../../../types/tailscale';
 import type { Environment } from '../../../types/environment';
+import { deploymentPollInterval } from '../../../utils/deploymentStatus';
 import { joinPortMappings, safeAtob, tailscaleConfigMapName, tailscaleSecretName } from '../../../utils/tailscale';
 
 interface TailscaleEnvCardProps {
@@ -68,7 +69,7 @@ export default function TailscaleEnvCard({ orgHandler, projectId, component, ver
   const orgUuid = useOrgUuid();
 
   const { data: deployment } = useComponentDeployment(orgHandler, orgUuid ?? '', component.id, versionId, env.id, {
-    refetchInterval: (query) => (query.state.data?.deploymentStatusV2 === 'IN_PROGRESS' ? 3000 : false),
+    refetchInterval: (query) => deploymentPollInterval(query.state.data?.deploymentStatusV2, 3000),
   });
   const releaseId = deployment?.releaseId ?? '';
   const status = deployment?.deploymentStatusV2 ?? 'NOT_DEPLOYED';

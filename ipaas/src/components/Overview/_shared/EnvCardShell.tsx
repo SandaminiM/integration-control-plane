@@ -25,6 +25,7 @@ import { useOrgUuid } from '../../../hooks/useOrgUuid';
 import type { Component } from '../../../types/component';
 import type { Environment } from '../../../types/environment';
 import type { EnvCardNotification, EnvCardSlotProps, IntegrationModule } from '../../../types/integration';
+import { deploymentPollInterval } from '../../../utils/deploymentStatus';
 import EnvCardHeader from './EnvCardHeader';
 
 interface EnvCardShellProps {
@@ -63,16 +64,17 @@ export default function EnvCardShell({ component, env, prevEnv, versionId, proje
   const queryClient = useQueryClient();
   const envOrgUuid = useOrgUuid() ?? '';
 
-  // Poll while transitional (IN_PROGRESS) or briefly after an explicit action.
+  // Poll while unsettled (progressing, or failed but still able to recover) or briefly
+  // after an explicit action.
   const [shouldPollOnce, setShouldPollOnce] = useState(false);
   const [refetchInterval, setRefetchInterval] = useState<number | false>(false);
   const { data: envDeployment, isLoading: loadingDeployment } = useComponentDeployment(orgHandler, envOrgUuid, component.id, versionId, env.id, { refetchInterval });
   const deploymentStatusV2 = envDeployment?.deploymentStatusV2 ?? null;
 
   useEffect(() => {
-    const transitional = deploymentStatusV2 === 'IN_PROGRESS';
-    setRefetchInterval(transitional || shouldPollOnce ? 8000 : false);
-    if (shouldPollOnce && !transitional) setShouldPollOnce(false);
+    const interval = deploymentPollInterval(deploymentStatusV2, 8000);
+    setRefetchInterval(interval || (shouldPollOnce ? 8000 : false));
+    if (shouldPollOnce && !interval) setShouldPollOnce(false);
   }, [deploymentStatusV2, shouldPollOnce]);
 
   const requestPoll = useCallback(() => setShouldPollOnce(true), []);

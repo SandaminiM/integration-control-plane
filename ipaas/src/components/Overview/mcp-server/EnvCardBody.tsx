@@ -23,6 +23,7 @@ import { useEnvEndpoints } from '../../../hooks/useDeployments';
 import { useGenerateTestKey } from '../../../hooks/useApim';
 import { useMcpTools } from '../../../hooks/useMcpTools';
 import type { EnvCardBodyProps } from '../../../types/integration';
+import { isDeploymentHealthy } from '../../../utils/deploymentStatus';
 import EnvCardSkeleton from '../_shared/EnvCardSkeleton';
 import EndpointUrlsPanel from '../_shared/EndpointUrlsPanel';
 import McpToolTile from './McpToolTile';
@@ -37,8 +38,9 @@ import McpToolTile from './McpToolTile';
  */
 export default function EnvCardBody({ component, env, versionId, releaseId, hasDeployment, loadingDeployment, deploymentStatusV2 }: EnvCardBodyProps): ReactNode {
   // Tools can only be listed once the server is actually deployed and running — an
-  // in-progress deployment has no reachable `/mcp` endpoint yet.
-  const isDeploymentReady = hasDeployment && deploymentStatusV2 !== 'IN_PROGRESS';
+  // in-progress deployment has no reachable `/mcp` endpoint yet, and a degraded one
+  // (crash-looping, or never rendered) never will.
+  const isDeploymentReady = hasDeployment && isDeploymentHealthy(deploymentStatusV2);
   const { data: endpoints = [] } = useEnvEndpoints(component.id, versionId, releaseId);
 
   // Default to the MCP-capable endpoint (one with a public URL + APIM id — the
