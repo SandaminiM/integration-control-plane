@@ -92,7 +92,7 @@ export default function RuntimeOverview({ componentName, status, lastDeployedAt,
         <CopyField label="Component ID" value={componentId} />
         <CopyField label="Release ID" value={releaseId} />
         <CopyField label="Namespace" value={namespace ?? ''} />
-        <CopyField label="Image" value={imageUrl ?? ''} emptyText={isDeployed ? 'Not available' : 'Not deployed yet'} />
+        <CopyField label="Image" value={imageUrl ?? ''} />
       </Grid>
     </Grid>
   );
