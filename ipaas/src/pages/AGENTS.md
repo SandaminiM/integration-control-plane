@@ -41,7 +41,12 @@ Use `useOrgUuid()` from `src/hooks/useOrgUuid.ts`. Never call `getOrgUuidFromTok
 
 ## Navigation
 
-Use `useNavigate()` from React Router. URL helpers live in `src/paths.ts` and `src/nav.ts`.
+Use `useAppNavigate()` from `src/hooks/useAppNavigate.ts` — **not** `useNavigate()`. It has the
+same signature, and additionally fetches the destination route's chunk before changing the URL, so
+the address bar and the page move together instead of the URL jumping ahead of a Suspense fallback.
+`useNavigate()` is reserved for auth redirects that must be immediate (`OIDCCallback`, logout).
+
+URL helpers live in `src/paths.ts` and `src/nav.ts`.
 
 ---
 

@@ -533,11 +533,15 @@ export function ScopeResolver(): JSX.Element {
 // ---------------------------------------------------------------------------
 
 export function withScope<S extends Scope>(Component: FC<S>, validLevels: readonly Level[]): FC {
-  return function Wrapped() {
+  function Wrapped() {
     const scope = useScope();
     if (!validLevels.includes(scope.level)) return createElement('p', null, `This page is not available at the ${scope.level} level.`);
     return createElement(Component, scope as S);
-  };
+  }
+  // Matrix routes render this wrapper, which would otherwise hide the lazy
+  // component's `preload` from the navigation preloader.
+  (Wrapped as FC & { preload?: () => Promise<unknown> }).preload = (Component as FC & { preload?: () => Promise<unknown> }).preload;
+  return Wrapped;
 }
 
 // ---------------------------------------------------------------------------

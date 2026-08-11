@@ -19,7 +19,7 @@
 import { Card, CardContent } from '@wso2/oxygen-ui';
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { useComponentDeployment, useEnvEndpoints } from '../../hooks/useDeployments';
 import { useExecutionConfigs } from '../../hooks/useExecutions';
 import { useSchemaConfig } from '../../hooks/useConfiguration';
@@ -59,7 +59,7 @@ export default function Environment({ env, prevEnv, componentId, projectId, comp
   const isAutomation = (displayType ?? '').toLowerCase() === 'scheduledtask';
   const isGenericService = GENERIC_SERVICE_TYPES.has(displayType ?? '');
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [configureOpen, setConfigureOpen] = useState(false);
   const [logsOpen, setLogsOpen] = useState(false);
   const [notification, setNotification] = useState<{ text: string; severity: 'success' | 'error' } | null>(null);

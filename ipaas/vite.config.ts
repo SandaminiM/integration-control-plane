@@ -47,6 +47,20 @@ export default defineConfig({
       },
     },
   },
+  // Preview mirrors the dev server: the IDP only accepts redirects on :3000, and
+  // `vite preview` reads none of `server`, so port and proxy are repeated here.
+  preview: {
+    port: 3000,
+    strictPort: true,
+    https: {},
+    proxy: {
+      '/subscriptions-proxy': {
+        target: 'https://subscriptions.dv.wso2.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/subscriptions-proxy/, ''),
+      },
+    },
+  },
   optimizeDeps: {
     // Pre-bundle so a lazy page importing it mid-session doesn't trigger a re-optimize reload.
     include: ['@wso2/oxygen-ui-charts-react'],
@@ -61,6 +75,17 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        // Rollup gives every module shared by two lazy routes its own chunk. With
+        // icons imported across ~80 route modules that produced 43 single-icon
+        // files, so one navigation spent ~2s on round-trips for ~35KB. Grouping
+        // them costs a few unused icons per route and saves 40+ requests.
+        manualChunks(id: string) {
+          if (id.includes('oxygen-ui-icons-react')) return 'icons';
+        },
+      },
+    },
   },
   plugins: [
     basicSsl(),
