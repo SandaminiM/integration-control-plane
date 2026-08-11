@@ -200,4 +200,3 @@ export async function deleteConsumer(ref: EndpointRef, consumer: Consumer): Prom
   await revokeConsumerKeys(ref, consumer);
   if (consumer.application) await deleteApplication(consumer.application.id);
 }
-

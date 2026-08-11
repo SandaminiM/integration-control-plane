@@ -214,8 +214,13 @@ function AppLayoutInner(): JSX.Element {
   const projectFromList = !isProjectUuid && projectParam ? (projects.find((p) => p.handler === projectParam) ?? null) : null;
   const project = isProjectUuid ? projectById : (projectByHandler ?? projectFromList);
   const projectId = project?.id ?? '';
-  const { data: allComponents = [] } = useComponents(scope.org, projectId);
+  const { data: allComponents = [], isLoading: isLoadingComponents } = useComponents(scope.org, projectId);
   const components = allComponents.filter((c) => isSupportedIntegration(c.displayType, c.componentSubType ?? null));
+  // Hide the sidebar on the project overview page specifically (not other project-scoped pages
+  // like Settings) when the project has no integrations yet — none of the nav links apply until
+  // there's at least one. Gated on !isLoadingComponents so it doesn't flash hidden-then-visible
+  // while the list is still loading.
+  const hideSidebarForEmptyProject = activeNavId === 'proj-overview' && !isLoadingComponents && components.length === 0;
 
   // Helper to get project display name with fallback to projects list
   const getProjectDisplayName = () => {
@@ -850,652 +855,654 @@ function AppLayoutInner(): JSX.Element {
         </Header>
       </AppShell.Navbar>
 
-      <AppShell.Sidebar>
-        <Sidebar
-          collapsed={shell.sidebarCollapsed}
-          activeItem={pendingNavId ?? activeNavId}
-          expandedMenus={shell.expandedMenus}
-          onSelect={(id) => {
-            if (id === 'expand') {
-              handleToggleSidebar();
-            } else {
-              handleNavSelect(id);
-            }
-          }}
-          onToggleExpand={actions.toggleMenu}
-          sx={{ backgroundColor: 'background.acrylic', backdropFilter: 'blur(3px)' }}>
-          <Sidebar.Nav>
-            {!hasProject(scope) ? (
-              /* Org-level nav */
-              <Sidebar.Category>
-                <Sidebar.Item id="overview">
-                  <Sidebar.ItemIcon>
-                    <LayoutDashboard size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>Overview</Sidebar.ItemLabel>
-                </Sidebar.Item>
+      {!hideSidebarForEmptyProject && (
+        <AppShell.Sidebar>
+          <Sidebar
+            collapsed={shell.sidebarCollapsed}
+            activeItem={pendingNavId ?? activeNavId}
+            expandedMenus={shell.expandedMenus}
+            onSelect={(id) => {
+              if (id === 'expand') {
+                handleToggleSidebar();
+              } else {
+                handleNavSelect(id);
+              }
+            }}
+            onToggleExpand={actions.toggleMenu}
+            sx={{ backgroundColor: 'background.acrylic', backdropFilter: 'blur(3px)' }}>
+            <Sidebar.Nav>
+              {!hasProject(scope) ? (
+                /* Org-level nav */
+                <Sidebar.Category>
+                  <Sidebar.Item id="overview">
+                    <Sidebar.ItemIcon>
+                      <LayoutDashboard size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Overview</Sidebar.ItemLabel>
+                  </Sidebar.Item>
 
-                {!IS_CLOUD && (
-                  <Sidebar.Item id="org-develop">
-                    <Sidebar.ItemIcon>
-                      <Lightbulb size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Develop</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                )}
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="org-develop">
+                      <Sidebar.ItemIcon>
+                        <Lightbulb size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Develop</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  )}
 
-                <Sidebar.Item id="build">
-                  <Sidebar.ItemIcon>
-                    <Hammer size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>Build</Sidebar.ItemLabel>
-                </Sidebar.Item>
+                  <Sidebar.Item id="build">
+                    <Sidebar.ItemIcon>
+                      <Hammer size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Build</Sidebar.ItemLabel>
+                  </Sidebar.Item>
 
-                <Sidebar.Item id="org-deploy">
-                  <Sidebar.ItemIcon>
-                    <Rocket size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>Deploy</Sidebar.ItemLabel>
-                </Sidebar.Item>
+                  <Sidebar.Item id="org-deploy">
+                    <Sidebar.ItemIcon>
+                      <Rocket size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Deploy</Sidebar.ItemLabel>
+                  </Sidebar.Item>
 
-                <Sidebar.Item id="org-test">
-                  <Sidebar.ItemIcon>
-                    <FlaskConical size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
-                </Sidebar.Item>
+                  <Sidebar.Item id="org-test">
+                    <Sidebar.ItemIcon>
+                      <FlaskConical size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
+                  </Sidebar.Item>
 
-                {!IS_CLOUD && (
-                  <Sidebar.Item id="org-insights">
-                    <Sidebar.ItemIcon>
-                      <BarChart3 size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
-                    <Sidebar.Item id="org-usage">
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="org-insights">
                       <Sidebar.ItemIcon>
-                        <Activity size={20} />
+                        <BarChart3 size={20} />
                       </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
+                      <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
+                      <Sidebar.Item id="org-usage">
+                        <Sidebar.ItemIcon>
+                          <Activity size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                      <Sidebar.Item id="org-delivery">
+                        <Sidebar.ItemIcon>
+                          <Truck size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                      <Sidebar.Item id="org-compliance">
+                        <Sidebar.ItemIcon>
+                          <ShieldCheck size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
+                      </Sidebar.Item>
                     </Sidebar.Item>
-                    <Sidebar.Item id="org-delivery">
-                      <Sidebar.ItemIcon>
-                        <Truck size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                    <Sidebar.Item id="org-compliance">
-                      <Sidebar.ItemIcon>
-                        <ShieldCheck size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                  </Sidebar.Item>
-                )}
+                  )}
 
-                <Sidebar.Item id="org-observability">
-                  <Sidebar.ItemIcon>
-                    <Eye size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>Observability</Sidebar.ItemLabel>
-                  <Sidebar.Item id="org-logs">
+                  <Sidebar.Item id="org-observability">
                     <Sidebar.ItemIcon>
-                      <ScrollText size={20} />
+                      <Eye size={20} />
                     </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Logs</Sidebar.ItemLabel>
+                    <Sidebar.ItemLabel>Observability</Sidebar.ItemLabel>
+                    <Sidebar.Item id="org-logs">
+                      <Sidebar.ItemIcon>
+                        <ScrollText size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Logs</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                    <Sidebar.Item id="org-metrics">
+                      <Sidebar.ItemIcon>
+                        <BarChart3 size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Metrics</Sidebar.ItemLabel>
+                    </Sidebar.Item>
                   </Sidebar.Item>
-                  <Sidebar.Item id="org-metrics">
-                    <Sidebar.ItemIcon>
-                      <BarChart3 size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Metrics</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                </Sidebar.Item>
 
-                <Sidebar.Item id="org-rag">
-                  <Sidebar.ItemIcon>
-                    <Brain size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>RAG</Sidebar.ItemLabel>
-                  <Sidebar.Item id="org-scheduled-ingestion">
+                  <Sidebar.Item id="org-rag">
                     <Sidebar.ItemIcon>
-                      <Clock size={20} />
+                      <Brain size={20} />
                     </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Scheduled Ingestion</Sidebar.ItemLabel>
+                    <Sidebar.ItemLabel>RAG</Sidebar.ItemLabel>
+                    <Sidebar.Item id="org-scheduled-ingestion">
+                      <Sidebar.ItemIcon>
+                        <Clock size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Scheduled Ingestion</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                    <Sidebar.Item id="org-service">
+                      <Sidebar.ItemIcon>
+                        <Cpu size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Service</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                    <Sidebar.Item id="org-retrieval">
+                      <Sidebar.ItemIcon>
+                        <Diamond size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Retrieval</Sidebar.ItemLabel>
+                    </Sidebar.Item>
                   </Sidebar.Item>
-                  <Sidebar.Item id="org-service">
-                    <Sidebar.ItemIcon>
-                      <Cpu size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Service</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                  <Sidebar.Item id="org-retrieval">
-                    <Sidebar.ItemIcon>
-                      <Diamond size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Retrieval</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                </Sidebar.Item>
 
-                <Sidebar.Item id="org-admin">
-                  <Sidebar.ItemIcon>
-                    <Settings2 size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
-                  {!IS_CLOUD && (
-                    <Sidebar.Item id="org-databases">
-                      <Sidebar.ItemIcon>
-                        <Database size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Databases</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                  )}
-                  {!IS_CLOUD && (
-                    <Sidebar.Item id="org-vector-databases">
-                      <Sidebar.ItemIcon>
-                        <DatabaseZap size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Vector Databases</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                  )}
-                  {!IS_CLOUD && (
-                    <Sidebar.Item id="org-message-brokers">
-                      <Sidebar.ItemIcon>
-                        <MessageSquare size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Message Brokers</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                  )}
-                  {!IS_CLOUD && (
-                    <Sidebar.Item id="org-third-party">
-                      <Sidebar.ItemIcon>
-                        <Puzzle size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Third Party Services</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                  )}
-                  {!IS_CLOUD && (
-                    <Sidebar.Item id="org-genai-services">
-                      <Sidebar.ItemIcon>
-                        <Sparkles size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>GenAI Services</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                  )}
-                  {!IS_CLOUD && (
-                    <Sidebar.Item id="org-config-groups">
-                      <Sidebar.ItemIcon>
-                        <SlidersHorizontal size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Config Groups</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                  )}
-                  {!IS_CLOUD && (
-                    <Sidebar.Item id="org-governance">
-                      <Sidebar.ItemIcon>
-                        <Scale size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Governance</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                  )}
-                  <Sidebar.Item id="org-cd-pipelines">
+                  <Sidebar.Item id="org-admin">
                     <Sidebar.ItemIcon>
-                      <GitBranch size={20} />
+                      <Settings2 size={20} />
                     </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>CD Pipelines</Sidebar.ItemLabel>
+                    <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
+                    {!IS_CLOUD && (
+                      <Sidebar.Item id="org-databases">
+                        <Sidebar.ItemIcon>
+                          <Database size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Databases</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                    )}
+                    {!IS_CLOUD && (
+                      <Sidebar.Item id="org-vector-databases">
+                        <Sidebar.ItemIcon>
+                          <DatabaseZap size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Vector Databases</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                    )}
+                    {!IS_CLOUD && (
+                      <Sidebar.Item id="org-message-brokers">
+                        <Sidebar.ItemIcon>
+                          <MessageSquare size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Message Brokers</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                    )}
+                    {!IS_CLOUD && (
+                      <Sidebar.Item id="org-third-party">
+                        <Sidebar.ItemIcon>
+                          <Puzzle size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Third Party Services</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                    )}
+                    {!IS_CLOUD && (
+                      <Sidebar.Item id="org-genai-services">
+                        <Sidebar.ItemIcon>
+                          <Sparkles size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>GenAI Services</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                    )}
+                    {!IS_CLOUD && (
+                      <Sidebar.Item id="org-config-groups">
+                        <Sidebar.ItemIcon>
+                          <SlidersHorizontal size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Config Groups</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                    )}
+                    {!IS_CLOUD && (
+                      <Sidebar.Item id="org-governance">
+                        <Sidebar.ItemIcon>
+                          <Scale size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Governance</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                    )}
+                    <Sidebar.Item id="org-cd-pipelines">
+                      <Sidebar.ItemIcon>
+                        <GitBranch size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>CD Pipelines</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                    <Sidebar.Item id="org-data-planes">
+                      <Sidebar.ItemIcon>
+                        <Network size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Data Planes</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                    <Sidebar.Item id="org-environments">
+                      <Sidebar.ItemIcon>
+                        <Layers size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Environments</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                    {!IS_CLOUD && (
+                      <Sidebar.Item id="org-audit-logs">
+                        <Sidebar.ItemIcon>
+                          <ClipboardList size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Audit Logs</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                    )}
+                    {!IS_CLOUD && (
+                      <Sidebar.Item id="org-approvals">
+                        <Sidebar.ItemIcon>
+                          <ClipboardCheck size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Approvals</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                    )}
+                    {!IS_CLOUD && (
+                      <Sidebar.Item id="org-certificates">
+                        <Sidebar.ItemIcon>
+                          <Award size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Certificates</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                    )}
+                    {/* Cloud has no Access Control, but Settings still carries Org Details + Package Registries. */}
+                    {(IS_CLOUD || canSeeAccessControl) && (
+                      <Sidebar.Item id="org-settings">
+                        <Sidebar.ItemIcon>
+                          <Cog size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Settings</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                    )}
                   </Sidebar.Item>
-                  <Sidebar.Item id="org-data-planes">
+                </Sidebar.Category>
+              ) : hasComponent(scope) ? (
+                (() => {
+                  const isGenericService = GENERIC_SERVICE_TYPES.has(currentComponent?.displayType ?? '');
+                  // External CI is a paid, Bring-Your-Own-Image-only feature.
+                  const showExternalCI = isExternalCiEnabled() && isByoiComponent(currentComponent?.displayType ?? '') && isSubscribed;
+                  const integrationType = identifyIntegration(currentComponent?.displayType ?? '', currentComponent?.componentSubType ?? null).type;
+                  const runtimeLogsType = ['file-integration', 'event-integration'].includes(integrationType);
+                  const aiAgentType = integrationType === 'ai-agent';
+                  // MCP (server + proxy): a single Test tab → the MCP playground
+                  // (@wso2-org/mcp-playground). No Console/API-Chat sub-items.
+                  const mcpType = integrationType === 'mcp-server' || integrationType === 'mcp-proxy';
+                  return (
+                    <>
+                      <Sidebar.Category>
+                        <Sidebar.Item id="overview">
+                          <Sidebar.ItemIcon>
+                            <LayoutDashboard size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Overview</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+                      </Sidebar.Category>
+
+                      <Sidebar.Category>
+                        {!IS_CLOUD && (
+                          <Sidebar.Item id="develop">
+                            <Sidebar.ItemIcon>
+                              <Lightbulb size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Develop</Sidebar.ItemLabel>
+                            <Sidebar.Item id="integration">
+                              <Sidebar.ItemIcon>
+                                <Workflow size={20} />
+                              </Sidebar.ItemIcon>
+                              <Sidebar.ItemLabel>Integration</Sidebar.ItemLabel>
+                            </Sidebar.Item>
+                            {isGenericService && (
+                              <Sidebar.Item id="api-info">
+                                <Sidebar.ItemIcon>
+                                  <FileText size={20} />
+                                </Sidebar.ItemIcon>
+                                <Sidebar.ItemLabel>API Info</Sidebar.ItemLabel>
+                              </Sidebar.Item>
+                            )}
+                            {isGenericService && (
+                              <Sidebar.Item id="lifecycle">
+                                <Sidebar.ItemIcon>
+                                  <Recycle size={20} />
+                                </Sidebar.ItemIcon>
+                                <Sidebar.ItemLabel>Lifecycle</Sidebar.ItemLabel>
+                              </Sidebar.Item>
+                            )}
+                            {isGenericService && (
+                              <Sidebar.Item id="documents">
+                                <Sidebar.ItemIcon>
+                                  <FileText size={20} />
+                                </Sidebar.ItemIcon>
+                                <Sidebar.ItemLabel>Document</Sidebar.ItemLabel>
+                              </Sidebar.Item>
+                            )}
+                            {isGenericService && (
+                              <Sidebar.Item id="plans">
+                                <Sidebar.ItemIcon>
+                                  <CreditCard size={20} />
+                                </Sidebar.ItemIcon>
+                                <Sidebar.ItemLabel>Plans</Sidebar.ItemLabel>
+                              </Sidebar.Item>
+                            )}
+                          </Sidebar.Item>
+                        )}
+
+                        <Sidebar.Item id="build">
+                          <Sidebar.ItemIcon>
+                            <Hammer size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Build</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+
+                        <Sidebar.Item id="deploy">
+                          <Sidebar.ItemIcon>
+                            <Rocket size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Deploy</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+
+                        {aiAgentType ? (
+                          <Sidebar.Item id="agent-chat">
+                            <Sidebar.ItemIcon>
+                              <FlaskConical size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        ) : mcpType || !isGenericService || runtimeLogsType ? (
+                          <Sidebar.Item id="test">
+                            <Sidebar.ItemIcon>
+                              <FlaskConical size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        ) : IS_WIP ? (
+                          <Sidebar.Item id="test">
+                            <Sidebar.ItemIcon>
+                              <FlaskConical size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
+                            <Sidebar.Item id="console">
+                              <Sidebar.ItemIcon>
+                                <Terminal size={20} />
+                              </Sidebar.ItemIcon>
+                              <Sidebar.ItemLabel>Console</Sidebar.ItemLabel>
+                            </Sidebar.Item>
+                            <Sidebar.Item id="api-chat">
+                              <Sidebar.ItemIcon>
+                                <MessageSquare size={20} />
+                              </Sidebar.ItemIcon>
+                              <Sidebar.ItemLabel>API Chat</Sidebar.ItemLabel>
+                            </Sidebar.Item>
+                          </Sidebar.Item>
+                        ) : (
+                          <Sidebar.Item id="test">
+                            <Sidebar.ItemIcon>
+                              <FlaskConical size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        )}
+
+                        {!IS_CLOUD && (
+                          <Sidebar.Item id="insights">
+                            <Sidebar.ItemIcon>
+                              <BarChart3 size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
+                            <Sidebar.Item id="usage">
+                              <Sidebar.ItemIcon>
+                                <Activity size={20} />
+                              </Sidebar.ItemIcon>
+                              <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
+                            </Sidebar.Item>
+                            <Sidebar.Item id="delivery">
+                              <Sidebar.ItemIcon>
+                                <Truck size={20} />
+                              </Sidebar.ItemIcon>
+                              <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
+                            </Sidebar.Item>
+                            <Sidebar.Item id="compliance">
+                              <Sidebar.ItemIcon>
+                                <ShieldCheck size={20} />
+                              </Sidebar.ItemIcon>
+                              <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
+                            </Sidebar.Item>
+                          </Sidebar.Item>
+                        )}
+
+                        <Sidebar.Item id="observability">
+                          <Sidebar.ItemIcon>
+                            <Eye size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Observability</Sidebar.ItemLabel>
+                          {!IS_CLOUD && (
+                            <Sidebar.Item id="alerts">
+                              <Sidebar.ItemIcon>
+                                <Bell size={20} />
+                              </Sidebar.ItemIcon>
+                              <Sidebar.ItemLabel>Alerts</Sidebar.ItemLabel>
+                            </Sidebar.Item>
+                          )}
+                          <Sidebar.Item id="logs">
+                            <Sidebar.ItemIcon>
+                              <ScrollText size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Logs</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                          <Sidebar.Item id="metrics">
+                            <Sidebar.ItemIcon>
+                              <BarChart3 size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Metrics</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                        </Sidebar.Item>
+
+                        <Sidebar.Item id="admin">
+                          <Sidebar.ItemIcon>
+                            <Settings2 size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
+                          {!IS_CLOUD && (
+                            <Sidebar.Item id="connections">
+                              <Sidebar.ItemIcon>
+                                <Link2 size={20} />
+                              </Sidebar.ItemIcon>
+                              <Sidebar.ItemLabel>Connections</Sidebar.ItemLabel>
+                            </Sidebar.Item>
+                          )}
+                          <Sidebar.Item id="runtime">
+                            <Sidebar.ItemIcon>
+                              <Server size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Runtime</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                          <Sidebar.Item id="containers">
+                            <Sidebar.ItemIcon>
+                              <Boxes size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Containers</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                          <Sidebar.Item id="configs-secrets">
+                            <Sidebar.ItemIcon>
+                              <KeyRound size={20} />
+                            </Sidebar.ItemIcon>
+                            <Sidebar.ItemLabel>Configs &amp; Secrets</Sidebar.ItemLabel>
+                          </Sidebar.Item>
+                          {isGenericService && (
+                            <Sidebar.Item id="health-checks">
+                              <Sidebar.ItemIcon>
+                                <HeartPulse size={20} />
+                              </Sidebar.ItemIcon>
+                              <Sidebar.ItemLabel>Health Checks</Sidebar.ItemLabel>
+                            </Sidebar.Item>
+                          )}
+                          {isGenericService && (
+                            <Sidebar.Item id="scaling">
+                              <Sidebar.ItemIcon>
+                                <Maximize2 size={20} />
+                              </Sidebar.ItemIcon>
+                              <Sidebar.ItemLabel>Scaling</Sidebar.ItemLabel>
+                            </Sidebar.Item>
+                          )}
+                          {!IS_CLOUD && (
+                            <Sidebar.Item id="storage">
+                              <Sidebar.ItemIcon>
+                                <HardDrive size={20} />
+                              </Sidebar.ItemIcon>
+                              <Sidebar.ItemLabel>Storage</Sidebar.ItemLabel>
+                            </Sidebar.Item>
+                          )}
+                          {showExternalCI && (
+                            <Sidebar.Item id="external-ci">
+                              <Sidebar.ItemIcon>
+                                <Webhook size={20} />
+                              </Sidebar.ItemIcon>
+                              <Sidebar.ItemLabel>External CI</Sidebar.ItemLabel>
+                            </Sidebar.Item>
+                          )}
+                          {!IS_CLOUD && canSeeAccessControl && (
+                            <Sidebar.Item id="component-settings">
+                              <Sidebar.ItemIcon>
+                                <Cog size={20} />
+                              </Sidebar.ItemIcon>
+                              <Sidebar.ItemLabel>Settings</Sidebar.ItemLabel>
+                            </Sidebar.Item>
+                          )}
+                        </Sidebar.Item>
+                      </Sidebar.Category>
+                    </>
+                  );
+                })()
+              ) : (
+                /* Project-level nav */
+                <Sidebar.Category>
+                  <Sidebar.Item id="proj-overview">
                     <Sidebar.ItemIcon>
-                      <Network size={20} />
+                      <LayoutDashboard size={20} />
                     </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Data Planes</Sidebar.ItemLabel>
+                    <Sidebar.ItemLabel>Overview</Sidebar.ItemLabel>
                   </Sidebar.Item>
-                  <Sidebar.Item id="org-environments">
+
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="proj-develop">
+                      <Sidebar.ItemIcon>
+                        <Lightbulb size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Develop</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  )}
+
+                  <Sidebar.Item id="proj-build">
                     <Sidebar.ItemIcon>
-                      <Layers size={20} />
+                      <Hammer size={20} />
                     </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Environments</Sidebar.ItemLabel>
+                    <Sidebar.ItemLabel>Build</Sidebar.ItemLabel>
                   </Sidebar.Item>
+
+                  <Sidebar.Item id="proj-deploy">
+                    <Sidebar.ItemIcon>
+                      <Rocket size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Deploy</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+
+                  <Sidebar.Item id="proj-test">
+                    <Sidebar.ItemIcon>
+                      <FlaskConical size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
+                  </Sidebar.Item>
+
                   {!IS_CLOUD && (
-                    <Sidebar.Item id="org-audit-logs">
+                    <Sidebar.Item id="proj-insights">
                       <Sidebar.ItemIcon>
-                        <ClipboardList size={20} />
+                        <BarChart3 size={20} />
                       </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Audit Logs</Sidebar.ItemLabel>
+                      <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
+                      <Sidebar.Item id="proj-usage">
+                        <Sidebar.ItemIcon>
+                          <Activity size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                      <Sidebar.Item id="proj-delivery">
+                        <Sidebar.ItemIcon>
+                          <Truck size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                      <Sidebar.Item id="proj-compliance">
+                        <Sidebar.ItemIcon>
+                          <ShieldCheck size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
+                      </Sidebar.Item>
                     </Sidebar.Item>
                   )}
-                  {!IS_CLOUD && (
-                    <Sidebar.Item id="org-approvals">
+
+                  <Sidebar.Item id="proj-observability">
+                    <Sidebar.ItemIcon>
+                      <Eye size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Observability</Sidebar.ItemLabel>
+                    <Sidebar.Item id="proj-logs">
                       <Sidebar.ItemIcon>
-                        <ClipboardCheck size={20} />
+                        <ScrollText size={20} />
                       </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Approvals</Sidebar.ItemLabel>
+                      <Sidebar.ItemLabel>Logs</Sidebar.ItemLabel>
                     </Sidebar.Item>
-                  )}
-                  {!IS_CLOUD && (
-                    <Sidebar.Item id="org-certificates">
+                    <Sidebar.Item id="proj-metrics">
                       <Sidebar.ItemIcon>
-                        <Award size={20} />
+                        <BarChart3 size={20} />
                       </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Certificates</Sidebar.ItemLabel>
+                      <Sidebar.ItemLabel>Metrics</Sidebar.ItemLabel>
                     </Sidebar.Item>
-                  )}
-                  {/* Cloud has no Access Control, but Settings still carries Org Details + Package Registries. */}
-                  {(IS_CLOUD || canSeeAccessControl) && (
-                    <Sidebar.Item id="org-settings">
+                  </Sidebar.Item>
+
+                  <Sidebar.Item id="proj-admin">
+                    <Sidebar.ItemIcon>
+                      <Settings2 size={20} />
+                    </Sidebar.ItemIcon>
+                    <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
+                    {!IS_CLOUD && (
+                      <Sidebar.Item id="proj-connections">
+                        <Sidebar.ItemIcon>
+                          <Link2 size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Connections</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                    )}
+                    {!IS_CLOUD && (
+                      <Sidebar.Item id="proj-third-party">
+                        <Sidebar.ItemIcon>
+                          <Puzzle size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Third Party Services</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                    )}
+                    {!IS_CLOUD && (
+                      <Sidebar.Item id="proj-genai-services">
+                        <Sidebar.ItemIcon>
+                          <Sparkles size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>GenAI Services</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                    )}
+                    <Sidebar.Item id="proj-cd-pipelines">
+                      <Sidebar.ItemIcon>
+                        <GitBranch size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>CD Pipelines</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                    <Sidebar.Item id="proj-environments">
+                      <Sidebar.ItemIcon>
+                        <Layers size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Environments</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                    <Sidebar.Item id="proj-settings">
                       <Sidebar.ItemIcon>
                         <Cog size={20} />
                       </Sidebar.ItemIcon>
                       <Sidebar.ItemLabel>Settings</Sidebar.ItemLabel>
                     </Sidebar.Item>
-                  )}
+                  </Sidebar.Item>
+                </Sidebar.Category>
+              )}
+            </Sidebar.Nav>
+
+            <Sidebar.Footer sx={{ py: 0 }}>
+              <Sidebar.Category sx={{ mb: 0 }}>
+                <Sidebar.Item id="expand" sx={{ minHeight: 0, py: '15px' }}>
+                  <Sidebar.ItemIcon>
+                    <ChevronRight size={20} style={{ transform: shell.sidebarCollapsed ? 'none' : 'rotate(180deg)' }} />
+                  </Sidebar.ItemIcon>
+                  <Sidebar.ItemLabel>{shell.sidebarCollapsed ? 'Expand' : 'Collapse'}</Sidebar.ItemLabel>
                 </Sidebar.Item>
               </Sidebar.Category>
-            ) : hasComponent(scope) ? (
-              (() => {
-                const isGenericService = GENERIC_SERVICE_TYPES.has(currentComponent?.displayType ?? '');
-                // External CI is a paid, Bring-Your-Own-Image-only feature.
-                const showExternalCI = isExternalCiEnabled() && isByoiComponent(currentComponent?.displayType ?? '') && isSubscribed;
-                const integrationType = identifyIntegration(currentComponent?.displayType ?? '', currentComponent?.componentSubType ?? null).type;
-                const runtimeLogsType = ['file-integration', 'event-integration'].includes(integrationType);
-                const aiAgentType = integrationType === 'ai-agent';
-                // MCP (server + proxy): a single Test tab → the MCP playground
-                // (@wso2-org/mcp-playground). No Console/API-Chat sub-items.
-                const mcpType = integrationType === 'mcp-server' || integrationType === 'mcp-proxy';
-                return (
-                  <>
-                    <Sidebar.Category>
-                      <Sidebar.Item id="overview">
-                        <Sidebar.ItemIcon>
-                          <LayoutDashboard size={20} />
-                        </Sidebar.ItemIcon>
-                        <Sidebar.ItemLabel>Overview</Sidebar.ItemLabel>
-                      </Sidebar.Item>
-                    </Sidebar.Category>
-
-                    <Sidebar.Category>
-                      {!IS_CLOUD && (
-                      <Sidebar.Item id="develop">
-                        <Sidebar.ItemIcon>
-                          <Lightbulb size={20} />
-                        </Sidebar.ItemIcon>
-                        <Sidebar.ItemLabel>Develop</Sidebar.ItemLabel>
-                        <Sidebar.Item id="integration">
-                          <Sidebar.ItemIcon>
-                            <Workflow size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Integration</Sidebar.ItemLabel>
-                        </Sidebar.Item>
-                        {isGenericService && (
-                          <Sidebar.Item id="api-info">
-                            <Sidebar.ItemIcon>
-                              <FileText size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>API Info</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                        )}
-                        {isGenericService && (
-                          <Sidebar.Item id="lifecycle">
-                            <Sidebar.ItemIcon>
-                              <Recycle size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Lifecycle</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                        )}
-                        {isGenericService && (
-                          <Sidebar.Item id="documents">
-                            <Sidebar.ItemIcon>
-                              <FileText size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Document</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                        )}
-                        {isGenericService && (
-                          <Sidebar.Item id="plans">
-                            <Sidebar.ItemIcon>
-                              <CreditCard size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Plans</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                        )}
-                      </Sidebar.Item>
-                      )}
-
-                      <Sidebar.Item id="build">
-                        <Sidebar.ItemIcon>
-                          <Hammer size={20} />
-                        </Sidebar.ItemIcon>
-                        <Sidebar.ItemLabel>Build</Sidebar.ItemLabel>
-                      </Sidebar.Item>
-
-                      <Sidebar.Item id="deploy">
-                        <Sidebar.ItemIcon>
-                          <Rocket size={20} />
-                        </Sidebar.ItemIcon>
-                        <Sidebar.ItemLabel>Deploy</Sidebar.ItemLabel>
-                      </Sidebar.Item>
-
-                      {aiAgentType ? (
-                        <Sidebar.Item id="agent-chat">
-                          <Sidebar.ItemIcon>
-                            <FlaskConical size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
-                        </Sidebar.Item>
-                      ) : mcpType || !isGenericService || runtimeLogsType ? (
-                        <Sidebar.Item id="test">
-                          <Sidebar.ItemIcon>
-                            <FlaskConical size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
-                        </Sidebar.Item>
-                      ) : IS_WIP ? (
-                        <Sidebar.Item id="test">
-                          <Sidebar.ItemIcon>
-                            <FlaskConical size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
-                          <Sidebar.Item id="console">
-                            <Sidebar.ItemIcon>
-                              <Terminal size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Console</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                          <Sidebar.Item id="api-chat">
-                            <Sidebar.ItemIcon>
-                              <MessageSquare size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>API Chat</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                        </Sidebar.Item>
-                      ) : (
-                        <Sidebar.Item id="test">
-                          <Sidebar.ItemIcon>
-                            <FlaskConical size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
-                        </Sidebar.Item>
-                      )}
-
-                      {!IS_CLOUD && (
-                        <Sidebar.Item id="insights">
-                          <Sidebar.ItemIcon>
-                            <BarChart3 size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
-                          <Sidebar.Item id="usage">
-                            <Sidebar.ItemIcon>
-                              <Activity size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                          <Sidebar.Item id="delivery">
-                            <Sidebar.ItemIcon>
-                              <Truck size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                          <Sidebar.Item id="compliance">
-                            <Sidebar.ItemIcon>
-                              <ShieldCheck size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                        </Sidebar.Item>
-                      )}
-
-                      <Sidebar.Item id="observability">
-                        <Sidebar.ItemIcon>
-                          <Eye size={20} />
-                        </Sidebar.ItemIcon>
-                        <Sidebar.ItemLabel>Observability</Sidebar.ItemLabel>
-                        {!IS_CLOUD && (
-                          <Sidebar.Item id="alerts">
-                            <Sidebar.ItemIcon>
-                              <Bell size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Alerts</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                        )}
-                        <Sidebar.Item id="logs">
-                          <Sidebar.ItemIcon>
-                            <ScrollText size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Logs</Sidebar.ItemLabel>
-                        </Sidebar.Item>
-                        <Sidebar.Item id="metrics">
-                          <Sidebar.ItemIcon>
-                            <BarChart3 size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Metrics</Sidebar.ItemLabel>
-                        </Sidebar.Item>
-                      </Sidebar.Item>
-
-                      <Sidebar.Item id="admin">
-                        <Sidebar.ItemIcon>
-                          <Settings2 size={20} />
-                        </Sidebar.ItemIcon>
-                        <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
-                        {!IS_CLOUD && (
-                          <Sidebar.Item id="connections">
-                            <Sidebar.ItemIcon>
-                              <Link2 size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Connections</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                        )}
-                        <Sidebar.Item id="runtime">
-                          <Sidebar.ItemIcon>
-                            <Server size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Runtime</Sidebar.ItemLabel>
-                        </Sidebar.Item>
-                        <Sidebar.Item id="containers">
-                          <Sidebar.ItemIcon>
-                            <Boxes size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Containers</Sidebar.ItemLabel>
-                        </Sidebar.Item>
-                        <Sidebar.Item id="configs-secrets">
-                          <Sidebar.ItemIcon>
-                            <KeyRound size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Configs &amp; Secrets</Sidebar.ItemLabel>
-                        </Sidebar.Item>
-                        {isGenericService && (
-                          <Sidebar.Item id="health-checks">
-                            <Sidebar.ItemIcon>
-                              <HeartPulse size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Health Checks</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                        )}
-                        {isGenericService && (
-                          <Sidebar.Item id="scaling">
-                            <Sidebar.ItemIcon>
-                              <Maximize2 size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Scaling</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                        )}
-                        {!IS_CLOUD && (
-                          <Sidebar.Item id="storage">
-                            <Sidebar.ItemIcon>
-                              <HardDrive size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Storage</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                        )}
-                        {showExternalCI && (
-                          <Sidebar.Item id="external-ci">
-                            <Sidebar.ItemIcon>
-                              <Webhook size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>External CI</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                        )}
-                        {!IS_CLOUD && canSeeAccessControl && (
-                          <Sidebar.Item id="component-settings">
-                            <Sidebar.ItemIcon>
-                              <Cog size={20} />
-                            </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Settings</Sidebar.ItemLabel>
-                          </Sidebar.Item>
-                        )}
-                      </Sidebar.Item>
-                    </Sidebar.Category>
-                  </>
-                );
-              })()
-            ) : (
-              /* Project-level nav */
-              <Sidebar.Category>
-                <Sidebar.Item id="proj-overview">
-                  <Sidebar.ItemIcon>
-                    <LayoutDashboard size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>Overview</Sidebar.ItemLabel>
-                </Sidebar.Item>
-
-                {!IS_CLOUD && (
-                  <Sidebar.Item id="proj-develop">
-                    <Sidebar.ItemIcon>
-                      <Lightbulb size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Develop</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                )}
-
-                <Sidebar.Item id="proj-build">
-                  <Sidebar.ItemIcon>
-                    <Hammer size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>Build</Sidebar.ItemLabel>
-                </Sidebar.Item>
-
-                <Sidebar.Item id="proj-deploy">
-                  <Sidebar.ItemIcon>
-                    <Rocket size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>Deploy</Sidebar.ItemLabel>
-                </Sidebar.Item>
-
-                <Sidebar.Item id="proj-test">
-                  <Sidebar.ItemIcon>
-                    <FlaskConical size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>Test</Sidebar.ItemLabel>
-                </Sidebar.Item>
-
-                {!IS_CLOUD && (
-                  <Sidebar.Item id="proj-insights">
-                    <Sidebar.ItemIcon>
-                      <BarChart3 size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Insights</Sidebar.ItemLabel>
-                    <Sidebar.Item id="proj-usage">
-                      <Sidebar.ItemIcon>
-                        <Activity size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Usage</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                    <Sidebar.Item id="proj-delivery">
-                      <Sidebar.ItemIcon>
-                        <Truck size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Delivery</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                    <Sidebar.Item id="proj-compliance">
-                      <Sidebar.ItemIcon>
-                        <ShieldCheck size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Compliance</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                  </Sidebar.Item>
-                )}
-
-                <Sidebar.Item id="proj-observability">
-                  <Sidebar.ItemIcon>
-                    <Eye size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>Observability</Sidebar.ItemLabel>
-                  <Sidebar.Item id="proj-logs">
-                    <Sidebar.ItemIcon>
-                      <ScrollText size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Logs</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                  <Sidebar.Item id="proj-metrics">
-                    <Sidebar.ItemIcon>
-                      <BarChart3 size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Metrics</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                </Sidebar.Item>
-
-                <Sidebar.Item id="proj-admin">
-                  <Sidebar.ItemIcon>
-                    <Settings2 size={20} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
-                  {!IS_CLOUD && (
-                    <Sidebar.Item id="proj-connections">
-                      <Sidebar.ItemIcon>
-                        <Link2 size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Connections</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                  )}
-                  {!IS_CLOUD && (
-                    <Sidebar.Item id="proj-third-party">
-                      <Sidebar.ItemIcon>
-                        <Puzzle size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Third Party Services</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                  )}
-                  {!IS_CLOUD && (
-                    <Sidebar.Item id="proj-genai-services">
-                      <Sidebar.ItemIcon>
-                        <Sparkles size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>GenAI Services</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                  )}
-                  <Sidebar.Item id="proj-cd-pipelines">
-                    <Sidebar.ItemIcon>
-                      <GitBranch size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>CD Pipelines</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                  <Sidebar.Item id="proj-environments">
-                    <Sidebar.ItemIcon>
-                      <Layers size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Environments</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                  <Sidebar.Item id="proj-settings">
-                    <Sidebar.ItemIcon>
-                      <Cog size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Settings</Sidebar.ItemLabel>
-                  </Sidebar.Item>
-                </Sidebar.Item>
-              </Sidebar.Category>
-            )}
-          </Sidebar.Nav>
-
-          <Sidebar.Footer sx={{ py: 0 }}>
-            <Sidebar.Category sx={{ mb: 0 }}>
-              <Sidebar.Item id="expand" sx={{ minHeight: 0, py: '15px' }}>
-                <Sidebar.ItemIcon>
-                  <ChevronRight size={20} style={{ transform: shell.sidebarCollapsed ? 'none' : 'rotate(180deg)' }} />
-                </Sidebar.ItemIcon>
-                <Sidebar.ItemLabel>{shell.sidebarCollapsed ? 'Expand' : 'Collapse'}</Sidebar.ItemLabel>
-              </Sidebar.Item>
-            </Sidebar.Category>
-          </Sidebar.Footer>
-        </Sidebar>
-      </AppShell.Sidebar>
+            </Sidebar.Footer>
+          </Sidebar>
+        </AppShell.Sidebar>
+      )}
 
       <AppShell.Main>
         {/* Navigation progress: a GitHub-style line under the navbar. The page

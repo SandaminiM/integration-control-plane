@@ -101,30 +101,19 @@ setup('authenticate', async ({ page }) => {
   // This ensures saved storage state never triggers onboarding screens in tests.
   await page.goto(`/organizations/${orgMatch[1]}/home`, { waitUntil: 'domcontentloaded' });
 
-  const personaVisible = await page
-    .getByRole('heading', { name: 'Welcome to WSO2 Integration Platform' })
-    .waitFor({ state: 'visible', timeout: 5_000 })
+  // Persona selection has been removed from onboarding (the choice wasn't persisted anywhere),
+  // so new users land straight on the region step — check for that directly rather than gating
+  // on a persona step that no longer appears.
+  const regionStepVisible = await page
+    .getByRole('heading', { name: 'Select Your Region' })
+    .waitFor({ state: 'visible', timeout: 10_000 })
     .then(() => true)
     .catch(() => false);
 
-  if (personaVisible) {
-    // Step 1 — Persona selector: Developer/Architect/PM is pre-selected; just click Next.
-    await page.getByRole('button', { name: 'Next' }).click();
-
-    // Step 2 — Region selector may follow. Select US and continue.
-    const regionStep = await page
-      .getByRole('radio', { name: /US/i })
-      .first()
-      .waitFor({ state: 'visible', timeout: 5_000 })
-      .then(() => true)
-      .catch(() => false);
-
-    if (regionStep) {
-      await page.getByRole('radio', { name: /US/i }).first().click();
-      await page.getByRole('button', { name: /continue/i }).click();
-    }
-
-    await page.getByRole('heading', { name: 'All Projects' }).waitFor({ state: 'visible', timeout: 15_000 });
+  if (regionStepVisible) {
+    // Region defaults to US already — no need to touch the dropdown.
+    await page.getByRole('button', { name: 'Get Started' }).click();
+    await page.getByRole('heading', { name: 'All Projects' }).waitFor({ state: 'visible', timeout: 30_000 });
   }
 
   // Save auth state after onboarding has been completed.

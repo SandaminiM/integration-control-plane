@@ -100,7 +100,9 @@ export default function EnvCardBody({ component, env, prevEnv, projectId, versio
         </Box>
       )}
 
-      {showEndpointPanel && deploymentStatusV2 !== 'IN_PROGRESS' && <EndpointUrlsPanel endpoints={envEndpoints} selectedIdx={selectedEpIdx} onSelect={setSelectedEpIdx} componentId={component.id} deploymentTrackId={versionId} externalUrlOverride={apiSecurity?.publicUrl || undefined} />}
+      {showEndpointPanel && deploymentStatusV2 !== 'IN_PROGRESS' && (
+        <EndpointUrlsPanel endpoints={envEndpoints} selectedIdx={selectedEpIdx} onSelect={setSelectedEpIdx} componentId={component.id} deploymentTrackId={versionId} externalUrlOverride={apiSecurity?.publicUrl || undefined} />
+      )}
 
       {hasDeployment &&
         deploymentStatusV2 !== 'IN_PROGRESS' &&

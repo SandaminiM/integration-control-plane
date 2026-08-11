@@ -50,14 +50,12 @@ export const POD_DRAWER_WIDTH = 960;
 export const POD_CONDITION_DEFINITIONS: Record<string, PodConditionInfo> = {
   PodScheduled: {
     displayName: 'Pod Scheduled',
-    description:
-      'The container scheduler has assigned this pod to a specific node in the data plane. Until this is completed, the pod will remain in a "Pending" state waiting for node assignment.',
+    description: 'The container scheduler has assigned this pod to a specific node in the data plane. Until this is completed, the pod will remain in a "Pending" state waiting for node assignment.',
     order: 1,
   },
   PodReadyToStartContainers: {
     displayName: 'Starting Pod Containers',
-    description:
-      "This condition indicates that the container runtime has successfully created the pod sandbox and configured the pod's networking. This happens before containers actually start running.",
+    description: "This condition indicates that the container runtime has successfully created the pod sandbox and configured the pod's networking. This happens before containers actually start running.",
     order: 2,
   },
   ContainersReady: {

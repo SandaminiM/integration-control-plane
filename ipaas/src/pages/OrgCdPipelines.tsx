@@ -75,14 +75,7 @@ export default function OrgCdPipelines(scope: OrgScope): JSX.Element {
           Failed to load deployment pipelines.
         </Alert>
       ) : !pipelines?.length ? (
-        <EmptyListing
-          icon={<GitBranch size={48} />}
-          title="No deployment pipelines"
-          description={EMPTY_DESCRIPTION}
-          showAction={!IS_CLOUD}
-          actionLabel="Create Pipeline"
-          onAction={() => navigate(cdPipelineEditorUrl(scope))}
-        />
+        <EmptyListing icon={<GitBranch size={48} />} title="No deployment pipelines" description={EMPTY_DESCRIPTION} showAction={!IS_CLOUD} actionLabel="Create Pipeline" onAction={() => navigate(cdPipelineEditorUrl(scope))} />
       ) : (
         <Stack gap={3}>
           {orderedPipelines?.map((pipeline) => (
