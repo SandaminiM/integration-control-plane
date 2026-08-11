@@ -27,7 +27,7 @@ import AgentChat from '../../AgentChat';
 import EndpointUrlsPanel from '../_shared/EndpointUrlsPanel';
 
 //AI Agent env-card body
-export default function EnvCardBody({ component, env, versionId, releaseId, hasDeployment, deploymentStatusV2 }: EnvCardBodyProps): ReactNode {
+export default function EnvCardBody({ component, env, versionId, releaseId, hasDeployment }: EnvCardBodyProps): ReactNode {
   // Per-env endpoints for the current release (drives the URLs/Download-Spec panel).
   const { data: endpoints = [] } = useEnvEndpoints(component.id, versionId, releaseId);
   const [selectedEpIdx, setSelectedEpIdx] = useState(0);
@@ -55,24 +55,15 @@ export default function EnvCardBody({ component, env, versionId, releaseId, hasD
 
   // Show the deployed endpoint URLs whenever the agent is deployed
   const showEndpoints = endpoints.length > 0;
-  // A rollout in flight has no reachable chat endpoint yet — the same gate the MCP
-  // and integration-as-api cards apply before talking to the deployment.
-  const isDeploymentReady = deploymentStatusV2 !== 'IN_PROGRESS';
 
+  // The chat is rendered for any deployed agent, whatever the rollout state. It reports its
+  // own readiness — endpoint discovery, gateway exposure and the connection chip — so a
+  // placeholder here would only duplicate that, less precisely.
   return (
     <>
       <Divider sx={{ my: 2 }} />
       {showEndpoints && <EndpointUrlsPanel endpoints={endpoints} selectedIdx={selectedEpIdx} onSelect={setSelectedEpIdx} componentId={component.id} deploymentTrackId={versionId} externalUrlOverride={apiSecurity?.publicUrl || undefined} />}
-      {isDeploymentReady ? (
-        <AgentChat componentId={component.id} versionId={versionId} releaseId={releaseId} environmentName={env.name} envCritical={!!env.critical} />
-      ) : (
-        <Stack alignItems="center" justifyContent="center" gap={1} sx={{ py: 4 }}>
-          <Sparkles size={24} style={{ opacity: 0.4 }} />
-          <Typography variant="body2" color="text.secondary">
-            Deployment in progress — chat will be available once the agent is running.
-          </Typography>
-        </Stack>
-      )}
+      <AgentChat componentId={component.id} versionId={versionId} releaseId={releaseId} environmentName={env.name} envCritical={!!env.critical} />
     </>
   );
 }
