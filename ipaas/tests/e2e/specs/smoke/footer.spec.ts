@@ -5,6 +5,9 @@ test.describe('footer @smoke', () => {
   test.beforeEach(async ({ page }) => {
     const { orgHandler } = getAuthContext();
     await page.goto(`/organizations/${orgHandler}/home`, { waitUntil: 'domcontentloaded' });
+    // Guard against a stale/expired session silently redirecting to /login — the footer
+    // there has no Support link, which would otherwise fail confusingly further down.
+    await expect(page).toHaveURL(/\/organizations\/[^/]+\/home/);
   });
 
   test('shows Terms of Use, Privacy Policy, and Support links in correct order', async ({ page }) => {

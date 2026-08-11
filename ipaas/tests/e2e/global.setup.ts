@@ -113,7 +113,23 @@ setup('authenticate', async ({ page }) => {
   if (regionStepVisible) {
     // Region defaults to US already — no need to touch the dropdown.
     await page.getByRole('button', { name: 'Get Started' }).click();
-    await page.getByRole('heading', { name: 'All Projects' }).waitFor({ state: 'visible', timeout: 30_000 });
+
+    // "Get Started" provisions the org + default project then navigates to that project's
+    // own home page (Project.tsx) — not the org-level "All Projects" list. Check for a
+    // submission error first so a real setup failure (e.g. a scope/permission error from
+    // the backend) fails fast with its actual message instead of a generic 30s timeout.
+    // The static info banner above the form is also role="alert", so it's excluded by text.
+    const errorAlert = page.getByRole('alert').filter({ hasNotText: 'You can start with the default Cloud Data Plane' });
+    const setupFailed = await errorAlert
+      .waitFor({ state: 'visible', timeout: 5_000 })
+      .then(() => true)
+      .catch(() => false);
+    if (setupFailed) {
+      const message = await errorAlert.innerText();
+      throw new Error(`Onboarding "Get Started" failed: ${message}`);
+    }
+
+    await page.getByRole('heading', { level: 1 }).waitFor({ state: 'visible', timeout: 30_000 });
   }
 
   // Save auth state after onboarding has been completed.

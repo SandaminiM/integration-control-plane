@@ -214,13 +214,14 @@ function AppLayoutInner(): JSX.Element {
   const projectFromList = !isProjectUuid && projectParam ? (projects.find((p) => p.handler === projectParam) ?? null) : null;
   const project = isProjectUuid ? projectById : (projectByHandler ?? projectFromList);
   const projectId = project?.id ?? '';
-  const { data: allComponents = [], isLoading: isLoadingComponents } = useComponents(scope.org, projectId);
+  const { data: allComponents = [], isFetched: isComponentsFetched } = useComponents(scope.org, projectId);
   const components = allComponents.filter((c) => isSupportedIntegration(c.displayType, c.componentSubType ?? null));
   // Hide the sidebar on the project overview page specifically (not other project-scoped pages
   // like Settings) when the project has no integrations yet — none of the nav links apply until
-  // there's at least one. Gated on !isLoadingComponents so it doesn't flash hidden-then-visible
-  // while the list is still loading.
-  const hideSidebarForEmptyProject = activeNavId === 'proj-overview' && !isLoadingComponents && components.length === 0;
+  // there's at least one. Requires a resolved projectId + isFetched (not isLoading) because
+  // useComponents is disabled until projectId resolves, and a disabled query reports
+  // isLoading: false — which would let this fire before we actually know the component list.
+  const hideSidebarForEmptyProject = activeNavId === 'proj-overview' && !!projectId && isComponentsFetched && components.length === 0;
 
   // Helper to get project display name with fallback to projects list
   const getProjectDisplayName = () => {
@@ -386,7 +387,7 @@ function AppLayoutInner(): JSX.Element {
     <AppShell>
       <AppShell.Navbar>
         <Header>
-          <Header.Toggle collapsed={shell.sidebarCollapsed} onToggle={handleToggleSidebar} />
+          {!hideSidebarForEmptyProject && <Header.Toggle collapsed={shell.sidebarCollapsed} onToggle={handleToggleSidebar} />}
           <Header.Brand>
             <Header.BrandLogo>
               <NavLink to={orgHomeUrl(scope.org)} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>

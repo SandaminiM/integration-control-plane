@@ -15,6 +15,9 @@ test.describe('empty project home @smoke', () => {
     orgHandler = getAuthContext().orgHandler;
     await page.goto(`/organizations/${orgHandler}/projects/default/home`, { waitUntil: 'domcontentloaded' });
     await page.waitForURL(/\/projects\/default\/home/, { timeout: 30_000 });
+    // Fail fast with a clear signal if the session died and we got bounced to login,
+    // instead of letting downstream assertions time out on a page that was never reached.
+    await expect(page.getByRole('heading', { name: 'Sign In' })).not.toBeVisible();
   });
 
   test('URL resolves to the default project home', async ({ page }) => {
