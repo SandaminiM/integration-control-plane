@@ -77,6 +77,15 @@ describe('beginNavigation', () => {
   });
 });
 
+describe('resetNavigationPending', () => {
+  it('cancels a pending show timer so it cannot fire after the reset', async () => {
+    beginNavigation(DELAY, MIN);
+    resetNavigationPending();
+    await settle(DELAY + 10);
+    expect(getNavigationPending()).toBe(false);
+  });
+});
+
 describe('subscribeNavigationPending', () => {
   it('notifies on change and stops after unsubscribe', async () => {
     const listener = vi.fn();

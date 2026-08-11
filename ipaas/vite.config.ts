@@ -53,13 +53,6 @@ export default defineConfig({
     port: 3000,
     strictPort: true,
     https: {},
-    proxy: {
-      '/subscriptions-proxy': {
-        target: 'https://subscriptions.dv.wso2.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/subscriptions-proxy/, ''),
-      },
-    },
   },
   optimizeDeps: {
     // Pre-bundle so a lazy page importing it mid-session doesn't trigger a re-optimize reload.

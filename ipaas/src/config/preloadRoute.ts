@@ -49,5 +49,12 @@ export function collectPreloads(to: string): Preloader[] {
  */
 export async function preloadRoute(preloaders: Preloader[], timeoutMs: number = PRELOAD_TIMEOUT_MS): Promise<void> {
   if (preloaders.length === 0) return;
-  await Promise.race([Promise.all(preloaders.map((fn) => fn())), new Promise((resolve) => window.setTimeout(resolve, timeoutMs))]).catch(() => undefined);
+  let timer = 0;
+  try {
+    await Promise.race([Promise.all(preloaders.map((fn) => fn())), new Promise((resolve) => (timer = window.setTimeout(resolve, timeoutMs)))]).catch(() => undefined);
+  } finally {
+    // The race leaves the loser running; at 30s a burst of navigations would
+    // otherwise hold a timer each.
+    window.clearTimeout(timer);
+  }
 }

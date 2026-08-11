@@ -33,6 +33,7 @@ let pending = false;
 let inFlight = 0;
 let shownAt = 0;
 const listeners = new Set<() => void>();
+const timers = new Set<number>();
 
 function set(next: boolean): void {
   if (pending === next) return;
@@ -49,25 +50,30 @@ function set(next: boolean): void {
 export function beginNavigation(delayMs: number = INDICATOR_DELAY_MS, minMs: number = INDICATOR_MIN_MS): () => void {
   inFlight += 1;
   const showTimer = window.setTimeout(() => {
+    timers.delete(showTimer);
     shownAt = Date.now();
     set(true);
   }, delayMs);
+  timers.add(showTimer);
 
   let ended = false;
   return () => {
     if (ended) return;
     ended = true;
     window.clearTimeout(showTimer);
+    timers.delete(showTimer);
     inFlight -= 1;
     if (inFlight > 0 || shownAt === 0) return;
-    window.setTimeout(
+    const hideTimer = window.setTimeout(
       () => {
+        timers.delete(hideTimer);
         if (inFlight > 0) return;
         shownAt = 0;
         set(false);
       },
       Math.max(0, minMs - (Date.now() - shownAt)),
     );
+    timers.add(hideTimer);
   };
 }
 
@@ -82,6 +88,8 @@ export function getNavigationPending(): boolean {
 
 /** Test seam — resets the module state between cases. */
 export function resetNavigationPending(): void {
+  timers.forEach((id) => window.clearTimeout(id));
+  timers.clear();
   pending = false;
   inFlight = 0;
   shownAt = 0;
