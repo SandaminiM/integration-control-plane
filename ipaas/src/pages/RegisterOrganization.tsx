@@ -224,7 +224,7 @@ export default function RegisterOrganization(): JSX.Element {
             {isCreating ? 'Creating...' : 'Create Organization'}
           </Button>
 
-          <Button variant="text" color="secondary" size="small" onClick={() => logout().then(() => navigate(loginUrl()))} disabled={isCreating}>
+          <Button variant="outlined" color="secondary" size="small" onClick={() => logout().then(() => navigate(loginUrl()))} disabled={isCreating}>
             Sign out and use a different account
           </Button>
         </Stack>
