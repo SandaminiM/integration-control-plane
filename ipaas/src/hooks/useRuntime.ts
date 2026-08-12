@@ -37,7 +37,7 @@ function hasReleaseScope(componentName: string, clusterId: string, namespace: st
 
 export function useReleaseDetails(projectId: string, componentId: string, componentName: string, releaseId: string) {
   return useQuery({
-    queryKey: [ROOT_KEY, 'release', releaseId],
+    queryKey: [ROOT_KEY, 'release', projectId, releaseId],
     queryFn: () => fetchReleaseDetails(projectId, componentId, componentName, releaseId),
     enabled: !!projectId && !!releaseId && (IS_WIP ? !!componentId : !!componentName),
     retry: false,
@@ -46,7 +46,7 @@ export function useReleaseDetails(projectId: string, componentId: string, compon
 
 export function useComponentPods(projectId: string, componentName: string, clusterId: string, releaseId: string, namespace: string, pollMs: number = POLL_MS) {
   return useQuery({
-    queryKey: [ROOT_KEY, 'pods', componentName, clusterId, releaseId, namespace],
+    queryKey: [ROOT_KEY, 'pods', projectId, componentName, clusterId, releaseId, namespace],
     queryFn: () => fetchComponentPods(projectId, componentName, clusterId, releaseId, namespace),
     enabled: !!projectId && !!releaseId && hasReleaseScope(componentName, clusterId, namespace),
     retry: false,
@@ -58,7 +58,7 @@ export function useComponentPods(projectId: string, componentName: string, clust
 
 export function useComponentPodMetrics(projectId: string, componentName: string, clusterId: string, releaseId: string, namespace: string) {
   return useQuery({
-    queryKey: [ROOT_KEY, 'podMetrics', componentName, clusterId, releaseId, namespace],
+    queryKey: [ROOT_KEY, 'podMetrics', projectId, componentName, clusterId, releaseId, namespace],
     queryFn: () => fetchComponentPodMetrics(projectId, componentName, clusterId, releaseId, namespace),
     enabled: !!projectId && !!releaseId && hasReleaseScope(componentName, clusterId, namespace),
     retry: false,
@@ -70,7 +70,7 @@ export function useComponentPodMetrics(projectId: string, componentName: string,
 
 export function usePodEvents(projectId: string, componentName: string, releaseId: string, clusterId: string, namespace: string, podName: string, enabled: boolean) {
   return useQuery({
-    queryKey: [ROOT_KEY, 'podEvents', componentName, releaseId, clusterId, namespace, podName],
+    queryKey: [ROOT_KEY, 'podEvents', projectId, componentName, releaseId, clusterId, namespace, podName],
     queryFn: () => fetchPodEvents(projectId, componentName, releaseId, clusterId, namespace, podName),
     enabled: enabled && !!projectId && !!podName && (IS_WIP ? !!clusterId && !!namespace : !!componentName && !!releaseId),
     retry: false,
@@ -82,7 +82,7 @@ export function usePodEvents(projectId: string, componentName: string, releaseId
 export function usePodLogs(projectId: string, componentName: string, releaseId: string, clusterId: string, namespace: string, podName: string, options: PodLogOptions, enabled: boolean) {
   return useQuery({
     // `previous` and `sinceSeconds` change what the server returns, so they belong in the key.
-    queryKey: [ROOT_KEY, 'podLogs', componentName, releaseId, clusterId, namespace, podName, options.containerName, options.previous, options.sinceSeconds],
+    queryKey: [ROOT_KEY, 'podLogs', projectId, componentName, releaseId, clusterId, namespace, podName, options.containerName, options.previous, options.sinceSeconds],
     queryFn: () => fetchPodLogs(projectId, componentName, releaseId, clusterId, namespace, podName, options),
     enabled: enabled && !!projectId && !!podName && (IS_WIP ? !!clusterId && !!namespace : !!componentName && !!releaseId),
     retry: false,
