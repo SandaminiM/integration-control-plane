@@ -42,7 +42,8 @@ import {
 } from '@wso2/oxygen-ui';
 import { ArrowLeft, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useCallback, type JSX } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import SearchField from '../components/SearchField';
 import { useRoleDetail, useRoleGroups, useGroups, useAddRolesToGroup, useRemoveRoleFromGroup } from '../hooks/useAuth';
 import { Permissions, ALL_ROLE_MODIFY_PERMISSIONS } from '../constants/permissions';
@@ -177,7 +178,7 @@ const envLabel = (m: { envUuid?: string | null }, environments: { id: string; na
 
 export default function ComponentRoleDetail(): JSX.Element {
   const { orgHandler = 'default', projectHandler = '', componentHandler = '', roleId = '' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { hasAnyPermission } = useAccessControl();
   const { data: projectData, isLoading: loadingProject } = useProjectByHandler(projectHandler);
   const projectId = projectData?.id ?? '';

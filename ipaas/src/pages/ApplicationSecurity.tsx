@@ -18,7 +18,8 @@
 
 import { Box, PageContent, Tab, Tabs } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import OrgSettingsTabs from '../components/Settings/OrgSettingsTabs';
 import IdentityProvidersTab from '../components/Settings/AppSecurity/IdentityProvidersTab';
 import RoleManagementTab from '../components/Settings/AppSecurity/RoleManagementTab';
@@ -30,7 +31,7 @@ const SUB_TAB_LABELS = ['Identity Providers', 'Role Management', 'Security Token
 
 export default function ApplicationSecurity({ org }: OrgScope): JSX.Element {
   const { tab = 'identity-providers' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
 
   const index = SUB_TABS.indexOf(tab as (typeof SUB_TABS)[number]);
   const safeIndex = index < 0 ? 0 : index;

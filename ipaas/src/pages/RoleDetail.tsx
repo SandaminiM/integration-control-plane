@@ -45,7 +45,8 @@ import {
 } from '@wso2/oxygen-ui';
 import { ArrowLeft, ChevronDown, ChevronUp, Link2, Lock, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useCallback, type JSX } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import SearchField from '../components/SearchField';
 import { useRoleDetail, useAllPermissions, useRoleGroups, useUpdateRole, useGroups, useAddRolesToGroup, useRemoveRoleFromGroup } from '../hooks/useAuth';
 import type { Permission, RoleGroupMapping, Group } from '../types/auth';
@@ -206,7 +207,7 @@ const envLabel = (m: { envUuid?: string | null }, environments: { id: string; na
 
 export default function RoleDetail(): JSX.Element {
   const { orgHandler = 'default', roleId = '' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const roleModifyPerms: string[] = [...ALL_ROLE_MODIFY_PERMISSIONS];
   const { hasAnyPermission } = useAccessControl();
   const canModifyRole = hasAnyPermission(roleModifyPerms);

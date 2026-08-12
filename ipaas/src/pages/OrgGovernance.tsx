@@ -19,7 +19,7 @@
 import { Alert, Button, Divider, Grid, PageContent, PageTitle, Skeleton, Stack, Typography } from '@wso2/oxygen-ui';
 import { Plus } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isGovernanceEnabled, usePolicies, useRulesets, useDocuments, useDeletePolicy, useDeleteRuleset, useDeleteDocument } from '../hooks/useGovernance';
 import ComingSoon from './ComingSoon';
 import AddPolicyDialog from '../components/Governance/AddPolicyDialog';
@@ -56,7 +56,7 @@ function CatalogGridSkeleton(): JSX.Element {
 }
 
 export default function OrgGovernance(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { data: policiesData, isLoading: policiesLoading, isError: policiesError, refetch: refetchPolicies } = usePolicies();
   const { data: rulesetsData, isLoading: rulesetsLoading, isError: rulesetsError, refetch: refetchRulesets } = useRulesets();
   const { data: documentsData, isLoading: documentsLoading, isError: documentsError, refetch: refetchDocuments } = useDocuments();

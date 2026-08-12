@@ -19,7 +19,7 @@
 import { Alert, Autocomplete, Box, Button, CircularProgress, MenuItem, PageContent, PageTitle, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Github } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useDeliveryConfig, useDeliveryDataPlanes, useSaveDeliveryConfig, useUpdateDeliveryConfig } from '../hooks/useDeliveryInsights';
 import VerticalStepper from '../components/VerticalStepper';
@@ -66,7 +66,7 @@ function TrackerTile({ name, selected, disabled, icon }: { name: string; selecte
  * label criteria. Per-repository selection (GitHub OAuth) is not ported.
  */
 export default function ConfigureDelivery(scope: OrgScope | ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const orgUuid = useOrgUuid() ?? '';
   const baseUrl = scope.level === 'projects' ? `/organizations/${scope.org}/projects/${scope.project}` : `/organizations/${scope.org}`;
   const dashboardUrl = `${baseUrl}/insights/delivery`;

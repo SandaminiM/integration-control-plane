@@ -19,7 +19,8 @@
 import { Alert, Box, Button, CircularProgress, PageContent, Stack, Tab, Tabs, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isPlatformServicesEnabled, useDatabaseServer } from '../hooks/usePlatformServices';
 import { useSubscriptions } from '../hooks/useSubscription';
 import { useOrgUuid } from '../hooks/useOrgUuid';
@@ -49,7 +50,7 @@ const logoFor = (type: string): string | undefined => SERVICE_TYPES.find((t) => 
 
 /** Shared detail/management view for both Databases and Vector Databases. */
 export function DatabaseServerDetailView({ scope, kind }: { scope: OrgScope; kind: DbServerKind }): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { dbServerId = '', tab = 'overview' } = useParams();
   const base = `/organizations/${scope.org}/admin/${kind.segment}`;
   const orgUuid = useOrgUuid();

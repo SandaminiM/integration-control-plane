@@ -19,7 +19,8 @@
 import { Alert, Box, Button, Checkbox, FormControlLabel, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, ChevronDown, ChevronUp } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useCreateRole, useAllPermissions } from '../hooks/useAuth';
 import type { Permission } from '../types/auth';
 import { orgAccessControlUrl } from '../paths';
@@ -85,7 +86,7 @@ function PermissionsEditor({ allPermissions, selectedIds, onChange }: { allPermi
 
 export default function CreateRole(): JSX.Element {
   const { orgHandler = 'default' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [roleName, setRoleName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());

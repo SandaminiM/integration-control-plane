@@ -18,7 +18,8 @@
 
 import { useEffect, useState } from 'react';
 import type { JSX } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router';
+import { useLocation, useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Link, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
 
@@ -27,7 +28,7 @@ import { loginUrl, orgHomeUrl, privacyPolicyUrl } from '../paths';
 
 export default function ProjectsRedirect(): JSX.Element {
   const { orgHandler } = useParams<{ orgHandler: string }>();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const location = useLocation();
   const { logout, userId } = useAuth();
   const [open, setOpen] = useState(false);

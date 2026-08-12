@@ -20,7 +20,7 @@
 
 import { Box, Button, PageContent, PageTitle, Typography, Chip, IconButton, SearchBarWithAdvancedFilter, ListingTable, Tooltip, Card, Grid, Link, type AdvancedFilterState } from '@wso2/oxygen-ui';
 import { Plus, Folder, ExternalLink, Info, Edit, Trash2, SlidersHorizontal, Building2, ArrowRight } from '@wso2/oxygen-ui-icons-react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useMemo, useState, type JSX } from 'react';
 import { newOrgUrl, editOrgUrl, orgUrl, external } from '../paths';
 import { mockOrganizations } from '../mock-data/mockOrganizations';
@@ -49,7 +49,7 @@ const ExploreSection = ({ icon: Icon, title, items }: ExploreMoreSection) => (
 );
 
 export default function Organizations(): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<AdvancedFilterState>({} as AdvancedFilterState);
 

@@ -18,7 +18,7 @@
 
 import { Alert, Box, Button, Card, CardActionArea, CardContent, CircularProgress, Grid, PageContent, PageTitle, Stack, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { useConnections } from '../../hooks/useConnections';
 import { CONNECTION_IMAGES } from '../../constants/connections';
 import ConnectionsListView from './ConnectionsListView';
@@ -42,7 +42,7 @@ interface ConnectionsLandingProps {
  * Shows the connections list when any exist, otherwise a create-a-connection landing.
  */
 export default function ConnectionsLanding({ projectId, componentId, base }: ConnectionsLandingProps): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { data: connections, isLoading, isFetching, isError, refetch } = useConnections({ projectId, componentId });
   const goCreate = (tab?: 'services' | 'databases' | 'storage') => navigate(tab ? `${base}/new?tab=${tab}` : `${base}/new`);
 

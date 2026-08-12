@@ -19,7 +19,8 @@
 import { Alert, Button, Chip, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, ListingTable, Stack, TablePagination, Tooltip } from '@wso2/oxygen-ui';
 import { Pencil, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, useEffect, type JSX } from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import SearchField from '../../SearchField';
 import { useAccessControl } from '../../../contexts/AccessControlContext';
 import { Permissions } from '../../../constants/permissions';
@@ -31,7 +32,7 @@ import { Loading } from './shared';
 import { useFiltered } from './utils';
 
 export function RolesTab({ orgHandler, projectId, projectHandler, componentHandler, readOnly }: { orgHandler: string; projectId?: string; projectHandler?: string; componentHandler?: string; readOnly?: boolean }): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const location = useLocation();
   const { hasOrgPermission } = useAccessControl();
   const canManageRoles = hasOrgPermission(Permissions.USER_MANAGE_ROLES);

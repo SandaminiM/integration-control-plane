@@ -18,7 +18,7 @@
 
 import { Alert, Avatar, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { useEffect, useRef, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import Authorized from '../components/Authorized';
 import InlineEditField from '../components/InlineEditField';
 import ProjectSettingsTabs from '../components/Settings/ProjectSettingsTabs';
@@ -31,7 +31,7 @@ import { projectsRedirectUrl } from '../paths';
 import type { ProjectScope } from '../nav';
 
 function ProjectOverviewForm({ org, project }: { org: string; project: Project }): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { data: allProjects = [] } = useProjects();
   const { hasAnyPermission } = useAccessControl();
   const update = useUpdateProject();

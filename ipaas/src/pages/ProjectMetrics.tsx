@@ -19,7 +19,7 @@
 import { Alert, Box, Button, CircularProgress, IconButton, MenuItem, PageContent, PageTitle, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronUp } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useQueryClient } from '@tanstack/react-query';
 import { useProjectId } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
@@ -46,7 +46,7 @@ import type { ProjectScope } from '../nav';
  * jumps to that integration's own Metrics page.
  */
 export default function ProjectMetrics(scope: ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { projectId, project, isLoading: loadingProject } = useProjectId(scope.project);
   const orgUuid = useOrgUuid() ?? '';
   const queryClient = useQueryClient();

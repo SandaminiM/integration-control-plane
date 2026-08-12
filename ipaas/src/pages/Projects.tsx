@@ -19,7 +19,8 @@
 import { Alert, Avatar, Box, Button, Card, CardContent, CircularProgress, Grid, IconButton, ListingTable, PageContent, PageTitle, Stack, TablePagination, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
 import { Clock, Folder, FolderInput, LayoutGrid, List, Plus, RefreshCw, Settings } from '@wso2/oxygen-ui-icons-react';
 import SearchField from '../components/SearchField';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useEffect, useState, type JSX } from 'react';
 import { useProjectsByOrg } from '../hooks/useProjects';
 import type { Project } from '../types/project';
@@ -60,7 +61,7 @@ function ProjectCard({ project, onClick, onSettingsClick }: { project: Project; 
 }
 
 export default function Projects(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const location = useLocation();
   const [query, setQuery] = useState('');
   const [view, setView] = useState<'grid' | 'list'>('grid');

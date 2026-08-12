@@ -19,7 +19,7 @@
 import { IconButton, Tooltip } from '@wso2/oxygen-ui';
 import { MCP } from '@wso2/oxygen-ui-icons-react';
 import type { ReactNode } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import { useApimApi } from '../../../hooks/useApim';
 import { generateMcpUrl } from '../../../nav';
 
@@ -39,7 +39,7 @@ interface GenerateMcpButtonProps {
  * convert flow with this API preselected.
  */
 export default function GenerateMcpButton({ apimId, sourceHandler, orgHandler, projectHandler }: GenerateMcpButtonProps): ReactNode {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { data: apimApi } = useApimApi(apimId);
   const lifecycleStatus = apimApi?.lifeCycleStatus ?? null;
   const isPublished = lifecycleStatus === 'PUBLISHED' || lifecycleStatus === 'PROTOTYPED';

@@ -19,7 +19,7 @@
 import { Button, PageContent, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isConfigGroupsEnabled, useCreateConfigGroup } from '../hooks/useConfigGroups';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { buildCreatePayload } from '../utils/configGroups';
@@ -30,7 +30,7 @@ import type { ConfigGroupSubmitValues } from '../types/configGroups';
 import type { OrgScope } from '../nav';
 
 export default function CreateConfigGroup(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const orgUuid = useOrgUuid();
   const base = `/organizations/${scope.org}/admin/config-groups`;
   const create = useCreateConfigGroup();

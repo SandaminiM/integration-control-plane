@@ -19,7 +19,8 @@
 import { Alert, Avatar, Button, Chip, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, ListingTable, Stack, TablePagination, ToggleButton, ToggleButtonGroup, Tooltip } from '@wso2/oxygen-ui';
 import { MailPlus, Pencil, Trash2, UserPlus, Users } from '@wso2/oxygen-ui-icons-react';
 import { useState, useCallback, useEffect, type JSX } from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import SearchField from '../../SearchField';
 import { Permissions } from '../../../constants/permissions';
 import Authorized from '../../Authorized';
@@ -32,7 +33,7 @@ import { useFiltered, getUserInitial } from './utils';
 import InviteUsersDialog from './InviteUsersDialog';
 
 export function UsersTab({ orgHandler }: { orgHandler: string }): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const location = useLocation();
   const { userId: currentUserId } = useAuth();
   const { data: users, isLoading } = useUsers(orgHandler);

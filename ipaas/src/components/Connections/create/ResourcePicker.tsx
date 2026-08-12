@@ -19,7 +19,7 @@
 import { Alert, Box, Button, CircularProgress, Grid, InputAdornment, MenuItem, PageContent, Pagination, Select, Stack, Tab, Tabs, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Plus, Search } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type Dispatch, type JSX, type SetStateAction } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import { useConnectionCatalog } from '../../../hooks/useConnections';
 import { CATEGORY_FILTERS, DB_CLOUD_PROVIDER_FILTERS, DB_STORAGE_TYPE_FILTERS, RESOURCE_PAGE_SIZE, RESOURCE_TAB_LABELS, SERVICE_TYPE_FILTERS, SERVICE_VISIBILITY_FILTERS } from '../../../constants/connections';
 import { ConnectionCatalogKind } from '../../../types/connections';
@@ -50,7 +50,7 @@ const toggleInSet = (setter: Dispatch<SetStateAction<Set<string>>>) => (value: s
   });
 
 export default function ResourcePicker({ org, projectId, componentId, base, isLoading: projectLoading, initialTab, onPick }: ResourcePickerProps): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [tab, setTab] = useState<ResourceTab>(initialTab);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortBy>('name-asc');

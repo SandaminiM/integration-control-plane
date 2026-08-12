@@ -19,7 +19,8 @@
 import { Alert, Autocomplete, Avatar, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, ListingTable, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, useCallback, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import SearchField from '../components/SearchField';
 import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
@@ -201,7 +202,7 @@ function UserDetailView({ orgHandler, user, onBack }: { orgHandler: string; user
 
 export default function EditUser(): JSX.Element {
   const { orgHandler = 'default', userId = '' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { data: users, isLoading } = useUsers(orgHandler);
   const backUrl = orgAccessControlUrl(orgHandler, 'users');
 

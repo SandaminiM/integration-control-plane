@@ -19,7 +19,7 @@
 import { Alert, Button, CircularProgress, FormControlLabel, PageContent, PageTitle, Stack, Switch, TextField } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { useCreateDeploymentPipeline, useUpdateDeploymentPipeline } from '../../hooks/useDeploymentPipelines';
 import type { CreateDeploymentPipelineRequest, DeploymentPipeline, EnvTemplate } from '../../types/deploymentPipeline';
 import { buildPromotionTree, flattenPromotionTree, validatePipelineName } from '../../utils/deploymentPipeline';
@@ -45,7 +45,7 @@ interface CdPipelineFormProps {
  * by pipeline id so it remounts per pipeline — no effect-driven sync).
  */
 export default function CdPipelineForm({ orgHandler, envTemplates, existingPipelines, existing }: CdPipelineFormProps): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const create = useCreateDeploymentPipeline();
   const update = useUpdateDeploymentPipeline();
 

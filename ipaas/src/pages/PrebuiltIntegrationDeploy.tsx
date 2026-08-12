@@ -18,7 +18,7 @@
 
 import { Alert, Box, Button, CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
 import { useEffect, useRef, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useDeployPrebuiltIntegration } from '../hooks/useDeployPrebuiltIntegration';
 import { usePrebuiltIntegrationConfig } from '../contexts/PrebuiltIntegrationConfigContext';
 import { resourceUrl, narrow, type ProjectScope } from '../nav';
@@ -26,7 +26,7 @@ import { prebuiltIntegrationsUrl } from '../paths';
 import { useProjectId } from '../hooks/useProjects';
 
 export default function PrebuiltIntegrationDeploy(scope: ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { integration, configValues, clearAll } = usePrebuiltIntegrationConfig();
 
   const { projectId } = useProjectId(scope.project);

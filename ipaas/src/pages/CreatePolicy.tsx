@@ -19,7 +19,8 @@
 import { Alert, Button, Chip, CircularProgress, FormControlLabel, PageContent, Radio, RadioGroup, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isGovernanceEnabled, useCreatePolicy, usePolicies, usePolicy, useRulesets, useUpdatePolicy } from '../hooks/useGovernance';
 import ComingSoon from './ComingSoon';
 import EnforcementDetailsTable from '../components/Governance/EnforcementDetailsTable';
@@ -33,7 +34,7 @@ import { PolicyType, type GovernancePolicyInfo, type RulesetInfo } from '../type
 import type { OrgScope } from '../nav';
 
 export default function CreatePolicy(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { policyId } = useParams<{ policyId?: string }>();
   const isEditing = !!policyId;
 

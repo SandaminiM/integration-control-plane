@@ -20,7 +20,7 @@ import { Alert, Button, Card, CardActionArea, Chip, CircularProgress, PageConten
 import { REQUIRED_FIELD_SX } from '../constants/styles';
 import { Upload } from '@wso2/oxygen-ui-icons-react';
 import { useRef, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isCertificatesEnabled, useCreateCertificate } from '../hooks/useCertificates';
 import { useEnvironmentTemplates } from '../hooks/useEnvironments';
 import { useOrgs } from '../hooks/useOrg';
@@ -30,7 +30,7 @@ import type { OrgScope } from '../nav';
 import ComingSoon from './ComingSoon';
 
 export default function CreateCertificate(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
 
   const { data: orgs } = useOrgs();
   const org = orgs?.find((o) => o.handle === scope.org);

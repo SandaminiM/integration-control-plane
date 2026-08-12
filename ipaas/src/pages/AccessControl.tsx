@@ -18,7 +18,8 @@
 
 import { Box, PageContent, PageTitle, Tab, Tabs, Typography } from '@wso2/oxygen-ui';
 import { useEffect, type JSX } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions';
 import { componentAccessControlUrl } from '../paths';
@@ -38,7 +39,7 @@ const PROJECT_TABS = ['roles', 'groups'] as const;
 
 export default function AccessControl(): JSX.Element {
   const { orgHandler = 'default', tab = 'users' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { hasAnyPermission, isOrgPermissionsLoaded } = useAccessControl();
 
   const accessControlPerms: string[] = [...ALL_USER_MGT_PERMISSIONS];
@@ -74,7 +75,7 @@ export default function AccessControl(): JSX.Element {
 
 export function OrgAccessControl({ org }: { org: string }): JSX.Element {
   const { tab = 'users' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { hasAnyPermission, isOrgPermissionsLoaded } = useAccessControl();
 
   const accessControlPerms: string[] = [...ALL_USER_MGT_PERMISSIONS];
@@ -109,7 +110,7 @@ export function OrgAccessControl({ org }: { org: string }): JSX.Element {
 
 export function ProjectAccessControl({ org, project }: { org: string; project: string }): JSX.Element {
   const { tab = 'roles' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { hasAnyPermission } = useAccessControl();
   const { data: projectData, isLoading } = useProjectByHandler(project);
   const projectId = projectData?.id ?? '';
@@ -150,7 +151,7 @@ export function ProjectAccessControl({ org, project }: { org: string; project: s
 
 export function ComponentAccessControl({ org, project, component }: ComponentScope): JSX.Element {
   const { tab = 'roles' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { hasAnyPermission } = useAccessControl();
   const { data: projectData, isLoading: loadingProject } = useProjectByHandler(project);
   const projectId = projectData?.id ?? '';

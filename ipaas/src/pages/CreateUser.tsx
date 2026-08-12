@@ -19,13 +19,14 @@
 import { Alert, Button, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useCreateUser } from '../hooks/useAuth';
 import { orgAccessControlUrl } from '../paths';
 
 export default function CreateUser(): JSX.Element {
   const { orgHandler = 'default' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');

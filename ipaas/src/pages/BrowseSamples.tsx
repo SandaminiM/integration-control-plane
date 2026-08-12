@@ -19,7 +19,7 @@
 import { Box, Button, CircularProgress, InputAdornment, PageContent, Pagination, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Search } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useEffect, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useCreateComponent } from '../hooks/useComponents';
 import FilterSection from '../components/FilterSection';
 import SampleGridCard from '../components/SampleGridCard';
@@ -33,7 +33,7 @@ import { toHandler } from '../utils/string';
 import { useProjectId } from '../hooks/useProjects';
 
 export default function BrowseSamples(scope: ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { projectId } = useProjectId(scope.project);
   const { data: samplesData, isLoading: isSamplesLoading, isError: isSamplesError } = useSamples();
 

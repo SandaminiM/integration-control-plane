@@ -19,7 +19,7 @@
 import { Accordion, AccordionSummary, AccordionDetails, Box, Card, CardContent, Chip, CircularProgress, Divider, IconButton, ListingTable, Stack, TablePagination, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ScrollText } from '@wso2/oxygen-ui-icons-react';
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { ARTIFACT_TYPE_TO_SOURCE_TYPE } from '../types/artifact';
 import { useArtifactSource, useArtifactParams, useArtifactWsdl, useLocalEntryValue } from '../hooks/useArtifacts';
 import { WSDL_NS, SOAP_NS, SOAP12_NS } from '../constants/wsdl';
@@ -405,7 +405,7 @@ export function ProxyApiReference({ envId, componentId, artifactType, artifact }
 }
 
 export function AutomationExecutions({ artifact, orgHandler, projectHandler, componentHandler }: TabProps & { orgHandler: string; projectHandler: string; componentHandler: string }) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 

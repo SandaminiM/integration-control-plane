@@ -23,7 +23,7 @@ import GitProviderCards from '../components/ProjectCreate/GitProviderCards';
 import GitHubAuthArea from '../components/Import/GitHubAuthArea';
 import { useGitRepoSource } from '../hooks/useGitRepoSource';
 import { useState, useEffect, useLayoutEffect, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useCreateProject, useCreateMonoRepoProject } from '../hooks/useProjects';
 import { useCreateComponent } from '../hooks/useComponents';
 import { useOrgs, useOrgComponentLimits, useOrgSubscriptions } from '../hooks/useOrg';
@@ -109,7 +109,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
   const createProject = useCreateProject();
   const createMonoRepoProject = useCreateMonoRepoProject();
   const createComponent = useCreateComponent();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const orgHomeUrl = resourceUrl(scope, 'overview');
 
   const { data: orgs = [] } = useOrgs();

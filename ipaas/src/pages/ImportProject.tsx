@@ -22,7 +22,7 @@ import GitLogoIcon from '../assets/icons/GitLogoIcon';
 import GitProviderCards from '../components/ProjectCreate/GitProviderCards';
 import GitHubAuthArea from '../components/Import/GitHubAuthArea';
 import { useState, useLayoutEffect, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useCreateMonoRepoProject } from '../hooks/useProjects';
 import { useCreateComponent } from '../hooks/useComponents';
 import { useOrgs, useOrgComponentLimits, useOrgSubscriptions } from '../hooks/useOrg';
@@ -44,7 +44,7 @@ import { GitProvider as CredGitProvider } from '../types/credentials';
 import { useGitRepoSource } from '../hooks/useGitRepoSource';
 
 export default function ImportProject(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
 
   const [displayName, setDisplayName] = useState('');
   const [description, setDescription] = useState('');

@@ -19,7 +19,8 @@
 import { Alert, Box, Button, Card, CircularProgress, IconButton, PageContent, Stack, Tab, Tabs, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, BookOpen, Check, Copy, ExternalLink, Eye, EyeOff, RefreshCw } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isConnectionsEnabled, useConnection, useRefreshConnection } from '../hooks/useConnections';
 import { useProjectId } from '../hooks/useProjects';
 import { useEnvironments } from '../hooks/useEnvironments';
@@ -99,7 +100,7 @@ function findEntry(config: Connection['configurations'][string] | undefined, re:
 
 export default function ConnectionDetail(scope: ProjectScope | ComponentScope): JSX.Element {
   const { org, project } = scope;
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { connectionId = '' } = useParams();
   const { projectId } = useProjectId(project);
   const orgUuid = useOrgUuid() ?? '';

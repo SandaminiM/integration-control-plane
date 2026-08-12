@@ -18,7 +18,8 @@
 
 import { useEffect, useState } from 'react';
 import type { JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { Alert, Box, Button, ButtonBase, Card, CardContent, CircularProgress, FormControl, MenuItem, Select, Stack, Typography } from '@wso2/oxygen-ui';
 import { ArrowRight, Settings, Users } from '@wso2/oxygen-ui-icons-react';
 import { useOrgUuid } from '../hooks/useOrgUuid';
@@ -78,7 +79,7 @@ function OnboardingShell({ children }: { children: React.ReactNode }) {
 
 export default function OrgHome(): JSX.Element {
   const { orgHandler } = useParams<{ orgHandler: string }>();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
 
   const [step, setStep] = useState<'checking' | 'persona' | 'region' | 'done'>(() => (localStorage.getItem(PERSONA_KEY) ? 'done' : 'checking'));
   const [persona, setPersona] = useState<string>('developer');

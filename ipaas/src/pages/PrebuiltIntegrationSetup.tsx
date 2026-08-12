@@ -19,7 +19,8 @@
 import { Alert, Box, Button, PageContent, Skeleton, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, ArrowRight } from '@wso2/oxygen-ui-icons-react';
 import { lazy, Suspense, useState, useMemo, type JSX } from 'react';
-import { useNavigate, useLocation, useParams } from 'react-router';
+import { useLocation, useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import AppIconsRow from '../components/AppIconsRow';
 import ImportConfigTomlButton from '../components/ImportConfigTomlButton';
 const Markdown = lazy(() => import('../components/Markdown'));
@@ -66,7 +67,7 @@ function ConfigSkeleton(): JSX.Element {
 }
 
 export default function PrebuiltIntegrationSetup(scope: ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const location = useLocation();
   const { slug } = useParams<{ slug: string }>();
   const locationState = (location.state ?? {}) as LocationState;

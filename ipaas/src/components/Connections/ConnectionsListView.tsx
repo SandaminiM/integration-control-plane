@@ -19,7 +19,7 @@
 import { Alert, Box, Button, Chip, CircularProgress, IconButton, ListingTable, MenuItem, PageTitle, Select, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { useConnections } from '../../hooks/useConnections';
 import { useAccessControl } from '../../contexts/AccessControlContext';
 import { Permissions } from '../../constants/permissions';
@@ -39,7 +39,7 @@ interface ConnectionsListViewProps {
 
 /** Shared connections listing (project + component scopes). Mirrors Devant's ConnectionsView. */
 export default function ConnectionsListView({ projectId, componentId, base }: ConnectionsListViewProps): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { hasPermission } = useAccessControl();
   const canManage = hasPermission(Permissions.PROJECT_MANAGE, projectId);
   const { data: connections, isLoading, isFetching, isError, refetch } = useConnections({ projectId, componentId });

@@ -19,7 +19,8 @@
 import { Alert, Button, CircularProgress, IconButton, MenuItem, PageContent, Select, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Eye, FileText, Pencil, Trash2, Upload } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isGovernanceEnabled, useCreateRuleset, useRuleset, useRulesetContent, useRulesets, useUpdateRuleset } from '../hooks/useGovernance';
 import ComingSoon from './ComingSoon';
 import FieldLabel from '../components/Governance/FieldLabel';
@@ -57,7 +58,7 @@ function parseRulesetError(error: unknown, fallback: string): string {
 }
 
 export default function CreateRuleset(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { rulesetId } = useParams<{ rulesetId?: string }>();
   const isEditing = !!rulesetId;
 

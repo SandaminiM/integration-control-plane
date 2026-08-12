@@ -19,7 +19,8 @@
 import { Alert, Box, Button, CircularProgress, PageContent, Tab, Tabs, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isConfigGroupsEnabled, useConfigGroup, useUpdateConfigGroup } from '../hooks/useConfigGroups';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { buildEditPayload, configGroupToFormValues } from '../utils/configGroups';
@@ -30,7 +31,7 @@ import type { ConfigGroupSubmitValues } from '../types/configGroups';
 import type { OrgScope } from '../nav';
 
 export default function EditConfigGroup(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const orgUuid = useOrgUuid();
   const { configGroupUuid = '' } = useParams();
   const base = `/organizations/${scope.org}/admin/config-groups`;

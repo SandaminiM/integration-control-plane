@@ -19,7 +19,8 @@
 import { Alert, Box, Button, Chip, CircularProgress, PageContent, Stack, Tab, Tabs, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Store } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useConnectionConfig, useGenaiService, useSetMarketplaceStatus } from '../hooks/useGenaiServices';
 import { isThirdPartyServicesEnabled } from '../hooks/useThirdPartyServices';
 import { marketplaceStatusLabel } from '../constants/genaiServices';
@@ -36,7 +37,7 @@ const NO_ENDPOINTS_HINT = 'Go to the Endpoints section and add at least one endp
 const headingChipSx = { height: 20, '& .MuiChip-label': { px: 0.75, fontSize: 11 } } as const;
 
 export default function ThirdPartyServiceDetail(scope: OrgScope | ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { serviceId = '' } = useParams();
   const base = thirdPartyServicesBase(scope);
   const { data: service, isLoading, isError, refetch } = useGenaiService(serviceId);

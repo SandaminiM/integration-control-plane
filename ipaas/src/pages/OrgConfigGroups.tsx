@@ -19,7 +19,7 @@
 import { Alert, Box, Button, Chip, CircularProgress, IconButton, ListingTable, PageContent, PageTitle, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isConfigGroupsEnabled, useConfigGroups } from '../hooks/useConfigGroups';
 import ComingSoon from './ComingSoon';
 import NoConfigGroupsBanner from '../components/ConfigGroups/NoConfigGroupsBanner';
@@ -29,7 +29,7 @@ import type { ConfigGroup } from '../types/configGroups';
 import type { OrgScope } from '../nav';
 
 export default function OrgConfigGroups(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { data: groups, isLoading, isFetching, isError, refetch } = useConfigGroups();
   const [search, setSearch] = useState('');
   const [toDelete, setToDelete] = useState<ConfigGroup | null>(null);

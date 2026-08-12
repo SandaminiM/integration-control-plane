@@ -18,7 +18,7 @@
 
 import { SlidersHorizontal } from '@wso2/oxygen-ui-icons-react';
 import type { ReactNode } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import type { OverviewHeaderActionsProps } from '../../../types/integration';
 import SharedOverviewHeaderActions from '../_shared/OverviewHeaderActions';
 import ConfigureActionRow from '../_shared/ConfigureActionRow';
@@ -30,7 +30,7 @@ import ConfigureActionRow from '../_shared/ConfigureActionRow';
  * policies destination is a Coming Soon route until that page exists.
  */
 export default function OverviewHeaderActions({ component, apimId, orgHandler, projectHandler }: OverviewHeaderActionsProps): ReactNode {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const configurePolicies = <ConfigureActionRow Icon={SlidersHorizontal} label="Configure Policies" onClick={() => navigate(`/organizations/${orgHandler}/projects/${projectHandler}/components/${component.handler}/manage/policies`)} />;
 
   return <SharedOverviewHeaderActions component={component} apimId={apimId} orgHandler={orgHandler} projectHandler={projectHandler} extraConfigureRows={configurePolicies} />;

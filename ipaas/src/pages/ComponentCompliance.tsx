@@ -18,7 +18,7 @@
 
 import { Alert, Box, CircularProgress, Grid, MenuItem, PageContent, PageTitle, Select } from '@wso2/oxygen-ui';
 import { useMemo, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isGovernanceEnabled, useEndpointRuleAdherence, useEndpointPolicyAdherence, useEndpointRulesetAdherence, usePolicies } from '../hooks/useGovernance';
 import { useProjectId } from '../hooks/useProjects';
 import { useComponentByHandler } from '../hooks/useComponents';
@@ -37,7 +37,7 @@ import RuleViolationsTabs from '../components/Compliance/RuleViolationsTabs';
 import RulesetsAdherenceSummaryCard from '../components/Compliance/RulesetsAdherenceSummaryCard';
 
 export default function ComponentCompliance(scope: ComponentScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { projectId, isLoading: loadingProject } = useProjectId(scope.project);
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
   const identity = useIntegrationIdentity(component);

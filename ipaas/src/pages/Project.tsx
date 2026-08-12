@@ -68,7 +68,7 @@ import GitLabIcon from '../assets/icons/GitLabIcon';
 import BitbucketIcon from '../assets/icons/BitbucketIcon';
 import AzureDevOpsIcon from '../assets/icons/AzureDevOpsIcon';
 import IntegratorIcon from '../assets/icons/IntegratorIcon';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useProject, useProjectByHandler, useProjects, useUpdateProject, useGitHubReadme } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
@@ -102,7 +102,7 @@ const Markdown = lazy(() => import('../components/Markdown'));
 const FREE_COMPONENT_LIMIT = 5;
 
 function EmptyProjectView({ scope, projectId }: { scope: ProjectScope; projectId: string }) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { userId } = useAuth();
   const { hasAnyPermission } = useAccessControl();
   const orgUuid = useOrgUuid() ?? '';
@@ -630,7 +630,7 @@ function IntegrationsTable({
   projectGitRepo?: string;
   onSelect: (handler: string) => void;
 }) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -953,7 +953,7 @@ function buildProjectRepoUrl(gitProvider?: string, gitOrganization?: string, rep
 }
 
 export default function Project(scope: ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const isUuid = UUID_RE.test(scope.project);
   const { data: projectById, isLoading: loadingById } = useProject(isUuid ? scope.project : '');
   const { data: projectByHandle, isLoading: loadingByHandle } = useProjectByHandler(isUuid ? '' : scope.project);

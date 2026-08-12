@@ -19,7 +19,8 @@
 import { Alert, Button, CircularProgress, IconButton, MenuItem, PageContent, Select, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Download, FileText, Trash2, Upload } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useRef, useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isGovernanceEnabled, useCreateDocument, useDocument, useUpdateDocument } from '../hooks/useGovernance';
 import ComingSoon from './ComingSoon';
 import FieldLabel from '../components/Governance/FieldLabel';
@@ -35,7 +36,7 @@ const appliesToLabels: Record<RulesetAppliesTo, string> = {
 };
 
 export default function CreateDocument(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { documentId } = useParams<{ documentId?: string }>();
   const isEditing = !!documentId;
 

@@ -19,7 +19,8 @@
 import { Box, Button, CircularProgress, IconButton, PageContent, Stack, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, ArrowRight, Plus, X } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useEffect, type JSX } from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import AppAvatar from '../components/AppAvatar';
 import ApplicationCard from '../components/ApplicationCard';
 import DirectionArrow from '../components/DirectionArrow';
@@ -300,7 +301,7 @@ function DiagramPanel({ integration, onSetup }: { integration: PrebuiltIntegrati
 }
 
 export default function BrowsePrebuiltIntegrations(scope: ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const location = useLocation();
   const locationState = (location.state ?? {}) as LocationState;
 
