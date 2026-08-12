@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { Card, CardContent, Grid, Stack, Typography } from '@wso2/oxygen-ui';
-import { type JSX } from 'react';
+import { Card, CardContent, Chip, Grid, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { type JSX, type ReactNode } from 'react';
 import { formatBytes, formatVcpu } from '../../utils/podMetrics';
 import type { CalculatedUsage } from '../../types/runtime';
 import UsageBar from './UsageBar';
@@ -28,34 +28,62 @@ const cardSx = {
   borderRadius: 1,
 } as const;
 
-export default function ResourceUsageCards({ usage }: { usage: CalculatedUsage }): JSX.Element {
+const UNAVAILABLE_TOOLTIP = "Usage metrics couldn't be retrieved for this release.";
+
+interface UsageCardProps {
+  title: string;
+  detail: ReactNode;
+  usagePercent: number;
+  unavailable?: boolean;
+}
+
+function UsageCard({ title, detail, usagePercent, unavailable }: UsageCardProps): JSX.Element {
+  return (
+    <Card elevation={0} sx={cardSx}>
+      <CardContent>
+        <Stack gap={1.5}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Typography variant="h6">{title}</Typography>
+            {unavailable && (
+              <Tooltip title={UNAVAILABLE_TOOLTIP}>
+                <Chip size="small" variant="outlined" label="Unavailable" sx={{ height: 20, fontSize: '0.68rem', fontWeight: 500 }} />
+              </Tooltip>
+            )}
+          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            {detail}
+          </Typography>
+          {!unavailable && <UsageBar percent={usagePercent} />}
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface ResourceUsageCardsProps {
+  usage: CalculatedUsage;
+  /** True when there's no usage source at all (cloud, componentLevelMetrics absent) — "0 used" would misreport an unknown as a confirmed zero. */
+  usageUnavailable?: boolean;
+}
+
+export default function ResourceUsageCards({ usage, usageUnavailable }: ResourceUsageCardsProps): JSX.Element {
   return (
     <Grid container spacing={3}>
       <Grid size={{ xs: 12, md: 6 }}>
-        <Card elevation={0} sx={cardSx}>
-          <CardContent>
-            <Stack gap={1.5}>
-              <Typography variant="h6">CPU Usage</Typography>
-              <Typography variant="body2" color="text.secondary">
-                {formatVcpu(usage.cpu.used)} of {formatVcpu(usage.cpu.limits)} total allocated vCPU used
-              </Typography>
-              <UsageBar percent={usage.cpu.usagePercent} />
-            </Stack>
-          </CardContent>
-        </Card>
+        <UsageCard
+          title="CPU Usage"
+          detail={usageUnavailable ? `${formatVcpu(usage.cpu.limits)} vCPU allocated` : `${formatVcpu(usage.cpu.used)} of ${formatVcpu(usage.cpu.limits)} total allocated vCPU used`}
+          usagePercent={usage.cpu.usagePercent}
+          unavailable={usageUnavailable}
+        />
       </Grid>
       <Grid size={{ xs: 12, md: 6 }}>
-        <Card elevation={0} sx={cardSx}>
-          <CardContent>
-            <Stack gap={1.5}>
-              <Typography variant="h6">Memory Usage</Typography>
-              <Typography variant="body2" color="text.secondary">
-                {formatBytes(usage.memory.used)} of {formatBytes(usage.memory.limits)} total allocated memory used
-              </Typography>
-              <UsageBar percent={usage.memory.usagePercent} />
-            </Stack>
-          </CardContent>
-        </Card>
+        <UsageCard
+          title="Memory Usage"
+          detail={usageUnavailable ? `${formatBytes(usage.memory.limits)} allocated` : `${formatBytes(usage.memory.used)} of ${formatBytes(usage.memory.limits)} total allocated memory used`}
+          usagePercent={usage.memory.usagePercent}
+          unavailable={usageUnavailable}
+        />
       </Grid>
     </Grid>
   );

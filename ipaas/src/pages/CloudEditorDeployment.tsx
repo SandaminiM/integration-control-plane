@@ -129,7 +129,10 @@ export default function CloudEditorDeployment(): JSX.Element {
     deploy();
   }, [params, createCodeServerMutation, getOrCreateRegistryMutation]);
 
-  const podsQuery = useComponentPods(params.projectId, instance?.clusterId ?? '', instance?.releaseId ?? '', instance?.namespace ?? '', CLOUD_EDITOR_POLL_MS);
+  // This page has no component handler/name available (only params.componentId, a UUID) —
+  // harmless since cloud's clusterId/namespace are already absent here (see the redirect
+  // above), so the query stays disabled on cloud regardless of componentName.
+  const podsQuery = useComponentPods(params.projectId, '', instance?.clusterId ?? '', instance?.releaseId ?? '', instance?.namespace ?? '', CLOUD_EDITOR_POLL_MS);
   const pods = useMemo(() => podsQuery.data ?? [], [podsQuery.data]);
   const isAnyPodRunning = pods.some((p) => p.status?.phase === 'Running');
   const isPolling = !!instance?.clusterId && !isAnyPodRunning;

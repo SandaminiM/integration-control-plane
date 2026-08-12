@@ -47,8 +47,8 @@ export default function CopyField({ label, value }: { label: string; value: stri
       </Grid>
       <Grid size={{ xs: 12, sm: 9 }}>
         <Stack direction="row" alignItems="center" gap={0.5}>
-          <Box sx={copyValueBox} title={value}>
-            {value || '—'}
+          <Box sx={copyValueBox} title={value || undefined}>
+            {value || 'N/A'}
           </Box>
           <Tooltip title={copied ? 'Copied' : failed ? 'Copy failed' : 'Copy'}>
             <span>

@@ -16,16 +16,16 @@
  * under the License.
  */
 
-// Component runtime (pods/metrics/redeploy) is a wip-only surface for now. Signatures mirror Contracts.RuntimeApi.
-import type { ClusterPod, PodEvent, PodLogOptions, PodMetrics, RuntimeReleaseDetails } from '../../types/runtime';
+// Component runtime (pods/metrics/redeploy) has no icp backend yet. Signatures mirror Contracts.RuntimeApi.
+import type { ClusterPod, PodEvent, PodLogOptions, RuntimeMetrics, RuntimeReleaseDetails } from '../../types/runtime';
 
 const ni = (name: string): never => {
   throw new Error(`[icp] runtime.${name}: not implemented`);
 };
 
-export const fetchReleaseDetails = (_projectId: string, _componentId: string, _releaseId: string): Promise<RuntimeReleaseDetails> => ni('fetchReleaseDetails');
-export const fetchComponentPods = (_projectId: string, _clusterId: string, _releaseId: string, _namespace: string): Promise<ClusterPod[]> => ni('fetchComponentPods');
-export const fetchComponentPodMetrics = (_projectId: string, _clusterId: string, _releaseId: string, _namespace: string): Promise<PodMetrics[]> => ni('fetchComponentPodMetrics');
-export const redeployRelease = (_projectId: string, _componentId: string, _releaseId: string, _message?: string): Promise<void> => ni('redeployRelease');
-export const fetchPodEvents = (_projectId: string, _clusterId: string, _namespace: string, _podName: string): Promise<PodEvent[]> => ni('fetchPodEvents');
-export const fetchPodLogs = (_projectId: string, _clusterId: string, _namespace: string, _podName: string, _options: PodLogOptions): Promise<string> => ni('fetchPodLogs');
+export const fetchReleaseDetails = (_projectId: string, _componentId: string, _componentName: string, _releaseId: string): Promise<RuntimeReleaseDetails> => ni('fetchReleaseDetails');
+export const fetchComponentPods = (_projectId: string, _componentName: string, _clusterId: string, _releaseId: string, _namespace: string): Promise<ClusterPod[]> => ni('fetchComponentPods');
+export const fetchComponentPodMetrics = (_projectId: string, _componentName: string, _clusterId: string, _releaseId: string, _namespace: string): Promise<RuntimeMetrics> => ni('fetchComponentPodMetrics');
+export const redeployRelease = (_projectId: string, _componentId: string, _componentName: string, _releaseId: string, _message?: string): Promise<void> => ni('redeployRelease');
+export const fetchPodEvents = (_projectId: string, _componentName: string, _releaseId: string, _clusterId: string, _namespace: string, _podName: string): Promise<PodEvent[]> => ni('fetchPodEvents');
+export const fetchPodLogs = (_projectId: string, _componentName: string, _releaseId: string, _clusterId: string, _namespace: string, _podName: string, _options: PodLogOptions): Promise<string> => ni('fetchPodLogs');
