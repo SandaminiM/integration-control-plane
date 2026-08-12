@@ -20,7 +20,7 @@ import { Button, Tooltip } from '@wso2/oxygen-ui';
 import { FlaskConical, List, RotateCw, Square } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import { useRedeployDeployment, useStopDeployment } from '../../../hooks/useDeployments';
 import { IS_CLOUD } from '../../../features';
 import type { EnvCardActionsProps } from '../../../types/integration';
@@ -47,7 +47,7 @@ export default function EnvCardActions({
   onNotify,
   requestPoll,
 }: EnvCardActionsProps): ReactNode {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [logsOpen, setLogsOpen] = useState(false);
   const stopMutation = useStopDeployment();
   const redeployMutation = useRedeployDeployment();

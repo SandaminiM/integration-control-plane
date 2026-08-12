@@ -18,7 +18,7 @@
 
 import { Box, CircularProgress, Grid, PageContent, PageTitle } from '@wso2/oxygen-ui';
 import { useMemo, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isGovernanceEnabled, useComponentCompliance, useProjectPolicyAdherence } from '../hooks/useGovernance';
 import { useProjectId } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
@@ -31,7 +31,7 @@ import CompliancePie from '../components/Compliance/CompliancePie';
 import ExpandableComplianceTable from '../components/Compliance/ExpandableComplianceTable';
 
 export default function ProjectCompliance(scope: ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { projectId, isLoading: loadingProject } = useProjectId(scope.project);
   const { data: components } = useComponents(scope.org, projectId);
   const compliance = useComponentCompliance(projectId);

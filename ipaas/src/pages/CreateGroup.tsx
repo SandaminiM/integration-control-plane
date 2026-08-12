@@ -19,13 +19,14 @@
 import { Alert, Button, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useCreateGroup } from '../hooks/useAuth';
 import { orgAccessControlUrl } from '../paths';
 
 export default function CreateGroup(): JSX.Element {
   const { orgHandler = 'default' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [groupName, setGroupName] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +69,7 @@ export default function CreateGroup(): JSX.Element {
         <Button variant="outlined" onClick={() => navigate(backUrl)}>
           Cancel
         </Button>
-        <Button variant="contained" onClick={submit} disabled={!groupName.trim() || mutation.isPending}>
+        <Button variant="contained" onClick={submit} disabled={!groupName.trim() || mutation.isPending || mutation.isSuccess}>
           Create
         </Button>
       </Stack>

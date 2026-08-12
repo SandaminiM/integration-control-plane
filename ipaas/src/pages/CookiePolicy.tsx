@@ -19,11 +19,11 @@
 import { Box, Link, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { external, loginUrl, privacyPolicyUrl } from '../paths';
 
 export default function CookiePolicy(): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const handleBack = () => (window.history.length > 1 ? navigate(-1) : navigate(loginUrl()));
 
   return (

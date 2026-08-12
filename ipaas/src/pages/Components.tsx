@@ -21,7 +21,8 @@
 import { useState, useMemo, type JSX } from 'react';
 import { Box, Button, Card, CardContent, Chip, IconButton, ListingTable, Menu, MenuItem, Select, FormControl, FormLabel, TablePagination, PageContent, PageTitle, type ListingTableDensity, CircularProgress } from '@wso2/oxygen-ui';
 import { Plus, MoreVertical, Filter, Download, FileText, Key, Shield, RefreshCw, Lock, Inbox } from '@wso2/oxygen-ui-icons-react';
-import { useNavigate, useParams, Link as NavigateLink } from 'react-router';
+import { useParams, Link as NavigateLink } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useComponents } from '../hooks/useComponents';
 import { projectUrl, componentUrl, editComponentUrl } from '../paths';
 import { newComponentUrl } from '../nav';
@@ -85,7 +86,7 @@ const ActionMenu = ({ anchor, onClose, onView, onEdit }: { anchor: HTMLElement |
 );
 
 export default function Components(): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { id, orgId } = useParams<{ id: string; orgId: string }>();
   const { data: components = [], isLoading, refetch, isFetching } = useComponents(orgId ?? '', id ?? '');
   const [filters, setFilters] = useState<Filters>({

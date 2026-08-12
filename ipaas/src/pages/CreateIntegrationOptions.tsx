@@ -19,7 +19,7 @@
 import { Alert, Box, Button, Card, CardContent, Chip, CircularProgress, IconButton, PageContent, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, ArrowRight, GitHub, Plus, GitBranch } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useCreateComponent } from '../hooks/useComponents';
 import { useChoreoSampleImages } from '../hooks/useRepository';
 import { generateAndSaveGitHubState, validateAndClearGitHubState } from '../auth/tokenManager';
@@ -51,7 +51,7 @@ import { useSamples } from '../hooks/useSamples';
 import { usePrebuiltIntegrations } from '../hooks/usePrebuiltIntegrations';
 
 export default function CreateIntegrationOptions(scope: ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { userId } = useAuth();
   const { projectId } = useProjectId(scope.project);
   const orgUuid = useOrgUuid() ?? '';

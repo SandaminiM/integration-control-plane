@@ -18,7 +18,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { Alert, Box, Button, Checkbox, CircularProgress, ColorSchemeImage, Divider, FormControlLabel, InputAdornment, InputLabel, Link, OutlinedInput, Stack, Typography } from '@wso2/oxygen-ui';
 import { Building2, CheckCircle, XCircle } from '@wso2/oxygen-ui-icons-react';
 
@@ -38,7 +38,7 @@ function validateOrgNameLocally(name: string): string | null {
 }
 
 export default function RegisterOrganization(): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { completeOrgRegistration, logout, isAuthenticated, displayName } = useAuth();
   const base = import.meta.env.BASE_URL;
 

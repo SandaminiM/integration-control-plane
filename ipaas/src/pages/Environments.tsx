@@ -19,7 +19,8 @@
 import { Alert, Avatar, Box, Button, CircularProgress, IconButton, ListingTable, PageContent, PageTitle, Stack, TablePagination, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Clock, Layers, Plus, Trash2, AlertTriangle } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useEffect, type JSX } from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { IS_CLOUD } from '../features';
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog';
 import { useDeleteEnvironmentTemplate, useEnvDeleteEligibility, useEnvironmentTemplates } from '../hooks/useEnvironments';
@@ -108,7 +109,7 @@ function DeleteDialog({ template, orgUuid, onClose, onSuccess, onError }: { temp
 const EMPTY_DESCRIPTION = IS_CLOUD ? 'Environments are the deployment targets for your integrations.' : 'Create your first environment to get started';
 
 export default function Environments(scope: OrgScope | ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const location = useLocation();
   const { hasOrgPermission } = useAccessControl();
   const canManageEnv = hasOrgPermission(Permissions.ENVIRONMENT_MANAGE);

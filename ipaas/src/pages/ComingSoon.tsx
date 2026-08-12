@@ -19,15 +19,14 @@
 import { Box, Button, PageContent, Stack, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import type { JSX } from 'react';
-import { useNavigate } from 'react-router';
-
+import { useAppNavigate } from '../hooks/useAppNavigate';
 interface ComingSoonProps {
   title?: string;
   description?: string;
 }
 
 export default function ComingSoon({ title = 'Coming Soon', description = 'This feature is currently under development. Check back soon!' }: ComingSoonProps): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
 
   return (
     <PageContent

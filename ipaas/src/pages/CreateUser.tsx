@@ -19,13 +19,14 @@
 import { Alert, Button, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useCreateUser } from '../hooks/useAuth';
 import { orgAccessControlUrl } from '../paths';
 
 export default function CreateUser(): JSX.Element {
   const { orgHandler = 'default' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
@@ -112,7 +113,7 @@ export default function CreateUser(): JSX.Element {
         <Button variant="outlined" onClick={() => navigate(backUrl)}>
           Cancel
         </Button>
-        <Button variant="contained" onClick={submit} disabled={!username.trim() || !displayName.trim() || !password.trim() || mutation.isPending}>
+        <Button variant="contained" onClick={submit} disabled={!username.trim() || !displayName.trim() || !password.trim() || mutation.isPending || mutation.isSuccess}>
           Create
         </Button>
       </Stack>

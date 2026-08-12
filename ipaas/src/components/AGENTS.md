@@ -17,9 +17,17 @@ Reusable UI components. Pure presentation and interaction logic — no direct ba
 | `src/assets/*`                                   |                                             |
 | `src/contexts/*`                                 |                                             |
 | `@wso2/oxygen-ui`, `@wso2/oxygen-ui-icons-react` |                                             |
-| React Router (`useNavigate`, `useParams`)        |                                             |
+| React Router (`useParams`, `Link`)               | `useNavigate` — use `useAppNavigate` instead |
 
 If you need data, call a hook. If the hook does not exist yet, create it in `src/hooks/` first.
+
+---
+
+## Navigation
+
+Use `useAppNavigate()` from `src/hooks/useAppNavigate.ts` rather than `useNavigate()`. Same
+signature, but it preloads the destination route's chunk before changing the URL so the page and the
+address bar commit together. `useNavigate()` stays only for auth redirects that must not wait.
 
 ---
 

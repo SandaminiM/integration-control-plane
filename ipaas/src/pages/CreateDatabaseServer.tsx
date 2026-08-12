@@ -19,7 +19,7 @@
 import { Alert, Box, Button, CircularProgress, Grid, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isPlatformServicesEnabled, useCreateServer, useDatabaseServers, useServicePlans } from '../hooks/usePlatformServices';
 import { useSubscriptions } from '../hooks/useSubscription';
 import { useOrgUuid } from '../hooks/useOrgUuid';
@@ -44,7 +44,7 @@ const sectionHeadingSx = { fontWeight: 600, mb: 1.5 } as const;
  * the routing segment and the title/label copy — see {@link DbServerKind}.
  */
 export function CreateDatabaseServerView({ scope, kind }: { scope: OrgScope; kind: DbServerKind }): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const orgUuid = useOrgUuid();
   const base = `/organizations/${scope.org}/admin/${kind.segment}`;
 

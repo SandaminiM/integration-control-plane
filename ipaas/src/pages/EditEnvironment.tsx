@@ -19,14 +19,15 @@
 import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useAllEnvironments } from '../hooks/useEnvironments';
 import type { Environment } from '../types/environment';
 import { useUpdateEnvironment } from '../hooks/useEnvironments';
 import { resourceUrl } from '../nav';
 
 function EditEnvironmentForm({ env, orgHandler }: { env: Environment; orgHandler: string }): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [name, setName] = useState(env.name);
   const [description, setDescription] = useState(env.description ?? '');
   const [critical, setCritical] = useState(env.critical);

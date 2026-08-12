@@ -17,7 +17,7 @@
  */
 
 import type { JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { useAccessControl } from '../../contexts/AccessControlContext';
 import { isSettingsSectionVisible } from '../../constants/orgSettingsSections';
 import { PROJECT_SETTINGS_SECTIONS } from '../../constants/projectSettingsSections';
@@ -28,7 +28,7 @@ import SettingsTabs from './SettingsTabs';
 /** The project Settings header — resolves the visible sections and delegates chrome to `SettingsTabs`. */
 export default function ProjectSettingsTabs({ active }: { active: string }): JSX.Element {
   const scope = useScope();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const projectHandle = hasProject(scope) ? scope.project : '';
   const { projectId } = useProjectId(projectHandle);
   const { hasAnyPermission } = useAccessControl();

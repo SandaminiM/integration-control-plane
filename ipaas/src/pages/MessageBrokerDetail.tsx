@@ -19,7 +19,8 @@
 import { Alert, Box, Button, CircularProgress, ColorSchemeImage, PageContent, Stack, Tab, Tabs, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isPlatformServicesEnabled, useDatabaseServer } from '../hooks/usePlatformServices';
 import { useSubscriptions } from '../hooks/useSubscription';
 import { useOrgUuid } from '../hooks/useOrgUuid';
@@ -50,7 +51,7 @@ const TABS: { value: DetailTab; label: string }[] = [
 const logoFor = (type: string): ServiceTypeOption | undefined => BROKER_SERVICE_TYPES.find((t) => t.id === type);
 
 export default function MessageBrokerDetail(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { brokerId = '', tab = 'overview' } = useParams();
   const base = `/organizations/${scope.org}/admin/message-brokers`;
   const orgUuid = useOrgUuid();

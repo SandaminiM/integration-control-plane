@@ -20,13 +20,13 @@ import { useState } from 'react';
 import type { JSX } from 'react';
 import { Alert, Box, Button, Card, CardContent, CircularProgress, Divider, IconButton, InputAdornment, InputLabel, OutlinedInput, Stack, Typography } from '@wso2/oxygen-ui';
 import { Eye, EyeOff } from '@wso2/oxygen-ui-icons-react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useAuth } from '../auth/AuthContext';
 import { useForceChangePassword } from '../hooks/useAuth';
 import { resourceUrl } from '../nav';
 
 export default function ForceChangePassword(): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { clearRequirePasswordChange } = useAuth();
   const mutation = useForceChangePassword();
 

@@ -19,7 +19,8 @@
 import { Alert, Button, Chip, CircularProgress, FormControlLabel, PageContent, Radio, RadioGroup, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isGovernanceEnabled, useCreatePolicy, usePolicies, usePolicy, useRulesets, useUpdatePolicy } from '../hooks/useGovernance';
 import ComingSoon from './ComingSoon';
 import EnforcementDetailsTable from '../components/Governance/EnforcementDetailsTable';
@@ -33,7 +34,7 @@ import { PolicyType, type GovernancePolicyInfo, type RulesetInfo } from '../type
 import type { OrgScope } from '../nav';
 
 export default function CreatePolicy(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { policyId } = useParams<{ policyId?: string }>();
   const isEditing = !!policyId;
 
@@ -114,7 +115,10 @@ export default function CreatePolicy(scope: OrgScope): JSX.Element {
     }
   };
 
-  const isSaving = createPolicy.isPending || updatePolicy.isPending;
+  // `isSuccess` keeps the control disabled through the deferred navigation:
+  // the mutation settles before the route changes, which would otherwise re-enable
+  // submit and allow a duplicate.
+  const isSaving = createPolicy.isPending || updatePolicy.isPending || createPolicy.isSuccess || updatePolicy.isSuccess;
   const canSave = !!name && selectedItems.length > 0 && isChanged && !isNameDuplicate;
 
   // Edit mode: show loading and not-found states before rendering the form.

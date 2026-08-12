@@ -19,7 +19,8 @@
 import { Button, PageContent, Stack, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isConnectionsEnabled, useCreateChoreoConnection, useCreateThirdPartyConnection, useOrgNumericId } from '../hooks/useConnections';
 import { useProjectId } from '../hooks/useProjects';
 import { useComponentByHandler } from '../hooks/useComponents';
@@ -34,7 +35,7 @@ import { hasComponent, type ComponentScope, type ProjectScope } from '../nav';
 export default function NewConnection(scope: ProjectScope | ComponentScope): JSX.Element {
   const { org, project } = scope;
   const componentHandle = hasComponent(scope) ? scope.component : undefined;
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [searchParams] = useSearchParams();
   const { projectId, isLoading } = useProjectId(project);
   const { data: componentData } = useComponentByHandler(projectId, componentHandle);

@@ -20,7 +20,8 @@ import { Alert, Box, Button, Dialog, DialogContent, DialogTitle, InputBase, Page
 import { ArrowLeft, Send } from '@wso2/oxygen-ui-icons-react';
 import { Fragment, useContext, useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useAuth } from '../auth/AuthContext';
 import { CopilotContext } from '../contexts/CopilotContext';
 import { useChoreoSampleImages } from '../hooks/useRepository';
@@ -48,7 +49,7 @@ function scaffoldStepsText(response: CustomIntegrationResponse): string {
 }
 
 function AiIntegrationBuilderView(scope: ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const location = useLocation() as { state?: { query?: string } };
   const { userId } = useAuth();
   const { setShowCopilot } = useContext(CopilotContext);

@@ -20,7 +20,7 @@ import { Button, Stack, Typography } from '@wso2/oxygen-ui';
 import { Clock, Play } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import { useQueryClient } from '@tanstack/react-query';
 import { useExecutionConfigs } from '../../../hooks/useExecutions';
 import { useSchemaConfig } from '../../../hooks/useConfiguration';
@@ -53,7 +53,7 @@ export default function EnvCardActions({
   onTrigger,
 }: EnvCardActionsProps): ReactNode {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
 
   const { data: scheduleConfig } = useExecutionConfigs(component.id, releaseId, env.id, projectId);
   const { data: schemaConfig } = useSchemaConfig(projectId, component.id, envTemplateId, versionId, deployedCommitSha);

@@ -19,7 +19,8 @@
 import { Alert, Box, Button, CircularProgress, FormHelperText, Grid, IconButton, InputAdornment, MenuItem, PageContent, Skeleton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, GitBranch, RefreshCw, GitHub } from '@wso2/oxygen-ui-icons-react';
 import { useState, useEffect, useMemo, useRef, type JSX } from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useCreateComponent } from '../hooks/useComponents';
 import type { DisplayType } from '../types/component';
 import { useGitHubUserRepos, useRepoBranches, useRepoContents, useRepoMetadata, useComponentNameAvailability } from '../hooks/useRepository';
@@ -70,7 +71,7 @@ const FIELD_HELPER_SX = {
 } as const;
 
 export default function ImportIntegration(scope: ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const location = useLocation();
 
   const { projectId } = useProjectId(scope.project);

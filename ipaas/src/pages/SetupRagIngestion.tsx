@@ -18,7 +18,7 @@
 
 import { Alert, Box, Button, CircularProgress, LinearProgress, PageContent, PageTitle, Stack, Typography } from '@wso2/oxygen-ui';
 import { useEffect, useReducer, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isRagIngestionEnabled, useCreateRagIngestion } from '../hooks/useRagIngestion';
 import { useProjects } from '../hooks/useProjects';
 import { useSubscriptions } from '../hooks/useSubscription';
@@ -41,7 +41,7 @@ const STEP_LABELS = ['Initialize Vector Store', 'Configure Embedding Model', 'Co
 const LAST_STEP = STEP_LABELS.length - 1;
 
 export default function SetupRagIngestion(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [form, dispatch] = useReducer(ragFormReducer, initialRagForm);
   const [activeStep, setActiveStep] = useState(0);
   const create = useCreateRagIngestion();

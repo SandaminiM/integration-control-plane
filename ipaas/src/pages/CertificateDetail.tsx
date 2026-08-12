@@ -19,7 +19,8 @@
 import { Alert, Box, Button, Chip, CircularProgress, PageContent, PageTitle, Stack, Tab, Tabs, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useConfigGroup } from '../hooks/useConfigGroups';
 import { isCertificatesEnabled } from '../hooks/useCertificates';
 import { certificateValidity, certificateTypeLabel, formatCertificateDate } from '../utils/certificates';
@@ -29,7 +30,7 @@ import ComingSoon from './ComingSoon';
 import CertificateUsageView from '../components/Certificates/CertificateUsageView';
 
 export default function CertificateDetail(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { certificateId = '' } = useParams();
   const [tab, setTab] = useState<'metadata' | 'usage'>('metadata');
 

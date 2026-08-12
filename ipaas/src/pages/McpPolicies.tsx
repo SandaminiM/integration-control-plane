@@ -19,7 +19,8 @@
 import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, Drawer, IconButton, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, ShieldCheck, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { Navigate, useNavigate } from 'react-router';
+import { Navigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useApimApi, useApimSwagger, useUpdateApimApi } from '../hooks/useApim';
 import { useComponentByHandler, useComponentEndpoints } from '../hooks/useComponents';
 import { useProjectId } from '../hooks/useProjects';
@@ -44,7 +45,7 @@ import McpProxyCanvas from '../components/Policies/McpProxyCanvas';
  * MCP-only: any other component is redirected to its overview.
  */
 export default function McpPolicies(scope: ComponentScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { projectId, isLoading: loadingProject } = useProjectId(scope.project);
   const { data: component, isLoading: loadingComponent } = useComponentByHandler(projectId, scope.component);
 

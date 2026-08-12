@@ -18,7 +18,7 @@
 
 import { Box, Button, Card, CardContent, Divider, Skeleton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ExternalLink, FileText } from '@wso2/oxygen-ui-icons-react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { useApiDocuments } from '../../hooks/useMarketplace';
 
 interface Props {
@@ -27,7 +27,7 @@ interface Props {
 }
 
 export default function DocumentsCard({ apimId, docsPath }: Props) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { data: documents = [], isLoading } = useApiDocuments(apimId);
 
   return (

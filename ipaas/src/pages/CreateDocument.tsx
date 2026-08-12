@@ -19,7 +19,8 @@
 import { Alert, Button, CircularProgress, IconButton, MenuItem, PageContent, Select, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Download, FileText, Trash2, Upload } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useRef, useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isGovernanceEnabled, useCreateDocument, useDocument, useUpdateDocument } from '../hooks/useGovernance';
 import ComingSoon from './ComingSoon';
 import FieldLabel from '../components/Governance/FieldLabel';
@@ -35,7 +36,7 @@ const appliesToLabels: Record<RulesetAppliesTo, string> = {
 };
 
 export default function CreateDocument(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { documentId } = useParams<{ documentId?: string }>();
   const isEditing = !!documentId;
 
@@ -124,7 +125,10 @@ export default function CreateDocument(scope: OrgScope): JSX.Element {
     }
   };
 
-  const isSaving = createDocument.isPending || updateDocument.isPending;
+  // `isSuccess` keeps the control disabled through the deferred navigation:
+  // the mutation settles before the route changes, which would otherwise re-enable
+  // submit and allow a duplicate.
+  const isSaving = createDocument.isPending || updateDocument.isPending || createDocument.isSuccess || updateDocument.isSuccess;
   const canSave = !!name.trim() && !!appliesTo && !!content && !!description && isChanged && !readonly;
 
   if (isEditing && documentLoading) {

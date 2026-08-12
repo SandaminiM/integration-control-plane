@@ -18,7 +18,7 @@
 
 import { Box, PageContent, PageTitle, Stack } from '@wso2/oxygen-ui';
 import { useMemo, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useProjectId } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
@@ -40,7 +40,7 @@ import type { InsightsApiRef, InsightsRange } from '../types/insights';
 import type { ProjectScope } from '../nav';
 
 export default function ProjectInsights({ org, project }: ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const orgUuid = useOrgUuid() ?? '';
   const { projectId, project: projectData, isLoading } = useProjectId(project);
 

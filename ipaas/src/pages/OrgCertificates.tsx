@@ -19,7 +19,7 @@
 import { Alert, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, ListingTable, PageContent, PageTitle, Select, MenuItem, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Plus, Search, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isCertificatesEnabled, useCertificateGroups, useDeleteCertificate } from '../hooks/useCertificates';
 import { certificateValidity, certificateTypeLabel } from '../utils/certificates';
 import { orgNewCertificateUrl, orgCertificateUrl } from '../paths';
@@ -28,7 +28,7 @@ import type { ConfigGroup } from '../types/configGroups';
 import ComingSoon from './ComingSoon';
 
 export default function OrgCertificates(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { data: groups, isLoading, isError, refetch } = useCertificateGroups();
   const del = useDeleteCertificate();
 

@@ -19,7 +19,7 @@
 import { Alert, Box, Button, CircularProgress, IconButton, PageContent, PageTitle, Stack, Tooltip } from '@wso2/oxygen-ui';
 import { Plus, RefreshCw } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isPlatformServicesEnabled, useDatabaseServers, useServiceAvailability } from '../hooks/usePlatformServices';
 import { useSubscriptions } from '../hooks/useSubscription';
 import { useOrgUuid } from '../hooks/useOrgUuid';
@@ -37,7 +37,7 @@ import type { DatabaseServer } from '../types/platformServices';
  * `is_vector_enabled` filter — see {@link DbServerKind}.
  */
 export function DatabaseServersListView({ scope, kind }: { scope: OrgScope; kind: DbServerKind }): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const orgUuid = useOrgUuid();
   const availability = useServiceAvailability();
   const servers = useDatabaseServers(kind.variant);

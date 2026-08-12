@@ -22,7 +22,7 @@ import { useState, useEffect } from 'react';
 import type { JSX } from 'react';
 import { Alert, Box, Button, Checkbox, CircularProgress, Divider, FormControlLabel, IconButton, InputAdornment, InputLabel, Link, OutlinedInput, Typography } from '@wso2/oxygen-ui';
 import { Eye, EyeOff, GitHub, Google } from '@wso2/oxygen-ui-icons-react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { resourceUrl } from '../nav';
 import { useAuth } from '../auth/AuthContext';
 
@@ -41,7 +41,7 @@ function friendlyLoginError(err: unknown, isSso = false): string {
 }
 
 export default function LoginForm(): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { login, loginWithOIDC } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);

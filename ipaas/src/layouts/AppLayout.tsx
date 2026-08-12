@@ -47,6 +47,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { JSX } from 'react';
 import { useNavigate, Outlet, NavLink, useLocation } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import Logo from '../components/Logo';
 import NotFound from '../components/NotFound';
 import {
@@ -361,9 +362,19 @@ function AppLayoutInner(): JSX.Element {
   }
   const canSeeAccessControl = hasAnyPermission(accessControlPerms, projectId || undefined, componentId);
 
+  const navigateTo = useAppNavigate();
+
+  // The URL now moves only once the destination's code is in, so the highlight
+  // would lag the click by the whole download. Mark the clicked item at once and
+  // let the resolved id take over when the route commits.
+  const [pendingNavId, setPendingNavId] = useState<string | null>(null);
+  useEffect(() => setPendingNavId(null), [pathname]);
+
   const handleNavSelect = (id: string) => {
     const url = navUrl(scope, id);
-    if (url) navigate(url);
+    if (!url) return;
+    setPendingNavId(id);
+    navigateTo(url);
   };
 
   return (
@@ -384,11 +395,11 @@ function AppLayoutInner(): JSX.Element {
               role="button"
               tabIndex={0}
               sx={{ position: 'relative', display: 'inline-flex', alignSelf: 'center', cursor: 'pointer' }}
-              onClick={() => navigate(orgHomeUrl(scope.org))}
+              onClick={() => navigateTo(orgHomeUrl(scope.org))}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  navigate(orgHomeUrl(scope.org));
+                  navigateTo(orgHomeUrl(scope.org));
                 }
               }}>
               <ComplexSelect
@@ -476,7 +487,7 @@ function AppLayoutInner(): JSX.Element {
                       setOrgMenuAnchor(null);
                       setOrgSearch('');
                       if (o.handle === scope.org) {
-                        navigate(orgHomeUrl(o.handle));
+                        navigateTo(orgHomeUrl(o.handle));
                         return;
                       }
                       switchOrgToken(o.handle)
@@ -486,9 +497,9 @@ function AppLayoutInner(): JSX.Element {
                             localStorage.setItem('org_numeric_id', String(o.numericId));
                           }
                           queryClient.clear();
-                          navigate(orgHomeUrl(o.handle));
+                          navigateTo(orgHomeUrl(o.handle));
                         })
-                        .catch(() => navigate(orgHomeUrl(o.handle)));
+                        .catch(() => navigateTo(orgHomeUrl(o.handle)));
                     }}>
                     {o.handle}
                   </MenuItem>
@@ -547,7 +558,7 @@ function AppLayoutInner(): JSX.Element {
                 onClick={() => {
                   setProjectMenuAnchor(null);
                   setProjectSearch('');
-                  navigate(newProjectUrl({ org: scope.org }));
+                  navigateTo(newProjectUrl({ org: scope.org }));
                 }}>
                 Create Project
               </Button>
@@ -570,7 +581,7 @@ function AppLayoutInner(): JSX.Element {
                         const newScope = narrow({ level: 'organizations', org: scope.org }, p.handler);
                         // Settings sections are a section-aware sub-matrix; everything else preserves its resource key.
                         const settingsUrl = settingsSwitchUrl(newScope, p.id, undefined);
-                        navigate(settingsUrl ?? navScopeSwitchUrl(pathname, scope, newScope));
+                        navigateTo(settingsUrl ?? navScopeSwitchUrl(pathname, scope, newScope));
                       }}>
                       {p.name}
                     </MenuItem>
@@ -586,13 +597,13 @@ function AppLayoutInner(): JSX.Element {
                   sx={{ position: 'relative', display: 'inline-flex', cursor: 'pointer' }}
                   onClick={() => {
                     const ps = { level: 'projects' as const, org: scope.org, project: scope.project };
-                    navigate(hasComponent(scope) ? navScopeSwitchUrl(pathname, scope, ps) : overviewUrl(ps));
+                    navigateTo(hasComponent(scope) ? navScopeSwitchUrl(pathname, scope, ps) : overviewUrl(ps));
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
                       const ps = { level: 'projects' as const, org: scope.org, project: scope.project };
-                      navigate(hasComponent(scope) ? navScopeSwitchUrl(pathname, scope, ps) : overviewUrl(ps));
+                      navigateTo(hasComponent(scope) ? navScopeSwitchUrl(pathname, scope, ps) : overviewUrl(ps));
                     }
                   }}>
                   <ComplexSelect
@@ -648,7 +659,7 @@ function AppLayoutInner(): JSX.Element {
                       e.stopPropagation();
                       const orgScope = { level: 'organizations' as const, org: scope.org };
                       const settingsUrl = settingsSwitchUrl(orgScope, undefined, undefined);
-                      navigate(settingsUrl ?? navScopeSwitchUrl(pathname, scope, orgScope));
+                      navigateTo(settingsUrl ?? navScopeSwitchUrl(pathname, scope, orgScope));
                     }}>
                     <X size={16} />
                   </IconButton>
@@ -706,7 +717,7 @@ function AppLayoutInner(): JSX.Element {
                     onClick={() => {
                       setComponentMenuAnchor(null);
                       setComponentSearch('');
-                      navigate(newComponentUrl({ org: scope.org, project: scope.project }));
+                      navigateTo(newComponentUrl({ org: scope.org, project: scope.project }));
                     }}>
                     Create Integration
                   </Button>
@@ -730,10 +741,10 @@ function AppLayoutInner(): JSX.Element {
                             // A generic-only tab (Lifecycle, API Info, Plans, …) can't survive a switch to a non-generic integration.
                             const currentKey = resolveResourceKey(pathname, scope);
                             if (GENERIC_ONLY_COMPONENT_KEYS.has(currentKey) && !GENERIC_SERVICE_TYPES.has(c.displayType)) {
-                              navigate(componentOverviewUrl(scope.org, scope.project, c.handler));
+                              navigateTo(componentOverviewUrl(scope.org, scope.project, c.handler));
                               return;
                             }
-                            navigate(navScopeSwitchUrl(pathname, scope, newScope));
+                            navigateTo(navScopeSwitchUrl(pathname, scope, newScope));
                           }}>
                           {c.displayName}
                         </MenuItem>
@@ -748,11 +759,11 @@ function AppLayoutInner(): JSX.Element {
                 role="button"
                 tabIndex={0}
                 sx={{ position: 'relative', display: 'inline-flex', cursor: 'pointer' }}
-                onClick={() => navigate(overviewUrl(scope))}
+                onClick={() => navigateTo(overviewUrl(scope))}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    navigate(overviewUrl(scope));
+                    navigateTo(overviewUrl(scope));
                   }
                 }}>
                 <ComplexSelect
@@ -809,7 +820,7 @@ function AppLayoutInner(): JSX.Element {
                     e.stopPropagation();
                     const projectScope = broaden(scope)!;
                     const settingsUrl = settingsSwitchUrl(projectScope, projectId || undefined, undefined);
-                    navigate(settingsUrl ?? navScopeSwitchUrl(pathname, scope, projectScope));
+                    navigateTo(settingsUrl ?? navScopeSwitchUrl(pathname, scope, projectScope));
                   }}>
                   <X size={16} />
                 </IconButton>
@@ -830,7 +841,7 @@ function AppLayoutInner(): JSX.Element {
             <UserMenu>
               <UserMenu.Trigger name={displayName || username || 'User'} avatar={pictureUrl} />
               <UserMenu.Header name={displayName || username || 'User'} email={username} role="Admin" avatar={pictureUrl} />
-              <UserMenu.Item icon={<UserIcon size={18} />} label="Profile" onClick={() => navigate(profileUrl())} />
+              <UserMenu.Item icon={<UserIcon size={18} />} label="Profile" onClick={() => navigateTo(profileUrl())} />
               <UserMenu.Item icon={<ScanEye size={18} />} label="Feature Preview" onClick={() => setFeaturePreviewOpen(true)} />
               <UserMenu.Divider />
               <UserMenu.Logout icon={<LogOut size={18} />} label="Sign Out" onClick={() => setConfirmDialogOpen(true)} />
@@ -842,7 +853,7 @@ function AppLayoutInner(): JSX.Element {
       <AppShell.Sidebar>
         <Sidebar
           collapsed={shell.sidebarCollapsed}
-          activeItem={activeNavId}
+          activeItem={pendingNavId ?? activeNavId}
           expandedMenus={shell.expandedMenus}
           onSelect={(id) => {
             if (id === 'expand') {
@@ -1487,6 +1498,8 @@ function AppLayoutInner(): JSX.Element {
       </AppShell.Sidebar>
 
       <AppShell.Main>
+        {/* Navigation progress: a GitHub-style line under the navbar. The page
+            underneath stays interactive until the new route is ready to commit. */}
         {/* position:absolute;inset:0 anchors this box to the Box35 wrapper inside
             <main>, which gets position:relative via the CSS rule in index.css.
             This hard-caps the flex wrapper to the exact pixel bounds of the

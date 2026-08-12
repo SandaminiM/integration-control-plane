@@ -18,7 +18,8 @@
 
 import { Box, CircularProgress, PageContent, Typography } from '@wso2/oxygen-ui';
 import { type JSX } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useGroups } from '../hooks/useAuth';
 import { useProjectByHandler } from '../hooks/useProjects';
 import { useComponentByHandler } from '../hooks/useComponents';
@@ -35,7 +36,7 @@ function Loading() {
 
 export default function ComponentGroupDetail(): JSX.Element {
   const { orgHandler = 'default', projectHandler = '', componentHandler = '', groupId = '' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { data: projectData, isLoading: loadingProject } = useProjectByHandler(projectHandler);
   const projectId = projectData?.id ?? '';
   const { data: componentData, isLoading: loadingComponent } = useComponentByHandler(projectId, componentHandler);

@@ -18,7 +18,8 @@
 
 import { Box, PageContent, PageTitle, Tab, Tabs, Typography } from '@wso2/oxygen-ui';
 import { useEffect, type JSX } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions';
 import { componentAccessControlUrl } from '../paths';
@@ -38,7 +39,7 @@ const PROJECT_TABS = ['roles', 'groups'] as const;
 
 export default function AccessControl(): JSX.Element {
   const { orgHandler = 'default', tab = 'users' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { hasAnyPermission, isOrgPermissionsLoaded } = useAccessControl();
 
   const accessControlPerms: string[] = [...ALL_USER_MGT_PERMISSIONS];
@@ -50,6 +51,10 @@ export default function AccessControl(): JSX.Element {
       navigate(`/organizations/${orgHandler}`);
     }
   }, [isOrgPermissionsLoaded, canSeeAccessControl, navigate, orgHandler]);
+
+  // Redirects now wait for the destination's chunk, so rendering must stop here
+  // rather than showing access-control content to a user who lacks permission.
+  if (isOrgPermissionsLoaded && !canSeeAccessControl) return <PageContent>{null}</PageContent>;
 
   const tabIndex = ORG_TABS.indexOf(tab as string as (typeof ORG_TABS)[number]);
   const safeIndex = tabIndex < 0 ? 0 : tabIndex;
@@ -74,7 +79,7 @@ export default function AccessControl(): JSX.Element {
 
 export function OrgAccessControl({ org }: { org: string }): JSX.Element {
   const { tab = 'users' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { hasAnyPermission, isOrgPermissionsLoaded } = useAccessControl();
 
   const accessControlPerms: string[] = [...ALL_USER_MGT_PERMISSIONS];
@@ -86,6 +91,10 @@ export function OrgAccessControl({ org }: { org: string }): JSX.Element {
       navigate(`/organizations/${org}`);
     }
   }, [isOrgPermissionsLoaded, canSeeAccessControl, navigate, org]);
+
+  // Redirects now wait for the destination's chunk, so rendering must stop here
+  // rather than showing access-control content to a user who lacks permission.
+  if (isOrgPermissionsLoaded && !canSeeAccessControl) return <PageContent>{null}</PageContent>;
 
   const tabIndex = ORG_TABS.indexOf(tab as string as (typeof ORG_TABS)[number]);
   const safeIndex = tabIndex < 0 ? 0 : tabIndex;
@@ -109,7 +118,7 @@ export function OrgAccessControl({ org }: { org: string }): JSX.Element {
 
 export function ProjectAccessControl({ org, project }: { org: string; project: string }): JSX.Element {
   const { tab = 'roles' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { hasAnyPermission } = useAccessControl();
   const { data: projectData, isLoading } = useProjectByHandler(project);
   const projectId = projectData?.id ?? '';
@@ -122,6 +131,10 @@ export function ProjectAccessControl({ org, project }: { org: string; project: s
       navigate(`/organizations/${org}/projects/${project}`);
     }
   }, [canSeeAccessControl, isLoading, projectId, navigate, org, project]);
+
+  // Redirects now wait for the destination's chunk, so rendering must stop here
+  // rather than showing access-control content to a user who lacks permission.
+  if (!isLoading && projectId && !canSeeAccessControl) return <PageContent>{null}</PageContent>;
 
   const tabIndex = PROJECT_TABS.indexOf(tab as string as (typeof PROJECT_TABS)[number]);
   const safeIndex = tabIndex < 0 ? 0 : tabIndex;
@@ -150,7 +163,7 @@ export function ProjectAccessControl({ org, project }: { org: string; project: s
 
 export function ComponentAccessControl({ org, project, component }: ComponentScope): JSX.Element {
   const { tab = 'roles' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { hasAnyPermission } = useAccessControl();
   const { data: projectData, isLoading: loadingProject } = useProjectByHandler(project);
   const projectId = projectData?.id ?? '';
@@ -165,6 +178,10 @@ export function ComponentAccessControl({ org, project, component }: ComponentSco
       navigate(`/organizations/${org}/projects/${project}/integrations/${component}`);
     }
   }, [canSeeAccessControl, loadingProject, loadingComponent, componentId, navigate, org, project, component]);
+
+  // Redirects now wait for the destination's chunk, so rendering must stop here
+  // rather than showing access-control content to a user who lacks permission.
+  if (!loadingProject && !loadingComponent && componentId && !canSeeAccessControl) return <PageContent>{null}</PageContent>;
 
   const tabIndex = PROJECT_TABS.indexOf(tab as string as (typeof PROJECT_TABS)[number]);
   const safeIndex = tabIndex < 0 ? 0 : tabIndex;

@@ -19,7 +19,7 @@
 import { Button, Chip, IconButton, Stack, Tooltip } from '@wso2/oxygen-ui';
 import { CodeXml, Recycle, ShieldCheck } from '@wso2/oxygen-ui-icons-react';
 import { useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import { useApimApi } from '../../../hooks/useApim';
 import { getDevPortalApiUrl } from '../../../config/runtimeConfig';
 import { IS_CLOUD } from '../../../features';
@@ -66,7 +66,7 @@ export default function OverviewHeaderActions({ component, apimId, orgHandler, p
   const componentHandler = component.handler;
   const componentId = component.id;
   const versionId = component.deploymentTracks?.[0]?.id;
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [securityDrawerOpen, setSecurityDrawerOpen] = useState(false);
   const { data: apimApi } = useApimApi(apimId);
   const lifecycleStatus = apimApi?.lifeCycleStatus ?? null;

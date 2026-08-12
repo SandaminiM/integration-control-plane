@@ -19,7 +19,8 @@
 import { Alert, Box, Button, Chip, CircularProgress, PageContent, Stack, Tab, Tabs, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, Store } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isGenaiServicesEnabled, useConnectionConfig, useGenaiService, useSetMarketplaceStatus } from '../hooks/useGenaiServices';
 import { GENAI_LOGO_BASE, GENAI_TEMPLATE_TYPE, marketplaceStatusLabel } from '../constants/genaiServices';
 import { genaiServicesBase, inferProviderLogo } from '../utils/genaiServices';
@@ -36,7 +37,7 @@ const LOGO_BASE = `${import.meta.env.BASE_URL}${GENAI_LOGO_BASE}`;
 const headingChipSx = { height: 20, '& .MuiChip-label': { px: 0.75, fontSize: 11 } } as const;
 
 export default function GenAIServiceDetail(scope: OrgScope | ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { serviceId = '' } = useParams();
   const base = genaiServicesBase(scope);
   const { data: service, isLoading, isError, refetch } = useGenaiService(serviceId);

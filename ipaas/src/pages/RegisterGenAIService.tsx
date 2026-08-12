@@ -18,7 +18,7 @@
 
 import { PageContent } from '@wso2/oxygen-ui';
 import { useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isGenaiServicesEnabled, useCreateGenaiService } from '../hooks/useGenaiServices';
 import { useProjectId } from '../hooks/useProjects';
 import { genaiServicesBase } from '../utils/genaiServices';
@@ -29,7 +29,7 @@ import { hasProject, type OrgScope, type ProjectScope } from '../nav';
 import type { CreateGenAiServiceArgs } from '../types/genaiServices';
 
 export default function RegisterGenAIService(scope: OrgScope | ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const projectHandle = hasProject(scope) ? scope.project : undefined;
   const { projectId, isLoading: resolvingProject } = useProjectId(projectHandle ?? '');
   const base = genaiServicesBase(scope);

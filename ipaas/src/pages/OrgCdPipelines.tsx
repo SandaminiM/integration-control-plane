@@ -19,7 +19,7 @@
 import { Alert, Box, Button, CircularProgress, IconButton, PageContent, PageTitle, Stack, Tooltip } from '@wso2/oxygen-ui';
 import { GitBranch, Pencil, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { IS_CLOUD } from '../features';
 import { useEnvTemplates, useOrgDeploymentPipelines } from '../hooks/useDeploymentPipelines';
 import type { DeploymentPipeline } from '../types/deploymentPipeline';
@@ -34,7 +34,7 @@ import DeletePipelineDialog from '../components/CdPipelines/DeletePipelineDialog
 const EMPTY_DESCRIPTION = IS_CLOUD ? 'Deployment pipelines define how integrations promote across environments.' : 'Create a pipeline to define how integrations promote across environments.';
 
 export default function OrgCdPipelines(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { data: pipelines, isLoading, isError, refetch } = useOrgDeploymentPipelines();
   const { data: envTemplates } = useEnvTemplates(scope.org);
   const orderedPipelines = useMemo(() => (pipelines ? pinDefaultFirst(pipelines, (p) => !!p.is_default) : pipelines), [pipelines]);

@@ -19,7 +19,7 @@
 import { Alert, Box, Button, Chip, CircularProgress, IconButton, ListingTable, PageContent, PageTitle, Stack, TablePagination, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { isThirdPartyServicesEnabled, useDeleteThirdPartyService, useThirdPartyServices } from '../hooks/useThirdPartyServices';
 import { useProjectId } from '../hooks/useProjects';
 import { GENAI_DEFAULT_PAGE_SIZE, GENAI_PAGE_SIZE_OPTIONS, marketplaceStatusLabel } from '../constants/genaiServices';
@@ -34,7 +34,7 @@ import { hasProject, type OrgScope, type ProjectScope } from '../nav';
 import type { GenAiService } from '../types/genaiServices';
 
 export default function ThirdPartyServices(scope: OrgScope | ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const projectHandle = hasProject(scope) ? scope.project : undefined;
   const { projectId, isLoading: resolvingProject } = useProjectId(projectHandle ?? '');
   const [search, setSearch] = useState('');

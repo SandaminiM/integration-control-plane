@@ -20,7 +20,7 @@ import { Alert, Box, PageContent, PageTitle, Skeleton, Stack, Typography } from 
 import { AudioWaveform, Clock, Gauge, Timer } from '@wso2/oxygen-ui-icons-react';
 import { BarChart, LineChart } from '@wso2/oxygen-ui-charts-react';
 import { useMemo, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useProjectId, useProjects } from '../hooks/useProjects';
 import { useDeliveryConfig, useDeliveryInsights } from '../hooks/useDeliveryInsights';
@@ -63,7 +63,7 @@ function DurationValue({ tokens }: { tokens: string[] }): JSX.Element {
  * incident source is configured (see `pages/ConfigureDelivery.tsx`).
  */
 export default function DeliveryInsights(scope: OrgScope | ProjectScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const orgUuid = useOrgUuid() ?? '';
   const projectHandler = scope.level === 'projects' ? scope.project : '';
   const { projectId, project: projectData } = useProjectId(projectHandler);

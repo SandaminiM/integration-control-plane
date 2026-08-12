@@ -46,7 +46,8 @@ import {
 } from '@wso2/oxygen-ui';
 import { ArrowLeft, Lock, Plus, Trash2, Users } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { Permissions, ALL_ROLE_MODIFY_PERMISSIONS } from '../constants/permissions';
 import SearchField from '../components/SearchField';
 import { useAccessControl } from '../contexts/AccessControlContext';
@@ -509,7 +510,7 @@ export function GroupDetailView({ orgHandler, group, onBack, projectId, componen
 
 export default function EditGroup(): JSX.Element {
   const { orgHandler = 'default', groupId = '' } = useParams();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { data: groups, isLoading, isError } = useGroups(orgHandler);
   const backUrl = orgAccessControlUrl(orgHandler, 'groups');
 

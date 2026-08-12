@@ -17,7 +17,7 @@
  */
 
 import type { JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { useAccessControl } from '../../contexts/AccessControlContext';
 import { visibleComponentSettingsSections } from '../../constants/componentSettingsSections';
 import { useComponentByHandler } from '../../hooks/useComponents';
@@ -33,7 +33,7 @@ import SettingsTabs from './SettingsTabs';
  */
 export default function ComponentSettingsTabs({ active }: { active: string }): JSX.Element {
   const scope = useScope();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const projectHandle = hasComponent(scope) ? scope.project : '';
   const componentHandle = hasComponent(scope) ? scope.component : '';
   const { projectId } = useProjectId(projectHandle);

@@ -19,7 +19,7 @@
 import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, MenuItem, PageContent, Select, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useDataPlanes } from '../hooks/useDataPlanes';
 import { useAddEnvironment } from '../hooks/useEnvironments';
 import { useOrgUuid } from '../hooks/useOrgUuid';
@@ -28,7 +28,7 @@ import { buildEnvironmentVhost, EnvironmentValidationError } from '../utils/envi
 import { resourceUrl, type OrgScope } from '../nav';
 
 export default function CreateEnvironment(scope: OrgScope): JSX.Element {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const orgUuid = useOrgUuid();
   const listUrl = resourceUrl(scope, 'environments');
   const { data: dataPlanes = [], isLoading: loadingDataPlanes, isError: dataPlanesError, refetch: refetchDataPlanes } = useDataPlanes();
@@ -80,7 +80,10 @@ export default function CreateEnvironment(scope: OrgScope): JSX.Element {
     );
   };
 
-  const canSubmit = !!name.trim() && (IS_CLOUD || !!dnsPrefix.trim()) && !!dataplaneId && !create.isPending;
+  // `isSuccess` keeps the control disabled through the deferred navigation:
+  // the mutation settles before the route changes, which would otherwise re-enable
+  // submit and allow a duplicate.
+  const canSubmit = !!name.trim() && (IS_CLOUD || !!dnsPrefix.trim()) && !!dataplaneId && !create.isPending && !create.isSuccess;
 
   return (
     <PageContent>

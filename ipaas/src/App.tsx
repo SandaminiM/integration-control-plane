@@ -19,6 +19,7 @@
 import { Suspense, type JSX } from 'react';
 import { Route, Routes } from 'react-router';
 import routes, { type AppRoute } from './config/routes';
+import NavigationProgress from './components/NavigationProgress';
 import './App.css';
 
 function renderRoutes(routeList: AppRoute[]): JSX.Element[] {
@@ -36,9 +37,12 @@ function renderRoutes(routeList: AppRoute[]): JSX.Element[] {
 
 function App() {
   return (
-    <Suspense fallback={null}>
-      <Routes>{renderRoutes(routes)}</Routes>
-    </Suspense>
+    <>
+      <NavigationProgress />
+      <Suspense fallback={null}>
+        <Routes>{renderRoutes(routes)}</Routes>
+      </Suspense>
+    </>
   );
 }
 

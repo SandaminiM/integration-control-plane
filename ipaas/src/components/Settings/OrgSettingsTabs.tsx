@@ -17,7 +17,7 @@
  */
 
 import type { JSX } from 'react';
-import { useNavigate } from 'react-router';
+import { useAppNavigate } from '../../hooks/useAppNavigate';
 import { useAccessControl } from '../../contexts/AccessControlContext';
 import { SETTINGS_SECTIONS, isSettingsSectionVisible } from '../../constants/orgSettingsSections';
 import { orgSettingsSectionUrl, useScope } from '../../nav';
@@ -26,7 +26,7 @@ import SettingsTabs from './SettingsTabs';
 /** The org Settings header — resolves the visible sections and delegates chrome to `SettingsTabs`. */
 export default function OrgSettingsTabs({ active }: { active: string }): JSX.Element {
   const scope = useScope();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { hasAnyPermission } = useAccessControl();
 
   const visible = SETTINGS_SECTIONS.filter((s) => isSettingsSectionVisible(s, hasAnyPermission));
