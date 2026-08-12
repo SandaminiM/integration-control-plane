@@ -176,7 +176,9 @@ function AppLayoutInner(): JSX.Element {
 
   // Lets the user manually bring the sidebar back on an empty project via the hamburger toggle,
   // which stays visible even while hideSidebarForEmptyProject is auto-hiding the sidebar itself.
-  const [sidebarManuallyShown, setSidebarManuallyShown] = useState(false);
+  // Scoped to the project id it was shown for, so switching to a different (also empty) project
+  // doesn't inherit the override.
+  const [manuallyShownProjectId, setManuallyShownProjectId] = useState<string | null>(null);
 
   const activeNavId = useMemo(() => resolveActiveNavId(pathname, scope), [pathname, scope]);
 
@@ -225,11 +227,11 @@ function AppLayoutInner(): JSX.Element {
   // there's at least one. Requires a resolved projectId + isFetched (not isLoading) because
   // useComponents is disabled until projectId resolves, and a disabled query reports
   // isLoading: false — which would let this fire before we actually know the component list.
-  const hideSidebarForEmptyProject = activeNavId === 'proj-overview' && !!projectId && isComponentsFetched && components.length === 0 && !sidebarManuallyShown;
+  const hideSidebarForEmptyProject = activeNavId === 'proj-overview' && !!projectId && isComponentsFetched && components.length === 0 && manuallyShownProjectId !== projectId;
 
   const handleHeaderToggle = () => {
     if (hideSidebarForEmptyProject) {
-      setSidebarManuallyShown(true);
+      setManuallyShownProjectId(projectId);
       return;
     }
     handleToggleSidebar();
