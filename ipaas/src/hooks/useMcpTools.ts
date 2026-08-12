@@ -21,12 +21,20 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport, StreamableHTTPError } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import type { McpTool } from '../types/mcp';
 
+/** APIM gateways read the test key from this header; cloud uses the api-key-auth header. */
+const DEFAULT_AUTH_HEADER = 'test-key';
+
 interface UseMcpToolsParams {
   /** Deployed endpoint base URL — tools are listed from `${baseUrl}/mcp`. */
   baseUrl: string;
-  /** Test key for the `test-key` header (from `useGenerateTestKey`). */
+  /**
+   * Credential for the server, or `null` when it needs none (an open endpoint).
+   * `enabled` — not this field — gates a connection while a key is still pending.
+   */
   apiKey: string | null;
-  /** Gate the connection until the endpoint + key are ready. */
+  /** Request header the credential is presented in. Defaults to `test-key`. */
+  authHeader?: string;
+  /** Gate the connection until the endpoint + credential are ready. */
   enabled: boolean;
 }
 
@@ -42,11 +50,11 @@ interface UseMcpToolsResult {
 /**
  * Lists the tools a deployed MCP server exposes, over the MCP SDK's
  * StreamableHTTP transport (`${baseUrl}/mcp?transportType=streamable-http`,
- * `test-key` header) — mirroring devant's `useMCPTools`. The connection is to
- * the deployed data-plane endpoint, not the console API, so this is an
+ * credential in `authHeader`) — mirroring devant's `useMCPTools`. The connection
+ * is to the deployed data-plane endpoint, not the console API, so this is an
  * external system: the connect/listTools lives in an effect, not in render.
  */
-export function useMcpTools({ baseUrl, apiKey, enabled }: UseMcpToolsParams): UseMcpToolsResult {
+export function useMcpTools({ baseUrl, apiKey, authHeader = DEFAULT_AUTH_HEADER, enabled }: UseMcpToolsParams): UseMcpToolsResult {
   const [tools, setTools] = useState<McpTool[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +62,7 @@ export function useMcpTools({ baseUrl, apiKey, enabled }: UseMcpToolsParams): Us
   const [refetchTrigger, setRefetchTrigger] = useState(0);
 
   useEffect(() => {
-    if (!enabled || !baseUrl || !apiKey) return undefined;
+    if (!enabled || !baseUrl) return undefined;
     let cancelled = false;
     let client: Client | null = null;
 
@@ -64,7 +72,7 @@ export function useMcpTools({ baseUrl, apiKey, enabled }: UseMcpToolsParams): Us
       setIsForbidden(false);
       try {
         const transport = new StreamableHTTPClientTransport(new URL(`${baseUrl.replace(/\/+$/, '')}/mcp?transportType=streamable-http`), {
-          requestInit: { headers: { 'test-key': apiKey } },
+          requestInit: { headers: apiKey ? { [authHeader]: apiKey } : {} },
         });
         client = new Client({ name: 'wip', version: '1.0.0' }, { capabilities: {} });
         await client.connect(transport);
@@ -88,7 +96,7 @@ export function useMcpTools({ baseUrl, apiKey, enabled }: UseMcpToolsParams): Us
     return () => {
       cancelled = true;
     };
-  }, [baseUrl, apiKey, enabled, refetchTrigger]);
+  }, [baseUrl, apiKey, authHeader, enabled, refetchTrigger]);
 
   const refetch = useCallback(() => setRefetchTrigger((t) => t + 1), []);
   return { tools, isLoading, error, isForbidden, refetch };
