@@ -83,12 +83,13 @@ export default function OrgHome(): JSX.Element {
   const { orgHandler } = useParams<{ orgHandler: string }>();
   const navigate = useAppNavigate();
 
-  const [step, setStep] = useState<'checking' | 'persona' | 'region' | 'done'>(() => (localStorage.getItem(PERSONA_KEY) ? 'done' : 'checking'));
+  const [step, setStep] = useState<'checking' | 'persona' | 'region' | 'provisioning-error' | 'done'>(() => (localStorage.getItem(PERSONA_KEY) ? 'done' : 'checking'));
   // setPersona is unused while the persona-selection step below is commented out — restore it there.
   const [persona] = useState<string>('developer');
   const [region, setRegion] = useState<string>('US');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [provisionError, setProvisionError] = useState<string | null>(null);
 
   const fetchProjects = useFetchProjectsByOrgId();
   const initOrgMutation = useInitOrg();
@@ -119,12 +120,19 @@ export default function OrgHome(): JSX.Element {
             const recent = usable.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
             localStorage.setItem(PERSONA_KEY, 'developer');
             navigate(projectHomeUrl(orgHandler!, recent.handler), { replace: true });
-          } else {
-            // Persona selection is disabled (see the commented-out step below) — go straight to region.
-            setStep('region');
+            return undefined;
           }
+          // Cloud has no region-scoped data planes, so region selection doesn't apply here —
+          // provision the default project directly instead of showing that step.
+          return createCloudProjectMutation.mutateAsync({ name: 'Default', handler: DEFAULT_PROJECT_HANDLER, description: '', orgHandler: orgHandler! }).then(() => {
+            localStorage.setItem(PERSONA_KEY, 'developer');
+            navigate(projectHomeUrl(orgHandler!, DEFAULT_PROJECT_HANDLER), { replace: true });
+          });
         })
-        .catch(() => setStep('region'));
+        .catch((err) => {
+          setProvisionError(err instanceof Error ? err.message : 'Setup failed. Please try again.');
+          setStep('provisioning-error');
+        });
       return;
     }
 
@@ -140,6 +148,7 @@ export default function OrgHome(): JSX.Element {
         }
       })
       .catch(() => setStep('region'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, orgNumericId, fetchProjects, navigate, orgHandler]);
 
   if (step === 'checking') {
@@ -147,6 +156,30 @@ export default function OrgHome(): JSX.Element {
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>
         <CircularProgress />
       </Box>
+    );
+  }
+
+  if (step === 'provisioning-error') {
+    return (
+      <OnboardingShell>
+        <Typography variant="h3" component="h1" sx={{ mb: 4 }}>
+          Something went wrong
+        </Typography>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {provisionError}
+        </Alert>
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              setProvisionError(null);
+              setStep('checking');
+            }}>
+            Retry
+          </Button>
+        </Box>
+      </OnboardingShell>
     );
   }
 

@@ -174,6 +174,10 @@ function AppLayoutInner(): JSX.Element {
     actions.toggleSidebar();
   };
 
+  // Lets the user manually bring the sidebar back on an empty project via the hamburger toggle,
+  // which stays visible even while hideSidebarForEmptyProject is auto-hiding the sidebar itself.
+  const [sidebarManuallyShown, setSidebarManuallyShown] = useState(false);
+
   const activeNavId = useMemo(() => resolveActiveNavId(pathname, scope), [pathname, scope]);
 
   // Auto-expand the parent group when navigating to a child nav item.
@@ -221,7 +225,15 @@ function AppLayoutInner(): JSX.Element {
   // there's at least one. Requires a resolved projectId + isFetched (not isLoading) because
   // useComponents is disabled until projectId resolves, and a disabled query reports
   // isLoading: false — which would let this fire before we actually know the component list.
-  const hideSidebarForEmptyProject = activeNavId === 'proj-overview' && !!projectId && isComponentsFetched && components.length === 0;
+  const hideSidebarForEmptyProject = activeNavId === 'proj-overview' && !!projectId && isComponentsFetched && components.length === 0 && !sidebarManuallyShown;
+
+  const handleHeaderToggle = () => {
+    if (hideSidebarForEmptyProject) {
+      setSidebarManuallyShown(true);
+      return;
+    }
+    handleToggleSidebar();
+  };
 
   // Helper to get project display name with fallback to projects list
   const getProjectDisplayName = () => {
@@ -387,7 +399,7 @@ function AppLayoutInner(): JSX.Element {
     <AppShell>
       <AppShell.Navbar>
         <Header>
-          {!hideSidebarForEmptyProject && <Header.Toggle collapsed={shell.sidebarCollapsed} onToggle={handleToggleSidebar} />}
+          <Header.Toggle collapsed={hideSidebarForEmptyProject || shell.sidebarCollapsed} onToggle={handleHeaderToggle} />
           <Header.Brand>
             <Header.BrandLogo>
               <NavLink to={orgHomeUrl(scope.org)} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
