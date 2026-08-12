@@ -125,7 +125,10 @@ export default function CreateDocument(scope: OrgScope): JSX.Element {
     }
   };
 
-  const isSaving = createDocument.isPending || updateDocument.isPending;
+  // `isSuccess` keeps the control disabled through the deferred navigation:
+  // the mutation settles before the route changes, which would otherwise re-enable
+  // submit and allow a duplicate.
+  const isSaving = createDocument.isPending || updateDocument.isPending || createDocument.isSuccess || updateDocument.isSuccess;
   const canSave = !!name.trim() && !!appliesTo && !!content && !!description && isChanged && !readonly;
 
   if (isEditing && documentLoading) {

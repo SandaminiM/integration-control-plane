@@ -30,16 +30,36 @@ const PRELOAD_TIMEOUT_MS = 30000;
 
 type Preloader = () => Promise<unknown>;
 
+interface ElementLike {
+  type?: { preload?: Preloader };
+  props?: { children?: unknown };
+}
+
+/**
+ * A route's `preload`, looking through single-child wrappers. Admin and
+ * compliance routes render `createElement(RouteErrorBoundary, null, page)`, so
+ * the lazy component sits a level below the element's own type. Bounded depth,
+ * and multi-child wrappers are skipped since there is no single page to preload.
+ */
+function preloadOf(element: unknown): Preloader | undefined {
+  let node = element as ElementLike | undefined;
+  for (let depth = 0; node && depth < 3; depth += 1) {
+    if (typeof node.type?.preload === 'function') return node.type.preload;
+    const child = node.props?.children;
+    node = child && !Array.isArray(child) ? (child as ElementLike) : undefined;
+  }
+  return undefined;
+}
+
 /**
  * The `preload` of every lazy component behind a path, via `lazyPage`. Empty
- * when the destination is already loaded, has no lazy component, or hides it
- * behind a wrapper (an error boundary) that does not forward `preload`.
+ * when the destination is already loaded or has no lazy component.
  */
 export function collectPreloads(to: string): Preloader[] {
   // matchRoutes only reads path/index/children, so AppRoute satisfies it in
   // practice even though its `element` type differs from RouteObject's.
   const matched = matchRoutes(routes as unknown as RouteObject[], to) ?? [];
-  return matched.map((m) => (m.route.element as { type?: { preload?: Preloader } } | undefined)?.type?.preload).filter((fn): fn is Preloader => typeof fn === 'function');
+  return matched.map((m) => preloadOf(m.route.element)).filter((fn): fn is Preloader => typeof fn === 'function');
 }
 
 /**
@@ -51,7 +71,7 @@ export async function preloadRoute(preloaders: Preloader[], timeoutMs: number = 
   if (preloaders.length === 0) return;
   let timer = 0;
   try {
-    await Promise.race([Promise.all(preloaders.map((fn) => fn())), new Promise((resolve) => (timer = window.setTimeout(resolve, timeoutMs)))]).catch(() => undefined);
+    await Promise.race([Promise.all(preloaders.map((fn) => Promise.resolve().then(fn))), new Promise((resolve) => (timer = window.setTimeout(resolve, timeoutMs)))]).catch(() => undefined);
   } finally {
     // The race leaves the loser running; at 30s a burst of navigations would
     // otherwise hold a timer each.

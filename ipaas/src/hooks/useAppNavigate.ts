@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { useNavigate, type NavigateFunction, type NavigateOptions, type To } from 'react-router';
 import { beginNavigation } from '../utils/navigationPending';
 import { collectPreloads, preloadRoute } from '../config/preloadRoute';
@@ -31,15 +31,19 @@ import { collectPreloads, preloadRoute } from '../config/preloadRoute';
  * history deltas, non-string targets, already-loaded routes, routes whose
  * `preload` is unreachable — pass straight through unchanged.
  */
+/**
+ * Supersession token. Module-level, not a ref: navigation is app-wide, so a
+ * sidebar click must invalidate a preload started by a page — different hook
+ * instances, same navigation.
+ */
+let latestNavigation = 0;
+
 export function useAppNavigate(): NavigateFunction {
   const navigate = useNavigate();
-  // Clicking B while A is still preloading must land on B: A's preload resolves
-  // later and would otherwise navigate on top of it.
-  const latest = useRef(0);
 
   return useCallback(
     (to: To | number, options?: NavigateOptions) => {
-      const token = (latest.current += 1);
+      const token = (latestNavigation += 1);
       // `navigate(-1)` and friends move through history; there is nothing to fetch.
       if (typeof to === 'number') {
         navigate(to);
@@ -57,7 +61,7 @@ export function useAppNavigate(): NavigateFunction {
       void preloadRoute(preloaders).finally(() => {
         // Always release the indicator, even when superseded, or the count leaks.
         end();
-        if (token !== latest.current) return;
+        if (token !== latestNavigation) return;
         navigate(to, options);
       });
     },

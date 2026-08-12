@@ -80,7 +80,10 @@ export default function CreateEnvironment(scope: OrgScope): JSX.Element {
     );
   };
 
-  const canSubmit = !!name.trim() && (IS_CLOUD || !!dnsPrefix.trim()) && !!dataplaneId && !create.isPending;
+  // `isSuccess` keeps the control disabled through the deferred navigation:
+  // the mutation settles before the route changes, which would otherwise re-enable
+  // submit and allow a duplicate.
+  const canSubmit = !!name.trim() && (IS_CLOUD || !!dnsPrefix.trim()) && !!dataplaneId && !create.isPending && !create.isSuccess;
 
   return (
     <PageContent>

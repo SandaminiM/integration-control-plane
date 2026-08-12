@@ -115,7 +115,10 @@ export default function CreatePolicy(scope: OrgScope): JSX.Element {
     }
   };
 
-  const isSaving = createPolicy.isPending || updatePolicy.isPending;
+  // `isSuccess` keeps the control disabled through the deferred navigation:
+  // the mutation settles before the route changes, which would otherwise re-enable
+  // submit and allow a duplicate.
+  const isSaving = createPolicy.isPending || updatePolicy.isPending || createPolicy.isSuccess || updatePolicy.isSuccess;
   const canSave = !!name && selectedItems.length > 0 && isChanged && !isNameDuplicate;
 
   // Edit mode: show loading and not-found states before rendering the form.

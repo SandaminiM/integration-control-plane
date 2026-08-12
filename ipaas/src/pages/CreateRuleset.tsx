@@ -158,7 +158,10 @@ export default function CreateRuleset(scope: OrgScope): JSX.Element {
     }
   };
 
-  const isSaving = createRuleset.isPending || updateRuleset.isPending;
+  // `isSuccess` keeps the control disabled through the deferred navigation:
+  // the mutation settles before the route changes, which would otherwise re-enable
+  // submit and allow a duplicate.
+  const isSaving = createRuleset.isPending || updateRuleset.isPending || createRuleset.isSuccess || updateRuleset.isSuccess;
   const canSave = !!name && !!appliesTo && !!provider && !!rulesetContent && isChanged && !isNameDuplicate && isDocLinkValid && !readonly;
 
   if (isEditing && (rulesetLoading || rulesetListLoading)) {

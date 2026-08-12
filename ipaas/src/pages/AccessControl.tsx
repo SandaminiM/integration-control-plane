@@ -52,6 +52,10 @@ export default function AccessControl(): JSX.Element {
     }
   }, [isOrgPermissionsLoaded, canSeeAccessControl, navigate, orgHandler]);
 
+  // Redirects now wait for the destination's chunk, so rendering must stop here
+  // rather than showing access-control content to a user who lacks permission.
+  if (isOrgPermissionsLoaded && !canSeeAccessControl) return <PageContent>{null}</PageContent>;
+
   const tabIndex = ORG_TABS.indexOf(tab as string as (typeof ORG_TABS)[number]);
   const safeIndex = tabIndex < 0 ? 0 : tabIndex;
   return (
@@ -88,6 +92,10 @@ export function OrgAccessControl({ org }: { org: string }): JSX.Element {
     }
   }, [isOrgPermissionsLoaded, canSeeAccessControl, navigate, org]);
 
+  // Redirects now wait for the destination's chunk, so rendering must stop here
+  // rather than showing access-control content to a user who lacks permission.
+  if (isOrgPermissionsLoaded && !canSeeAccessControl) return <PageContent>{null}</PageContent>;
+
   const tabIndex = ORG_TABS.indexOf(tab as string as (typeof ORG_TABS)[number]);
   const safeIndex = tabIndex < 0 ? 0 : tabIndex;
   return (
@@ -123,6 +131,10 @@ export function ProjectAccessControl({ org, project }: { org: string; project: s
       navigate(`/organizations/${org}/projects/${project}`);
     }
   }, [canSeeAccessControl, isLoading, projectId, navigate, org, project]);
+
+  // Redirects now wait for the destination's chunk, so rendering must stop here
+  // rather than showing access-control content to a user who lacks permission.
+  if (!isLoading && projectId && !canSeeAccessControl) return <PageContent>{null}</PageContent>;
 
   const tabIndex = PROJECT_TABS.indexOf(tab as string as (typeof PROJECT_TABS)[number]);
   const safeIndex = tabIndex < 0 ? 0 : tabIndex;
@@ -166,6 +178,10 @@ export function ComponentAccessControl({ org, project, component }: ComponentSco
       navigate(`/organizations/${org}/projects/${project}/integrations/${component}`);
     }
   }, [canSeeAccessControl, loadingProject, loadingComponent, componentId, navigate, org, project, component]);
+
+  // Redirects now wait for the destination's chunk, so rendering must stop here
+  // rather than showing access-control content to a user who lacks permission.
+  if (!loadingProject && !loadingComponent && componentId && !canSeeAccessControl) return <PageContent>{null}</PageContent>;
 
   const tabIndex = PROJECT_TABS.indexOf(tab as string as (typeof PROJECT_TABS)[number]);
   const safeIndex = tabIndex < 0 ? 0 : tabIndex;

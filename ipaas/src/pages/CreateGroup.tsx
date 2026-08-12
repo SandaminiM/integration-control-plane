@@ -69,7 +69,7 @@ export default function CreateGroup(): JSX.Element {
         <Button variant="outlined" onClick={() => navigate(backUrl)}>
           Cancel
         </Button>
-        <Button variant="contained" onClick={submit} disabled={!groupName.trim() || mutation.isPending}>
+        <Button variant="contained" onClick={submit} disabled={!groupName.trim() || mutation.isPending || mutation.isSuccess}>
           Create
         </Button>
       </Stack>

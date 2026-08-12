@@ -50,12 +50,16 @@ export default function PrebuiltIntegrationDeploy(scope: ProjectScope): JSX.Elem
 
   useEffect(() => {
     if (isSuccess && componentHandler && (!configSaveError || configAlertDismissed)) {
-      clearAll();
       const overviewUrl = resourceUrl(narrow(scope, componentHandler), 'overview');
       navigate(overviewUrl, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuccess, componentHandler, configAlertDismissed]);
+
+  // Cleared on unmount, not before navigating: navigation waits for the next
+  // route's chunk, and wiping the context first drops this page into its
+  // "Integration not found" branch for the duration.
+  useEffect(() => clearAll, [clearAll]);
 
   if (!integration) {
     return (

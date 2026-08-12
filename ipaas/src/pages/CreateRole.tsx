@@ -133,7 +133,7 @@ export default function CreateRole(): JSX.Element {
         <Button variant="outlined" onClick={() => navigate(backUrl)}>
           Cancel
         </Button>
-        <Button variant="contained" onClick={submit} disabled={!roleName.trim() || mutation.isPending}>
+        <Button variant="contained" onClick={submit} disabled={!roleName.trim() || mutation.isPending || mutation.isSuccess}>
           Create
         </Button>
       </Stack>
