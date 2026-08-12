@@ -227,7 +227,19 @@ function AppLayoutInner(): JSX.Element {
   // there's at least one. Requires a resolved projectId + isFetched (not isLoading) because
   // useComponents is disabled until projectId resolves, and a disabled query reports
   // isLoading: false — which would let this fire before we actually know the component list.
-  const hideSidebarForEmptyProject = activeNavId === 'proj-overview' && !!projectId && isComponentsFetched && components.length === 0 && manuallyShownProjectId !== projectId;
+  //
+  // While isComponentsFetched is still false (e.g. a hard reload, where react-query's own cache
+  // is gone) fall back to the last known result for this project instead of assuming "not empty"
+  // — otherwise the sidebar flashes visible and then disappears once the query resolves.
+  const emptyProjectCacheKey = projectId ? `sidebar-empty-project:${projectId}` : null;
+  const cachedProjectIsEmpty = emptyProjectCacheKey ? sessionStorage.getItem(emptyProjectCacheKey) === 'true' : false;
+
+  useEffect(() => {
+    if (!emptyProjectCacheKey || !isComponentsFetched) return;
+    sessionStorage.setItem(emptyProjectCacheKey, String(components.length === 0));
+  }, [emptyProjectCacheKey, isComponentsFetched, components.length]);
+
+  const hideSidebarForEmptyProject = activeNavId === 'proj-overview' && !!projectId && (isComponentsFetched ? components.length === 0 : cachedProjectIsEmpty) && manuallyShownProjectId !== projectId;
 
   const handleHeaderToggle = () => {
     if (hideSidebarForEmptyProject) {
