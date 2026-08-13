@@ -107,7 +107,8 @@ test.describe('org overview @smoke', () => {
   // -------------------------------------------------------------------------
 
   test.skip('Platform Engineer/SRE persona shows relevant org overview', async () => {
-    // TODO: test the Platform Engineer/SRE persona selection path through onboarding.
+    // TODO: persona selection is currently commented out in OrgHome.tsx (not persisted
+    // anywhere) — revisit this test once/if that step comes back.
   });
 
   test.skip('EU region selection during onboarding', async () => {

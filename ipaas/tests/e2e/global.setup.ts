@@ -101,30 +101,38 @@ setup('authenticate', async ({ page }) => {
   // This ensures saved storage state never triggers onboarding screens in tests.
   await page.goto(`/organizations/${orgMatch[1]}/home`, { waitUntil: 'domcontentloaded' });
 
-  const personaVisible = await page
-    .getByRole('heading', { name: 'Welcome to WSO2 Integration Platform' })
-    .waitFor({ state: 'visible', timeout: 5_000 })
+  // Persona selection has been removed from onboarding (the choice wasn't persisted anywhere),
+  // so new users land straight on the region step — check for that directly rather than gating
+  // on a persona step that no longer appears.
+  const regionStepVisible = await page
+    .getByRole('heading', { name: 'Select Your Region' })
+    .waitFor({ state: 'visible', timeout: 10_000 })
     .then(() => true)
     .catch(() => false);
 
-  if (personaVisible) {
-    // Step 1 — Persona selector: Developer/Architect/PM is pre-selected; just click Next.
-    await page.getByRole('button', { name: 'Next' }).click();
+  if (regionStepVisible) {
+    // Region defaults to US already — no need to touch the dropdown.
+    await page.getByRole('button', { name: 'Get Started' }).click();
 
-    // Step 2 — Region selector may follow. Select US and continue.
-    const regionStep = await page
-      .getByRole('radio', { name: /US/i })
-      .first()
+    // "Get Started" provisions the org + default project then navigates to that project's
+    // own home page (Project.tsx) — not the org-level "All Projects" list. Check for a
+    // submission error first so a real setup failure (e.g. a scope/permission error from
+    // the backend) fails fast with its actual message instead of a generic 30s timeout.
+    // The static info banner above the form is also role="alert", so it's excluded by text.
+    const errorAlert = page.getByRole('alert').filter({ hasNotText: 'You can start with the default Cloud Data Plane' });
+    const setupFailed = await errorAlert
       .waitFor({ state: 'visible', timeout: 5_000 })
       .then(() => true)
       .catch(() => false);
-
-    if (regionStep) {
-      await page.getByRole('radio', { name: /US/i }).first().click();
-      await page.getByRole('button', { name: /continue/i }).click();
+    if (setupFailed) {
+      const message = await errorAlert.innerText();
+      throw new Error(`Onboarding "Get Started" failed: ${message}`);
     }
 
-    await page.getByRole('heading', { name: 'All Projects' }).waitFor({ state: 'visible', timeout: 15_000 });
+    // Assert the URL, not just an h1 — the region screen's own "Select Your Region" heading is
+    // itself an h1, so waiting on heading level alone can resolve immediately without ever
+    // waiting for provisioning + navigation to the project home page to actually complete.
+    await expect(page).toHaveURL(/\/organizations\/[^/]+\/projects\/[^/]+\/home/, { timeout: 30_000 });
   }
 
   // Save auth state after onboarding has been completed.

@@ -94,8 +94,7 @@ export function usePodLogs(projectId: string, componentName: string, releaseId: 
 export function useRedeployRelease() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { projectId: string; componentId: string; componentName: string; releaseId: string }) =>
-      redeployRelease(input.projectId, input.componentId, input.componentName, input.releaseId),
+    mutationFn: (input: { projectId: string; componentId: string; componentName: string; releaseId: string }) => redeployRelease(input.projectId, input.componentId, input.componentName, input.releaseId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [ROOT_KEY] });
       qc.invalidateQueries({ queryKey: ['componentDeployment'] });

@@ -20,8 +20,9 @@ import { useEffect, useState } from 'react';
 import type { JSX } from 'react';
 import { useParams } from 'react-router';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { Alert, Box, Button, ButtonBase, Card, CardContent, CircularProgress, FormControl, MenuItem, Select, Stack, Typography } from '@wso2/oxygen-ui';
-import { ArrowRight, Settings, Users } from '@wso2/oxygen-ui-icons-react';
+// ButtonBase, Stack (below) and ArrowRight, Settings, Users (icons) are only used by the
+// persona-selection step, which is commented out below — restore these imports alongside it.
+import { Alert, Box, Button, Card, CardContent, CircularProgress, FormControl, MenuItem, Select, Typography } from '@wso2/oxygen-ui';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useCreateDefaultProject, useFetchProjectsByOrgId, useInitOrg } from '../hooks/useOrg';
 import { useCreateProject } from '../hooks/useProjects';
@@ -33,20 +34,21 @@ import Projects from './Projects';
 const PERSONA_KEY = 'persona';
 const REGION_KEY = 'region';
 
-const PERSONAS = [
-  {
-    id: 'developer',
-    title: 'Developer/Architect/Product Manager',
-    description: 'Focus on building, testing, and deploying applications.',
-    Icon: Users,
-  },
-  {
-    id: 'platform-engineer',
-    title: 'Platform Engineer/SRE',
-    description: 'Focus on infrastructure, governance, service mesh, and monitoring.',
-    Icon: Settings,
-  },
-] as const;
+// Disabled along with the persona-selection step below — we aren't saving this anywhere yet.
+// const PERSONAS = [
+//   {
+//     id: 'developer',
+//     title: 'Developer/Architect/Product Manager',
+//     description: 'Focus on building, testing, and deploying applications.',
+//     Icon: Users,
+//   },
+//   {
+//     id: 'platform-engineer',
+//     title: 'Platform Engineer/SRE',
+//     description: 'Focus on infrastructure, governance, service mesh, and monitoring.',
+//     Icon: Settings,
+//   },
+// ] as const;
 
 const REGIONS = [
   { value: 'US', label: '🇺🇸 US' },
@@ -81,11 +83,13 @@ export default function OrgHome(): JSX.Element {
   const { orgHandler } = useParams<{ orgHandler: string }>();
   const navigate = useAppNavigate();
 
-  const [step, setStep] = useState<'checking' | 'persona' | 'region' | 'done'>(() => (localStorage.getItem(PERSONA_KEY) ? 'done' : 'checking'));
-  const [persona, setPersona] = useState<string>('developer');
+  const [step, setStep] = useState<'checking' | 'persona' | 'region' | 'provisioning-error' | 'done'>(() => (localStorage.getItem(PERSONA_KEY) ? 'done' : 'checking'));
+  // setPersona is unused while the persona-selection step below is commented out — restore it there.
+  const [persona] = useState<string>('developer');
   const [region, setRegion] = useState<string>('US');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [provisionError, setProvisionError] = useState<string | null>(null);
 
   const fetchProjects = useFetchProjectsByOrgId();
   const initOrgMutation = useInitOrg();
@@ -116,11 +120,19 @@ export default function OrgHome(): JSX.Element {
             const recent = usable.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
             localStorage.setItem(PERSONA_KEY, 'developer');
             navigate(projectHomeUrl(orgHandler!, recent.handler), { replace: true });
-          } else {
-            setStep('persona');
+            return undefined;
           }
+          // Cloud has no region-scoped data planes, so region selection doesn't apply here —
+          // provision the default project directly instead of showing that step.
+          return createCloudProjectMutation.mutateAsync({ name: 'Default', handler: DEFAULT_PROJECT_HANDLER, description: '', orgHandler: orgHandler! }).then(() => {
+            localStorage.setItem(PERSONA_KEY, 'developer');
+            navigate(projectHomeUrl(orgHandler!, DEFAULT_PROJECT_HANDLER), { replace: true });
+          });
         })
-        .catch(() => setStep('persona'));
+        .catch((err) => {
+          setProvisionError(err instanceof Error ? err.message : 'Setup failed. Please try again.');
+          setStep('provisioning-error');
+        });
       return;
     }
 
@@ -131,10 +143,12 @@ export default function OrgHome(): JSX.Element {
           localStorage.setItem(PERSONA_KEY, 'developer');
           setStep('done');
         } else {
-          setStep('persona');
+          // Persona selection is disabled (see the commented-out step below) — go straight to region.
+          setStep('region');
         }
       })
-      .catch(() => setStep('persona'));
+      .catch(() => setStep('region'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, orgNumericId, fetchProjects, navigate, orgHandler]);
 
   if (step === 'checking') {
@@ -142,6 +156,30 @@ export default function OrgHome(): JSX.Element {
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>
         <CircularProgress />
       </Box>
+    );
+  }
+
+  if (step === 'provisioning-error') {
+    return (
+      <OnboardingShell>
+        <Typography variant="h3" component="h1" sx={{ mb: 4 }}>
+          Something went wrong
+        </Typography>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {provisionError}
+        </Alert>
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              setProvisionError(null);
+              setStep('checking');
+            }}>
+            Retry
+          </Button>
+        </Box>
+      </OnboardingShell>
     );
   }
 
@@ -214,9 +252,7 @@ export default function OrgHome(): JSX.Element {
         </FormControl>
 
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5 }}>
-          <Button variant="outlined" color="secondary" onClick={() => setStep('persona')} disabled={isSubmitting}>
-            Back
-          </Button>
+          {/* Back → persona is disabled along with the persona step below — nothing to go back to. */}
           <Button variant="contained" color="primary" onClick={handleGetStarted} disabled={isSubmitting} startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : undefined}>
             {isSubmitting ? 'Setting up...' : 'Get Started'}
           </Button>
@@ -225,62 +261,67 @@ export default function OrgHome(): JSX.Element {
     );
   }
 
-  // step === 'persona'
-  return (
-    <OnboardingShell>
-      <Typography variant="h3" component="h1" sx={{ mb: 4 }}>
-        Welcome to WSO2 Integration Platform
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        WSO2 Integration Platform provides customized views for developers, architects, platform engineers, and SREs to streamline workflows.
-      </Typography>
-
-      <Typography variant="body2" sx={{ mb: 1.5 }}>
-        Select your persona to get started
-      </Typography>
-
-      <Box role="radiogroup" aria-label="Select your persona">
-        <Stack spacing={1.5}>
-          {PERSONAS.map(({ id, title, description, Icon }) => (
-            <ButtonBase
-              key={id}
-              role="radio"
-              aria-checked={persona === id}
-              tabIndex={0}
-              onClick={() => setPersona(id)}
-              sx={{
-                display: 'block',
-                width: '100%',
-                textAlign: 'left',
-                border: persona === id ? '2px solid' : '1px solid',
-                borderColor: persona === id ? 'primary.main' : 'divider',
-                borderRadius: 1,
-                '&:hover': { borderColor: 'primary.main' },
-                '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: '2px' },
-              }}>
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', py: 1.5, px: 2 }}>
-                <Box sx={{ color: 'primary.main', mt: 0.5, flexShrink: 0 }}>
-                  <Icon size={28} />
-                </Box>
-                <Box>
-                  <Typography variant="body1" fontWeight="bold">
-                    {title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {description}
-                  </Typography>
-                </Box>
-              </Box>
-            </ButtonBase>
-          ))}
-        </Stack>
-      </Box>
-
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-        <Button variant="contained" color="primary" onClick={() => setStep('region')} endIcon={<ArrowRight size={16} />}>
-          Next
-        </Button>
-      </Box>
-    </OnboardingShell>
-  );
+  // step === 'persona' — disabled for now, we aren't saving this selection anywhere.
+  // `setStep('persona')` is never called (all call sites above go straight to 'region'
+  // instead), so this is unreachable; kept commented out rather than deleted so it's
+  // easy to bring back once persona is actually persisted.
+  //
+  // return (
+  //   <OnboardingShell>
+  //     <Typography variant="h3" component="h1" sx={{ mb: 4 }}>
+  //       Welcome to WSO2 Integration Platform
+  //     </Typography>
+  //     <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+  //       WSO2 Integration Platform provides customized views for developers, architects, platform engineers, and SREs to streamline workflows.
+  //     </Typography>
+  //
+  //     <Typography variant="body2" sx={{ mb: 1.5 }}>
+  //       Select your persona to get started
+  //     </Typography>
+  //
+  //     <Box role="radiogroup" aria-label="Select your persona">
+  //       <Stack spacing={1.5}>
+  //         {PERSONAS.map(({ id, title, description, Icon }) => (
+  //           <ButtonBase
+  //             key={id}
+  //             role="radio"
+  //             aria-checked={persona === id}
+  //             tabIndex={0}
+  //             onClick={() => setPersona(id)}
+  //             sx={{
+  //               display: 'block',
+  //               width: '100%',
+  //               textAlign: 'left',
+  //               border: persona === id ? '2px solid' : '1px solid',
+  //               borderColor: persona === id ? 'primary.main' : 'divider',
+  //               borderRadius: 1,
+  //               '&:hover': { borderColor: 'primary.main' },
+  //               '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: '2px' },
+  //             }}>
+  //             <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', py: 1.5, px: 2 }}>
+  //               <Box sx={{ color: 'primary.main', mt: 0.5, flexShrink: 0 }}>
+  //                 <Icon size={28} />
+  //               </Box>
+  //               <Box>
+  //                 <Typography variant="body1" fontWeight="bold">
+  //                   {title}
+  //                 </Typography>
+  //                 <Typography variant="body2" color="text.secondary">
+  //                   {description}
+  //                 </Typography>
+  //               </Box>
+  //             </Box>
+  //           </ButtonBase>
+  //         ))}
+  //       </Stack>
+  //     </Box>
+  //
+  //     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+  //       <Button variant="contained" color="primary" onClick={() => setStep('region')} endIcon={<ArrowRight size={16} />}>
+  //         Next
+  //       </Button>
+  //     </Box>
+  //   </OnboardingShell>
+  // );
+  return <></>;
 }

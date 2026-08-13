@@ -71,20 +71,17 @@ export const fetchReleaseDetails = (_projectId: string, _componentId: string, co
   bff.get<CloudReleaseRuntime>(`${releasePath(componentName, releaseId)}/runtime`).then((raw) => toReleaseDetails(raw, releaseId));
 
 /** Pods for a release. An empty array is normal (scaled to zero, or no current binding). */
-export const fetchComponentPods = (_projectId: string, componentName: string, _clusterId: string, releaseId: string, _namespace: string): Promise<ClusterPod[]> =>
-  bff.get<ClusterPod[]>(`${releasePath(componentName, releaseId)}/pods`);
+export const fetchComponentPods = (_projectId: string, componentName: string, _clusterId: string, releaseId: string, _namespace: string): Promise<ClusterPod[]> => bff.get<ClusterPod[]>(`${releasePath(componentName, releaseId)}/pods`);
 
 /**
  * OpenChoreo has no pod-level metrics source — `podLevelMetrics` is always `[]`.
  * `componentLevelMetrics` is the real aggregate and is absent (not zeroed) whenever it
  * can't be resolved (no binding, Observer unreachable). Passed straight through.
  */
-export const fetchComponentPodMetrics = (_projectId: string, componentName: string, _clusterId: string, releaseId: string, _namespace: string): Promise<RuntimeMetrics> =>
-  bff.get<RuntimeMetrics>(`${releasePath(componentName, releaseId)}/metrics`);
+export const fetchComponentPodMetrics = (_projectId: string, componentName: string, _clusterId: string, releaseId: string, _namespace: string): Promise<RuntimeMetrics> => bff.get<RuntimeMetrics>(`${releasePath(componentName, releaseId)}/metrics`);
 
 /** Redeploy the currently deployed release ("Redeploy Release" button). No request body. */
-export const redeployRelease = (_projectId: string, _componentId: string, componentName: string, releaseId: string, _message?: string): Promise<void> =>
-  bff.post<{ message: string }>(`${releasePath(componentName, releaseId)}/redeploy`).then(() => undefined);
+export const redeployRelease = (_projectId: string, _componentId: string, componentName: string, releaseId: string, _message?: string): Promise<void> => bff.post<{ message: string }>(`${releasePath(componentName, releaseId)}/redeploy`).then(() => undefined);
 
 /** Recent lifecycle events for one pod (~1hr retention) — an empty array is normal. */
 export const fetchPodEvents = (_projectId: string, componentName: string, releaseId: string, _clusterId: string, _namespace: string, podName: string): Promise<PodEvent[]> =>

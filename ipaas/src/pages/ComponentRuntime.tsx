@@ -70,9 +70,9 @@ export default function ComponentRuntime({ org, project, component }: ComponentS
   // Falling back to componentId/releaseId while `release` is still loading would flash a
   // handler-shaped value that then flips to the real OpenChoreo UUID once it arrives —
   // show nothing until the authoritative value is in, rather than a mismatched one first.
-  const displayComponentId = IS_CLOUD ? release?.componentId ?? '' : componentId;
-  const displayReleaseId = IS_CLOUD ? release?.ID ?? '' : releaseId;
-  const displayImageUrl = IS_CLOUD ? release?.image : deployment?.imageUrl ?? undefined;
+  const displayComponentId = IS_CLOUD ? (release?.componentId ?? '') : componentId;
+  const displayReleaseId = IS_CLOUD ? (release?.ID ?? '') : releaseId;
+  const displayImageUrl = IS_CLOUD ? release?.image : (deployment?.imageUrl ?? undefined);
 
   const pods = useComponentPods(projectId, component, clusterId, releaseId, namespace);
   const metrics = useComponentPodMetrics(projectId, component, clusterId, releaseId, namespace);
@@ -80,13 +80,10 @@ export default function ComponentRuntime({ org, project, component }: ComponentS
   // release.replicas is a one-shot fetch (invalidated once right when Redeploy is clicked,
   // before the rollout settles) and then never refreshed, so it goes stale — e.g. it can get
   // stuck at 2 after a redeploy's old pod terminates. The live, polled pod count self-corrects.
-  const replicaCount = IS_CLOUD ? pods.data?.length ?? release?.replicas ?? 0 : release?.replicas ?? 0;
+  const replicaCount = IS_CLOUD ? (pods.data?.length ?? release?.replicas ?? 0) : (release?.replicas ?? 0);
   // cloud has no pod-level metrics source and instead sends a pre-aggregated total; wip's
   // backend only ever gives per-pod metrics, so it's summed against pod resource limits.
-  const usage = useMemo(
-    () => (metrics.data?.componentLevelMetrics ? usageFromComponentLevelMetrics(metrics.data.componentLevelMetrics) : calculateAggregateUsage(pods.data ?? [], metrics.data?.podLevelMetrics ?? [])),
-    [pods.data, metrics.data],
-  );
+  const usage = useMemo(() => (metrics.data?.componentLevelMetrics ? usageFromComponentLevelMetrics(metrics.data.componentLevelMetrics) : calculateAggregateUsage(pods.data ?? [], metrics.data?.podLevelMetrics ?? [])), [pods.data, metrics.data]);
   // cloud sends componentLevelMetrics only when it can resolve one (Observer reachable) —
   // when it's absent but pods are actually running, "0 used" would misreport unknown as zero.
   const usageUnavailable = IS_CLOUD && !metrics.data?.componentLevelMetrics && (pods.data?.length ?? 0) > 0;
@@ -95,10 +92,7 @@ export default function ComponentRuntime({ org, project, component }: ComponentS
   const { data: hpa, isLoading: loadingHpa, isError: hpaError, refetch: refetchHpa } = useHpa(projectId, componentId, releaseId);
   const { data: scalingState } = useScalingState(projectId, componentId, releaseId);
   const scalingPath = useMemo(() => ({ componentId, releaseId }), [componentId, releaseId]);
-  const podScope = useMemo(
-    () => ({ projectId, clusterId, namespace, releaseId, orgHandler: org, projectHandler: project, componentHandler: component }),
-    [projectId, clusterId, namespace, releaseId, org, project, component],
-  );
+  const podScope = useMemo(() => ({ projectId, clusterId, namespace, releaseId, orgHandler: org, projectHandler: project, componentHandler: component }), [projectId, clusterId, namespace, releaseId, org, project, component]);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Landing straight on this page skips the Overview, which is where component-scoped
