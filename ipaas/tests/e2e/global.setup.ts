@@ -129,7 +129,10 @@ setup('authenticate', async ({ page }) => {
       throw new Error(`Onboarding "Get Started" failed: ${message}`);
     }
 
-    await page.getByRole('heading', { level: 1 }).waitFor({ state: 'visible', timeout: 30_000 });
+    // Assert the URL, not just an h1 — the region screen's own "Select Your Region" heading is
+    // itself an h1, so waiting on heading level alone can resolve immediately without ever
+    // waiting for provisioning + navigation to the project home page to actually complete.
+    await expect(page).toHaveURL(/\/organizations\/[^/]+\/projects\/[^/]+\/home/, { timeout: 30_000 });
   }
 
   // Save auth state after onboarding has been completed.
