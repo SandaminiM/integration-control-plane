@@ -34,21 +34,28 @@ import SetupInstructionsButton from './SetupInstructionsButton';
 import type { IntegrationModule } from '../../../types/integration';
 import { IS_CLOUD } from '../../../features';
 
+const trimSlashes = (s: string): string => s.replace(/^\/+|\/+$/g, '');
+
 function buildRepoUrl(repo: Repository): string {
-  const { gitProvider, organizationApp, nameApp, branch, appSubPath, bitbucketServerUrl, serverUrl, projectApp } = repo;
-  const subPath = appSubPath || '';
+  const { gitProvider, branch, bitbucketServerUrl, projectApp } = repo;
+  // Trim every segment here so the joins below never double up.
+  const organizationApp = trimSlashes(repo.organizationApp);
+  const nameApp = trimSlashes(repo.nameApp);
+  const serverUrl = trimSlashes(repo.serverUrl || '');
+  const subPath = trimSlashes(repo.appSubPath || '');
+  const suffix = subPath ? `/${subPath}` : '';
   const encodedBranch = encodeURIComponent(branch);
   switch (gitProvider) {
     case 'github':
-      return `https://github.com/${organizationApp}/${nameApp}/tree/${encodedBranch}/${subPath}`;
+      return `https://github.com/${organizationApp}/${nameApp}/tree/${encodedBranch}${suffix}`;
     case 'bitbucket':
-      return `https://bitbucket.org/${organizationApp}/${nameApp}/src/HEAD/${subPath}?at=${encodedBranch}`;
+      return `https://bitbucket.org/${organizationApp}/${nameApp}/src/HEAD${suffix}?at=${encodedBranch}`;
     case 'bitbucket_server': {
-      const base = (bitbucketServerUrl || serverUrl || '').replace(/\/$/, '');
-      return `${base}/projects/${organizationApp}/repos/${nameApp}/browse/${subPath}?at=${encodedBranch}`;
+      const base = trimSlashes(bitbucketServerUrl || '') || serverUrl;
+      return `${base}/projects/${organizationApp}/repos/${nameApp}/browse${suffix}?at=${encodedBranch}`;
     }
     case 'gitlab_self_managed':
-      return `${serverUrl || ''}/${organizationApp}/${nameApp}`;
+      return `${serverUrl}/${organizationApp}/${nameApp}`;
     case 'azure_devops':
       return `https://dev.azure.com/${organizationApp}/${projectApp}/_git/${nameApp}?path=${subPath}&version=GB${branch}`;
     default:
