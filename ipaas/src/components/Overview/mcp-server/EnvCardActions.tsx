@@ -91,7 +91,7 @@ export default function EnvCardActions({
   return (
     <>
       {hasDeployment && (
-        <Tooltip title={canTest ? '' : 'Available once the deployment is active'}>
+        <Tooltip title={canTest ? 'Test' : 'Available once the deployment is active'}>
           <span>
             <Button
               variant="text"
