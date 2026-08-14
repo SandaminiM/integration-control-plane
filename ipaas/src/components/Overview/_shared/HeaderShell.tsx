@@ -27,41 +27,13 @@ import { useChoreoSampleImages } from '../../../hooks/useRepository';
 import LabelDialog from '../../LabelDialog';
 import { formatDistanceToNow } from '../../../utils/time';
 import { getGitProviderIcon } from '../../../utils/build';
+import { buildRepoBrowseUrl } from '../../../utils/gitProviderUrl';
 import { useAuth } from '../../../auth/AuthContext';
 import { useOrgUuid } from '../../../hooks/useOrgUuid';
 import { getDisplayLabel } from '../../../constants/integrations';
 import SetupInstructionsButton from './SetupInstructionsButton';
 import type { IntegrationModule } from '../../../types/integration';
 import { IS_CLOUD } from '../../../features';
-
-const trimSlashes = (s: string): string => s.replace(/^\/+|\/+$/g, '');
-
-function buildRepoUrl(repo: Repository): string {
-  const { gitProvider, branch, bitbucketServerUrl, projectApp } = repo;
-  // Trim every segment here so the joins below never double up.
-  const organizationApp = trimSlashes(repo.organizationApp);
-  const nameApp = trimSlashes(repo.nameApp);
-  const serverUrl = trimSlashes(repo.serverUrl || '');
-  const subPath = trimSlashes(repo.appSubPath || '');
-  const suffix = subPath ? `/${subPath}` : '';
-  const encodedBranch = encodeURIComponent(branch);
-  switch (gitProvider) {
-    case 'github':
-      return `https://github.com/${organizationApp}/${nameApp}/tree/${encodedBranch}${suffix}`;
-    case 'bitbucket':
-      return `https://bitbucket.org/${organizationApp}/${nameApp}/src/HEAD${suffix}?at=${encodedBranch}`;
-    case 'bitbucket_server': {
-      const base = trimSlashes(bitbucketServerUrl || '') || serverUrl;
-      return `${base}/projects/${organizationApp}/repos/${nameApp}/browse${suffix}?at=${encodedBranch}`;
-    }
-    case 'gitlab_self_managed':
-      return `${serverUrl}/${organizationApp}/${nameApp}`;
-    case 'azure_devops':
-      return `https://dev.azure.com/${organizationApp}/${projectApp}/_git/${nameApp}?path=${subPath}&version=GB${branch}`;
-    default:
-      return `https://github.com/${organizationApp}/${nameApp}`;
-  }
-}
 
 const REST_API_TYPES = new Set(['restApi', 'byocRestApi', 'miRestApi', 'buildRestApi', 'miApiService', 'ballerinaService', 'byocService', 'byoiService', 'graphql', 'buildpackService']);
 
@@ -234,7 +206,7 @@ export default function ComponentHeader({ component, project, repository, latest
   // TODO: Remove the gate once the BFF injects GIT_* for source components.
   const showOpenInEditor = hasSource && !module?.hideOpenInEditor && !IS_CLOUD;
 
-  const repoUrl = repository ? buildRepoUrl(repository) : null;
+  const repoUrl = repository ? buildRepoBrowseUrl(repository) : null;
   const ProviderIcon = getGitProviderIcon(repository?.gitProvider);
 
   const orgUuidFromToken = useOrgUuid() ?? '';
