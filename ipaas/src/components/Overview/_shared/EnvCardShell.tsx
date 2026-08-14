@@ -153,8 +153,10 @@ export default function EnvCardShell({ component, env, prevEnv, versionId, proje
             hasDeployment={!!envDeployment}
             isRefreshing={isRefreshing}
             onRefresh={handleRefresh}
-            status={HeaderStatus ? <HeaderStatus {...slotProps} /> : undefined}
-            actions={EnvCardActions ? <EnvCardActions {...slotProps} /> : undefined}
+            // Held back while loading so the card settles in one go: the bodies
+            // already skeleton, and these would otherwise render off a null status.
+            status={HeaderStatus && !loadingDeployment ? <HeaderStatus {...slotProps} /> : undefined}
+            actions={EnvCardActions && !loadingDeployment ? <EnvCardActions {...slotProps} /> : undefined}
           />
         )}
 

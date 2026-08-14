@@ -18,13 +18,30 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchBuildLogs, fetchBuildRunLogs } from '#api/builds';
+import type { BuildRunLogs } from '../types/build';
+import { logsBehindBuild } from '../utils/buildProgress';
 
-export function useBuildLogs(componentId: string, versionId: string, workflowName: string, isInProgress: boolean, enabled = true) {
+interface BuildLogsPolling {
+  /** The build's own verdict; drives the cadence and how long polling runs on for. */
+  status?: string;
+  conclusion?: string | null;
+  /** Slow refresh while the user is actually watching the log panel. */
+  keepFresh?: boolean;
+}
+
+export function useBuildLogs(componentId: string, versionId: string, workflowName: string, enabled = true, polling: BuildLogsPolling = {}) {
+  const { status, conclusion, keepFresh } = polling;
   return useQuery({
     queryKey: ['buildLogs', componentId, versionId, workflowName],
     queryFn: () => fetchBuildLogs(componentId, versionId, workflowName),
     enabled: enabled && !!componentId && !!versionId && !!workflowName,
-    refetchInterval: isInProgress ? 5000 : false,
+    refetchInterval: (query) => {
+      if (status === 'in_progress') return 5000;
+      // A finished build is not the end of the logs: the failing step often
+      // resolves a beat later, and log lines keep arriving from the pipeline.
+      if (logsBehindBuild(status, conclusion, query.state.data as BuildRunLogs | null | undefined)) return 5000;
+      return keepFresh ? 15000 : false;
+    },
   });
 }
 
