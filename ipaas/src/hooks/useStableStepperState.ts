@@ -31,6 +31,8 @@ interface RefState {
   buildId: number | null;
   state: StepperState;
   hasRealData: boolean;
+  /** Signature of what is already in storage, so identical state is not rewritten. */
+  persisted: string | null;
 }
 
 const STORAGE_KEY_PREFIX = 'integration-platform-build-stepper-';
@@ -57,6 +59,11 @@ function readFromStorage(buildId: number): StepperState | null {
   }
 }
 
+function stateSignature(s: StepperState): string {
+  const set = (v: Set<number>) => [...v].sort((a, b) => a - b).join('.');
+  return [s.activeIndex, s.isError ? 1 : 0, set(s.skippedStages), set(s.failedStages), set(s.passedStages)].join('|');
+}
+
 function writeToStorage(buildId: number, state: StepperState): void {
   try {
     const toStore: PersistedState = {
@@ -71,6 +78,19 @@ function writeToStorage(buildId: number, state: StepperState): void {
     // sessionStorage unavailable — the in-memory ref still prevents
     // oscillation for the life of this mount.
   }
+}
+
+/**
+ * Mirror the state to storage only when it actually changed. The stepper renders
+ * many times per build — polls, parent re-renders — and a completed build would
+ * otherwise re-serialise the same object on every one of them.
+ */
+function persist(ref: RefState, buildId: number | null, state: StepperState): void {
+  if (buildId === null) return;
+  const signature = stateSignature(state);
+  if (ref.persisted === signature) return;
+  writeToStorage(buildId, state);
+  ref.persisted = signature;
 }
 
 export interface StableStepperResult {
@@ -100,7 +120,7 @@ export function useStableStepperState(
   buildConclusion: string | null | undefined,
   logsAvailable: boolean
 ): StableStepperResult {
-  const stableRef = useRef<RefState>({ buildId: null, state: copyState(rawState), hasRealData: false });
+  const stableRef = useRef<RefState>({ buildId: null, state: copyState(rawState), hasRealData: false, persisted: null });
 
   const isInProgress = buildStatus === 'in_progress';
   const isCompleted = buildStatus === 'completed';
@@ -112,7 +132,7 @@ export function useStableStepperState(
   // show one frame of the previous build's progress.
   if (stableRef.current.buildId !== buildId) {
     const stored = buildId !== null ? readFromStorage(buildId) : null;
-    stableRef.current = { buildId, state: stored ?? copyState(rawState), hasRealData: stored !== null };
+    stableRef.current = { buildId, state: stored ?? copyState(rawState), hasRealData: stored !== null, persisted: stored ? stateSignature(stored) : null };
   }
 
   if (isCompleted) {
@@ -123,7 +143,7 @@ export function useStableStepperState(
       // breaking step unresolved, and raw alone would drag the stepper back to
       // an earlier stage and mark that one failed.
       const settled = isSuccess ? rawState : mergeForward(stableRef.current.state, rawState);
-      if (buildId !== null) writeToStorage(buildId, settled);
+      persist(stableRef.current, buildId, settled);
       stableRef.current.state = copyState(settled);
       stableRef.current.hasRealData = true;
       return { state: settled, isReadyToShow: true };
@@ -152,7 +172,7 @@ export function useStableStepperState(
   if (hasAdvanced) {
     stableRef.current.state = next;
     stableRef.current.hasRealData = true;
-    if (buildId !== null) writeToStorage(buildId, next);
+    persist(stableRef.current, buildId, next);
   }
 
   return { state: stableRef.current.state, isReadyToShow: true };

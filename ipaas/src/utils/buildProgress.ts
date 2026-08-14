@@ -41,6 +41,21 @@ export function isFailedConclusion(conclusion?: string | null): boolean {
   return c === 'failure' || c === 'failed';
 }
 
+export function isSkippedConclusion(conclusion?: string | null): boolean {
+  return (conclusion ?? '').toLowerCase() === 'skipped';
+}
+
+/**
+ * Wording for a conclusion we have no specific copy for — `timed_out` reads as
+ * "Timed Out". Covers the terminal-but-not-success-or-failure verdicts
+ * (cancelled, timed out, neutral) so they never surface as "Unknown".
+ */
+export function humanizeConclusion(conclusion?: string | null): string {
+  const c = (conclusion ?? '').trim();
+  if (!c) return 'Unknown';
+  return c.replace(/[_-]+/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
 export function emptyStepperState(): StepperState {
   return { activeIndex: -1, isError: false, skippedStages: new Set(), failedStages: new Set(), passedStages: new Set() };
 }
@@ -76,7 +91,7 @@ export function getBuildStatus(status: string | undefined, conclusion: string | 
     BUILD_STAGES.forEach(({ key }, i) => {
       const steps = stageSteps(logs, key);
       if (steps.length === 0) return;
-      const allSkipped = steps.every((s) => s.conclusion === 'skipped');
+      const allSkipped = steps.every((s) => isSkippedConclusion(s.conclusion));
       const anyFailed = steps.some((s) => isFailedConclusion(s.conclusion));
       if (allSkipped) skippedStages.add(i);
       if (anyFailed) failedStages.add(i);

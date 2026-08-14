@@ -17,7 +17,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { buildStepperSteps, failedStepPhrase, getBuildStatus, logsBehindBuild, mergeForward, stepStatusAt, type StepperState } from './buildProgress';
+import { buildStepperSteps, failedStepPhrase, getBuildStatus, humanizeConclusion, isSkippedConclusion, logsBehindBuild, mergeForward, stepStatusAt, type StepperState } from './buildProgress';
 import { BUILD_STAGES } from '../constants/build';
 import type { BuildRunLogs, BuildStage } from '../types/build';
 
@@ -104,6 +104,13 @@ describe('getBuildStatus', () => {
     expect(statuses(state)).toEqual(['skipped', 'inProgress', 'notStarted']);
   });
 
+  it('recognises a skipped stage whatever the case of the conclusion', () => {
+    const state = getBuildStatus('in_progress', '', logs(stage('completed', ['SKIPPED']), stage('in_progress', [null]), stage(null)));
+    expect([...state.skippedStages]).toEqual([0]);
+    expect([...state.passedStages]).toEqual([]);
+    expect(statuses(state)).toEqual(['skipped', 'inProgress', 'notStarted']);
+  });
+
   it('detects a stage failure while the build still reports in progress', () => {
     const state = getBuildStatus('in_progress', '', logs(stage('completed', ['failure']), stage(null), stage(null)));
     expect([...state.failedStages]).toEqual([0]);
@@ -154,6 +161,37 @@ describe('failedStepPhrase', () => {
   it('gives no phrase without logs or without a failure', () => {
     expect(failedStepPhrase(null)).toBeUndefined();
     expect(failedStepPhrase(logs(named([{ name: 'checkout-source', conclusion: 'success' }]), stage(null), stage(null)))).toBeUndefined();
+  });
+});
+
+describe('isSkippedConclusion', () => {
+  it('matches regardless of case', () => {
+    expect(isSkippedConclusion('skipped')).toBe(true);
+    expect(isSkippedConclusion('SKIPPED')).toBe(true);
+    expect(isSkippedConclusion('Skipped')).toBe(true);
+  });
+
+  it('rejects anything else', () => {
+    expect(isSkippedConclusion('success')).toBe(false);
+    expect(isSkippedConclusion(null)).toBe(false);
+    expect(isSkippedConclusion(undefined)).toBe(false);
+  });
+});
+
+describe('humanizeConclusion', () => {
+  it('spaces and title-cases a snake_case verdict', () => {
+    expect(humanizeConclusion('timed_out')).toBe('Timed Out');
+  });
+
+  it('title-cases a single word', () => {
+    expect(humanizeConclusion('cancelled')).toBe('Cancelled');
+  });
+
+  it('falls back to Unknown for an absent verdict', () => {
+    expect(humanizeConclusion('')).toBe('Unknown');
+    expect(humanizeConclusion('   ')).toBe('Unknown');
+    expect(humanizeConclusion(null)).toBe('Unknown');
+    expect(humanizeConclusion(undefined)).toBe('Unknown');
   });
 });
 

@@ -17,6 +17,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
+import { useRef } from 'react';
 import { fetchBuildLogs, fetchBuildRunLogs } from '#api/builds';
 import type { BuildRunLogs } from '../types/build';
 import { logsBehindBuild } from '../utils/buildProgress';
@@ -29,17 +30,34 @@ interface BuildLogsPolling {
   keepFresh?: boolean;
 }
 
+/**
+ * How long logs keep being chased at full speed after a build finishes. A run
+ * killed mid-flight can leave its tasks unresolved for ever, so the catch-up
+ * window has to end rather than poll until the page closes.
+ */
+const LOG_SETTLE_WINDOW_MS = 60_000;
+
 export function useBuildLogs(componentId: string, versionId: string, workflowName: string, enabled = true, polling: BuildLogsPolling = {}) {
   const { status, conclusion, keepFresh } = polling;
+  // Start of the current build's catch-up window, keyed by build so a new one
+  // gets a fresh window. Written from the refetch callback, not during render.
+  const settleRef = useRef<{ key: string; startedAt: number } | null>(null);
+
   return useQuery({
     queryKey: ['buildLogs', componentId, versionId, workflowName],
     queryFn: () => fetchBuildLogs(componentId, versionId, workflowName),
     enabled: enabled && !!componentId && !!versionId && !!workflowName,
     refetchInterval: (query) => {
-      if (status === 'in_progress') return 5000;
+      if (status === 'in_progress') {
+        settleRef.current = null;
+        return 5000;
+      }
       // A finished build is not the end of the logs: the failing step often
       // resolves a beat later, and log lines keep arriving from the pipeline.
-      if (logsBehindBuild(status, conclusion, query.state.data as BuildRunLogs | null | undefined)) return 5000;
+      if (logsBehindBuild(status, conclusion, query.state.data as BuildRunLogs | null | undefined)) {
+        if (settleRef.current?.key !== workflowName) settleRef.current = { key: workflowName, startedAt: Date.now() };
+        if (Date.now() - settleRef.current.startedAt < LOG_SETTLE_WINDOW_MS) return 5000;
+      }
       return keepFresh ? 15000 : false;
     },
   });

@@ -23,7 +23,7 @@ import { BUILD_STAGES } from '../constants/build';
 import { useDeploymentStatus } from '../hooks/useDeployments';
 import { useBuildLogs } from '../hooks/useBuilds';
 import { useStableStepperState } from '../hooks/useStableStepperState';
-import { buildStepperSteps, failedStepPhrase, getBuildStatus, isFailedConclusion } from '../utils/buildProgress';
+import { buildStepperSteps, failedStepPhrase, getBuildStatus, humanizeConclusion, isFailedConclusion } from '../utils/buildProgress';
 import type { Commit } from '../types/repository';
 import BuildLogViewer from './BuildLogViewer';
 import HorizontalStepper from './HorizontalStepper';
@@ -133,6 +133,11 @@ export default function BuildCard({ componentId, versionId, latestCommit }: Buil
   } else if (status === 'completed' && isFailedConclusion(conclusion)) {
     statusLabel = failedLabel;
     statusDotColor = 'error.main';
+  } else if (status === 'completed') {
+    // Terminal, but neither success nor failure — cancelled, timed out, neutral.
+    // Name the verdict rather than leaving the card reading "Unknown".
+    statusLabel = humanizeConclusion(conclusion);
+    statusDotColor = 'text.secondary';
   }
 
   // A finished build whose real stage state is still unknown gets a placeholder
