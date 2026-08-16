@@ -19,6 +19,49 @@
 import type { EnvEndpoint } from '../types/component';
 
 /**
+ * Drop a redundant leading "Endpoint" word from a label, so "Endpoint Covid Status"
+ * reads as "Covid Status". The trailing whitespace is required: without it the word
+ * boundary also matches before a hyphen, turning the generated key "endpoint-9097"
+ * into "-9097".
+ */
+export function trimEndpointName(name: string): string {
+  const raw = name ?? '';
+  return (
+    raw
+      .replace(/^\s*Endpoint\s+/i, '')
+      .replace(/\s+/g, ' ')
+      .trim() || raw
+  );
+}
+
+/** Endpoint keys the build pipeline generates when the spec title was unusable. */
+const GENERATED_ENDPOINT_KEY = /^endpoint-\d+$/i;
+
+const hasLetter = (value: string) => /[a-z]/i.test(value);
+
+/**
+ * Resolve the label to show for an endpoint.
+ *
+ * The Ballerina OpenAPI generator derives `info.title` from the service base path, so
+ * `service / on ...` yields "/", a listener with no base path yields "", and a service
+ * bound to a listener variable yields a numeric hash. None of those name anything, and
+ * the build pipeline applies the same "must contain a letter" test when it generates the
+ * endpoint key (RFC 6335), falling back to `endpoint-<port>`.
+ *
+ * Order: spec title → endpoint key (when it is not that generated form, so component.yaml
+ * names like "greeter-api" still win) → the port number.
+ */
+export function getEndpointLabel(endpoint: { displayName?: string | null; name?: string | null; port?: number | null }): string {
+  const title = trimEndpointName(endpoint.displayName ?? '').trim();
+  if (hasLetter(title)) return title;
+
+  const key = trimEndpointName(endpoint.name ?? '').trim();
+  if (hasLetter(key) && !GENERATED_ENDPOINT_KEY.test(key)) return key;
+
+  return endpoint.port != null ? String(endpoint.port) : key;
+}
+
+/**
  * Resolve the URL to invoke an endpoint at, preferring the widest network
  * visibility it is exposed on (Public → Organization → Project), then any URL
  * available. The trailing slash is stripped so a path can be appended cleanly.
