@@ -213,21 +213,38 @@ const listEnvGroups = async (projectId: string, env: string): Promise<BffEnvGrou
   return fetchEnvGroups(componentId, projectId, env);
 };
 
-// ── release (synthetic container carrying the resolved env) ────────────────────
+// ── release (real container data, keyed by the resolved env) ───────────────────
 
-// Cloud has no release/container resource. Resolve the environment for the
-// release and return it AS the (single, MAIN) container id, so the mount/delete
-// functions — which receive containerId but not envId — read the env off it.
+// Cloud has no release resource distinct from an app-environment binding, so
+// releaseId resolves to an environment (see envForRelease), and the container's
+// `ID` stays the environment string — every downstream consumer (config
+// mounts, scaling, health checks, storage) reads containerId expecting the env,
+// not a real container id; changing that would break them. `name` is display-only
+// (never used for addressing), so it keeps the real container name from the BFF,
+// falling back to the env only if the BFF didn't return one. Real container
+// fields (image/resources/ports/pull-policy/command/args) come from the BFF's
+// Containers endpoint, keyed on that same env — its JSON shape already matches
+// ReleaseContainer field-for-field, so the response is spread in directly.
 export const getReleaseById = async (_orgUuid: string, _projectId: string, componentId: string, releaseId: string): Promise<ReleaseDetails> => {
   const env = await envForRelease(componentId, releaseId);
-  if (env) setComponentForEnv(env, componentId);
-  const containers: ReleaseContainer[] = env ? [{ ID: env, name: env, type: 'MAIN' }] : [];
-  return { ID: releaseId, containers };
+  if (!env) return { ID: releaseId, containers: [] };
+  setComponentForEnv(env, componentId);
+  const list = await bff.get<ListResponse<ReleaseContainer>>(`${filesBase(componentId, env)}/containers`).catch(() => null);
+  const real = items(list)[0] ?? ({} as Partial<ReleaseContainer>);
+  return { ID: releaseId, containers: [{ ...real, ID: env, name: real.name ?? env, type: real.type ?? 'MAIN' }] };
 };
 
-/** Container editing is a WIP-only devops surface; OpenChoreo has no equivalent BFF endpoint. */
-export const updateContainer = (_orgUuid: string, _projectId: string, _componentId: string, _releaseId: string, _containerId: string, _data: ContainerWriteData): Promise<ReleaseContainer> =>
-  Promise.reject(new Error('[cloud] devopsConfigs.updateContainer: not implemented'));
+// PUT splits into a ReleaseBinding write (cpu/memory/limits/pull-policy, visible
+// on the next GET once the rollout completes) and a declarative-only Workload
+// write (command/args, takes effect only on the next release cut+promote) on the
+// BFF side — see ipaas-service's CONTAINERS_FEATURE_PROMPT.md. containerId is the
+// env (carried through from getReleaseById); the URL's containerId segment is a
+// fixed literal since the BFF ignores it — there is only ever one container.
+export const updateContainer = async (_orgUuid: string, _projectId: string, componentId: string, _releaseId: string, containerId: string, data: ContainerWriteData): Promise<ReleaseContainer> => {
+  const env = containerId;
+  await bff.put(`${filesBase(componentId, env)}/containers/main`, data);
+  return { ID: env, name: env, type: 'MAIN', ...data };
+};
 
 // ── config maps / secrets = env-var groups (files have no env-scoped source) ───
 
