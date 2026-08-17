@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Step as MuiStep, StepLabel, Stepper, stepConnectorClasses } from '@wso2/oxygen-ui';
+import { Step as OxyStep, StepLabel, Stepper, stepConnectorClasses } from '@wso2/oxygen-ui';
 import type { JSX, ReactNode } from 'react';
 import type { Step, StepperSize, StepStatus } from '../types/stepper';
 import { FailedIcon, InProgressIcon, QueuedIcon, SkippedIcon, SuccessIcon } from './StatusIcons';
@@ -91,11 +91,11 @@ export default function HorizontalStepper({ steps, currentStepIndex, size = 'm',
         '& .MuiStepLabel-label': { fontSize: `${cfg.label}px`, color: 'text.primary', '&.Mui-active': { fontWeight: 500 } },
       }}>
       {steps.map((step, index) => (
-        <MuiStep key={step.id}>
+        <OxyStep key={step.id}>
           <StepLabel StepIconComponent={CustomStepIcon} icon={statusIcon(step.status, cfg.icon)} sx={{ transition: 'transform 0.3s ease', transform: index === currentStepIndex ? 'scale(1.05)' : 'none' }}>
             {step.label}
           </StepLabel>
-        </MuiStep>
+        </OxyStep>
       ))}
     </Stepper>
   );
