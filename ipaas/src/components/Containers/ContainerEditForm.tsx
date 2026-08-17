@@ -73,8 +73,7 @@ export default function ContainerEditForm({ container, projectId, componentId, r
         </Alert>
       )}
 
-      {/* Toggling limits on/off isn't supported for cloud; the sliders below still
-          reflect whatever limitsEnabled the container's actual data carries. */}
+      {/* Toggling limits on/off isn't supported for cloud; */}
       {isPaidOrPdpUser && !IS_CLOUD && (
         <FormControlLabel
           labelPlacement="start"

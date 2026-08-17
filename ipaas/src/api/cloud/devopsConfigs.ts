@@ -216,15 +216,19 @@ const listEnvGroups = async (projectId: string, env: string): Promise<BffEnvGrou
 // ── release (real container data, keyed by the resolved env) ───────────────────
 
 // Cloud has no release resource distinct from an app-environment binding, so
-// releaseId resolves to an environment (see envForRelease), and the container's
-// `ID` stays the environment string — every downstream consumer (config
-// mounts, scaling, health checks, storage) reads containerId expecting the env,
-// not a real container id; changing that would break them. `name` is display-only
-// (never used for addressing), so it keeps the real container name from the BFF,
-// falling back to the env only if the BFF didn't return one. Real container
-// fields (image/resources/ports/pull-policy/command/args) come from the BFF's
-// Containers endpoint, keyed on that same env — its JSON shape already matches
-// ReleaseContainer field-for-field, so the response is spread in directly.
+// releaseId resolves to an environment via envForRelease. `ID` is aliased to
+// that env string on purpose — every downstream consumer (config mounts,
+// scaling, health checks, storage) addresses the container by env, not a real
+// container id, so changing `ID` here would break them.
+//
+// `name` isn't under that constraint (nothing addresses by it), so it keeps
+// the real container name from the BFF, falling back to the env only if the
+// BFF didn't return one.
+//
+// The rest of the container fields (image/resources/ports/pull-policy/
+// command/args) come from the BFF's Containers endpoint, keyed on the same
+// env — its JSON already matches ReleaseContainer field-for-field, so the
+// response is spread in directly.
 export const getReleaseById = async (_orgUuid: string, _projectId: string, componentId: string, releaseId: string): Promise<ReleaseDetails> => {
   const env = await envForRelease(componentId, releaseId);
   if (!env) return { ID: releaseId, containers: [] };
