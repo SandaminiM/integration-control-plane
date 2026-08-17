@@ -36,7 +36,7 @@ export default function BuildDetails({ componentId, versionId, build, onLogsTogg
   const [buildIdCopied, setBuildIdCopied] = useState(false);
   const workflowName = build.buildRef ?? String(build.id);
   const isInProgress = build.status === 'in_progress';
-  const { data: logs = null, isLoading: logsLoading } = useBuildLogs(componentId, versionId, workflowName, isInProgress);
+  const { data: logs = null, isLoading: logsLoading } = useBuildLogs(componentId, versionId, workflowName, true, { status: build.status, conclusion: build.conclusion });
 
   // Copy the full identifier; the displayed `#id` is only its numeric suffix.
   const handleCopyBuildId = () => {
