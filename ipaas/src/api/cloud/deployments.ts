@@ -47,6 +47,7 @@ import type { ComponentDeployment, BuildRun, ReleaseMgtDeployment, DeploymentTra
 import type { EnvEndpoint } from '../../types/component';
 import type { DeployComponentInput } from '../../types/build';
 import { bff, items, q, seg, type ListResponse, type MessageResponse } from './_client';
+import { getEndpointLabel } from '../../utils/endpoints';
 
 // Underscored params (_orgHandler, _orgUuid, _projectId, _versionId) are kept
 // on these signatures for devant contract parity; cloud does not use them.
@@ -92,7 +93,7 @@ function toEnvEndpoint(ep: BffEndpointResources, releaseId: string): EnvEndpoint
     id: ep.name,
     releaseId,
     environmentId: '',
-    displayName: ep.displayName || ep.name,
+    displayName: getEndpointLabel(ep),
     type: ep.type ?? '',
     port: ep.port ?? null,
     visibility: networkVisibilities[0] ?? '',

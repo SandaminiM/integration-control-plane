@@ -17,7 +17,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { resolveEndpointInvokeUrl } from './endpoints';
+import { getEndpointLabel, resolveEndpointInvokeUrl, trimEndpointName } from './endpoints';
 import type { EnvEndpoint } from '../types/component';
 
 const ep = (partial: Partial<EnvEndpoint>): EnvEndpoint => ({ id: 'e', releaseId: 'r', environmentId: 'env', displayName: 'ep', type: 'GraphQL', visibility: 'Public', ...partial }) as EnvEndpoint;
@@ -40,5 +40,68 @@ describe('resolveEndpointInvokeUrl', () => {
   it('falls back to any available url when no visibility matches', () => {
     const e = ep({ networkVisibilities: [], invokeUrl: 'https://any/graphql' });
     expect(resolveEndpointInvokeUrl(e)).toBe('https://any/graphql');
+  });
+});
+
+describe('trimEndpointName', () => {
+  it('drops a redundant leading "Endpoint" word', () => {
+    expect(trimEndpointName('Endpoint Covid Status')).toBe('Covid Status');
+    // The auto-generated shape the wip/GraphQL path relies on.
+    expect(trimEndpointName('Endpoint 1')).toBe('1');
+    expect(trimEndpointName('  Endpoint   Foo  ')).toBe('Foo');
+  });
+
+  it('only strips the word when it stands alone', () => {
+    expect(trimEndpointName('EndpointFoo')).toBe('EndpointFoo');
+    expect(trimEndpointName('Endpoints')).toBe('Endpoints');
+    expect(trimEndpointName('My Endpoint')).toBe('My Endpoint');
+  });
+
+  it('leaves a hyphenated name starting with "endpoint" intact', () => {
+    // The old /^\s*Endpoint\b\s*/i matched before the hyphen and produced "-metrics".
+    expect(trimEndpointName('endpoint-metrics')).toBe('endpoint-metrics');
+    expect(trimEndpointName('endpoint-9097')).toBe('endpoint-9097');
+  });
+
+  it('keeps the original when trimming would empty it', () => {
+    expect(trimEndpointName('Endpoint')).toBe('Endpoint');
+  });
+});
+
+describe('getEndpointLabel', () => {
+  // Titles the Ballerina OpenAPI generator emits for the covid19-status sample.
+  it('keeps a title that names something', () => {
+    expect(getEndpointLabel({ displayName: 'Covid Status', name: 'covid-status', port: 9000 })).toBe('Covid Status');
+    expect(getEndpointLabel({ displayName: 'Covid Community Support', name: 'covid-commu-3e5', port: 9003 })).toBe('Covid Community Support');
+  });
+
+  it('falls back to the port for a base-path-only title', () => {
+    expect(getEndpointLabel({ displayName: '/', name: 'endpoint-9001', port: 9001 })).toBe('9001');
+  });
+
+  it('falls back to the port for an empty or absent title', () => {
+    expect(getEndpointLabel({ displayName: '', name: 'endpoint-9097', port: 9097 })).toBe('9097');
+    expect(getEndpointLabel({ name: 'endpoint-9097', port: 9097 })).toBe('9097');
+  });
+
+  it('falls back to the port for a generated numeric-hash title', () => {
+    expect(getEndpointLabel({ displayName: '484419380', name: 'endpoint-9002', port: 9002 })).toBe('9002');
+  });
+
+  it('prefers a meaningful component.yaml key over the port when the title is absent', () => {
+    expect(getEndpointLabel({ name: 'greeter-api', port: 9090 })).toBe('greeter-api');
+    expect(getEndpointLabel({ name: 'sample-agent-endpoint', port: 8000 })).toBe('sample-agent-endpoint');
+  });
+
+  it('ignores the generated endpoint-<port> key in favour of the port', () => {
+    expect(getEndpointLabel({ name: 'endpoint-9090', port: 9090 })).toBe('9090');
+  });
+
+  it('normalizes whitespace in a usable title', () => {
+    expect(getEndpointLabel({ displayName: '  Covid   Status  ', name: 'covid-status', port: 9000 })).toBe('Covid Status');
+  });
+
+  it('returns the key when there is no port to fall back to', () => {
+    expect(getEndpointLabel({ displayName: '/', name: 'endpoint-9001' })).toBe('endpoint-9001');
   });
 });

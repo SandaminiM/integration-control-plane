@@ -26,17 +26,7 @@ import SwaggerOperationsList from '../Overview/integration-as-api/SwaggerOperati
 import { useFetchComponentEndpointSpec } from '../../hooks/useComponents';
 import { useApiDefinition } from '../../hooks/useDeployments';
 import type { EnvEndpoint } from '../../types/component';
-
-// ---------- helpers ----------
-
-function trimEndpointName(name: string) {
-  return (
-    name
-      .replace(/^\s*Endpoint\b\s*/i, '')
-      .replace(/\s+/g, ' ')
-      .trim() || name
-  );
-}
+import { trimEndpointName } from '../../utils/endpoints';
 
 // ---------- CopyButton ----------
 
