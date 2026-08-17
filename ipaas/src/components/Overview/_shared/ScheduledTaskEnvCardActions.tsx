@@ -26,6 +26,7 @@ import { useExecutionConfigs } from '../../../hooks/useExecutions';
 import { useSchemaConfig } from '../../../hooks/useConfiguration';
 import { formatTimeUntil, nextCronRunMs } from '../../../utils/cronUtils';
 import type { EnvCardActionsProps } from '../../../types/integration';
+import { isDeploymentHealthy } from '../../../utils/deploymentStatus';
 import ScheduleButton from './ScheduleButton';
 import { hasMissingRequiredConfigs } from './configStatus';
 
@@ -49,6 +50,7 @@ export default function EnvCardActions({
   envTemplateId,
   deployedCommitSha,
   isBuildInProgress,
+  deploymentStatusV2,
   onNotify,
   onTrigger,
 }: EnvCardActionsProps): ReactNode {
@@ -61,6 +63,8 @@ export default function EnvCardActions({
 
   // Automation's Run/Schedule are always disabled while a build is in progress.
   const buildDisabled = !!isBuildInProgress;
+  // Testing runs the task, so only a running workload qualifies.
+  const canTest = isDeploymentHealthy(deploymentStatusV2);
 
   // Next-run countdown + cron auto-fire detection: when a scheduled run is about
   // to fire, optimistically record a trigger so the executions table updates.
@@ -118,7 +122,7 @@ export default function EnvCardActions({
         onSaveError={() => onNotify({ text: 'Failed to save schedule. Please try again.', severity: 'error' })}
         onStopSuccess={() => onNotify({ text: 'Schedule stopped successfully', severity: 'success' })}
       />
-      <Button variant="contained" size="small" startIcon={<Play size={14} />} disabled={missingConfigs || buildDisabled} onClick={goToTestPage}>
+      <Button variant="contained" size="small" startIcon={<Play size={14} />} disabled={missingConfigs || buildDisabled || !canTest} onClick={goToTestPage}>
         Test
       </Button>
     </>
