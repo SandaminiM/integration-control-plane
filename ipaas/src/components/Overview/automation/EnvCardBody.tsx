@@ -24,6 +24,7 @@ import { describeCron } from '../../../utils/cronUtils';
 import type { EnvCardBodyProps } from '../../../types/integration';
 import EnvCardSkeleton from '../_shared/EnvCardSkeleton';
 import AutomationExecutions from '../../AutomationExecutions';
+import DeploymentNotice from '../../DeploymentNotice';
 import AutomationInsights from './AutomationInsights';
 
 /**
@@ -42,6 +43,7 @@ export default function EnvCardBody({
   componentHandler,
   hasDeployment,
   loadingDeployment,
+  deploymentStatusV2,
   pendingTriggerTime,
   pendingTriggerArgs,
   onTriggerResolved,
@@ -77,6 +79,7 @@ export default function EnvCardBody({
           projectHandler={projectHandler}
           componentHandler={componentHandler}
           envCritical={env.critical ?? false}
+          deploymentStatusV2={deploymentStatusV2}
           pendingTriggerTime={pendingTriggerTime}
           pendingTriggerArgs={pendingTriggerArgs}
           onTriggerResolved={onTriggerResolved}
@@ -88,11 +91,7 @@ export default function EnvCardBody({
         />
       )}
 
-      {!loadingDeployment && !hasDeployment && (
-        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-          No deployments yet. Click &apos;{env.critical ? 'Run' : 'Test'}&apos; or use &apos;Schedule&apos; to trigger an execution.
-        </Typography>
-      )}
+      {!loadingDeployment && !hasDeployment && <DeploymentNotice hasDeployment={false} envCritical={!!env.critical} />}
 
       {showInsights && <AutomationInsights releaseId={releaseId} executionScope={{ componentId: component.id, envId: env.id, projectId }} />}
     </>

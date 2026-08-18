@@ -197,13 +197,14 @@ export default function Environments(scope: OrgScope | ProjectScope): JSX.Elemen
                   <ListingTable.Cell>Type</ListingTable.Cell>
                   <ListingTable.Cell>DNS Prefix</ListingTable.Cell>
                   <ListingTable.Cell>Created</ListingTable.Cell>
-                  <ListingTable.Cell align="right">Action</ListingTable.Cell>
+                  {/* Cloud environments are platform-managed — nothing to act on. */}
+                  {!IS_CLOUD && <ListingTable.Cell align="right">Action</ListingTable.Cell>}
                 </ListingTable.Row>
               </ListingTable.Head>
               <ListingTable.Body>
                 {filtered.length === 0 ? (
                   <ListingTable.Row>
-                    <ListingTable.Cell colSpan={5} align="center">
+                    <ListingTable.Cell colSpan={IS_CLOUD ? 4 : 5} align="center">
                       No records to display
                     </ListingTable.Cell>
                   </ListingTable.Row>
@@ -224,15 +225,17 @@ export default function Environments(scope: OrgScope | ProjectScope): JSX.Elemen
                           {t.createdAt ? formatDistanceToNow(t.createdAt) : '—'}
                         </Stack>
                       </ListingTable.Cell>
-                      <Authorized permissions={Permissions.ENVIRONMENT_MANAGE} fallback={<ListingTable.Cell align="right" />}>
-                        <ListingTable.Cell align="right">
-                          <Tooltip title="Delete">
-                            <IconButton size="small" color="error" aria-label={`Delete ${t.name}`} onClick={() => setDeleting(t)}>
-                              <Trash2 size={16} />
-                            </IconButton>
-                          </Tooltip>
-                        </ListingTable.Cell>
-                      </Authorized>
+                      {!IS_CLOUD && (
+                        <Authorized permissions={Permissions.ENVIRONMENT_MANAGE} fallback={<ListingTable.Cell align="right" />}>
+                          <ListingTable.Cell align="right">
+                            <Tooltip title="Delete">
+                              <IconButton size="small" color="error" aria-label={`Delete ${t.name}`} onClick={() => setDeleting(t)}>
+                                <Trash2 size={16} />
+                              </IconButton>
+                            </Tooltip>
+                          </ListingTable.Cell>
+                        </Authorized>
+                      )}
                     </ListingTable.Row>
                   ))
                 )}

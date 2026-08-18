@@ -34,7 +34,7 @@ import {
   deleteDeploymentTrack,
   checkDeploymentTrackDeletable,
 } from '#api/components';
-import type { CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, CreateDeploymentTrackInput } from '../types/component';
+import type { Component, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, CreateDeploymentTrackInput } from '../types/component';
 
 export function useComponents(orgHandler: string, projectId: string) {
   return useQuery({
@@ -73,7 +73,13 @@ export function useDeleteComponent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { orgHandler: string; componentId: string; projectId: string }) => deleteComponent(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['components'] }),
+    onSuccess: (result, input) => {
+      if (!result.canDelete) return;
+      // Scoped per org+project — names repeat across orgs.
+      const listKey = ['components', input.orgHandler, input.projectId];
+      qc.setQueriesData<Component[]>({ queryKey: listKey }, (list) => list?.filter((c) => c.id !== input.componentId));
+      qc.invalidateQueries({ queryKey: listKey, refetchType: 'none' });
+    },
   });
 }
 

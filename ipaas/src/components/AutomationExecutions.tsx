@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, Button, CircularProgress, IconButton, ListingTable, TablePagination, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, IconButton, ListingTable, TablePagination, Typography } from '@wso2/oxygen-ui';
 import { CheckCircle2, ChevronRight, XCircle } from '@wso2/oxygen-ui-icons-react';
 import { Fragment, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -24,6 +24,7 @@ import { useTaskExecutions } from '../hooks/useExecutions';
 import type { TaskExecution } from '../types/executions';
 import ExecutionDrawer from './EnvironmentCard/ExecutionDrawer';
 import LogsDrawer from './EnvironmentCard/LogsDrawer';
+import DeploymentNotice from './DeploymentNotice';
 
 interface AutomationExecutionsProps {
   releaseId: string;
@@ -35,6 +36,8 @@ interface AutomationExecutionsProps {
   projectHandler: string;
   componentHandler: string;
   envCritical: boolean;
+  /** Raw `deploymentStatusV2`, so the empty state can explain a card with disabled actions. */
+  deploymentStatusV2?: string | null;
   pendingTriggerTime?: number | null;
   pendingTriggerArgs?: string[] | null;
   onTriggerResolved?: () => void;
@@ -97,6 +100,7 @@ export default function AutomationExecutions({
   projectHandler,
   componentHandler,
   envCritical,
+  deploymentStatusV2,
   pendingTriggerTime,
   pendingTriggerArgs: _pendingTriggerArgs,
   onTriggerResolved,
@@ -108,7 +112,7 @@ export default function AutomationExecutions({
   const [selectedExecution, setSelectedExecution] = useState<TaskExecution | null>(null);
   const [logsExecution, setLogsExecution] = useState<TaskExecution | null>(null);
 
-  const { data: executions = [], isLoading } = useTaskExecutions(releaseId, componentId, environmentId, projectId);
+  const { data: executions = [], isLoading, isError } = useTaskExecutions(releaseId, componentId, environmentId, projectId);
 
   // Only poll while there is something to wait for: a pending trigger, an in-progress execution,
   // or an extended-poll window opened after the 60s sentinel timeout fires.
@@ -172,12 +176,17 @@ export default function AutomationExecutions({
     );
   }
 
-  if (allExecutions.length === 0) {
+  // A failed history fetch is not an empty history — do not let it read as one.
+  if (isError && allExecutions.length === 0) {
     return (
-      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-        No execution data available. Click &apos;{envCritical ? 'Run' : 'Test'}&apos; or use &apos;Schedule&apos; to trigger an execution.
-      </Typography>
+      <Alert severity="error" sx={{ my: 2 }}>
+        Could not load the execution history for this environment. Refresh to try again.
+      </Alert>
     );
+  }
+
+  if (allExecutions.length === 0) {
+    return <DeploymentNotice hasDeployment status={deploymentStatusV2} envCritical={envCritical} />;
   }
 
   return (
