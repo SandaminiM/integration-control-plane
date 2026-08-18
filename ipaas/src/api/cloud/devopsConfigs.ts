@@ -234,7 +234,8 @@ export const getReleaseById = async (_orgUuid: string, _projectId: string, compo
   if (!env) return { ID: releaseId, containers: [] };
   setComponentForEnv(env, componentId);
   const list = await bff.get<ListResponse<ReleaseContainer>>(`${filesBase(componentId, env)}/containers`).catch(() => null);
-  const real = items(list)[0] ?? ({} as Partial<ReleaseContainer>);
+  const real = items(list)[0];
+  if (!real) return { ID: releaseId, containers: [] };
   return { ID: releaseId, containers: [{ ...real, ID: env, name: real.name ?? env, type: real.type ?? 'MAIN' }] };
 };
 
