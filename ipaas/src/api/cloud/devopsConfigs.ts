@@ -215,20 +215,11 @@ const listEnvGroups = async (projectId: string, env: string): Promise<BffEnvGrou
 
 // ── release (real container data, keyed by the resolved env) ───────────────────
 
-// Cloud has no release resource distinct from an app-environment binding, so
-// releaseId resolves to an environment via envForRelease. `ID` is aliased to
-// that env string on purpose — every downstream consumer (config mounts,
-// scaling, health checks, storage) addresses the container by env, not a real
-// container id, so changing `ID` here would break them.
-//
-// `name` isn't under that constraint (nothing addresses by it), so it keeps
-// the real container name from the BFF, falling back to the env only if the
-// BFF didn't return one.
-//
-// The rest of the container fields (image/resources/ports/pull-policy/
-// command/args) come from the BFF's Containers endpoint, keyed on the same
-// env — its JSON already matches ReleaseContainer field-for-field, so the
-// response is spread in directly.
+// Cloud has no release distinct from an app-environment binding, so releaseId
+// resolves to an env via envForRelease. `ID` is aliased to that env on purpose —
+// downstream consumers address the container by env, not a real container id.
+// Other fields come straight from the BFF's Containers endpoint (same shape as
+// ReleaseContainer), except `name` falls back to the env only if BFF omits it.
 export const getReleaseById = async (_orgUuid: string, _projectId: string, componentId: string, releaseId: string): Promise<ReleaseDetails> => {
   const env = await envForRelease(componentId, releaseId);
   if (!env) return { ID: releaseId, containers: [] };
@@ -239,12 +230,9 @@ export const getReleaseById = async (_orgUuid: string, _projectId: string, compo
   return { ID: releaseId, containers: [{ ...real, ID: env, name: real.name ?? env, type: real.type ?? 'MAIN' }] };
 };
 
-// PUT splits into a ReleaseBinding write (cpu/memory/limits/pull-policy, visible
-// on the next GET once the rollout completes) and a declarative-only Workload
-// write (command/args, takes effect only on the next release cut+promote) on the
-// BFF side — see ipaas-service's CONTAINERS_FEATURE_PROMPT.md. containerId is the
-// env (carried through from getReleaseById); the URL's containerId segment is a
-// fixed literal since the BFF ignores it — there is only ever one container.
+// BFF splits this PUT into a ReleaseBinding write (resources/pull-policy, live after
+// rollout) and a Workload write (command/args, live after next cut+promote).
+// containerId is really the env; the URL's "main" segment is a fixed literal.
 export const updateContainer = async (_orgUuid: string, _projectId: string, componentId: string, _releaseId: string, containerId: string, data: ContainerWriteData): Promise<ReleaseContainer> => {
   const env = containerId;
   await bff.put(`${filesBase(componentId, env)}/containers/main`, data);
