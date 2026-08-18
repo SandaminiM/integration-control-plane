@@ -75,8 +75,10 @@ export function useDeleteComponent() {
     mutationFn: (input: { orgHandler: string; componentId: string; projectId: string }) => deleteComponent(input),
     onSuccess: (result, input) => {
       if (!result.canDelete) return;
-      qc.setQueriesData<Component[]>({ queryKey: ['components'] }, (list) => list?.filter((c) => c.id !== input.componentId));
-      qc.invalidateQueries({ queryKey: ['components'], refetchType: 'none' });
+      // Scoped per org+project — names repeat across orgs.
+      const listKey = ['components', input.orgHandler, input.projectId];
+      qc.setQueriesData<Component[]>({ queryKey: listKey }, (list) => list?.filter((c) => c.id !== input.componentId));
+      qc.invalidateQueries({ queryKey: listKey, refetchType: 'none' });
     },
   });
 }

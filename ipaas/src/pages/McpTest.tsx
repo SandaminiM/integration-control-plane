@@ -86,7 +86,8 @@ export default function McpTest(scope: ComponentScope): JSX.Element {
   const baseUrl = visibilityOptions.find((v) => v.value === activeVisibility)?.getUrl(activeEndpoint!) ?? '';
   const mcpUrl = baseUrl ? `${baseUrl}/mcp` : '';
   const apimId = activeEndpoint?.apimId ?? null;
-  const isDeploymentInProgress = deployment?.deploymentStatusV2 === 'IN_PROGRESS';
+  // Only a live deployment can answer MCP calls; every other state explains itself.
+  const isActive = deployment?.deploymentStatusV2 === 'ACTIVE';
 
   const endpointSwitcher = { options: testableEndpoints.map((e) => ({ label: e.displayName, value: e.id })), value: activeEndpointId, onChange: setSelectedEndpointId };
   const visibilitySwitcher = { options: visibilityOptions.map((v) => ({ label: v.label, value: v.value })), value: activeVisibility, onChange: setSelectedVisibility };
@@ -118,7 +119,7 @@ export default function McpTest(scope: ComponentScope): JSX.Element {
       {tracks.length > 0 && <DeploymentTrackBar tracks={tracks} selectedId={selectedTrackId} onChange={setSelectedTrackId} orgHandler={scope.org} projectHandler={project?.handler ?? scope.project} componentHandler={scope.component} extra={envSelector} />}
 
       <PageContent sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-        {isDeploymentInProgress || !mcpUrl ? (
+        {!isActive || !mcpUrl ? (
           <>
             <PageTitle>
               <PageTitle.Header>Test</PageTitle.Header>
