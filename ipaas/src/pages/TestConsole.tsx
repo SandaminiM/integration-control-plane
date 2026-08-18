@@ -38,6 +38,7 @@ import type { EndpointRef } from '../types/consumers';
 import { friendlyApiError } from '../utils/apiSecurity';
 import { broaden, resourceUrl, type ComponentScope } from '../nav';
 
+import NotDeployedAlert from '../components/NotDeployedAlert';
 /** Header the APIM gateway reads the test key from. Cloud uses the api-key-auth header instead. */
 const APIM_TEST_KEY_HEADER = 'test-key';
 const TEST_KEY_HEADER = IS_CLOUD ? DEFAULT_API_KEY_HEADER : APIM_TEST_KEY_HEADER;
@@ -220,7 +221,7 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
     return <NotFound message="Component not found" backTo={resourceUrl(broaden(scope)!, 'overview')} backLabel="Back to Project" />;
   }
 
-  const envSelector = environments.length > 0 && (
+  const envSelector = !IS_CLOUD && environments.length > 1 && (
     <Select
       size="small"
       value={selectedEnvId}
@@ -265,6 +266,11 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
           Test Console
         </Typography>
 
+        {/* Nothing deployed to call — explain rather than render an empty endpoint picker. */}
+        {!deployment || deployment.deploymentStatusV2 !== 'ACTIVE' ? (
+          <NotDeployedAlert status={deployment ? deployment.deploymentStatusV2 : null} />
+        ) : (
+          <>
         {/* Controls panel */}
         <Box sx={{ maxWidth: 720, mb: 3 }}>
           <Stack direction="column" gap={2}>
@@ -430,6 +436,8 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
             No API definition available for this endpoint.
           </Typography>
         ) : null}
+          </>
+        )}
       </PageContent>
     </Box>
   );

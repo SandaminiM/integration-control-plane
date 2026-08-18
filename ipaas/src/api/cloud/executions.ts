@@ -130,8 +130,11 @@ export const fetchTaskExecutions = async (_releaseId: string, componentId = '', 
       before = res?.nextCursor || undefined;
       if (!before) break;
     }
-  } catch {
-    // Degrade gracefully: return whatever pages were gathered before the failure.
+  } catch (error) {
+    // A later page failing still leaves usable history, so keep what was gathered.
+    // The first page failing means we have nothing — surface that instead of
+    // returning an empty list the UI would render as "no executions yet".
+    if (all.length === 0) throw error;
   }
   return all;
 };

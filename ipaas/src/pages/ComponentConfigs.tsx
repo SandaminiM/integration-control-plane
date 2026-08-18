@@ -33,6 +33,7 @@ import { useProjectId } from '../hooks/useProjects';
 import { buildConfigRows, mainContainer } from '../utils/devopsConfigs';
 import type { ConfigRow } from '../types/devopsConfigs';
 import type { ComponentScope } from '../nav';
+import { IS_CLOUD } from '../features';
 
 type View = { kind: 'list' } | { kind: 'create' } | { kind: 'edit'; row: ConfigRow };
 
@@ -91,7 +92,7 @@ export default function ComponentConfigs({ org, project, component }: ComponentS
     );
   };
 
-  const envSelect = (
+  const envSelect = !IS_CLOUD && environments.length > 1 && (
     <Select
       size="small"
       value={environments.some((e) => e.id === envId) ? envId : ''}

@@ -286,8 +286,11 @@ export default function DeployEnvironmentCard({
   const isSuspended = status === DeploymentStatus.Suspended;
   // Keep button visible while in-flight. Suppress the opposing button while an action is in-flight
   // to prevent both showing simultaneously when status transitions mid-flight (header scatter).
-  const showStop = ((isActive || isError || isInProgress) && hasRelease && !isRedeployPending) || isStopPending;
+  const showStop = ((isActive || isInProgress) && hasRelease && !isRedeployPending) || isStopPending;
   const showStart = (isSuspended && hasRelease && !isStopPending) || isRedeployPending;
+  // A failed deployment is already not serving, so stopping it achieves nothing —
+  // offer the recovery action instead.
+  const showRedeploy = isError && hasRelease && !isStopPending && !isRedeployPending;
   const showPromote = !!nextEnvId;
 
   return (
@@ -302,6 +305,7 @@ export default function DeployEnvironmentCard({
             isStopPending={isStopPending}
             onStop={handleStop}
             showStart={showStart}
+            showRedeploy={showRedeploy}
             isRedeployPending={isRedeployPending}
             onStart={handleRedeploy}
             onRefresh={handleRefresh}
