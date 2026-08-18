@@ -39,6 +39,7 @@ export default function BallerinaCentralTokenDrawer({ open, onClose, tokenInput,
 
   const handleClose = () => {
     setError(null);
+    onTokenInputChange('');
     onClose();
   };
 
@@ -68,7 +69,7 @@ export default function BallerinaCentralTokenDrawer({ open, onClose, tokenInput,
         {/* Header */}
         <Box sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h5">{PANEL_COPY.heading}</Typography>
-          <IconButton size="small" onClick={handleClose}>
+          <IconButton size="small" onClick={handleClose} aria-label="Close Ballerina Central access">
             <X size={16} />
           </IconButton>
         </Box>
@@ -81,7 +82,7 @@ export default function BallerinaCentralTokenDrawer({ open, onClose, tokenInput,
             <Stack gap={2}>
               <Alert severity="success">{PANEL_COPY.saveSuccessMessage}</Alert>
 
-              <Card variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+              <Card variant="outlined" sx={{ p: 2.5, borderRadius: 1 }}>
                 <Stack direction="row" alignItems="center" gap={1} sx={{ color: 'success.main', mb: 2 }}>
                   <CheckCircle2 size={18} />
                   <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'success.main' }}>
@@ -152,6 +153,7 @@ export default function BallerinaCentralTokenDrawer({ open, onClose, tokenInput,
                   onChange={(e) => onTokenInputChange(e.target.value)}
                   placeholder={PANEL_COPY.tokenPlaceholder}
                   disabled={saveToken.isPending}
+                  slotProps={{ htmlInput: { 'aria-label': PANEL_COPY.accessTokenLabel } }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
