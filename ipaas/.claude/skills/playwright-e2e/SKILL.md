@@ -40,7 +40,7 @@ Work in this order. The most common way an e2e test goes wrong here is not a bad
 
 Routes live in `src/config/routes.tsx`; the URL builders live in `src/paths.ts` (`projectHomeUrl`, `componentsNewUrl`, `orgHomeUrl`, …). Reading `paths.ts` is the fastest way to learn the exact URL shape, and its function names tell you what the app calls each surface.
 
-Check whether the route is product-gated. Routes wrapped in `IS_WIP` / `IS_CLOUD` (from `src/features.ts`) only exist in that product. The suite runs the `wip` build, so an `IS_ICP`-only page cannot be tested here — say so rather than writing a spec that 404s.
+Check whether the route is product-gated. In `routes.tsx`, routes wrapped in `hideable(IS_CLOUD, ...)` are available in the `wip` build (they're redirected away only on cloud); routes added via `IS_CLOUD ? [...] : []` exist only on cloud. The suite runs the `wip` build, so a cloud-only route cannot be tested here — say so rather than writing a spec that 404s.
 
 ### 2. Read the page component
 

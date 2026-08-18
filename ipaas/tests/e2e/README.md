@@ -136,7 +136,7 @@ The skill's core rule is that **every locator must trace to a real string in `sr
 
 ## Adding tests by hand
 
-**1. Find the route.** `src/config/routes.tsx`, with URL builders in `src/paths.ts`. Routes gated behind `IS_CLOUD` / `IS_ICP` do not exist in the `wip` build this suite runs.
+**1. Find the route.** `src/config/routes.tsx`, with URL builders in `src/paths.ts`. Routes wrapped in `hideable(IS_CLOUD, ...)` are available in the `wip` build this suite runs; routes added via `IS_CLOUD ? [...] : []` are cloud-only and don't exist here.
 
 **2. Read the page component.** Per `HOUSE_RULES.md` every page handles loading, error, not-found and empty-listing explicitly. Those are four different DOMs — decide which one you are testing and pick a fixture that produces it. The `default` project is provisioned empty, which is why `project-home-empty.spec.ts` uses it.
 

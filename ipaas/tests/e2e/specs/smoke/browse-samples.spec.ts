@@ -41,7 +41,7 @@ test.describe('browse samples @smoke', () => {
         .catch(() => {}),
     ]);
 
-    await expect(page, 'Session expired or was never authenticated — redirected to the login page').toHaveURL(/\/components\/new\/samples/, { timeout: 5_000 });
+    await expect(page, 'Session expired or was never authenticated — redirected to the login page').toHaveURL(new RegExp(`/organizations/${orgHandler}/projects/${projectHandler}/components/new/samples$`), { timeout: 5_000 });
     await expect(page.getByText('Failed to load samples. Please try again later.'), 'The samples service is down — this is a backend failure, not a UI regression').not.toBeVisible();
   });
 
@@ -67,17 +67,24 @@ test.describe('browse samples @smoke', () => {
   });
 
   test('a search with no matches shows the empty-result message', async ({ page }) => {
+    // Every SampleGridCard renders a "Quick Deploy" button regardless of which sample it is —
+    // asserting on it first confirms real results are showing before we search them away.
+    await expect(page.getByRole('button', { name: 'Quick Deploy' }).first()).toBeVisible();
+
     await page.getByPlaceholder('Search samples…').fill(`no-such-sample-${Date.now()}`);
     await expect(page.getByText('No samples match your search.')).toBeVisible();
   });
 
   test('clearing the search brings the results back', async ({ page }) => {
     const search = page.getByPlaceholder('Search samples…');
+    await expect(page.getByRole('button', { name: 'Quick Deploy' }).first()).toBeVisible();
+
     await search.fill(`no-such-sample-${Date.now()}`);
     await expect(page.getByText('No samples match your search.')).toBeVisible();
 
     await search.clear();
     await expect(page.getByText('No samples match your search.')).not.toBeVisible();
+    await expect(page.getByRole('button', { name: 'Quick Deploy' }).first()).toBeVisible();
   });
 
   test.skip('deploying a sample creates an integration', async () => {
