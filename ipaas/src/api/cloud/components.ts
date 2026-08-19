@@ -76,19 +76,23 @@ const ANN_PREBUILT = 'openchoreo.dev/prebuilt';
 // pair required by the Component CRD; `workflow` must appear in that
 // ComponentType's spec.allowedWorkflows.
 //
+// Service components use deployment/integration-as-api, the integration platform 
+// fronts every endpoint with the WSO2 API Platform gateway (apip)
+//
 // The Ballerina (BI) entries resolve against real cluster resources: every
-// ComponentType referenced here (deployment/service, cronjob/scheduled-task,
-// deployment/event-integration) is provisioned with ballerina-buildpack-builder
-// in its allowedWorkflows. The MI entries are placeholders — mi-buildpack-builder
-// is not in any ComponentType's allowedWorkflows yet, so creating MI components
-// will 400 until the control plane provisions that ClusterWorkflow.
+// ComponentType referenced here (deployment/integration-as-api,
+// cronjob/scheduled-task, deployment/event-integration) is provisioned with
+// ballerina-buildpack-builder in its allowedWorkflows. The MI entries are
+// placeholders — mi-buildpack-builder is not in any ComponentType's
+// allowedWorkflows yet, so creating MI components will 400 until the control
+// plane provisions that ClusterWorkflow.
 const DISPLAY_TYPE_MAP: Record<DisplayType, { componentType: string; workflow: string }> = {
-  ballerinaService: { componentType: 'deployment/service', workflow: 'ballerina-buildpack-builder' },
+  ballerinaService: { componentType: 'deployment/integration-as-api', workflow: 'ballerina-buildpack-builder' },
   scheduledTask: { componentType: 'cronjob/scheduled-task', workflow: 'ballerina-buildpack-builder' },
   manualTrigger: { componentType: 'cronjob/scheduled-task', workflow: 'ballerina-buildpack-builder' },
   webhook: { componentType: 'deployment/event-integration', workflow: 'ballerina-buildpack-builder' },
   ballerinaEventHandler: { componentType: 'deployment/event-integration', workflow: 'ballerina-buildpack-builder' },
-  miApiService: { componentType: 'deployment/service', workflow: 'mi-buildpack-builder' },
+  miApiService: { componentType: 'deployment/integration-as-api', workflow: 'mi-buildpack-builder' },
   miCronjob: { componentType: 'cronjob/scheduled-task', workflow: 'mi-buildpack-builder' },
   miJob: { componentType: 'cronjob/scheduled-task', workflow: 'mi-buildpack-builder' },
   miWebhook: { componentType: 'deployment/event-integration', workflow: 'mi-buildpack-builder' },
