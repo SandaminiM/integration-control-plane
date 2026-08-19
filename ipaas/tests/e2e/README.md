@@ -1,155 +1,202 @@
 # WIP E2E Test Suite
 
-Playwright-based smoke tests for the WIP (formerly Devant) product, targeting `https://preview-o2-dev.devant.dev`.
+Playwright smoke tests for the WIP (formerly Devant) product, targeting `https://preview-o2-dev.devant.dev`.
+
+These run against a **live deployment**, not a local dev server. Real latency, real backend state, real identity provider — which is why the conventions below are stricter about waiting than a typical Playwright suite.
 
 ---
 
 ## Structure
 
-```
+```text
+playwright.config.ts             testDir, projects, baseURL, timeouts
+.env.test                        credentials (gitignored; template = .env.test.example)
+.auth/user.json                  saved storageState — live session tokens, gitignored
+.auth/context.json               { orgHandler, projectHandler } written by setup
+
 tests/e2e/
-  global.setup.ts          # Logs in once via WSO2 Identity Platform, saves auth state to .auth/user.json
-  pages/                   # Page-object models (one file per page)
-    LoginPage.ts
-    OrgHomePage.ts
-    ProjectsPage.ts
-    CreateProjectPage.ts
-    IntegrationOptionsPage.ts
-  specs/
-    smoke/                 # Fast smoke suite — runs on every nightly build
-      auth.spec.ts         # Login, auth redirect, login page options
-      projects.spec.ts     # Projects list, create project flow
-      integrations.spec.ts # Integration creation options, samples, prebuilt
+  global.setup.ts                logs in once, completes onboarding, saves auth state
+  save-google-session.setup.ts   optional: saves a Google session for OAuth work
+  get-gmail-token.ts             one-off script to mint the Gmail refresh token
+  helpers/
+    auth-context.ts              getAuthContext() → reads .auth/context.json
+    gmail.ts                     waitForOTP() — reads the login OTP from Gmail
+  pages/                         page objects, one per page
+    LoginPage.ts  TopNav.ts  OrgHomePage.ts  ProjectsPage.ts
+    CreateProjectPage.ts  IntegrationOptionsPage.ts
+  specs/smoke/                   one spec file per page or surface
+    login.spec.ts                login + signup pages, email/OTP sign-in flow
+    org-overview.spec.ts         org home, project cards, navigation
+    project-home.spec.ts         project home content and breadcrumbs
+    project-home-empty.spec.ts   empty-state branch (uses the `default` project)
+    top-nav.spec.ts              project picker, sign out
+    footer.spec.ts               footer links and copyright
+    browse-samples.spec.ts       samples listing, search, filter sections
+    integrations.spec.ts         currently skipped — create-project flow not final
+```
+
+### How auth works
+
+Playwright runs two projects. The `setup` project runs `global.setup.ts` first: it signs in through the WSO2 Identity Platform, reads the email OTP from Gmail, completes onboarding if the account is new, then writes two files.
+
+- `.auth/user.json` — the browser `storageState`, which the `wip` project loads so every spec starts signed in.
+- `.auth/context.json` — the `orgHandler` and `projectHandler` for that account, read via `getAuthContext()`.
+
+Both handles are per-account and per-run. **Never hardcode them.** Specs that need to be unauthenticated opt out explicitly:
+
+```ts
+test.use({ storageState: { cookies: [], origins: [] } });
 ```
 
 ---
 
 ## Prerequisites
 
-1. **Install dependencies**
+**1. Install dependencies**
 
-   ```bash
-   cd ipaas
-   pnpm install
-   pnpm exec playwright install --with-deps chromium
-   ```
+```bash
+cd ipaas
+pnpm install
+pnpm exec playwright install --with-deps chromium
+```
 
-2. **Test user account**
+**2. Test account**
 
-   You need a dedicated WSO2 Identity Platform account for tests — never use a personal account.
+Use a dedicated account, never a personal one. The current bot account is `integration-e2e-test-bot@wso2.com`. It must have signed in at least once and have an org, so onboarding has run.
 
-   | What   | Value                                                                |
-   | ------ | -------------------------------------------------------------------- |
-   | Email  | `wip-e2e@wso2.com` (or any shared team mailbox)                      |
-   | Org    | Pre-create one org manually after first sign-up                      |
-   | GitHub | Create a `wip-e2e-bot` GitHub account for integration tests (future) |
+**3. Credentials**
 
-   Sign up at `https://preview-o2-dev.devant.dev` and complete email verification once. After that, the tests log in and reuse the session.
+```bash
+cp .env.test.example .env.test
+```
 
-3. **Credentials file**
+Then fill in:
 
-   Copy the example file and fill in real values:
+| Variable              | Purpose                                                               |
+| --------------------- | --------------------------------------------------------------------- |
+| `E2E_USERNAME`        | Test account email                                                    |
+| `GMAIL_CLIENT_ID`     | OAuth client from Google Cloud Console                                |
+| `GMAIL_CLIENT_SECRET` | Same client's secret                                                  |
+| `GMAIL_REFRESH_TOKEN` | Generated by the command below                                        |
+| `E2E_PASSWORD`        | Only needed if the account falls back to password auth instead of OTP |
+| `E2E_BASE_URL`        | Optional — defaults to `https://preview-o2-dev.devant.dev`            |
 
-   ```bash
-   cp .env.test.example .env.test
-   # then edit .env.test with your credentials
-   ```
+Sign-in uses an email OTP, which the suite reads from Gmail via the API. Mint the refresh token once:
 
-   `.env.test` is gitignored — never commit it. `.env.test.example` is the committed template.
+```bash
+pnpm test:e2e:get-gmail-token
+```
 
-   ```
-   E2E_USERNAME=wip-e2e@wso2.com
-   E2E_PASSWORD=your-password-here
-
-   # Optional — defaults to https://preview-o2-dev.devant.dev
-   # E2E_BASE_URL=https://preview-o2-dev.devant.dev
-   ```
+`.env.test` is gitignored. Never commit it, and never commit `.auth/` — it holds live session tokens.
 
 ---
 
-## Running locally
+## Running
 
 ```bash
-# Run all smoke tests (reads credentials from .env.test automatically)
-pnpm test:e2e
+pnpm test:e2e                                              # full suite
+pnpm test:e2e tests/e2e/specs/smoke/browse-samples.spec.ts  # one file
+pnpm test:e2e --headed                                     # watch the browser
+pnpm test:e2e --grep @smoke                                # by tag
+pnpm test:e2e:ui                                           # Playwright test explorer
+pnpm test:e2e:report                                       # open the last HTML report
+```
 
-# Run with browser visible (useful for debugging)
-pnpm test:e2e --headed
+On failure the config retains a trace, video and screenshot under `test-results/`. Open the trace before changing anything — it shows the DOM at the moment of failure, which usually answers "was my selector wrong, or had the page not rendered yet?" immediately.
 
-# Run interactive UI mode (Playwright's test explorer)
-pnpm test:e2e:ui
+```bash
+pnpm exec playwright show-trace test-results/<path>/trace.zip
+```
 
-# Run a specific spec file
-pnpm test:e2e tests/e2e/specs/smoke/auth.spec.ts
+---
 
-# Open the last HTML report
-pnpm test:e2e:report
+## Writing tests with Claude
+
+The repo ships a Claude Code skill that encodes these conventions, so you don't have to restate them each time.
+
+```text
+.claude/skills/playwright-e2e/
+  SKILL.md                 the workflow, locator rules, waiting rules, checklist
+  references/locators.md   oxygen-ui → ARIA role mapping and selector traps
+  references/triage.md     failure messages mapped to causes
+  assets/                  spec and page-object scaffolds to copy
+.claude/commands/e2e.md    the /e2e slash command
+```
+
+Run `claude` from the `ipaas` directory and the skill loads automatically. Either ask in plain English or use the command:
+
+```text
+/e2e the create-environment page
+/e2e sign-out flow from project home
+```
+
+The skill's core rule is that **every locator must trace to a real string in `src/`** — read off the page component, verified against a real run for third-party pages, or derived at runtime for backend-supplied content. A locator that was guessed and then loosened until it passed is the main way an e2e suite ends up green and worthless.
+
+---
+
+## Adding tests by hand
+
+**1. Find the route.** `src/config/routes.tsx`, with URL builders in `src/paths.ts`. Routes wrapped in `hideable(IS_CLOUD, ...)` are available in the `wip` build this suite runs; routes added via `IS_CLOUD ? [...] : []` are cloud-only and don't exist here.
+
+**2. Read the page component.** Per `HOUSE_RULES.md` every page handles loading, error, not-found and empty-listing explicitly. Those are four different DOMs — decide which one you are testing and pick a fixture that produces it. The `default` project is provisioned empty, which is why `project-home-empty.spec.ts` uses it.
+
+**3. Add a page object** in `pages/` if the surface has navigation plus several elements more than one spec will touch. Locators and actions go in the page object; assertions go in the spec, except for a readiness helper like `expectPageLoaded`. Prefer `getByRole` / `getByLabel` / `getByPlaceholder` over CSS.
+
+**4. Write the spec** in `specs/smoke/`, named after the surface, tagged `@smoke` in the `describe` title. Name tests as claims — `'sign out redirects to login page'`, not `'test signout'`.
+
+**5. Waiting rules that matter here.**
+
+- A `toHaveURL` assertion is **not** a render assertion. Routes are lazy-loaded and data arrives via React Query, so the URL can be right while the page is still a spinner.
+- Race real readiness against the failure modes (expired session → `/login`, backend error → error text) so each fails fast with its own message.
+- Never `waitForTimeout`. Use web-first assertions, which auto-retry.
+- Assert absence only _after_ asserting something visible — otherwise it passes while the page is still loading.
+
+**6. Parallel safety.** `fullyParallel: true`. No shared mutable state; name anything you create `e2e-<purpose>-${Date.now()}`. Need a resource for a whole suite? Create it once in `beforeAll` with its own context, as `integrations.spec.ts` does.
+
+**7. Blocked flows get `test.skip` with a reason** — what is blocking it and what would unblock it. This documents intended coverage honestly, which is better than a flaky test or silence.
+
+**8. Verify.** ESLint covers `tests/`; `tsc -b` does **not** (`tsconfig.app.json` includes only `src`). So:
+
+```bash
+./node_modules/.bin/eslint tests/e2e
+pnpm test:e2e <your spec>
 ```
 
 ---
 
 ## Nightly CI
 
-The workflow at `.github/workflows/e2e-nightly.yml`:
+The workflow at `.github/workflows/e2e-nightly.yml` (in the repo root, above this directory):
 
-- Runs automatically at **2 AM UTC** every day against `devant-migration` branch
-- Can be triggered manually via **Actions → E2E Nightly (WIP) → Run workflow**
-- Lets you pick any branch and target URL at trigger time
+- Runs at **2 AM UTC** daily against the `devant-migration` branch
+- Can be triggered manually via **Actions → E2E Nightly (WIP) → Run workflow**, picking any branch and target URL
 
-### Required GitHub Actions secrets
+Required GitHub Actions secrets — CI uses these instead of `.env.test`:
 
-The workflow uses secrets instead of `.env.test` (which is local-only and never committed).
+| Secret                                                          | Description                                     |
+| --------------------------------------------------------------- | ----------------------------------------------- |
+| `E2E_USERNAME`                                                  | Test account email                              |
+| `E2E_PASSWORD`                                                  | Test account password, if password auth is used |
+| `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN` | Needed for OTP sign-in                          |
+| `E2E_SLACK_WEBHOOK_URL`                                         | Optional — failure notifications                |
 
-Set these at `https://github.com/sm1990/integration-control-plane/settings/secrets/actions`:
-
-| Secret                  | Description                                            |
-| ----------------------- | ------------------------------------------------------ |
-| `E2E_USERNAME`          | Test user email (same value as in your `.env.test`)    |
-| `E2E_PASSWORD`          | Test user password (same value as in your `.env.test`) |
-| `E2E_SLACK_WEBHOOK_URL` | (Optional) Slack webhook for failure notifications     |
-
-### Enabling the workflow on a fork
-
-GitHub disables scheduled workflows on forks by default. After pushing:
-
-1. Go to `https://github.com/sm1990/integration-control-plane/actions`
-2. Find **E2E Nightly (WIP)**
-3. Click **Enable workflow** if shown
-
----
-
-## Adding new tests
-
-1. **Add a page object** in `tests/e2e/pages/` if you need to interact with a new page.
-   - Name it after the page (e.g. `EnvironmentsPage.ts`)
-   - Use `getByRole`, `getByLabel`, `getByText` — avoid CSS selectors where possible
-   - Keep assertions in spec files, not page objects
-
-2. **Add a spec** in `tests/e2e/specs/smoke/` for smoke-level coverage, or create a new subdirectory (e.g. `specs/regression/`) for deeper flows.
-
-3. **Test naming convention**
-   - Smoke tests: tag with `@smoke` in `test.describe`
-   - Use unique resource names: `e2e-<purpose>-${Date.now()}`
-
-4. **Parallel safety**
-   - Tests run with `fullyParallel: true` — never share mutable state between tests
-   - Each test or suite creates its own resources
+GitHub disables scheduled workflows on forks, and only runs schedules from the repository's default branch.
 
 ---
 
 ## Troubleshooting
 
-**`E2E_USERNAME and E2E_PASSWORD must be set`**
-→ You haven't created `.env.test` yet. Run `cp .env.test.example .env.test` and fill in your credentials.
+See `.claude/skills/playwright-e2e/references/triage.md` for the full table. The common ones:
 
-**`Not on an org page` error in OrgHomePage**
-→ The test user has no org yet. Sign in manually at the app and create one.
-
-**WSO2 Identity Platform login selectors fail in `global.setup.ts`**
-→ Run with `--headed` and watch the WSO2 Identity Platform login page. Inspect the username/password field IDs and update the locator strings in `global.setup.ts` lines ~20–26.
-
-**Tests pass locally but fail in CI**
-→ Check the uploaded `playwright-report` artifact in the GitHub Actions run. Traces and videos are saved on failure.
-
-**`Schedule` trigger not firing**
-→ GitHub only runs scheduled workflows from the repository's **default branch**. Make sure the workflow file is merged to `main`.
+| Symptom                                    | Cause                                                        | Fix                                                               |
+| ------------------------------------------ | ------------------------------------------------------------ | ----------------------------------------------------------------- |
+| `E2E_USERNAME must be set`                 | No `.env.test`                                               | `cp .env.test.example .env.test` and fill it in                   |
+| `waitForOTP` times out                     | Gmail refresh token expired or revoked                       | `pnpm test:e2e:get-gmail-token`                                   |
+| Setup fails on the Asgardeo login page     | The IdP changed its markup                                   | Run `--headed`, inspect, update the locators in `global.setup.ts` |
+| `Not on an org page`                       | Test account has no org                                      | Sign in manually once and let onboarding provision one            |
+| `No projectHandler in auth context`        | `.auth/context.json` stale, or setup never reached a project | Delete `.auth/` and re-run                                        |
+| Every spec redirects to `/login`           | Saved `storageState` expired                                 | Delete `.auth/user.json` and re-run                               |
+| Locator times out, trace shows a spinner   | Asserted before render                                       | Wait on a rendered element, not the URL                           |
+| Locator times out, trace shows the element | Name mismatch or prefix collision                            | Copy the name from the trace; add `exact: true`                   |
+| Passes alone, fails in the suite           | Shared state or name collision across workers                | Per-test resources with `Date.now()` names                        |
+| Passes locally, fails in CI                | Slower runner, or missing secrets                            | Check the uploaded `playwright-report` artifact                   |
