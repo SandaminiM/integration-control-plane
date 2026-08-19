@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, CircularProgress, FormHelperText, Grid, IconButton, InputAdornment, MenuItem, PageContent, Skeleton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, FormHelperText, Grid, IconButton, InputAdornment, Link, MenuItem, PageContent, Skeleton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, GitBranch, RefreshCw, GitHub } from '@wso2/oxygen-ui-icons-react';
 import { useState, useEffect, useMemo, useRef, type JSX } from 'react';
 import { useLocation } from 'react-router';
@@ -29,7 +29,8 @@ import DirectoryPickerField from '../components/DirectoryPicker';
 import IntegrationTypeSelector from '../components/IntegrationCreate/IntegrationTypeSelector';
 import TechnologySelector from '../components/IntegrationCreate/TechnologySelector';
 import TechDetectionIcon from '../components/IntegrationCreate/TechDetectionIcon';
-import BallerinaCentralTokenPanel from '../components/IntegrationCreate/BallerinaCentralTokenPanel';
+import BallerinaCentralTokenDrawer from '../components/IntegrationCreate/BallerinaCentralTokenDrawer';
+import { useBallerinaCentralToken } from '../hooks/useBallerinaCentralToken';
 import IntegrationCreationLoader from '../components/IntegrationCreationLoader';
 import type { IntegrationType, SourceMode, LocationState } from '../types/import';
 import { SAMPLE_REPO_URL } from '../constants/github';
@@ -126,6 +127,8 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   const [selectedTechnology, setSelectedTechnology] = useState<'MI' | 'BI' | null>(null);
   const [selectedIntegrationType, setSelectedIntegrationType] = useState<IntegrationType | null>(null);
   const [ballerinaTokenInput, setBallerinaTokenInput] = useState('');
+  const [ballerinaDrawerOpen, setBallerinaDrawerOpen] = useState(false);
+  const { data: ballerinaTokenStatus } = useBallerinaCentralToken();
 
   const activeOrg = isPublicRepo ? parsedOrg : selectedOrg;
   const activeRepo = isPublicRepo ? parsedRepo : selectedRepo;
@@ -890,11 +893,21 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
           <Typography variant="h5" sx={{ mb: 2, mt: 5 }}>
             Technology
           </Typography>
-          <TechnologySelector selected={selectedTechnology} detectedMode={detectedMode} enabled={showBranchAndSubPath} onSelect={setSelectedTechnology} />
+          <TechnologySelector selected={selectedTechnology} detectedMode={detectedMode} enabled={showBranchAndSubPath} onSelect={setSelectedTechnology} />          
           {IS_CLOUD && selectedTechnology === 'BI' && (
-            <Box sx={{ mt: 3, width: { xs: '100%', md: 'calc(75% + 32px)' } }}>
-              <BallerinaCentralTokenPanel tokenInput={ballerinaTokenInput} onTokenInputChange={setBallerinaTokenInput} />
-            </Box>
+            <>
+              {!ballerinaTokenStatus?.configured && (
+                <Stack direction="row" alignItems="center" gap={1} sx={{ mt: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Depend on private packages?
+                  </Typography>
+                  <Link component="button" type="button" variant="body2" underline="hover" onClick={() => setBallerinaDrawerOpen(true)} sx={{ fontWeight: 600 }}>
+                    Add a Ballerina Central token
+                  </Link>
+                </Stack>
+              )}
+              <BallerinaCentralTokenDrawer open={ballerinaDrawerOpen} onClose={() => setBallerinaDrawerOpen(false)} tokenInput={ballerinaTokenInput} onTokenInputChange={setBallerinaTokenInput} />
+            </>
           )}
         </Box>
 
