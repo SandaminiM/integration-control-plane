@@ -107,6 +107,7 @@ import {
 import FeaturePreviewModal from '../components/FeaturePreview/FeaturePreviewModal';
 import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
+import { useFreshDefaultProject } from '../hooks/useFreshDefaultProject';
 import { useOrgs } from '../hooks/useOrg';
 import { useBillingOrg } from '../hooks/useBillingOrg';
 import { isSupportedIntegration, isByoiComponent, GENERIC_SERVICE_TYPES } from '../constants/integrations';
@@ -220,29 +221,15 @@ function AppLayoutInner(): JSX.Element {
   const projectFromList = !isProjectUuid && projectParam ? (projects.find((p) => p.handler === projectParam) ?? null) : null;
   const project = isProjectUuid ? projectById : (projectByHandler ?? projectFromList);
   const projectId = project?.id ?? '';
-  const { data: allComponents = [], isSuccess: isComponentsSuccess } = useComponents(scope.org, projectId);
+  const { data: allComponents = [] } = useComponents(scope.org, projectId);
   const components = allComponents.filter((c) => isSupportedIntegration(c.displayType, c.componentSubType ?? null));
-  // Hide the sidebar on the project overview page specifically (not other project-scoped pages
-  // like Settings) when the project has no integrations yet — none of the nav links apply until
-  // there's at least one. Requires a resolved projectId + isSuccess (not isLoading, and not just
-  // isFetched) because: useComponents is disabled until projectId resolves, and a disabled query
-  // reports isLoading: false, which would let this fire before we actually know the component
-  // list; and isFetched turns true on a failed fetch too, which combined with data defaulting to
-  // [] would treat a transient/permission error as "empty project" instead of leaving the sidebar
-  // alone until a real answer comes back.
-  //
-  // While isComponentsSuccess is still false (e.g. a hard reload, where react-query's own cache
-  // is gone) fall back to the last known result for this project instead of assuming "not empty"
-  // — otherwise the sidebar flashes visible and then disappears once the query resolves.
-  const emptyProjectCacheKey = projectId ? `sidebar-empty-project:${projectId}` : null;
-  const cachedProjectIsEmpty = emptyProjectCacheKey ? sessionStorage.getItem(emptyProjectCacheKey) === 'true' : false;
 
-  useEffect(() => {
-    if (!emptyProjectCacheKey || !isComponentsSuccess) return;
-    sessionStorage.setItem(emptyProjectCacheKey, String(components.length === 0));
-  }, [emptyProjectCacheKey, isComponentsSuccess, components.length]);
-
-  const hideSidebarForEmptyProject = activeNavId === 'proj-overview' && !!projectId && (isComponentsSuccess ? components.length === 0 : cachedProjectIsEmpty) && manuallyShownProjectId !== projectId;
+  // Shared with Project.tsx's overview-header hiding, so both surfaces hide on exactly the same
+  // one-shot "just landed here right after onboarding" signal and can't drift out of sync. This
+  // only fires on that first landing — navigating elsewhere and back always shows the sidebar
+  // again, even if the project is still empty, so it never vanishes on a repeat visit.
+  const justProvisionedDefaultProject = useFreshDefaultProject();
+  const hideSidebarForEmptyProject = activeNavId === 'proj-overview' && justProvisionedDefaultProject && manuallyShownProjectId !== projectId;
 
   const handleHeaderToggle = () => {
     if (hideSidebarForEmptyProject) {

@@ -21,8 +21,7 @@ import { buildRepoUrl, buildRepoBrowseUrl } from './gitProviderUrl';
 import { GitProvider } from '../types/credentials';
 import type { Repository } from '../types/repository';
 
-const repo = (over: Partial<Repository>): Repository =>
-  ({ gitProvider: 'github', organizationApp: 'acme', nameApp: 'svc', branch: 'main', appSubPath: '', ...over }) as Repository;
+const repo = (over: Partial<Repository>): Repository => ({ gitProvider: 'github', organizationApp: 'acme', nameApp: 'svc', branch: 'main', appSubPath: '', ...over }) as Repository;
 
 describe('buildRepoUrl', () => {
   it('builds a GitHub URL', () => {
