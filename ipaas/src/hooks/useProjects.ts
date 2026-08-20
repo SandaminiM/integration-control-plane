@@ -33,6 +33,18 @@ function orgId(): number {
 // ignores the numericId argument — we just need to let the queries fire.
 const isOrgScopeReady = (id: number): boolean => IS_CLOUD || id > 0;
 
+/**
+ * Whether the queries in this file are actually enabled yet (WIP only — cloud is always ready).
+ * Right after fresh onboarding, `asgardeoOrgNumericId` isn't recovered immediately (see
+ * AppLayout.tsx's ID-recovery effect), so `orgId()` reads 0 for a beat. A caller that treats
+ * "not loading" as "definitely doesn't exist" during that gap — instead of "we haven't been able
+ * to check yet" — can flash a false not-found state. Use this to extend a loading condition
+ * through that window instead.
+ */
+export function useIsOrgScopeReady(): boolean {
+  return isOrgScopeReady(orgId());
+}
+
 export function useProjects() {
   const id = orgId();
   return useQuery({

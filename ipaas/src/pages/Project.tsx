@@ -70,7 +70,7 @@ import AzureDevOpsIcon from '../assets/icons/AzureDevOpsIcon';
 import IntegratorIcon from '../assets/icons/IntegratorIcon';
 import { useAppNavigate } from '../hooks/useAppNavigate';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { useProject, useProjectByHandler, useProjects, useUpdateProject, useGitHubReadme } from '../hooks/useProjects';
+import { useProject, useProjectByHandler, useProjects, useUpdateProject, useGitHubReadme, useIsOrgScopeReady } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
 import { useFreshDefaultProject } from '../hooks/useFreshDefaultProject';
 import { useOrgs, useOrgComponentLimits, useOrgSubscriptions } from '../hooks/useOrg';
@@ -961,7 +961,12 @@ export default function Project(scope: ProjectScope): JSX.Element {
   const { data: allProjects = [], isLoading: loadingProjects } = useProjects();
   const projectFromList = !isUuid ? (allProjects.find((p) => p.handler === scope.project) ?? null) : null;
   const project = isUuid ? projectById : (projectByHandle ?? projectFromList);
-  const loadingProject = !project && (isUuid ? loadingById : loadingByHandle || loadingProjects);
+  const isOrgScopeReady = useIsOrgScopeReady();
+  // Right after fresh onboarding, asgardeoOrgNumericId isn't recovered yet, so the project
+  // queries above are disabled and report isLoading: false — indistinguishable from "we checked
+  // and there's genuinely no project" unless we also wait on org-scope readiness here. Without
+  // this, the page briefly flashes "Project not found" before the real data arrives.
+  const loadingProject = !isOrgScopeReady || (!project && (isUuid ? loadingById : loadingByHandle || loadingProjects));
   const projectId = project?.id ?? '';
   useLoadProjectPermissions(scope.org, projectId);
   // Shared with AppLayout's left-nav hiding, so both surfaces hide on exactly the same one-shot

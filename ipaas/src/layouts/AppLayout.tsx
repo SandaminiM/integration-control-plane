@@ -229,11 +229,15 @@ function AppLayoutInner(): JSX.Element {
   // only fires on that first landing — navigating elsewhere and back always shows the sidebar
   // again, even if the project is still empty, so it never vanishes on a repeat visit.
   const justProvisionedDefaultProject = useFreshDefaultProject();
-  const hideSidebarForEmptyProject = activeNavId === 'proj-overview' && justProvisionedDefaultProject && manuallyShownProjectId !== projectId;
+  // Compared against projectParam (the route segment), not projectId — projectId is '' until the
+  // project record resolves over the network, so a toggle click during that window would store ''
+  // and then stop matching the instant projectId resolves, silently re-hiding the sidebar right
+  // after the user revealed it. projectParam is stable and known synchronously from the URL.
+  const hideSidebarForEmptyProject = activeNavId === 'proj-overview' && justProvisionedDefaultProject && manuallyShownProjectId !== projectParam;
 
   const handleHeaderToggle = () => {
     if (hideSidebarForEmptyProject) {
-      setManuallyShownProjectId(projectId);
+      setManuallyShownProjectId(projectParam);
       return;
     }
     handleToggleSidebar();

@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import { useEffect } from 'react';
 import { useLocation } from 'react-router';
 
 /**
@@ -30,5 +31,21 @@ import { useLocation } from 'react-router';
  */
 export function useFreshDefaultProject(): boolean {
   const { state } = useLocation();
-  return (state as { freshDefaultProject?: boolean } | null)?.freshDefaultProject === true;
+  const isFresh = (state as { freshDefaultProject?: boolean } | null)?.freshDefaultProject === true;
+
+  useEffect(() => {
+    if (!isFresh) return;
+    // Consume the flag directly on the browser's history entry rather than via react-router's
+    // navigate(), which would trigger a reactive re-render here and flip `isFresh` back to false
+    // immediately — flashing the nav/header back on right after hiding them. A plain
+    // history.replaceState only affects what a future reload of this exact URL sees; it doesn't
+    // notify react-router's own location listeners, so this render's already-returned value is
+    // unaffected. Without this, `history.state` persists across a plain reload of the same URL,
+    // so refreshing right after onboarding would keep re-triggering the hidden chrome indefinitely.
+    const { freshDefaultProject: _freshDefaultProject, ...rest } = (state ?? {}) as Record<string, unknown>;
+    window.history.replaceState(rest, '', window.location.href);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFresh]);
+
+  return isFresh;
 }
