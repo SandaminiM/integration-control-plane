@@ -51,16 +51,17 @@ interface BffBuildRun {
 
 type StageKey = 'init' | 'build' | 'deploy';
 
-// Classify an OpenChoreo build task into one of the three stepper stages.
-// Pattern-based so it tolerates builder-specific task names (ballerina /
-// dockerfile / buildpack workflows expose different sets). Observed names:
-// checkout-source → init, build-image → build, generate-workload-cr &
-// publish-build-artifacts → deploy.
+const TASK_STAGE: Record<string, StageKey> = {
+  'checkout-source': 'init',
+  'build-image': 'build',
+  'publish-image': 'deploy',
+  'convert-component-descriptor': 'deploy',
+  'generate-workload-cr': 'deploy',
+  'publish-build-artifacts': 'deploy',
+};
+
 function stageForTask(name: string): StageKey {
-  const n = name.toLowerCase();
-  if (n.includes('checkout') || n.includes('clone') || n.includes('source')) return 'init';
-  if (n.includes('publish') || n.includes('push') || n.includes('workload') || n.includes('artifact') || n.includes('deploy') || n.includes('release')) return 'deploy';
-  return 'build';
+  return TASK_STAGE[name] ?? 'build';
 }
 
 // OpenChoreo task phase → the status/conclusion the stepper reads.
@@ -80,13 +81,22 @@ function stepFromTask(task: BffWorkflowTask, number: number): BuildStep {
   return { number, name: task.name, status, conclusion, started_at: task.startedAt ?? null, completed_at: task.completedAt ?? null };
 }
 
-// Stage status from its steps: in_progress if any running, completed if all
-// terminal, otherwise null (the card reads an empty stage as "pending").
-function stageStatus(steps: BuildStep[]): string | null {
+// The last task that runs for each stage. A stage is done only once
+// this task succeeds
+const STAGE_FINAL_TASK: Record<StageKey, string> = {
+  init: 'checkout-source',
+  build: 'build-image',
+  deploy: 'publish-build-artifacts',
+};
+
+// Stage status from its steps: in_progress if any running, completed once
+// the stage's final task (STAGE_FINAL_TASK) has succeeded, otherwise null
+// (the card reads an unresolved/empty stage as "pending").
+function stageStatus(steps: BuildStep[], stage: StageKey): string | null {
   if (steps.length === 0) return null;
   if (steps.some((s) => s.status === 'in_progress')) return 'in_progress';
-  if (steps.every((s) => s.status === 'completed')) return 'completed';
-  return null;
+  const finalTask = steps.find((s) => s.name === STAGE_FINAL_TASK[stage]);
+  return finalTask?.status === 'completed' ? 'completed' : null;
 }
 
 // The card base64-decodes stage logs (safeAtob), but the BFF returns raw text;
@@ -104,7 +114,7 @@ function encodeLog(text: string | null | undefined): string | null {
 function buildRunLogsFromTasks(run: BffBuildRun, rawBuildLog: string | null): BuildRunLogs {
   const stages: Record<StageKey, BuildStep[]> = { init: [], build: [], deploy: [] };
   (run.tasks ?? []).forEach((t, i) => stages[stageForTask(t.name)].push(stepFromTask(t, i + 1)));
-  const mk = (key: StageKey, log: string | null): BuildStage => ({ log, status: stageStatus(stages[key]), steps: stages[key] });
+  const mk = (key: StageKey, log: string | null): BuildStage => ({ log, status: stageStatus(stages[key], key), steps: stages[key] });
   return { init: mk('init', null), build: mk('build', encodeLog(rawBuildLog)), deploy: mk('deploy', null) };
 }
 
