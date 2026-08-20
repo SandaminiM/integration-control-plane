@@ -108,9 +108,13 @@ export const deleteProject = (projectId: string): Promise<void> => bff.delete<vo
 
 export const createMonoRepoProject = async (input: CreateMonoRepoProjectInput): Promise<Project> => bff.post<Project>('/projects', await toBffCreateMonoRepoProjectBody(input));
 
-// Links a repository to an existing project. Only the repo identity travels:
-// the org comes from the access token, linking never edits the project's name or
-// description, and cloud has no git credential store for `secretRef` to reference.
+// Links a repository to an existing project. Only the repository's own identity
+// travels. `orgHandler` is dropped because the WSO2 organization comes from the
+// access token — that is a different thing from `gitOrganization` below, which is
+// the git account that owns the repository (the `acme` in github.com/acme/repo)
+// and which the BFF rejects the request without. `name`/`description` are dropped
+// because linking never edits them, and `secretRef` because cloud has no git
+// credential store for it to reference.
 // `projectId` is the OpenChoreo project name — the same value updateProject uses
 // as its path segment.
 export const linkProjectRepository = (input: LinkProjectRepositoryInput): Promise<Project> =>
