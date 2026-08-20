@@ -22,10 +22,6 @@ import type { Project, ProjectContributor, ProjectHandlerAvailability, CreatePro
 import { bff, items, q, seg, type ListResponse } from './_client';
 import { fetchComponents } from './components';
 
-const ni = (name: string): never => {
-  throw new Error(`[cloud] projects.${name}: not implemented`);
-};
-
 // _orgId is kept on the signatures for devant contract parity; cloud derives
 // the org from the access token instead of taking a numeric id from the caller.
 
@@ -112,4 +108,17 @@ export const deleteProject = (projectId: string): Promise<void> => bff.delete<vo
 
 export const createMonoRepoProject = async (input: CreateMonoRepoProjectInput): Promise<Project> => bff.post<Project>('/projects', await toBffCreateMonoRepoProjectBody(input));
 
-export const linkProjectRepository = (_input: LinkProjectRepositoryInput): Promise<Project> => ni('linkProjectRepository');
+// Links a repository to an existing project. Only the repo identity travels:
+// the org comes from the access token, linking never edits the project's name or
+// description, and cloud has no git credential store for `secretRef` to reference.
+// `projectId` is the OpenChoreo project name — the same value updateProject uses
+// as its path segment.
+export const linkProjectRepository = (input: LinkProjectRepositoryInput): Promise<Project> =>
+  bff.put<Project>(`/projects/${seg(input.projectId)}/repository`, {
+    gitProvider: input.gitProvider,
+    gitOrganization: input.gitOrganization,
+    repository: input.repository,
+    branch: input.branch,
+    directoryPath: input.directoryPath,
+    isPublicRepo: input.isPublicRepo,
+  });
