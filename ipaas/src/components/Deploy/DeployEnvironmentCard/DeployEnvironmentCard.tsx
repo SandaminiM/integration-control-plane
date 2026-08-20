@@ -117,7 +117,7 @@ export default function DeployEnvironmentCard({
   const releaseId = deployment?.releaseId ?? '';
   const status = deployment?.deploymentStatusV2;
 
-  const { data: executionConfigs } = useExecutionConfigs(flags.isAutomation ? componentId : '', flags.isAutomation ? releaseId : '');
+  const { data: executionConfigs } = useExecutionConfigs(flags.isAutomation ? componentId : '', flags.isAutomation ? releaseId : '', flags.isAutomation ? env.id : '');
   const scheduleDescription = executionConfigs?.cronjobFrequency ? `${describeCron(executionConfigs.cronjobFrequency)}, ${executionConfigs.cronjobTimezone || 'UTC'}` : null;
 
   const [nextRunLabel, setNextRunLabel] = useState<string | null>(null);
@@ -381,7 +381,17 @@ export default function DeployEnvironmentCard({
       />
 
       {flags.isAutomation && hasRelease && scheduleOpen && (
-        <ScheduleDialog open={scheduleOpen} onClose={() => setScheduleOpen(false)} envId={env.id} envName={env.name} componentId={componentId} orgHandler={orgHandler} versionId={versionId} deploymentPipelineId={deploymentPipelineId} />
+        <ScheduleDialog
+          open={scheduleOpen}
+          onClose={() => setScheduleOpen(false)}
+          envId={env.id}
+          envName={env.name}
+          componentId={componentId}
+          releaseId={releaseId}
+          buildId={deployedBuildId ?? undefined}
+          versionId={versionId}
+          deploymentPipelineId={deploymentPipelineId}
+        />
       )}
 
       <DeploymentHistoryDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} orgUuid={orgUuid} projectId={projectId} componentId={componentId} versionId={versionId} environmentId={env.id} envName={env.name} />

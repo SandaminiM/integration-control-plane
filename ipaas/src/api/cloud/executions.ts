@@ -79,14 +79,16 @@ function toTaskExecution(e: BffExecution): TaskExecution {
 // environment. Mapped onto ExecutionConfigs so the schedule UI (button state,
 // next-run countdown, dialog prefill) reads it unchanged.
 //
+// Previously we used to send `projectName` param, now removed because it's not used in ipaas-service.
+//
 // Stopping a schedule undeploys the underlying ReleaseBinding (state "Undeploy")
 // but leaves its cron spec intact, so the endpoint keeps returning a cronExpression.
 // Report a stopped schedule as no active schedule so the UI reflects "not running"
 // rather than treating the lingering cron as live.
-export const fetchExecutionConfigs = (componentId: string, _releaseId: string, envId = '', projectId = ''): Promise<ExecutionConfigs | null> => {
+export const fetchExecutionConfigs = (componentId: string, _releaseId: string, envId = ''): Promise<ExecutionConfigs | null> => {
   if (!envId) return Promise.resolve(null);
   return bff
-    .get<BffSchedule>(`/components/${seg(componentId)}/schedules/${seg(envId)}${q({ projectName: projectId })}`)
+    .get<BffSchedule>(`/components/${seg(componentId)}/schedules/${seg(envId)}`)
     .then((s) => {
       if (s.state === 'Undeploy') return null;
       return {
