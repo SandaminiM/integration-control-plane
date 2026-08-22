@@ -21,6 +21,8 @@ import { X } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
 import type { EnvEndpoint } from '../../../types/component';
 import { EndpointCard } from '../../EndpointCard';
+import ApiSettingsDrawer from '../../Overview/integration-as-api/ApiSettingsDrawer';
+import { IS_CLOUD } from '../../../features';
 import ManageDrawer from '../../EnvironmentCard/ManageDrawer';
 
 interface EndpointsDrawerProps {
@@ -31,6 +33,7 @@ interface EndpointsDrawerProps {
   envName: string;
   // Context for deploy-settings-v2 redeploy and visibility editing
   componentId?: string;
+  projectId?: string;
   versionId?: string;
   releaseId?: string;
   buildId?: string;
@@ -50,7 +53,7 @@ const drawerSx = {
   },
 } as const;
 
-export default function EndpointsDrawer({ open, onClose, endpoints, isLoading, envName, componentId, versionId, releaseId, buildId, environmentId }: EndpointsDrawerProps) {
+export default function EndpointsDrawer({ open, onClose, endpoints, isLoading, envName, componentId, projectId, versionId, releaseId, buildId, environmentId }: EndpointsDrawerProps) {
   const [manageDrawerOpen, setManageDrawerOpen] = useState(false);
   const [selectedEndpoint, setSelectedEndpoint] = useState<EnvEndpoint | null>(null);
 
@@ -96,20 +99,32 @@ export default function EndpointsDrawer({ open, onClose, endpoints, isLoading, e
         </Box>
       </Drawer>
 
-      <ManageDrawer
-        open={manageDrawerOpen}
-        onClose={() => setManageDrawerOpen(false)}
-        apimId={selectedEndpoint?.apimId}
-        apimRevisionId={selectedEndpoint?.apimRevisionId}
-        endpointId={selectedEndpoint?.id}
-        endpointDisplayName={selectedEndpoint?.displayName}
-        networkVisibilities={selectedEndpoint?.networkVisibilities}
-        componentId={componentId}
-        versionId={versionId}
-        releaseId={releaseId}
-        buildId={buildId}
-        environmentId={environmentId}
-      />
+      {IS_CLOUD ? (
+        <ApiSettingsDrawer
+          open={manageDrawerOpen}
+          onClose={() => setManageDrawerOpen(false)}
+          componentName={componentId ?? ''}
+          envName={environmentId ?? ''}
+          endpoints={endpoints.map((ep) => ({ name: ep.id, displayName: ep.displayName || ep.id }))}
+          activeEndpointName={selectedEndpoint?.id}
+        />
+      ) : (
+        <ManageDrawer
+          open={manageDrawerOpen}
+          onClose={() => setManageDrawerOpen(false)}
+          apimId={selectedEndpoint?.apimId}
+          apimRevisionId={selectedEndpoint?.apimRevisionId}
+          endpointId={selectedEndpoint?.id}
+          endpointDisplayName={selectedEndpoint?.displayName}
+          networkVisibilities={selectedEndpoint?.networkVisibilities}
+          componentId={componentId}
+          projectId={projectId}
+          versionId={versionId}
+          releaseId={releaseId}
+          buildId={buildId}
+          environmentId={environmentId}
+        />
+      )}
     </>
   );
 }

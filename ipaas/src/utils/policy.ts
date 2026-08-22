@@ -51,11 +51,23 @@ export function applyRateLimit(api: ApimApiInfo, value: RateLimitConfig): ApimAp
   };
 }
 
-/** True when the rate limit is internally valid (a positive request count when limited). */
-export function isRateLimitValid(value: RateLimitConfig): boolean {
-  if (value.level !== 'API_LEVEL') return true;
-  const count = Number(value.requestCount);
+/** True when a single limit is a positive whole number of requests. */
+export function isRuleValid(rule: { requestCount: string }): boolean {
+  const count = Number(rule.requestCount);
   return Number.isInteger(count) && count > 0;
+}
+
+/**
+ * True when the rate limit is internally valid. A resource-level limit is valid when every
+ * operation the user filled in is valid — a blank one means "leave this operation unlimited",
+ * so it must not block the save.
+ */
+export function isRateLimitValid(value: RateLimitConfig): boolean {
+  if (value.level === 'RESOURCE_LEVEL') {
+    return Object.values(value.operations ?? {}).every((rule) => rule.requestCount === '' || isRuleValid(rule));
+  }
+  if (value.level !== 'API_LEVEL') return true;
+  return isRuleValid(value);
 }
 
 // ── CORS ──────────────────────────────────────────────────────────────────────

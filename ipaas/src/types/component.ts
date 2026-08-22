@@ -132,6 +132,22 @@ export interface EnvEndpoint {
   generationSource?: string | null;
 }
 
+/** Input for updating an endpoint's network visibility. */
+export interface UpdateEndpointInput {
+  componentId: string;
+  /**
+   * Project the component belongs to. Cloud sends it so the BFF can resolve the component's
+   * release bindings; wip carries the project in the component id and ignores it.
+   */
+  projectId: string;
+  versionId: string;
+  releaseId: string;
+  endpointId: string;
+  displayName: string;
+  /** UI labels — 'Public' | 'Organization' | 'Project'. Each product maps them to its own wire values. */
+  networkVisibilities: string[];
+}
+
 export interface ComponentNameAvailability {
   componentNameUnique: boolean;
   alternateComponentName: string;

@@ -217,7 +217,7 @@ export default function McpPolicies(scope: ComponentScope): JSX.Element {
                   <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
                     Rate Limiting
                   </Typography>
-                  <RateLimitingSection value={rateLimit} onChange={setRateLimit} disabled={saving} />
+                  <RateLimitingSection value={rateLimit} onChange={setRateLimit} disabled={saving} description="Limit how many requests this MCP server accepts. Resource-level limits are managed per environment from the deployment settings." />
                 </Box>
 
                 <Divider />

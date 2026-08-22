@@ -404,6 +404,7 @@ export default function DeployEnvironmentCard({
           isLoading={endpointsLoading}
           envName={env.name}
           componentId={componentId}
+          projectId={projectId}
           versionId={versionId}
           releaseId={releaseId}
           buildId={deployedBuildId ?? undefined}

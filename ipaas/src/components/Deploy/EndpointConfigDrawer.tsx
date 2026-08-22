@@ -28,6 +28,8 @@ import { buildEndpointSecurityState, extractScopesFromSwagger, toggleSchemeToken
 import { getHttpMethodColors } from '../../utils/httpMethods';
 import type { EndpointSecurityState } from '../../types/deploy';
 import TagInput from './TagInput';
+import ApiSecurityDrawer from '../Overview/integration-as-api/ApiSecurityDrawer';
+import { IS_CLOUD } from '../../features';
 
 const drawerSx = {
   '& .MuiDrawer-paper': {
@@ -316,9 +318,11 @@ interface EndpointConfigDrawerProps {
   componentId: string;
   versionId: string;
   firstEnvReleaseId: string;
+  /** Environment slug, required by the cloud security drawer's BFF routes. */
+  firstEnvId?: string;
 }
 
-export default function EndpointConfigDrawer({ open, onClose, componentId, versionId, firstEnvReleaseId }: EndpointConfigDrawerProps) {
+export default function EndpointConfigDrawer({ open, onClose, componentId, versionId, firstEnvReleaseId, firstEnvId }: EndpointConfigDrawerProps) {
   const { data: endpoints = [], isLoading: endpointsLoading } = useEnvEndpoints(componentId, versionId, firstEnvReleaseId);
 
   const [selectedIdx, setSelectedIdx] = useState(0);
@@ -339,6 +343,21 @@ export default function EndpointConfigDrawer({ open, onClose, componentId, versi
   };
 
   const selectedEp: EnvEndpoint | null = endpoints[selectedIdx] ?? null;
+
+  // The panel below edits an APIM API object, which cloud has none of. Its cloud counterpart is
+  // the APIP-backed security drawer, so open that instead of a permanently empty panel.
+  if (IS_CLOUD) {
+    return (
+      <ApiSecurityDrawer
+        open={open}
+        onClose={handleClose}
+        componentName={componentId}
+        envName={firstEnvId ?? ''}
+        endpoints={endpoints.map((ep) => ({ name: ep.id, displayName: ep.displayName || ep.id }))}
+        activeEndpointName={selectedEp?.id}
+      />
+    );
+  }
 
   return (
     <Drawer anchor="right" open={open} onClose={handleClose} variant="temporary" sx={drawerSx}>

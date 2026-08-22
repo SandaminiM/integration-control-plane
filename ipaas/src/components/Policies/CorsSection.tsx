@@ -70,9 +70,18 @@ export default function CorsSection({ value, onChange, disabled }: CorsSectionPr
 
           <TagField label="Access control allow methods" placeholder="Add a method" options={CORS_METHOD_OPTIONS} values={value.methods} onChange={(v) => onChange({ ...value, methods: v })} disabled={disabled} />
 
+          {/* Credentials against a wildcard origin is rejected by the CORS spec, and the gateway
+              does not merely ignore it — it 500s every request to the API until the config is
+              changed back. Lock the pair out rather than letting two clicks take an API down. */}
           <FormControlLabel
-            control={<Checkbox size="small" checked={value.allowCredentials} onChange={(e) => onChange({ ...value, allowCredentials: e.target.checked })} disabled={disabled} />}
-            label={<Typography variant="body2">Allow credentials</Typography>}
+            control={
+              <Checkbox size="small" checked={value.allowCredentials && !value.allowAllOrigins} onChange={(e) => onChange({ ...value, allowCredentials: e.target.checked })} disabled={disabled || value.allowAllOrigins} />
+            }
+            label={
+              <Typography variant="body2" color={value.allowAllOrigins ? 'text.disabled' : undefined}>
+                Allow credentials{value.allowAllOrigins ? ' — unavailable while all origins are allowed' : ''}
+              </Typography>
+            }
           />
         </Stack>
       </Collapse>

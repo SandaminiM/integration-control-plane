@@ -23,6 +23,7 @@ import { API_KEY_SCHEME_DESCRIPTION, COMING_SOON_OAUTH, COMING_SOON_UPSTREAM_ATT
 import { useEndpointSecurity, useSetEndpointSecurity } from '../../../hooks/useConsumers';
 import type { EndpointOption, EndpointRef, SecurityConfig, SecurityMode } from '../../../types/consumers';
 import { friendlyApiError } from '../../../utils/apiSecurity';
+import { httpStatusOf } from '../../../utils/apiErrors';
 import * as styles from './apiConsumption.styles';
 
 interface ApiSecurityDrawerProps {
@@ -85,6 +86,18 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
     }
   }, [open, security, syncKey]);
 
+  // 409 and 503 are states, not failures: the endpoint is not exposed yet, or the platform is not
+  // configured here. Both need copy that says what to do rather than a generic warning.
+  const loadStatus = securityError ? httpStatusOf(securityError) : undefined;
+  const notice =
+    loadStatus === 409
+      ? 'This endpoint isn’t exposed as an API yet. Set its visibility to Public and deploy, then come back to configure security.'
+      : loadStatus === 503
+        ? 'API security isn’t available in this environment.'
+        : securityError
+          ? friendlyApiError(securityError, 'Could not read the current security configuration.')
+          : null;
+
   const isApiKey = mode === 'api-key';
   const isOAuth = mode === 'jwt';
 
@@ -126,7 +139,7 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
           ) : (
             <Stack gap={2.5}>
               {error && <Alert severity="error">{error}</Alert>}
-              {securityError && !error && <Alert severity="warning">{friendlyApiError(securityError, 'Could not read the current security configuration.')}</Alert>}
+              {notice && !error && <Alert severity={loadStatus === 409 ? 'info' : 'warning'}>{notice}</Alert>}
 
               <Stack direction="row" alignItems="center" gap={2}>
                 <Typography variant="body2" fontWeight={500}>

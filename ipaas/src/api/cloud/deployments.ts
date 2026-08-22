@@ -48,6 +48,7 @@ import type { EnvEndpoint } from '../../types/component';
 import type { DeployComponentInput } from '../../types/build';
 import { bff, items, q, seg, type ListResponse, type MessageResponse } from './_client';
 import { getEndpointLabel } from '../../utils/endpoints';
+import { toVisibilityLabel } from './_visibility';
 
 // Underscored params (_orgHandler, _orgUuid, _projectId, _versionId) are kept
 // on these signatures for devant contract parity; cloud does not use them.
@@ -78,8 +79,6 @@ interface BffEndpointResources {
   schemaContent?: string;
 }
 
-const VISIBILITY_LABEL: Record<string, string> = { external: 'Public', organization: 'Organization', project: 'Project' };
-
 function buildUrl(u?: BffEndpointURL): string {
   if (!u?.host) return '';
   const scheme = u.scheme || 'https';
@@ -89,7 +88,7 @@ function buildUrl(u?: BffEndpointURL): string {
 }
 
 function toEnvEndpoint(ep: BffEndpointResources, releaseId: string): EnvEndpoint {
-  const networkVisibilities = (ep.visibility ?? []).map((v) => VISIBILITY_LABEL[v] ?? v);
+  const networkVisibilities = (ep.visibility ?? []).map(toVisibilityLabel);
   const publicUrl = buildUrl(ep.urls?.external);
   const organizationUrl = buildUrl(ep.urls?.internal);
   return {

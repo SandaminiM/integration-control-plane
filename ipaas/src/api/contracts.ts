@@ -36,7 +36,7 @@
 import type { AlertComponentType } from '../constants/alerts';
 import type { AlertHistoryResponse, AlertRule, AlertRuleCountUsage } from '../types/alerts';
 import type { ApimApiInfo, GeneratedTestKey, DeploySettingsV2Payload, LifecycleState, LifecycleHistory, MarketplaceService } from '../types/apim';
-import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, CreateApiKeyInput, CreateConsumerInput, EndpointRef, SecurityConfig, ConsumerCredential } from '../types/consumers';
+import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, CreateApiKeyInput, CreateConsumerInput, EndpointPolicyConfig, EndpointRef, SecurityConfig, ConsumerCredential } from '../types/consumers';
 import type { ArtifactType, Artifact, ArtifactParam, ArtifactStatusInput, ListenerStateInput, ArtifactToggleStatusInput, ArtifactToggleKind, TriggerTaskInput } from '../types/artifact';
 import type {
   User,
@@ -76,6 +76,7 @@ import type {
   CreateComponentInput,
   UpdateComponentInput,
   UpdateAutoDeployInput,
+  UpdateEndpointInput,
   GenerateComponentEndpointsInput,
   ComponentNameAvailability,
   DeleteComponentResult,
@@ -265,6 +266,11 @@ export interface ConsumersApi {
   /** Set the single active auth mode (none/api-key/jwt); the BFF clears the other + redeploys. */
   setEndpointSecurity(ref: EndpointRef, cfg: SecurityConfig): Promise<SecurityConfig>;
 
+  // Endpoint policies — the non-auth gateway behaviour (CORS, rate limiting), written
+  // independently of the auth mode above.
+  getEndpointPolicies(ref: EndpointRef): Promise<EndpointPolicyConfig>;
+  setEndpointPolicies(ref: EndpointRef, cfg: EndpointPolicyConfig): Promise<EndpointPolicyConfig>;
+
   // Consumers — a consumer application holding an api-key on the exposed endpoint (no
   // subscription-token flow; the BFF implements /applications but no /subscriptions).
   /** One row per consumer application of the API exposed for `ref`, revoked ones included. */
@@ -373,6 +379,7 @@ export interface ComponentsApi {
   deleteComponent(input: { orgHandler: string; componentId: string; projectId: string }): Promise<DeleteComponentResult>;
   updateComponent(input: UpdateComponentInput): Promise<Component>;
   updateAutoDeployEnabled(input: UpdateAutoDeployInput): Promise<{ id: string; autoDeployEnabled: boolean }>;
+  updateEndpoint(input: UpdateEndpointInput): Promise<object>;
   generateComponentEndpoints(input: GenerateComponentEndpointsInput): Promise<EnvEndpoint[]>;
   fetchComponentNameAvailability(projectId: string, componentNameCandidate: string): Promise<ComponentNameAvailability>;
   fetchComponentEndpointSpec(componentId: string, versionId: string, endpointId: string): Promise<string | null>;

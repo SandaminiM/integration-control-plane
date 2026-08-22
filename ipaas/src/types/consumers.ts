@@ -103,6 +103,50 @@ export interface SecurityConfig {
   publicUrl?: string;
 }
 
+/**
+ * The non-auth gateway behaviour of an exposed endpoint API (GET/PUT `.../policies`).
+ *
+ * Endpoint timeout ("resiliency") is absent on purpose: the gateway has one, but platform-api does
+ * not expose it, so there is nothing the BFF could set.
+ */
+export interface EndpointPolicyConfig {
+  cors?: EndpointCorsPolicy;
+  rateLimit?: EndpointRateLimitPolicy;
+  /**
+   * Routes the exposed API actually has. An endpoint exposed without an OpenAPI schema gets the
+   * catch-all method set on `/*`, so this is what a per-operation limit can be attached to —
+   * not the paths in the endpoint's own schema. Read-only: ignored on PUT.
+   */
+  operations?: EndpointPolicyOperation[];
+}
+
+export interface EndpointPolicyOperation {
+  /** `"<METHOD> <path>"` — the identity `EndpointRateLimitPolicy.operations` is keyed by. */
+  key: string;
+  method: string;
+  path: string;
+}
+
+export interface EndpointCorsPolicy {
+  enabled: boolean;
+  /** Exact origins, a wildcard subdomain, or `['*']` for any. */
+  allowOrigins?: string[];
+  allowMethods?: string[];
+  allowHeaders?: string[];
+  allowCredentials: boolean;
+}
+
+/** `api` = one allowance for the whole API; `resource` = one per operation. */
+export type EndpointRateLimitLevel = 'unlimited' | 'api' | 'resource';
+
+export interface EndpointRateLimitPolicy {
+  level: EndpointRateLimitLevel;
+  requestCount?: number;
+  timeUnit?: 'MINUTE' | 'HOUR' | 'DAY';
+  /** Per-operation limits, keyed by `"<METHOD> <path>"`. Absent operations stay unlimited. */
+  operations?: Record<string, { requestCount: number; timeUnit: 'MINUTE' | 'HOUR' | 'DAY' }>;
+}
+
 /** Normalised from the credential's raw status. A revoked consumer keeps its row. */
 export type ConsumerStatus = 'active' | 'revoked';
 

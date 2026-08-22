@@ -21,7 +21,7 @@
  * from the JWT, so no call takes an org parameter.
  */
 
-import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, ConsumerApplication, CreateApiKeyInput, CreateApplicationInput, CreateConsumerInput, EndpointRef, SecurityConfig, ConsumerCredential } from '../../types/consumers';
+import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, ConsumerApplication, CreateApiKeyInput, CreateApplicationInput, CreateConsumerInput, EndpointPolicyConfig, EndpointRef, SecurityConfig, ConsumerCredential } from '../../types/consumers';
 import { normalizeConsumerStatus } from '../../utils/apiConsumption';
 import { userFacingError } from '../../utils/apiSecurity';
 import { bff, items, seg, type ListResponse } from './_client';
@@ -78,6 +78,18 @@ export const getEndpointSecurity = (ref: EndpointRef): Promise<SecurityConfig> =
 
 /** Set the single active auth mode. The BFF clears the other mode + redeploys. */
 export const setEndpointSecurity = (ref: EndpointRef, cfg: SecurityConfig): Promise<SecurityConfig> => bff.put<SecurityConfig>(`${endpointPath(ref)}/security`, cfg);
+
+// ---------------------------------------------------------------------------
+// Endpoint policies — CORS and rate limiting
+//
+// Separate from /security because the two are written independently: the BFF leaves auth policies
+// alone here and leaves these alone there, so neither drawer can disarm the other.
+// ---------------------------------------------------------------------------
+
+export const getEndpointPolicies = (ref: EndpointRef): Promise<EndpointPolicyConfig> => bff.get<EndpointPolicyConfig>(`${endpointPath(ref)}/policies`);
+
+/** Replaces both policies and redeploys; the response is the re-read state. */
+export const setEndpointPolicies = (ref: EndpointRef, cfg: EndpointPolicyConfig): Promise<EndpointPolicyConfig> => bff.put<EndpointPolicyConfig>(`${endpointPath(ref)}/policies`, cfg);
 
 // ---------------------------------------------------------------------------
 // Consumer applications
