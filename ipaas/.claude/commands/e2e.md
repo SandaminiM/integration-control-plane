@@ -13,7 +13,7 @@ Work in this order and do not skip ahead:
 2. Read the page component under `src/pages/` and whatever it renders from `src/components/`. Identify which of the four states (loading / error / not-found / empty) the test will land in, and pick a fixture that produces it reliably.
 3. Harvest accessible names verbatim from that source. Every locator must trace back to a real string you read, a third-party page you verified against a real run, or a value derived at runtime.
 4. Decide whether this needs a page object in `tests/e2e/pages/` or whether inline locators are clearer.
-5. Write the spec in `tests/e2e/specs/smoke/`, tagged `@smoke`.
+5. Write the spec in `tests/e2e/specs/shared/` (or `specs/wip/` / `specs/cloud/` when product-specific), tagged `@smoke`.
 6. Run `./node_modules/.bin/eslint` and `pnpm test:e2e <spec path>` on it.
 
 Then report back with: the file you created, which behaviours it asserts, anything you deliberately left as `test.skip` and why, and the actual run result. If you could not run it, say so plainly rather than implying it passed.

@@ -23,7 +23,10 @@ tests/e2e/
   helpers/auth-context.ts     getAuthContext() → reads .auth/context.json
   helpers/gmail.ts            waitForOTP() — reads the login OTP from Gmail
   pages/                      page objects, one per page (LoginPage, TopNav, ProjectsPage, …)
-  specs/smoke/                the smoke suite — one spec file per page or surface
+  specs/shared/               specs that run against both WIP and cloud
+  specs/wip/                  WIP-only specs (Asgardeo login page)
+  specs/cloud/                cloud-only authenticated specs
+  specs/cloud-anon/           cloud-only specs that need no session
 ```
 
 Two things about this setup drive nearly every rule below.
@@ -200,7 +203,7 @@ What earns a skip is an external blocker. A test you could not get passing does 
 
 ```bash
 pnpm test:e2e                                        # full suite; loads .env.test
-pnpm test:e2e tests/e2e/specs/smoke/top-nav.spec.ts  # one file
+pnpm test:e2e tests/e2e/specs/shared/top-nav.spec.ts  # one file
 pnpm test:e2e --headed                               # watch the browser
 pnpm test:e2e --grep @smoke                          # by tag
 pnpm test:e2e:ui                                     # Playwright's test explorer

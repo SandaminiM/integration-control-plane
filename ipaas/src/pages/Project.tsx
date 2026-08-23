@@ -957,10 +957,11 @@ export default function Project(scope: ProjectScope): JSX.Element {
   const isUuid = UUID_RE.test(scope.project);
   const { data: projectById, isLoading: loadingById } = useProject(isUuid ? scope.project : '');
   const { data: projectByHandle, isLoading: loadingByHandle } = useProjectByHandler(isUuid ? '' : scope.project);
-  const { data: allProjects = [], isLoading: loadingProjects } = useProjects();
+  const { data: allProjects = [], isLoading: loadingProjects, isFetching: fetchingProjects } = useProjects();
   const projectFromList = !isUuid ? (allProjects.find((p) => p.handler === scope.project) ?? null) : null;
   const project = isUuid ? projectById : (projectByHandle ?? projectFromList);
-  const loadingProject = !project && (isUuid ? loadingById : loadingByHandle || loadingProjects);
+  // A refetch of the invalidated list reports isLoading false while data is still pre-creation.
+  const loadingProject = !project && (isUuid ? loadingById : loadingByHandle || loadingProjects || fetchingProjects);
   const projectId = project?.id ?? '';
   useLoadProjectPermissions(scope.org, projectId);
   const { data: components = [], isLoading: loadingComponents, isFetching: fetchingComponents, refetch: refetchComponents } = useComponents(scope.org, projectId);
