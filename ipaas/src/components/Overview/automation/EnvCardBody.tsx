@@ -51,7 +51,7 @@ export default function EnvCardBody({
   onNotify,
 }: EnvCardBodyProps): ReactNode {
   const queryClient = useQueryClient();
-  const { data: scheduleConfig } = useExecutionConfigs(component.id, releaseId, env.id, projectId);
+  const { data: scheduleConfig } = useExecutionConfigs(component.id, releaseId, env.id);
   const scheduleDescription = scheduleConfig?.cronjobFrequency ? `${describeCron(scheduleConfig.cronjobFrequency)}, in time zone ${scheduleConfig.cronjobTimezone || 'UTC'}` : null;
 
   const showInsights = !!env.critical && !!releaseId;

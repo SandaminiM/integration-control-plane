@@ -111,7 +111,7 @@ export default function Environment({ env, prevEnv, componentId, projectId, comp
   const prevEnvReleaseId = prevEnvDeployment?.releaseId ?? '';
   const { data: prevEnvEndpoints = [] } = useEnvEndpoints(prevEnvEnabled && !!prevEnvReleaseId ? componentId : '', prevEnvEnabled && !!prevEnvReleaseId ? versionId : '', prevEnvEnabled && !!prevEnvReleaseId ? prevEnvReleaseId : '');
 
-  const { data: scheduleConfig } = useExecutionConfigs(isAutomation ? componentId : '', isAutomation ? envReleaseId : '', isAutomation ? env.id : '', isAutomation ? projectId : '');
+  const { data: scheduleConfig } = useExecutionConfigs(isAutomation ? componentId : '', isAutomation ? envReleaseId : '', isAutomation ? env.id : '');
   const scheduleDescription = scheduleConfig?.cronjobFrequency ? `${describeCron(scheduleConfig.cronjobFrequency)}, in time zone ${scheduleConfig.cronjobTimezone || 'UTC'}` : null;
 
   const envTemplateId = env.templateId ?? env.id;
@@ -256,6 +256,7 @@ export default function Environment({ env, prevEnv, componentId, projectId, comp
                   componentId,
                   orgHandler,
                   releaseId: envReleaseId,
+                  buildId: envDeployment?.build?.buildId,
                   versionId,
                   deploymentPipelineId,
                   hasSchedule: !!scheduleConfig?.cronjobFrequency,
