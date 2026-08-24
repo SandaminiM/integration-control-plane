@@ -93,13 +93,7 @@ export default function EnvCardActions({
       {hasDeployment && (
         <Tooltip title={canTest ? 'Test' : 'Available once the deployment is active'}>
           <span>
-            <Button
-              variant="text"
-              size="small"
-              startIcon={<FlaskConical size={14} />}
-              disabled={!canTest}
-              onClick={() => navigate(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/test`)}
-              sx={{ textTransform: 'none' }}>
+            <Button variant="text" size="small" startIcon={<FlaskConical size={14} />} disabled={!canTest} onClick={() => navigate(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/test`)} sx={{ textTransform: 'none' }}>
               Test
             </Button>
           </span>

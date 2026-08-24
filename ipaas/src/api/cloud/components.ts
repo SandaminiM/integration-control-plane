@@ -76,7 +76,7 @@ const ANN_PREBUILT = 'openchoreo.dev/prebuilt';
 // pair required by the Component CRD; `workflow` must appear in that
 // ComponentType's spec.allowedWorkflows.
 //
-// Service components use deployment/integration-as-api, the integration platform 
+// Service components use deployment/integration-as-api, the integration platform
 // fronts every endpoint with the WSO2 API Platform gateway (apip)
 //
 // The Ballerina (BI) entries resolve against real cluster resources: every
