@@ -59,8 +59,18 @@ export default function CorsSection({ value, onChange, disabled }: CorsSectionPr
 
       <Collapse in={value.enabled} unmountOnExit>
         <Stack gap={2} sx={{ pl: 0.5 }}>
+          {/* Turning the wildcard on clears credentials in the model, not just in the view: a
+              value left set here would survive into the saved config through any caller that
+              does not normalize it. */}
           <FormControlLabel
-            control={<Checkbox size="small" checked={value.allowAllOrigins} onChange={(e) => onChange({ ...value, allowAllOrigins: e.target.checked })} disabled={disabled} />}
+            control={
+              <Checkbox
+                size="small"
+                checked={value.allowAllOrigins}
+                onChange={(e) => onChange({ ...value, allowAllOrigins: e.target.checked, allowCredentials: e.target.checked ? false : value.allowCredentials })}
+                disabled={disabled}
+              />
+            }
             label={<Typography variant="body2">Allow all origins (*)</Typography>}
           />
 

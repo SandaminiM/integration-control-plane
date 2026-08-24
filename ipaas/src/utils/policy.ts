@@ -91,7 +91,10 @@ export function applyCors(api: ApimApiInfo, value: CorsConfig): ApimApiInfo {
   const corsConfiguration: CorsConfiguration = {
     corsConfigurationEnabled: value.enabled,
     accessControlAllowOrigins: value.enabled ? (value.allowAllOrigins ? ['*'] : value.origins) : [],
-    accessControlAllowCredentials: value.enabled ? value.allowCredentials : false,
+    // Credentials are invalid against a wildcard origin per the CORS spec, and gateways reject
+    // the pair rather than ignoring it, so it must never reach a saved config — including from
+    // state loaded back from an API that already holds both.
+    accessControlAllowCredentials: value.enabled && !value.allowAllOrigins ? value.allowCredentials : false,
     accessControlAllowHeaders: value.enabled ? value.headers : [],
     accessControlAllowMethods: value.enabled ? value.methods : [],
   };
