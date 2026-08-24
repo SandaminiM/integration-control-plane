@@ -449,6 +449,11 @@ function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { com
   const mutation = useDeleteComponent();
   const confirmed = confirmation === component.displayName;
 
+  // Escape and backdrop bypass the disabled Cancel button, so gate them too.
+  const handleClose = () => {
+    if (!mutation.isPending) onClose();
+  };
+
   const handleDelete = () => {
     setDeleteError(null);
     mutation.mutate(
@@ -488,7 +493,7 @@ function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { com
   if (subscribers) {
     const { internal, external } = subscribers;
     return (
-      <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
+      <Dialog open onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>Integration &lsquo;{component.displayName}&rsquo; has endpoints with active subscribers</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>This integration cannot be deleted as it has the following subscribers:</DialogContentText>
@@ -521,7 +526,7 @@ function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { com
   }
 
   return (
-    <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         Are you sure you want to remove the integration &lsquo;<strong>{component.displayName}</strong>&rsquo; ?
       </DialogTitle>
@@ -535,7 +540,7 @@ function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { com
         <TextField autoFocus fullWidth placeholder="Enter integration name to confirm" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />
       </DialogContent>
       <DialogActions>
-        <Button variant="outlined" onClick={onClose}>
+        <Button variant="outlined" onClick={onClose} disabled={mutation.isPending}>
           Cancel
         </Button>
         <Button variant="contained" color="error" disabled={!confirmed || mutation.isPending} startIcon={mutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined} onClick={handleDelete}>
