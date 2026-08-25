@@ -107,7 +107,12 @@ export default function ApiSecurityDrawer({ open, onClose, componentName, envNam
   const handleApply = async () => {
     if (!endpointRef) return;
     setError(null);
-    const cfg: SecurityConfig = mode === 'api-key' ? { mode, apiKey: { header: apiKeyHeader.trim() || DEFAULT_API_KEY_HEADER } } : mode === 'jwt' ? { mode, jwt: {} } : { mode: 'none' };
+    // The OAuth row is read-only, so a jwt mode here was fetched rather than chosen. Carry its
+    // issuers and audiences back unchanged: sending an empty object would reset the issuers to the
+    // org default and drop the audiences, silently narrowing the API's security on a save the user
+    // made for some other reason.
+    const cfg: SecurityConfig =
+      mode === 'api-key' ? { mode, apiKey: { header: apiKeyHeader.trim() || DEFAULT_API_KEY_HEADER } } : mode === 'jwt' ? { mode, jwt: security?.jwt ?? {} } : { mode: 'none' };
     try {
       await setSecurityMutation.mutateAsync(cfg);
       onClose();
