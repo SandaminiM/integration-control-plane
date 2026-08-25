@@ -222,6 +222,36 @@ describe('applyCors', () => {
     expect(cors.accessControlAllowCredentials).toBe(false);
   });
 
+  // The origins field is free-form, so "*" can be typed while the allow-all checkbox is off.
+  // Guarding only the checkbox let this pair reach APIM, which has no server-side backstop.
+  it('drops credentials when a literal * is typed as an origin', () => {
+    const value: CorsConfig = {
+      enabled: true,
+      allowAllOrigins: false,
+      origins: ['*'],
+      headers: ['authorization'],
+      methods: ['GET'],
+      allowCredentials: true,
+    };
+    const cors = applyCors(baseApi, value).corsConfiguration!;
+    expect(cors.accessControlAllowOrigins).toEqual(['*']);
+    expect(cors.accessControlAllowCredentials).toBe(false);
+  });
+
+  it('collapses a typed wildcard alongside other origins', () => {
+    const value: CorsConfig = {
+      enabled: true,
+      allowAllOrigins: false,
+      origins: ['https://app.example', ' * '],
+      headers: [],
+      methods: [],
+      allowCredentials: true,
+    };
+    const cors = applyCors(baseApi, value).corsConfiguration!;
+    expect(cors.accessControlAllowOrigins).toEqual(['*']);
+    expect(cors.accessControlAllowCredentials).toBe(false);
+  });
+
   it('keeps credentials when the origins are explicit', () => {
     const value: CorsConfig = {
       enabled: true,

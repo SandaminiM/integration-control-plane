@@ -62,6 +62,13 @@ describe('corsToPolicy', () => {
     expect(out.allowCredentials).toBe(false);
   });
 
+  // Same gap as applyCors: the origins field is free-form, so the wildcard can arrive by typing.
+  it('drops credentials when a literal * is typed as an origin', () => {
+    const out = corsToPolicy({ ...enabled, allowAllOrigins: false, origins: ['*'], allowCredentials: true });
+    expect(out.allowOrigins).toEqual(['*']);
+    expect(out.allowCredentials).toBe(false);
+  });
+
   it('round-trips an enabled config', () => {
     expect(corsFromPolicy(corsToPolicy(enabled))).toEqual(enabled);
   });

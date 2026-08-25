@@ -29,6 +29,7 @@
 import { DEFAULT_CORS_HEADERS, DEFAULT_CORS_METHODS, TIME_UNITS } from '../constants/policy';
 import type { EndpointCorsPolicy, EndpointPolicyConfig, EndpointPolicyOperation, EndpointRateLimitLevel, EndpointRateLimitPolicy } from '../types/consumers';
 import type { CorsConfig, RateLimitConfig, RateLimitLevel, RateLimitOperation, TimeUnit } from '../types/policy';
+import { allowsAllOrigins } from './policy';
 
 const ALLOW_ALL = '*';
 
@@ -54,15 +55,17 @@ export function corsFromPolicy(cors: EndpointCorsPolicy | undefined): CorsConfig
 
 export function corsToPolicy(value: CorsConfig): EndpointCorsPolicy {
   if (!value.enabled) return { enabled: false, allowCredentials: false };
+  // The pair is invalid per the CORS spec and the gateway 500s every request to the API when it
+  // sees it, so credentials are dropped whenever every origin is allowed — including when the
+  // wildcard was typed as an origin rather than ticked, and when `allowCredentials` is stale from
+  // before that happened.
+  const wildcard = allowsAllOrigins(value);
   return {
     enabled: true,
-    allowOrigins: value.allowAllOrigins ? [ALLOW_ALL] : value.origins,
+    allowOrigins: wildcard ? [ALLOW_ALL] : value.origins,
     allowMethods: value.methods,
     allowHeaders: value.headers,
-    // Credentials are dropped against a wildcard origin. The pair is invalid per the CORS spec and
-    // the gateway 500s every request to the API when it sees it, so a stale `allowCredentials`
-    // left over from before the wildcard was ticked must never reach the wire.
-    allowCredentials: value.allowAllOrigins ? false : value.allowCredentials,
+    allowCredentials: wildcard ? false : value.allowCredentials,
   };
 }
 

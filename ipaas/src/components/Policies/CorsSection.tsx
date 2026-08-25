@@ -20,6 +20,7 @@ import { Autocomplete, Checkbox, Chip, Collapse, FormControlLabel, Stack, Switch
 import type { ReactNode } from 'react';
 import { CORS_METHOD_OPTIONS, DEFAULT_CORS_HEADERS } from '../../constants/policy';
 import type { CorsConfig } from '../../types/policy';
+import { allowsAllOrigins } from '../../utils/policy';
 
 interface CorsSectionProps {
   value: CorsConfig;
@@ -53,6 +54,7 @@ function TagField({ label, placeholder, options, values, onChange, disabled }: {
  * so it can track dirty state and save the whole API in one PUT.
  */
 export default function CorsSection({ value, onChange, disabled }: CorsSectionProps): ReactNode {
+  const wildcardOrigins = allowsAllOrigins(value);
   return (
     <Stack gap={1.5}>
       <FormControlLabel control={<Switch size="small" checked={value.enabled} onChange={(e) => onChange({ ...value, enabled: e.target.checked })} disabled={disabled} />} label={<Typography variant="body2">Enable CORS</Typography>} />
@@ -82,14 +84,16 @@ export default function CorsSection({ value, onChange, disabled }: CorsSectionPr
 
           {/* Credentials against a wildcard origin is rejected by the CORS spec, and the gateway
               does not merely ignore it — it 500s every request to the API until the config is
-              changed back. Lock the pair out rather than letting two clicks take an API down. */}
+              changed back. Keyed off the same predicate the mappers use, so the form never offers
+              a setting that would be dropped on save: the origins field is free-form, so "*" can
+              arrive by typing as well as from the checkbox. */}
           <FormControlLabel
             control={
-              <Checkbox size="small" checked={value.allowCredentials && !value.allowAllOrigins} onChange={(e) => onChange({ ...value, allowCredentials: e.target.checked })} disabled={disabled || value.allowAllOrigins} />
+              <Checkbox size="small" checked={value.allowCredentials && !wildcardOrigins} onChange={(e) => onChange({ ...value, allowCredentials: e.target.checked })} disabled={disabled || wildcardOrigins} />
             }
             label={
-              <Typography variant="body2" color={value.allowAllOrigins ? 'text.disabled' : undefined}>
-                Allow credentials{value.allowAllOrigins ? ' — unavailable while all origins are allowed' : ''}
+              <Typography variant="body2" color={wildcardOrigins ? 'text.disabled' : undefined}>
+                Allow credentials{wildcardOrigins ? ' — unavailable while all origins are allowed' : ''}
               </Typography>
             }
           />

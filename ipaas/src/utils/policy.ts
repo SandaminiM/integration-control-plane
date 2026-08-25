@@ -72,6 +72,16 @@ export function isRateLimitValid(value: RateLimitConfig): boolean {
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 
+/**
+ * True when the configuration allows every origin, whether that came from the checkbox or from a
+ * literal "*" typed into the origins field — the field is free-form, so both are reachable. The
+ * read mappers already collapse a "*" into the checkbox; the write side and the form have to agree
+ * with them, or a config saves as something other than what the user was shown.
+ */
+export function allowsAllOrigins(value: Pick<CorsConfig, 'allowAllOrigins' | 'origins'>): boolean {
+  return value.allowAllOrigins || value.origins.some((o) => o.trim() === '*');
+}
+
 /** Derive the CORS view-model from an APIM API. */
 export function corsFromApi(api: ApimApiInfo | null | undefined): CorsConfig {
   const cors = api?.corsConfiguration;
@@ -88,13 +98,15 @@ export function corsFromApi(api: ApimApiInfo | null | undefined): CorsConfig {
 
 /** Apply the CORS view-model onto an APIM API, returning a new object to PUT. */
 export function applyCors(api: ApimApiInfo, value: CorsConfig): ApimApiInfo {
+  // Credentials are invalid against a wildcard origin per the CORS spec, and gateways reject the
+  // pair rather than ignoring it, so it must never reach a saved config — whether the wildcard
+  // came from the checkbox, from a typed origin, or from state loaded back from an API that
+  // already holds both.
+  const wildcard = allowsAllOrigins(value);
   const corsConfiguration: CorsConfiguration = {
     corsConfigurationEnabled: value.enabled,
-    accessControlAllowOrigins: value.enabled ? (value.allowAllOrigins ? ['*'] : value.origins) : [],
-    // Credentials are invalid against a wildcard origin per the CORS spec, and gateways reject
-    // the pair rather than ignoring it, so it must never reach a saved config — including from
-    // state loaded back from an API that already holds both.
-    accessControlAllowCredentials: value.enabled && !value.allowAllOrigins ? value.allowCredentials : false,
+    accessControlAllowOrigins: value.enabled ? (wildcard ? ['*'] : value.origins) : [],
+    accessControlAllowCredentials: value.enabled && !wildcard ? value.allowCredentials : false,
     accessControlAllowHeaders: value.enabled ? value.headers : [],
     accessControlAllowMethods: value.enabled ? value.methods : [],
   };
