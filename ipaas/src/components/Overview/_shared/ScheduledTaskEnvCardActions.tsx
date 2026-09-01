@@ -46,6 +46,7 @@ export default function EnvCardActions({
   projectHandler,
   componentHandler,
   releaseId,
+  buildId,
   deploymentPipelineId,
   envTemplateId,
   deployedCommitSha,
@@ -57,7 +58,7 @@ export default function EnvCardActions({
   const queryClient = useQueryClient();
   const navigate = useAppNavigate();
 
-  const { data: scheduleConfig } = useExecutionConfigs(component.id, releaseId, env.id, projectId);
+  const { data: scheduleConfig } = useExecutionConfigs(component.id, releaseId, env.id);
   const { data: schemaConfig } = useSchemaConfig(projectId, component.id, envTemplateId, versionId, deployedCommitSha);
   const missingConfigs = useMemo(() => hasMissingRequiredConfigs(schemaConfig), [schemaConfig]);
 
@@ -114,6 +115,7 @@ export default function EnvCardActions({
         componentId={component.id}
         orgHandler={orgHandler}
         releaseId={releaseId}
+        buildId={buildId}
         versionId={versionId}
         deploymentPipelineId={deploymentPipelineId}
         hasSchedule={!!scheduleConfig?.cronjobFrequency}

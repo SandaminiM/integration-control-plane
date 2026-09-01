@@ -52,8 +52,11 @@ import { getEndpointLabel } from '../../utils/endpoints';
 // Underscored params (_orgHandler, _orgUuid, _projectId, _versionId) are kept
 // on these signatures for devant contract parity; cloud does not use them.
 
+// Empty 200 body (no deployment yet) → ./_client's request() resolves it as
+// `undefined`, not `null`. React Query treats an `undefined` queryFn result as a
+// bug and errors the query, so coalesce here to the declared `| null` contract.
 export const fetchComponentDeployment = (_orgHandler: string, _orgUuid: string, componentId: string, _versionId: string, environmentId: string): Promise<ComponentDeployment | null> =>
-  bff.get<ComponentDeployment | null>(`/components/${seg(componentId)}/deployments${q({ environmentId })}`);
+  bff.get<ComponentDeployment | null>(`/components/${seg(componentId)}/deployments${q({ environmentId })}`).then((d) => d ?? null);
 
 // Shape of GET /components/{name}/releases/{releaseId}/endpoints (BFF
 // APIResourcesResponse): the workload's endpoints with resolved URLs and the

@@ -31,6 +31,7 @@ export interface ScheduleButtonProps {
   componentId: string;
   orgHandler: string;
   releaseId: string;
+  buildId?: string;
   versionId: string;
   deploymentPipelineId: string;
   hasSchedule: boolean;

@@ -271,171 +271,171 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
           <NotDeployedAlert status={deployment ? deployment.deploymentStatusV2 : null} />
         ) : (
           <>
-        {/* Controls panel */}
-        <Box sx={{ maxWidth: 720, mb: 3 }}>
-          <Stack direction="column" gap={2}>
-            {/* Endpoint */}
-            <Stack direction="row" alignItems="center" gap={2}>
-              <Typography variant="body2" sx={{ minWidth: 140, fontWeight: 500, color: 'text.secondary' }}>
-                Endpoint
-              </Typography>
-              {loadingEndpoints ? (
-                <CircularProgress size={20} />
-              ) : (
-                <Autocomplete
-                  size="small"
-                  options={endpoints}
-                  getOptionLabel={(ep) => ep.displayName}
-                  value={selectedEndpoint}
-                  onChange={(_, ep) => {
-                    if (ep) setSelectedEndpointId(ep.id);
-                  }}
-                  disableClearable
-                  sx={{ minWidth: 220 }}
-                  renderInput={(params) => <TextField {...params} />}
-                />
-              )}
-            </Stack>
-
-            {/* Visibility */}
-            {visibilityOptions.length > 0 && (
-              <Stack direction="row" alignItems="center" gap={2}>
-                <Typography variant="body2" sx={{ minWidth: 140, fontWeight: 500, color: 'text.secondary' }}>
-                  Visibility
-                </Typography>
-                <Autocomplete
-                  size="small"
-                  options={visibilityOptions}
-                  getOptionLabel={(v) => v.label}
-                  value={selectedVisibility}
-                  onChange={(_, v) => setSelectedVisibility(v)}
-                  disableClearable
-                  sx={{ minWidth: 180 }}
-                  renderInput={(params) => <TextField {...params} />}
-                />
-              </Stack>
-            )}
-
-            {/* Invoke URL */}
-            {invokeUrl && (
-              <Stack direction="row" alignItems="center" gap={2}>
-                <Typography variant="body2" sx={{ minWidth: 140, fontWeight: 500, color: 'text.secondary' }}>
-                  Invoke URL
-                </Typography>
-                <OutlinedInput
-                  size="small"
-                  value={invokeUrl}
-                  readOnly
-                  sx={{ flex: 1, fontFamily: 'monospace', fontSize: '0.8rem' }}
-                  endAdornment={
-                    <InputAdornment position="end">
-                      <Tooltip title={urlCopied ? 'Copied!' : 'Copy to Clipboard'}>
-                        <IconButton
-                          size="small"
-                          onClick={() => {
-                            navigator.clipboard.writeText(invokeUrl);
-                            setUrlCopied(true);
-                            setTimeout(() => setUrlCopied(false), 2000);
-                          }}>
-                          {urlCopied ? <Check size={16} /> : <Copy size={16} />}
-                        </IconButton>
-                      </Tooltip>
-                    </InputAdornment>
-                  }
-                />
-              </Stack>
-            )}
-
-            {/* Security Header */}
-            <Stack direction="row" alignItems="flex-start" gap={2}>
-              <Typography variant="body2" sx={{ minWidth: 140, fontWeight: 500, color: 'text.secondary', pt: 1 }}>
-                Security Header
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 400 }}>
-                  {TEST_KEY_HEADER}
-                </Typography>
-              </Typography>
-              <Stack direction="column" gap={0.5} sx={{ flex: 1 }}>
-                <Stack direction="row" alignItems="center" gap={1}>
-                  <OutlinedInput
-                    size="small"
-                    type={showKey ? 'text' : 'password'}
-                    value={securityHeader}
-                    onChange={(e) => updateSecurityHeader(e.target.value)}
-                    placeholder="Paste or fetch a test key"
-                    sx={{ flex: 1, fontFamily: 'monospace', fontSize: '0.8rem' }}
-                    endAdornment={
-                      <InputAdornment position="end">
-                        <Tooltip title={showKey ? 'Hide' : 'Show'}>
-                          <IconButton size="small" onClick={() => setShowKey((s) => !s)}>
-                            {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title={keyCopied ? 'Copied!' : 'Copy'}>
-                          <IconButton
-                            size="small"
-                            disabled={!securityHeader}
-                            onClick={() => {
-                              navigator.clipboard.writeText(securityHeader);
-                              setKeyCopied(true);
-                              setTimeout(() => setKeyCopied(false), 2000);
-                            }}>
-                            {keyCopied ? <Check size={16} /> : <Copy size={16} />}
-                          </IconButton>
-                        </Tooltip>
-                      </InputAdornment>
-                    }
-                  />
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={fetchingKey ? <CircularProgress size={14} color="inherit" /> : <Key size={14} />}
-                    disabled={fetchingKey || !canGetTestKey}
-                    onClick={handleGetTestKey}
-                    sx={{ whiteSpace: 'nowrap', textTransform: 'none' }}>
-                    Get Test Key
-                  </Button>
-                </Stack>
-                {keyError && (
-                  <Typography variant="caption" color="error">
-                    {keyError}
+            {/* Controls panel */}
+            <Box sx={{ maxWidth: 720, mb: 3 }}>
+              <Stack direction="column" gap={2}>
+                {/* Endpoint */}
+                <Stack direction="row" alignItems="center" gap={2}>
+                  <Typography variant="body2" sx={{ minWidth: 140, fontWeight: 500, color: 'text.secondary' }}>
+                    Endpoint
                   </Typography>
+                  {loadingEndpoints ? (
+                    <CircularProgress size={20} />
+                  ) : (
+                    <Autocomplete
+                      size="small"
+                      options={endpoints}
+                      getOptionLabel={(ep) => ep.displayName}
+                      value={selectedEndpoint}
+                      onChange={(_, ep) => {
+                        if (ep) setSelectedEndpointId(ep.id);
+                      }}
+                      disableClearable
+                      sx={{ minWidth: 220 }}
+                      renderInput={(params) => <TextField {...params} />}
+                    />
+                  )}
+                </Stack>
+
+                {/* Visibility */}
+                {visibilityOptions.length > 0 && (
+                  <Stack direction="row" alignItems="center" gap={2}>
+                    <Typography variant="body2" sx={{ minWidth: 140, fontWeight: 500, color: 'text.secondary' }}>
+                      Visibility
+                    </Typography>
+                    <Autocomplete
+                      size="small"
+                      options={visibilityOptions}
+                      getOptionLabel={(v) => v.label}
+                      value={selectedVisibility}
+                      onChange={(_, v) => setSelectedVisibility(v)}
+                      disableClearable
+                      sx={{ minWidth: 180 }}
+                      renderInput={(params) => <TextField {...params} />}
+                    />
+                  </Stack>
                 )}
+
+                {/* Invoke URL */}
+                {invokeUrl && (
+                  <Stack direction="row" alignItems="center" gap={2}>
+                    <Typography variant="body2" sx={{ minWidth: 140, fontWeight: 500, color: 'text.secondary' }}>
+                      Invoke URL
+                    </Typography>
+                    <OutlinedInput
+                      size="small"
+                      value={invokeUrl}
+                      readOnly
+                      sx={{ flex: 1, fontFamily: 'monospace', fontSize: '0.8rem' }}
+                      endAdornment={
+                        <InputAdornment position="end">
+                          <Tooltip title={urlCopied ? 'Copied!' : 'Copy to Clipboard'}>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                navigator.clipboard.writeText(invokeUrl);
+                                setUrlCopied(true);
+                                setTimeout(() => setUrlCopied(false), 2000);
+                              }}>
+                              {urlCopied ? <Check size={16} /> : <Copy size={16} />}
+                            </IconButton>
+                          </Tooltip>
+                        </InputAdornment>
+                      }
+                    />
+                  </Stack>
+                )}
+
+                {/* Security Header */}
+                <Stack direction="row" alignItems="flex-start" gap={2}>
+                  <Typography variant="body2" sx={{ minWidth: 140, fontWeight: 500, color: 'text.secondary', pt: 1 }}>
+                    Security Header
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 400 }}>
+                      {TEST_KEY_HEADER}
+                    </Typography>
+                  </Typography>
+                  <Stack direction="column" gap={0.5} sx={{ flex: 1 }}>
+                    <Stack direction="row" alignItems="center" gap={1}>
+                      <OutlinedInput
+                        size="small"
+                        type={showKey ? 'text' : 'password'}
+                        value={securityHeader}
+                        onChange={(e) => updateSecurityHeader(e.target.value)}
+                        placeholder="Paste or fetch a test key"
+                        sx={{ flex: 1, fontFamily: 'monospace', fontSize: '0.8rem' }}
+                        endAdornment={
+                          <InputAdornment position="end">
+                            <Tooltip title={showKey ? 'Hide' : 'Show'}>
+                              <IconButton size="small" onClick={() => setShowKey((s) => !s)}>
+                                {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title={keyCopied ? 'Copied!' : 'Copy'}>
+                              <IconButton
+                                size="small"
+                                disabled={!securityHeader}
+                                onClick={() => {
+                                  navigator.clipboard.writeText(securityHeader);
+                                  setKeyCopied(true);
+                                  setTimeout(() => setKeyCopied(false), 2000);
+                                }}>
+                                {keyCopied ? <Check size={16} /> : <Copy size={16} />}
+                              </IconButton>
+                            </Tooltip>
+                          </InputAdornment>
+                        }
+                      />
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={fetchingKey ? <CircularProgress size={14} color="inherit" /> : <Key size={14} />}
+                        disabled={fetchingKey || !canGetTestKey}
+                        onClick={handleGetTestKey}
+                        sx={{ whiteSpace: 'nowrap', textTransform: 'none' }}>
+                        Get Test Key
+                      </Button>
+                    </Stack>
+                    {keyError && (
+                      <Typography variant="caption" color="error">
+                        {keyError}
+                      </Typography>
+                    )}
+                  </Stack>
+                </Stack>
               </Stack>
-            </Stack>
-          </Stack>
-        </Box>
+            </Box>
 
-        <Divider sx={{ mb: 3 }} />
+            <Divider sx={{ mb: 3 }} />
 
-        {/* Swagger UI */}
-        {loadingSwagger ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : swaggerWithServer ? (
-          <Box
-            sx={{
-              '& .swagger-ui .topbar': { display: 'none' },
-              '& .swagger-ui .information-container': { display: 'none' },
-              '& .swagger-ui .scheme-container': { display: 'none' },
-            }}>
-            <SwaggerUI
-              spec={swaggerWithServer}
-              plugins={[HideTopPlugin]}
-              docExpansion="list"
-              requestInterceptor={(request) => {
-                if (securityHeaderRef.current) {
-                  request.headers[TEST_KEY_HEADER] = securityHeaderRef.current;
-                }
-                return request;
-              }}
-            />
-          </Box>
-        ) : selectedEndpoint && !loadingSwagger ? (
-          <Typography variant="body2" color="text.secondary">
-            No API definition available for this endpoint.
-          </Typography>
-        ) : null}
+            {/* Swagger UI */}
+            {loadingSwagger ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : swaggerWithServer ? (
+              <Box
+                sx={{
+                  '& .swagger-ui .topbar': { display: 'none' },
+                  '& .swagger-ui .information-container': { display: 'none' },
+                  '& .swagger-ui .scheme-container': { display: 'none' },
+                }}>
+                <SwaggerUI
+                  spec={swaggerWithServer}
+                  plugins={[HideTopPlugin]}
+                  docExpansion="list"
+                  requestInterceptor={(request) => {
+                    if (securityHeaderRef.current) {
+                      request.headers[TEST_KEY_HEADER] = securityHeaderRef.current;
+                    }
+                    return request;
+                  }}
+                />
+              </Box>
+            ) : selectedEndpoint && !loadingSwagger ? (
+              <Typography variant="body2" color="text.secondary">
+                No API definition available for this endpoint.
+              </Typography>
+            ) : null}
           </>
         )}
       </PageContent>

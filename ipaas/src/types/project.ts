@@ -32,6 +32,9 @@ export interface Project {
   repository?: string;
   branch?: string;
   gitProvider?: string;
+  /** Path within the repository; '' addresses the repository root. */
+  directoryPath?: string;
+  isPublicRepo?: boolean;
   /** Org-owner display name — used by Delivery insights' Top Performing Projects table. */
   owner?: string;
 }

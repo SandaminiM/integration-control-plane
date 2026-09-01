@@ -29,6 +29,7 @@ import { useCreateProject } from '../hooks/useProjects';
 import { fetchProjects as fetchProjectsApi } from '#api/projects';
 import { projectHomeUrl } from '../paths';
 import { IS_CLOUD } from '../features';
+import { DEFAULT_PROJECT_HANDLER } from '../constants/project';
 import Projects from './Projects';
 
 const PERSONA_KEY = 'persona';
@@ -54,8 +55,6 @@ const REGIONS = [
   { value: 'US', label: '🇺🇸 US' },
   { value: 'EU', label: '🇪🇺 EU' },
 ];
-
-const DEFAULT_PROJECT_HANDLER = 'default';
 
 function OnboardingShell({ children }: { children: React.ReactNode }) {
   return (
@@ -126,7 +125,10 @@ export default function OrgHome(): JSX.Element {
           // provision the default project directly instead of showing that step.
           return createCloudProjectMutation.mutateAsync({ name: 'Default', handler: DEFAULT_PROJECT_HANDLER, description: '', orgHandler: orgHandler! }).then(() => {
             localStorage.setItem(PERSONA_KEY, 'developer');
-            navigate(projectHomeUrl(orgHandler!, DEFAULT_PROJECT_HANDLER), { replace: true });
+            // freshDefaultProject tells AppLayout it can hide the left nav immediately, without
+            // waiting on the components/projects queries — we already know this project is empty
+            // and the org has no other projects, since we just created it.
+            navigate(projectHomeUrl(orgHandler!, DEFAULT_PROJECT_HANDLER), { replace: true, state: { freshDefaultProject: true } });
           });
         })
         .catch((err) => {
@@ -215,7 +217,10 @@ export default function OrgHome(): JSX.Element {
         // Only mark onboarding complete and navigate on success
         localStorage.setItem(PERSONA_KEY, persona);
         localStorage.setItem(REGION_KEY, region);
-        navigate(projectHomeUrl(orgHandler!, DEFAULT_PROJECT_HANDLER), { replace: true });
+        // freshDefaultProject tells AppLayout it can hide the left nav immediately, without
+        // waiting on the components/projects queries — we already know this project is empty and
+        // the org has no other projects, since we just created it.
+        navigate(projectHomeUrl(orgHandler!, DEFAULT_PROJECT_HANDLER), { replace: true, state: { freshDefaultProject: true } });
       } catch (err) {
         setSubmitError(err instanceof Error ? err.message : 'Setup failed. Please try again.');
         setIsSubmitting(false);

@@ -113,13 +113,7 @@ export interface StableStepperResult {
  * step as running — and if its logs never arrived at all, the last known stable
  * state plus `isError` beats an all-red guess.
  */
-export function useStableStepperState(
-  buildId: number | null,
-  rawState: StepperState,
-  buildStatus: string | undefined,
-  buildConclusion: string | null | undefined,
-  logsAvailable: boolean
-): StableStepperResult {
+export function useStableStepperState(buildId: number | null, rawState: StepperState, buildStatus: string | undefined, buildConclusion: string | null | undefined, logsAvailable: boolean): StableStepperResult {
   const stableRef = useRef<RefState>({ buildId: null, state: copyState(rawState), hasRealData: false, persisted: null });
 
   const isInProgress = buildStatus === 'in_progress';
@@ -163,11 +157,7 @@ export function useStableStepperState(
   const next = mergeForward(stable, rawState);
 
   const hasAdvanced =
-    next.activeIndex !== stable.activeIndex ||
-    next.isError !== stable.isError ||
-    next.skippedStages.size !== stable.skippedStages.size ||
-    next.failedStages.size !== stable.failedStages.size ||
-    next.passedStages.size !== stable.passedStages.size;
+    next.activeIndex !== stable.activeIndex || next.isError !== stable.isError || next.skippedStages.size !== stable.skippedStages.size || next.failedStages.size !== stable.failedStages.size || next.passedStages.size !== stable.passedStages.size;
 
   if (hasAdvanced) {
     stableRef.current.state = next;

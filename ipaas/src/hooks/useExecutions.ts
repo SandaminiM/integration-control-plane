@@ -28,7 +28,7 @@ import { IS_CLOUD } from '../features';
 // contract function is assignable to the wider signature, and the extra args are
 // only ever supplied from the IS_CLOUD branch below (where the cloud build wires
 // the wide implementation).
-const fetchExecutionConfigsScoped: (componentId: string, releaseId: string, envId: string, projectId: string) => Promise<ExecutionConfigs | null> = fetchExecutionConfigs;
+const fetchExecutionConfigsScoped: (componentId: string, releaseId: string, envId: string) => Promise<ExecutionConfigs | null> = fetchExecutionConfigs;
 const fetchTaskExecutionsScoped: (releaseId: string, componentId: string, envId: string, projectId: string) => Promise<TaskExecution[]> = fetchTaskExecutions;
 const fetchTaskExecutionCountScoped: (releaseId: string, componentId: string, envId: string, projectId: string) => Promise<number | null> = fetchTaskExecutionCount;
 
@@ -37,9 +37,9 @@ const fetchTaskExecutionCountScoped: (releaseId: string, componentId: string, en
 // systemApisBaseUrl. The cache key, fetcher, and enable guard co-vary per product,
 // so each hook selects them as one `wiring` block; the rest of the query config is
 // shared.
-export function useExecutionConfigs(componentId: string, releaseId: string, envId = '', projectId = '') {
+export function useExecutionConfigs(componentId: string, releaseId: string, envId = '') {
   const wiring = IS_CLOUD
-    ? { queryKey: ['executionConfigs', componentId, releaseId, envId, projectId], queryFn: () => fetchExecutionConfigsScoped(componentId, releaseId, envId, projectId), enabled: !!componentId && !!envId }
+    ? { queryKey: ['executionConfigs', componentId, releaseId, envId], queryFn: () => fetchExecutionConfigsScoped(componentId, releaseId, envId), enabled: !!componentId && !!envId && !!releaseId }
     : { queryKey: ['executionConfigs', componentId, releaseId], queryFn: () => fetchExecutionConfigs(componentId, releaseId), enabled: !!componentId && !!releaseId };
   return useQuery({ ...wiring, retry: false });
 }

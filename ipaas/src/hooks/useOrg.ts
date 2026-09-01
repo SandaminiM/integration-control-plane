@@ -75,8 +75,14 @@ export function useInitOrg() {
 }
 
 export function useCreateDefaultProject() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ orgNumericId, orgHandler, projectHandler }: { orgNumericId: number; orgHandler: string; projectHandler?: string }) => createDefaultProject(orgNumericId, orgHandler, projectHandler),
+    // Without this, AppLayout's own useProjects() call (already mounted throughout onboarding)
+    // keeps serving the pre-creation project list — so the page OrgHome navigates to right after
+    // this succeeds reads a stale, empty list, finds no matching project, and briefly renders
+    // "Project not found" before a later refetch (if any) corrects it.
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
   });
 }
 

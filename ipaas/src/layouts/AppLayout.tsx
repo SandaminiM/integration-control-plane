@@ -107,6 +107,7 @@ import {
 import FeaturePreviewModal from '../components/FeaturePreview/FeaturePreviewModal';
 import { useProject, useProjectByHandler, useProjects } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
+import { useFreshDefaultProject } from '../hooks/useFreshDefaultProject';
 import { useOrgs } from '../hooks/useOrg';
 import { useBillingOrg } from '../hooks/useBillingOrg';
 import { isSupportedIntegration, isByoiComponent, GENERIC_SERVICE_TYPES } from '../constants/integrations';
@@ -220,33 +221,23 @@ function AppLayoutInner(): JSX.Element {
   const projectFromList = !isProjectUuid && projectParam ? (projects.find((p) => p.handler === projectParam) ?? null) : null;
   const project = isProjectUuid ? projectById : (projectByHandler ?? projectFromList);
   const projectId = project?.id ?? '';
-  const { data: allComponents = [], isSuccess: isComponentsSuccess } = useComponents(scope.org, projectId);
+  const { data: allComponents = [] } = useComponents(scope.org, projectId);
   const components = allComponents.filter((c) => isSupportedIntegration(c.displayType, c.componentSubType ?? null));
-  // Hide the sidebar on the project overview page specifically (not other project-scoped pages
-  // like Settings) when the project has no integrations yet — none of the nav links apply until
-  // there's at least one. Requires a resolved projectId + isSuccess (not isLoading, and not just
-  // isFetched) because: useComponents is disabled until projectId resolves, and a disabled query
-  // reports isLoading: false, which would let this fire before we actually know the component
-  // list; and isFetched turns true on a failed fetch too, which combined with data defaulting to
-  // [] would treat a transient/permission error as "empty project" instead of leaving the sidebar
-  // alone until a real answer comes back.
-  //
-  // While isComponentsSuccess is still false (e.g. a hard reload, where react-query's own cache
-  // is gone) fall back to the last known result for this project instead of assuming "not empty"
-  // — otherwise the sidebar flashes visible and then disappears once the query resolves.
-  const emptyProjectCacheKey = projectId ? `sidebar-empty-project:${projectId}` : null;
-  const cachedProjectIsEmpty = emptyProjectCacheKey ? sessionStorage.getItem(emptyProjectCacheKey) === 'true' : false;
 
-  useEffect(() => {
-    if (!emptyProjectCacheKey || !isComponentsSuccess) return;
-    sessionStorage.setItem(emptyProjectCacheKey, String(components.length === 0));
-  }, [emptyProjectCacheKey, isComponentsSuccess, components.length]);
-
-  const hideSidebarForEmptyProject = activeNavId === 'proj-overview' && !!projectId && (isComponentsSuccess ? components.length === 0 : cachedProjectIsEmpty) && manuallyShownProjectId !== projectId;
+  // Shared with Project.tsx's overview-header hiding, so both surfaces hide on exactly the same
+  // one-shot "just landed here right after onboarding" signal and can't drift out of sync. This
+  // only fires on that first landing — navigating elsewhere and back always shows the sidebar
+  // again, even if the project is still empty, so it never vanishes on a repeat visit.
+  const justProvisionedDefaultProject = useFreshDefaultProject();
+  // Compared against projectParam (the route segment), not projectId — projectId is '' until the
+  // project record resolves over the network, so a toggle click during that window would store ''
+  // and then stop matching the instant projectId resolves, silently re-hiding the sidebar right
+  // after the user revealed it. projectParam is stable and known synchronously from the URL.
+  const hideSidebarForEmptyProject = activeNavId === 'proj-overview' && justProvisionedDefaultProject && manuallyShownProjectId !== projectParam;
 
   const handleHeaderToggle = () => {
     if (hideSidebarForEmptyProject) {
-      setManuallyShownProjectId(projectId);
+      setManuallyShownProjectId(projectParam);
       return;
     }
     handleToggleSidebar();
@@ -987,144 +978,139 @@ function AppLayoutInner(): JSX.Element {
                     </Sidebar.Item>
                   </Sidebar.Item>
 
-                  <Sidebar.Item id="org-rag">
-                    <Sidebar.ItemIcon>
-                      <Brain size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>RAG</Sidebar.ItemLabel>
-                    <Sidebar.Item id="org-scheduled-ingestion">
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="org-rag">
                       <Sidebar.ItemIcon>
-                        <Clock size={20} />
+                        <Brain size={20} />
                       </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Scheduled Ingestion</Sidebar.ItemLabel>
+                      <Sidebar.ItemLabel>RAG</Sidebar.ItemLabel>
+                      <Sidebar.Item id="org-scheduled-ingestion">
+                        <Sidebar.ItemIcon>
+                          <Clock size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Scheduled Ingestion</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                      <Sidebar.Item id="org-service">
+                        <Sidebar.ItemIcon>
+                          <Cpu size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Service</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                      <Sidebar.Item id="org-retrieval">
+                        <Sidebar.ItemIcon>
+                          <Diamond size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Retrieval</Sidebar.ItemLabel>
+                      </Sidebar.Item>
                     </Sidebar.Item>
-                    <Sidebar.Item id="org-service">
-                      <Sidebar.ItemIcon>
-                        <Cpu size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Service</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                    <Sidebar.Item id="org-retrieval">
-                      <Sidebar.ItemIcon>
-                        <Diamond size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Retrieval</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                  </Sidebar.Item>
+                  )}
 
-                  <Sidebar.Item id="org-admin">
-                    <Sidebar.ItemIcon>
-                      <Settings2 size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
-                    {!IS_CLOUD && (
+                  {/* Cloud drops CD Pipelines/Data Planes/Environments entirely and pulls Settings
+                      out to a standalone item below, so the whole Admin group has nothing left to show. */}
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="org-admin">
+                      <Sidebar.ItemIcon>
+                        <Settings2 size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
                       <Sidebar.Item id="org-databases">
                         <Sidebar.ItemIcon>
                           <Database size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>Databases</Sidebar.ItemLabel>
                       </Sidebar.Item>
-                    )}
-                    {!IS_CLOUD && (
                       <Sidebar.Item id="org-vector-databases">
                         <Sidebar.ItemIcon>
                           <DatabaseZap size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>Vector Databases</Sidebar.ItemLabel>
                       </Sidebar.Item>
-                    )}
-                    {!IS_CLOUD && (
                       <Sidebar.Item id="org-message-brokers">
                         <Sidebar.ItemIcon>
                           <MessageSquare size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>Message Brokers</Sidebar.ItemLabel>
                       </Sidebar.Item>
-                    )}
-                    {!IS_CLOUD && (
                       <Sidebar.Item id="org-third-party">
                         <Sidebar.ItemIcon>
                           <Puzzle size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>Third Party Services</Sidebar.ItemLabel>
                       </Sidebar.Item>
-                    )}
-                    {!IS_CLOUD && (
                       <Sidebar.Item id="org-genai-services">
                         <Sidebar.ItemIcon>
                           <Sparkles size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>GenAI Services</Sidebar.ItemLabel>
                       </Sidebar.Item>
-                    )}
-                    {!IS_CLOUD && (
                       <Sidebar.Item id="org-config-groups">
                         <Sidebar.ItemIcon>
                           <SlidersHorizontal size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>Config Groups</Sidebar.ItemLabel>
                       </Sidebar.Item>
-                    )}
-                    {!IS_CLOUD && (
                       <Sidebar.Item id="org-governance">
                         <Sidebar.ItemIcon>
                           <Scale size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>Governance</Sidebar.ItemLabel>
                       </Sidebar.Item>
-                    )}
-                    <Sidebar.Item id="org-cd-pipelines">
-                      <Sidebar.ItemIcon>
-                        <GitBranch size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>CD Pipelines</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                    <Sidebar.Item id="org-data-planes">
-                      <Sidebar.ItemIcon>
-                        <Network size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Data Planes</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                    <Sidebar.Item id="org-environments">
-                      <Sidebar.ItemIcon>
-                        <Layers size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Environments</Sidebar.ItemLabel>
-                    </Sidebar.Item>
-                    {!IS_CLOUD && (
+                      <Sidebar.Item id="org-cd-pipelines">
+                        <Sidebar.ItemIcon>
+                          <GitBranch size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>CD Pipelines</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                      <Sidebar.Item id="org-data-planes">
+                        <Sidebar.ItemIcon>
+                          <Network size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Data Planes</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                      <Sidebar.Item id="org-environments">
+                        <Sidebar.ItemIcon>
+                          <Layers size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Environments</Sidebar.ItemLabel>
+                      </Sidebar.Item>
                       <Sidebar.Item id="org-audit-logs">
                         <Sidebar.ItemIcon>
                           <ClipboardList size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>Audit Logs</Sidebar.ItemLabel>
                       </Sidebar.Item>
-                    )}
-                    {!IS_CLOUD && (
                       <Sidebar.Item id="org-approvals">
                         <Sidebar.ItemIcon>
                           <ClipboardCheck size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>Approvals</Sidebar.ItemLabel>
                       </Sidebar.Item>
-                    )}
-                    {!IS_CLOUD && (
                       <Sidebar.Item id="org-certificates">
                         <Sidebar.ItemIcon>
                           <Award size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>Certificates</Sidebar.ItemLabel>
                       </Sidebar.Item>
-                    )}
-                    {/* Cloud has no Access Control, but Settings still carries Org Details + Package Registries. */}
-                    {(IS_CLOUD || canSeeAccessControl) && (
-                      <Sidebar.Item id="org-settings">
-                        <Sidebar.ItemIcon>
-                          <Cog size={20} />
-                        </Sidebar.ItemIcon>
-                        <Sidebar.ItemLabel>Settings</Sidebar.ItemLabel>
-                      </Sidebar.Item>
-                    )}
-                  </Sidebar.Item>
+                      {canSeeAccessControl && (
+                        <Sidebar.Item id="org-settings">
+                          <Sidebar.ItemIcon>
+                            <Cog size={20} />
+                          </Sidebar.ItemIcon>
+                          <Sidebar.ItemLabel>Settings</Sidebar.ItemLabel>
+                        </Sidebar.Item>
+                      )}
+                    </Sidebar.Item>
+                  )}
+
+                  {/* Cloud has no Access Control, but Settings still carries Org Details + Package Registries. */}
+                  {IS_CLOUD && (
+                    <Sidebar.Item id="org-settings">
+                      <Sidebar.ItemIcon>
+                        <Cog size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Settings</Sidebar.ItemLabel>
+                    </Sidebar.Item>
+                  )}
                 </Sidebar.Category>
               ) : hasComponent(scope) ? (
                 (() => {
@@ -1345,7 +1331,7 @@ function AppLayoutInner(): JSX.Element {
                               <Sidebar.ItemLabel>Health Checks</Sidebar.ItemLabel>
                             </Sidebar.Item>
                           )}
-                          {isGenericService && (
+                          {isGenericService && !IS_CLOUD && (
                             <Sidebar.Item id="scaling">
                               <Sidebar.ItemIcon>
                                 <Maximize2 size={20} />
@@ -1468,54 +1454,61 @@ function AppLayoutInner(): JSX.Element {
                     </Sidebar.Item>
                   </Sidebar.Item>
 
-                  <Sidebar.Item id="proj-admin">
-                    <Sidebar.ItemIcon>
-                      <Settings2 size={20} />
-                    </Sidebar.ItemIcon>
-                    <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
-                    {!IS_CLOUD && (
+                  {/* Cloud drops CD Pipelines/Environments entirely and pulls Settings out to a
+                      standalone item below, so the whole Admin group has nothing left to show. */}
+                  {!IS_CLOUD && (
+                    <Sidebar.Item id="proj-admin">
+                      <Sidebar.ItemIcon>
+                        <Settings2 size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
                       <Sidebar.Item id="proj-connections">
                         <Sidebar.ItemIcon>
                           <Link2 size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>Connections</Sidebar.ItemLabel>
                       </Sidebar.Item>
-                    )}
-                    {!IS_CLOUD && (
                       <Sidebar.Item id="proj-third-party">
                         <Sidebar.ItemIcon>
                           <Puzzle size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>Third Party Services</Sidebar.ItemLabel>
                       </Sidebar.Item>
-                    )}
-                    {!IS_CLOUD && (
                       <Sidebar.Item id="proj-genai-services">
                         <Sidebar.ItemIcon>
                           <Sparkles size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>GenAI Services</Sidebar.ItemLabel>
                       </Sidebar.Item>
-                    )}
-                    <Sidebar.Item id="proj-cd-pipelines">
-                      <Sidebar.ItemIcon>
-                        <GitBranch size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>CD Pipelines</Sidebar.ItemLabel>
+                      <Sidebar.Item id="proj-cd-pipelines">
+                        <Sidebar.ItemIcon>
+                          <GitBranch size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>CD Pipelines</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                      <Sidebar.Item id="proj-environments">
+                        <Sidebar.ItemIcon>
+                          <Layers size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Environments</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                      <Sidebar.Item id="proj-settings">
+                        <Sidebar.ItemIcon>
+                          <Cog size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Settings</Sidebar.ItemLabel>
+                      </Sidebar.Item>
                     </Sidebar.Item>
-                    <Sidebar.Item id="proj-environments">
-                      <Sidebar.ItemIcon>
-                        <Layers size={20} />
-                      </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Environments</Sidebar.ItemLabel>
-                    </Sidebar.Item>
+                  )}
+
+                  {IS_CLOUD && (
                     <Sidebar.Item id="proj-settings">
                       <Sidebar.ItemIcon>
                         <Cog size={20} />
                       </Sidebar.ItemIcon>
                       <Sidebar.ItemLabel>Settings</Sidebar.ItemLabel>
                     </Sidebar.Item>
-                  </Sidebar.Item>
+                  )}
                 </Sidebar.Category>
               )}
             </Sidebar.Nav>

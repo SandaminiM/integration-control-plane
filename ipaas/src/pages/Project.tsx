@@ -70,8 +70,9 @@ import AzureDevOpsIcon from '../assets/icons/AzureDevOpsIcon';
 import IntegratorIcon from '../assets/icons/IntegratorIcon';
 import { useAppNavigate } from '../hooks/useAppNavigate';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { useProject, useProjectByHandler, useProjects, useUpdateProject, useGitHubReadme } from '../hooks/useProjects';
+import { useProject, useProjectByHandler, useProjects, useUpdateProject, useGitHubReadme, useIsOrgScopeReady } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
+import { useFreshDefaultProject } from '../hooks/useFreshDefaultProject';
 import { useOrgs, useOrgComponentLimits, useOrgSubscriptions } from '../hooks/useOrg';
 import { useChoreoSampleImages } from '../hooks/useRepository';
 import type { Component, ComponentDeletionError, ComponentSubscription, SubscriptionInfo } from '../types/component';
@@ -448,6 +449,11 @@ function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { com
   const mutation = useDeleteComponent();
   const confirmed = confirmation === component.displayName;
 
+  // Escape and backdrop bypass the disabled Cancel button, so gate them too.
+  const handleClose = () => {
+    if (!mutation.isPending) onClose();
+  };
+
   const handleDelete = () => {
     setDeleteError(null);
     mutation.mutate(
@@ -487,7 +493,7 @@ function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { com
   if (subscribers) {
     const { internal, external } = subscribers;
     return (
-      <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
+      <Dialog open onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>Integration &lsquo;{component.displayName}&rsquo; has endpoints with active subscribers</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>This integration cannot be deleted as it has the following subscribers:</DialogContentText>
@@ -520,7 +526,7 @@ function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { com
   }
 
   return (
-    <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         Are you sure you want to remove the integration &lsquo;<strong>{component.displayName}</strong>&rsquo; ?
       </DialogTitle>
@@ -534,7 +540,7 @@ function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { com
         <TextField autoFocus fullWidth placeholder="Enter integration name to confirm" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />
       </DialogContent>
       <DialogActions>
-        <Button variant="outlined" onClick={onClose}>
+        <Button variant="outlined" onClick={onClose} disabled={mutation.isPending}>
           Cancel
         </Button>
         <Button variant="contained" color="error" disabled={!confirmed || mutation.isPending} startIcon={mutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined} onClick={handleDelete}>
@@ -960,11 +966,37 @@ export default function Project(scope: ProjectScope): JSX.Element {
   const { data: allProjects = [], isLoading: loadingProjects, isFetching: fetchingProjects } = useProjects();
   const projectFromList = !isUuid ? (allProjects.find((p) => p.handler === scope.project) ?? null) : null;
   const project = isUuid ? projectById : (projectByHandle ?? projectFromList);
-  // A refetch of the invalidated list reports isLoading false while data is still pre-creation.
-  const loadingProject = !project && (isUuid ? loadingById : loadingByHandle || loadingProjects || fetchingProjects);
+  const isOrgScopeReady = useIsOrgScopeReady();
+  // Right after fresh onboarding, asgardeoOrgNumericId isn't recovered yet, so the project
+  // queries above are disabled and report isLoading: false — indistinguishable from "we checked
+  // and there's genuinely no project" unless we also wait on org-scope readiness here. Without
+  // this, the page briefly flashes "Project not found" before the real data arrives.
+  // fetchingProjects covers the other route to the same flash: a refetch of the invalidated
+  // list reports isLoading false while its data is still pre-creation.
+  const loadingProject = !isOrgScopeReady || (!project && (isUuid ? loadingById : loadingByHandle || loadingProjects || fetchingProjects));
   const projectId = project?.id ?? '';
   useLoadProjectPermissions(scope.org, projectId);
-  const { data: components = [], isLoading: loadingComponents, isFetching: fetchingComponents, refetch: refetchComponents } = useComponents(scope.org, projectId);
+  // Shared with AppLayout's left-nav hiding, so both surfaces hide on exactly the same one-shot
+  // "just landed here right after onboarding" signal and can't drift out of sync. This only fires
+  // on that first landing — navigating elsewhere and back always shows the header again, even if
+  // the project is still empty, so it never vanishes on a repeat visit.
+  const justProvisionedDefaultProject = useFreshDefaultProject();
+  const { data: components = [], isLoading: loadingComponents, isFetching: fetchingComponents, isSuccess: isComponentsSuccess, refetch: refetchComponents } = useComponents(scope.org, projectId);
+  // Avoids flashing the "has integrations" table chrome (search bar, Create button, table spinner)
+  // before flipping to the true empty state once the components query resolves — the query
+  // reporting isLoading: true otherwise makes `isEmpty` false by default, picking the wrong
+  // branch until the real answer comes back. justProvisionedDefaultProject already guarantees
+  // emptiness for the onboarding transition (the project was just created), and a per-project
+  // sessionStorage cache covers repeat visits to any other empty project within the same tab
+  // session, so only a genuinely first-ever visit to an empty non-onboarding project still waits.
+  const emptyProjectCacheKey = projectId ? `project-overview-empty:${projectId}` : null;
+  const cachedIsEmpty = emptyProjectCacheKey ? sessionStorage.getItem(emptyProjectCacheKey) === 'true' : false;
+
+  useEffect(() => {
+    if (!emptyProjectCacheKey || !isComponentsSuccess) return;
+    sessionStorage.setItem(emptyProjectCacheKey, String(components.length === 0));
+  }, [emptyProjectCacheKey, isComponentsSuccess, components.length]);
+
   const { data: orgs = [] } = useOrgs();
   const orgUuid = useOrgUuid() ?? orgs.find((o) => o.handle === scope.org)?.uuid ?? '';
   const { data: orgLimits } = useOrgComponentLimits(orgUuid);
@@ -1003,7 +1035,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
     return <NotFound message="Project not found" backTo={resourceUrl(broaden(scope)!, 'overview')} backLabel="Back to Projects" />;
   }
 
-  const isEmpty = !loadingComponents && components.length === 0;
+  const isEmpty = justProvisionedDefaultProject || (isComponentsSuccess ? components.length === 0 : cachedIsEmpty);
   const isWorkspace = project.type === 'MONO_REPO';
   const openInCloudComponent =
     components.find((c) => {
@@ -1091,174 +1123,181 @@ export default function Project(scope: ProjectScope): JSX.Element {
   };
 
   return (
-    <PageContent>
-      <Stack component="header" direction="row" alignItems="flex-start" justifyContent="space-between" gap={2} sx={{ mb: isEmpty ? 3 : 4 }}>
-        <Stack direction="row" alignItems="flex-start" gap={2}>
-          <Avatar sx={{ width: 56, height: 56, fontSize: 24, bgcolor: 'primary.main', color: 'primary.contrastText', flexShrink: 0 }}>{project?.name?.[0]?.toUpperCase() ?? 'P'}</Avatar>
-          <div>
-            <Typography variant="h1">{project.name}</Typography>
-            <Stack direction="row" alignItems="flex-start" gap={1} onMouseEnter={() => setDescHovered(true)} onMouseLeave={() => setDescHovered(false)}>
-              <Box
-                sx={{ position: 'relative', flex: 1, cursor: 'text', mt: 0.25 }}
-                onClick={() => {
-                  if (!descEditing) {
-                    setDescEditing(true);
-                    setTimeout(() => descInputRef.current?.focus(), 0);
-                  }
-                }}>
-                <Typography
-                  variant="body2"
-                  component="div"
-                  sx={{
-                    visibility: descEditing ? 'hidden' : 'visible',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                    color: descValue ? 'text.secondary' : 'primary.main',
-                    minHeight: '1.4em',
-                  }}>
-                  {descValue || '+ Add Description'}
-                  {descValue && (
-                    <Box component="span" sx={{ display: 'inline-flex', verticalAlign: 'middle', ml: 0.5 }}>
-                      <Tooltip title="Edit description">
-                        <IconButton
-                          size="small"
-                          sx={{ p: 0.25, opacity: descHovered ? 1 : 0, transition: 'opacity 0.15s' }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDescEditing(true);
-                            setTimeout(() => descInputRef.current?.focus(), 0);
-                          }}>
-                          <Pencil size={12} />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  )}
-                </Typography>
-                {descEditing && (
-                  <InputBase
-                    inputRef={descInputRef}
-                    multiline
-                    autoFocus
-                    value={descValue}
-                    onChange={(e) => setDescValue(e.target.value)}
-                    onBlur={commitDescEdit}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Escape') {
-                        e.preventDefault();
-                        cancelDescEdit();
-                      }
-                    }}
-                    sx={(theme) => ({
-                      position: 'absolute',
-                      inset: '-4px',
-                      padding: '4px',
-                      border: `2px solid ${theme.palette.primary.main}`,
-                      borderRadius: `${theme.shape.borderRadius}px`,
-                      alignItems: 'flex-start',
-                      '& textarea': { ...theme.typography.body2, padding: 0, resize: 'none', border: 'none', outline: 'none', background: 'transparent' },
-                    })}
-                    disabled={updateProject.isPending}
-                    autoComplete="off"
-                  />
-                )}
-              </Box>
-              {updateProject.isPending && <CircularProgress size={12} sx={{ mt: 0.25 }} />}
-            </Stack>
-            {projectRepoUrl ? (
-              <Stack direction="row" alignItems="center" gap={0.5} sx={{ mt: 1 }}>
-                <GitHub size={14} />
-                <Link href={projectRepoUrl} target="_blank" rel="noreferrer" data-testid="project-repo-link-link" underline="hover" sx={{ color: 'primary.main', fontSize: '0.8125rem' }}>
-                  {projectRepoUrl}
-                </Link>
-              </Stack>
-            ) : (
-              <Button size="small" variant="text" color="primary" startIcon={<Link2 size={14} />} onClick={() => setLinkRepoOpen(true)} sx={{ mt: 1, pl: 0, textTransform: 'none', fontSize: '0.8125rem' }}>
-                Link a Repository
-              </Button>
-            )}
-          </div>
-        </Stack>
-        {openInCloudComponent && projectRepoUrl && (
-          <Box sx={{ position: 'relative', flexShrink: 0 }}>
-            {openInIntegratorEnabled ? (
-              <>
-                <ButtonGroup variant="outlined" size="small" ref={splitButtonRef}>
-                  <Button
-                    startIcon={
-                      <Box component="span" sx={{ color: 'text.primary', display: 'flex' }}>
-                        <IntegratorIcon width={16} height={16} />
-                      </Box>
+    // Vertically centers the empty state for a fresh user's first landing on the auto-provisioned
+    // project — the header is hidden in this state too, so this is the only content on the page,
+    // and centering it reads as a deliberate welcome screen rather than content stuck at the top.
+    <PageContent sx={justProvisionedDefaultProject ? { flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' } : undefined}>
+      {/* Hidden for a fresh user's still-empty auto-provisioned project — the name/description/
+          repo-link controls have nothing to act on yet and only add noise to the empty state. */}
+      {!justProvisionedDefaultProject && (
+        <Stack component="header" direction="row" alignItems="flex-start" justifyContent="space-between" gap={2} sx={{ mb: isEmpty ? 3 : 4 }}>
+          <Stack direction="row" alignItems="flex-start" gap={2}>
+            <Avatar sx={{ width: 56, height: 56, fontSize: 24, bgcolor: 'primary.main', color: 'primary.contrastText', flexShrink: 0 }}>{project?.name?.[0]?.toUpperCase() ?? 'P'}</Avatar>
+            <div>
+              <Typography variant="h1">{project.name}</Typography>
+              <Stack direction="row" alignItems="flex-start" gap={1} onMouseEnter={() => setDescHovered(true)} onMouseLeave={() => setDescHovered(false)}>
+                <Box
+                  sx={{ position: 'relative', flex: 1, cursor: 'text', mt: 0.25 }}
+                  onClick={() => {
+                    if (!descEditing) {
+                      setDescEditing(true);
+                      setTimeout(() => descInputRef.current?.focus(), 0);
                     }
-                    onClick={primaryAction === 'cloud' ? handleOpenInCloud : handleOpenInIntegrator}
-                    disabled={primaryAction === 'cloud' ? !codeServerSample : !openInCloudComponent}
-                    sx={{ whiteSpace: 'nowrap' }}>
-                    {primaryAction === 'cloud' ? (
-                      <>
-                        Open in Cloud&nbsp;
-                        <Chip label="Beta" size="small" color="primary" sx={{ height: 16, fontSize: 10, cursor: 'pointer' }} />
-                      </>
-                    ) : (
-                      'Open in Integrator'
+                  }}>
+                  <Typography
+                    variant="body2"
+                    component="div"
+                    sx={{
+                      visibility: descEditing ? 'hidden' : 'visible',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      color: descValue ? 'text.secondary' : 'primary.main',
+                      minHeight: '1.4em',
+                    }}>
+                    {descValue || '+ Add Description'}
+                    {descValue && (
+                      <Box component="span" sx={{ display: 'inline-flex', verticalAlign: 'middle', ml: 0.5 }}>
+                        <Tooltip title="Edit description">
+                          <IconButton
+                            size="small"
+                            sx={{ p: 0.25, opacity: descHovered ? 1 : 0, transition: 'opacity 0.15s' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDescEditing(true);
+                              setTimeout(() => descInputRef.current?.focus(), 0);
+                            }}>
+                            <Pencil size={12} />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                     )}
-                  </Button>
-                  <Button size="small" sx={{ px: 0.5 }} aria-label="More options" onClick={() => setSplitOpen((prev) => !prev)}>
-                    <ChevronDown size={14} />
-                  </Button>
-                </ButtonGroup>
-                <Popper open={splitOpen} anchorEl={splitButtonRef.current} placement="bottom-end" transition disablePortal style={{ zIndex: 1300 }}>
-                  {({ TransitionProps }) => (
-                    <Grow {...TransitionProps}>
-                      <Paper elevation={3}>
-                        <ClickAwayListener onClickAway={() => setSplitOpen(false)}>
-                          <MenuList dense sx={{ minWidth: 200 }}>
-                            <MenuItem
-                              onClick={() => {
-                                setPrimaryAction('cloud');
-                                handleOpenInCloud();
-                              }}
-                              disabled={!codeServerSample}>
-                              <Stack direction="row" alignItems="center" gap={1}>
-                                <IntegratorIcon width={16} height={16} />
-                                <Typography variant="body2">Open in Cloud</Typography>
-                                <Chip label="Beta" size="small" color="primary" sx={{ height: 16, fontSize: 10 }} />
-                              </Stack>
-                            </MenuItem>
-                            <MenuItem
-                              onClick={() => {
-                                setPrimaryAction('integrator');
-                                handleOpenInIntegrator();
-                              }}>
-                              <Stack direction="row" alignItems="center" gap={1}>
-                                <IntegratorIcon width={16} height={16} />
-                                <Typography variant="body2">Open in Integrator</Typography>
-                              </Stack>
-                            </MenuItem>
-                          </MenuList>
-                        </ClickAwayListener>
-                      </Paper>
-                    </Grow>
+                  </Typography>
+                  {descEditing && (
+                    <InputBase
+                      inputRef={descInputRef}
+                      multiline
+                      autoFocus
+                      value={descValue}
+                      onChange={(e) => setDescValue(e.target.value)}
+                      onBlur={commitDescEdit}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          e.preventDefault();
+                          cancelDescEdit();
+                        }
+                      }}
+                      sx={(theme) => ({
+                        position: 'absolute',
+                        inset: '-4px',
+                        padding: '4px',
+                        border: `2px solid ${theme.palette.primary.main}`,
+                        borderRadius: `${theme.shape.borderRadius}px`,
+                        alignItems: 'flex-start',
+                        '& textarea': { ...theme.typography.body2, padding: 0, resize: 'none', border: 'none', outline: 'none', background: 'transparent' },
+                      })}
+                      disabled={updateProject.isPending}
+                      autoComplete="off"
+                    />
                   )}
-                </Popper>
-              </>
-            ) : (
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={
-                  <Box component="span" sx={{ color: 'text.primary', display: 'flex' }}>
-                    <IntegratorIcon width={16} height={16} />
-                  </Box>
-                }
-                onClick={handleOpenInCloud}
-                disabled={!codeServerSample}
-                sx={{ whiteSpace: 'nowrap' }}>
-                Open in Cloud&nbsp;
-                <Chip label="Beta" size="small" color="primary" sx={{ height: 16, fontSize: 10, cursor: 'pointer' }} />
-              </Button>
-            )}
-          </Box>
-        )}
-      </Stack>
+                </Box>
+                {updateProject.isPending && <CircularProgress size={12} sx={{ mt: 0.25 }} />}
+              </Stack>
+              {projectRepoUrl ? (
+                <Stack direction="row" alignItems="center" gap={0.5} sx={{ mt: 1 }}>
+                  <GitHub size={14} />
+                  <Link href={projectRepoUrl} target="_blank" rel="noreferrer" data-testid="project-repo-link-link" underline="hover" sx={{ color: 'primary.main', fontSize: '0.8125rem' }}>
+                    {projectRepoUrl}
+                  </Link>
+                </Stack>
+              ) : (
+                <Button size="small" variant="text" color="primary" startIcon={<Link2 size={14} />} onClick={() => setLinkRepoOpen(true)} sx={{ mt: 1, pl: 0, textTransform: 'none', fontSize: '0.8125rem' }}>
+                  Link a Repository
+                </Button>
+              )}
+            </div>
+          </Stack>
+          {openInCloudComponent && projectRepoUrl && (
+            <Box sx={{ position: 'relative', flexShrink: 0 }}>
+              {openInIntegratorEnabled ? (
+                <>
+                  <ButtonGroup variant="outlined" size="small" ref={splitButtonRef}>
+                    <Button
+                      startIcon={
+                        <Box component="span" sx={{ color: 'text.primary', display: 'flex' }}>
+                          <IntegratorIcon width={16} height={16} />
+                        </Box>
+                      }
+                      onClick={primaryAction === 'cloud' ? handleOpenInCloud : handleOpenInIntegrator}
+                      disabled={primaryAction === 'cloud' ? !codeServerSample : !openInCloudComponent}
+                      sx={{ whiteSpace: 'nowrap' }}>
+                      {primaryAction === 'cloud' ? (
+                        <>
+                          Open in Cloud&nbsp;
+                          <Chip label="Beta" size="small" color="primary" sx={{ height: 16, fontSize: 10, cursor: 'pointer' }} />
+                        </>
+                      ) : (
+                        'Open in Integrator'
+                      )}
+                    </Button>
+                    <Button size="small" sx={{ px: 0.5 }} aria-label="More options" onClick={() => setSplitOpen((prev) => !prev)}>
+                      <ChevronDown size={14} />
+                    </Button>
+                  </ButtonGroup>
+                  <Popper open={splitOpen} anchorEl={splitButtonRef.current} placement="bottom-end" transition disablePortal style={{ zIndex: 1300 }}>
+                    {({ TransitionProps }) => (
+                      <Grow {...TransitionProps}>
+                        <Paper elevation={3}>
+                          <ClickAwayListener onClickAway={() => setSplitOpen(false)}>
+                            <MenuList dense sx={{ minWidth: 200 }}>
+                              <MenuItem
+                                onClick={() => {
+                                  setPrimaryAction('cloud');
+                                  handleOpenInCloud();
+                                }}
+                                disabled={!codeServerSample}>
+                                <Stack direction="row" alignItems="center" gap={1}>
+                                  <IntegratorIcon width={16} height={16} />
+                                  <Typography variant="body2">Open in Cloud</Typography>
+                                  <Chip label="Beta" size="small" color="primary" sx={{ height: 16, fontSize: 10 }} />
+                                </Stack>
+                              </MenuItem>
+                              <MenuItem
+                                onClick={() => {
+                                  setPrimaryAction('integrator');
+                                  handleOpenInIntegrator();
+                                }}>
+                                <Stack direction="row" alignItems="center" gap={1}>
+                                  <IntegratorIcon width={16} height={16} />
+                                  <Typography variant="body2">Open in Integrator</Typography>
+                                </Stack>
+                              </MenuItem>
+                            </MenuList>
+                          </ClickAwayListener>
+                        </Paper>
+                      </Grow>
+                    )}
+                  </Popper>
+                </>
+              ) : (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={
+                    <Box component="span" sx={{ color: 'text.primary', display: 'flex' }}>
+                      <IntegratorIcon width={16} height={16} />
+                    </Box>
+                  }
+                  onClick={handleOpenInCloud}
+                  disabled={!codeServerSample}
+                  sx={{ whiteSpace: 'nowrap' }}>
+                  Open in Cloud&nbsp;
+                  <Chip label="Beta" size="small" color="primary" sx={{ height: 16, fontSize: 10, cursor: 'pointer' }} />
+                </Button>
+              )}
+            </Box>
+          )}
+        </Stack>
+      )}
 
       {project && <LinkRepositoryDialog open={linkRepoOpen} onClose={() => setLinkRepoOpen(false)} project={project} orgHandler={scope.org} />}
 
