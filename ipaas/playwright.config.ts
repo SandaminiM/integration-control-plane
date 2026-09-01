@@ -23,12 +23,19 @@ const CLOUD_BASE_URL = process.env.E2E_CLOUD_BASE_URL ?? 'https://ipaas-console-
 // Thunder's Gate SPA intermittently stalls on its spinner; a fresh load clears it.
 const CLOUD_RETRIES = process.env.CI ? 2 : 1;
 
+// Selecting the setup by an explicit flag rather than by whether a token source happens
+// to be set: a mistyped E2E_TOKEN_URL would otherwise fall back to the browser login and
+// report a pass for a mode that never ran.
+const CLOUD_SETUP = process.env.E2E_TOKEN_MODE ? 'setup-cloud-token' : 'setup-cloud';
+
 export default defineConfig({
   testDir: './tests/e2e/specs',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Playwright reads the host's core count, not the container's cgroup limit, so a
+  // containerised run must state its worker count rather than inherit the default.
+  workers: process.env.PW_WORKERS ? Number(process.env.PW_WORKERS) : process.env.CI ? 1 : undefined,
   reporter: [['html', { open: 'never' }], ['list']],
   timeout: 60_000,
   use: {
@@ -75,6 +82,14 @@ export default defineConfig({
       },
     },
     {
+      // Skips the browser login: takes a token the platform already issued and rebuilds
+      // the session the console would have stored.
+      name: 'setup-cloud-token',
+      testDir: './tests/e2e',
+      testMatch: /cloud-token\.setup\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: CLOUD_BASE_URL },
+    },
+    {
       // No storageState and no setup dependency, so this project needs no credentials.
       name: 'cloud-anon',
       testDir: './tests/e2e/specs/cloud-anon',
@@ -97,7 +112,7 @@ export default defineConfig({
         baseURL: CLOUD_BASE_URL,
         storageState: '.auth/cloud-user.json',
       },
-      dependencies: ['setup-cloud'],
+      dependencies: [CLOUD_SETUP],
     },
   ],
   outputDir: 'test-results/',

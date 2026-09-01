@@ -27,6 +27,7 @@ playwright.config.ts             testDir, projects, baseURL, timeouts
 tests/e2e/
   global.setup.ts                WIP: Asgardeo sign-in + onboarding, saves auth state
   cloud.setup.ts                 cloud: GitHub SSO through Thunder, saves auth state
+  cloud-token.setup.ts           cloud: rebuilds the session from a platform-issued token
   save-google-session.setup.ts   optional: saves a Google session for local OAuth work
   get-gmail-token.ts             one-off script to mint the Gmail refresh token
   helpers/
@@ -34,6 +35,8 @@ tests/e2e/
     product.ts                   currentProduct() / isCloud() — derived from the project name
     gmail.ts                     waitForOTP() — reads a code from the bot's Gmail inbox
     totp.ts                      totpCode() via otpauth — GitHub's TOTP second factor
+    token.ts                     fetch/decode a platform token, rebuild the console session
+    secrets.ts                   readSecret() / fillSecret() — keeps values out of traces
   pages/                         page objects, one per page
     LoginPage.ts  TopNav.ts  OrgHomePage.ts  ProjectsPage.ts
     CreateProjectPage.ts  IntegrationOptionsPage.ts
@@ -49,7 +52,13 @@ tests/e2e/
       login.spec.ts              login + signup pages, email/OTP sign-in flow
       org-overview.spec.ts       org home, project cards, navigation — cloud
                                  redirects this page away, see the file header
-    cloud/                       cloud only, authenticated (empty for now)
+    cloud/                       cloud only, authenticated
+      project-home-entry-points.spec.ts   empty-state entry points; creates its own project
+      project-home-populated.spec.ts      integrations table; creates its own project + integration
+      deploy-sample.spec.ts               deploy a sample and follow the build it starts
+      import-integration.spec.ts          import from a public repo and follow the build
+      observability-pages.spec.ts         Logs and Metrics at org, project and integration scope
+      settings.spec.ts                    org + project settings, and the cloud sections
     cloud-anon/                  cloud only, NO session required
       login.spec.ts              /login hands off to Thunder's hosted Gate
 ```
@@ -61,7 +70,97 @@ render, guard it with `test.skip(isCloud(), reason)` instead of moving the whole
 project-picker test in the same file. Move the file only when its entire premise fails, as with
 `org-overview.spec.ts`.
 
-Current state: the cloud suite is green — 25 passed, 7 skipped, 0 failing.
+### Scenarios covered — cloud console
+
+**Sign-in** (no session required)
+
+- `/login` hands off to Thunder's hosted sign-in page
+- Google and GitHub are the only sign-in options offered
+- Terms of Service and Privacy Policy links are present
+- the GitHub option reaches an OAuth app that can identify the user
+
+**Project home — empty project**
+
+- the URL resolves to the project home and it renders the empty state
+- "Create an Integration" and "Import an Integration" cards are shown
+- the "Get Started Quickly" panel offers Prebuilt Integrations and Samples tabs
+- no integrations table is shown
+- all five import providers are offered — Public Repository, GitHub, GitLab, Bitbucket, Azure — and no sixth
+- the cloud editor is offered, marked Beta
+- the Prebuilt Integrations tab is selected by default and lists cards
+- prebuilt cards name the integrations they connect
+- the page links to tutorials and Discord support
+
+**Project home — project with integrations**
+
+- the integrations table renders with its Name, Description, Type, Last Updated and Action columns
+- every row carries an integration type and a delete action
+- the empty-state entry points are replaced, not merely hidden
+- the architecture panel renders
+- the Integration Types panel totals the rows in the table
+- the contributors panel names contributors when the project has any
+- searching narrows the table to the matching integration
+- a search with no matches empties the table
+
+**Project home — either state**
+
+- the project name is the page heading
+- the top nav shows organization and project breadcrumbs
+- the page offers to link a repository
+
+**Browse samples**
+
+- the heading, subtitle and search input render
+- a Back button returns to the integration creation options
+- the Type, Technology and Tags filter sections are shown
+- a search with no matches shows the empty-result message, and clearing it restores the results
+
+**Deploying a sample**
+
+- deploying a named sample provisions an integration
+- the build card reports a build that has started
+- the build section expands into a stepper once the build is running
+- View Logs opens the logs panel and Hide Logs closes it
+- the build reaches a terminal state — completed or failed
+
+**Importing an integration from a public repository**
+
+- the form resolves the repository URL into a branch and a sub-path, and derives the names
+- the identifier is disabled, being derived from the display name rather than typed
+- the sub-path picker lists the repository tree and offers its directories
+- importing provisions an integration and lands on it
+- the integration reports its source repository, its type, and a build
+- View Logs opens the build logs, with a copy control, and Hide Logs closes them
+- the build section collapses and expands
+- the build reaches a terminal state — completed or failed
+
+**Logs and Metrics**
+
+- both pages exist and render at organization scope
+- both pages exist and render at project scope
+- both pages exist and render at integration scope
+- no request fails while any of them loads
+
+**Settings**
+
+- the organization settings page exists
+- it offers Org Details and Package Registries
+- it offers no section that belongs only to the WIP build
+- the Package Registries and Org Details pages each render
+- the project settings page exists
+
+**Top nav and footer**
+
+- signing out redirects to the login page
+- the project picker opens a project's home
+- the footer shows Terms of Use, Privacy Policy and Support in that order
+- footer links open in a new tab, and the WSO2 copyright notice is shown
+
+Specs that create anything — a project, an integration — create it themselves and delete it in
+teardown, so a run leaves the org as it found it and never depends on what a shared project
+happens to contain. Teardown empties a fixture project by listing its components rather than by
+remembering what it created, so an integration provisioned by a test that then failed is still
+removed.
 
 ### Projects
 
@@ -70,7 +169,8 @@ Current state: the cloud suite is green — 25 passed, 7 skipped, 0 failing.
 | `setup` | `global.setup.ts` | writes `.auth/user.json` | WIP account + Gmail |
 | `wip` | `specs/shared` + `specs/wip` | `.auth/user.json` | via `setup` |
 | `setup-cloud` | `cloud.setup.ts` | writes `.auth/cloud-user.json` | GitHub bot |
-| `cloud` | `specs/shared` + `specs/cloud` | `.auth/cloud-user.json` | via `setup-cloud` |
+| `setup-cloud-token` | `cloud-token.setup.ts` | writes `.auth/cloud-user.json` | a platform-issued token |
+| `cloud` | `specs/shared` + `specs/cloud` | `.auth/cloud-user.json` | via whichever setup is selected |
 | `cloud-anon` | `specs/cloud-anon` | none | **none** |
 | `save-google-session` | manual helper | writes `.auth/google-session.json` | interactive |
 
@@ -104,6 +204,33 @@ GitHub's second factor takes one of two forms, and they are mutually exclusive:
 - **No 2FA on the account** — GitHub emails a six-digit device-verification code instead, which `helpers/gmail.ts` reads from the bot's inbox. Nothing beyond the existing Gmail credentials is required.
 
 Enrolling TOTP stops the emails, so set the secret only once the account actually has TOTP.
+
+**Cloud, token mode.** `E2E_TOKEN_MODE` swaps `setup-cloud` for `setup-cloud-token`, which takes a
+token the platform already issued and rebuilds the session from it — no browser login, so none of
+the GitHub credentials are needed. `cloud-token.setup.ts` reads the token, decodes its claims, and
+writes the same two files `cloud.setup.ts` does. The specs cannot tell the difference.
+
+The token is fetched from `E2E_TOKEN_URL`, with `E2E_TOKEN_AUTH` sent as `X-Auth-Token`. That is
+wso2cloud's `monitoring-token-provider`: an init container signs in once through GitHub, and the
+server then keeps that token alive by refreshing it, handing out a live one on request.
+
+It sits behind the cluster's internal gateway on HTTPS, serving an in-cluster service name that
+no certificate matches, so `E2E_TOKEN_TLS_INSECURE` turns verification off for that hop — in the
+cluster as well as through a `kubectl port-forward`. The token it returns is still validated on
+every use, and wso2cloud's own suites make the same call for the same hop.
+
+A token with **under five minutes** left is refused up front. The provider guarantees only 30
+seconds of remaining life, which is shorter than a run; without the check it expires mid-suite and
+every later spec fails for a reason none of them explain.
+
+`E2E_TOKEN_MODE` is a separate switch rather than being inferred from `E2E_TOKEN_URL` being set, so
+that a typo in the URL fails loudly instead of quietly running the browser login instead.
+
+```bash
+dotenv -e .env.test -- env E2E_TOKEN_MODE=1 \
+  E2E_TOKEN_URL=<provider endpoint> \
+  pnpm exec playwright test --project=cloud
+```
 
 Both handles are per-account and per-run. **Never hardcode them.** Specs that need to be unauthenticated opt out explicitly:
 

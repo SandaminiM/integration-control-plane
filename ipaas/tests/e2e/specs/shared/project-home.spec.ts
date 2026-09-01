@@ -52,20 +52,18 @@ test.describe('project home @smoke', () => {
 
   // -------------------------------------------------------------------------
   // Page content
+  //
+  // Only what holds whichever branch the project renders. The empty state's cards
+  // live in project-home-empty.spec.ts and the table in specs/cloud's populated
+  // spec, because a project has one of those two shapes and never both.
   // -------------------------------------------------------------------------
 
-  test('Create an Integration card is visible', async ({ page }) => {
-    await expect(page.getByText('Create an Integration')).toBeVisible({ timeout: 30_000 });
+  test('shows the project name as the page heading', async ({ page }) => {
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 30_000 });
   });
 
-  test('Import an Integration card is visible', async ({ page }) => {
-    await expect(page.getByText('Import an Integration')).toBeVisible({ timeout: 30_000 });
-  });
-
-  test('Get Started Quickly panel shows Prebuilt Integrations and Samples tabs', async ({ page }) => {
-    await expect(page.getByText('Get Started Quickly')).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByRole('tab', { name: 'Prebuilt Integrations' })).toBeVisible();
-    await expect(page.getByRole('tab', { name: 'Samples' })).toBeVisible();
+  test('offers to link a repository', async ({ page }) => {
+    await expect(page.getByRole('button', { name: 'Link a Repository' })).toBeVisible({ timeout: 30_000 });
   });
 
   // -------------------------------------------------------------------------
