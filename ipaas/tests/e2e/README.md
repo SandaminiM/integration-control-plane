@@ -156,11 +156,9 @@ project-picker test in the same file. Move the file only when its entire premise
 - the footer shows Terms of Use, Privacy Policy and Support in that order
 - footer links open in a new tab, and the WSO2 copyright notice is shown
 
-Specs that create anything — a project, an integration — create it themselves and delete it in
-teardown, so a run leaves the org as it found it and never depends on what a shared project
-happens to contain. Teardown empties a fixture project by listing its components rather than by
-remembering what it created, so an integration provisioned by a test that then failed is still
-removed.
+Specs that create anything create it themselves and delete it in teardown, so a run leaves the
+org as it found it. Teardown empties a fixture project by listing its components rather than by
+remembering what it created.
 
 ### Projects
 
@@ -205,26 +203,15 @@ GitHub's second factor takes one of two forms, and they are mutually exclusive:
 
 Enrolling TOTP stops the emails, so set the secret only once the account actually has TOTP.
 
-**Cloud, token mode.** `E2E_TOKEN_MODE` swaps `setup-cloud` for `setup-cloud-token`, which takes a
-token the platform already issued and rebuilds the session from it — no browser login, so none of
-the GitHub credentials are needed. `cloud-token.setup.ts` reads the token, decodes its claims, and
-writes the same two files `cloud.setup.ts` does. The specs cannot tell the difference.
+**Cloud, token mode.** `E2E_TOKEN_MODE` swaps `setup-cloud` for `setup-cloud-token`, which
+rebuilds the session from a platform-issued token instead of signing in, so no GitHub credentials
+are needed. It writes the same two files, and the specs cannot tell the difference.
 
-The token is fetched from `E2E_TOKEN_URL`, with `E2E_TOKEN_AUTH` sent as `X-Auth-Token`. That is
-wso2cloud's `monitoring-token-provider`: an init container signs in once through GitHub, and the
-server then keeps that token alive by refreshing it, handing out a live one on request.
-
-It sits behind the cluster's internal gateway on HTTPS, serving an in-cluster service name that
-no certificate matches, so `E2E_TOKEN_TLS_INSECURE` turns verification off for that hop — in the
-cluster as well as through a `kubectl port-forward`. The token it returns is still validated on
-every use, and wso2cloud's own suites make the same call for the same hop.
-
-A token with **under five minutes** left is refused up front. The provider guarantees only 30
-seconds of remaining life, which is shorter than a run; without the check it expires mid-suite and
-every later spec fails for a reason none of them explain.
-
-`E2E_TOKEN_MODE` is a separate switch rather than being inferred from `E2E_TOKEN_URL` being set, so
-that a typo in the URL fails loudly instead of quietly running the browser login instead.
+The token comes from `E2E_TOKEN_URL` (wso2cloud's `monitoring-token-provider`) with
+`E2E_TOKEN_AUTH` sent as `X-Auth-Token`. `E2E_TOKEN_TLS_INSECURE` is needed for that hop: the
+internal gateway serves an in-cluster service name no certificate matches. A token with under
+five minutes left is refused up front, since the provider only guarantees 30 seconds and a run
+takes longer.
 
 ```bash
 dotenv -e .env.test -- env E2E_TOKEN_MODE=1 \
@@ -443,102 +430,6 @@ The container performs its own sign-in — `--project=cloud` depends on
 `setup-cloud`, so `.auth/` is created inside the container and no session has to
 be mounted in. The test process is PID 1, so **its exit code is the container's**,
 which is what a Kubernetes Job uses to decide pass or fail.
-
-### Credentials
-
-Injected at runtime, never baked in: `.dockerignore` excludes `.env.test` and
-`.auth`, and the Dockerfile copies only `tests/`, `playwright.config.ts` and the
-dependency manifests. The image runs as the unprivileged `node` user, so a
-cluster enforcing `runAsNonRoot` accepts it and mounted artifacts stay owned by
-the host user instead of root.
-
-One trap worth knowing: `docker run --env-file` assigns values **verbatim,
-quotes included**, while the `dotenv-cli` used by the pnpm scripts strips them. A
-quoted `.env.test` therefore works locally and fails in the container with
-GitHub's "Incorrect username or password". `readSecret()` in `helpers/secrets.ts`
-drops one matching pair of outer quotes so every invocation behaves alike;
-Kubernetes secrets arrive unquoted and pass through untouched.
-
-There is no entrypoint script. The suite validates its own environment and fails
-with a readable error, so the test process is PID 1 and its exit code is the
-container's.
-
-### Image size
-
-Roughly 0.5 GB. The suite shares the app's single `package.json`, so the build
-installs the whole dependency tree — the frontend's included — to keep one source
-of truth for versions. If pull time ever matters, the alternative is a test-only
-manifest under `tests/e2e/` (as `wso2cloud/tests/ui-tests` does), at the cost of
-a second place to keep dependency versions in sync.
-
-### Headless
-
-The image installs `chromium --only-shell`: one browser, headless. That is what
-`playwright.config.ts` declares, and GitHub sign-in has been verified working
-headless from both this machine and inside the container. `wso2cloud/tests/ui-tests`
-runs headed under Xvfb because GitHub was more suspicious of its headless
-sessions — if that starts happening here, switch the install to `--no-shell` and
-add `xvfb` plus a virtual display in `docker-entrypoint.sh`.
-
-### Kubernetes
-
-The manifests live in the controlplane (GitOps) repository, not here — this repo
-carries no deployment YAML for any component, and the suite is no exception.
-OpenChoreo already has a `scheduled-task` ClusterComponentType (`workloadType:
-cronjob`) whose parameters cover what this needs, so the runner is a component of
-that type rather than a hand-written CronJob.
-
-What whoever writes that manifest needs from us:
-
-| Requirement | Why |
-| ----------- | --- |
-| Secret with `E2E_GITHUB_USERNAME`, `E2E_GITHUB_PASSWORD`, `E2E_GITHUB_TOTP_SECRET` | The sign-in. Values must be **unquoted**. |
-| `/dev/shm` ≥ 1Gi (`emptyDir`, `medium: Memory`) | Chromium's 64Mi default crashes renderers, and it reads as flaky tests. |
-| ~1-2 CPU, 2-4Gi memory | Browser plus the suite. |
-| `concurrencyPolicy: Forbid` | One shared bot account; parallel GitHub logins invite bot detection. |
-| `backoffLimit: 0` | Overrides the type's default of 3 — repeated failed password attempts risk locking the account. |
-| Exit code is the verdict | Results are read from pod logs, which is why the sign-in logs each stage. |
-
-Traces contain the session bearer token, so artifacts must not be published
-anywhere public.
-
----
-
-## Practices borrowed from `wso2cloud/tests/ui-tests`
-
-That suite signs in to the Agent Manager console through the same GitHub + TOTP
-route, so it is the closest prior art. What was taken from it:
-
-- **Stage handlers rather than a linear script.** Each step is a function that
-  no-ops when its screen does not appear, because the path branches by account
-  state. `handleTwoFactor`, `handleOAuthConsent`, `handleOrgOnboarding`.
-- **`assertNoChallenge`.** CAPTCHA and device-verification walls fail fast with an
-  instruction, instead of timing out on a form that will never be filled.
-- **TOTP window handling.** A code generated just before the 30-second boundary
-  expires mid-submit, so the remaining time is read once and the submit retried on
-  the next window.
-- **`otpauth` for TOTP**, same package and version, rather than hand-rolled crypto.
-- **Progress logging.** `console.log` at each stage. In a Kubernetes Job the logs
-  are the only diagnostic, so knowing whether a run died at GitHub, at consent, or
-  at onboarding matters more than it does locally.
-- **One worker for the login, retries for the IdP.** Parallel GitHub logins invite
-  bot detection, and Thunder's sign-in SPA intermittently stalls on its spinner.
-
-Deliberately **not** taken:
-
-- **`headless: false` with Xvfb.** They run headed because GitHub was more
-  suspicious of their headless sessions. Ours has been verified working headless
-  both locally and in the container, so the simpler, smaller setup stands until
-  that stops being true.
-- **A logout teardown that deletes the saved session.** It guarantees every run
-  exercises the full login, but locally that means re-authenticating for each
-  spec iteration — more GitHub logins, and more bot-detection risk. The container
-  is ephemeral, so the session dies with it anyway.
-- **Persisting the access token to a plain text file.** `utils/token.ts` writes
-  `access-token.txt` and deliberately survives teardown. A bearer token on disk is
-  exactly what the artifact rules above try to avoid.
-
----
 
 ## Nightly CI
 

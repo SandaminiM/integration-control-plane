@@ -37,7 +37,7 @@ const REPO_SUBDIR = 'greeting-service';
 const INTEGRATION_TYPE = 'Integration as API';
 
 // BuildCard.tsx:118-140. 'Failed' also reads 'Failed while <phrase>', hence the prefix match.
-const TERMINAL_STATUS = /^(Completed|Failed)/;
+const TERMINAL_STATUS = /^(Completed|Failed|Cancelled|Timed Out)/;
 const BUILD_TIMEOUT_MS = 20 * 60_000;
 
 // Each form step waits on a GitHub round-trip, and an inner 60s wait cannot complete inside

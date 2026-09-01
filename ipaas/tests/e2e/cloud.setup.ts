@@ -66,7 +66,7 @@ async function handleTwoFactor(page: Page, options: { totpSecret?: string; after
       afterMs: options.afterMs,
       timeoutMs: 90_000,
     });
-    await codeField.fill(code);
+    await fillSecret(codeField, code);
     await leaveTwoFactor(page, 'the emailed device-verification code was rejected');
     return;
   }
@@ -76,7 +76,7 @@ async function handleTwoFactor(page: Page, options: { totpSecret?: string; after
     const untilNextWindow = msUntilNextWindow();
     if (untilNextWindow < 3_000) await page.waitForTimeout(untilNextWindow + 500);
 
-    await codeField.fill(totpCode(options.totpSecret));
+    await fillSecret(codeField, totpCode(options.totpSecret));
 
     try {
       // GitHub auto-submits once the sixth digit lands, so success shows as leaving the page.
@@ -181,11 +181,14 @@ setup('authenticate cloud', async ({ page }) => {
   console.log('Reached the Thunder sign-in page; continuing with GitHub...');
   await page.getByRole('button', { name: 'Continue with GitHub' }).click();
 
-  // An already-signed-in GitHub session skips the login form entirely.
+  // An already-signed-in GitHub session skips the login form. It can still land on the
+  // consent screen, so that URL counts as a reused session too — without it the race falls
+  // through and the setup tries to fill a login form that is not on the page.
   const loginField = page.locator('#login_field');
   const sessionReused = await Promise.race([
     loginField.waitFor({ state: 'visible', timeout: 60_000 }).then(() => false),
     page.waitForURL(/\/organizations\//, { timeout: 60_000 }).then(() => true),
+    page.waitForURL(/\/login\/oauth\/authorize/, { timeout: 60_000 }).then(() => true),
   ]).catch(() => false);
 
   if (!sessionReused) {
@@ -201,8 +204,10 @@ setup('authenticate cloud', async ({ page }) => {
     }
 
     await handleTwoFactor(page, { totpSecret, afterMs: startedAt });
-    await handleOAuthConsent(page);
   }
+
+  // Runs on both paths: a reused session that has not authorised the app still gets consent.
+  await handleOAuthConsent(page);
 
   await handleOrgOnboarding(page);
 

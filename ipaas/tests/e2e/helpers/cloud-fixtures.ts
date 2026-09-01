@@ -113,7 +113,8 @@ export async function deleteFixtureProjects(page: Page, projects: readonly strin
       const components = listed.ok ? (((await listed.json()).items ?? []) as Record<string, string>[]) : [];
       for (const component of components) {
         const name = component.handler ?? component.name;
-        await fetch(`${base}/projects/${project}/components/${name}`, { method: 'DELETE', headers }).catch(() => {});
+        const res = await fetch(`${base}/projects/${project}/components/${name}`, { method: 'DELETE', headers }).catch(() => null);
+        if (!res || (!res.ok && res.status !== 404)) out.push(`${res?.status ?? 'error'} ${project}/${name}`);
       }
       const res = await fetch(`${base}/projects/${project}`, { method: 'DELETE', headers });
       out.push(`${res.status} ${project}`);
@@ -122,7 +123,8 @@ export async function deleteFixtureProjects(page: Page, projects: readonly strin
   }, [...projects]);
 }
 
-// A 404 is not a leak: handles are recorded before the create is confirmed.
+// Reports rather than throws: a throw here would replace the tests' own failures with a
+// teardown error. A 404 is not a leak — handles are recorded before the create is confirmed.
 export function reportTeardown(results: readonly string[]): void {
   for (const line of results) {
     if (!line.startsWith('2') && !line.startsWith('404')) console.warn(`Teardown left a project behind: ${line}`);

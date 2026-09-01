@@ -59,7 +59,11 @@ test.describe('project home @smoke', () => {
   // -------------------------------------------------------------------------
 
   test('shows the project name as the page heading', async ({ page }) => {
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 30_000 });
+    // The display name is the backend's, not the handle in the auth context, so the
+    // assertion is that the heading carries one rather than what it says.
+    const heading = page.getByRole('heading', { level: 1 });
+    await expect(heading).toBeVisible({ timeout: 30_000 });
+    await expect(heading).not.toHaveText('');
   });
 
   test('offers to link a repository', async ({ page }) => {

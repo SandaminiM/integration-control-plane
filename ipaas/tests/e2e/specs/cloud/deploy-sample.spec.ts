@@ -34,7 +34,7 @@ import { authStatePath } from '../../helpers/product.js';
 
 // BuildCard.tsx:118-140. 'Failed' also reads 'Failed while <phrase>', hence the prefix match.
 const STARTING_STATUS = /^(Queued|In Progress)$/;
-const TERMINAL_STATUS = /^(Completed|Failed)/;
+const TERMINAL_STATUS = /^(Completed|Failed|Cancelled|Timed Out)/;
 
 // A build runs for minutes; wso2cloud's own suite budgets 20 for one.
 const BUILD_TIMEOUT_MS = 20 * 60_000;

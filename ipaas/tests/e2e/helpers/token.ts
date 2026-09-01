@@ -31,10 +31,9 @@ export interface TokenClaims {
 }
 
 /**
- * The token provider promises only 30 seconds of remaining life, which is shorter
- * than a suite run — a token accepted at setup can expire mid-run and turn every
- * later spec into an unexplained failure. Workaround until the provider can
- * guarantee a longer floor: refuse anything that would not outlive the run.
+ * Covers a read-only run, not one that waits out a build. The provider guarantees only 30
+ * seconds and hands out no refresh token, so a floor long enough for the 20-minute build waits
+ * would reject tokens that are fine for the rest of the suite. Those specs re-seed instead.
  */
 export const MIN_TOKEN_LIFETIME_MS = 5 * 60_000;
 
