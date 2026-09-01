@@ -209,9 +209,11 @@ are needed. It writes the same two files, and the specs cannot tell the differen
 
 The token comes from `E2E_TOKEN_URL` (wso2cloud's `monitoring-token-provider`) with
 `E2E_TOKEN_AUTH` sent as `X-Auth-Token`. `E2E_TOKEN_TLS_INSECURE` is needed for that hop: the
-internal gateway serves an in-cluster service name no certificate matches. A token with under
-five minutes left is refused up front, since the provider only guarantees 30 seconds and a run
-takes longer.
+internal gateway serves an in-cluster service name no certificate matches.
+
+A token with under five minutes left is refused up front — enough for a read-only run. The
+specs that wait out a build take longer than a token's hour, and the session carries no refresh
+token, so those poll in chunks and fetch a fresh one between them.
 
 ```bash
 dotenv -e .env.test -- env E2E_TOKEN_MODE=1 \

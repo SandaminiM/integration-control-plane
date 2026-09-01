@@ -29,7 +29,7 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import { getAuthContext } from '../../helpers/auth-context.js';
-import { createFixtureProject, deleteFixtureProjects, reportTeardown, waitForApiConfig } from '../../helpers/cloud-fixtures.js';
+import { createFixtureProject, deleteFixtureProjects, reportTeardown, reseedSessionToken, waitForApiConfig } from '../../helpers/cloud-fixtures.js';
 import { authStatePath } from '../../helpers/product.js';
 
 // BuildCard.tsx:118-140. 'Failed' also reads 'Failed while <phrase>', hence the prefix match.
@@ -46,6 +46,28 @@ const SAMPLE = 'Hello World Service';
 // The status has no role or accessible name (BuildCard.tsx:194-198), so it is matched by its text.
 function buildStatus(page: Page) {
   return page.getByText(/^(Queued|In Progress|Completed|Failed|Cancelled|Timed Out)/).first();
+}
+
+/**
+ * Polls in chunks, putting a fresh token in place between them. One 20-minute assertion would
+ * outlive the token's hour in token mode, and the session cannot refresh itself there.
+ */
+async function expectBuildToFinish(page: Page): Promise<void> {
+  const CHUNK_MS = 4 * 60_000;
+
+  for (let elapsed = 0; elapsed < BUILD_TIMEOUT_MS; elapsed += CHUNK_MS) {
+    const finished = await expect(buildStatus(page))
+      .toHaveText(TERMINAL_STATUS, { timeout: CHUNK_MS })
+      .then(() => true)
+      .catch(() => false);
+    if (finished) return;
+
+    await reseedSessionToken(page);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: 'Latest Build' })).toBeVisible({ timeout: 60_000 });
+  }
+
+  throw new Error(`Build did not reach a terminal state within ${BUILD_TIMEOUT_MS / 60_000} minutes; last status: ${await buildStatus(page).textContent()}`);
 }
 
 // Samples render as flat siblings with no accessible grouping, so a sample's Deploy button
@@ -164,6 +186,6 @@ test.describe('deploy a sample @smoke', () => {
     await expect(page.getByRole('heading', { name: 'Latest Build' })).toBeVisible({ timeout: 60_000 });
 
     // Either outcome passes: this asserts the build finishes, not that the sample builds cleanly.
-    await expect(buildStatus(page)).toHaveText(TERMINAL_STATUS, { timeout: BUILD_TIMEOUT_MS });
+    await expectBuildToFinish(page);
   });
 });

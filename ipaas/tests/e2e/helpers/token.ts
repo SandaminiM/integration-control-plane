@@ -31,9 +31,9 @@ export interface TokenClaims {
 }
 
 /**
- * Covers a read-only run, not one that waits out a build. The provider guarantees only 30
- * seconds and hands out no refresh token, so a floor long enough for the 20-minute build waits
- * would reject tokens that are fine for the rest of the suite. Those specs re-seed instead.
+ * Enough for a read-only run. A floor covering the 20-minute build waits would reject tokens
+ * that serve the rest of the suite perfectly well, so those specs call reseedSessionToken
+ * between polls instead — the provider hands out no refresh token for the console to use.
  */
 export const MIN_TOKEN_LIFETIME_MS = 5 * 60_000;
 

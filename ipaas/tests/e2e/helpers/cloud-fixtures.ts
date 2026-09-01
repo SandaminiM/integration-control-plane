@@ -26,6 +26,7 @@
  */
 
 import { expect, type Page } from '@playwright/test';
+import { decodeTokenClaims, resolveToken } from './token.js';
 
 export interface FixtureResult {
   status: number;
@@ -145,4 +146,23 @@ export async function expectPageRendered(page: Page, url: string): Promise<void>
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await expect(page, `Navigating to ${url} did not stay there`).toHaveURL(new RegExp(url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), { timeout: 30_000 });
   await expect(page.locator('main').getByRole('heading').first()).toBeVisible({ timeout: 30_000 });
+}
+
+/**
+ * Puts a freshly fetched token into the page, replacing rather than refreshing: in token mode
+ * the session carries no refresh token, so a spec outliving the token's hour — the build waits —
+ * has to seed a new one itself. A no-op elsewhere; a browser-login session refreshes itself.
+ */
+export async function reseedSessionToken(page: Page): Promise<void> {
+  if (!process.env.E2E_TOKEN_MODE) return;
+
+  const token = await resolveToken();
+  const claims = decodeTokenClaims(token);
+  await page.evaluate(
+    ({ value, expiresAt }) => {
+      localStorage.setItem('auth_token', value);
+      localStorage.setItem('token_expires_at', expiresAt);
+    },
+    { value: token, expiresAt: String(claims.exp * 1000) },
+  );
 }
