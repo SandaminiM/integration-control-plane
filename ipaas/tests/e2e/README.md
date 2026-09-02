@@ -119,20 +119,19 @@ project-picker test in the same file. Move the file only when its entire premise
 
 - deploying a named sample provisions an integration
 - the build card reports a build that has started
-- the build section expands into a stepper once the build is running
-- View Logs opens the logs panel and Hide Logs closes it
-- the build reaches a terminal state — completed or failed
+
+The build card's own behaviour is asserted under the import flow instead — it is the same
+card, and waiting out two real builds would double the suite's runtime for no extra coverage.
 
 **Importing an integration from a public repository**
 
-- the form resolves the repository URL into a branch and a sub-path, and derives the names
-- the identifier is disabled, being derived from the display name rather than typed
-- the sub-path picker lists the repository tree and offers its directories
-- importing provisions an integration and lands on it
+- the form resolves the repository URL into a branch, a sub-path and the derived names, the
+  identifier stays disabled, the picker lists the repository tree, and importing lands on the
+  new integration
 - the integration reports its source repository, its type, and a build
 - View Logs opens the build logs, with a copy control, and Hide Logs closes them
 - the build section collapses and expands
-- the build reaches a terminal state — completed or failed
+- the build completes
 
 **Logs and Metrics**
 

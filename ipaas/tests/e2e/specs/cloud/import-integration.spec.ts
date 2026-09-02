@@ -202,7 +202,7 @@ test.describe('import an integration @smoke', () => {
     await expect(page.getByRole('button', { name: 'Collapse' }).first()).toBeVisible({ timeout: 30_000 });
   });
 
-  test('the build reaches a terminal state', async ({ page }) => {
+  test('the build completes', async ({ page }) => {
     test.skip(!componentHandle, 'No integration was imported');
     // Far beyond the 60s default: this waits out a real build.
     test.setTimeout(BUILD_TIMEOUT_MS + 2 * 60_000);
@@ -210,7 +210,8 @@ test.describe('import an integration @smoke', () => {
     await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandle}/overview`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'Latest Build' })).toBeVisible({ timeout: 60_000 });
 
-    // Either outcome passes: this asserts the build finishes, not that the sample builds cleanly.
     await expectBuildToFinish(page);
+
+    await expect(buildStatus(page), 'the build reached a terminal state other than Completed').toHaveText(/^Completed/);
   });
 });
