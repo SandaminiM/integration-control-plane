@@ -156,20 +156,50 @@ function get(url: string, headers: Record<string, string>): Promise<{ status: nu
   });
 }
 
+/**
+ * 503 means the provider is up but holds no live token, which its own refresh loop recovers
+ * from; a transport error means the pod is restarting. Both clear on their own, so they are
+ * retried. A 401 is a wrong secret and will never come good, so it is not.
+ */
+export function isRetryableTokenFailure(status: number): boolean {
+  return status === 0 || status === 503 || status === 502 || status === 504;
+}
+
+export const TOKEN_FETCH_ATTEMPTS = 5;
+export const TOKEN_RETRY_BASE_MS = 2_000;
+
+/** Doubling backoff, so five attempts span roughly half a minute rather than hammering. */
+export function tokenRetryDelayMs(attempt: number): number {
+  return TOKEN_RETRY_BASE_MS * 2 ** (attempt - 1);
+}
+
 async function fetchFromProvider(url: string, authToken: string | undefined): Promise<string> {
-  const { status, body } = await get(url, authToken ? { 'X-Auth-Token': authToken } : {});
+  let last = '';
 
-  if (status === 401) {
-    throw new Error(`Token provider at ${url} rejected the request (401). Check E2E_TOKEN_AUTH.`);
-  }
-  if (status === 503) {
-    throw new Error(`Token provider at ${url} holds no live token (503). Its browser login or refresh has failed.`);
-  }
-  if (status < 200 || status >= 300) {
-    throw new Error(`Token provider at ${url} returned ${status}.`);
+  for (let attempt = 1; attempt <= TOKEN_FETCH_ATTEMPTS; attempt++) {
+    // status 0 is this module's marker for a transport failure — connection refused while the
+    // provider's pod restarts, most often.
+    const { status, body } = await get(url, authToken ? { 'X-Auth-Token': authToken } : {}).catch((error: Error) => ({
+      status: 0,
+      body: error.message,
+    }));
+
+    if (status === 401) {
+      throw new Error(`Token provider at ${url} rejected the request (401). Check E2E_TOKEN_AUTH.`);
+    }
+    if (status >= 200 && status < 300) {
+      return parseTokenBody(body, url);
+    }
+
+    last = status === 0 ? `transport error: ${body}` : `HTTP ${status}`;
+    if (!isRetryableTokenFailure(status)) throw new Error(`Token provider at ${url} returned ${status}.`);
+
+    if (attempt < TOKEN_FETCH_ATTEMPTS) {
+      await new Promise((resolve) => setTimeout(resolve, tokenRetryDelayMs(attempt)));
+    }
   }
 
-  return parseTokenBody(body, url);
+  throw new Error(`Token provider at ${url} did not return a token after ${TOKEN_FETCH_ATTEMPTS} attempts (last: ${last}). A 503 means it holds no live token — its browser login or refresh has failed.`);
 }
 
 export async function resolveToken(): Promise<string> {

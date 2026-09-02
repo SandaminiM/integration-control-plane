@@ -21,8 +21,11 @@ import {
   assertUsableLifetime,
   buildStorageState,
   decodeTokenClaims,
+  isRetryableTokenFailure,
   MIN_TOKEN_LIFETIME_MS,
   parseTokenBody,
+  TOKEN_FETCH_ATTEMPTS,
+  tokenRetryDelayMs,
   type TokenClaims,
 } from './token';
 
@@ -131,5 +134,30 @@ describe('buildStorageState', () => {
     expect(buildStorageState('t', CLAIMS, 'https://console.example.com').origins[0].origin).toBe(
       'https://console.example.com',
     );
+  });
+});
+
+describe('isRetryableTokenFailure', () => {
+  it.each([0, 502, 503, 504])('retries %i — the provider recovers from these on its own', (status) => {
+    expect(isRetryableTokenFailure(status)).toBe(true);
+  });
+
+  it('does not retry 401 — a wrong shared secret never comes good', () => {
+    expect(isRetryableTokenFailure(401)).toBe(false);
+  });
+
+  it.each([400, 403, 404, 500])('does not retry %i', (status) => {
+    expect(isRetryableTokenFailure(status)).toBe(false);
+  });
+});
+
+describe('tokenRetryDelayMs', () => {
+  it('doubles each attempt', () => {
+    expect([1, 2, 3, 4].map(tokenRetryDelayMs)).toEqual([2_000, 4_000, 8_000, 16_000]);
+  });
+
+  it('spans under a minute across the full run of attempts', () => {
+    const total = Array.from({ length: TOKEN_FETCH_ATTEMPTS - 1 }, (_, i) => tokenRetryDelayMs(i + 1)).reduce((a, b) => a + b, 0);
+    expect(total).toBeLessThan(60_000);
   });
 });
