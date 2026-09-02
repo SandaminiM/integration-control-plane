@@ -16,18 +16,21 @@
  * under the License.
  */
 
-import path from 'path';
-import { defineConfig } from 'vitest/config';
+import * as OTPAuth from 'otpauth';
 
-export default defineConfig({
-  test: {
-    environment: 'happy-dom',
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'tests/e2e/helpers/*.test.ts'],
-  },
-  resolve: {
-    alias: {
-      '#api': path.resolve(__dirname, 'src/api/wip'),
-      '#product': path.resolve(__dirname, 'src/product/wip'),
-    },
-  },
-});
+// SHA-1 / 6 digits / 30s — the parameters GitHub issues.
+export function totpCode(secret: string, atMs?: number): string {
+  const totp = new OTPAuth.TOTP({
+    secret: OTPAuth.Secret.fromBase32(secret.replace(/\s+/g, '').toUpperCase()),
+    algorithm: 'SHA1',
+    digits: 6,
+    period: 30,
+  });
+  return atMs === undefined ? totp.generate() : totp.generate({ timestamp: atMs });
+}
+
+/** Milliseconds until the current TOTP window rolls over. */
+export function msUntilNextWindow(period = 30): number {
+  const elapsed = (Date.now() / 1000) % period;
+  return Math.ceil((period - elapsed) * 1000);
+}
