@@ -145,7 +145,7 @@ test.describe('deploy a sample @smoke', () => {
 
   test('the build card reports a build that has started', async ({ page }) => {
     test.skip(!componentHandle, 'No integration was provisioned');
-    await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandle}/build`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandle}/overview`, { waitUntil: 'domcontentloaded' });
 
     await expect(page.getByRole('heading', { name: 'Latest Build' })).toBeVisible({ timeout: 60_000 });
     // A set, not 'Queued': the build may already have moved on, making a literal match flaky.
@@ -154,7 +154,7 @@ test.describe('deploy a sample @smoke', () => {
 
   test('the build section expands into a stepper once the build is running', async ({ page }) => {
     test.skip(!componentHandle, 'No integration was provisioned');
-    await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandle}/build`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandle}/overview`, { waitUntil: 'domcontentloaded' });
 
     // The section auto-expands at In Progress, so this waits for the state rather than the label.
     await expect(page.getByRole('heading', { name: 'Latest Build' })).toBeVisible({ timeout: 60_000 });
@@ -163,7 +163,7 @@ test.describe('deploy a sample @smoke', () => {
 
   test('View Logs opens the logs panel and Hide Logs closes it', async ({ page }) => {
     test.skip(!componentHandle, 'No integration was provisioned');
-    await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandle}/build`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandle}/overview`, { waitUntil: 'domcontentloaded' });
 
     const viewLogs = page.getByRole('button', { name: 'View Logs' });
     await expect(viewLogs).toBeVisible({ timeout: 5 * 60_000 });
@@ -182,7 +182,7 @@ test.describe('deploy a sample @smoke', () => {
     // Far beyond the 60s default: this waits out a real build.
     test.setTimeout(BUILD_TIMEOUT_MS + 2 * 60_000);
 
-    await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandle}/build`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandle}/overview`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'Latest Build' })).toBeVisible({ timeout: 60_000 });
 
     // Either outcome passes: this asserts the build finishes, not that the sample builds cleanly.

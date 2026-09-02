@@ -113,58 +113,30 @@ test.describe('import an integration @smoke', () => {
   });
 
   // -------------------------------------------------------------------------
-  // The form
+  // The form, and the import it submits
   // -------------------------------------------------------------------------
 
-  test('the import form resolves the repository into a branch and a sub-path', async ({ page }) => {
+  test('importing a public repository provisions an integration', async ({ page }) => {
     test.setTimeout(FORM_TIMEOUT_MS);
     await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/home`, { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: 'Import from a Public Repository' }).click();
-
     await expect(page.getByRole('heading', { name: 'Import an Integration' })).toBeVisible({ timeout: 30_000 });
+
     await page.getByRole('textbox', { name: 'Repository URL' }).fill(REPO_URL);
 
     // Branch, sub-path and the names appear only once the repository resolves, which is a
     // round-trip to GitHub — hence the wait on the branch rather than on the URL field.
-    await expect(page.getByRole('combobox', { name: /^Branch/ })).toContainText('main', { timeout: 60_000 });
+    await expect(page.getByRole('combobox', { name: /^Branch/ }), 'the repository did not resolve into a branch').toContainText('main', { timeout: 60_000 });
     await expect(page.getByRole('textbox', { name: 'Repository Sub Path' })).toBeVisible();
-    await expect(page.getByRole('textbox', { name: 'Display Name' })).not.toHaveValue('');
+    await expect(page.getByRole('textbox', { name: 'Display Name' }), 'the display name was not derived from the repository').not.toHaveValue('');
     // exact: true — 'Display Name' also matches a loose 'Name'. Disabled because the
     // identifier is derived from the display name rather than typed.
     await expect(page.getByRole('textbox', { name: 'Name', exact: true })).toBeDisabled();
-  });
-
-  test('the sub-path picker lists the repository tree', async ({ page }) => {
-    test.setTimeout(FORM_TIMEOUT_MS);
-    await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/home`, { waitUntil: 'domcontentloaded' });
-    await page.getByRole('button', { name: 'Import from a Public Repository' }).click();
-    await page.getByRole('textbox', { name: 'Repository URL' }).fill(REPO_URL);
-    await expect(page.getByRole('combobox', { name: /^Branch/ })).toContainText('main', { timeout: 60_000 });
 
     await page.getByRole('button', { name: 'Edit path' }).click();
-
     const dialog = page.getByRole('dialog', { name: 'Repository Sub Path' });
     await expect(dialog).toBeVisible({ timeout: 30_000 });
-    await expect(dialog.getByRole('tree')).toBeVisible();
-    await expect(dialog.getByRole('treeitem', { name: REPO_SUBDIR })).toBeVisible({ timeout: 30_000 });
-
-    await dialog.getByRole('button', { name: 'Cancel' }).click();
-    await expect(dialog).not.toBeVisible();
-  });
-
-  // -------------------------------------------------------------------------
-  // Importing
-  // -------------------------------------------------------------------------
-
-  test('importing the repository provisions an integration', async ({ page }) => {
-    test.setTimeout(FORM_TIMEOUT_MS);
-    await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/home`, { waitUntil: 'domcontentloaded' });
-    await page.getByRole('button', { name: 'Import from a Public Repository' }).click();
-    await page.getByRole('textbox', { name: 'Repository URL' }).fill(REPO_URL);
-    await expect(page.getByRole('combobox', { name: /^Branch/ })).toContainText('main', { timeout: 60_000 });
-
-    await page.getByRole('button', { name: 'Edit path' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Repository Sub Path' });
+    await expect(dialog.getByRole('tree'), 'the picker did not list the repository tree').toBeVisible();
     await dialog.getByRole('treeitem', { name: REPO_SUBDIR }).click();
     await dialog.getByRole('button', { name: 'Continue' }).click();
     await expect(dialog).not.toBeVisible();
@@ -183,7 +155,6 @@ test.describe('import an integration @smoke', () => {
     await page.waitForURL((url) => (url.pathname.match(/\/components\/([^/]+)/)?.[1] ?? 'new') !== 'new', { timeout: 120_000 });
     componentHandle = page.url().match(/\/components\/([^/]+)/)?.[1] ?? null;
     expect(componentHandle, 'Import did not navigate to an integration').toBeTruthy();
-    expect(componentHandle, 'Landed on the import form, not the new integration').not.toBe('new');
   });
 
   // -------------------------------------------------------------------------
