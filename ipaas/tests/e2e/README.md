@@ -160,6 +160,10 @@ Specs that create anything create it themselves and delete it in teardown, so a 
 org as it found it. Teardown empties a fixture project by listing its components rather than by
 remembering what it created.
 
+Cloud runs are pinned to two workers, matching what the deployed runners set. The org has a
+project quota, and each fixture-creating spec holds one project while it runs — left to pick its
+own worker count Playwright takes half the machine's cores and the creates start returning 402.
+
 ### Projects
 
 | Project | Runs | Session | Credentials needed |

@@ -19,9 +19,13 @@
 /**
  * Deploying a sample from the project home, through to the build it kicks off.
  *
- * Serial and stateful on purpose: one deploy feeds every later assertion, because a sample
+ * Serial and stateful on purpose: the deploy feeds the assertion after it, because a sample
  * deploy provisions a real integration and starts a real build. The fixture project and the
  * integration are removed in teardown.
+ *
+ * Covers the Samples entry point only. The build card's own behaviour — the logs toggle, the
+ * collapse, waiting out a terminal state — is asserted once, in import-integration.spec.ts,
+ * since it is the same card reached by a different route.
  *
  * The status labels and the logs toggle are harvested from src/components/BuildCard.tsx;
  * the samples list and its Deploy buttons from a live snapshot of the Samples tab.
@@ -29,15 +33,11 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import { getAuthContext } from '../../helpers/auth-context.js';
-import { createFixtureProject, deleteFixtureProjects, reportTeardown, reseedSessionToken, waitForApiConfig } from '../../helpers/cloud-fixtures.js';
+import { createFixtureProject, deleteFixtureProjects, reportTeardown, waitForApiConfig } from '../../helpers/cloud-fixtures.js';
 import { authStatePath } from '../../helpers/product.js';
 
 // BuildCard.tsx:118-140. 'Failed' also reads 'Failed while <phrase>', hence the prefix match.
 const STARTING_STATUS = /^(Queued|In Progress)$/;
-const TERMINAL_STATUS = /^(Completed|Failed|Cancelled|Timed Out)/;
-
-// A build runs for minutes; wso2cloud's own suite budgets 20 for one.
-const BUILD_TIMEOUT_MS = 20 * 60_000;
 
 // Named rather than taken by position: the catalogue's order is the backend's to change.
 const SAMPLE = 'Hello World Service';
@@ -48,27 +48,6 @@ function buildStatus(page: Page) {
   return page.getByText(/^(Queued|In Progress|Completed|Failed|Cancelled|Timed Out)/).first();
 }
 
-/**
- * Polls in chunks, putting a fresh token in place between them. One 20-minute assertion would
- * outlive the token's hour in token mode, and the session cannot refresh itself there.
- */
-async function expectBuildToFinish(page: Page): Promise<void> {
-  const CHUNK_MS = 4 * 60_000;
-
-  for (let elapsed = 0; elapsed < BUILD_TIMEOUT_MS; elapsed += CHUNK_MS) {
-    const finished = await expect(buildStatus(page))
-      .toHaveText(TERMINAL_STATUS, { timeout: CHUNK_MS })
-      .then(() => true)
-      .catch(() => false);
-    if (finished) return;
-
-    await reseedSessionToken(page);
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.getByRole('heading', { name: 'Latest Build' })).toBeVisible({ timeout: 60_000 });
-  }
-
-  throw new Error(`Build did not reach a terminal state within ${BUILD_TIMEOUT_MS / 60_000} minutes; last status: ${await buildStatus(page).textContent()}`);
-}
 
 // Samples render as flat siblings with no accessible grouping, so a sample's Deploy button
 // is located relative to its title rather than by position in the list.
@@ -152,40 +131,6 @@ test.describe('deploy a sample @smoke', () => {
     await expect(buildStatus(page)).toHaveText(STARTING_STATUS, { timeout: 60_000 });
   });
 
-  test('the build section expands into a stepper once the build is running', async ({ page }) => {
-    test.skip(!componentHandle, 'No integration was provisioned');
-    await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandle}/overview`, { waitUntil: 'domcontentloaded' });
 
-    // The section auto-expands at In Progress, so this waits for the state rather than the label.
-    await expect(page.getByRole('heading', { name: 'Latest Build' })).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByRole('button', { name: 'View Logs' })).toBeVisible({ timeout: 5 * 60_000 });
-  });
 
-  test('View Logs opens the logs panel and Hide Logs closes it', async ({ page }) => {
-    test.skip(!componentHandle, 'No integration was provisioned');
-    await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandle}/overview`, { waitUntil: 'domcontentloaded' });
-
-    const viewLogs = page.getByRole('button', { name: 'View Logs' });
-    await expect(viewLogs).toBeVisible({ timeout: 5 * 60_000 });
-    await viewLogs.click();
-
-    // One button carries both labels (BuildCard.tsx:208), so the flip is the evidence.
-    const hideLogs = page.getByRole('button', { name: 'Hide Logs' });
-    await expect(hideLogs).toBeVisible({ timeout: 30_000 });
-
-    await hideLogs.click();
-    await expect(page.getByRole('button', { name: 'View Logs' })).toBeVisible({ timeout: 30_000 });
-  });
-
-  test('the build reaches a terminal state', async ({ page }) => {
-    test.skip(!componentHandle, 'No integration was provisioned');
-    // Far beyond the 60s default: this waits out a real build.
-    test.setTimeout(BUILD_TIMEOUT_MS + 2 * 60_000);
-
-    await page.goto(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandle}/overview`, { waitUntil: 'domcontentloaded' });
-    await expect(page.getByRole('heading', { name: 'Latest Build' })).toBeVisible({ timeout: 60_000 });
-
-    // Either outcome passes: this asserts the build finishes, not that the sample builds cleanly.
-    await expectBuildToFinish(page);
-  });
 });
