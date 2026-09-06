@@ -17,6 +17,7 @@
  */
 
 import type { EnvEndpoint } from '../types/component';
+import type { EndpointOption } from '../types/consumers';
 
 /**
  * Drop a redundant leading "Endpoint" word from a label, so "Endpoint Covid Status"
@@ -76,3 +77,6 @@ export function resolveEndpointInvokeUrl(endpoint: EnvEndpoint | undefined): str
   const url = [...preferred, endpoint.publicUrl, endpoint.defaultPublicUrl, endpoint.organizationUrl, endpoint.defaultOrganizationUrl, endpoint.projectUrl, endpoint.invokeUrl].find((u) => !!u) ?? '';
   return url.replace(/\/+$/, '');
 }
+
+/** Environment endpoints as the options the cloud API drawers select from. */
+export const toEndpointOptions = (endpoints: EnvEndpoint[]): EndpointOption[] => endpoints.map((ep) => ({ name: ep.id, displayName: ep.displayName || ep.id }));

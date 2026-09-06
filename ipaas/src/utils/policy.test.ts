@@ -205,9 +205,6 @@ describe('corsFromApi', () => {
 });
 
 describe('applyCors', () => {
-  // A wildcard origin with credentials is rejected by the CORS spec and by gateways, which
-  // fail the route rather than ignoring the pair. The form disables the checkbox, but state
-  // loaded from an API that already holds both must not be written straight back out.
   it('drops credentials when all origins are allowed', () => {
     const value: CorsConfig = {
       enabled: true,
@@ -222,8 +219,6 @@ describe('applyCors', () => {
     expect(cors.accessControlAllowCredentials).toBe(false);
   });
 
-  // The origins field is free-form, so "*" can be typed while the allow-all checkbox is off.
-  // Guarding only the checkbox let this pair reach APIM, which has no server-side backstop.
   it('drops credentials when a literal * is typed as an origin', () => {
     const value: CorsConfig = {
       enabled: true,
@@ -296,8 +291,7 @@ describe('applyCors', () => {
     expect(applyCors(baseApi, value).corsConfiguration).toEqual({
       corsConfigurationEnabled: true,
       accessControlAllowOrigins: ['*'],
-      // false despite the input asking for credentials — the wildcard wins, see below
-      accessControlAllowCredentials: false,
+      accessControlAllowCredentials: false, // the wildcard wins over the requested credentials
       accessControlAllowHeaders: ['X-Test'],
       accessControlAllowMethods: ['GET'],
     });

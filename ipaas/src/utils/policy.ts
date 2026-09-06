@@ -57,11 +57,7 @@ export function isRuleValid(rule: { requestCount: string }): boolean {
   return Number.isInteger(count) && count > 0;
 }
 
-/**
- * True when the rate limit is internally valid. A resource-level limit is valid when every
- * operation the user filled in is valid — a blank one means "leave this operation unlimited",
- * so it must not block the save.
- */
+/** True when the rate limit is internally valid. A blank per-operation row is valid — it means unlimited. */
 export function isRateLimitValid(value: RateLimitConfig): boolean {
   if (value.level === 'RESOURCE_LEVEL') {
     return Object.values(value.operations ?? {}).every((rule) => rule.requestCount === '' || isRuleValid(rule));
@@ -72,12 +68,7 @@ export function isRateLimitValid(value: RateLimitConfig): boolean {
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 
-/**
- * True when the configuration allows every origin, whether that came from the checkbox or from a
- * literal "*" typed into the origins field — the field is free-form, so both are reachable. The
- * read mappers already collapse a "*" into the checkbox; the write side and the form have to agree
- * with them, or a config saves as something other than what the user was shown.
- */
+/** True when every origin is allowed — from the checkbox, or from a literal "*" typed as an origin. */
 export function allowsAllOrigins(value: Pick<CorsConfig, 'allowAllOrigins' | 'origins'>): boolean {
   return value.allowAllOrigins || value.origins.some((o) => o.trim() === '*');
 }
@@ -98,10 +89,7 @@ export function corsFromApi(api: ApimApiInfo | null | undefined): CorsConfig {
 
 /** Apply the CORS view-model onto an APIM API, returning a new object to PUT. */
 export function applyCors(api: ApimApiInfo, value: CorsConfig): ApimApiInfo {
-  // Credentials are invalid against a wildcard origin per the CORS spec, and gateways reject the
-  // pair rather than ignoring it, so it must never reach a saved config — whether the wildcard
-  // came from the checkbox, from a typed origin, or from state loaded back from an API that
-  // already holds both.
+  // Credentials against a wildcard origin is rejected by the gateway, so it must never be saved.
   const wildcard = allowsAllOrigins(value);
   const corsConfiguration: CorsConfiguration = {
     corsConfigurationEnabled: value.enabled,

@@ -266,8 +266,7 @@ export interface ConsumersApi {
   /** Set the single active auth mode (none/api-key/jwt); the BFF clears the other + redeploys. */
   setEndpointSecurity(ref: EndpointRef, cfg: SecurityConfig): Promise<SecurityConfig>;
 
-  // Endpoint policies — the non-auth gateway behaviour (CORS, rate limiting), written
-  // independently of the auth mode above.
+  // Endpoint policies — CORS and rate limiting, written independently of the auth mode above.
   getEndpointPolicies(ref: EndpointRef): Promise<EndpointPolicyConfig>;
   setEndpointPolicies(ref: EndpointRef, cfg: EndpointPolicyConfig): Promise<EndpointPolicyConfig>;
 

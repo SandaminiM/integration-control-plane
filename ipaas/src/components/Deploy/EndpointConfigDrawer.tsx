@@ -30,6 +30,7 @@ import type { EndpointSecurityState } from '../../types/deploy';
 import TagInput from './TagInput';
 import ApiSecurityDrawer from '../Overview/integration-as-api/ApiSecurityDrawer';
 import { IS_CLOUD } from '../../features';
+import { toEndpointOptions } from '../../utils/endpoints';
 
 const drawerSx = {
   '& .MuiDrawer-paper': {
@@ -344,19 +345,9 @@ export default function EndpointConfigDrawer({ open, onClose, componentId, versi
 
   const selectedEp: EnvEndpoint | null = endpoints[selectedIdx] ?? null;
 
-  // The panel below edits an APIM API object, which cloud has none of. Its cloud counterpart is
-  // the APIP-backed security drawer, so open that instead of a permanently empty panel.
+  // The panel below edits an APIM API object, which cloud has none of.
   if (IS_CLOUD) {
-    return (
-      <ApiSecurityDrawer
-        open={open}
-        onClose={handleClose}
-        componentName={componentId}
-        envName={firstEnvId ?? ''}
-        endpoints={endpoints.map((ep) => ({ name: ep.id, displayName: ep.displayName || ep.id }))}
-        activeEndpointName={selectedEp?.id}
-      />
-    );
+    return <ApiSecurityDrawer open={open} onClose={handleClose} componentName={componentId} envName={firstEnvId ?? ''} endpoints={toEndpointOptions(endpoints)} activeEndpointName={selectedEp?.id} />;
   }
 
   return (

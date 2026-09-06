@@ -103,20 +103,11 @@ export interface SecurityConfig {
   publicUrl?: string;
 }
 
-/**
- * The non-auth gateway behaviour of an exposed endpoint API (GET/PUT `.../policies`).
- *
- * Endpoint timeout ("resiliency") is absent on purpose: the gateway has one, but platform-api does
- * not expose it, so there is nothing the BFF could set.
- */
+/** The non-auth gateway behaviour of an exposed endpoint API (GET/PUT `.../policies`). */
 export interface EndpointPolicyConfig {
   cors?: EndpointCorsPolicy;
   rateLimit?: EndpointRateLimitPolicy;
-  /**
-   * Routes the exposed API actually has. An endpoint exposed without an OpenAPI schema gets the
-   * catch-all method set on `/*`, so this is what a per-operation limit can be attached to —
-   * not the paths in the endpoint's own schema. Read-only: ignored on PUT.
-   */
+  /** Routes the exposed API has — what a per-operation limit attaches to. Read-only: ignored on PUT. */
   operations?: EndpointPolicyOperation[];
 }
 

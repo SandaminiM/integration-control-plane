@@ -28,11 +28,7 @@ interface RateLimitingSectionProps {
   disabled?: boolean;
   /** Explains what the limit applies to; each surface names its own subject. */
   description: ReactNode;
-  /**
-   * Operations a per-operation limit can be attached to. Omitted (or empty) hides the
-   * resource-level choice entirely, so a surface whose backend has no per-operation limit
-   * cannot offer one.
-   */
+  /** Operations a per-operation limit can attach to. Empty hides the resource-level choice. */
   operations?: RateLimitOperation[];
   /** Label for the API-wide choice. Defaults to "Limited" for a surface with only one level. */
   apiLevelLabel?: string;
@@ -41,9 +37,8 @@ interface RateLimitingSectionProps {
 const DEFAULT_RULE: RateLimitRule = { requestCount: '', timeUnit: 'MINUTE' };
 
 /**
- * Editor for an API's request rate limit: unlimited, one allowance for the whole API, or —
- * where the backend supports it — a separate allowance per operation. Controlled by the parent
- * so it can track dirty state and save everything in one request.
+ * Editor for an API's request rate limit: unlimited, one allowance for the whole API, or one per
+ * operation. Controlled by the parent so it can track dirty state and save in one request.
  */
 export default function RateLimitingSection({ value, onChange, disabled, description, operations, apiLevelLabel }: RateLimitingSectionProps): ReactNode {
   const limited = value.level === 'API_LEVEL';

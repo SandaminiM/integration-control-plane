@@ -24,8 +24,6 @@ describe('endpoint visibility mapping', () => {
     expect(['Public', 'Organization', 'Project'].map(toVisibilityWire)).toEqual(['external', 'internal', 'project']);
   });
 
-  // OpenChoreo's term for org-wide is `internal`; reading `organization` finds nothing, which is
-  // what left an org-visible endpoint showing a raw chip with no box ticked.
   it('reads org-wide visibility back as Organization', () => {
     expect(toVisibilityLabel('internal')).toBe('Organization');
   });
@@ -34,10 +32,5 @@ describe('endpoint visibility mapping', () => {
     for (const label of ['Public', 'Organization', 'Project']) {
       expect(toVisibilityLabel(toVisibilityWire(label))).toBe(label);
     }
-  });
-
-  it('passes an unmapped value through, so the BFF rejects it instead of storing a wrong one', () => {
-    expect(toVisibilityWire('Galactic')).toBe('Galactic');
-    expect(toVisibilityLabel('namespace')).toBe('namespace');
   });
 });

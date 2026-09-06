@@ -17,33 +17,21 @@
  */
 
 /**
- * Endpoint network-visibility translation, in both directions.
- *
- * Two domain modules need it — `deployments.ts` reads visibility off the workload endpoints and
- * `components.ts` writes it back — so it lives on its own rather than in either of them, following
- * `_environmentShape.ts`.
- *
- * The wire value is the OpenChoreo endpoint-visibility enum, which is what the BFF stores on the
- * Workload. Its term for org-wide is `internal`; the console calls the same thing "Organization".
- * Reading `organization` off the wire finds nothing, which is what left an org-visible endpoint
- * showing a raw `internal` chip with no box ticked in the edit form.
+ * Endpoint visibility: the OpenChoreo wire enum the BFF stores, and the labels the UI shows
+ * (the `VISIBILITY_OPTS` keys in `components/EndpointCard`). Shared by `deployments.ts`, which
+ * reads it, and `components.ts`, which writes it.
  */
 
-/** Wire value -> the label shown in the UI. */
-export const VISIBILITY_LABEL: Record<string, string> = {
+/** Wire value -> UI label. The inverse is derived, so the two cannot drift. */
+const VISIBILITY_LABEL: Record<string, string> = {
   external: 'Public',
   internal: 'Organization',
   project: 'Project',
 };
 
-/** UI label -> the wire value. */
-export const VISIBILITY_WIRE: Record<string, string> = {
-  Public: 'external',
-  Organization: 'internal',
-  Project: 'project',
-};
+const VISIBILITY_WIRE: Record<string, string> = Object.fromEntries(Object.entries(VISIBILITY_LABEL).map(([wire, label]) => [label, wire]));
 
-/** Labels the BFF cannot map are passed through, so it rejects them rather than silently storing a wrong one. */
+/** Unmapped values pass through, so the BFF rejects them rather than storing a wrong one. */
 export const toVisibilityWire = (label: string): string => VISIBILITY_WIRE[label] ?? label;
 
 export const toVisibilityLabel = (wire: string): string => VISIBILITY_LABEL[wire] ?? wire;

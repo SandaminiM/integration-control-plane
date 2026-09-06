@@ -20,23 +20,17 @@ import { Alert, Box, Button, CircularProgress, Divider, Drawer, IconButton, Menu
 import { X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useEndpointPolicies, useSetEndpointPolicies } from '../../../hooks/useConsumers';
-import type { EndpointOption, EndpointRef } from '../../../types/consumers';
+import type { EndpointOption } from '../../../types/consumers';
 import type { CorsConfig, RateLimitConfig } from '../../../types/policy';
 import { configToPolicy, policyToConfig, toRateLimitOperations } from '../../../utils/endpointPolicy';
 import { isRateLimitValid } from '../../../utils/policy';
-import { friendlyApiError } from '../../../utils/apiSecurity';
-import { httpStatusOf } from '../../../utils/apiErrors';
+import { endpointLoadNotice, friendlyApiError } from '../../../utils/apiSecurity';
 import CorsSection from '../../Policies/CorsSection';
 import RateLimitingSection from '../../Policies/RateLimitingSection';
+import { useEndpointDrawer } from './useEndpointDrawer';
 import * as styles from './apiConsumption.styles';
 
-/**
- * The gateway does support a request timeout, but platform-api does not expose it, so the BFF has
- * no way to set one. The field is shown disabled rather than hidden: it is a setting people expect
- * to find here, and silently omitting it reads as "this platform has no timeout" instead of
- * "not settable from here yet".
- */
-const DEFAULT_TIMEOUT_MS = '60000';
+/** The gateway has a request timeout, but platform-api does not expose it for the BFF to set. */
 const TIMEOUT_UNAVAILABLE = 'Endpoint timeout is not configurable from here yet';
 
 interface ApiSettingsDrawerProps {
@@ -52,46 +46,22 @@ interface ApiSettingsDrawerProps {
   activeEndpointName?: string;
 }
 
-/**
- * Cloud-only "API Settings" drawer for one exposed endpoint API: CORS and rate limiting, enforced
- * as gateway policies. Authentication is configured separately in ApiSecurityDrawer — the BFF
- * writes the two independently so neither can clear the other.
- */
+/** Cloud-only "API Settings" drawer: CORS and rate limiting. Authentication lives in ApiSecurityDrawer. */
 export default function ApiSettingsDrawer({ open, onClose, componentName, envName, endpoints, activeEndpointName }: ApiSettingsDrawerProps): JSX.Element {
-  const [userSelectedIdx, setUserSelectedIdx] = useState<number | null>(null);
   const [cors, setCors] = useState<CorsConfig | null>(null);
   const [rateLimit, setRateLimit] = useState<RateLimitConfig | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Drop the endpoint override when the drawer closes, so reopening derives it from
-  // activeEndpointName instead of a stale prior selection.
-  useEffect(() => {
-    if (!open) setUserSelectedIdx(null);
-  }, [open]);
-
-  const matchedIdx = useMemo(() => {
-    const i = endpoints.findIndex((ep) => ep.name === activeEndpointName);
-    return i >= 0 ? i : 0;
-  }, [endpoints, activeEndpointName]);
-  const selectedEndpointIdx = userSelectedIdx ?? matchedIdx;
-  const selectedEndpoint = endpoints[selectedEndpointIdx] ?? null;
-
-  const endpointRef: EndpointRef | null = useMemo(
-    () => (selectedEndpoint ? { componentName, environmentName: envName, endpointName: selectedEndpoint.name } : null),
-    [componentName, envName, selectedEndpoint],
-  );
+  const { selectedIdx, selectEndpoint, selectedEndpoint, endpointRef, syncKey } = useEndpointDrawer({ open, componentName, envName, endpoints, activeEndpointName });
 
   const { data: policies, isLoading, error: loadError } = useEndpointPolicies(endpointRef, open);
   const setPolicies = useSetEndpointPolicies(endpointRef);
   const saving = setPolicies.isPending;
 
-  // The routes a per-operation limit can attach to come from the exposed API itself, not from the
-  // endpoint's OpenAPI schema — an endpoint exposed without one has only the catch-all methods.
+  /** Routes come from the exposed API, not the endpoint's schema: without one there is only `/*`. */
   const operations = useMemo(() => toRateLimitOperations(policies?.operations), [policies?.operations]);
 
-  // Seed the form from the fetched state once per (endpoint, open) — later edits stick even if
-  // the query re-settles.
-  const syncKey = JSON.stringify({ componentName, envName, endpointName: selectedEndpoint?.name ?? '', open });
+  // Seed the form once per (endpoint, open), so later edits survive a refetch.
   const syncedRef = useRef('');
   useEffect(() => {
     if (!open) {
@@ -107,20 +77,13 @@ export default function ApiSettingsDrawer({ open, onClose, componentName, envNam
     }
   }, [open, policies, syncKey]);
 
-  // 409 and 503 are states, not failures: the endpoint is not exposed yet, or the platform is not
-  // configured here. Both need copy that says what to do rather than a generic warning.
-  const loadStatus = loadError ? httpStatusOf(loadError) : undefined;
-  const notice =
-    loadStatus === 409
-      ? 'This endpoint isn’t exposed as an API yet. Set its visibility to Public and deploy, then come back to configure API settings.'
-      : loadStatus === 503
-        ? 'API settings aren’t available in this environment.'
-        : loadError
-          ? friendlyApiError(loadError, 'Could not read the current API settings.')
-          : null;
+  const notice = endpointLoadNotice(loadError, {
+    notExposed: 'This endpoint isn’t exposed as an API yet. Set its visibility to Public and deploy, then come back to configure API settings.',
+    unavailable: 'API settings aren’t available in this environment.',
+    readFailed: 'Could not read the current API settings.',
+  });
 
-  const valid = !rateLimit || isRateLimitValid(rateLimit);
-  const canApply = !!endpointRef && !!cors && !!rateLimit && !loadError && !isLoading && !saving && valid;
+  const canApply = !!endpointRef && !!cors && !!rateLimit && isRateLimitValid(rateLimit) && !loadError && !isLoading && !saving;
 
   const handleApply = async () => {
     if (!endpointRef || !cors || !rateLimit || !canApply) return;
@@ -156,13 +119,13 @@ export default function ApiSettingsDrawer({ open, onClose, componentName, envNam
           ) : (
             <Stack gap={2.5}>
               {error && <Alert severity="error">{error}</Alert>}
-              {notice && !error && <Alert severity={loadStatus === 409 ? 'info' : 'warning'}>{notice}</Alert>}
+              {notice && !error && <Alert severity={notice.severity}>{notice.text}</Alert>}
 
               <Stack direction="row" alignItems="center" gap={2}>
                 <Typography variant="body2" fontWeight={500}>
                   Endpoints:
                 </Typography>
-                <Select size="small" value={selectedEndpointIdx} onChange={(e) => setUserSelectedIdx(Number(e.target.value))} disabled={endpoints.length <= 1} sx={styles.endpointSelect}>
+                <Select size="small" value={selectedIdx} onChange={(e) => selectEndpoint(Number(e.target.value))} disabled={endpoints.length <= 1} sx={styles.endpointSelect}>
                   {endpoints.map((ep, i) => (
                     <MenuItem key={ep.name} value={i}>
                       {ep.displayName}
@@ -192,14 +155,7 @@ export default function ApiSettingsDrawer({ open, onClose, componentName, envNam
                       <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
                         Rate Limiting
                       </Typography>
-                      <RateLimitingSection
-                        value={rateLimit}
-                        onChange={setRateLimit}
-                        disabled={saving}
-                        description="Limit how many requests the gateway accepts for this endpoint."
-                        apiLevelLabel="Whole endpoint"
-                        operations={operations}
-                      />
+                      <RateLimitingSection value={rateLimit} onChange={setRateLimit} disabled={saving} description="Limit how many requests the gateway accepts for this endpoint." apiLevelLabel="Whole endpoint" operations={operations} />
                     </Box>
 
                     <Divider />
@@ -210,7 +166,7 @@ export default function ApiSettingsDrawer({ open, onClose, componentName, envNam
                       </Typography>
                       <Tooltip title={TIMEOUT_UNAVAILABLE}>
                         <Box component="span" sx={styles.disabledTooltipTarget}>
-                          <TextField size="small" type="number" label="Endpoint timeout (ms)" value={DEFAULT_TIMEOUT_MS} disabled sx={{ width: 220 }} helperText={TIMEOUT_UNAVAILABLE} />
+                          <TextField size="small" type="number" label="Endpoint timeout (ms)" value="" disabled sx={{ width: 220 }} helperText={TIMEOUT_UNAVAILABLE} />
                         </Box>
                       </Tooltip>
                     </Box>

@@ -54,15 +54,12 @@ describe('corsToPolicy', () => {
     expect(corsToPolicy({ ...enabled, enabled: false })).toEqual({ enabled: false, allowCredentials: false });
   });
 
-  // The gateway 500s the whole API on this pair, so it must not survive the mapping even if the
-  // form state still carries a credentials flag from before the wildcard was ticked.
   it('drops credentials when all origins are allowed', () => {
     const out = corsToPolicy({ ...enabled, allowAllOrigins: true, allowCredentials: true });
     expect(out.allowOrigins).toEqual(['*']);
     expect(out.allowCredentials).toBe(false);
   });
 
-  // Same gap as applyCors: the origins field is free-form, so the wildcard can arrive by typing.
   it('drops credentials when a literal * is typed as an origin', () => {
     const out = corsToPolicy({ ...enabled, allowAllOrigins: false, origins: ['*'], allowCredentials: true });
     expect(out.allowOrigins).toEqual(['*']);
@@ -104,6 +101,11 @@ describe('rateLimitToPolicy', () => {
       operations: { 'GET /pets': { requestCount: '2', timeUnit: 'MINUTE' }, 'POST /pets': { requestCount: '', timeUnit: 'MINUTE' } },
     };
     expect(rateLimitToPolicy(value).operations).toEqual({ 'GET /pets': { requestCount: 2, timeUnit: 'MINUTE' } });
+  });
+
+  it('saves as unlimited when every operation row was left blank', () => {
+    const value: RateLimitConfig = { level: 'RESOURCE_LEVEL', requestCount: '', timeUnit: 'MINUTE', operations: { 'GET /pets': { requestCount: '', timeUnit: 'MINUTE' } } };
+    expect(rateLimitToPolicy(value)).toEqual({ level: 'unlimited' });
   });
 
   it('sends only the level when unlimited', () => {

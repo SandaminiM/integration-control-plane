@@ -16,15 +16,7 @@
  * under the License.
  */
 
-/**
- * Translation between the BFF's endpoint-policy wire shape and the view-models the shared
- * CORS / rate-limiting sections are controlled by.
- *
- * The wire shape is the gateway's, so it carries only what the gateway can enforce; the
- * view-models keep numbers as strings because they back text inputs. The two differ enough
- * (allow-all is `['*']` on the wire but a checkbox in the UI) that the mapping is worth having
- * in one tested place rather than inline in the drawer.
- */
+/** Translation between the BFF's endpoint-policy wire shape and the CORS / rate-limit view-models. */
 
 import { DEFAULT_CORS_HEADERS, DEFAULT_CORS_METHODS, TIME_UNITS } from '../constants/policy';
 import type { EndpointCorsPolicy, EndpointPolicyConfig, EndpointPolicyOperation, EndpointRateLimitLevel, EndpointRateLimitPolicy } from '../types/consumers';
@@ -37,10 +29,7 @@ const asTimeUnit = (unit: string | undefined): TimeUnit => (TIME_UNITS.some((u) 
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 
-/**
- * Enabling CORS for the first time seeds the header and method lists, so the user gets a working
- * policy instead of one that allows nothing. The defaults match what the wip drawer writes.
- */
+/** Seeds the header and method defaults, so a first enable allows something. */
 export function corsFromPolicy(cors: EndpointCorsPolicy | undefined): CorsConfig {
   const origins = cors?.allowOrigins ?? [];
   return {
@@ -53,12 +42,9 @@ export function corsFromPolicy(cors: EndpointCorsPolicy | undefined): CorsConfig
   };
 }
 
+/** Credentials are dropped against a wildcard origin: the gateway 500s the whole API on that pair. */
 export function corsToPolicy(value: CorsConfig): EndpointCorsPolicy {
   if (!value.enabled) return { enabled: false, allowCredentials: false };
-  // The pair is invalid per the CORS spec and the gateway 500s every request to the API when it
-  // sees it, so credentials are dropped whenever every origin is allowed — including when the
-  // wildcard was typed as an origin rather than ticked, and when `allowCredentials` is stale from
-  // before that happened.
   const wildcard = allowsAllOrigins(value);
   return {
     enabled: true,
@@ -97,10 +83,7 @@ export function rateLimitFromPolicy(rateLimit: EndpointRateLimitPolicy | undefin
   };
 }
 
-/**
- * Operations the user left blank are dropped rather than sent as zero: the gateway rejects a
- * non-positive count, and "blank" means the operation should stay unlimited.
- */
+/** Blank operations are dropped — they mean "leave this one unlimited", not "zero requests". */
 export function rateLimitToPolicy(value: RateLimitConfig): EndpointRateLimitPolicy {
   const level = LEVEL_TO_WIRE[value.level];
   if (level === 'api') {
@@ -113,14 +96,14 @@ export function rateLimitToPolicy(value: RateLimitConfig): EndpointRateLimitPoli
       if (!Number.isInteger(count) || count <= 0) continue;
       operations[key] = { requestCount: count, timeUnit: rule.timeUnit };
     }
-    return { level, operations };
+    // Clearing every row means the limit is gone, not that an empty limit is configured.
+    return Object.keys(operations).length ? { level, operations } : { level: 'unlimited' };
   }
   return { level: 'unlimited' };
 }
 
 /** The operations the rate-limiting section renders a row for. */
-export const toRateLimitOperations = (operations: EndpointPolicyOperation[] | undefined): RateLimitOperation[] =>
-  (operations ?? []).map((op) => ({ key: op.key, verb: op.method, target: op.path }));
+export const toRateLimitOperations = (operations: EndpointPolicyOperation[] | undefined): RateLimitOperation[] => (operations ?? []).map((op) => ({ key: op.key, verb: op.method, target: op.path }));
 
 export const policyToConfig = (cfg: EndpointPolicyConfig | undefined): { cors: CorsConfig; rateLimit: RateLimitConfig } => ({
   cors: corsFromPolicy(cfg?.cors),

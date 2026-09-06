@@ -23,6 +23,7 @@ import type { EnvEndpoint } from '../../../types/component';
 import { EndpointCard } from '../../EndpointCard';
 import ApiSettingsDrawer from '../../Overview/integration-as-api/ApiSettingsDrawer';
 import { IS_CLOUD } from '../../../features';
+import { toEndpointOptions } from '../../../utils/endpoints';
 import ManageDrawer from '../../EnvironmentCard/ManageDrawer';
 
 interface EndpointsDrawerProps {
@@ -33,7 +34,6 @@ interface EndpointsDrawerProps {
   envName: string;
   // Context for deploy-settings-v2 redeploy and visibility editing
   componentId?: string;
-  projectId?: string;
   versionId?: string;
   releaseId?: string;
   buildId?: string;
@@ -53,7 +53,7 @@ const drawerSx = {
   },
 } as const;
 
-export default function EndpointsDrawer({ open, onClose, endpoints, isLoading, envName, componentId, projectId, versionId, releaseId, buildId, environmentId }: EndpointsDrawerProps) {
+export default function EndpointsDrawer({ open, onClose, endpoints, isLoading, envName, componentId, versionId, releaseId, buildId, environmentId }: EndpointsDrawerProps) {
   const [manageDrawerOpen, setManageDrawerOpen] = useState(false);
   const [selectedEndpoint, setSelectedEndpoint] = useState<EnvEndpoint | null>(null);
 
@@ -100,14 +100,7 @@ export default function EndpointsDrawer({ open, onClose, endpoints, isLoading, e
       </Drawer>
 
       {IS_CLOUD ? (
-        <ApiSettingsDrawer
-          open={manageDrawerOpen}
-          onClose={() => setManageDrawerOpen(false)}
-          componentName={componentId ?? ''}
-          envName={environmentId ?? ''}
-          endpoints={endpoints.map((ep) => ({ name: ep.id, displayName: ep.displayName || ep.id }))}
-          activeEndpointName={selectedEndpoint?.id}
-        />
+        <ApiSettingsDrawer open={manageDrawerOpen} onClose={() => setManageDrawerOpen(false)} componentName={componentId ?? ''} envName={environmentId ?? ''} endpoints={toEndpointOptions(endpoints)} activeEndpointName={selectedEndpoint?.id} />
       ) : (
         <ManageDrawer
           open={manageDrawerOpen}
@@ -118,7 +111,6 @@ export default function EndpointsDrawer({ open, onClose, endpoints, isLoading, e
           endpointDisplayName={selectedEndpoint?.displayName}
           networkVisibilities={selectedEndpoint?.networkVisibilities}
           componentId={componentId}
-          projectId={projectId}
           versionId={versionId}
           releaseId={releaseId}
           buildId={buildId}

@@ -30,6 +30,7 @@ import { useDeployDeploymentTrack } from '../../hooks/useDeployments';
 import ManageDrawer from './ManageDrawer';
 import ApiSettingsDrawer from '../Overview/integration-as-api/ApiSettingsDrawer';
 import { IS_CLOUD } from '../../features';
+import { toEndpointOptions } from '../../utils/endpoints';
 import { EndpointCard, VISIBILITY_OPTS } from '../EndpointCard';
 import { ConfigForm, type BaseType, type LinkingInfo, type JSONSchema } from '../SchemaConfigForm';
 import ImportConfigTomlButton from '../ImportConfigTomlButton';
@@ -1284,14 +1285,7 @@ function GenericServiceConfigureDrawer({
       </Drawer>
 
       {IS_CLOUD ? (
-        <ApiSettingsDrawer
-          open={manageDrawerOpen}
-          onClose={() => setManageDrawerOpen(false)}
-          componentName={componentId}
-          envName={envId}
-          endpoints={endpoints.map((ep) => ({ name: ep.id, displayName: ep.displayName || ep.id }))}
-          activeEndpointName={settingsEp?.id}
-        />
+        <ApiSettingsDrawer open={manageDrawerOpen} onClose={() => setManageDrawerOpen(false)} componentName={componentId} envName={envId} endpoints={toEndpointOptions(endpoints)} activeEndpointName={settingsEp?.id} />
       ) : (
         <ManageDrawer open={manageDrawerOpen} onClose={() => setManageDrawerOpen(false)} apimId={settingsEp?.apimId ?? null} />
       )}

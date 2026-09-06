@@ -74,3 +74,20 @@ export function friendlyApiError(error: unknown, fallback: string): string {
   if (/failed to fetch|networkerror|load failed/i.test(raw)) return 'Could not reach the server. Check your connection and try again.';
   return fallback;
 }
+
+/**
+ * The notice an endpoint drawer shows when its configuration cannot be read. 409 (not exposed as
+ * an API yet) and 503 (not configured in this environment) are states rather than failures, so
+ * each gets copy saying what to do; anything else falls back to `friendlyApiError`.
+ */
+export function endpointLoadNotice(error: unknown, copy: { notExposed: string; unavailable: string; readFailed: string }): { text: string; severity: 'info' | 'warning' } | null {
+  if (!error) return null;
+  switch (httpStatusOf(error)) {
+    case 409:
+      return { text: copy.notExposed, severity: 'info' };
+    case 503:
+      return { text: copy.unavailable, severity: 'warning' };
+    default:
+      return { text: friendlyApiError(error, copy.readFailed), severity: 'warning' };
+  }
+}

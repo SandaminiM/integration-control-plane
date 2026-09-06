@@ -21,7 +21,21 @@
  * from the JWT, so no call takes an org parameter.
  */
 
-import type { ApiExposure, ApiKeyAuthOptions, ApiKeyResult, ApiKeySummary, Consumer, ConsumerApplication, CreateApiKeyInput, CreateApplicationInput, CreateConsumerInput, EndpointPolicyConfig, EndpointRef, SecurityConfig, ConsumerCredential } from '../../types/consumers';
+import type {
+  ApiExposure,
+  ApiKeyAuthOptions,
+  ApiKeyResult,
+  ApiKeySummary,
+  Consumer,
+  ConsumerApplication,
+  CreateApiKeyInput,
+  CreateApplicationInput,
+  CreateConsumerInput,
+  EndpointPolicyConfig,
+  EndpointRef,
+  SecurityConfig,
+  ConsumerCredential,
+} from '../../types/consumers';
 import { normalizeConsumerStatus } from '../../utils/apiConsumption';
 import { userFacingError } from '../../utils/apiSecurity';
 import { bff, items, seg, type ListResponse } from './_client';
@@ -80,15 +94,12 @@ export const getEndpointSecurity = (ref: EndpointRef): Promise<SecurityConfig> =
 export const setEndpointSecurity = (ref: EndpointRef, cfg: SecurityConfig): Promise<SecurityConfig> => bff.put<SecurityConfig>(`${endpointPath(ref)}/security`, cfg);
 
 // ---------------------------------------------------------------------------
-// Endpoint policies — CORS and rate limiting
-//
-// Separate from /security because the two are written independently: the BFF leaves auth policies
-// alone here and leaves these alone there, so neither drawer can disarm the other.
+// Endpoint policies — CORS and rate limiting, written independently of /security
 // ---------------------------------------------------------------------------
 
 export const getEndpointPolicies = (ref: EndpointRef): Promise<EndpointPolicyConfig> => bff.get<EndpointPolicyConfig>(`${endpointPath(ref)}/policies`);
 
-/** Replaces both policies and redeploys; the response is the re-read state. */
+/** Replaces both policies and redeploys. */
 export const setEndpointPolicies = (ref: EndpointRef, cfg: EndpointPolicyConfig): Promise<EndpointPolicyConfig> => bff.put<EndpointPolicyConfig>(`${endpointPath(ref)}/policies`, cfg);
 
 // ---------------------------------------------------------------------------

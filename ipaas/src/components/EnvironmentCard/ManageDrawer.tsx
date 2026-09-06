@@ -238,7 +238,6 @@ interface ManageDrawerProps {
   apimId: string | null | undefined;
   // Optional — when provided, enables deploy-settings-v2 redeploy after save
   componentId?: string;
-  projectId?: string;
   versionId?: string;
   releaseId?: string;
   buildId?: string;
@@ -250,7 +249,7 @@ interface ManageDrawerProps {
   networkVisibilities?: string[] | null;
 }
 
-export default function ManageDrawer({ open, onClose, apimId, componentId, projectId, versionId, releaseId, buildId, environmentId, apimRevisionId, endpointId, endpointDisplayName, networkVisibilities: initialNetworkVisibilities }: ManageDrawerProps) {
+export default function ManageDrawer({ open, onClose, apimId, componentId, versionId, releaseId, buildId, environmentId, apimRevisionId, endpointId, endpointDisplayName, networkVisibilities: initialNetworkVisibilities }: ManageDrawerProps) {
   const { data: apimApiInfo, isLoading } = useApimApi(open ? apimId : null);
   useThrottlingPolicies(); // prefetch
   const updateEndpoint = useUpdateEndpoint();
@@ -378,7 +377,6 @@ export default function ManageDrawer({ open, onClose, apimId, componentId, proje
       if (canEditVisibility) {
         await updateEndpoint.mutateAsync({
           componentId: componentId!,
-          projectId: projectId ?? '',
           versionId: versionId!,
           releaseId: releaseId!,
           endpointId: endpointId!,

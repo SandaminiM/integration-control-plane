@@ -61,18 +61,9 @@ export default function CorsSection({ value, onChange, disabled }: CorsSectionPr
 
       <Collapse in={value.enabled} unmountOnExit>
         <Stack gap={2} sx={{ pl: 0.5 }}>
-          {/* Turning the wildcard on clears credentials in the model, not just in the view: a
-              value left set here would survive into the saved config through any caller that
-              does not normalize it. */}
+          {/* Ticking allow-all clears credentials in the model, not just in the view. */}
           <FormControlLabel
-            control={
-              <Checkbox
-                size="small"
-                checked={value.allowAllOrigins}
-                onChange={(e) => onChange({ ...value, allowAllOrigins: e.target.checked, allowCredentials: e.target.checked ? false : value.allowCredentials })}
-                disabled={disabled}
-              />
-            }
+            control={<Checkbox size="small" checked={value.allowAllOrigins} onChange={(e) => onChange({ ...value, allowAllOrigins: e.target.checked, allowCredentials: e.target.checked ? false : value.allowCredentials })} disabled={disabled} />}
             label={<Typography variant="body2">Allow all origins (*)</Typography>}
           />
 
@@ -82,15 +73,9 @@ export default function CorsSection({ value, onChange, disabled }: CorsSectionPr
 
           <TagField label="Access control allow methods" placeholder="Add a method" options={CORS_METHOD_OPTIONS} values={value.methods} onChange={(v) => onChange({ ...value, methods: v })} disabled={disabled} />
 
-          {/* Credentials against a wildcard origin is rejected by the CORS spec, and the gateway
-              does not merely ignore it — it 500s every request to the API until the config is
-              changed back. Keyed off the same predicate the mappers use, so the form never offers
-              a setting that would be dropped on save: the origins field is free-form, so "*" can
-              arrive by typing as well as from the checkbox. */}
+          {/* Credentials + a wildcard origin makes the gateway 500 every request, so don't offer it. */}
           <FormControlLabel
-            control={
-              <Checkbox size="small" checked={value.allowCredentials && !wildcardOrigins} onChange={(e) => onChange({ ...value, allowCredentials: e.target.checked })} disabled={disabled || wildcardOrigins} />
-            }
+            control={<Checkbox size="small" checked={value.allowCredentials && !wildcardOrigins} onChange={(e) => onChange({ ...value, allowCredentials: e.target.checked })} disabled={disabled || wildcardOrigins} />}
             label={
               <Typography variant="body2" color={wildcardOrigins ? 'text.disabled' : undefined}>
                 Allow credentials{wildcardOrigins ? ' — unavailable while all origins are allowed' : ''}

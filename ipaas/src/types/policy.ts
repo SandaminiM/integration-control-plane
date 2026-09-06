@@ -18,10 +18,7 @@
 
 export type TimeUnit = 'MINUTE' | 'HOUR' | 'DAY';
 
-/**
- * API_LEVEL is one allowance shared by the whole API; RESOURCE_LEVEL gives each operation its own.
- * Only surfaces that pass `operations` to RateLimitingSection can select RESOURCE_LEVEL.
- */
+/** API_LEVEL is one allowance for the whole API; RESOURCE_LEVEL gives each operation its own. */
 export type RateLimitLevel = 'UNLIMITED' | 'API_LEVEL' | 'RESOURCE_LEVEL';
 
 /** One operation's limit, kept as strings so the text inputs stay controlled. */

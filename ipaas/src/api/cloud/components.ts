@@ -84,7 +84,7 @@ const ANN_PREBUILT = 'openchoreo.dev/prebuilt';
 // The Ballerina (BI) entries resolve against real cluster resources: every
 // ComponentType referenced here (deployment/integration-as-api,
 // cronjob/scheduled-task, deployment/event-integration) is provisioned with
-// ballerina-buildpack-builder in its allowedWorkflows. 
+// ballerina-buildpack-builder in its allowedWorkflows.
 const DISPLAY_TYPE_MAP: Record<DisplayType, { componentType: string; workflow: string }> = {
   ballerinaService: { componentType: 'deployment/integration-as-api', workflow: 'ballerina-buildpack-builder' },
   scheduledTask: { componentType: 'cronjob/scheduled-task', workflow: 'ballerina-buildpack-builder' },
@@ -282,10 +282,7 @@ export const generateComponentEnvironmentJwtSecret = (componentId: string, envir
 export const rotateComponentEnvironmentJwtSecret = (componentId: string, environmentId: string): Promise<string> =>
   bff.put<{ secret: string }>(`/components/${seg(componentId)}/environments/${seg(environmentId)}/jwt-secret/rotate`).then((r) => r?.secret ?? '');
 
-// Visibility is the only mutable part of an endpoint here: the BFF patches the Workload and rolls
-// the change out to the component's release bindings. It binds `visibility` alone, so the mutation
-// input cannot be forwarded verbatim, and it resolves the bindings from `projectName` — omitting
-// that would leave the owner project to be inferred.
+// Sends visibility only; projectName resolves the component's release bindings.
 export const updateEndpoint = (input: UpdateEndpointInput): Promise<object> =>
   bff.put<object>(`/components/${seg(input.componentId)}/endpoints/${seg(input.endpointId)}/visibility${q({ projectName: input.projectId })}`, {
     visibility: input.networkVisibilities.map(toVisibilityWire),
