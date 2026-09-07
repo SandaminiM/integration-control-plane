@@ -75,11 +75,13 @@ export function useDeleteComponent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { orgHandler: string; componentId: string; projectId: string }) => deleteComponent(input),
-    onSuccess: (result, input) => {
+    onSuccess: async (result, input) => {
       // The backend refuses some deletions without throwing, reporting `canDelete: false`.
       if (!result.canDelete) return;
       // Scoped per org+project — names repeat across orgs.
       const listKey = ['components', input.orgHandler, input.projectId];
+      // An in-flight fetch would resolve after the mark below and overwrite it.
+      await qc.cancelQueries({ queryKey: listKey });
       // The delete is only accepted here, so mark the row rather than dropping it.
       qc.setQueriesData<Component[]>({ queryKey: listKey }, (list) => list?.map((c) => (c.id === input.componentId ? { ...c, deleting: true } : c)));
       qc.invalidateQueries({ queryKey: listKey, refetchType: 'none' });

@@ -90,6 +90,9 @@ function highlightText(text: string, keyword: string): React.ReactNode {
   );
 }
 
+// Cloud hides the Attempts tab, so Arguments is the only valid starting tab there.
+const INITIAL_TAB = IS_CLOUD ? 1 : 0;
+
 const drawerSx = {
   '& .MuiDrawer-paper': {
     width: 680,
@@ -109,7 +112,7 @@ export default function ExecutionDrawer({ execution, open, onClose, onRunSuccess
   };
 
   const [view, setView] = useState<'execution' | 'logs'>('execution');
-  const [tab, setTab] = useState(IS_CLOUD ? 1 : 0);
+  const [tab, setTab] = useState(INITIAL_TAB);
   const [copied, setCopied] = useState(false);
   const [titleCopied, setTitleCopied] = useState(false);
   const [args, setArgs] = useState<string[]>(['']);
@@ -141,7 +144,7 @@ export default function ExecutionDrawer({ execution, open, onClose, onRunSuccess
   // Reset state when drawer closes
   useEffect(() => {
     if (!open) {
-      setTab(0);
+      setTab(INITIAL_TAB);
       setArgs(['']);
       setRunError(null);
       setView('execution');

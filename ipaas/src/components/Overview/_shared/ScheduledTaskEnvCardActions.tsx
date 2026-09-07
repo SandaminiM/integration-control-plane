@@ -95,7 +95,7 @@ export default function EnvCardActions({
   };
 
   // Cloud has no runtime-arguments endpoint, so the query stays disabled rather than always failing.
-  const { data: runtimeArgs } = useRuntimeArguments(component.id, versionId, deployedCommitSha ?? '', !IS_CLOUD);
+  const { data: runtimeArgs, isLoading: runtimeArgsLoading } = useRuntimeArguments(component.id, versionId, deployedCommitSha ?? '', !IS_CLOUD);
   const hasRuntimeArgs = (runtimeArgs?.length ?? 0) > 0;
   const triggerRun = useTriggerComponent();
 
@@ -174,7 +174,7 @@ export default function EnvCardActions({
         onSaveError={() => onNotify({ text: 'Failed to save schedule. Please try again.', severity: 'error' })}
         onStopSuccess={() => onNotify({ text: 'Schedule stopped successfully', severity: 'success' })}
       />
-      <Button variant="contained" size="small" startIcon={<Play size={14} />} disabled={missingConfigs || buildDisabled || !canTest || triggerRun.isPending} onClick={handleTest}>
+      <Button variant="contained" size="small" startIcon={<Play size={14} />} disabled={missingConfigs || buildDisabled || !canTest || triggerRun.isPending || runtimeArgsLoading} onClick={handleTest}>
         Test
       </Button>
       {(canStop || isInProgress) && (

@@ -26,13 +26,21 @@ interface Removable {
 /**
  * Calls `onRemoved` once a deleting entry drops out of the list. A delete is only
  * accepted when the request returns, so confirming then would outrun the backend.
+ * `scopeKey` identifies which list these entries belong to.
  */
-export function useRemovalNotice<T extends Removable>(items: T[] | undefined, labelOf: (item: T) => string, onRemoved: (label: string) => void): void {
+export function useRemovalNotice<T extends Removable>(scopeKey: string, items: T[] | undefined, labelOf: (item: T) => string, onRemoved: (label: string) => void): void {
   const pending = useRef<Map<string, string>>(new Map());
+  const scope = useRef(scopeKey);
   const notify = useRef(onRemoved);
   notify.current = onRemoved;
 
   useEffect(() => {
+    // The list swaps wholesale on a scope change; ids pending from the old one are
+    // absent from the new one and would read as removals.
+    if (scope.current !== scopeKey) {
+      scope.current = scopeKey;
+      pending.current.clear();
+    }
     if (!items) return;
     const present = new Set(items.map((item) => item.id));
     pending.current.forEach((label, id) => {
@@ -43,7 +51,7 @@ export function useRemovalNotice<T extends Removable>(items: T[] | undefined, la
     items.forEach((item) => {
       if (item.deleting) pending.current.set(item.id, labelOf(item));
     });
-    // labelOf is a render-scoped closure; the effect keys off the list alone.
+    // labelOf is a render-scoped closure; the effect keys off the list and scope alone.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items]);
+  }, [items, scopeKey]);
 }

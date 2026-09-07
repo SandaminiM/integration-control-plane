@@ -144,7 +144,9 @@ export function useDeleteProject() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (projectId: string) => deleteProject(projectId),
-    onSuccess: (_result, projectId) => {
+    onSuccess: async (_result, projectId) => {
+      // An in-flight fetch would resolve after the mark below and overwrite it.
+      await qc.cancelQueries({ queryKey: ['projects'] });
       // The delete is only accepted here, so mark the row rather than dropping it.
       qc.setQueriesData<Project[]>({ queryKey: ['projects'] }, (list) => list?.map((p) => (p.id === projectId ? { ...p, deleting: true } : p)));
       qc.invalidateQueries({ queryKey: ['projects'], refetchType: 'none' });

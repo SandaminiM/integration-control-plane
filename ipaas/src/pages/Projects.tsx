@@ -91,6 +91,7 @@ export default function Projects(scope: OrgScope): JSX.Element {
   }, [location, navigate]);
 
   useRemovalNotice(
+    scope.org,
     projects,
     (p) => p.name,
     (name) => setAlert(`Project '${name}' deleted successfully.`),
