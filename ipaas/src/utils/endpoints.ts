@@ -80,3 +80,38 @@ export function resolveEndpointInvokeUrl(endpoint: EnvEndpoint | undefined): str
 
 /** Environment endpoints as the options the cloud API drawers select from. */
 export const toEndpointOptions = (endpoints: EnvEndpoint[]): EndpointOption[] => endpoints.map((ep) => ({ name: ep.id, displayName: ep.displayName || ep.id }));
+
+export type VisibilityKey = 'public' | 'organization' | 'project';
+
+export interface EndpointVisibilityUrl {
+  key: VisibilityKey;
+  /** Matches the values in networkVisibilities. */
+  label: string;
+  url: string;
+}
+
+const VISIBILITY_URLS: { key: VisibilityKey; label: string; getUrl: (ep: EnvEndpoint) => string }[] = [
+  { key: 'public', label: 'Public', getUrl: (ep) => ep.publicUrl || ep.defaultPublicUrl || '' },
+  { key: 'organization', label: 'Organization', getUrl: (ep) => ep.organizationUrl || ep.defaultOrganizationUrl || '' },
+  { key: 'project', label: 'Project', getUrl: (ep) => ep.projectUrl || '' },
+];
+
+/**
+ * Invoke URLs for the visibilities set on the endpoint. `externalUrlOverride` replaces the Public
+ * URL with the API Platform gateway URL.
+ */
+export function visibilityUrlOptions(ep: EnvEndpoint, externalUrlOverride?: string): EndpointVisibilityUrl[] {
+  const set = ep.networkVisibilities ?? [];
+  const options = VISIBILITY_URLS.map(({ key, label, getUrl }) => ({
+    key,
+    label,
+    url: key === 'public' && externalUrlOverride ? externalUrlOverride : getUrl(ep),
+  })).filter((o) => !!o.url && (set.length === 0 || set.includes(o.label)));
+
+  // Fallback when no visibility-specific URL is set.
+  if (options.length === 0 && ep.invokeUrl) return [{ key: 'public', label: 'Public', url: ep.invokeUrl }];
+  return options;
+}
+
+/** Only Public is callable from a browser; the others are in-cluster hosts. */
+export const isBrowserReachable = (key: VisibilityKey): boolean => key === 'public';

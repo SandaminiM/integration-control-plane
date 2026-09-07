@@ -16,20 +16,20 @@
  * under the License.
  */
 
-import { Autocomplete, Box, Button, CircularProgress, Divider, IconButton, InputAdornment, MenuItem, OutlinedInput, PageContent, Select, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Autocomplete, Box, Button, CircularProgress, Divider, IconButton, InputAdornment, MenuItem, OutlinedInput, PageContent, Select, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Check, Copy, Eye, EyeOff, Key } from '@wso2/oxygen-ui-icons-react';
-import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import { useMemo, useRef, useState, type JSX } from 'react';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
 import '../swagger-ui-overrides.scss';
 import { DEFAULT_API_KEY_HEADER } from '../constants/apiConsumption';
 import { IS_CLOUD } from '../features';
+import { isBrowserReachable, visibilityUrlOptions } from '../utils/endpoints';
 import { useApimSwagger, useGenerateTestKey } from '../hooks/useApim';
 import { useComponentByHandler } from '../hooks/useComponents';
 import { useCreateEndpointTestKey, useEndpointSecurity } from '../hooks/useConsumers';
 import { useComponentDeployment, useEnvEndpoints } from '../hooks/useDeployments';
 import { useEnvironments } from '../hooks/useEnvironments';
-import type { EnvEndpoint } from '../types/component';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import NotFound from '../components/NotFound';
@@ -65,20 +65,6 @@ function EnvDot({ orgHandler, orgUuid, componentId, versionId, envId }: EnvDotPr
   const status = dep?.deploymentStatusV2?.toUpperCase() ?? '';
   const color = ENV_STATUS_DOT[status] ?? 'text.disabled';
   return <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color, flexShrink: 0 }} />;
-}
-
-interface VisibilityOption {
-  label: string;
-  url: string;
-}
-
-function getVisibilityOptions(endpoint: EnvEndpoint): VisibilityOption[] {
-  const opts: VisibilityOption[] = [];
-  if (endpoint.publicUrl) opts.push({ label: 'Public', url: endpoint.publicUrl });
-  if (endpoint.organizationUrl) opts.push({ label: 'Organization', url: endpoint.organizationUrl });
-  if (endpoint.projectUrl) opts.push({ label: 'Project', url: endpoint.projectUrl });
-  if (opts.length === 0 && endpoint.invokeUrl) opts.push({ label: 'Public', url: endpoint.invokeUrl });
-  return opts;
 }
 
 // Hides SwaggerUI top chrome — keeps only the operations list with try-it-out
@@ -139,22 +125,14 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
   // open (policy-engine not in path), so a test key means nothing there.
   const gatewayInvokeUrl = apiSecurity?.publicUrl ?? '';
 
-  // Visibility options for selected endpoint. When the endpoint is exposed on the API Platform
-  // gateway, offer that host first and select it by default so try-it-out (with the minted test key)
-  // exercises the secured API rather than the open raw URL.
-  const visibilityOptions: VisibilityOption[] = useMemo(() => {
-    // When the endpoint is exposed on the API Platform gateway, that is the URL to call
-    if (gatewayInvokeUrl) return [{ label: 'API Gateway', url: gatewayInvokeUrl }];
-    return selectedEndpoint ? getVisibilityOptions(selectedEndpoint) : [];
-  }, [selectedEndpoint, gatewayInvokeUrl]);
-  const [selectedVisibility, setSelectedVisibility] = useState<VisibilityOption | null>(null);
-  // Re-seed whenever the available URL options change (endpoint, env/track, or apip-exposure change) —
-  // visibilityOptions is memoized, so this only fires when the options actually change, and it avoids
-  // a stale selection when a different env reuses the same endpoint id.
-  useEffect(() => {
-    setSelectedVisibility(visibilityOptions[0] ?? null);
-  }, [visibilityOptions]);
+  // The options name the endpoint's actual visibilities. An exposed endpoint's Public URL is the
+  // API Platform gateway host, so try-it-out (with the minted test key) still exercises the secured
+  // API rather than the open raw route.
+  const visibilityOptions = useMemo(() => (selectedEndpoint ? visibilityUrlOptions(selectedEndpoint, gatewayInvokeUrl) : []), [selectedEndpoint, gatewayInvokeUrl]);
+  const [selectedVisibilityKey, setSelectedVisibilityKey] = useState('');
+  const selectedVisibility = visibilityOptions.find((v) => v.key === selectedVisibilityKey) ?? visibilityOptions[0] ?? null;
   const invokeUrl = selectedVisibility?.url ?? '';
+  const testable = !!selectedVisibility && isBrowserReachable(selectedVisibility.key);
 
   // Security header / test key
   // securityHeaderRef is read inside SwaggerUI's requestInterceptor to avoid stale closures.
@@ -307,8 +285,8 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
                       size="small"
                       options={visibilityOptions}
                       getOptionLabel={(v) => v.label}
-                      value={selectedVisibility}
-                      onChange={(_, v) => setSelectedVisibility(v)}
+                      value={selectedVisibility ?? visibilityOptions[0]}
+                      onChange={(_, v) => setSelectedVisibilityKey(v.key)}
                       disableClearable
                       sx={{ minWidth: 180 }}
                       renderInput={(params) => <TextField {...params} />}
@@ -346,62 +324,64 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
                   </Stack>
                 )}
 
-                {/* Security Header */}
-                <Stack direction="row" alignItems="flex-start" gap={2}>
-                  <Typography variant="body2" sx={{ minWidth: 140, fontWeight: 500, color: 'text.secondary', pt: 1 }}>
-                    Security Header
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 400 }}>
-                      {TEST_KEY_HEADER}
-                    </Typography>
-                  </Typography>
-                  <Stack direction="column" gap={0.5} sx={{ flex: 1 }}>
-                    <Stack direction="row" alignItems="center" gap={1}>
-                      <OutlinedInput
-                        size="small"
-                        type={showKey ? 'text' : 'password'}
-                        value={securityHeader}
-                        onChange={(e) => updateSecurityHeader(e.target.value)}
-                        placeholder="Paste or fetch a test key"
-                        sx={{ flex: 1, fontFamily: 'monospace', fontSize: '0.8rem' }}
-                        endAdornment={
-                          <InputAdornment position="end">
-                            <Tooltip title={showKey ? 'Hide' : 'Show'}>
-                              <IconButton size="small" onClick={() => setShowKey((s) => !s)}>
-                                {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title={keyCopied ? 'Copied!' : 'Copy'}>
-                              <IconButton
-                                size="small"
-                                disabled={!securityHeader}
-                                onClick={() => {
-                                  navigator.clipboard.writeText(securityHeader);
-                                  setKeyCopied(true);
-                                  setTimeout(() => setKeyCopied(false), 2000);
-                                }}>
-                                {keyCopied ? <Check size={16} /> : <Copy size={16} />}
-                              </IconButton>
-                            </Tooltip>
-                          </InputAdornment>
-                        }
-                      />
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={fetchingKey ? <CircularProgress size={14} color="inherit" /> : <Key size={14} />}
-                        disabled={fetchingKey || !canGetTestKey}
-                        onClick={handleGetTestKey}
-                        sx={{ whiteSpace: 'nowrap', textTransform: 'none' }}>
-                        Get Test Key
-                      </Button>
-                    </Stack>
-                    {keyError && (
-                      <Typography variant="caption" color="error">
-                        {keyError}
+                {/* Security Header — hidden for a visibility that cannot be called from a browser. */}
+                {testable && (
+                  <Stack direction="row" alignItems="flex-start" gap={2}>
+                    <Typography variant="body2" sx={{ minWidth: 140, fontWeight: 500, color: 'text.secondary', pt: 1 }}>
+                      Security Header
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 400 }}>
+                        {TEST_KEY_HEADER}
                       </Typography>
-                    )}
+                    </Typography>
+                    <Stack direction="column" gap={0.5} sx={{ flex: 1 }}>
+                      <Stack direction="row" alignItems="center" gap={1}>
+                        <OutlinedInput
+                          size="small"
+                          type={showKey ? 'text' : 'password'}
+                          value={securityHeader}
+                          onChange={(e) => updateSecurityHeader(e.target.value)}
+                          placeholder="Paste or fetch a test key"
+                          sx={{ flex: 1, fontFamily: 'monospace', fontSize: '0.8rem' }}
+                          endAdornment={
+                            <InputAdornment position="end">
+                              <Tooltip title={showKey ? 'Hide' : 'Show'}>
+                                <IconButton size="small" onClick={() => setShowKey((s) => !s)}>
+                                  {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title={keyCopied ? 'Copied!' : 'Copy'}>
+                                <IconButton
+                                  size="small"
+                                  disabled={!securityHeader}
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(securityHeader);
+                                    setKeyCopied(true);
+                                    setTimeout(() => setKeyCopied(false), 2000);
+                                  }}>
+                                  {keyCopied ? <Check size={16} /> : <Copy size={16} />}
+                                </IconButton>
+                              </Tooltip>
+                            </InputAdornment>
+                          }
+                        />
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={fetchingKey ? <CircularProgress size={14} color="inherit" /> : <Key size={14} />}
+                          disabled={fetchingKey || !canGetTestKey}
+                          onClick={handleGetTestKey}
+                          sx={{ whiteSpace: 'nowrap', textTransform: 'none' }}>
+                          Get Test Key
+                        </Button>
+                      </Stack>
+                      {keyError && (
+                        <Typography variant="caption" color="error">
+                          {keyError}
+                        </Typography>
+                      )}
+                    </Stack>
                   </Stack>
-                </Stack>
+                )}
               </Stack>
             </Box>
 
@@ -412,6 +392,8 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                 <CircularProgress />
               </Box>
+            ) : !testable && selectedVisibility ? (
+              <Alert severity="info">{selectedVisibility.label} endpoints are not publicly accessible.</Alert>
             ) : swaggerWithServer ? (
               <Box
                 sx={{

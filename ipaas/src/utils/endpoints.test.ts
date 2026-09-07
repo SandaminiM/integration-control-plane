@@ -17,7 +17,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { getEndpointLabel, resolveEndpointInvokeUrl, trimEndpointName } from './endpoints';
+import { getEndpointLabel, isBrowserReachable, resolveEndpointInvokeUrl, trimEndpointName, visibilityUrlOptions } from './endpoints';
 import type { EnvEndpoint } from '../types/component';
 
 const ep = (partial: Partial<EnvEndpoint>): EnvEndpoint => ({ id: 'e', releaseId: 'r', environmentId: 'env', displayName: 'ep', type: 'GraphQL', visibility: 'Public', ...partial }) as EnvEndpoint;
@@ -103,5 +103,51 @@ describe('getEndpointLabel', () => {
 
   it('returns the key when there is no port to fall back to', () => {
     expect(getEndpointLabel({ displayName: '/', name: 'endpoint-9001' })).toBe('endpoint-9001');
+  });
+});
+
+describe('visibilityUrlOptions', () => {
+  it('offers only the visibilities actually set on the endpoint', () => {
+    const value = visibilityUrlOptions(ep({ networkVisibilities: ['Public'], publicUrl: 'https://a.example', organizationUrl: 'http://svc.cluster.local' }));
+    expect(value).toEqual([{ key: 'public', label: 'Public', url: 'https://a.example' }]);
+  });
+
+  it('offers Project, not Organization, for a project-visible endpoint', () => {
+    const value = visibilityUrlOptions(ep({ networkVisibilities: ['Project'], organizationUrl: 'http://svc.cluster.local', projectUrl: 'http://svc.cluster.local' }));
+    expect(value).toEqual([{ key: 'project', label: 'Project', url: 'http://svc.cluster.local' }]);
+  });
+
+  // A visibility whose URL the mapper left unset contributes no row, rather than borrowing
+  // another visibility's URL and mislabelling it.
+  it('drops a declared visibility that has no URL', () => {
+    expect(visibilityUrlOptions(ep({ networkVisibilities: ['Project'], organizationUrl: 'http://svc.cluster.local' }))).toEqual([]);
+  });
+
+  it('uses the gateway URL for Public without renaming the option', () => {
+    const value = visibilityUrlOptions(ep({ networkVisibilities: ['Public'], publicUrl: 'https://raw.example' }), 'https://gw.example/api-1');
+    expect(value).toEqual([{ key: 'public', label: 'Public', url: 'https://gw.example/api-1' }]);
+  });
+
+  it('keeps every visibility when several are set', () => {
+    const value = visibilityUrlOptions(ep({ networkVisibilities: ['Public', 'Organization'], publicUrl: 'https://a.example', organizationUrl: 'http://svc.cluster.local' }));
+    expect(value.map((v) => v.label)).toEqual(['Public', 'Organization']);
+  });
+
+  it('does not filter when the endpoint reports no visibilities', () => {
+    const value = visibilityUrlOptions(ep({ publicUrl: 'https://a.example' }));
+    expect(value.map((v) => v.key)).toEqual(['public']);
+  });
+
+  it('falls back to invokeUrl when no visibility-specific URL exists', () => {
+    const value = visibilityUrlOptions(ep({ networkVisibilities: ['Public'], invokeUrl: 'https://only.example' }));
+    expect(value).toEqual([{ key: 'public', label: 'Public', url: 'https://only.example' }]);
+  });
+});
+
+describe('isBrowserReachable', () => {
+  it('is true only for Public — organization and project URLs are in-cluster hosts', () => {
+    expect(isBrowserReachable('public')).toBe(true);
+    expect(isBrowserReachable('organization')).toBe(false);
+    expect(isBrowserReachable('project')).toBe(false);
   });
 });
