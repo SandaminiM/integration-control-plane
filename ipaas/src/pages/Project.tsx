@@ -72,6 +72,7 @@ import { useAppNavigate } from '../hooks/useAppNavigate';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useProject, useProjectByHandler, useProjects, useUpdateProject, useGitHubReadme, useIsOrgScopeReady } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
+import { useRemovalNotice } from '../hooks/useRemovalNotice';
 import { useFreshDefaultProject } from '../hooks/useFreshDefaultProject';
 import { useOrgs, useOrgComponentLimits, useOrgSubscriptions } from '../hooks/useOrg';
 import { useChoreoSampleImages } from '../hooks/useRepository';
@@ -442,7 +443,7 @@ function splitSubscribers(data: SubscriptionInfo[]): { internal: ComponentSubscr
   return { internal, external };
 }
 
-function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { component: Component; scope: ProjectScope; projectId: string; onClose: () => void; onDeleted: (name: string) => void }) {
+function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { component: Component; scope: ProjectScope; projectId: string; onClose: () => void; onDeleted: () => void }) {
   const [confirmation, setConfirmation] = useState('');
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [subscribers, setSubscribers] = useState<{ internal: ComponentSubscription[]; external: ComponentSubscription[] } | null>(null);
@@ -461,7 +462,7 @@ function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { com
       {
         onSuccess: (result) => {
           if (result.canDelete) {
-            onDeleted(component.displayName);
+            onDeleted();
             return;
           }
           // The backend blocks deletion (e.g. active API subscribers) without throwing — canDelete must be checked explicitly.
@@ -540,7 +541,7 @@ function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { com
         <TextField autoFocus fullWidth placeholder="Enter integration name to confirm" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />
       </DialogContent>
       <DialogActions>
-        <Button variant="outlined" onClick={onClose} disabled={mutation.isPending}>
+        <Button variant="outlined" onClick={handleClose} disabled={mutation.isPending}>
           Cancel
         </Button>
         <Button variant="contained" color="error" disabled={!confirmed || mutation.isPending} startIcon={mutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined} onClick={handleDelete}>
@@ -642,6 +643,12 @@ function IntegrationsTable({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleting, setDeleting] = useState<Component | null>(null);
   const [deleteAlert, setDeleteAlert] = useState<string | null>(null);
+  useRemovalNotice(
+    projectId,
+    components,
+    (c) => c.displayName,
+    (name) => setDeleteAlert(`Integration '${name}' deleted successfully.`),
+  );
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [labelAnchor, setLabelAnchor] = useState<HTMLElement | null>(null);
   const quotaReached = orgDevantComponentCount >= FREE_COMPONENT_LIMIT;
@@ -784,56 +791,71 @@ function IntegrationsTable({
                 <ListingTable.Body>
                   {paginated.map((c) => {
                     const init = getInitProgress(c, isWorkspace);
+                    const deleting = c.deleting === true;
                     return (
-                      <ListingTable.Row
-                        key={c.id}
-                        variant="card"
-                        clickable
-                        hover
-                        tabIndex={0}
-                        aria-label={`View details for ${c.displayName}`}
-                        onClick={() => onSelect(c.handler)}
-                        onKeyDown={(e) => {
-                          if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-                            if (e.key === ' ') e.preventDefault();
-                            onSelect(c.handler);
-                          }
-                        }}>
-                        <ListingTable.Cell>
-                          <ComponentNameCell component={c} isWorkspace={isWorkspace} projectGitOrg={projectGitOrg} projectGitRepo={projectGitRepo} />
-                        </ListingTable.Cell>
-                        <ListingTable.Cell>
-                          {!init && (
-                            <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 200 }}>
-                              {c.description?.trim() || ''}
-                            </Typography>
-                          )}
-                        </ListingTable.Cell>
-                        <ListingTable.Cell>{!init && <Typography variant="body2">{getDisplayLabel(c.displayType ?? '', c.componentSubType ?? null)}</Typography>}</ListingTable.Cell>
-                        <ListingTable.Cell>
-                          {!init && (
-                            <Typography variant="body2" color="text.secondary">
-                              {formatDistanceToNow(c.lastBuildDate)}
-                            </Typography>
-                          )}
-                        </ListingTable.Cell>
-                        <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
+                      // followCursor because ListingTable.Row does not forward a ref for the tooltip to anchor to.
+                      <Tooltip key={c.id} followCursor title={deleting ? 'This integration is being deleted' : ''}>
+                        <ListingTable.Row
+                          variant="card"
+                          clickable={!deleting}
+                          hover={!deleting}
+                          tabIndex={deleting ? -1 : 0}
+                          aria-disabled={deleting || undefined}
+                          aria-label={deleting ? `${c.displayName} is being deleted` : `View details for ${c.displayName}`}
+                          // The card variant tints its own background on hover; pin both states so a dying row stays inert.
+                          sx={deleting ? { opacity: 0.38, cursor: 'default', backgroundColor: 'background.acrylic', '&:hover': { backgroundColor: 'background.acrylic' } } : undefined}
+                          onClick={deleting ? undefined : () => onSelect(c.handler)}
+                          onKeyDown={(e) => {
+                            if (!deleting && e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                              if (e.key === ' ') e.preventDefault();
+                              onSelect(c.handler);
+                            }
+                          }}>
                           <ListingTable.Cell>
-                            <Tooltip title="Delete">
-                              <IconButton
-                                size="small"
-                                color="error"
-                                aria-label={`Delete ${c.displayName}`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeleting(c);
-                                }}>
-                                <Trash2 size={16} />
-                              </IconButton>
-                            </Tooltip>
+                            <ComponentNameCell component={c} isWorkspace={isWorkspace} projectGitOrg={projectGitOrg} projectGitRepo={projectGitRepo} />
                           </ListingTable.Cell>
-                        </Authorized>
-                      </ListingTable.Row>
+                          <ListingTable.Cell>
+                            {!init && (
+                              <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 200 }}>
+                                {c.description?.trim() || ''}
+                              </Typography>
+                            )}
+                          </ListingTable.Cell>
+                          <ListingTable.Cell>{!init && <Typography variant="body2">{getDisplayLabel(c.displayType ?? '', c.componentSubType ?? null)}</Typography>}</ListingTable.Cell>
+                          <ListingTable.Cell>
+                            {!init && !deleting && (
+                              <Typography variant="body2" color="text.secondary">
+                                {formatDistanceToNow(c.lastBuildDate)}
+                              </Typography>
+                            )}
+                          </ListingTable.Cell>
+                          <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
+                            <ListingTable.Cell>
+                              {deleting ? (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                                  <CircularProgress size={14} color="inherit" />
+                                  <Typography variant="body2" color="text.secondary" noWrap>
+                                    Deleting
+                                  </Typography>
+                                </Box>
+                              ) : (
+                                <Tooltip title="Delete">
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    aria-label={`Delete ${c.displayName}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeleting(c);
+                                    }}>
+                                    <Trash2 size={16} />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </ListingTable.Cell>
+                          </Authorized>
+                        </ListingTable.Row>
+                      </Tooltip>
                     );
                   })}
                 </ListingTable.Body>
@@ -927,18 +949,7 @@ function IntegrationsTable({
         </>
       )}
 
-      {deleting && (
-        <DeleteDialog
-          component={deleting}
-          scope={scope}
-          projectId={projectId}
-          onClose={() => setDeleting(null)}
-          onDeleted={(name) => {
-            setDeleting(null);
-            setDeleteAlert(`Integration '${name}' deleted successfully.`);
-          }}
-        />
-      )}
+      {deleting && <DeleteDialog component={deleting} scope={scope} projectId={projectId} onClose={() => setDeleting(null)} onDeleted={() => setDeleting(null)} />}
     </section>
   );
 }

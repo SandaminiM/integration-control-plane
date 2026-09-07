@@ -99,22 +99,26 @@ export default function OverviewHeaderActions({ component, apimId, orgHandler, p
             {lifecycleStatus && <Chip label={LIFECYCLE_LABEL[lifecycleStatus] ?? lifecycleStatus} size="small" color={lifecycleColor} variant="outlined" sx={{ height: 22, fontSize: '0.7rem' }} />}
           </Stack>
         )}
-        {/* Developer Portal + type-specific actions (e.g. Generate MCP) */}
-        <Stack direction="row" alignItems="center" gap={1}>
-          <Tooltip title={isPublished ? 'Go to Developer Portal' : 'Publish API to access Developer Portal'}>
-            <IconButton
-              size="small"
-              component="a"
-              href={devPortalUrl ?? '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              disabled={!isPublished || !devPortalUrl}
-              sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, color: isPublished && devPortalUrl ? 'text.secondary' : 'text.disabled', pointerEvents: 'auto' }}>
-              <CodeXml size={16} />
-            </IconButton>
-          </Tooltip>
-          {extra}
-        </Stack>
+        {/* Guarded as a whole so cloud, showing neither, contributes no empty row to the gap. */}
+        {(!IS_CLOUD || extra) && (
+          <Stack direction="row" alignItems="center" gap={1}>
+            {!IS_CLOUD && (
+              <Tooltip title={isPublished ? 'Go to Developer Portal' : 'Publish API to access Developer Portal'}>
+                <IconButton
+                  size="small"
+                  component="a"
+                  href={devPortalUrl ?? '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  disabled={!isPublished || !devPortalUrl}
+                  sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, color: isPublished && devPortalUrl ? 'text.secondary' : 'text.disabled', pointerEvents: 'auto' }}>
+                  <CodeXml size={16} />
+                </IconButton>
+              </Tooltip>
+            )}
+            {extra}
+          </Stack>
+        )}
       </Stack>
       {!IS_CLOUD && <SecurityDrawer open={securityDrawerOpen} onClose={() => setSecurityDrawerOpen(false)} apimId={apimId} componentId={componentId} versionId={versionId} />}
     </>

@@ -173,7 +173,7 @@ function toBffCreateComponentBody(input: CreateComponentInput) {
       // git build on create; everything else builds from source.
       autoBuild: !input.isPrebuilt,
       workflow: {
-        kind: 'Workflow',
+        kind: 'ClusterWorkflow',
         name: mapping.workflow,
         parameters: {
           repository: {

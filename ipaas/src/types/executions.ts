@@ -57,6 +57,14 @@ export interface UpdateJobConfigsInput {
   jobRetryCount?: number;
 }
 
+/** Identifies the schedule to stop. `orgHandler`/`releaseId` are unused by cloud. */
+export interface StopScheduleInput {
+  componentId: string;
+  envId: string;
+  orgHandler: string;
+  releaseId: string;
+}
+
 export interface TriggerComponentInput {
   orgHandler: string;
   projectId: string;

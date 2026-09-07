@@ -117,7 +117,7 @@ import type { Cluster, PdpManagerPdp } from '../types/dataPlanes';
 import type { ClusterPod as RuntimeClusterPod, PodEvent as RuntimePodEvent, PodLogOptions as RuntimePodLogOptions, RuntimeMetrics, RuntimeReleaseDetails } from '../types/runtime';
 import type { CreateGitCredentialInput, CredentialDeleteEligibility, GitCredential } from '../types/credentials';
 import type { Environment, CloudDataPlane, EnvironmentInput, EnvironmentTemplate, CreateEnvironmentData, EnvDeletionEligibility } from '../types/environment';
-import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../types/executions';
+import type { StopScheduleInput, ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../types/executions';
 import type { SubscriptionList, ComponentLimits } from '../types/subscription';
 import type { ConfigGroup, ConfigGroupNameAvailability, ConfigGroupUsage, CreateConfigGroupRequest, EditConfigGroupRequest } from '../types/configGroups';
 import type { Certificate, CreateCertificateInput } from '../types/certificates';
@@ -621,6 +621,8 @@ export interface ExecutionsApi {
   fetchExecutionLogs(componentId: string, deploymentTrackId: string, executionId: string, environmentId: string): Promise<ExecutionLogEntry[]>;
   fetchTaskExecutionCount(releaseId: string): Promise<number | null>;
   updateJobConfigs(input: UpdateJobConfigsInput): Promise<boolean>;
+  /** Stops the CronJob's schedule. Cloud leaves the deployment untouched; wip clears the cron via its stop mutation. */
+  stopSchedule(input: StopScheduleInput): Promise<void>;
   triggerTask(input: TriggerTaskInput): Promise<{ status: string; message: string; successCount: number; failedCount: number; details: string[] }>;
   triggerComponentRun(input: TriggerComponentInput): Promise<TriggerRunResult>;
 }

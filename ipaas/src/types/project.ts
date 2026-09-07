@@ -37,6 +37,8 @@ export interface Project {
   isPublicRepo?: boolean;
   /** Org-owner display name — used by Delivery insights' Top Performing Projects table. */
   owner?: string;
+  /** Set while the project's delete is accepted but its finalizers have not cleared yet. */
+  deleting?: boolean;
 }
 
 export interface ProjectContributor {

@@ -222,7 +222,6 @@ export default function BuildCard({ componentId, versionId, latestCommit }: Buil
 
         {logsVisible && (
           <>
-            <Divider sx={{ mb: 1.5 }} />
             <BuildLogViewer logs={logs} logsLoading={queryLoading} showLogs />
           </>
         )}

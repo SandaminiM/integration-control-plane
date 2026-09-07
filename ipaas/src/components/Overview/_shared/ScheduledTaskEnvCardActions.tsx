@@ -16,26 +16,24 @@
  * under the License.
  */
 
-import { Button, Stack, Typography } from '@wso2/oxygen-ui';
-import { Clock, Play } from '@wso2/oxygen-ui-icons-react';
+import { Button, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Clock, Play, RotateCw, Square } from '@wso2/oxygen-ui-icons-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import { useQueryClient } from '@tanstack/react-query';
-import { useExecutionConfigs } from '../../../hooks/useExecutions';
+import { useExecutionConfigs, useRuntimeArguments, useTriggerComponent } from '../../../hooks/useExecutions';
 import { useSchemaConfig } from '../../../hooks/useConfiguration';
 import { formatTimeUntil, nextCronRunMs } from '../../../utils/cronUtils';
 import type { EnvCardActionsProps } from '../../../types/integration';
 import { isDeploymentHealthy } from '../../../utils/deploymentStatus';
+import { useRedeployDeployment, useStopDeployment } from '../../../hooks/useDeployments';
+import { IS_CLOUD } from '../../../features';
 import ScheduleButton from './ScheduleButton';
 import { hasMissingRequiredConfigs } from './configStatus';
 
 /**
- * Automation's right-header slot: the next-run label (with cron auto-fire
- * detection), Schedule controls, and a Test button that navigates to the
- * dedicated Test page. Owns the schedule config; reports schedule outcomes via
- * `onNotify` and records optimistic cron auto-fires via `onTrigger` (the shell
- * relays those to the body's table).
+ * Automation's right-header slot. Test only leaves the card when the task takes runtime arguments.
  */
 export default function EnvCardActions({
   component,
@@ -64,8 +62,42 @@ export default function EnvCardActions({
 
   // Automation's Run/Schedule are always disabled while a build is in progress.
   const buildDisabled = !!isBuildInProgress;
-  // Testing runs the task, so only a running workload qualifies.
+  // A stopped schedule leaves the CronJob deployed, so this only excludes a stopped deployment.
   const canTest = isDeploymentHealthy(deploymentStatusV2);
+
+  // SUSPENDED means the workload was stopped, never that the cron was.
+  const stopMutation = useStopDeployment();
+  const redeployMutation = useRedeployDeployment();
+  const isActionPending = stopMutation.isPending || redeployMutation.isPending;
+  const canStop = deploymentStatusV2 === 'ACTIVE';
+  const canStart = deploymentStatusV2 === 'SUSPENDED';
+  const isInProgress = deploymentStatusV2 === 'IN_PROGRESS';
+
+  const handleStopDeployment = () => {
+    stopMutation.mutate(
+      // clearCron false: stopping the deployment must leave the schedule alone.
+      { orgHandler, componentId: component.id, releaseId, ...(IS_CLOUD ? { environment: env.id } : {}), type: 'scheduledTask', clearCron: false },
+      {
+        onSuccess: () => onNotify({ text: 'Deployment stopped successfully', severity: 'success' }),
+        onError: (err) => onNotify({ text: err instanceof Error ? err.message : 'Failed to stop deployment', severity: 'error' }),
+      },
+    );
+  };
+
+  const handleStartDeployment = () => {
+    redeployMutation.mutate(
+      { orgHandler, componentId: component.id, releaseId, type: 'scheduledTask' },
+      {
+        onSuccess: () => onNotify({ text: 'Deployment started successfully', severity: 'success' }),
+        onError: (err) => onNotify({ text: err instanceof Error ? err.message : 'Failed to start deployment', severity: 'error' }),
+      },
+    );
+  };
+
+  // Cloud has no runtime-arguments endpoint, so the query stays disabled rather than always failing.
+  const { data: runtimeArgs, isLoading: runtimeArgsLoading } = useRuntimeArguments(component.id, versionId, deployedCommitSha ?? '', !IS_CLOUD);
+  const hasRuntimeArgs = (runtimeArgs?.length ?? 0) > 0;
+  const triggerRun = useTriggerComponent();
 
   // Next-run countdown + cron auto-fire detection: when a scheduled run is about
   // to fire, optimistically record a trigger so the executions table updates.
@@ -96,8 +128,26 @@ export default function EnvCardActions({
     return () => clearInterval(timer);
   }, [updateNextRun]);
 
-  // Testing now lives on the dedicated Test page; this just navigates there.
   const goToTestPage = () => navigate(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/test`);
+
+  const handleTest = () => {
+    if (hasRuntimeArgs) {
+      goToTestPage();
+      return;
+    }
+    triggerRun.mutate(
+      { orgHandler, projectId, componentId: component.id, releaseId, args: [] },
+      {
+        onSuccess: () => {
+          onNotify({ text: 'Execution triggered successfully', severity: 'success' });
+          // Surfaces the run in this card's executions table before the list refetches.
+          onTrigger(Date.now());
+          queryClient.invalidateQueries({ queryKey: ['taskExecutions'] });
+        },
+        onError: (err) => onNotify({ text: err instanceof Error ? err.message : 'Failed to trigger execution', severity: 'error' }),
+      },
+    );
+  };
 
   return (
     <>
@@ -124,9 +174,27 @@ export default function EnvCardActions({
         onSaveError={() => onNotify({ text: 'Failed to save schedule. Please try again.', severity: 'error' })}
         onStopSuccess={() => onNotify({ text: 'Schedule stopped successfully', severity: 'success' })}
       />
-      <Button variant="contained" size="small" startIcon={<Play size={14} />} disabled={missingConfigs || buildDisabled || !canTest} onClick={goToTestPage}>
+      <Button variant="contained" size="small" startIcon={<Play size={14} />} disabled={missingConfigs || buildDisabled || !canTest || triggerRun.isPending || runtimeArgsLoading} onClick={handleTest}>
         Test
       </Button>
+      {(canStop || isInProgress) && (
+        <Tooltip title="Stop deployment">
+          <span>
+            <Button variant="outlined" size="small" color="error" startIcon={<Square size={14} />} onClick={handleStopDeployment} disabled={isActionPending || isInProgress}>
+              Stop
+            </Button>
+          </span>
+        </Tooltip>
+      )}
+      {canStart && (
+        <Tooltip title="Start deployment">
+          <span>
+            <Button variant="outlined" size="small" color="success" startIcon={<RotateCw size={14} />} onClick={handleStartDeployment} disabled={isActionPending}>
+              Start
+            </Button>
+          </span>
+        </Tooltip>
+      )}
     </>
   );
 }

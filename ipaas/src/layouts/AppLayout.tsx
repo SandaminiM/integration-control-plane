@@ -219,6 +219,8 @@ function AppLayoutInner(): JSX.Element {
   const { data: projectById } = useProject(isProjectUuid ? projectParam : '');
   const { data: projects = [] } = useProjects();
   const projectFromList = !isProjectUuid && projectParam ? (projects.find((p) => p.handler === projectParam) ?? null) : null;
+  // The lookup above still needs the finalizing project so the one you are viewing resolves.
+  const selectableProjects = projects.filter((p) => !p.deleting);
   const project = isProjectUuid ? projectById : (projectByHandler ?? projectFromList);
   const projectId = project?.id ?? '';
   const { data: allComponents = [] } = useComponents(scope.org, projectId);
@@ -592,10 +594,10 @@ function AppLayoutInner(): JSX.Element {
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', px: 2, pt: 1, pb: 0.5 }}>
                 All Projects
               </Typography>
-              {projects.filter((p) => !projectSearch.trim() || p.name.toLowerCase().includes(projectSearch.trim().toLowerCase())).length === 0 ? (
+              {selectableProjects.filter((p) => !projectSearch.trim() || p.name.toLowerCase().includes(projectSearch.trim().toLowerCase())).length === 0 ? (
                 <MenuItem disabled>No projects found</MenuItem>
               ) : (
-                projects
+                selectableProjects
                   .filter((p) => !projectSearch.trim() || p.name.toLowerCase().includes(projectSearch.trim().toLowerCase()))
                   .map((p) => (
                     <MenuItem
@@ -670,7 +672,7 @@ function AppLayoutInner(): JSX.Element {
                     <ComplexSelect.MenuItem key="__project_placeholder__" value={scope.project} sx={{ display: 'none' }}>
                       <ComplexSelect.MenuItem.Text primary={getProjectDisplayName()} secondary="Project" primaryTypographyProps={{ noWrap: true, title: getProjectDisplayName() }} />
                     </ComplexSelect.MenuItem>
-                    {projects.map((p) => (
+                    {selectableProjects.map((p) => (
                       <ComplexSelect.MenuItem key={p.handler} value={p.handler} sx={{ display: 'none' }}>
                         <ComplexSelect.MenuItem.Text primary={p.name} secondary={p.description} primaryTypographyProps={{ noWrap: true, title: p.name }} />
                       </ComplexSelect.MenuItem>
