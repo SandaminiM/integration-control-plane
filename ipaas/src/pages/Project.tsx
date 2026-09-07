@@ -974,7 +974,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
   const isUuid = UUID_RE.test(scope.project);
   const { data: projectById, isLoading: loadingById } = useProject(isUuid ? scope.project : '');
   const { data: projectByHandle, isLoading: loadingByHandle } = useProjectByHandler(isUuid ? '' : scope.project);
-  const { data: allProjects = [], isLoading: loadingProjects } = useProjects();
+  const { data: allProjects = [], isLoading: loadingProjects, isFetching: fetchingProjects } = useProjects();
   const projectFromList = !isUuid ? (allProjects.find((p) => p.handler === scope.project) ?? null) : null;
   const project = isUuid ? projectById : (projectByHandle ?? projectFromList);
   const isOrgScopeReady = useIsOrgScopeReady();
@@ -982,7 +982,9 @@ export default function Project(scope: ProjectScope): JSX.Element {
   // queries above are disabled and report isLoading: false — indistinguishable from "we checked
   // and there's genuinely no project" unless we also wait on org-scope readiness here. Without
   // this, the page briefly flashes "Project not found" before the real data arrives.
-  const loadingProject = !isOrgScopeReady || (!project && (isUuid ? loadingById : loadingByHandle || loadingProjects));
+  // fetchingProjects covers the other route to the same flash: a refetch of the invalidated
+  // list reports isLoading false while its data is still pre-creation.
+  const loadingProject = !isOrgScopeReady || (!project && (isUuid ? loadingById : loadingByHandle || loadingProjects || fetchingProjects));
   const projectId = project?.id ?? '';
   useLoadProjectPermissions(scope.org, projectId);
   // Shared with AppLayout's left-nav hiding, so both surfaces hide on exactly the same one-shot

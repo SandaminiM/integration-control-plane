@@ -48,6 +48,7 @@ import type { EnvEndpoint } from '../../types/component';
 import type { DeployComponentInput } from '../../types/build';
 import { bff, items, q, seg, type ListResponse, type MessageResponse } from './_client';
 import { getEndpointLabel } from '../../utils/endpoints';
+import { toVisibilityLabel } from './_visibility';
 
 // Underscored params (_orgHandler, _orgUuid, _projectId, _versionId) are kept
 // on these signatures for devant contract parity; cloud does not use them.
@@ -78,8 +79,6 @@ interface BffEndpointResources {
   schemaContent?: string;
 }
 
-const VISIBILITY_LABEL: Record<string, string> = { external: 'Public', organization: 'Organization', project: 'Project' };
-
 function buildUrl(u?: BffEndpointURL): string {
   if (!u?.host) return '';
   const scheme = u.scheme || 'https';
@@ -88,10 +87,12 @@ function buildUrl(u?: BffEndpointURL): string {
   return `${scheme}://${u.host}${portSuffix}${path}`;
 }
 
-function toEnvEndpoint(ep: BffEndpointResources, releaseId: string): EnvEndpoint {
-  const networkVisibilities = (ep.visibility ?? []).map((v) => VISIBILITY_LABEL[v] ?? v);
+export function toEnvEndpoint(ep: BffEndpointResources, releaseId: string): EnvEndpoint {
+  const networkVisibilities = (ep.visibility ?? []).map(toVisibilityLabel);
   const publicUrl = buildUrl(ep.urls?.external);
-  const organizationUrl = buildUrl(ep.urls?.internal);
+  const internalUrl = buildUrl(ep.urls?.internal);
+  const organizationUrl = networkVisibilities.length === 0 || networkVisibilities.includes('Organization') ? internalUrl : '';
+  const projectUrl = networkVisibilities.includes('Project') ? internalUrl : '';
   return {
     id: ep.name,
     releaseId,
@@ -103,7 +104,9 @@ function toEnvEndpoint(ep: BffEndpointResources, releaseId: string): EnvEndpoint
     networkVisibilities,
     publicUrl,
     organizationUrl,
-    invokeUrl: publicUrl || organizationUrl,
+    projectUrl,
+    // Not organizationUrl: organization visibility needs to be implemented yet.
+    invokeUrl: publicUrl || internalUrl,
     // The swagger view reads activeEndpoint.apimRevisionId; cloud has no APIM, so
     // carry the base64 OpenAPI here for cloud/apim.ts#fetchApimSwagger to decode.
     apimRevisionId: ep.schemaContent ?? null,

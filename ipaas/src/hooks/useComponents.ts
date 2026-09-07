@@ -35,7 +35,7 @@ import {
   checkDeploymentTrackDeletable,
 } from '#api/components';
 import { pollWhileDeleting } from '../utils/deletionPolling';
-import type { Component, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, CreateDeploymentTrackInput } from '../types/component';
+import type { Component, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, UpdateEndpointInput, GenerateComponentEndpointsInput, CreateDeploymentTrackInput } from '../types/component';
 
 export function useComponents(orgHandler: string, projectId: string) {
   return useQuery({
@@ -149,7 +149,7 @@ export function useCheckDeploymentTrackDeletable() {
 export function useUpdateEndpoint() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { componentId: string; versionId: string; releaseId: string; endpointId: string; displayName: string; networkVisibilities: string[] }) => updateEndpoint(input),
+    mutationFn: (input: UpdateEndpointInput) => updateEndpoint(input),
     onSuccess: (_data, input) => {
       qc.invalidateQueries({ queryKey: ['envEndpoints'] });
       qc.invalidateQueries({ queryKey: ['componentEndpoints', input.componentId, input.versionId] });
