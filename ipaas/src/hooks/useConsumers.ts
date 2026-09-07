@@ -111,7 +111,7 @@ export function useSetEndpointSecurity(ref: EndpointRef | null | undefined) {
   return useMutation<SecurityConfig, Error, SecurityConfig>({
     mutationFn: (cfg) => setEndpointSecurity(ref!, cfg),
     onSuccess: (data) => {
-      qc.setQueryData(securityKey(ref), data);
+      qc.setQueryData<SecurityConfig>(securityKey(ref), (prev) => ({ ...prev, ...data }));
     },
   });
 }
