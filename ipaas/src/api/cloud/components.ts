@@ -26,6 +26,7 @@ import type {
   CreateComponentInput,
   UpdateComponentInput,
   UpdateAutoDeployInput,
+  UpdateEndpointInput,
   GenerateComponentEndpointsInput,
   ComponentNameAvailability,
   DisplayType,
@@ -38,6 +39,7 @@ import type {
 import type { CreateMcpProxyComponentInput } from '../../types/mcpProxy';
 import { bff, items, q, seg, type ListResponse } from './_client';
 import { parseGitHubUrl } from '../../utils/github';
+import { toVisibilityWire } from './_visibility';
 
 // Underscored params (_orgHandler, _versionId, _releaseId) are kept on exported
 // signatures so cloud matches the devant contract that tsconfig type-checks
@@ -82,7 +84,7 @@ const ANN_PREBUILT = 'openchoreo.dev/prebuilt';
 // The Ballerina (BI) entries resolve against real cluster resources: every
 // ComponentType referenced here (deployment/integration-as-api,
 // cronjob/scheduled-task, deployment/event-integration) is provisioned with
-// ballerina-buildpack-builder in its allowedWorkflows. 
+// ballerina-buildpack-builder in its allowedWorkflows.
 const DISPLAY_TYPE_MAP: Record<DisplayType, { componentType: string; workflow: string }> = {
   ballerinaService: { componentType: 'deployment/integration-as-api', workflow: 'ballerina-buildpack-builder' },
   scheduledTask: { componentType: 'cronjob/scheduled-task', workflow: 'ballerina-buildpack-builder' },
@@ -280,8 +282,11 @@ export const generateComponentEnvironmentJwtSecret = (componentId: string, envir
 export const rotateComponentEnvironmentJwtSecret = (componentId: string, environmentId: string): Promise<string> =>
   bff.put<{ secret: string }>(`/components/${seg(componentId)}/environments/${seg(environmentId)}/jwt-secret/rotate`).then((r) => r?.secret ?? '');
 
-export const updateEndpoint = (input: { componentId: string; versionId: string; releaseId: string; endpointId: string; displayName: string; networkVisibilities: string[] }): Promise<object> =>
-  bff.put<object>(`/components/${seg(input.componentId)}/endpoints/${seg(input.endpointId)}/visibility`, input);
+// Sends visibility only; projectName resolves the component's release bindings.
+export const updateEndpoint = (input: UpdateEndpointInput): Promise<object> =>
+  bff.put<object>(`/components/${seg(input.componentId)}/endpoints/${seg(input.endpointId)}/visibility${q({ projectName: input.projectId })}`, {
+    visibility: input.networkVisibilities.map(toVisibilityWire),
+  });
 
 // MCP proxy (convert from an existing HTTP API) is a wip/APIM-only flow.
 export const createMcpProxyComponent = (_input: CreateMcpProxyComponentInput): Promise<Component> => {
