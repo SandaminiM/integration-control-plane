@@ -87,10 +87,12 @@ function buildUrl(u?: BffEndpointURL): string {
   return `${scheme}://${u.host}${portSuffix}${path}`;
 }
 
-function toEnvEndpoint(ep: BffEndpointResources, releaseId: string): EnvEndpoint {
+export function toEnvEndpoint(ep: BffEndpointResources, releaseId: string): EnvEndpoint {
   const networkVisibilities = (ep.visibility ?? []).map(toVisibilityLabel);
   const publicUrl = buildUrl(ep.urls?.external);
-  const organizationUrl = buildUrl(ep.urls?.internal);
+  const internalUrl = buildUrl(ep.urls?.internal);
+  const organizationUrl = networkVisibilities.length === 0 || networkVisibilities.includes('Organization') ? internalUrl : '';
+  const projectUrl = networkVisibilities.includes('Project') ? internalUrl : '';
   return {
     id: ep.name,
     releaseId,
@@ -102,7 +104,9 @@ function toEnvEndpoint(ep: BffEndpointResources, releaseId: string): EnvEndpoint
     networkVisibilities,
     publicUrl,
     organizationUrl,
-    invokeUrl: publicUrl || organizationUrl,
+    projectUrl,
+    // Not organizationUrl: organization visibility needs to be implemented yet. 
+    invokeUrl: publicUrl || internalUrl,
     // The swagger view reads activeEndpoint.apimRevisionId; cloud has no APIM, so
     // carry the base64 OpenAPI here for cloud/apim.ts#fetchApimSwagger to decode.
     apimRevisionId: ep.schemaContent ?? null,
