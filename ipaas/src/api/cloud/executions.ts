@@ -27,7 +27,7 @@
  */
 
 import { bff, q, seg } from './_client';
-import type { ExecutionConfigs, TaskExecution, ExecutionLogEntry, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../../types/executions';
+import type { StopScheduleInput, ExecutionConfigs, TaskExecution, ExecutionLogEntry, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../../types/executions';
 import type { TriggerTaskInput } from '../../types/artifact';
 
 interface ExecutionArgument {
@@ -81,16 +81,13 @@ function toTaskExecution(e: BffExecution): TaskExecution {
 //
 // Previously we used to send `projectName` param, now removed because it's not used in ipaas-service.
 //
-// Stopping a schedule undeploys the underlying ReleaseBinding (state "Undeploy")
-// but leaves its cron spec intact, so the endpoint keeps returning a cronExpression.
-// Report a stopped schedule as no active schedule so the UI reflects "not running"
-// rather than treating the lingering cron as live.
+// An empty cronExpression means no schedule: the BFF owns the never-fires expression in both directions.
 export const fetchExecutionConfigs = (componentId: string, _releaseId: string, envId = ''): Promise<ExecutionConfigs | null> => {
   if (!envId) return Promise.resolve(null);
   return bff
     .get<BffSchedule>(`/components/${seg(componentId)}/schedules/${seg(envId)}`)
     .then((s) => {
-      if (s.state === 'Undeploy') return null;
+      if (!s.cronExpression) return null;
       return {
         cronjobFrequency: s.cronExpression,
         cronjobTimezone: s.cronTimezone || 'UTC',
@@ -164,6 +161,9 @@ export const fetchTaskExecutionCount = (releaseId: string, componentId = '', env
     .catch(() => null);
 
 export const updateJobConfigs = (input: UpdateJobConfigsInput): Promise<boolean> => bff.put<{ success?: boolean }>(`/components/${seg(input.componentId)}/job-configs`, input).then((r) => r?.success ?? true);
+
+// Empty cron = stop firing; the BFF substitutes the never-fires expression and leaves deployment state alone.
+export const stopSchedule = (input: StopScheduleInput): Promise<void> => bff.post<void>(`/components/${seg(input.componentId)}/schedules`, { environment: input.envId, cronExpression: '' }).then(() => undefined);
 
 // MI artifact trigger — no API Manager / MI runtime on the OpenChoreo stack.
 export const triggerTask = (_input: TriggerTaskInput): Promise<{ status: string; message: string; successCount: number; failedCount: number; details: string[] }> =>

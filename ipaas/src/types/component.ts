@@ -37,6 +37,8 @@ export interface Component {
   apiId?: string;
   serviceAccessMode?: string | null;
   isPrebuilt?: boolean;
+  /** Set while the integration's delete is accepted but its finalizers have not cleared yet. */
+  deleting?: boolean;
 }
 
 export interface DeploymentTrack {

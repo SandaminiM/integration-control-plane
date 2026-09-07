@@ -224,7 +224,8 @@ export default function DeployEnvironmentCard({
         // cloud: OpenChoreo's stop endpoint is per-environment; wip ignores it.
         ...(IS_CLOUD ? { environment: env.id } : {}),
         type: flags.isAutomation ? 'scheduledTask' : 'service',
-        clearCron: flags.isAutomation,
+        // Stopping the deployment leaves the CronJob's schedule untouched.
+        clearCron: false,
       },
       {
         onSuccess: () => {

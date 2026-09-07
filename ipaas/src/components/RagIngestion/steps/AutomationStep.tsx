@@ -18,7 +18,7 @@
 
 import { MenuItem, Stack, TextField, Typography } from '@wso2/oxygen-ui';
 import { useEffect, type JSX } from 'react';
-import { useProjects } from '../../../hooks/useProjects';
+import { useActiveProjects } from '../../../hooks/useProjects';
 import { useComponentNameAvailability } from '../../../hooks/useRepository';
 import { componentNameError, slugify } from '../../../utils/ragIngestion';
 import { REQUIRED_FIELD_SX } from '../../../constants/styles';
@@ -33,7 +33,7 @@ interface AutomationStepProps {
 }
 
 export default function AutomationStep({ value, onChange, heading = 'Create Automation' }: AutomationStepProps): JSX.Element {
-  const { data: projects, isLoading } = useProjects();
+  const { data: projects, isLoading } = useActiveProjects();
 
   // Default to the first project once the list loads.
   useEffect(() => {

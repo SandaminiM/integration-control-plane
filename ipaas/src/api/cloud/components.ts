@@ -82,7 +82,7 @@ const ANN_PREBUILT = 'openchoreo.dev/prebuilt';
 // The Ballerina (BI) entries resolve against real cluster resources: every
 // ComponentType referenced here (deployment/integration-as-api,
 // cronjob/scheduled-task, deployment/event-integration) is provisioned with
-// ballerina-buildpack-builder in its allowedWorkflows. 
+// ballerina-buildpack-builder in its allowedWorkflows.
 const DISPLAY_TYPE_MAP: Record<DisplayType, { componentType: string; workflow: string }> = {
   ballerinaService: { componentType: 'deployment/integration-as-api', workflow: 'ballerina-buildpack-builder' },
   scheduledTask: { componentType: 'cronjob/scheduled-task', workflow: 'ballerina-buildpack-builder' },
@@ -171,7 +171,7 @@ function toBffCreateComponentBody(input: CreateComponentInput) {
       // git build on create; everything else builds from source.
       autoBuild: !input.isPrebuilt,
       workflow: {
-        kind: 'Workflow',
+        kind: 'ClusterWorkflow',
         name: mapping.workflow,
         parameters: {
           repository: {

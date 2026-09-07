@@ -131,7 +131,7 @@ const OrgDeploy = lazyPage(() => import('../pages/OrgDeploy'));
 const ProjectDeploy = lazyPage(() => import('../pages/ProjectDeploy'));
 const Deploy = lazyPage(() => import('../pages/Deploy'));
 const TestConsole = lazyPage(() => import('../pages/TestConsole'));
-const AgentChatConsole = lazyPage(() => import('../pages/AgentChatConsole'));
+const AgentChatTestRoute = lazyPage(() => import('../pages/ComponentTest').then((m) => ({ default: m.AgentChatTestRoute })));
 const Lifecycle = lazyPage(() => import('../pages/Lifecycle'));
 const OrgCompliance = lazyPage(() => import('../pages/OrgCompliance'));
 const ProjectCompliance = lazyPage(() => import('../pages/ProjectCompliance'));
@@ -391,7 +391,7 @@ const routes: AppRoute[] = [
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test/agent-chat',
-                element: createElement(withScope(AgentChatConsole, ['components'])),
+                element: createElement(withScope(AgentChatTestRoute, ['components'])),
               },
               {
                 path: 'organizations/:orgHandler/projects/:projectHandler/components/:componentHandler/test/api-chat',

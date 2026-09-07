@@ -17,8 +17,8 @@
  */
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchExecutionConfigs, fetchTaskExecutions, fetchRuntimeArguments, fetchExecutionArguments, fetchExecutionLogs, fetchTaskExecutionCount, updateJobConfigs, triggerTask, triggerComponentRun } from '#api/executions';
-import type { ExecutionConfigs, TaskExecution, UpdateJobConfigsInput, TriggerComponentInput, RuntimeArgument } from '../types/executions';
+import { fetchExecutionConfigs, fetchTaskExecutions, fetchRuntimeArguments, fetchExecutionArguments, fetchExecutionLogs, fetchTaskExecutionCount, updateJobConfigs, stopSchedule, triggerTask, triggerComponentRun } from '#api/executions';
+import type { StopScheduleInput, ExecutionConfigs, TaskExecution, UpdateJobConfigsInput, TriggerComponentInput, RuntimeArgument } from '../types/executions';
 import type { TriggerTaskInput } from '../types/artifact';
 import { IS_CLOUD } from '../features';
 
@@ -106,6 +106,14 @@ export function useUpdateJobConfigs() {
     onSuccess: (_data, input) => {
       qc.invalidateQueries({ queryKey: ['executionConfigs', input.componentId] });
     },
+  });
+}
+
+export function useStopSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: StopScheduleInput) => stopSchedule(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['executionConfigs'] }),
   });
 }
 

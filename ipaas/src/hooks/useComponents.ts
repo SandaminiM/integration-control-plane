@@ -34,13 +34,15 @@ import {
   deleteDeploymentTrack,
   checkDeploymentTrackDeletable,
 } from '#api/components';
-import type { CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, CreateDeploymentTrackInput } from '../types/component';
+import { pollWhileDeleting } from '../utils/deletionPolling';
+import type { Component, CreateComponentInput, UpdateComponentInput, UpdateAutoDeployInput, GenerateComponentEndpointsInput, CreateDeploymentTrackInput } from '../types/component';
 
 export function useComponents(orgHandler: string, projectId: string) {
   return useQuery({
     queryKey: ['components', orgHandler, projectId],
     queryFn: () => fetchComponents(orgHandler, projectId),
     enabled: !!orgHandler && !!projectId,
+    refetchInterval: pollWhileDeleting,
   });
 }
 
@@ -76,7 +78,11 @@ export function useDeleteComponent() {
     onSuccess: (result, input) => {
       // The backend refuses some deletions without throwing, reporting `canDelete: false`.
       if (!result.canDelete) return;
-      qc.invalidateQueries({ queryKey: ['components', input.orgHandler, input.projectId] });
+      // Scoped per org+project — names repeat across orgs.
+      const listKey = ['components', input.orgHandler, input.projectId];
+      // The delete is only accepted here, so mark the row rather than dropping it.
+      qc.setQueriesData<Component[]>({ queryKey: listKey }, (list) => list?.map((c) => (c.id === input.componentId ? { ...c, deleting: true } : c)));
+      qc.invalidateQueries({ queryKey: listKey, refetchType: 'none' });
     },
   });
 }
