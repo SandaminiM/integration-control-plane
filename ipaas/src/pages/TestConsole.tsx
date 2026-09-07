@@ -113,11 +113,12 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
   const selectedEndpointId = endpoints.some((e) => e.id === selectedEndpointIdState) ? selectedEndpointIdState : (endpoints[0]?.id ?? '');
   const selectedEndpoint = endpoints.find((e) => e.id === selectedEndpointId) ?? null;
 
+  // environmentName is the environment slug, which toEnvironment puts in `id` — `name` is the label.
   // Cloud mints the test key from the BFF's test-key route (component/environment/endpoint triple)
   // and exposes the enforcing API Platform gateway URL via the endpoint's security config; wip/icp
   // mint from APIM against apimId (below).
   const testKeyEndpointRef: EndpointRef | null = useMemo(
-    () => (IS_CLOUD && component && selectedEnv && selectedEndpoint ? { componentName: component.id, environmentName: selectedEnv.name, endpointName: selectedEndpoint.id } : null),
+    () => (IS_CLOUD && component && selectedEnv && selectedEndpoint ? { componentName: component.id, environmentName: selectedEnv.id, endpointName: selectedEndpoint.id } : null),
     [component, selectedEnv, selectedEndpoint],
   );
   const { data: apiSecurity } = useEndpointSecurity(testKeyEndpointRef, IS_CLOUD && !!testKeyEndpointRef);
