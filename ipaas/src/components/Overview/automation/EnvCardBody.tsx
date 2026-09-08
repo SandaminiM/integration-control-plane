@@ -17,10 +17,14 @@
  */
 
 import { Box, Divider, Typography } from '@wso2/oxygen-ui';
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useExecutionConfigs } from '../../../hooks/useExecutions';
 import { describeCron } from '../../../utils/cronUtils';
+import ScheduleButton from '../_shared/ScheduleButton';
+import * as styles from './EnvCardBody.styles';
+import { useSchemaConfig } from '../../../hooks/useConfiguration';
+import { hasMissingRequiredConfigs } from '../_shared/configStatus';
 import type { EnvCardBodyProps } from '../../../types/integration';
 import EnvCardSkeleton from '../_shared/EnvCardSkeleton';
 import AutomationExecutions from '../../AutomationExecutions';
@@ -44,6 +48,11 @@ export default function EnvCardBody({
   hasDeployment,
   loadingDeployment,
   deploymentStatusV2,
+  envTemplateId,
+  deployedCommitSha,
+  deploymentPipelineId,
+  buildId,
+  isBuildInProgress,
   pendingTriggerTime,
   pendingTriggerArgs,
   onTriggerResolved,
@@ -52,7 +61,10 @@ export default function EnvCardBody({
 }: EnvCardBodyProps): ReactNode {
   const queryClient = useQueryClient();
   const { data: scheduleConfig } = useExecutionConfigs(component.id, releaseId, env.id);
-  const scheduleDescription = scheduleConfig?.cronjobFrequency ? `${describeCron(scheduleConfig.cronjobFrequency)}, in time zone ${scheduleConfig.cronjobTimezone || 'UTC'}` : null;
+  const hasSchedule = !!scheduleConfig?.cronjobFrequency;
+  const scheduleDescription = hasSchedule ? `${describeCron(scheduleConfig!.cronjobFrequency!)}, in time zone ${scheduleConfig?.cronjobTimezone || 'UTC'}` : 'This automation doesn’t have an active schedule. Add one to run it automatically.';
+  const { data: schemaConfig } = useSchemaConfig(projectId, component.id, envTemplateId, versionId, deployedCommitSha);
+  const missingConfigs = useMemo(() => hasMissingRequiredConfigs(schemaConfig), [schemaConfig]);
 
   const showInsights = !!env.critical && !!releaseId;
 
@@ -62,9 +74,26 @@ export default function EnvCardBody({
     <>
       <Divider sx={{ my: 2 }} />
 
-      {hasDeployment && scheduleDescription && (
-        <Box sx={{ bgcolor: 'action.selected', borderRadius: 1, px: 2, py: 1, mb: 2 }}>
-          <Typography variant="body2">{scheduleDescription}</Typography>
+      {hasDeployment && (
+        <Box sx={styles.scheduleRow}>
+          <Box sx={styles.scheduleDescription}>
+            <Typography variant="body2">{scheduleDescription}</Typography>
+          </Box>
+          <ScheduleButton
+            envId={env.id}
+            envName={env.name}
+            componentId={component.id}
+            orgHandler={orgHandler}
+            releaseId={releaseId}
+            buildId={buildId}
+            versionId={versionId}
+            deploymentPipelineId={deploymentPipelineId}
+            hasSchedule={hasSchedule}
+            disabled={missingConfigs || !!isBuildInProgress}
+            onSaveSuccess={() => onNotify({ text: 'Schedule updated successfully', severity: 'success' })}
+            onSaveError={() => onNotify({ text: 'Failed to save schedule. Please try again.', severity: 'error' })}
+            onStopSuccess={() => onNotify({ text: 'Schedule stopped successfully', severity: 'success' })}
+          />
         </Box>
       )}
 

@@ -18,7 +18,7 @@
 
 import { Button, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Clock, Play, RotateCw, Square } from '@wso2/oxygen-ui-icons-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import { useQueryClient } from '@tanstack/react-query';
@@ -29,7 +29,6 @@ import type { EnvCardActionsProps } from '../../../types/integration';
 import { isDeploymentHealthy } from '../../../utils/deploymentStatus';
 import { useRedeployDeployment, useStopDeployment } from '../../../hooks/useDeployments';
 import { IS_CLOUD } from '../../../features';
-import ScheduleButton from './ScheduleButton';
 import { hasMissingRequiredConfigs } from './configStatus';
 
 /**
@@ -44,8 +43,6 @@ export default function EnvCardActions({
   projectHandler,
   componentHandler,
   releaseId,
-  buildId,
-  deploymentPipelineId,
   envTemplateId,
   deployedCommitSha,
   isBuildInProgress,
@@ -71,6 +68,7 @@ export default function EnvCardActions({
   const isActionPending = stopMutation.isPending || redeployMutation.isPending;
   const canStop = deploymentStatusV2 === 'ACTIVE';
   const canStart = deploymentStatusV2 === 'SUSPENDED';
+  const hasError = deploymentStatusV2 === 'ERROR';
   const isInProgress = deploymentStatusV2 === 'IN_PROGRESS';
 
   const handleStopDeployment = () => {
@@ -99,29 +97,13 @@ export default function EnvCardActions({
   const hasRuntimeArgs = (runtimeArgs?.length ?? 0) > 0;
   const triggerRun = useTriggerComponent();
 
-  // Next-run countdown + cron auto-fire detection: when a scheduled run is about
-  // to fire, optimistically record a trigger so the executions table updates.
+  // Countdown only: the cron says when a run is due, not that it fired, so predicting one strands an in-progress row.
   const [nextRunLabel, setNextRunLabel] = useState<string | null>(null);
   const cronFreq = scheduleConfig?.cronjobFrequency ?? null;
-  const lastScheduledTriggerRef = useRef<number>(0);
   const updateNextRun = useCallback(() => {
-    if (!cronFreq) {
-      setNextRunLabel(null);
-      return;
-    }
-    const ms = nextCronRunMs(cronFreq);
-    if (ms !== null) {
-      const diff = ms - Date.now();
-      if (diff < 1000 && Date.now() - lastScheduledTriggerRef.current > 30000) {
-        lastScheduledTriggerRef.current = Date.now();
-        onTrigger(Date.now());
-        queryClient.invalidateQueries({ queryKey: ['taskExecutions'] });
-      }
-      setNextRunLabel(`Next run in ${formatTimeUntil(ms)}`);
-    } else {
-      setNextRunLabel(null);
-    }
-  }, [cronFreq, queryClient, onTrigger]);
+    const ms = cronFreq ? nextCronRunMs(cronFreq) : null;
+    setNextRunLabel(ms === null ? null : `Next run in ${formatTimeUntil(ms)}`);
+  }, [cronFreq]);
   useEffect(() => {
     updateNextRun();
     const timer = setInterval(updateNextRun, 1000);
@@ -159,21 +141,6 @@ export default function EnvCardActions({
           </Typography>
         </Stack>
       )}
-      <ScheduleButton
-        envId={env.id}
-        envName={env.name}
-        componentId={component.id}
-        orgHandler={orgHandler}
-        releaseId={releaseId}
-        buildId={buildId}
-        versionId={versionId}
-        deploymentPipelineId={deploymentPipelineId}
-        hasSchedule={!!scheduleConfig?.cronjobFrequency}
-        disabled={missingConfigs || buildDisabled}
-        onSaveSuccess={() => onNotify({ text: 'Schedule updated successfully', severity: 'success' })}
-        onSaveError={() => onNotify({ text: 'Failed to save schedule. Please try again.', severity: 'error' })}
-        onStopSuccess={() => onNotify({ text: 'Schedule stopped successfully', severity: 'success' })}
-      />
       <Button variant="contained" size="small" startIcon={<Play size={14} />} disabled={missingConfigs || buildDisabled || !canTest || triggerRun.isPending || runtimeArgsLoading} onClick={handleTest}>
         Test
       </Button>
@@ -181,7 +148,7 @@ export default function EnvCardActions({
         <Tooltip title="Stop deployment">
           <span>
             <Button variant="outlined" size="small" color="error" startIcon={<Square size={14} />} onClick={handleStopDeployment} disabled={isActionPending || isInProgress}>
-              Stop
+              Stop Deployment
             </Button>
           </span>
         </Tooltip>
@@ -190,7 +157,16 @@ export default function EnvCardActions({
         <Tooltip title="Start deployment">
           <span>
             <Button variant="outlined" size="small" color="success" startIcon={<RotateCw size={14} />} onClick={handleStartDeployment} disabled={isActionPending}>
-              Start
+              Start Deployment
+            </Button>
+          </span>
+        </Tooltip>
+      )}
+      {hasError && (
+        <Tooltip title="Redeploy">
+          <span>
+            <Button variant="outlined" size="small" startIcon={<RotateCw size={14} />} onClick={handleStartDeployment} disabled={isActionPending}>
+              Redeploy
             </Button>
           </span>
         </Tooltip>

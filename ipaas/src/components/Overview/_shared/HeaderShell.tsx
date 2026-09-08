@@ -20,6 +20,8 @@ import { Avatar, Box, Button, ButtonGroup, Chip, CircularProgress, ClickAwayList
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { Tag, Cloud, GitCommitHorizontal, Copy, Check, ChevronDown, Code2, Pencil, Globe, Lock } from '@wso2/oxygen-ui-icons-react';
 import type { ComponentDetail } from '../../../types/component';
+import { identifyIntegration } from '../../../utils/identifyIntegration';
+import IntegrationIcon from '../../IntegrationIcon';
 import type { Project } from '../../../types/project';
 import type { Repository, Commit } from '../../../types/repository';
 import { useUpdateComponent } from '../../../hooks/useComponents';
@@ -252,12 +254,12 @@ export default function ComponentHeader({ component, project, repository, latest
         {/* LEFT COLUMN */}
         <Stack gap={1} sx={{ flex: 1, minWidth: 0, maxWidth: '60%', [NARROW_HEADER_QUERY]: { maxWidth: '100%' } }}>
           <Stack direction="row" alignItems="center" gap={2}>
-            <Avatar sx={{ width: 48, height: 48, fontSize: 22, bgcolor: 'text.primary', color: 'background.paper' }}>{nameValue?.[0]?.toUpperCase() ?? 'C'}</Avatar>
+            <IntegrationIcon type={identifyIntegration(displayType, component.componentSubType ?? null).type} size={48} />
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Stack direction="row" alignItems="center" gap={0.5} sx={{ mb: 0.25, cursor: 'text', columnGap: nameEditing ? 1.5 : 0.5, '&:hover .pencil-btn': { opacity: 1 } }} onClick={() => !nameEditing && setNameEditing(true)}>
                 {/* The Typography always stays in the DOM and determines the layout size.
                   The InputBase is absolutely overlaid on top when editing — zero layout shift. */}
-                <Box sx={{ position: 'relative', display: 'flex', flex: 1, minWidth: 200 }}>
+                <Box sx={{ position: 'relative', display: 'flex', flex: '0 1 auto', minWidth: nameEditing ? 200 : 0, maxWidth: '100%' }}>
                   <Typography
                     ref={titleRef}
                     variant="h1"
@@ -347,7 +349,7 @@ export default function ComponentHeader({ component, project, repository, latest
               )}
             </Box>
           </Stack>
-          <Stack direction="row" alignItems="flex-start" gap={1} sx={{ pt: 1 }} onMouseEnter={() => setDescHovered(true)} onMouseLeave={() => setDescHovered(false)}>
+          <Stack direction="row" alignItems="flex-start" gap={1} sx={{ mt: '20px' }} onMouseEnter={() => setDescHovered(true)} onMouseLeave={() => setDescHovered(false)}>
             <Box sx={{ position: 'relative', flex: 1, minWidth: 0, cursor: descEditing ? 'text' : descValue ? 'text' : 'pointer' }} onClick={() => !descEditing && setDescEditing(true)}>
               {/* Ghost text determines height; pencil sits inline after last word */}
               <Typography
