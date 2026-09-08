@@ -16,15 +16,14 @@
  * under the License.
  */
 
-import { Button, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { Clock, Play, RotateCw, Square } from '@wso2/oxygen-ui-icons-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Button, Tooltip } from '@wso2/oxygen-ui';
+import { Play, RotateCw, Square } from '@wso2/oxygen-ui-icons-react';
+import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import { useQueryClient } from '@tanstack/react-query';
-import { useExecutionConfigs, useRuntimeArguments, useTriggerComponent } from '../../../hooks/useExecutions';
+import { useRuntimeArguments, useTriggerComponent } from '../../../hooks/useExecutions';
 import { useSchemaConfig } from '../../../hooks/useConfiguration';
-import { formatTimeUntil, nextCronRunMs } from '../../../utils/cronUtils';
 import type { EnvCardActionsProps } from '../../../types/integration';
 import { isDeploymentHealthy } from '../../../utils/deploymentStatus';
 import { useRedeployDeployment, useStopDeployment } from '../../../hooks/useDeployments';
@@ -53,7 +52,6 @@ export default function EnvCardActions({
   const queryClient = useQueryClient();
   const navigate = useAppNavigate();
 
-  const { data: scheduleConfig } = useExecutionConfigs(component.id, releaseId, env.id);
   const { data: schemaConfig } = useSchemaConfig(projectId, component.id, envTemplateId, versionId, deployedCommitSha);
   const missingConfigs = useMemo(() => hasMissingRequiredConfigs(schemaConfig), [schemaConfig]);
 
@@ -97,19 +95,6 @@ export default function EnvCardActions({
   const hasRuntimeArgs = (runtimeArgs?.length ?? 0) > 0;
   const triggerRun = useTriggerComponent();
 
-  // Countdown only: the cron says when a run is due, not that it fired, so predicting one strands an in-progress row.
-  const [nextRunLabel, setNextRunLabel] = useState<string | null>(null);
-  const cronFreq = scheduleConfig?.cronjobFrequency ?? null;
-  const updateNextRun = useCallback(() => {
-    const ms = cronFreq ? nextCronRunMs(cronFreq) : null;
-    setNextRunLabel(ms === null ? null : `Next run in ${formatTimeUntil(ms)}`);
-  }, [cronFreq]);
-  useEffect(() => {
-    updateNextRun();
-    const timer = setInterval(updateNextRun, 1000);
-    return () => clearInterval(timer);
-  }, [updateNextRun]);
-
   const goToTestPage = () => navigate(`/organizations/${orgHandler}/projects/${projectHandler}/components/${componentHandler}/test`);
 
   const handleTest = () => {
@@ -133,14 +118,6 @@ export default function EnvCardActions({
 
   return (
     <>
-      {nextRunLabel && (
-        <Stack direction="row" alignItems="center" gap={0.5} sx={{ mr: 0.5 }}>
-          <Clock size={14} />
-          <Typography variant="body2" color="text.secondary">
-            {nextRunLabel}
-          </Typography>
-        </Stack>
-      )}
       <Button variant="contained" size="small" startIcon={<Play size={14} />} disabled={missingConfigs || buildDisabled || !canTest || triggerRun.isPending || runtimeArgsLoading} onClick={handleTest}>
         Test
       </Button>

@@ -43,9 +43,10 @@ export default function MenuSearchField({ value, onChange, placeholder = 'Search
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        // Select's type-ahead would otherwise steal the keystrokes, and Space would close the menu mid-word.
+        // Only text entry stops here — Select's type-ahead would steal it and Space would close the
+        // menu. Arrows, Enter, Tab and Escape must reach the MenuList to keep it keyboard-navigable.
         onKeyDown={(e) => {
-          if (e.key !== 'Escape') e.stopPropagation();
+          if (e.key.length === 1) e.stopPropagation();
         }}
         slotProps={{
           input: {

@@ -57,8 +57,8 @@ export default function ScheduleButton({ hasSchedule, disabled, onSaveSuccess, o
       <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
         {hasSchedule ? (
           <>
-            <ButtonGroup variant="contained" size="small" ref={splitButtonRef} disabled={disabled}>
-              <Button startIcon={<CalendarClock size={14} />} onClick={handleStopSchedule} disabled={stopSchedule.isPending}>
+            <ButtonGroup variant="contained" size="small" ref={splitButtonRef} disabled={disabled || stopSchedule.isPending}>
+              <Button startIcon={<CalendarClock size={14} />} onClick={handleStopSchedule}>
                 Stop Schedule
               </Button>
               <Button size="small" sx={{ px: 0.5 }} onClick={() => setSplitOpen((prev) => !prev)}>

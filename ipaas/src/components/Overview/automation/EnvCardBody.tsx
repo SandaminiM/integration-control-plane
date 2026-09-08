@@ -16,11 +16,12 @@
  * under the License.
  */
 
-import { Box, Divider, Typography } from '@wso2/oxygen-ui';
-import { useMemo, type ReactNode } from 'react';
+import { Box, Divider, Stack, Typography } from '@wso2/oxygen-ui';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useExecutionConfigs } from '../../../hooks/useExecutions';
-import { describeCron } from '../../../utils/cronUtils';
+import { Clock } from '@wso2/oxygen-ui-icons-react';
+import { describeCron, formatTimeUntil, nextCronRunMs } from '../../../utils/cronUtils';
 import ScheduleButton from '../_shared/ScheduleButton';
 import * as styles from './EnvCardBody.styles';
 import { useSchemaConfig } from '../../../hooks/useConfiguration';
@@ -63,6 +64,18 @@ export default function EnvCardBody({
   const { data: scheduleConfig } = useExecutionConfigs(component.id, releaseId, env.id);
   const hasSchedule = !!scheduleConfig?.cronjobFrequency;
   const scheduleDescription = hasSchedule ? `${describeCron(scheduleConfig!.cronjobFrequency!)}, in time zone ${scheduleConfig?.cronjobTimezone || 'UTC'}` : 'This automation doesn’t have an active schedule. Add one to run it automatically.';
+  const [nextRunLabel, setNextRunLabel] = useState<string | null>(null);
+  const cronFreq = scheduleConfig?.cronjobFrequency ?? null;
+  const updateNextRun = useCallback(() => {
+    const ms = cronFreq ? nextCronRunMs(cronFreq) : null;
+    setNextRunLabel(ms === null ? null : `Next run in ${formatTimeUntil(ms)}`);
+  }, [cronFreq]);
+  useEffect(() => {
+    updateNextRun();
+    const timer = setInterval(updateNextRun, 1000);
+    return () => clearInterval(timer);
+  }, [updateNextRun]);
+
   const { data: schemaConfig } = useSchemaConfig(projectId, component.id, envTemplateId, versionId, deployedCommitSha);
   const missingConfigs = useMemo(() => hasMissingRequiredConfigs(schemaConfig), [schemaConfig]);
 
@@ -77,7 +90,20 @@ export default function EnvCardBody({
       {hasDeployment && (
         <Box sx={styles.scheduleRow}>
           <Box sx={styles.scheduleDescription}>
-            <Typography variant="body2">{scheduleDescription}</Typography>
+            <Stack direction="row" alignItems="center" gap={1.5} flexWrap="wrap">
+              <Typography variant="body2">{scheduleDescription}</Typography>
+              {nextRunLabel && (
+                <>
+                  <Divider orientation="vertical" flexItem sx={styles.nextRunDivider} />
+                  <Stack direction="row" alignItems="center" gap={0.5} sx={styles.nextRun}>
+                    <Clock size={14} strokeWidth={2.5} />
+                    <Typography variant="body2" fontWeight={700}>
+                      {nextRunLabel}
+                    </Typography>
+                  </Stack>
+                </>
+              )}
+            </Stack>
           </Box>
           <ScheduleButton
             envId={env.id}

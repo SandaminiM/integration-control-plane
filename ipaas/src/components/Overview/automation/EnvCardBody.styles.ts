@@ -33,3 +33,12 @@ export const scheduleDescription = {
   flex: 1,
   minWidth: 240,
 } as const;
+
+/** The countdown is the live part of the row, so it carries the emphasis. */
+export const nextRun = {
+  color: 'text.primary',
+} as const;
+
+export const nextRunDivider = {
+  my: 0.5,
+} as const;
