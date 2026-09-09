@@ -16,15 +16,6 @@
  * under the License.
  */
 
-/** Schedule description and its controls sit on one row, the button outside the tinted box. */
-export const scheduleRow = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 2,
-  mb: 2,
-  flexWrap: 'wrap',
-} as const;
-
 export const scheduleDescription = {
   bgcolor: 'action.selected',
   borderRadius: 1,
@@ -32,13 +23,4 @@ export const scheduleDescription = {
   py: 1,
   flex: 1,
   minWidth: 240,
-} as const;
-
-/** The countdown is the live part of the row, so it carries the emphasis. */
-export const nextRun = {
-  color: 'text.primary',
-} as const;
-
-export const nextRunDivider = {
-  my: 0.5,
 } as const;

@@ -16,16 +16,12 @@
  * under the License.
  */
 
-import { Box, Divider, Stack, Typography } from '@wso2/oxygen-ui';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Box, Divider, Typography } from '@wso2/oxygen-ui';
+import { type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useExecutionConfigs } from '../../../hooks/useExecutions';
-import { Clock } from '@wso2/oxygen-ui-icons-react';
-import { describeCron, formatTimeUntil, nextCronRunMs } from '../../../utils/cronUtils';
-import ScheduleButton from '../_shared/ScheduleButton';
+import { describeCron } from '../../../utils/cronUtils';
 import * as styles from './EnvCardBody.styles';
-import { useSchemaConfig } from '../../../hooks/useConfiguration';
-import { hasMissingRequiredConfigs } from '../_shared/configStatus';
 import type { EnvCardBodyProps } from '../../../types/integration';
 import EnvCardSkeleton from '../_shared/EnvCardSkeleton';
 import AutomationExecutions from '../../AutomationExecutions';
@@ -49,11 +45,6 @@ export default function EnvCardBody({
   hasDeployment,
   loadingDeployment,
   deploymentStatusV2,
-  envTemplateId,
-  deployedCommitSha,
-  deploymentPipelineId,
-  buildId,
-  isBuildInProgress,
   pendingTriggerTime,
   pendingTriggerArgs,
   onTriggerResolved,
@@ -64,21 +55,6 @@ export default function EnvCardBody({
   const { data: scheduleConfig } = useExecutionConfigs(component.id, releaseId, env.id);
   const hasSchedule = !!scheduleConfig?.cronjobFrequency;
   const scheduleDescription = hasSchedule ? `${describeCron(scheduleConfig!.cronjobFrequency!)}, in time zone ${scheduleConfig?.cronjobTimezone || 'UTC'}` : 'This automation doesn’t have an active schedule. Add one to run it automatically.';
-  const [nextRunLabel, setNextRunLabel] = useState<string | null>(null);
-  const cronFreq = scheduleConfig?.cronjobFrequency ?? null;
-  const updateNextRun = useCallback(() => {
-    const ms = cronFreq ? nextCronRunMs(cronFreq) : null;
-    setNextRunLabel(ms === null ? null : `Next run in ${formatTimeUntil(ms)}`);
-  }, [cronFreq]);
-  useEffect(() => {
-    updateNextRun();
-    const timer = setInterval(updateNextRun, 1000);
-    return () => clearInterval(timer);
-  }, [updateNextRun]);
-
-  const { data: schemaConfig } = useSchemaConfig(projectId, component.id, envTemplateId, versionId, deployedCommitSha);
-  const missingConfigs = useMemo(() => hasMissingRequiredConfigs(schemaConfig), [schemaConfig]);
-
   const showInsights = !!env.critical && !!releaseId;
 
   if (loadingDeployment) return <EnvCardSkeleton />;
@@ -88,38 +64,8 @@ export default function EnvCardBody({
       <Divider sx={{ my: 2 }} />
 
       {hasDeployment && (
-        <Box sx={styles.scheduleRow}>
-          <Box sx={styles.scheduleDescription}>
-            <Stack direction="row" alignItems="center" gap={1.5} flexWrap="wrap">
-              <Typography variant="body2">{scheduleDescription}</Typography>
-              {nextRunLabel && (
-                <>
-                  <Divider orientation="vertical" flexItem sx={styles.nextRunDivider} />
-                  <Stack direction="row" alignItems="center" gap={0.5} sx={styles.nextRun}>
-                    <Clock size={14} strokeWidth={2.5} />
-                    <Typography variant="body2" fontWeight={700}>
-                      {nextRunLabel}
-                    </Typography>
-                  </Stack>
-                </>
-              )}
-            </Stack>
-          </Box>
-          <ScheduleButton
-            envId={env.id}
-            envName={env.name}
-            componentId={component.id}
-            orgHandler={orgHandler}
-            releaseId={releaseId}
-            buildId={buildId}
-            versionId={versionId}
-            deploymentPipelineId={deploymentPipelineId}
-            hasSchedule={hasSchedule}
-            disabled={missingConfigs || !!isBuildInProgress}
-            onSaveSuccess={() => onNotify({ text: 'Schedule updated successfully', severity: 'success' })}
-            onSaveError={() => onNotify({ text: 'Failed to save schedule. Please try again.', severity: 'error' })}
-            onStopSuccess={() => onNotify({ text: 'Schedule stopped successfully', severity: 'success' })}
-          />
+        <Box sx={styles.scheduleDescription}>
+          <Typography variant="body2">{scheduleDescription}</Typography>
         </Box>
       )}
 
