@@ -123,7 +123,7 @@ export default function EnvCardActions({
         versionId={versionId}
         deploymentPipelineId={deploymentPipelineId}
         hasSchedule={!!scheduleConfig?.cronjobFrequency}
-        disabled={missingConfigs || buildDisabled}
+        disabled={missingConfigs || buildDisabled || !releaseId}
         onSaveSuccess={() => onNotify({ text: 'Schedule updated successfully', severity: 'success' })}
         onSaveError={() => onNotify({ text: 'Failed to save schedule. Please try again.', severity: 'error' })}
         onStopSuccess={() => onNotify({ text: 'Schedule stopped successfully', severity: 'success' })}
