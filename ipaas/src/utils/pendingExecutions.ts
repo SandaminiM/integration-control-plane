@@ -24,10 +24,34 @@ export const PENDING_MATCH_TOLERANCE_MS = 5_000;
 /** A due run the backend never reports is dropped rather than spinning forever. */
 export const PENDING_EXPIRY_MS = 120_000;
 
-/** Whether the backend has reported an execution that this due time can account for. */
-export function hasExecutionForDueTime(dueTime: number, executions: TaskExecution[]): boolean {
-  return executions.some((execution) => {
-    const seconds = parseInt(execution.startTime, 10);
-    return !Number.isNaN(seconds) && seconds * 1000 >= dueTime - PENDING_MATCH_TOLERANCE_MS;
-  });
+function startedAtMs(execution: TaskExecution): number {
+  const seconds = parseInt(execution.startTime, 10);
+  return Number.isNaN(seconds) ? NaN : seconds * 1000;
+}
+
+/**
+ * Due times the backend has not accounted for yet, newest first.
+ *
+ * Each execution is claimed by at most one due time, newest first. That ordering is what stops
+ * a single late execution from settling an older due time whose job never appeared: the run
+ * belongs to the most recent due time it could have come from. Expired entries are dropped —
+ * a due time says a run was owed, not that one started.
+ */
+export function unclaimedDueTimes(dueTimes: number[], executions: TaskExecution[], nowMs: number): number[] {
+  const starts = executions
+    .map(startedAtMs)
+    .filter((ms) => !Number.isNaN(ms))
+    .sort((a, b) => a - b);
+  const claimed = new Set<number>();
+  const unclaimed: number[] = [];
+
+  for (const dueTime of [...dueTimes].sort((a, b) => b - a)) {
+    const index = starts.findIndex((start, i) => !claimed.has(i) && start >= dueTime - PENDING_MATCH_TOLERANCE_MS);
+    if (index === -1) {
+      if (nowMs - dueTime < PENDING_EXPIRY_MS) unclaimed.push(dueTime);
+      continue;
+    }
+    claimed.add(index);
+  }
+  return unclaimed;
 }
