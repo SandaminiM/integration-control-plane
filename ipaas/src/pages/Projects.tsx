@@ -225,7 +225,7 @@ export default function Projects(scope: OrgScope): JSX.Element {
         </PageTitle.Actions>
       </PageTitle>
 
-      <Stack direction="row" gap={1} alignItems="center" sx={{ mb: 3 }}>
+      <Stack direction="row" gap={1} alignItems="center" sx={{ mb: 3, ml: 1 }}>
         <SearchField value={query} onChange={setQuery} placeholder="Search projects" fullWidth />
         <Authorized permissions={Permissions.PROJECT_MANAGE}>
           <Button variant="contained" startIcon={<Plus size={20} />} onClick={() => navigate(newProjectUrl(scope))} sx={{ whiteSpace: 'nowrap' }}>
