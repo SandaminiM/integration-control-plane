@@ -122,15 +122,16 @@ export default function DeployEnvironmentCard({
 
   const [nextRunLabel, setNextRunLabel] = useState<string | null>(null);
   const cronFreq = executionConfigs?.cronjobFrequency ?? null;
+  const cronTimezone = executionConfigs?.cronjobTimezone ?? '';
   const updateNextRun = useCallback(() => {
     if (!cronFreq) {
       setNextRunLabel(null);
       return;
     }
-    const ms = nextCronRunMs(cronFreq);
+    const ms = nextCronRunMs(cronFreq, cronTimezone || undefined);
     if (ms !== null) setNextRunLabel(`Next run in ${formatTimeUntil(ms)}`);
     else setNextRunLabel(null);
-  }, [cronFreq]);
+  }, [cronFreq, cronTimezone]);
   useEffect(() => {
     updateNextRun();
     const timer = setInterval(updateNextRun, 1000);

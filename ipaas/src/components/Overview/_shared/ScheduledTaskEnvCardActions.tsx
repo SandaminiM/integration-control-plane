@@ -67,10 +67,11 @@ export default function EnvCardActions({
   // Countdown only: the cron says when a run is due, not that it fired, so predicting one strands an in-progress row.
   const [nextRunLabel, setNextRunLabel] = useState<string | null>(null);
   const cronFreq = scheduleConfig?.cronjobFrequency ?? null;
+  const cronTimezone = scheduleConfig?.cronjobTimezone ?? '';
   const updateNextRun = useCallback(() => {
-    const ms = cronFreq ? nextCronRunMs(cronFreq) : null;
+    const ms = cronFreq ? nextCronRunMs(cronFreq, cronTimezone || undefined) : null;
     setNextRunLabel(ms === null ? null : `Next run in ${formatTimeUntil(ms)}`);
-  }, [cronFreq]);
+  }, [cronFreq, cronTimezone]);
   useEffect(() => {
     updateNextRun();
     const timer = setInterval(updateNextRun, 1000);

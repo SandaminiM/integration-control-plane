@@ -52,6 +52,7 @@ interface BffSchedule {
   state?: string;
   backoffLimit?: number | null;
   activeDeadlineSeconds?: number | null;
+  concurrencyPolicy?: string | null;
 }
 
 // The BFF returns ISO timestamps; the env card parses startTime/completionTime
@@ -94,6 +95,8 @@ export const fetchExecutionConfigs = (componentId: string, _releaseId: string, e
         cronjobTimezone: s.cronTimezone || 'UTC',
         timeoutSeconds: s.activeDeadlineSeconds ?? undefined,
         retryCount: s.backoffLimit ?? undefined,
+        // The ComponentType defaults concurrencyPolicy to Forbid, so an absent policy is not overlapping.
+        cronjobAllowConcurrency: s.concurrencyPolicy === 'Allow',
       };
     })
     .catch(() => null);

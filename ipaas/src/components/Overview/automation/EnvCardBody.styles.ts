@@ -21,6 +21,7 @@ export const scheduleDescription = {
   borderRadius: 1,
   px: 2,
   py: 1,
+  mb: 2,
   flex: 1,
   minWidth: 240,
 } as const;
