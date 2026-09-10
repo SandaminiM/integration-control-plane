@@ -157,6 +157,14 @@ const LOG_WINDOW_FALLBACK_MS = 24 * 3600_000;
 // The observer's own per-query ceiling.
 const EXECUTION_LOG_LIMIT = 1000;
 
+// The observer applies that ceiling before the console can filter by pod, and
+// its log scope reaches only component + environment — there is no pod or job
+// selector (workflowRunName matches Argo workflow runs, not a CronJob's Jobs).
+// So a window crowded by concurrent runs of a chatty task can push this run's
+// output past the ceiling, and the only way to reach it is to walk the window a
+// page at a time. The cap bounds that walk for a window that is busier still.
+const EXECUTION_LOG_MAX_PAGES = 10;
+
 // The observer answers a scoped query with this code, as a 5xx, when the org
 // has nothing indexed at all. That is an empty result, not a failure.
 const NO_INDEXED_DATA_CODE = 'OBS-V1-L-04';
@@ -222,29 +230,54 @@ export const fetchExecutionLogs = async (componentId: string, _deploymentTrackId
   // a component with no build to resolve one from has never produced a run.
   const project = await resolveComponentProject(componentId);
   if (!project) return [];
-  let entries: ObsLogEntry[];
-  try {
-    entries = await queryObsLogEntries({
-      searchScope: {
-        project,
-        component: componentId,
-        environment: environmentId.toLowerCase(),
-      },
-      ...executionLogWindow(run),
-      limit: EXECUTION_LOG_LIMIT,
-      // Ascending so the drawer reads top-to-bottom, the order the task emitted.
-      sortOrder: 'asc',
-      // A run's output is wanted whole, and the proxy's level filter matches a
-      // level parsed from the line, so it drops output that never labelled one.
-      searchPhrase: '',
-    });
-  } catch (error) {
-    if (isNoIndexedData(error)) return [];
-    throw error;
+  const searchScope = {
+    project,
+    component: componentId,
+    environment: environmentId.toLowerCase(),
+  };
+  const { startTime, endTime } = executionLogWindow(run);
+  const matched: ObsLogEntry[] = [];
+  let from = startTime;
+
+  for (let page = 0; page < EXECUTION_LOG_MAX_PAGES; page++) {
+    let entries: ObsLogEntry[];
+    try {
+      entries = await queryObsLogEntries({
+        searchScope,
+        startTime: from,
+        endTime,
+        limit: EXECUTION_LOG_LIMIT,
+        // Ascending so the drawer reads top-to-bottom, the order the task emitted.
+        sortOrder: 'asc',
+        // A run's output is wanted whole, and the proxy's level filter matches a
+        // level parsed from the line, so it drops output that never labelled one.
+        searchPhrase: '',
+      });
+    } catch (error) {
+      if (isNoIndexedData(error)) break;
+      throw error;
+    }
+
+    // An entry with no podName cannot be attributed, and a concurrent run's
+    // lines would land in this drawer if it were kept.
+    for (const entry of entries) {
+      if (podBelongsToJob(entry.metadata?.podName ?? '', executionId)) matched.push(entry);
+    }
+
+    // A short page is the whole remainder of the window.
+    if (entries.length < EXECUTION_LOG_LIMIT) break;
+    const last = entries[entries.length - 1]?.timestamp;
+    // Both ends of the range are exclusive, so resuming at the last timestamp
+    // cannot repeat an entry already seen. The range has only second
+    // granularity, so this does give up any entry sharing that same second
+    // beyond the page — a bounded loss, where stopping here would drop the rest
+    // of the window outright. An unadvanceable cursor means the whole page
+    // shares one second and there is no way forward.
+    if (!last || last === from) break;
+    from = last;
   }
-  // An entry with no podName cannot be attributed, and a concurrent run's lines
-  // would land in this drawer if it were kept.
-  return entries.filter((e) => podBelongsToJob(e.metadata?.podName ?? '', executionId)).map(toExecutionLogEntry);
+
+  return matched.map(toExecutionLogEntry);
 };
 
 // The runtime-arguments schema is a wip-only feature; OpenChoreo has no equivalent

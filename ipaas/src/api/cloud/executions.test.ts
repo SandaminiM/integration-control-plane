@@ -195,6 +195,58 @@ describe('fetchExecutionLogs', () => {
     expect(await fetchExecutionLogs('scheduled-logger', 'track', JOB, 'development', run)).toEqual([]);
   });
 
+  // The observer applies its entry limit before the console can filter by pod,
+  // and offers no pod or job selector, so a window crowded by concurrent runs
+  // would otherwise hide this run entirely behind the first full page.
+  it('reaches a run whose output starts after a full page of other pods', async () => {
+    resolveComponentProject.mockResolvedValue('default');
+    const crowd = Array.from({ length: 1000 }, (_, i) => entry('scheduled-logger-a1b2c3-29713549-kk9zz', `other ${i}`));
+    crowd[crowd.length - 1] = { ...crowd[crowd.length - 1], timestamp: '2026-09-10T10:00:00Z' };
+    queryObsLogEntries.mockResolvedValueOnce(crowd).mockResolvedValueOnce([entry(`${JOB}-2d2xp`, 'mine')]);
+
+    const logs = await fetchExecutionLogs('scheduled-logger', 'track', JOB, 'development', run);
+
+    expect(logs.map((l) => l.message)).toEqual(['mine']);
+    expect(queryObsLogEntries).toHaveBeenCalledTimes(2);
+    // The next page resumes at the last entry seen; both range ends are
+    // exclusive, so nothing is fetched twice.
+    expect(queryObsLogEntries.mock.calls[1][0].startTime).toBe('2026-09-10T10:00:00Z');
+    expect(queryObsLogEntries.mock.calls[1][0].endTime).toBe(queryObsLogEntries.mock.calls[0][0].endTime);
+  });
+
+  it('stops after a short page rather than asking for more', async () => {
+    resolveComponentProject.mockResolvedValue('default');
+    queryObsLogEntries.mockResolvedValue([entry(`${JOB}-2d2xp`, 'mine')]);
+
+    await fetchExecutionLogs('scheduled-logger', 'track', JOB, 'development', run);
+
+    expect(queryObsLogEntries).toHaveBeenCalledTimes(1);
+  });
+
+  // Every entry of a full page sharing one second leaves no later cursor to ask
+  // for, so the walk has to end rather than repeat the same query forever.
+  it('gives up when the cursor cannot advance', async () => {
+    resolveComponentProject.mockResolvedValue('default');
+    queryObsLogEntries.mockResolvedValue(Array.from({ length: 1000 }, () => entry('other-pod-xyz', 'x')));
+
+    const logs = await fetchExecutionLogs('scheduled-logger', 'track', JOB, 'development', run);
+
+    expect(logs).toEqual([]);
+    expect(queryObsLogEntries.mock.calls.length).toBeLessThanOrEqual(2);
+  });
+
+  // A window busier than the walk allows must still return what it found.
+  it('bounds the walk and keeps the matches it reached', async () => {
+    resolveComponentProject.mockResolvedValue('default');
+    let n = 0;
+    queryObsLogEntries.mockImplementation(() => Promise.resolve([...Array.from({ length: 999 }, () => entry('other-pod-xyz', 'x')), { ...entry(`${JOB}-2d2xp`, `mine ${n}`), timestamp: `2026-09-10T10:${String(n++).padStart(2, '0')}:00Z` }]));
+
+    const logs = await fetchExecutionLogs('scheduled-logger', 'track', JOB, 'development', run);
+
+    expect(queryObsLogEntries).toHaveBeenCalledTimes(10);
+    expect(logs).toHaveLength(10);
+  });
+
   it('propagates any other failure', async () => {
     resolveComponentProject.mockResolvedValue('default');
     queryObsLogEntries.mockRejectedValue(new HttpError(500, 'HTTP 500: {"errorCode":"OBS-V1-L-29"}'));
