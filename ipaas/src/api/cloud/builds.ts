@@ -132,7 +132,6 @@ async function fetchObsBuildLogText(runId: string, run: BffBuildRun): Promise<st
       endTime,
       limit: 500,
       sortOrder: 'asc',
-      logLevels: [],
       searchPhrase: '',
     });
     return rows.length > 0 ? rows.map((r) => r.logLine).join('\n') : null;

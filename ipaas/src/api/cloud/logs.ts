@@ -31,10 +31,6 @@ import type { LogsRequest, ComponentLogsRequest, LogRow } from '../../types/logs
 
 const LOGS_QUERY_PATH = '/wso2cloud-obs/api/v1/logs/query';
 
-// Levels the proxy indexes; sent when the caller does not filter, since the
-// proxy treats an empty logLevels list as "match nothing".
-export const DEFAULT_LOG_LEVELS = ['INFO', 'DEBUG', 'ERROR', 'WARN'];
-
 // Scope fields are independent label filters — any subset narrows the query
 // (e.g. build logs filter on workflowRunName alone).
 export interface ObsLogsScope {
@@ -44,13 +40,18 @@ export interface ObsLogsScope {
   workflowRunName?: string;
 }
 
+// The proxy's logLevels filter matches a level parsed out of the log line, not
+// the level the response carries — unlabelled stdout comes back as INFO yet
+// matches no level. Any value for it therefore hides plain container output,
+// which for a cron task is its entire output. Level filtering belongs on the
+// returned rows, matched against the level actually displayed, so this query
+// deliberately cannot narrow by level.
 export interface ObsLogsQuery {
   searchScope: ObsLogsScope;
   startTime: string;
   endTime: string;
   limit: number;
   sortOrder: 'asc' | 'desc';
-  logLevels?: string[];
   searchPhrase: string;
 }
 
@@ -74,7 +75,7 @@ export interface ObsLogMetadata {
 // Proxy log entry: timestamp/level/log, the nested Kubernetes metadata block,
 // plus whatever extended metadata fields the ingestion pipeline attached (same
 // names as LogRow).
-export interface ObsLogEntry extends Partial<Omit<LogRow, 'timestamp' | 'level' | 'logLine'>> {
+export interface ObsLogEntry extends Partial<Omit<LogRow, 'timestamp' | 'level' | 'logLine' | 'componentName' | 'containerName' | 'podName'>> {
   timestamp?: string;
   level?: string;
   log?: string;
@@ -102,25 +103,21 @@ const toLogRow = (e: ObsLogEntry): LogRow => ({
   componentVersionId: e.componentVersionId ?? '',
   gatewayCode: e.gatewayCode ?? null,
   statusCode: e.statusCode ?? null,
+  // Provenance lives only in the nested metadata block; there is no top-level copy.
+  componentName: e.metadata?.componentName ?? null,
+  containerName: e.metadata?.containerName ?? null,
+  podName: e.metadata?.podName ?? null,
 });
 
-// Raw entries, metadata intact, and the query passed through as given. LogRow
-// drops the Kubernetes block, so callers that need pod or container identity
-// read the query through here instead.
+// Raw entries, metadata intact. LogRow keeps only a flattened subset of the
+// Kubernetes block, so callers needing the whole of it read the query here.
 export async function queryObsLogEntries(query: ObsLogsQuery): Promise<ObsLogEntry[]> {
-  const { logLevels, ...rest } = query;
-  // An absent key and an empty list both mean "every level"; send the key only
-  // when it actually narrows something.
-  const body = logLevels && logLevels.length > 0 ? { ...rest, logLevels } : rest;
-  const json = await obsClient.post<{ logs?: ObsLogEntry[] }>(LOGS_QUERY_PATH, body);
+  const json = await obsClient.post<{ logs?: ObsLogEntry[] }>(LOGS_QUERY_PATH, query);
   return json?.logs ?? [];
 }
 
 export async function queryObsLogs(query: ObsLogsQuery): Promise<LogRow[]> {
-  const entries = await queryObsLogEntries({
-    ...query,
-    logLevels: query.logLevels && query.logLevels.length > 0 ? query.logLevels : DEFAULT_LOG_LEVELS,
-  });
+  const entries = await queryObsLogEntries(query);
   return entries.map(toLogRow);
 }
 
@@ -160,18 +157,16 @@ export function fetchLogs(req: LogsRequest, _logsApiUrl: string): Promise<LogRow
     endTime: req.endTime,
     limit: req.limit,
     sortOrder: req.sort,
-    logLevels: req.logLevels,
     searchPhrase: req.searchPhrase,
   });
 }
 
 export async function fetchComponentLogs(req: ComponentLogsRequest, _logsApiUrl: string): Promise<LogRow[]> {
-  // ComponentLogsRequest carries no project field, but the proxy requires it;
-  // resolve the owning project from the component's builds.
   const project = await resolveComponentProject(req.componentId);
+  if (!project) return [];
   return queryObsLogs({
     searchScope: {
-      ...(project ? { project } : {}),
+      project,
       component: req.componentId,
       environment: req.environmentId.toLowerCase(),
     },
@@ -179,7 +174,6 @@ export async function fetchComponentLogs(req: ComponentLogsRequest, _logsApiUrl:
     endTime: req.endTime,
     limit: req.limit,
     sortOrder: req.sort,
-    logLevels: req.logLevels,
     searchPhrase: req.searchPhrase,
   });
 }

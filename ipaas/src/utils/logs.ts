@@ -61,6 +61,9 @@ export const DISPLAY_FIELDS: { key: keyof LogRow; label: string }[] = [
   { key: 'logContext', label: 'Log Context' },
   { key: 'componentVersion', label: 'Component Version' },
   { key: 'componentVersionId', label: 'Component Version ID' },
+  { key: 'componentName', label: 'Integration' },
+  { key: 'containerName', label: 'Container' },
+  { key: 'podName', label: 'Pod' },
 ];
 
 export function levelColor(level: string): { bg: string; text: string } {
@@ -135,4 +138,27 @@ export function formatExecutionLogLine(entry: ExecutionLogEntry, showContainer: 
   if (entry.level) parts.push(entry.level);
   parts.push(entry.message);
   return parts.join(' ');
+}
+
+/** Which rows a log list should show, for narrowing a source cannot do itself. */
+export interface LogRowFilter {
+  /** Display levels to keep. Absent or empty keeps every row. */
+  levels?: string[];
+  /** Component ids whose rows belong in this list. Absent or empty keeps every row. */
+  componentIds?: string[];
+}
+
+/**
+ * Narrows fetched rows to what the filters admit.
+ */
+export function filterLogRows(rows: LogRow[], { levels, componentIds }: LogRowFilter): LogRow[] {
+  const wantedLevels = levels?.length ? new Set(levels.map((l) => l.toUpperCase())) : null;
+  const ownedComponents = componentIds?.length ? new Set(componentIds) : null;
+  // Returning the same array keeps a caller's memoized identity stable.
+  if (!wantedLevels && !ownedComponents) return rows;
+  return rows.filter((r) => {
+    if (wantedLevels && !wantedLevels.has((r.level ?? '').toUpperCase())) return false;
+    if (ownedComponents && r.componentName && !ownedComponents.has(r.componentName)) return false;
+    return true;
+  });
 }

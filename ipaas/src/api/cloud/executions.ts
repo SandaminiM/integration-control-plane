@@ -234,8 +234,8 @@ export const fetchExecutionLogs = async (componentId: string, _deploymentTrackId
       limit: EXECUTION_LOG_LIMIT,
       // Ascending so the drawer reads top-to-bottom, the order the task emitted.
       sortOrder: 'asc',
-      // No level filter: a run's output is wanted whole, and filtering by level
-      // drops lines whose source never labelled one (see DEFAULT_LOG_LEVELS).
+      // A run's output is wanted whole, and the proxy's level filter matches a
+      // level parsed from the line, so it drops output that never labelled one.
       searchPhrase: '',
     });
   } catch (error) {
