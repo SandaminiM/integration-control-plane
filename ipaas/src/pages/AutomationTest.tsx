@@ -382,7 +382,16 @@ export default function AutomationTest({ org, project, component }: ComponentSco
           <Stack gap={4}>
             <ExecutionArgsView execArgs={executionArgs} />
             <TestStepper hasTriggered={!!currentRunId} status={execution?.status} />
-            <ExecutionLogsPanel componentId={comp?.id ?? ''} deploymentTrackId={trackId} environmentId={envId} executionId={execution?.id ?? ''} isRunning={!!currentRunId && !isTerminal} expanded={logsOpen} onToggle={setLogsOpen} />
+            <ExecutionLogsPanel
+              componentId={comp?.id ?? ''}
+              deploymentTrackId={trackId}
+              environmentId={envId}
+              executionId={execution?.id ?? ''}
+              run={execution ?? undefined}
+              isRunning={!!currentRunId && !isTerminal}
+              expanded={logsOpen}
+              onToggle={setLogsOpen}
+            />
           </Stack>
         </Box>
       </Box>

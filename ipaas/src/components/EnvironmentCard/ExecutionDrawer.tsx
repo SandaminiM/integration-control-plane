@@ -24,6 +24,7 @@ import { useExecutionArguments, useExecutionLogs } from '../../hooks/useExecutio
 import { IS_CLOUD } from '../../features';
 import type { TaskExecution } from '../../types/executions';
 import { executionIdTail } from '../../utils/executionStatus';
+import { formatExecutionLogLine, spansMultipleContainers } from '../../utils/logs';
 import { useTriggerComponent } from '../../hooks/useExecutions';
 
 interface ExecutionDrawerProps {
@@ -126,13 +127,18 @@ export default function ExecutionDrawer({ execution, open, onClose, onRunSuccess
 
   const { data: fetchedArgs, isLoading: argsLoading } = useExecutionArguments(execution?.runId ?? '', componentId, releaseId, open && tab === 1 && !!execution?.runId);
 
-  const { data: logs = [], isLoading: logsLoading } = useExecutionLogs(componentId, deploymentTrackId, execution?.id ?? '', environmentId, open && view === 'logs' && !!execution?.id);
+  const { data: logs = [], isLoading: logsLoading } = useExecutionLogs(componentId, deploymentTrackId, execution?.id ?? '', environmentId, open && view === 'logs' && !!execution?.id, execution ?? undefined);
+
+  const logLines = useMemo(() => {
+    const showContainer = spansMultipleContainers(logs);
+    return logs.map((e) => formatExecutionLogLine(e, showContainer));
+  }, [logs]);
 
   const filteredLogs = useMemo(() => {
-    if (!logFilterMode || !logSearch.trim()) return logs;
+    if (!logFilterMode || !logSearch.trim()) return logLines;
     const lower = logSearch.toLowerCase();
-    return logs.filter((e) => `${e.timestamp} ${e.message}`.toLowerCase().includes(lower));
-  }, [logs, logSearch, logFilterMode]);
+    return logLines.filter((line) => line.toLowerCase().includes(lower));
+  }, [logLines, logSearch, logFilterMode]);
 
   // Populate editable args from fetched data
   useEffect(() => {
@@ -278,14 +284,11 @@ export default function ExecutionDrawer({ execution, open, onClose, onRunSuccess
               </Box>
             ) : (
               <Box component="pre" sx={{ m: 0, fontFamily: 'monospace', fontSize: '0.75rem', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-                {filteredLogs.map((entry, i) => {
-                  const line = entry.timestamp ? `${entry.timestamp} ${entry.message}` : entry.message;
-                  return (
-                    <Box key={i} component="span" sx={{ display: 'block' }}>
-                      {logSearch && !logFilterMode ? highlightText(line, logSearch) : line}
-                    </Box>
-                  );
-                })}
+                {filteredLogs.map((line, i) => (
+                  <Box key={i} component="span" sx={{ display: 'block' }}>
+                    {logSearch && !logFilterMode ? highlightText(line, logSearch) : line}
+                  </Box>
+                ))}
               </Box>
             )}
           </Box>

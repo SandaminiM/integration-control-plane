@@ -29,6 +29,7 @@
  */
 
 import type { BuildRunLogs, BuildStage, BuildStep } from '../../types/build';
+import type { LogRow } from '../../types/logs';
 import { bff, q, seg } from './_client';
 import { queryObsLogs } from './logs';
 
@@ -118,6 +119,27 @@ function buildRunLogsFromTasks(run: BffBuildRun, rawBuildLog: string | null): Bu
   return { init: mk('init', null), build: mk('build', encodeLog(rawBuildLog)), deploy: mk('deploy', null) };
 }
 
+// The most entries the observer will return for one query; asking for more is
+// rejected outright.
+const BUILD_LOG_LIMIT = 1000;
+
+/**
+ * Renders queried rows as the build's log text, oldest line first.
+ *
+ * Rows arrive newest-first because a build that outruns the query limit has to
+ * lose one end of its output, and the end worth keeping is the last one — a
+ * failure reports itself there. Hitting the limit is called out in the text, so
+ * a truncated log cannot be misread as a build that began mid-stream.
+ */
+export function buildLogTextFrom(rows: LogRow[]): string | null {
+  if (rows.length === 0) return null;
+  const lines = rows.map((r) => r.logLine).reverse();
+  if (rows.length >= BUILD_LOG_LIMIT) {
+    lines.unshift(`... earlier output omitted - showing the last ${BUILD_LOG_LIMIT} lines`);
+  }
+  return lines.join('\n');
+}
+
 // Fetch the build's log lines from the observability proxy, keyed by the
 // WorkflowRun name. The time window starts at the run's start (30 days back
 // when unknown) and is padded 10 minutes past completion to capture logs that
@@ -130,12 +152,11 @@ async function fetchObsBuildLogText(runId: string, run: BffBuildRun): Promise<st
       searchScope: { workflowRunName: runId },
       startTime,
       endTime,
-      limit: 500,
-      sortOrder: 'asc',
-      logLevels: [],
+      limit: BUILD_LOG_LIMIT,
+      sortOrder: 'desc',
       searchPhrase: '',
     });
-    return rows.length > 0 ? rows.map((r) => r.logLine).join('\n') : null;
+    return buildLogTextFrom(rows);
   } catch {
     return null;
   }

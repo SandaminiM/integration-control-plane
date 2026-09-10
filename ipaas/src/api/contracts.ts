@@ -117,7 +117,7 @@ import type { Cluster, PdpManagerPdp } from '../types/dataPlanes';
 import type { ClusterPod as RuntimeClusterPod, PodEvent as RuntimePodEvent, PodLogOptions as RuntimePodLogOptions, RuntimeMetrics, RuntimeReleaseDetails } from '../types/runtime';
 import type { CreateGitCredentialInput, CredentialDeleteEligibility, GitCredential } from '../types/credentials';
 import type { Environment, CloudDataPlane, EnvironmentInput, EnvironmentTemplate, CreateEnvironmentData, EnvDeletionEligibility } from '../types/environment';
-import type { StopScheduleInput, ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../types/executions';
+import type { StopScheduleInput, ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionLogWindow, ExecutionArgument, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../types/executions';
 import type { SubscriptionList, ComponentLimits } from '../types/subscription';
 import type { ConfigGroup, ConfigGroupNameAvailability, ConfigGroupUsage, CreateConfigGroupRequest, EditConfigGroupRequest } from '../types/configGroups';
 import type { Certificate, CreateCertificateInput } from '../types/certificates';
@@ -618,7 +618,13 @@ export interface ExecutionsApi {
   fetchTaskExecutions(releaseId: string): Promise<TaskExecution[]>;
   fetchRuntimeArguments(componentId: string, deploymentTrackId: string, commitHash: string): Promise<RuntimeArgument[]>;
   fetchExecutionArguments(runId: string, componentId: string, releaseId: string): Promise<ExecutionArgument[]>;
-  fetchExecutionLogs(componentId: string, deploymentTrackId: string, executionId: string, environmentId: string): Promise<ExecutionLogEntry[]>;
+  /**
+   * `run` carries the execution's bounds for backends that cannot filter logs
+   * by run — cloud queries the observability proxy, whose log search scope
+   * reaches only component + environment. Optional because backends addressing
+   * a run directly have no use for it.
+   */
+  fetchExecutionLogs(componentId: string, deploymentTrackId: string, executionId: string, environmentId: string, run?: ExecutionLogWindow): Promise<ExecutionLogEntry[]>;
   fetchTaskExecutionCount(releaseId: string): Promise<number | null>;
   updateJobConfigs(input: UpdateJobConfigsInput): Promise<boolean>;
   /** Stops the CronJob's schedule. Cloud leaves the deployment untouched; wip clears the cron via its stop mutation. */

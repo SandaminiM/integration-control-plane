@@ -26,7 +26,7 @@ import { useComponents } from '../hooks/useComponents';
 import { useEnvironments, useCloudDataPlanes } from '../hooks/useEnvironments';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useProjectMetricsModel, rangeToIso } from '../hooks/useObservabilityMetrics';
-import { useInfiniteLogs } from '../hooks/useLogs';
+import { useInfiniteLogs, useVisibleLogs } from '../hooks/useLogs';
 import MetricsHeader from '../components/Observability/MetricsHeader';
 import ProjectMetricsDiagram from '../components/Observability/ProjectMetricsDiagram';
 import LogsPanel from '../components/Logs/LogsPanel';
@@ -100,7 +100,7 @@ export default function ProjectMetrics(scope: ProjectScope): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, componentIdsKey, primaryEnv?.id, logsFrom, logsTo, logsApiUrl, project?.region]);
   const logs = useInfiniteLogs(logsOpen ? logsRequest : null, false, logsApiUrl);
-  const logItems = useMemo(() => logs.data?.pages.flat() ?? [], [logs.data]);
+  const logItems = useVisibleLogs(logs.data, { componentIds: components.map((c) => c.id) });
 
   if (loadingProject || loadingComponents || loadingEnvironments) {
     return (
