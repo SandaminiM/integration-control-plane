@@ -17,6 +17,7 @@
  */
 
 import type { LogRow } from '../types/logs';
+import type { ExecutionLogEntry } from '../types/executions';
 
 export const LOG_LEVELS = ['INFO', 'WARN', 'ERROR', 'DEBUG'] as const;
 
@@ -113,4 +114,25 @@ export function filterLogLines(logs: string, keyword: string, filterMode: boolea
   if (!filterMode || !keyword.trim()) return lines;
   const lower = keyword.toLowerCase();
   return lines.filter((line) => line.toLowerCase().includes(lower));
+}
+
+/**
+ * True when the entries come from more than one container, which is what makes
+ * a per-line container tag worth showing — an init container's output is
+ * otherwise indistinguishable from the task's own.
+ */
+export function spansMultipleContainers(entries: ExecutionLogEntry[]): boolean {
+  const first = entries.find((e) => e.container)?.container;
+  if (!first) return false;
+  return entries.some((e) => e.container && e.container !== first);
+}
+
+/** Renders one execution log entry as the single line the drawers display and search over. */
+export function formatExecutionLogLine(entry: ExecutionLogEntry, showContainer: boolean): string {
+  const parts: string[] = [];
+  if (entry.timestamp) parts.push(entry.timestamp);
+  if (showContainer && entry.container) parts.push(`[${entry.container}]`);
+  if (entry.level) parts.push(entry.level);
+  parts.push(entry.message);
+  return parts.join(' ');
 }

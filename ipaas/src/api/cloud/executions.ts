@@ -22,13 +22,14 @@
  * OpenChoreo scopes scheduled tasks per environment, so the schedule spec and job
  * history are keyed by component + env (+ project), not by releaseId — the legacy
  * releaseId argument is carried only to satisfy the shared contract and is ignored
- * here. Per-execution logs remain safe-defaulted (pod-log plumbing via
- * resource-tree is not wired yet), and triggerTask (MI) is unsupported.
+ * here.
  */
 
 import { bff, q, seg } from './_client';
-import type { StopScheduleInput, ExecutionConfigs, TaskExecution, ExecutionLogEntry, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../../types/executions';
+import { queryObsLogEntries, resolveComponentProject, type ObsLogEntry } from './logs';
+import type { StopScheduleInput, ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionLogWindow, UpdateJobConfigsInput, TriggerComponentInput, TriggerRunResult, RuntimeArgument } from '../../types/executions';
 import type { TriggerTaskInput } from '../../types/artifact';
+import { HttpError } from '../../types/http';
 
 interface ExecutionArgument {
   argumentName: string;
@@ -144,8 +145,107 @@ export const fetchExecutionArguments = (runId: string, componentId: string, _rel
     .then((r) => r ?? [])
     .catch(() => []);
 
-// awaits: BFF execution-log plumbing (pod logs via resource-tree).
-export const fetchExecutionLogs = (_componentId: string, _deploymentTrackId: string, _executionId: string, _environmentId: string): Promise<ExecutionLogEntry[]> => Promise.resolve([]);
+// Padding around a run's bounds. The history row's startTime is the earliest
+// Kubernetes event for the Job, which the kubelet's image-pull and startup
+// lines can predate; its completionTime is the Job's Completed event, which the
+// container's final flush can trail. Both are also subject to ingestion lag.
+const LOG_WINDOW_LEAD_MS = 60_000;
+const LOG_WINDOW_TRAIL_MS = 5 * 60_000;
+
+const LOG_WINDOW_FALLBACK_MS = 24 * 3600_000;
+
+// The observer's own per-query ceiling.
+const EXECUTION_LOG_LIMIT = 1000;
+
+// The observer answers a scoped query with this code, as a 5xx, when the org
+// has nothing indexed at all. That is an empty result, not a failure.
+const NO_INDEXED_DATA_CODE = 'OBS-V1-L-04';
+
+// TaskExecution timestamps are unix seconds in string form (see toTaskExecution).
+function fromUnixSeconds(value: string | undefined): number | undefined {
+  const seconds = Number(value);
+  if (!value || !Number.isFinite(seconds)) return undefined;
+  return seconds * 1000;
+}
+
+/**
+ * The observer window to read a single run's logs over. A run still in flight
+ * (no completionTime) reads up to now.
+ */
+export function executionLogWindow(run?: ExecutionLogWindow): { startTime: string; endTime: string } {
+  const now = Date.now();
+  const started = fromUnixSeconds(run?.startTime);
+  const completed = fromUnixSeconds(run?.completionTime);
+  if (started === undefined) {
+    return { startTime: new Date(now - LOG_WINDOW_FALLBACK_MS).toISOString(), endTime: new Date(now).toISOString() };
+  }
+  const end = completed === undefined ? now : completed + LOG_WINDOW_TRAIL_MS;
+  return {
+    startTime: new Date(started - LOG_WINDOW_LEAD_MS).toISOString(),
+    endTime: new Date(Math.max(end, started)).toISOString(),
+  };
+}
+
+/**
+ * Whether a pod's logs belong to the given Job. A Job names its pods
+ * `<jobName>-<suffix>`, which is the only link between a log line and a run —
+ * the observer's log search scope stops at component + environment. The
+ * trailing hyphen is what keeps job `x-297` from claiming pod `x-2971-abc`.
+ */
+export function podBelongsToJob(podName: string, jobId: string): boolean {
+  if (!podName || !jobId) return false;
+  return podName === jobId || podName.startsWith(`${jobId}-`);
+}
+
+export function toExecutionLogEntry(e: ObsLogEntry): ExecutionLogEntry {
+  return {
+    timestamp: e.timestamp ?? '',
+    message: e.log ?? '',
+    level: e.level ?? '',
+    container: e.metadata?.containerName ?? '',
+  };
+}
+
+function isNoIndexedData(error: unknown): boolean {
+  return error instanceof HttpError && error.status >= 500 && error.message.includes(NO_INDEXED_DATA_CODE);
+}
+
+/**
+ * One execution's container logs, queried from the observability proxy and
+ * narrowed to the pods the run owns. `run` supplies the time window; without it
+ * the query falls back to a fixed lookback and may find nothing for an older
+ * run.
+ */
+export const fetchExecutionLogs = async (componentId: string, _deploymentTrackId: string, executionId: string, environmentId: string, run?: ExecutionLogWindow): Promise<ExecutionLogEntry[]> => {
+  if (!componentId || !executionId || !environmentId) return [];
+  // The observer rejects a component-scoped query that carries no project, and
+  // a component with no build to resolve one from has never produced a run.
+  const project = await resolveComponentProject(componentId);
+  if (!project) return [];
+  let entries: ObsLogEntry[];
+  try {
+    entries = await queryObsLogEntries({
+      searchScope: {
+        project,
+        component: componentId,
+        environment: environmentId.toLowerCase(),
+      },
+      ...executionLogWindow(run),
+      limit: EXECUTION_LOG_LIMIT,
+      // Ascending so the drawer reads top-to-bottom, the order the task emitted.
+      sortOrder: 'asc',
+      // No level filter: a run's output is wanted whole, and filtering by level
+      // drops lines whose source never labelled one (see DEFAULT_LOG_LEVELS).
+      searchPhrase: '',
+    });
+  } catch (error) {
+    if (isNoIndexedData(error)) return [];
+    throw error;
+  }
+  // An entry with no podName cannot be attributed, and a concurrent run's lines
+  // would land in this drawer if it were kept.
+  return entries.filter((e) => podBelongsToJob(e.metadata?.podName ?? '', executionId)).map(toExecutionLogEntry);
+};
 
 // The runtime-arguments schema is a wip-only feature; OpenChoreo has no equivalent
 // endpoint, so surface it as unsupported rather than fabricating an empty schema.

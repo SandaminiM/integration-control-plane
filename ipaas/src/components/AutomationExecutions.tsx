@@ -275,7 +275,7 @@ export default function AutomationExecutions({
         environmentId={environmentId}
       />
 
-      <LogsDrawer open={!!logsExecution} onClose={() => setLogsExecution(null)} executionId={logsExecution?.id ?? ''} componentId={componentId} deploymentTrackId={deploymentTrackId} environmentId={environmentId} />
+      <LogsDrawer open={!!logsExecution} onClose={() => setLogsExecution(null)} executionId={logsExecution?.id ?? ''} componentId={componentId} deploymentTrackId={deploymentTrackId} environmentId={environmentId} run={logsExecution ?? undefined} />
     </Fragment>
   );
 }

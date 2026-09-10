@@ -18,7 +18,7 @@
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchExecutionConfigs, fetchTaskExecutions, fetchRuntimeArguments, fetchExecutionArguments, fetchExecutionLogs, fetchTaskExecutionCount, updateJobConfigs, stopSchedule, triggerTask, triggerComponentRun } from '#api/executions';
-import type { StopScheduleInput, ExecutionConfigs, TaskExecution, UpdateJobConfigsInput, TriggerComponentInput, RuntimeArgument } from '../types/executions';
+import type { StopScheduleInput, ExecutionConfigs, TaskExecution, ExecutionLogEntry, ExecutionLogWindow, UpdateJobConfigsInput, TriggerComponentInput, RuntimeArgument } from '../types/executions';
 import type { TriggerTaskInput } from '../types/artifact';
 import { IS_CLOUD } from '../features';
 
@@ -31,6 +31,7 @@ import { IS_CLOUD } from '../features';
 const fetchExecutionConfigsScoped: (componentId: string, releaseId: string, envId: string) => Promise<ExecutionConfigs | null> = fetchExecutionConfigs;
 const fetchTaskExecutionsScoped: (releaseId: string, componentId: string, envId: string, projectId: string) => Promise<TaskExecution[]> = fetchTaskExecutions;
 const fetchTaskExecutionCountScoped: (releaseId: string, componentId: string, envId: string, projectId: string) => Promise<number | null> = fetchTaskExecutionCount;
+const fetchExecutionLogsScoped: (componentId: string, deploymentTrackId: string, executionId: string, environmentId: string, run?: ExecutionLogWindow) => Promise<ExecutionLogEntry[]> = fetchExecutionLogs;
 
 // The cloud product keys schedules per environment and has no systemapis base URL,
 // whereas wip keys by releaseId and reaches the observability API through
@@ -78,12 +79,30 @@ export function useExecutionArguments(runId: string, componentId: string, releas
   });
 }
 
-export function useExecutionLogs(componentId: string, deploymentTrackId: string, executionId: string, environmentId: string, enabled: boolean) {
+// `run` bounds the query to the execution; cloud needs it because the
+// observability proxy filters logs by component and time, not by run.
+//
+// The cloud branch drops the systemApisBaseUrl and deploymentTrackId guards:
+// neither exists in this deployment (SYSTEM_APIS_BASE_URL is empty), so keeping
+// them would leave the query permanently disabled. The run's completionTime is
+// appended last so it participates in the cache key — a run still in flight
+// refetches as it finishes — while leaving the leading key parts intact for
+// callers that invalidate by prefix.
+export function useExecutionLogs(componentId: string, deploymentTrackId: string, executionId: string, environmentId: string, enabled: boolean, run?: ExecutionLogWindow) {
   const baseUrl = window.API_CONFIG?.systemApisBaseUrl ?? '';
+  const wiring = IS_CLOUD
+    ? {
+        queryKey: ['executionLogs', componentId, deploymentTrackId, executionId, environmentId, run?.completionTime ?? ''],
+        queryFn: () => fetchExecutionLogsScoped(componentId, deploymentTrackId, executionId, environmentId, run),
+        enabled: enabled && !!componentId && !!executionId && !!environmentId,
+      }
+    : {
+        queryKey: ['executionLogs', componentId, deploymentTrackId, executionId, environmentId, baseUrl],
+        queryFn: () => fetchExecutionLogs(componentId, deploymentTrackId, executionId, environmentId),
+        enabled: enabled && !!baseUrl && !!componentId && !!deploymentTrackId && !!executionId && !!environmentId,
+      };
   return useQuery({
-    queryKey: ['executionLogs', componentId, deploymentTrackId, executionId, environmentId, baseUrl],
-    queryFn: () => fetchExecutionLogs(componentId, deploymentTrackId, executionId, environmentId),
-    enabled: enabled && !!baseUrl && !!componentId && !!deploymentTrackId && !!executionId && !!environmentId,
+    ...wiring,
     retry: false,
     staleTime: 30000,
   });
