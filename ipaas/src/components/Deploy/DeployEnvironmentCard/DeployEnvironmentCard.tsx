@@ -89,6 +89,8 @@ export default function DeployEnvironmentCard({
         let deploymentStatusV2: DeploymentStatus;
         if (!rawDeployment.releaseId) {
           deploymentStatusV2 = DeploymentStatus.NotDeployed;
+        } else if (flags.isAutomation) {
+          deploymentStatusV2 = rawDeployment.cron ? DeploymentStatus.Active : DeploymentStatus.Suspended;
         } else if (raw === 'ACTIVE') {
           deploymentStatusV2 = DeploymentStatus.Active;
         } else if (raw === 'SUSPENDED') {
@@ -97,8 +99,6 @@ export default function DeployEnvironmentCard({
           deploymentStatusV2 = DeploymentStatus.InProgress;
         } else if (raw === 'ERROR') {
           deploymentStatusV2 = DeploymentStatus.Error;
-        } else if (flags.isAutomation) {
-          deploymentStatusV2 = rawDeployment.cron ? DeploymentStatus.Active : DeploymentStatus.Suspended;
         } else {
           deploymentStatusV2 = DeploymentStatus.Active;
         }
@@ -287,13 +287,13 @@ export default function DeployEnvironmentCard({
   const isSuspended = status === DeploymentStatus.Suspended;
   // Keep button visible while in-flight. Suppress the opposing button while an action is in-flight
   // to prevent both showing simultaneously when status transitions mid-flight (header scatter).
-  const showStop = ((isActive || isInProgress) && hasRelease && !isRedeployPending) || isStopPending;
+  const showStop = !flags.isAutomation && (((isActive || isInProgress) && hasRelease && !isRedeployPending) || isStopPending);
   // `isRedeployPending` keeps a button visible mid-flight, but it must be the one
   // that was clicked: a redeploy started from ERROR stays on Redeploy, not Start.
-  const showStart = (isSuspended && hasRelease && !isStopPending) || (isRedeployPending && !isError);
+  const showStart = !flags.isAutomation && ((isSuspended && hasRelease && !isStopPending) || (isRedeployPending && !isError));
   // A failed deployment is already not serving, so stopping it achieves nothing —
   // offer the recovery action instead, and hold it through the redeploy.
-  const showRedeploy = isError && hasRelease && !isStopPending;
+  const showRedeploy = !flags.isAutomation && isError && hasRelease && !isStopPending;
   const showPromote = !!nextEnvId;
 
   return (

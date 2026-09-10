@@ -17,10 +17,11 @@
  */
 
 import { Box, Divider, Typography } from '@wso2/oxygen-ui';
-import type { ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useExecutionConfigs } from '../../../hooks/useExecutions';
 import { describeCron } from '../../../utils/cronUtils';
+import * as styles from './EnvCardBody.styles';
 import type { EnvCardBodyProps } from '../../../types/integration';
 import EnvCardSkeleton from '../_shared/EnvCardSkeleton';
 import AutomationExecutions from '../../AutomationExecutions';
@@ -52,8 +53,8 @@ export default function EnvCardBody({
 }: EnvCardBodyProps): ReactNode {
   const queryClient = useQueryClient();
   const { data: scheduleConfig } = useExecutionConfigs(component.id, releaseId, env.id);
-  const scheduleDescription = scheduleConfig?.cronjobFrequency ? `${describeCron(scheduleConfig.cronjobFrequency)}, in time zone ${scheduleConfig.cronjobTimezone || 'UTC'}` : null;
-
+  const hasSchedule = !!scheduleConfig?.cronjobFrequency;
+  const scheduleDescription = hasSchedule ? `${describeCron(scheduleConfig!.cronjobFrequency!)}, in time zone ${scheduleConfig?.cronjobTimezone || 'UTC'}` : 'This automation doesn’t have an active schedule. Add one to run it automatically.';
   const showInsights = !!env.critical && !!releaseId;
 
   if (loadingDeployment) return <EnvCardSkeleton />;
@@ -62,8 +63,8 @@ export default function EnvCardBody({
     <>
       <Divider sx={{ my: 2 }} />
 
-      {hasDeployment && scheduleDescription && (
-        <Box sx={{ bgcolor: 'action.selected', borderRadius: 1, px: 2, py: 1, mb: 2 }}>
+      {hasDeployment && (
+        <Box sx={styles.scheduleDescription}>
           <Typography variant="body2">{scheduleDescription}</Typography>
         </Box>
       )}

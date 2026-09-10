@@ -23,14 +23,14 @@ import type { JSX } from 'react';
 import { getDisplayLabel, isSupportedIntegration } from '../constants/integrations';
 
 export default function IntegrationTypesCard({ components }: { components: Component[] }): JSX.Element {
-  const hasNonIntegrations = components.some((c) => !isSupportedIntegration(c.displayType ?? '', c.componentSubType ?? null));
+  const hasNonIntegrations = components.some((c) => !isSupportedIntegration(c.displayType ?? '', c.componentSubType ?? null, c.buildpackType));
 
   let rows: { label: string; count: number }[];
   if (hasNonIntegrations) {
     const integrationCounts: Record<string, number> = {};
     let nonIntegrationCount = 0;
     for (const c of components) {
-      if (isSupportedIntegration(c.displayType ?? '', c.componentSubType ?? null)) {
+      if (isSupportedIntegration(c.displayType ?? '', c.componentSubType ?? null, c.buildpackType)) {
         const label = getDisplayLabel(c.displayType ?? '', c.componentSubType ?? null);
         integrationCounts[label] = (integrationCounts[label] || 0) + 1;
       } else {

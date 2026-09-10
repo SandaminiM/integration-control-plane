@@ -18,6 +18,7 @@
 
 import { Alert, Box, Button, CircularProgress, FormHelperText, Grid, IconButton, InputAdornment, Link, MenuItem, PageContent, Skeleton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, GitBranch, RefreshCw, GitHub } from '@wso2/oxygen-ui-icons-react';
+import MenuSearchField, { MENU_SEARCH_THRESHOLD } from '../components/MenuSearchField';
 import { useState, useEffect, useMemo, useRef, type JSX } from 'react';
 import { useLocation } from 'react-router';
 import { useAppNavigate } from '../hooks/useAppNavigate';
@@ -120,6 +121,8 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
   const [parsedRepo, setParsedRepo] = useState('');
 
   const [selectedBranch, setSelectedBranch] = useState('');
+  const [repoSearch, setRepoSearch] = useState('');
+  const [branchSearch, setBranchSearch] = useState('');
   const [subPath, setSubPath] = useState('/');
   const [displayName, setDisplayName] = useState('');
   const [description, setDescription] = useState('');
@@ -624,6 +627,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
                 fullWidth
                 disabled={!selectedOrg || isReposLoading}
                 slotProps={{
+                  select: { onClose: () => setRepoSearch('') },
                   input: {
                     startAdornment: (
                       <InputAdornment position="start">
@@ -632,12 +636,15 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
                     ),
                   },
                 }}>
+                {reposForOrg.length > MENU_SEARCH_THRESHOLD && <MenuSearchField key="repo-search" value={repoSearch} onChange={setRepoSearch} placeholder="Search repositories" />}
                 {!isCredentialMode && repositoryActionItems(!!githubInstallUrl)}
-                {reposForOrg.map((repo) => (
-                  <MenuItem key={repo} value={repo}>
-                    {repo}
-                  </MenuItem>
-                ))}
+                {reposForOrg
+                  .filter((repo) => repo.toLowerCase().includes(repoSearch.trim().toLowerCase()))
+                  .map((repo) => (
+                    <MenuItem key={repo} value={repo}>
+                      {repo}
+                    </MenuItem>
+                  ))}
               </TextField>
               {isAuthenticated && !isCredentialMode && (
                 <Tooltip title="Refresh repositories" placement="top">
@@ -666,6 +673,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
               fullWidth
               disabled={!activeRepo || isBranchesLoading}
               slotProps={{
+                select: { onClose: () => setBranchSearch('') },
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
@@ -674,12 +682,15 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
                   ),
                 },
               }}>
-              {(branches ?? []).map((b) => (
-                <MenuItem key={b.name} value={b.name}>
-                  {b.name}
-                  {b.isDefault ? ' (default)' : ''}
-                </MenuItem>
-              ))}
+              {(branches ?? []).length > MENU_SEARCH_THRESHOLD && <MenuSearchField key="branch-search" value={branchSearch} onChange={setBranchSearch} placeholder="Search branches" />}
+              {(branches ?? [])
+                .filter((b) => b.name.toLowerCase().includes(branchSearch.trim().toLowerCase()))
+                .map((b) => (
+                  <MenuItem key={b.name} value={b.name}>
+                    {b.name}
+                    {b.isDefault ? ' (default)' : ''}
+                  </MenuItem>
+                ))}
             </TextField>
             <Tooltip title="Refresh branches" placement="top">
               <Box component="span" sx={FIELD_REFRESH_WRAP_SX}>
@@ -893,7 +904,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
           <Typography variant="h5" sx={{ mb: 2, mt: 5 }}>
             Technology
           </Typography>
-          <TechnologySelector selected={selectedTechnology} detectedMode={detectedMode} enabled={showBranchAndSubPath} onSelect={setSelectedTechnology} />          
+          <TechnologySelector selected={selectedTechnology} detectedMode={detectedMode} enabled={showBranchAndSubPath} onSelect={setSelectedTechnology} />
           {IS_CLOUD && selectedTechnology === 'BI' && (
             <>
               {!ballerinaTokenStatus?.configured && (

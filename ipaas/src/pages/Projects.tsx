@@ -32,14 +32,17 @@ import { projectHomeUrl } from '../paths';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { Permissions } from '../constants/permissions';
 import Authorized from '../components/Authorized';
+import * as styles from './Projects.styles';
 
 function ProjectCard({ project, onClick, onSettingsClick }: { project: Project; onClick: () => void; onSettingsClick: () => void }) {
   const deleting = project.deleting === true;
   return (
     <Tooltip title={deleting ? 'This project is being deleted' : ''}>
-      <Card variant="outlined" aria-disabled={deleting || undefined} sx={deleting ? { opacity: 0.38, cursor: 'default' } : { cursor: 'pointer', '&:hover': { boxShadow: 2 } }} onClick={deleting ? undefined : onClick}>
+      <Card variant="outlined" aria-disabled={deleting || undefined} sx={deleting ? styles.cardDeleting : styles.card} onClick={deleting ? undefined : onClick}>
         <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2.5 }}>
-          <Avatar sx={{ bgcolor: 'action.hover', color: 'text.secondary', width: 48, height: 48 }}>{project.name[0].toUpperCase()}</Avatar>
+          <Avatar variant="rounded" sx={{ bgcolor: 'action.hover', color: 'text.secondary', width: 48, height: 48, borderRadius: 1 }}>
+            {project.name[0].toUpperCase()}
+          </Avatar>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, flex: 1 }}>
             {project.name}
           </Typography>
@@ -117,7 +120,7 @@ export default function Projects(scope: OrgScope): JSX.Element {
   const projectsView =
     view === 'list' ? (
       <ListingTable.Container disablePaper>
-        <ListingTable variant="card" density="compact">
+        <ListingTable variant="card" density="compact" sx={{ '& .MuiTableBody-root .MuiTableCell-root': { py: 2 } }}>
           <ListingTable.Head>
             <ListingTable.Row>
               <ListingTable.Cell width={300}>Name</ListingTable.Cell>
@@ -142,7 +145,9 @@ export default function Projects(scope: OrgScope): JSX.Element {
                     onClick={deleting ? undefined : () => navigate(projectHomeUrl(scope.org, p.handler))}>
                     <ListingTable.Cell>
                       <Stack direction="row" alignItems="center" gap={1.5}>
-                        <Avatar sx={{ width: 32, height: 32, fontSize: 14, bgcolor: 'action.hover', color: 'text.primary' }}>{p.name[0].toUpperCase()}</Avatar>
+                        <Avatar variant="rounded" sx={{ width: 32, height: 32, borderRadius: 1, fontSize: 14, bgcolor: 'action.hover', color: 'text.primary' }}>
+                          {p.name[0].toUpperCase()}
+                        </Avatar>
                         <Typography variant="body2" fontWeight={600}>
                           {p.name}
                         </Typography>

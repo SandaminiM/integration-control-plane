@@ -40,6 +40,7 @@ import type { CreateMcpProxyComponentInput } from '../../types/mcpProxy';
 import { bff, items, q, seg, type ListResponse } from './_client';
 import { parseGitHubUrl } from '../../utils/github';
 import { toVisibilityWire } from './_visibility';
+import { OTHER_BUILDPACK } from '../../constants/integrations';
 
 // Underscored params (_orgHandler, _versionId, _releaseId) are kept on exported
 // signatures so cloud matches the devant contract that tsconfig type-checks
@@ -111,6 +112,8 @@ const LOGICAL_TYPE_TO_DISPLAY_TYPE: Record<string, { bi: string; mi: string }> =
 };
 
 function withFrontendDisplayType<T extends Component>(c: T): T {
+  // Rewriting a foreign runtime to a BI/MI displayType would make it read as one of ours.
+  if (c.buildpackType === OTHER_BUILDPACK) return c;
   const isMI = (c.displayType ?? '').toLowerCase().startsWith('mi');
   // File integrations reuse the BI/MI service build runtime, so the app
   // distinguishes them by componentSubType — not displayType (identifyIntegration,

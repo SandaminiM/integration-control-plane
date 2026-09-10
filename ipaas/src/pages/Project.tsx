@@ -88,6 +88,8 @@ import { useAuth } from '../auth/AuthContext';
 import { componentOverviewUrl, importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, importComingSoonUrl, buildGitHubOAuthUrl } from '../paths';
 import { Permissions } from '../constants/permissions';
 import { isSupportedIntegration, getDisplayLabel, displayTypeFromSample, getNonIntegrationPlatform } from '../constants/integrations';
+import { identifyIntegration } from '../utils/identifyIntegration';
+import IntegrationIcon from '../components/IntegrationIcon';
 import { GITHUB_AUTH } from '../constants/github';
 import { CARD_HOVER_SX, PROVIDER_ICON_SX, GITHUB_ICON_SX } from '../constants/styles';
 import Authorized from '../components/Authorized';
@@ -570,7 +572,7 @@ function getInitProgress(c: Component, isWorkspace: boolean): { progress: number
   return INIT_PROGRESS_MAP[c.initStatus.toLowerCase()] ?? null;
 }
 
-function ComponentNameCell({ component: c, isWorkspace, projectGitOrg, projectGitRepo }: { component: Component; isWorkspace: boolean; projectGitOrg?: string; projectGitRepo?: string }) {
+function ComponentNameCell({ component: c, isWorkspace, external = false, projectGitOrg, projectGitRepo }: { component: Component; isWorkspace: boolean; external?: boolean; projectGitOrg?: string; projectGitRepo?: string }) {
   const init = getInitProgress(c, isWorkspace);
   const nameLabel = init && c.displayType ? `${c.displayName}: ${c.displayType}` : c.displayName;
   const isExternalRepo =
@@ -587,7 +589,7 @@ function ComponentNameCell({ component: c, isWorkspace, projectGitOrg, projectGi
           </Box>
         </Box>
       ) : (
-        <Avatar sx={{ width: 32, height: 32, fontSize: '0.875rem', bgcolor: 'action.selected', color: 'text.primary', flexShrink: 0 }}>{c.displayName.charAt(0).toUpperCase()}</Avatar>
+        <IntegrationIcon type={identifyIntegration(c.displayType ?? '', c.componentSubType ?? null).type} external={external} />
       )}
       <Stack direction="row" alignItems="center" gap={0.5}>
         <Stack gap={0.25}>
@@ -674,8 +676,8 @@ function IntegrationsTable({
     const matchesLabels = selectedLabels.length === 0 || componentLabels.some((l) => selectedLabels.includes(l));
     return matchesSearch && matchesLabels;
   });
-  const filteredIntegrations = filtered.filter((c) => isSupportedIntegration(c.displayType ?? '', c.componentSubType ?? null));
-  const filteredNonIntegrations = filtered.filter((c) => !isSupportedIntegration(c.displayType ?? '', c.componentSubType ?? null));
+  const filteredIntegrations = filtered.filter((c) => isSupportedIntegration(c.displayType ?? '', c.componentSubType ?? null, c.buildpackType));
+  const filteredNonIntegrations = filtered.filter((c) => !isSupportedIntegration(c.displayType ?? '', c.componentSubType ?? null, c.buildpackType));
   const maxPage = Math.max(0, Math.ceil(filteredIntegrations.length / rowsPerPage) - 1);
   const safePage = Math.min(page, maxPage);
   const paginated = filteredIntegrations.slice(safePage * rowsPerPage, safePage * rowsPerPage + rowsPerPage);
@@ -776,7 +778,7 @@ function IntegrationsTable({
         <>
           {filteredIntegrations.length > 0 && (
             <ListingTable.Container disablePaper>
-              <ListingTable variant="card" density="compact">
+              <ListingTable variant="card" density="compact" sx={{ '& .MuiTableBody-root .MuiTableCell-root': { py: 2 } }}>
                 <ListingTable.Head>
                   <ListingTable.Row>
                     <ListingTable.Cell>Name</ListingTable.Cell>
@@ -784,7 +786,9 @@ function IntegrationsTable({
                     <ListingTable.Cell>Type</ListingTable.Cell>
                     <ListingTable.Cell>Last Updated</ListingTable.Cell>
                     <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
-                      <ListingTable.Cell width={60}>Action</ListingTable.Cell>
+                      <ListingTable.Cell width={60} align="right">
+                        Action
+                      </ListingTable.Cell>
                     </Authorized>
                   </ListingTable.Row>
                 </ListingTable.Head>
@@ -830,7 +834,7 @@ function IntegrationsTable({
                             )}
                           </ListingTable.Cell>
                           <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
-                            <ListingTable.Cell>
+                            <ListingTable.Cell align="right">
                               {deleting ? (
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                                   <CircularProgress size={14} color="inherit" />
@@ -885,16 +889,14 @@ function IntegrationsTable({
                 Non Integrations
               </Typography>
               <ListingTable.Container disablePaper>
-                <ListingTable variant="card" density="compact">
+                <ListingTable variant="card" density="compact" sx={{ '& .MuiTableBody-root .MuiTableCell-root': { py: 2 } }}>
                   <ListingTable.Head>
                     <ListingTable.Row>
                       <ListingTable.Cell>Name</ListingTable.Cell>
                       <ListingTable.Cell>Description</ListingTable.Cell>
                       <ListingTable.Cell>Type</ListingTable.Cell>
                       <ListingTable.Cell>Last Updated</ListingTable.Cell>
-                      <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
-                        <ListingTable.Cell width={60}>Action</ListingTable.Cell>
-                      </Authorized>
+                      {/* No Action column: another platform owns these, so none of them are actionable from here. */}
                     </ListingTable.Row>
                   </ListingTable.Head>
                   <ListingTable.Body>
@@ -904,7 +906,7 @@ function IntegrationsTable({
                         <Tooltip key={c.id} followCursor title={`This component is not part of WSO2 Integration Platform. Switch to ${getNonIntegrationPlatform(c.originCloud)} to view and manage it.`}>
                           <ListingTable.Row variant="card" aria-disabled tabIndex={-1} sx={{ opacity: 0.5, cursor: 'default' }}>
                             <ListingTable.Cell>
-                              <ComponentNameCell component={c} isWorkspace={isWorkspace} projectGitOrg={projectGitOrg} projectGitRepo={projectGitRepo} />
+                              <ComponentNameCell component={c} isWorkspace={isWorkspace} external projectGitOrg={projectGitOrg} projectGitRepo={projectGitRepo} />
                             </ListingTable.Cell>
                             <ListingTable.Cell>
                               {!init && (
@@ -921,22 +923,6 @@ function IntegrationsTable({
                                 </Typography>
                               )}
                             </ListingTable.Cell>
-                            <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
-                              <ListingTable.Cell>
-                                <Tooltip title="Delete">
-                                  <IconButton
-                                    size="small"
-                                    color="error"
-                                    aria-label={`Delete ${c.displayName}`}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setDeleting(c);
-                                    }}>
-                                    <Trash2 size={16} />
-                                  </IconButton>
-                                </Tooltip>
-                              </ListingTable.Cell>
-                            </Authorized>
                           </ListingTable.Row>
                         </Tooltip>
                       );
@@ -1050,7 +1036,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
   const isWorkspace = project.type === 'MONO_REPO';
   const openInCloudComponent =
     components.find((c) => {
-      if (!isSupportedIntegration(c.displayType, c.componentSubType)) return false;
+      if (!isSupportedIntegration(c.displayType, c.componentSubType, c.buildpackType)) return false;
       if (!project.gitOrganization || !project.repository) return true;
       if (!c.repository?.organizationApp || !c.repository?.nameApp) return true;
       return c.repository.organizationApp.toLowerCase() === project.gitOrganization.toLowerCase() && c.repository.nameApp.toLowerCase() === project.repository.toLowerCase();
@@ -1142,90 +1128,103 @@ export default function Project(scope: ProjectScope): JSX.Element {
           repo-link controls have nothing to act on yet and only add noise to the empty state. */}
       {!justProvisionedDefaultProject && (
         <Stack component="header" direction="row" alignItems="flex-start" justifyContent="space-between" gap={2} sx={{ mb: isEmpty ? 3 : 4 }}>
-          <Stack direction="row" alignItems="flex-start" gap={2}>
-            <Avatar sx={{ width: 56, height: 56, fontSize: 24, bgcolor: 'primary.main', color: 'primary.contrastText', flexShrink: 0 }}>{project?.name?.[0]?.toUpperCase() ?? 'P'}</Avatar>
-            <div>
-              <Typography variant="h1">{project.name}</Typography>
-              <Stack direction="row" alignItems="flex-start" gap={1} onMouseEnter={() => setDescHovered(true)} onMouseLeave={() => setDescHovered(false)}>
-                <Box
-                  sx={{ position: 'relative', flex: 1, cursor: 'text', mt: 0.25 }}
-                  onClick={() => {
-                    if (!descEditing) {
-                      setDescEditing(true);
-                      setTimeout(() => descInputRef.current?.focus(), 0);
-                    }
-                  }}>
-                  <Typography
-                    variant="body2"
-                    component="div"
-                    sx={{
-                      visibility: descEditing ? 'hidden' : 'visible',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      color: descValue ? 'text.secondary' : 'primary.main',
-                      minHeight: '1.4em',
+          <Stack sx={{ minWidth: 0 }}>
+            <Stack direction="row" alignItems="flex-start" gap={2}>
+              <Avatar variant="rounded" sx={{ width: 58, height: 58, borderRadius: 1, fontSize: 24, bgcolor: 'primary.main', color: 'primary.contrastText', flexShrink: 0 }}>
+                {project?.name?.[0]?.toUpperCase() ?? 'P'}
+              </Avatar>
+              <div>
+                <Typography variant="h1" mb={1}>
+                  {project.name}
+                </Typography>
+                <Stack direction="row" alignItems="flex-start" gap={1} onMouseEnter={() => setDescHovered(true)} onMouseLeave={() => setDescHovered(false)}>
+                  <Box
+                    sx={{ position: 'relative', flex: 1, cursor: 'text', mt: 0.25 }}
+                    onClick={() => {
+                      if (!descEditing) {
+                        setDescEditing(true);
+                        setTimeout(() => descInputRef.current?.focus(), 0);
+                      }
                     }}>
-                    {descValue || '+ Add Description'}
-                    {descValue && (
-                      <Box component="span" sx={{ display: 'inline-flex', verticalAlign: 'middle', ml: 0.5 }}>
-                        <Tooltip title="Edit description">
-                          <IconButton
-                            size="small"
-                            sx={{ p: 0.25, opacity: descHovered ? 1 : 0, transition: 'opacity 0.15s' }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDescEditing(true);
-                              setTimeout(() => descInputRef.current?.focus(), 0);
-                            }}>
-                            <Pencil size={12} />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
+                    <Typography
+                      variant="body2"
+                      component="div"
+                      sx={{
+                        visibility: descEditing ? 'hidden' : 'visible',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        color: descValue ? 'text.secondary' : 'primary.main',
+                        minHeight: '1.4em',
+                      }}>
+                      {descValue || '+ Add Description'}
+                      {descValue && (
+                        <Box component="span" sx={{ display: 'inline-flex', verticalAlign: 'middle', ml: 0.5 }}>
+                          <Tooltip title="Edit description">
+                            <IconButton
+                              size="small"
+                              sx={{ p: 0.25, opacity: descHovered ? 1 : 0, transition: 'opacity 0.15s' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDescEditing(true);
+                                setTimeout(() => descInputRef.current?.focus(), 0);
+                              }}>
+                              <Pencil size={12} />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      )}
+                    </Typography>
+                    {descEditing && (
+                      <InputBase
+                        inputRef={descInputRef}
+                        multiline
+                        autoFocus
+                        value={descValue}
+                        onChange={(e) => setDescValue(e.target.value)}
+                        onBlur={commitDescEdit}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') {
+                            e.preventDefault();
+                            cancelDescEdit();
+                          }
+                        }}
+                        sx={(theme) => ({
+                          position: 'absolute',
+                          inset: '-4px',
+                          padding: '4px',
+                          border: `2px solid ${theme.palette.primary.main}`,
+                          borderRadius: `${theme.shape.borderRadius}px`,
+                          alignItems: 'flex-start',
+                          '& textarea': { ...theme.typography.body2, padding: 0, resize: 'none', border: 'none', outline: 'none', background: 'transparent' },
+                        })}
+                        disabled={updateProject.isPending}
+                        autoComplete="off"
+                      />
                     )}
-                  </Typography>
-                  {descEditing && (
-                    <InputBase
-                      inputRef={descInputRef}
-                      multiline
-                      autoFocus
-                      value={descValue}
-                      onChange={(e) => setDescValue(e.target.value)}
-                      onBlur={commitDescEdit}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Escape') {
-                          e.preventDefault();
-                          cancelDescEdit();
-                        }
-                      }}
-                      sx={(theme) => ({
-                        position: 'absolute',
-                        inset: '-4px',
-                        padding: '4px',
-                        border: `2px solid ${theme.palette.primary.main}`,
-                        borderRadius: `${theme.shape.borderRadius}px`,
-                        alignItems: 'flex-start',
-                        '& textarea': { ...theme.typography.body2, padding: 0, resize: 'none', border: 'none', outline: 'none', background: 'transparent' },
-                      })}
-                      disabled={updateProject.isPending}
-                      autoComplete="off"
-                    />
-                  )}
-                </Box>
-                {updateProject.isPending && <CircularProgress size={12} sx={{ mt: 0.25 }} />}
-              </Stack>
-              {projectRepoUrl ? (
-                <Stack direction="row" alignItems="center" gap={0.5} sx={{ mt: 1 }}>
-                  <GitHub size={14} />
-                  <Link href={projectRepoUrl} target="_blank" rel="noreferrer" data-testid="project-repo-link-link" underline="hover" sx={{ color: 'primary.main', fontSize: '0.8125rem' }}>
-                    {projectRepoUrl}
-                  </Link>
+                  </Box>
+                  {updateProject.isPending && <CircularProgress size={12} sx={{ mt: 0.25 }} />}
                 </Stack>
-              ) : (
-                <Button size="small" variant="text" color="primary" startIcon={<Link2 size={14} />} onClick={() => setLinkRepoOpen(true)} sx={{ mt: 1, pl: 0, textTransform: 'none', fontSize: '0.8125rem' }}>
-                  Link a Repository
-                </Button>
-              )}
-            </div>
+              </div>
+            </Stack>
+            {/* Outside the text column so its left edge lines up with the avatar's. */}
+            {projectRepoUrl ? (
+              <Stack direction="row" alignItems="center" gap={0.5} sx={{ mt: 2 }}>
+                <GitHub size={14} />
+                <Link href={projectRepoUrl} target="_blank" rel="noreferrer" data-testid="project-repo-link-link" underline="hover" sx={{ color: 'primary.main', fontSize: '0.8125rem' }}>
+                  {projectRepoUrl}
+                </Link>
+              </Stack>
+            ) : (
+              <Button
+                size="small"
+                variant="text"
+                color="primary"
+                startIcon={<Link2 size={14} />}
+                onClick={() => setLinkRepoOpen(true)}
+                sx={{ mt: 2, pl: 0, alignSelf: 'flex-start', textTransform: 'none', fontSize: '0.8125rem' }}>
+                Link a Repository
+              </Button>
+            )}
           </Stack>
           {openInCloudComponent && projectRepoUrl && (
             <Box sx={{ position: 'relative', flexShrink: 0 }}>
@@ -1241,14 +1240,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
                       onClick={primaryAction === 'cloud' ? handleOpenInCloud : handleOpenInIntegrator}
                       disabled={primaryAction === 'cloud' ? !codeServerSample : !openInCloudComponent}
                       sx={{ whiteSpace: 'nowrap' }}>
-                      {primaryAction === 'cloud' ? (
-                        <>
-                          Open in Cloud&nbsp;
-                          <Chip label="Beta" size="small" color="primary" sx={{ height: 16, fontSize: 10, cursor: 'pointer' }} />
-                        </>
-                      ) : (
-                        'Open in Integrator'
-                      )}
+                      {primaryAction === 'cloud' ? <>Open in Cloud</> : 'Open in Integrator'}
                     </Button>
                     <Button size="small" sx={{ px: 0.5 }} aria-label="More options" onClick={() => setSplitOpen((prev) => !prev)}>
                       <ChevronDown size={14} />
@@ -1269,7 +1261,6 @@ export default function Project(scope: ProjectScope): JSX.Element {
                                 <Stack direction="row" alignItems="center" gap={1}>
                                   <IntegratorIcon width={16} height={16} />
                                   <Typography variant="body2">Open in Cloud</Typography>
-                                  <Chip label="Beta" size="small" color="primary" sx={{ height: 16, fontSize: 10 }} />
                                 </Stack>
                               </MenuItem>
                               <MenuItem
@@ -1301,8 +1292,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
                   onClick={handleOpenInCloud}
                   disabled={!codeServerSample}
                   sx={{ whiteSpace: 'nowrap' }}>
-                  Open in Cloud&nbsp;
-                  <Chip label="Beta" size="small" color="primary" sx={{ height: 16, fontSize: 10, cursor: 'pointer' }} />
+                  Open in Cloud
                 </Button>
               )}
             </Box>
@@ -1318,8 +1308,8 @@ export default function Project(scope: ProjectScope): JSX.Element {
         <Box
           sx={{
             display: 'grid',
-            gap: 3,
-            gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' },
+            gap: 4,
+            gridTemplateColumns: { xs: '1fr', md: '3fr 1fr' },
           }}>
           <Box>
             <IntegrationsTable

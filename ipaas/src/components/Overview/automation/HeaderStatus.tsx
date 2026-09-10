@@ -21,7 +21,6 @@ import type { ReactNode } from 'react';
 import { useSchemaConfig } from '../../../hooks/useConfiguration';
 import type { HeaderStatusProps } from '../../../types/integration';
 import ConfigureButton from '../_shared/ConfigureButton';
-import StatusDot from '../_shared/StatusDot';
 // Transitional: the legacy ConfigureDrawer (branches internally on `isAutomation`)
 // stays until its genericisation in phase 4.5. Imported here, inside the type's
 // own folder — never from `_shared`.
@@ -29,7 +28,7 @@ import ConfigureDrawer from '../../EnvironmentCard/ConfigureDrawer';
 import { hasMissingRequiredConfigs } from '../_shared/configStatus';
 
 /**
- * Automation's left-header slot: the deployment status dot plus a Configure entry point.
+ * Automation's left-header slot: a Configure entry point.
  */
 export default function HeaderStatus({
   component,
@@ -46,17 +45,15 @@ export default function HeaderStatus({
   releaseMgtReleaseId,
   releaseMgtDeploymentId,
   buildId,
-  deploymentStatusV2,
 }: HeaderStatusProps): ReactNode {
   const [configureOpen, setConfigureOpen] = useState(false);
   const { data: schemaConfig } = useSchemaConfig(projectId, component.id, envTemplateId, versionId, deployedCommitSha);
   const missingConfigs = useMemo(() => hasMissingRequiredConfigs(schemaConfig), [schemaConfig]);
 
-  if (!hasDeployment) return <StatusDot status={deploymentStatusV2} />;
+  if (!hasDeployment) return null;
 
   return (
     <>
-      <StatusDot status={deploymentStatusV2} />
       <ConfigureButton onClick={() => setConfigureOpen(true)} hasMissingConfigs={missingConfigs} />
       <ConfigureDrawer
         open={configureOpen}

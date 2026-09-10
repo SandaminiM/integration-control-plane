@@ -83,6 +83,7 @@ import {
   LogOut,
   Maximize2,
   MessageSquare,
+  Building2,
   Network,
   Plus,
   Puzzle,
@@ -141,6 +142,9 @@ import { useAuth } from '../auth/AuthContext';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { CopilotProvider } from '../contexts/CopilotContext';
 const CopilotDrawer = lazy(() => import('../components/AiCopilot/CopilotDrawer'));
+
+// ComplexSelect is content-sized, and at org level there is no card beside the icon to stretch against.
+const SWITCHER_CARD_HEIGHT = 50;
 import CopilotButton from '../components/CopilotButton';
 import UpgradeButton from '../components/UpgradeButton';
 import { useOrgUuid } from '../hooks/useOrgUuid';
@@ -224,7 +228,7 @@ function AppLayoutInner(): JSX.Element {
   const project = isProjectUuid ? projectById : (projectByHandler ?? projectFromList);
   const projectId = project?.id ?? '';
   const { data: allComponents = [] } = useComponents(scope.org, projectId);
-  const components = allComponents.filter((c) => isSupportedIntegration(c.displayType, c.componentSubType ?? null));
+  const components = allComponents.filter((c) => isSupportedIntegration(c.displayType, c.componentSubType ?? null, c.buildpackType));
 
   // Shared with Project.tsx's overview-header hiding, so both surfaces hide on exactly the same
   // one-shot "just landed here right after onboarding" signal and can't drift out of sync. This
@@ -418,58 +422,70 @@ function AppLayoutInner(): JSX.Element {
             </Header.BrandLogo>
           </Header.Brand>
           <Header.Switchers showDivider={false}>
-            <Box
-              ref={orgCardRef}
-              role="button"
-              tabIndex={0}
-              sx={{ position: 'relative', display: 'inline-flex', alignSelf: 'center', cursor: 'pointer' }}
-              onClick={() => navigateTo(orgHomeUrl(scope.org))}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  navigateTo(orgHomeUrl(scope.org));
-                }
-              }}>
-              <ComplexSelect
-                value={scope.org}
-                open={false}
-                onChange={() => {}}
-                onOpen={() => {}}
-                size="small"
-                sx={{ minWidth: 180, maxWidth: 220, '& .MuiListItemText-root': { minWidth: 0, overflow: 'hidden' } }}
-                IconComponent={
-                  IS_CLOUD
-                    ? () => null
-                    : ({ ownerState: _ownerState, ...props }) => (
-                        <span
-                          {...props}
-                          role="button"
-                          tabIndex={0}
-                          aria-label="Change organization"
-                          style={{ position: 'absolute', top: 'auto', bottom: '0', right: '6px', display: 'flex', pointerEvents: 'all', cursor: 'pointer' }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOrgMenuAnchor(orgCardRef.current);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
+            {/* A lone org has nothing to switch to, so it collapses to an icon that just links home. */}
+            {orgsData.length === 1 ? (
+              // The div carries the anchor ref — IconButton's own ref is typed to a button.
+              <Box ref={orgCardRef} sx={{ display: 'inline-flex', alignSelf: 'center' }}>
+                <Tooltip title={scope.org}>
+                  <IconButton aria-label={`Organization: ${scope.org}`} onClick={() => navigateTo(orgHomeUrl(scope.org))} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, width: SWITCHER_CARD_HEIGHT, height: SWITCHER_CARD_HEIGHT }}>
+                    <Building2 size={20} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            ) : (
+              <Box
+                ref={orgCardRef}
+                role="button"
+                tabIndex={0}
+                sx={{ position: 'relative', display: 'inline-flex', alignSelf: 'center', cursor: 'pointer' }}
+                onClick={() => navigateTo(orgHomeUrl(scope.org))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigateTo(orgHomeUrl(scope.org));
+                  }
+                }}>
+                <ComplexSelect
+                  value={scope.org}
+                  open={false}
+                  onChange={() => {}}
+                  onOpen={() => {}}
+                  size="small"
+                  sx={{ minWidth: 180, maxWidth: 220, '& .MuiListItemText-root': { minWidth: 0, overflow: 'hidden' } }}
+                  IconComponent={
+                    IS_CLOUD
+                      ? () => null
+                      : ({ ownerState: _ownerState, ...props }) => (
+                          <span
+                            {...props}
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Change organization"
+                            style={{ position: 'absolute', top: 'auto', bottom: '0', right: '6px', display: 'flex', pointerEvents: 'all', cursor: 'pointer' }}
+                            onClick={(e) => {
                               e.stopPropagation();
                               setOrgMenuAnchor(orgCardRef.current);
-                            }
-                          }}>
-                          <ChevronDown size={18} />
-                        </span>
-                      )
-                }
-                SelectDisplayProps={{ 'aria-label': 'Select organization' }}
-                renderValue={() => <ComplexSelect.MenuItem.Text primary={scope.org} secondary="Organization" primaryTypographyProps={{ noWrap: true, title: scope.org }} />}
-                label="Organization">
-                <ComplexSelect.MenuItem value={scope.org}>
-                  <ComplexSelect.MenuItem.Text primary={scope.org} secondary="Organization" primaryTypographyProps={{ noWrap: true, title: scope.org }} />
-                </ComplexSelect.MenuItem>
-              </ComplexSelect>
-            </Box>
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setOrgMenuAnchor(orgCardRef.current);
+                              }
+                            }}>
+                            <ChevronDown size={18} />
+                          </span>
+                        )
+                  }
+                  SelectDisplayProps={{ 'aria-label': 'Select organization' }}
+                  renderValue={() => <ComplexSelect.MenuItem.Text primary={scope.org} secondary="Organization" primaryTypographyProps={{ noWrap: true, title: scope.org }} />}
+                  label="Organization">
+                  <ComplexSelect.MenuItem value={scope.org}>
+                    <ComplexSelect.MenuItem.Text primary={scope.org} secondary="Organization" primaryTypographyProps={{ noWrap: true, title: scope.org }} />
+                  </ComplexSelect.MenuItem>
+                </ComplexSelect>
+              </Box>
+            )}
             <Popover
               anchorEl={orgMenuAnchor}
               open={Boolean(orgMenuAnchor)}

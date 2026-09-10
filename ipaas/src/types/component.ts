@@ -39,6 +39,8 @@ export interface Component {
   isPrebuilt?: boolean;
   /** Set while the integration's delete is accepted but its finalizers have not cleared yet. */
   deleting?: boolean;
+  /** 'BI' | 'MI' | 'other' — 'other' is another platform's runtime. Cloud only. */
+  buildpackType?: string;
 }
 
 export interface DeploymentTrack {
