@@ -99,8 +99,8 @@ export const nodeGlowSx = {
   height: 74,
   borderRadius: 3,
   bgcolor: 'primary.main',
-  opacity: 0.16,
-  filter: 'blur(6px)',
+  opacity: 0.09,
+  filter: 'blur(4px)',
 } as const;
 
 export const nodeTileSx = (active: boolean) =>
@@ -108,10 +108,10 @@ export const nodeTileSx = (active: boolean) =>
     position: 'relative',
     width: active ? 72 : 62,
     height: active ? 62 : 52,
-    borderRadius: 2,
+    borderRadius: 1.2,
     bgcolor: 'background.paper',
     border: '1px solid',
-    borderColor: active ? 'primary.main' : 'divider',
+    borderColor: active ? 'primary.main' : 'action.disabled',
     color: active ? 'primary.main' : 'text.primary',
     display: 'flex',
     alignItems: 'center',

@@ -34,12 +34,18 @@ export default function NextRunLabel({ cron, timeZone, sx }: NextRunLabelProps):
   const [remaining, setRemaining] = useState<string | null>(null);
 
   useEffect(() => {
-    const update = () => {
-      const ms = cron ? nextCronRunMs(cron, timeZone || undefined) : null;
-      setRemaining(ms === null ? null : formatTimeUntil(ms));
+    if (!cron) {
+      setRemaining(null);
+      return;
+    }
+    // Resolving the cron scans minute by minute, so hold the target and only re-resolve once it passes.
+    let target = nextCronRunMs(cron, timeZone || undefined);
+    const tick = () => {
+      if (target !== null && Date.now() >= target) target = nextCronRunMs(cron, timeZone || undefined);
+      setRemaining(target === null ? null : formatTimeUntil(target));
     };
-    update();
-    const timer = setInterval(update, 1000);
+    tick();
+    const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
   }, [cron, timeZone]);
 

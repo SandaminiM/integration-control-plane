@@ -37,12 +37,14 @@ export default function InlineEditField({ label, value, placeholder, multiline, 
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Keep the draft in sync when the underlying value changes (e.g. after a save).
-  useEffect(() => {
-    if (!focused) setDraft(value);
-  }, [value, focused]);
-
   const dirty = draft.trim() !== value.trim();
+
+  // Adopt an external value change, but never over an edit in flight: a rejected save leaves the
+  // field blurred and dirty, and resyncing there would discard what the user typed.
+  useEffect(() => {
+    if (!focused && !dirty) setDraft(value);
+  }, [value, focused, dirty]);
+
   const error = dirty ? (validate?.(draft) ?? '') : '';
 
   const commit = async () => {

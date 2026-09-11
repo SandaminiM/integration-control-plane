@@ -381,15 +381,18 @@ export default function ExecutionDrawer({ execution, open, onClose, onRunSuccess
             {/* Arguments tab */}
             {tab === 1 && (
               <Box sx={{ px: 2, py: 2 }}>
-                <Alert severity="info" variant="outlined" sx={{ mb: 2 }}>
-                  <Typography variant="body2">
-                    To learn more about runtime arguments, see the{' '}
-                    <Link href={AUTOMATION_SCHEDULE_DOC_URL} target="_blank" rel="noopener noreferrer" variant="body2">
-                      WSO2 Integration Platform Documentation
-                    </Link>
-                    .
-                  </Typography>
-                </Alert>
+                {/* Cloud has no runtime-arguments documentation to point at yet. */}
+                {!IS_CLOUD && (
+                  <Alert severity="info" variant="outlined" sx={{ mb: 2 }}>
+                    <Typography variant="body2">
+                      To learn more about runtime arguments, see the{' '}
+                      <Link href={AUTOMATION_SCHEDULE_DOC_URL} target="_blank" rel="noopener noreferrer" variant="body2">
+                        WSO2 Integration Platform Documentation
+                      </Link>
+                      .
+                    </Typography>
+                  </Alert>
+                )}
 
                 {argsLoading ? (
                   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>

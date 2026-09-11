@@ -86,6 +86,12 @@ export default function OrgHome(): JSX.Element {
   // Unscoped, a second org — or a second user on this browser — read as already-onboarded.
   const onboardedKey = `persona:${userId}:${orgHandler ?? ''}`;
   const [step, setStep] = useState<'checking' | 'persona' | 'region' | 'provisioning-error' | 'done'>(() => (localStorage.getItem(onboardedKey) ? 'done' : 'checking'));
+
+  // The route reuses this component across orgs, so a switch must re-check against the new key
+  // rather than keep the previous org's 'done'.
+  useEffect(() => {
+    setStep(localStorage.getItem(onboardedKey) ? 'done' : 'checking');
+  }, [onboardedKey]);
   // setPersona is unused while the persona-selection step below is commented out — restore it there.
   const [persona] = useState<string>('developer');
   const [region, setRegion] = useState<string>('US');
