@@ -1166,9 +1166,6 @@ function AppLayoutInner(): JSX.Element {
                           </Sidebar.ItemIcon>
                           <Sidebar.ItemLabel>Overview</Sidebar.ItemLabel>
                         </Sidebar.Item>
-                      </Sidebar.Category>
-
-                      <Sidebar.Category>
                         {!IS_CLOUD && (
                           <Sidebar.Item id="develop">
                             <Sidebar.ItemIcon>
