@@ -335,6 +335,7 @@ export default function AutomationTest({ org, project, component }: ComponentSco
   // Runtime arguments present → the "Test Your Automation" form view (two panels).
   const renderFormView = (): JSX.Element => (
     <Box>
+      {pageTitle}
       <FormExecutionSummary
         commitSha={commitHash}
         buildDate={buildDate}

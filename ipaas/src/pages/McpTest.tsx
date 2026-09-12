@@ -118,16 +118,14 @@ export default function McpTest(scope: ComponentScope): JSX.Element {
       {tracks.length > 0 && <DeploymentTrackBar tracks={tracks} selectedId={selectedTrackId} onChange={setSelectedTrackId} orgHandler={scope.org} projectHandler={project?.handler ?? scope.project} componentHandler={scope.component} />}
 
       <PageContent sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" gap={2} flexWrap="wrap">
+          <PageTitle>
+            <PageTitle.Header>Test</PageTitle.Header>
+          </PageTitle>
+          {envSelector}
+        </Stack>
         {!isActive || !mcpUrl ? (
-          <>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" gap={2} flexWrap="wrap">
-              <PageTitle>
-                <PageTitle.Header>Test</PageTitle.Header>
-              </PageTitle>
-              {envSelector}
-            </Stack>
-            <NotDeployedAlert status={deployment?.deploymentStatusV2} />
-          </>
+          <NotDeployedAlert status={deployment?.deploymentStatusV2} />
         ) : (
           <McpPlayground url={mcpUrl} token={token || null} headerName={TEST_KEY_HEADER} isTokenFetching={tokenFetching} onTokenRegenerate={regenerate} endpointSwitcher={endpointSwitcher} visibilitySwitcher={visibilitySwitcher} />
         )}

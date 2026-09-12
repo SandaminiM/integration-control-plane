@@ -18,7 +18,7 @@
 
 import { Alert, Box, Button, Card, CardContent, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowRight, GitHub, Plus, GitBranch } from '@wso2/oxygen-ui-icons-react';
-import { useState, type JSX, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type JSX, type ReactNode } from 'react';
 import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useCreateComponent } from '../hooks/useComponents';
 import { useChoreoSampleImages } from '../hooks/useRepository';
@@ -47,6 +47,10 @@ import type { Sample } from '../types/samples';
 import { toHandler } from '../utils/string';
 import { buildCloudEditorUrl } from '../utils/cloudEditor';
 import { useProjectId } from '../hooks/useProjects';
+import { useAccessControl } from '../contexts/AccessControlContext';
+import { useOrgComponentLimits, useOrgSubscriptions } from '../hooks/useOrg';
+import { Permissions } from '../constants/permissions';
+import { FREE_COMPONENT_LIMIT } from '../constants/subscription';
 import { useSamples } from '../hooks/useSamples';
 import { usePrebuiltIntegrations } from '../hooks/usePrebuiltIntegrations';
 
@@ -65,10 +69,29 @@ export default function CreateIntegrationPanels({ scope, heading }: CreateIntegr
   // Without a page heading above them (the empty-project surface), the section labels carry the
   // whole explanation and spell the choice out in full.
   const standalone = !heading;
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const channelRef = useRef<BroadcastChannel | null>(null);
+  useEffect(
+    () => () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      channelRef.current?.close();
+    },
+    [],
+  );
   const navigate = useAppNavigate();
   const { userId } = useAuth();
   const { projectId } = useProjectId(scope.project);
   const orgUuid = useOrgUuid() ?? '';
+
+  const { hasAnyPermission } = useAccessControl();
+  const { data: orgLimits } = useOrgComponentLimits(orgUuid);
+  const { data: subscriptions } = useOrgSubscriptions(orgUuid);
+
+  const isUpgraded = (subscriptions ?? []).some((sub) => sub.subscriptionType === 'devant-subscription' && sub.subscriptionStatus === 'active');
+  const quotaReached = !isUpgraded && (orgLimits?.billableComponentCount ?? 0) >= FREE_COMPONENT_LIMIT;
+  const canManage = hasAnyPermission([Permissions.INTEGRATION_MANAGE], projectId);
+  const creationBlocked = !canManage || quotaReached;
+  const blockedTooltip = !canManage ? 'You do not have permission to create integrations.' : 'You have exceeded the allocated integration quota. Upgrade your subscription.';
   const { features } = useFeaturePreview();
   const aiBuilderEnabled = !!features['AI Integration Builder'];
   const { data: samplesData, isLoading: samplesLoading, isError: samplesError } = useSamples();
@@ -87,6 +110,7 @@ export default function CreateIntegrationPanels({ scope, heading }: CreateIntegr
   const createComponent = useCreateComponent();
 
   const handleOpenCloudEditor = () => {
+    if (creationBlocked) return;
     const codeServerSample = (sampleImages ?? []).find((img) => img.name === 'Code Server');
     if (!codeServerSample) {
       setPageError({ message: 'Cloud Editor is not available. Please try again later.', severity: 'warning' });
@@ -101,6 +125,7 @@ export default function CreateIntegrationPanels({ scope, heading }: CreateIntegr
   const importUrl = importComponentUrl(scope.org, scope.project);
 
   const handleImportClick = () => {
+    if (creationBlocked) return;
     const { githubAppClientId, githubAppAuthRedirectUrl } = window.API_CONFIG;
     if (!githubAppClientId) {
       // Cloud only: no GitHub App configured means private-repo authorization
@@ -115,15 +140,25 @@ export default function CreateIntegrationPanels({ scope, heading }: CreateIntegr
     const state = generateAndSaveGitHubState();
     const url = buildGitHubOAuthUrl(githubAppAuthRedirectUrl ?? '', githubAppClientId, state);
     const popup = window.open(url, 'github-oauth', GITHUB_AUTH.POPUP_DIMENSIONS);
+    // A blocked popup is null, and `null?.closed` is never true — polling it would spin forever
+    // with the button stuck in its authenticating state.
+    if (!popup) {
+      setIsImportAuthenticating(false);
+      setPageError({ message: 'Please allow popups for this site and try again.', severity: 'warning' });
+      return;
+    }
 
     const channel = new BroadcastChannel(GITHUB_AUTH.BROADCAST_CHANNEL);
+    channelRef.current = channel;
     const pollClosed = setInterval(() => {
-      if (popup?.closed) {
+      if (popup.closed) {
         clearInterval(pollClosed);
         channel.close();
+        channelRef.current = null;
         setIsImportAuthenticating(false);
       }
     }, GITHUB_AUTH.POPUP_POLL_INTERVAL_MS);
+    pollRef.current = pollClosed;
 
     channel.onmessage = (event) => {
       clearInterval(pollClosed);
@@ -144,7 +179,7 @@ export default function CreateIntegrationPanels({ scope, heading }: CreateIntegr
   };
 
   const handleQuickDeploy = (sample: Sample) => {
-    if (!projectId) return;
+    if (!projectId || creationBlocked) return;
     setDeployingSample(sample.displayName);
     createComponent.mutate(
       {
@@ -227,7 +262,7 @@ export default function CreateIntegrationPanels({ scope, heading }: CreateIntegr
                   {standalone ? 'Create an Integration on Cloud' : 'Create on Cloud'}
                 </Typography>
               </Stack>
-              <Card variant="outlined" sx={{ flex: 1, boxShadow: 'none', borderColor: 'primary.main' }}>
+              <Card variant="outlined" sx={{ flex: 1, boxShadow: 'none', borderColor: 'primary.main', ...(creationBlocked ? { opacity: 0.5, pointerEvents: 'none' } : {}) }}>
                 <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3, '&:last-child': { pb: 3 } }}>
                   <Box sx={{ flex: 1, minHeight: 260, overflow: 'hidden' }}>
                     <IDEMockup onOpenClick={handleOpenCloudEditor} />
@@ -248,7 +283,7 @@ export default function CreateIntegrationPanels({ scope, heading }: CreateIntegr
                 {standalone ? 'Import your own Integration' : 'Import your own'}
               </Typography>
             )}
-            <Card variant="outlined" sx={{ boxShadow: 'none', ...(isImportAuthenticating ? { pointerEvents: 'none', opacity: 0.7 } : {}) }}>
+            <Card variant="outlined" sx={{ boxShadow: 'none', ...(isImportAuthenticating || creationBlocked ? { pointerEvents: 'none', opacity: creationBlocked ? 0.5 : 0.7 } : {}) }}>
               <CardContent
                 sx={{
                   display: 'flex',
@@ -369,6 +404,8 @@ export default function CreateIntegrationPanels({ scope, heading }: CreateIntegr
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                       {featuredPrebuilt.map((integration) => (
                         <PrebuiltCard
+                          disabled={creationBlocked}
+                          disabledTooltip={blockedTooltip}
                           key={integration.displayName}
                           integration={integration}
                           onClick={() =>
@@ -409,7 +446,7 @@ export default function CreateIntegrationPanels({ scope, heading }: CreateIntegr
                   ) : (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                       {featuredSamples.map((sample) => (
-                        <SampleRowCard key={sample.displayName} sample={sample} onDeploy={() => handleQuickDeploy(sample)} isDeploying={deployingSample === sample.displayName} />
+                        <SampleRowCard key={sample.displayName} sample={sample} onDeploy={() => handleQuickDeploy(sample)} isDeploying={deployingSample === sample.displayName} deployDisabled={creationBlocked} deployDisabledTooltip={blockedTooltip} />
                       ))}
                     </Box>
                   )}
