@@ -1342,8 +1342,8 @@ export default function Project(scope: ProjectScope): JSX.Element {
           </Box>
           <Box>
             <Stack gap={3}>
-              <ArchitectureCard projectId={projectId} components={components} isLoading={loadingComponents} isRefreshing={fetchingComponents && !loadingComponents} onRefresh={refetchComponents} />
               <IntegrationTypesCard components={components} />
+              <ArchitectureCard projectId={projectId} components={components} isLoading={loadingComponents} />
               <ContributorsCard projectId={projectId} />
             </Stack>
           </Box>

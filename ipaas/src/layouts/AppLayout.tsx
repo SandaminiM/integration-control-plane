@@ -900,13 +900,7 @@ function AppLayoutInner(): JSX.Element {
             collapsed={shell.sidebarCollapsed}
             activeItem={pendingNavId ?? activeNavId}
             expandedMenus={shell.expandedMenus}
-            onSelect={(id) => {
-              if (id === 'expand') {
-                handleToggleSidebar();
-              } else {
-                handleNavSelect(id);
-              }
-            }}
+            onSelect={handleNavSelect}
             onToggleExpand={actions.toggleMenu}
             sx={{ backgroundColor: 'background.acrylic', backdropFilter: 'blur(3px)' }}>
             <Sidebar.Nav>
@@ -986,7 +980,7 @@ function AppLayoutInner(): JSX.Element {
                       <Sidebar.ItemIcon>
                         <ScrollText size={20} />
                       </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Logs</Sidebar.ItemLabel>
+                      <Sidebar.ItemLabel>Runtime Logs</Sidebar.ItemLabel>
                     </Sidebar.Item>
                     <Sidebar.Item id="org-metrics">
                       <Sidebar.ItemIcon>
@@ -1030,7 +1024,7 @@ function AppLayoutInner(): JSX.Element {
                       <Sidebar.ItemIcon>
                         <Settings2 size={20} />
                       </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
+                      <Sidebar.ItemLabel>Infrastructure</Sidebar.ItemLabel>
                       <Sidebar.Item id="org-databases">
                         <Sidebar.ItemIcon>
                           <Database size={20} />
@@ -1117,6 +1111,28 @@ function AppLayoutInner(): JSX.Element {
                           <Sidebar.ItemLabel>Settings</Sidebar.ItemLabel>
                         </Sidebar.Item>
                       )}
+                    </Sidebar.Item>
+                  )}
+
+                  {/* Cloud's Infrastructure group: environments come before the pipelines that promote across them. */}
+                  {IS_CLOUD && (
+                    <Sidebar.Item id="org-admin">
+                      <Sidebar.ItemIcon>
+                        <Settings2 size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Infrastructure</Sidebar.ItemLabel>
+                      <Sidebar.Item id="org-environments">
+                        <Sidebar.ItemIcon>
+                          <Layers size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Environments</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                      <Sidebar.Item id="org-cd-pipelines">
+                        <Sidebar.ItemIcon>
+                          <GitBranch size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Pipelines</Sidebar.ItemLabel>
+                      </Sidebar.Item>
                     </Sidebar.Item>
                   )}
 
@@ -1300,7 +1316,7 @@ function AppLayoutInner(): JSX.Element {
                             <Sidebar.ItemIcon>
                               <ScrollText size={20} />
                             </Sidebar.ItemIcon>
-                            <Sidebar.ItemLabel>Logs</Sidebar.ItemLabel>
+                            <Sidebar.ItemLabel>Runtime Logs</Sidebar.ItemLabel>
                           </Sidebar.Item>
                           <Sidebar.Item id="metrics">
                             <Sidebar.ItemIcon>
@@ -1314,7 +1330,26 @@ function AppLayoutInner(): JSX.Element {
                           <Sidebar.ItemIcon>
                             <Settings2 size={20} />
                           </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
+                          <Sidebar.ItemLabel>Infrastructure</Sidebar.ItemLabel>
+                          {/* Neither page exists at integration level — these link up, and lead the group.
+                              Rendered as separate children: a fragment hides them from the Sidebar's
+                              child scan, which is what decides sub-item indentation. */}
+                          {IS_CLOUD && (
+                            <Sidebar.Item id="org-environments">
+                              <Sidebar.ItemIcon>
+                                <Layers size={20} />
+                              </Sidebar.ItemIcon>
+                              <Sidebar.ItemLabel>Environments</Sidebar.ItemLabel>
+                            </Sidebar.Item>
+                          )}
+                          {IS_CLOUD && (
+                            <Sidebar.Item id="proj-cd-pipelines">
+                              <Sidebar.ItemIcon>
+                                <GitBranch size={20} />
+                              </Sidebar.ItemIcon>
+                              <Sidebar.ItemLabel>Pipelines</Sidebar.ItemLabel>
+                            </Sidebar.Item>
+                          )}
                           {!IS_CLOUD && (
                             <Sidebar.Item id="connections">
                               <Sidebar.ItemIcon>
@@ -1462,7 +1497,7 @@ function AppLayoutInner(): JSX.Element {
                       <Sidebar.ItemIcon>
                         <ScrollText size={20} />
                       </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Logs</Sidebar.ItemLabel>
+                      <Sidebar.ItemLabel>Runtime Logs</Sidebar.ItemLabel>
                     </Sidebar.Item>
                     <Sidebar.Item id="proj-metrics">
                       <Sidebar.ItemIcon>
@@ -1479,7 +1514,7 @@ function AppLayoutInner(): JSX.Element {
                       <Sidebar.ItemIcon>
                         <Settings2 size={20} />
                       </Sidebar.ItemIcon>
-                      <Sidebar.ItemLabel>Admin</Sidebar.ItemLabel>
+                      <Sidebar.ItemLabel>Infrastructure</Sidebar.ItemLabel>
                       <Sidebar.Item id="proj-connections">
                         <Sidebar.ItemIcon>
                           <Link2 size={20} />
@@ -1519,6 +1554,28 @@ function AppLayoutInner(): JSX.Element {
                     </Sidebar.Item>
                   )}
 
+                  {/* Environments link up to the org page; the pipeline is this project's own. */}
+                  {IS_CLOUD && (
+                    <Sidebar.Item id="proj-admin">
+                      <Sidebar.ItemIcon>
+                        <Settings2 size={20} />
+                      </Sidebar.ItemIcon>
+                      <Sidebar.ItemLabel>Infrastructure</Sidebar.ItemLabel>
+                      <Sidebar.Item id="org-environments">
+                        <Sidebar.ItemIcon>
+                          <Layers size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Environments</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                      <Sidebar.Item id="proj-cd-pipelines">
+                        <Sidebar.ItemIcon>
+                          <GitBranch size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Pipelines</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                    </Sidebar.Item>
+                  )}
+
                   {IS_CLOUD && (
                     <Sidebar.Item id="proj-settings">
                       <Sidebar.ItemIcon>
@@ -1531,16 +1588,6 @@ function AppLayoutInner(): JSX.Element {
               )}
             </Sidebar.Nav>
 
-            <Sidebar.Footer sx={{ py: 0 }}>
-              <Sidebar.Category sx={{ mb: 0 }}>
-                <Sidebar.Item id="expand" sx={{ minHeight: 0, py: '15px' }}>
-                  <Sidebar.ItemIcon>
-                    <ChevronRight size={20} style={{ transform: shell.sidebarCollapsed ? 'none' : 'rotate(180deg)' }} />
-                  </Sidebar.ItemIcon>
-                  <Sidebar.ItemLabel>{shell.sidebarCollapsed ? 'Expand' : 'Collapse'}</Sidebar.ItemLabel>
-                </Sidebar.Item>
-              </Sidebar.Category>
-            </Sidebar.Footer>
           </Sidebar>
         </AppShell.Sidebar>
       )}
@@ -1593,7 +1640,8 @@ function AppLayoutInner(): JSX.Element {
             {DB_TRADEMARK_NOTICE}
           </Typography>
         )}
-        <Footer>
+        {/* Matches the sidebar's surface rather than sitting as a white band under it. */}
+        <Footer sx={{ backgroundColor: 'background.acrylic', backdropFilter: 'blur(3px)' }}>
           <Footer.Link href={termsOfUseUrl()} target="_blank" rel="noopener noreferrer">
             Terms of Use
           </Footer.Link>

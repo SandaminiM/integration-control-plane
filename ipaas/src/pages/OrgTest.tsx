@@ -21,10 +21,10 @@ import IntegrationScopePicker from '../components/IntegrationScopePicker';
 import { PageContent } from '@wso2/oxygen-ui';
 import type { OrgScope } from '../nav';
 
-export default function OrgBuild(scope: OrgScope): JSX.Element {
+export default function OrgTest(scope: OrgScope): JSX.Element {
   return (
     <PageContent>
-      <IntegrationScopePicker org={scope.org} segment="build" />
+      <IntegrationScopePicker org={scope.org} segment="test" />
     </PageContent>
   );
 }

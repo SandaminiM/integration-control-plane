@@ -16,15 +16,28 @@
  * under the License.
  */
 
-import type { JSX } from 'react';
-import IntegrationScopePicker from '../components/IntegrationScopePicker';
-import { PageContent } from '@wso2/oxygen-ui';
-import type { OrgScope } from '../nav';
+export const containerSx = {
+  border: '0.7px solid',
+  borderColor: 'primary.main',
+  borderRadius: 1.5,
+  p: 4,
+  maxWidth: 1000,
+} as const;
 
-export default function OrgBuild(scope: OrgScope): JSX.Element {
-  return (
-    <PageContent>
-      <IntegrationScopePicker org={scope.org} segment="build" />
-    </PageContent>
-  );
-}
+export const titleSx = {
+  fontWeight: 600,
+} as const;
+
+export const subtitleSx = {
+  mt: 0.5,
+  mb: 3,
+} as const;
+
+export const actionItemSx = {
+  color: 'primary.main',
+} as const;
+
+export const goButtonSx = {
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
+} as const;
