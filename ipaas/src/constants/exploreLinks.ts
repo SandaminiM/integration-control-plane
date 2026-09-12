@@ -16,7 +16,9 @@
  * under the License.
  */
 
-const DOCS = 'https://wso2.com/devant/docs/';
+// The current documentation site. The `get-started/` paths below are the same ones the
+// Create Integration cards link to (see constants/import.tsx), so they stay in step.
+const DOCS = 'https://wso2.com/integration-platform/docs/';
 
 export interface ExploreLink {
   label: string;
@@ -33,19 +35,20 @@ export const EXPLORE_GROUPS: readonly ExploreGroup[] = [
   {
     title: 'Tutorials',
     links: [
-      { label: 'Schedule Your First Automation', href: `${DOCS}quick-start-guides/schedule-your-first-automation/` },
-      { label: 'Develop Your First Integration as API', href: `${DOCS}quick-start-guides/develop-your-first-integration-as-api` },
-      { label: 'Develop Your First AI Agent', href: `${DOCS}quick-start-guides/develop-your-first-ai-agent/` },
-      { label: 'Develop Your First Event Integration', href: `${DOCS}quick-start-guides/develop-your-first-event-integration/` },
-      { label: 'Develop Your First File Integration', href: `${DOCS}quick-start-guides/develop-your-first-file-integration/` },
+      { label: 'Build an Automation', href: `${DOCS}get-started/build-automation` },
+      { label: 'Build an Integration as API', href: `${DOCS}get-started/build-integration-api` },
+      { label: 'Build an AI Agent', href: `${DOCS}get-started/build-ai-agent` },
+      { label: 'Build an Event-Driven Integration', href: `${DOCS}get-started/build-event-driven-integration` },
+      { label: 'Build a File-Driven Integration', href: `${DOCS}get-started/build-file-driven-integration` },
+      { label: 'Develop an MCP Server', href: `${DOCS}get-started/develop-an-mcp-server` },
     ],
   },
   {
     title: 'References',
     links: [
-      { label: 'RAG Ingestion', href: `${DOCS}rag/rag-ingestion/` },
-      { label: 'Manage Your Integrations with DevOps and CI/CD', href: `${DOCS}devops-and-ci-cd/` },
-      { label: 'Observe Your Integration', href: `${DOCS}monitoring-and-insights/` },
+      { label: 'RAG Ingestion', href: `${DOCS}genai/develop/rag/overview` },
+      { label: 'Manage Your Integrations with CI/CD', href: `${DOCS}deploy-operate/cicd/github-actions` },
+      { label: 'Observe Your Integration', href: `${DOCS}deploy-operate/observe/observability-overview` },
     ],
   },
   {

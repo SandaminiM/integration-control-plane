@@ -20,4 +20,4 @@
 export const RUNTIME_ARGS_DOC_URL = 'https://wso2.com/ballerina/icp/docs/';
 
 /** Documentation link for automation schedules (execution drawer). */
-export const AUTOMATION_SCHEDULE_DOC_URL = 'https://wso2.com/devant/docs/quick-start-guides/schedule-your-first-automation/';
+export const AUTOMATION_SCHEDULE_DOC_URL = 'https://wso2.com/integration-platform/docs/get-started/build-automation';
