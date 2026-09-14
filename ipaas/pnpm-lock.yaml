@@ -8,9 +8,6 @@ patchedDependencies:
   '@wso2/cell-diagram@0.2.0':
     hash: 9c04121b3e3acba24df1aef9973e599659ddec80258cbec631dd427c7d5a7b4a
     path: patches/@wso2__cell-diagram@0.2.0.patch
-  '@wso2/oxygen-ui@0.8.0':
-    hash: 3d5383ca025056f8f624da4bbc8ca85bd6bf8c44bbbc6e6fe34ff9539ea92b64
-    path: patches/@wso2__oxygen-ui@0.8.0.patch
   lucide-react@0.545.0:
     hash: 1a047ba4cfdf0225fdcfcc1d4ecb3f45a73d5588d8f5045248e2eb46a2b91677
     path: patches/lucide-react@0.545.0.patch
@@ -35,11 +32,11 @@ importers:
         specifier: 0.2.0
         version: 0.2.0(patch_hash=9c04121b3e3acba24df1aef9973e599659ddec80258cbec631dd427c7d5a7b4a)(@types/react@19.2.2)(pathfinding@0.4.18)(paths-js@0.4.11)(resize-observer-polyfill@1.5.1)
       '@wso2/oxygen-ui':
-        specifier: ^0.8.0
-        version: 0.8.0(patch_hash=3d5383ca025056f8f624da4bbc8ca85bd6bf8c44bbbc6e6fe34ff9539ea92b64)(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: ^0.13.1
+        version: 0.13.1(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@wso2/oxygen-ui-charts-react':
-        specifier: ^0.8.0
-        version: 0.8.0(@types/react@19.2.2)(@wso2/oxygen-ui@0.8.0(patch_hash=3d5383ca025056f8f624da4bbc8ca85bd6bf8c44bbbc6e6fe34ff9539ea92b64)(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react-is@19.2.4)(react@19.2.3)(redux@5.0.1)
+        specifier: ^0.13.1
+        version: 0.13.1(@types/react@19.2.2)(@wso2/oxygen-ui@0.13.1(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react-is@19.2.4)(react@19.2.3)(redux@5.0.1)
       '@wso2/oxygen-ui-icons-react':
         specifier: ^0.9.1
         version: 0.9.1(react@19.2.3)
@@ -212,6 +209,10 @@ packages:
 
   '@babel/runtime@7.28.6':
     resolution: {integrity: sha512-05WQkdpL9COIMz4LjTxGpPNCdlpyimKppYNoJ5Di5EUObifl8t4tuLuUBBZEpoLYOmfvIWrsp9fCl0HoPRVTdA==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/runtime@7.29.7':
+    resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
     engines: {node: '>=6.9.0'}
 
   '@babel/template@7.28.6':
@@ -954,6 +955,14 @@ packages:
       '@types/react':
         optional: true
 
+  '@mui/types@9.4.0':
+    resolution: {integrity: sha512-13DH0Oniua4WmGqeYbQAZqmiN7r4nfd0zwIoGJ5QeJwyIHgEmf+LkRw/jV1HZb6AiUoHX8Oxf4xgalq3vYHcIw==}
+    peerDependencies:
+      '@types/react': ^17.0.0 || ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
   '@mui/utils@5.17.1':
     resolution: {integrity: sha512-jEZ8FTqInt2WzxDV8bhImWBqeQRD99c/id/fq83H0ER9tFl+sfZlaAoCdznGvbSQQ9ividMxqSV2c7cC1vBcQg==}
     engines: {node: '>=12.0.0'}
@@ -966,6 +975,16 @@ packages:
 
   '@mui/utils@7.3.7':
     resolution: {integrity: sha512-+YjnjMRnyeTkWnspzoxRdiSOgkrcpTikhNPoxOZW0APXx+urHtUoXJ9lbtCZRCA5a4dg5gSbd19alL1DvRs5fg==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      '@types/react': ^17.0.0 || ^18.0.0 || ^19.0.0
+      react: ^17.0.0 || ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
+  '@mui/utils@9.0.0':
+    resolution: {integrity: sha512-bQcqyg/gjULUqTuyUjSAFr6LQGLvtkNtDbJerAtoUn9kGZ0hg5QJiN1PLHMLbeFpe3te1831uq7GFl2ITokGdg==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       '@types/react': ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -1858,8 +1877,8 @@ packages:
   '@wso2/cell-diagram@0.2.0':
     resolution: {integrity: sha512-XtGywdnD2py/5mf/76xMEf7v8194lOv9XVDtSIHpbk14VQknU3Fxi9jbdQUxdVbSGRxn5lImSf+76sx9PQBI6Q==}
 
-  '@wso2/oxygen-ui-charts-react@0.8.0':
-    resolution: {integrity: sha512-x06wGdzqi9VlZG0TwD8TRaYDBr64JbPxFfi/H1iByggikR84j1mZUVKT8Dv5C0/V7FsGBfOiPQCtqShxZbVH4g==}
+  '@wso2/oxygen-ui-charts-react@0.13.1':
+    resolution: {integrity: sha512-Lw7+QfXzOhHbZfsJI/vAsEUkeWGZMbiDc8BD5sgtLcVp4mFHfI3dIgAHzOmRMClApQFkKqwRDIiAmq4NjCIbIQ==}
     peerDependencies:
       '@wso2/oxygen-ui': '>=0.1.0'
       react: 19.2.3
@@ -1871,8 +1890,8 @@ packages:
     peerDependencies:
       react: 19.2.3
 
-  '@wso2/oxygen-ui@0.8.0':
-    resolution: {integrity: sha512-j7bmWLiBPXGgdwEs6GGN/lM0+kx0Fa6UzALC0B1k4bv8LuCHTxIXnsEEoxYoUpzla8jk1m01iNYnIu08wXOMng==}
+  '@wso2/oxygen-ui@0.13.1':
+    resolution: {integrity: sha512-naLAZdIBBYS76Rx9cncLquyLZHrXxMym9CXO+W+CZn5YWnYQWxsE+0IIW03Ap/eF0JNX+d/AJVlENA/+WE9WoQ==}
     hasBin: true
     peerDependencies:
       '@wso2/oxygen-ui-icons-react': '>=0.1.0'
@@ -4489,6 +4508,8 @@ snapshots:
 
   '@babel/runtime@7.28.6': {}
 
+  '@babel/runtime@7.29.7': {}
+
   '@babel/template@7.28.6':
     dependencies:
       '@babel/code-frame': 7.29.0
@@ -5170,6 +5191,12 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.2
 
+  '@mui/types@9.4.0(@types/react@19.2.2)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+    optionalDependencies:
+      '@types/react': 19.2.2
+
   '@mui/utils@5.17.1(@types/react@19.2.2)(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.28.6
@@ -5186,6 +5213,18 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.28.6
       '@mui/types': 7.4.10(@types/react@19.2.2)
+      '@types/prop-types': 15.7.15
+      clsx: 2.1.1
+      prop-types: 15.8.1
+      react: 19.2.3
+      react-is: 19.2.4
+    optionalDependencies:
+      '@types/react': 19.2.2
+
+  '@mui/utils@9.0.0(@types/react@19.2.2)(react@19.2.3)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      '@mui/types': 9.4.0(@types/react@19.2.2)
       '@types/prop-types': 15.7.15
       clsx: 2.1.1
       prop-types: 15.8.1
@@ -6411,9 +6450,9 @@ snapshots:
       - resize-observer-polyfill
       - supports-color
 
-  '@wso2/oxygen-ui-charts-react@0.8.0(@types/react@19.2.2)(@wso2/oxygen-ui@0.8.0(patch_hash=3d5383ca025056f8f624da4bbc8ca85bd6bf8c44bbbc6e6fe34ff9539ea92b64)(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react-is@19.2.4)(react@19.2.3)(redux@5.0.1)':
+  '@wso2/oxygen-ui-charts-react@0.13.1(@types/react@19.2.2)(@wso2/oxygen-ui@0.13.1(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react-is@19.2.4)(react@19.2.3)(redux@5.0.1)':
     dependencies:
-      '@wso2/oxygen-ui': 0.8.0(patch_hash=3d5383ca025056f8f624da4bbc8ca85bd6bf8c44bbbc6e6fe34ff9539ea92b64)(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@wso2/oxygen-ui': 0.13.1(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
       react-is: 19.2.4
@@ -6427,12 +6466,14 @@ snapshots:
       lucide-react: 0.545.0(patch_hash=1a047ba4cfdf0225fdcfcc1d4ecb3f45a73d5588d8f5045248e2eb46a2b91677)(react@19.2.3)
       react: 19.2.3
 
-  '@wso2/oxygen-ui@0.8.0(patch_hash=3d5383ca025056f8f624da4bbc8ca85bd6bf8c44bbbc6e6fe34ff9539ea92b64)(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+  '@wso2/oxygen-ui@0.13.1(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(@wso2/oxygen-ui-icons-react@0.9.1(react@19.2.3))(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
+      '@emotion/cache': 11.14.0
       '@emotion/react': 11.14.0(@types/react@19.2.2)(react@19.2.3)
       '@emotion/styled': 11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3)
       '@fontsource-variable/inter': 5.2.8
       '@mui/material': 7.3.4(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@mui/utils': 9.0.0(@types/react@19.2.2)(react@19.2.3)
       '@mui/x-data-grid': 8.16.0(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@mui/material@7.3.4(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@mui/x-date-pickers': 8.16.0(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@mui/material@7.3.4(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(date-fns@4.1.0)(dayjs@1.11.20)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@mui/x-tree-view': 8.14.0(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@mui/material@7.3.4(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(@mui/system@7.3.7(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react@19.2.3))(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
