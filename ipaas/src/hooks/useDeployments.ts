@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import { useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Query } from '@tanstack/react-query';
 import { fetchApimSwagger } from '#api/apim';
@@ -53,13 +54,23 @@ export function useComponentDeployment(orgHandler: string, orgUuid: string, comp
   });
 }
 
-export function useEnvEndpoints(componentId: string, versionId: string, releaseId: string) {
+// Endpoints land on the release seconds after the deployment does, and nothing else refetches them.
+const ENDPOINTS_POLL_MS = 8_000;
+// Bounded, because an empty list is also the permanent answer for a type that exposes none.
+const ENDPOINTS_POLL_MAX_FETCHES = 20;
+
+export function useEnvEndpoints(componentId: string, versionId: string, releaseId: string, options?: { pollUntilReady?: boolean }) {
+  const pollUntilReady = options?.pollUntilReady ?? false;
   return useQuery({
     queryKey: ['envEndpoints', componentId, versionId, releaseId],
     queryFn: () => fetchEnvEndpoints(componentId, versionId, releaseId),
     enabled: !!componentId && !!versionId && !!releaseId,
     staleTime: 30_000,
     retry: false,
+    refetchInterval: (query) => {
+      if (!pollUntilReady || (query.state.data?.length ?? 0) > 0) return false;
+      return query.state.dataUpdateCount + query.state.errorUpdateCount < ENDPOINTS_POLL_MAX_FETCHES ? ENDPOINTS_POLL_MS : false;
+    },
   });
 }
 
@@ -89,6 +100,22 @@ export function useDeploymentStatus(componentId: string, versionId: string) {
       return data.some((d) => d.status === 'in_progress' || d.status === 'queued') ? 5000 : 15000;
     },
   });
+}
+
+/** Neither query polls once settled, so this edge is the only thing that notices the deployment and its endpoints appearing. */
+export function useRefreshOnBuildSuccess(componentId: string, versionId: string): void {
+  const queryClient = useQueryClient();
+  const { data: builds } = useDeploymentStatus(componentId, versionId);
+  const previousStatus = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    const latest = builds?.[0];
+    if (previousStatus.current === 'in_progress' && latest?.status === 'completed' && latest?.conclusion === 'success') {
+      queryClient.invalidateQueries({ queryKey: ['componentDeployment'] });
+      queryClient.invalidateQueries({ queryKey: ['envEndpoints'] });
+    }
+    previousStatus.current = latest?.status;
+  }, [builds, queryClient]);
 }
 
 export function useReleaseMgtDeployments(orgUuid: string, projectId: string, componentId: string, versionId: string, environmentId: string) {
