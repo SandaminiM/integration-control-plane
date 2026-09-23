@@ -44,6 +44,9 @@ import type { IntegrationKind } from '../types/insights';
 
 const TERMINAL_CONCLUSIONS = new Set(['success', 'failure', 'cancelled', 'timed_out', 'neutral', 'skipped']);
 
+// A backgrounded tab pauses polling, so a build can be last seen queued and never observed in_progress.
+const BUILD_PENDING_STATUSES = new Set(['queued', 'in_progress']);
+
 export function useComponentDeployment(orgHandler: string, orgUuid: string, componentId: string, versionId: string, environmentId: string, options?: { refetchInterval?: number | false | ((query: Query<ComponentDeployment | null>) => number | false) }) {
   return useQuery<ComponentDeployment | null, Error, ComponentDeployment | null>({
     queryKey: ['componentDeployment', orgHandler, orgUuid, componentId, versionId, environmentId],
@@ -110,7 +113,8 @@ export function useRefreshOnBuildSuccess(componentId: string, versionId: string)
 
   useEffect(() => {
     const latest = builds?.[0];
-    if (previousStatus.current === 'in_progress' && latest?.status === 'completed' && latest?.conclusion === 'success') {
+    const succeeded = !!latest && latest.status === 'completed' && (latest.conclusionV2 ?? latest.conclusion ?? '') === 'success';
+    if (succeeded && BUILD_PENDING_STATUSES.has(previousStatus.current ?? '')) {
       queryClient.invalidateQueries({ queryKey: ['componentDeployment'] });
       queryClient.invalidateQueries({ queryKey: ['envEndpoints'] });
     }
