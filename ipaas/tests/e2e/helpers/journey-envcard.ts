@@ -20,7 +20,7 @@
 
 import { expect, type Locator, type Page } from '@playwright/test';
 import { STARTING_STATUS, waitForBuildToSettle } from './build.js';
-import { AUTOMATION, BUILD_QUIET_MS, DEPLOY_TIMEOUT_MS, ENV, PROBE_GAP_MS, SAMPLE } from './journey-fixtures.js';
+import { AGENT_GATE_POLL_MS, AGENT_GATE_TIMEOUT_MS, AUTOMATION, BUILD_QUIET_MS, DEPLOY_TIMEOUT_MS, ENV, PROBE_GAP_MS, SAMPLE } from './journey-fixtures.js';
 
 /** The environment card. Scoped because the build card shows the same status words a deployment does. */
 export function envCard(page: Page): Locator {
@@ -91,6 +91,30 @@ export async function requireActiveDeployment(page: Page): Promise<void> {
   await dismissStrayDialog(page);
   const deployed = await waitForDeploymentSettled(page);
   expect(deployed, `${SAMPLE} deployment to ${ENV} ended as ${deployed}`).toBe('Active');
+}
+
+/** Reloaded, not merely awaited: the card renders "Deploy this agent…" until a build lands and does not refetch on its own. */
+export async function waitForConfigureGate(page: Page, timeout = AGENT_GATE_TIMEOUT_MS): Promise<string> {
+  const deadline = Date.now() + timeout;
+  const gate = () => envCard(page).getByRole('button', { name: 'Configure to Continue' });
+
+  for (;;) {
+    if (
+      await expect(gate())
+        .toBeVisible({ timeout: AGENT_GATE_POLL_MS })
+        .then(() => true)
+        .catch(() => false)
+    ) {
+      return 'the agent asked to be configured';
+    }
+    if (Date.now() >= deadline) return (await envCard(page).textContent())?.replace(/\s+/g, ' ').trim().slice(0, 200) ?? 'the card reported nothing';
+
+    // An import triggers build after build, and each one has to finish before a deployment exists.
+    await waitForBuildQuiet(page, Math.min(BUILD_QUIET_MS, Math.max(0, deadline - Date.now())));
+    // A plain reload: waitForBuildQuiet already tops the token up through the build helper.
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(envCard(page), 'the environment card did not come back after the reload').toBeVisible({ timeout: 60_000 });
+  }
 }
 
 /** An automation's card renders no status dot, so readiness is its Schedule and Test actions. */

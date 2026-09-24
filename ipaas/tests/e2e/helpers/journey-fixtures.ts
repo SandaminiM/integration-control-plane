@@ -52,6 +52,9 @@ export const REDEPLOY_SETTLE_MS = 60_000;
 export const AGENT_REPLY_TIMEOUT_MS = 90_000;
 /** An agent's import triggers a second build minutes after the first settles, so the card is watched this long past it. */
 export const BUILD_QUIET_MS = 90_000;
+/** An agent has no deployment until its last build lands, and the card offers nothing before that. */
+export const AGENT_GATE_TIMEOUT_MS = 15 * 60_000;
+export const AGENT_GATE_POLL_MS = 30_000;
 
 /** A fresh test key is refused until it propagates (10-22s), so Execute is retried across that window. */
 export const EXECUTE_ATTEMPTS = 6;
