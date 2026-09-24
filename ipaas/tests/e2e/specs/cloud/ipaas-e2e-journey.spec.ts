@@ -39,6 +39,7 @@ import {
   NO_SCHEDULE,
   PROBE_TIMEOUT_MS,
   PROJECT,
+  PROJECT_REMOVAL_TIMEOUT_MS,
   REDEPLOY_SETTLE_MS,
   REMOVAL_TIMEOUT_MS,
   SAMPLE,
@@ -960,7 +961,7 @@ test.describe('08 clean up @smoke', () => {
   });
 
   test('Delete Project becomes available once the project is empty', async () => {
-    test.setTimeout(9 * 60_000);
+    test.setTimeout(REMOVAL_TIMEOUT_MS + 3 * 60_000);
     // Back to project scope: cloud's integration scope offers no Settings item (AppLayout.tsx:1424).
     await openProjectSettings(page, orgHandler);
 
@@ -968,8 +969,8 @@ test.describe('08 clean up @smoke', () => {
     // deletions landed. Re-entered each attempt because the components query does not refetch.
     const deleteProject = page.getByRole('button', { name: 'Delete Project', exact: true });
     let enabled = false;
-    // 24 attempts at 15s: the platform can take six minutes to finish removing an integration.
-    for (let attempt = 0; attempt < 24 && !enabled; attempt++) {
+    // 40 attempts at 15s, matching the budget a single integration's removal gets.
+    for (let attempt = 0; attempt < 40 && !enabled; attempt++) {
       enabled = await expect(deleteProject)
         .toBeEnabled({ timeout: 15_000 })
         .then(() => true)
@@ -980,7 +981,7 @@ test.describe('08 clean up @smoke', () => {
   });
 
   test('deleting the project returns to the organization home without its card', async () => {
-    test.setTimeout(4 * 60_000);
+    test.setTimeout(PROJECT_REMOVAL_TIMEOUT_MS + 3 * 60_000);
     await page.getByRole('button', { name: 'Delete Project', exact: true }).click();
     await confirmRemoval(page, 'Enter project name to confirm', PROJECT);
 
@@ -994,7 +995,7 @@ test.describe('08 clean up @smoke', () => {
       throw new Error(`the console rejected the delete: ${(await rejected.textContent())?.trim()}`);
     }
     await expect(landed, 'the delete neither completed nor reported an error').toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText(PROJECT, { exact: true }), `the ${PROJECT} card is still on the org home`).toHaveCount(0, { timeout: REMOVAL_TIMEOUT_MS });
+    await expect(page.getByText(PROJECT, { exact: true }), `the ${PROJECT} card is still on the org home`).toHaveCount(0, { timeout: PROJECT_REMOVAL_TIMEOUT_MS });
   });
 });
 

@@ -22,7 +22,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { reseedSessionToken, waitForApiConfig } from './cloud-fixtures.js';
 import { expandSidebar, gotoOrgHome, openProject } from './console-nav.js';
 import { dismissStrayDialog } from './journey-envcard.js';
-import { PROJECT, REMOVAL_TIMEOUT_MS } from './journey-fixtures.js';
+import { PROJECT, PROJECT_REMOVAL_TIMEOUT_MS } from './journey-fixtures.js';
 
 /** Parked on config.json first: reseeding writes through the page, so it needs the console's origin. */
 export async function refreshSession(page: Page): Promise<void> {
@@ -113,5 +113,5 @@ export async function waitForStaleProjectRemoval(page: Page): Promise<void> {
   )
     return;
   test.info().annotations.push({ type: 'fixture', description: `${PROJECT} was still being deleted; waited for it to disappear` });
-  await expect(page.getByText(PROJECT, { exact: true }), `${PROJECT} is stuck mid-deletion on the org home`).toHaveCount(0, { timeout: REMOVAL_TIMEOUT_MS });
+  await expect(page.getByText(PROJECT, { exact: true }), `${PROJECT} is stuck mid-deletion on the org home`).toHaveCount(0, { timeout: PROJECT_REMOVAL_TIMEOUT_MS });
 }

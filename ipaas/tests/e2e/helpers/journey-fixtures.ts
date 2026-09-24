@@ -44,8 +44,10 @@ export const FOOTER_LINKS = [
 export const CLOUD_SECTIONS = ['Org Details', 'Package Registries'] as const;
 export const WIP_ONLY_SECTIONS = ['Access Control', 'Egress Control', 'Workflows', 'Credentials', 'On-Prem Keys', 'Application Security'] as const;
 
-/** Deleting an integration is asynchronous: the row greys out, then goes. */
-export const REMOVAL_TIMEOUT_MS = 7 * 60_000;
+/** Deleting an integration is asynchronous: the row greys out, then goes. Observed at ~3 minutes on DEV. */
+export const REMOVAL_TIMEOUT_MS = 10 * 60_000;
+/** A project goes only once its integrations are gone, so it is given longer than any one of them. */
+export const PROJECT_REMOVAL_TIMEOUT_MS = 15 * 60_000;
 export const DEPLOY_TIMEOUT_MS = 7 * 60_000;
 /** The card reports the previous deployment for a moment after Apply, so the status waits it out. */
 export const REDEPLOY_SETTLE_MS = 60_000;
