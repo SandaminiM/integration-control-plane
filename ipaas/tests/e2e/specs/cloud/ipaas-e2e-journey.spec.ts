@@ -682,7 +682,7 @@ test.describe('05 import an AI agent @smoke', () => {
 
   test('the build completed and the deployment is Active', async () => {
     test.setTimeout(BUILD_TIMEOUT_MS + DEPLOY_TIMEOUT_MS + 2 * 60_000);
-    await requireActiveDeployment(page);
+    await requireActiveDeployment(page, agentName || AGENT_TYPE);
   });
 
   test('the agent asks to be configured before it can run', async () => {

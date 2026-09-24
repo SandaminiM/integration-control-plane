@@ -84,13 +84,13 @@ export async function waitForBuildQuiet(page: Page, quietMs = BUILD_QUIET_MS): P
   return status;
 }
 
-export async function requireActiveDeployment(page: Page): Promise<void> {
+export async function requireActiveDeployment(page: Page, name = SAMPLE): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Latest Build' })).toBeVisible({ timeout: 60_000 });
   const build = await waitForBuildQuiet(page);
-  expect(build, `${SAMPLE} build ended as ${build}`).toMatch(/^Completed/);
+  expect(build, `${name} build ended as ${build}`).toMatch(/^Completed/);
   await dismissStrayDialog(page);
   const deployed = await waitForDeploymentSettled(page);
-  expect(deployed, `${SAMPLE} deployment to ${ENV} ended as ${deployed}`).toBe('Active');
+  expect(deployed, `${name} deployment to ${ENV} ended as ${deployed}`).toBe('Active');
 }
 
 /** Reloaded, not merely awaited: the card renders "Deploy this agent…" until a build lands and does not refetch on its own. */
