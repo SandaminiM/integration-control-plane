@@ -954,7 +954,7 @@ test.describe('08 clean up @smoke', () => {
   });
 
   test('Delete Project becomes available once the project is empty', async () => {
-    test.setTimeout(8 * 60_000);
+    test.setTimeout(9 * 60_000);
     // Back to project scope: cloud's integration scope offers no Settings item (AppLayout.tsx:1424).
     await openProjectSettings(page, orgHandler);
 
@@ -962,7 +962,8 @@ test.describe('08 clean up @smoke', () => {
     // deletions landed. Re-entered each attempt because the components query does not refetch.
     const deleteProject = page.getByRole('button', { name: 'Delete Project', exact: true });
     let enabled = false;
-    for (let attempt = 0; attempt < 8 && !enabled; attempt++) {
+    // 24 attempts at 15s: the platform can take six minutes to finish removing an integration.
+    for (let attempt = 0; attempt < 24 && !enabled; attempt++) {
       enabled = await expect(deleteProject)
         .toBeEnabled({ timeout: 15_000 })
         .then(() => true)
