@@ -192,3 +192,14 @@ describe('fetchGatewayLogs', () => {
     await expect(fetchGatewayLogs(gatewayRequest(2))).rejects.toThrow(/no timestamp/);
   });
 });
+
+describe('fetchComponentLogs environment scope', () => {
+  it('leaves the environment out of the scope when none is given, and names each row by its own', async () => {
+    get.mockResolvedValue({ items: [{ projectName: 'default' }] });
+    post.mockResolvedValue({ logs: [{ timestamp: 't1', log: 'line', metadata: { environmentName: 'production' } }] });
+
+    const rows = await fetchComponentLogs(request({ environmentId: undefined }), 'ignored');
+    expect(post.mock.calls[0][1].searchScope).not.toHaveProperty('environment');
+    expect(rows[0].environment).toBe('production');
+  });
+});

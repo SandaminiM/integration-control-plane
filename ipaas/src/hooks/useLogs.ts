@@ -22,7 +22,7 @@ import type { InfiniteData } from '@tanstack/react-query';
 import { fetchLogs, fetchComponentLogs, fetchGatewayLogs } from '#api/logs';
 import { IS_CLOUD } from '../features';
 import { filterLogRows, type LogRowFilter } from '../utils/logs';
-import type { LogsRequest, ComponentLogsRequest, GatewayLogsPage, GatewayLogsRequest, LogRow } from '../types/logs';
+import type { LogsRequest, ComponentLogsRequest, GatewayEnvironmentCursor, GatewayEnvironmentsPage, GatewayLogsPage, GatewayLogsRequest, LogRow } from '../types/logs';
 
 // The cloud log source cannot narrow by level, so leaving levels out of its
 // request keeps the query key — and the pages already loaded — stable while the
@@ -31,6 +31,12 @@ import type { LogsRequest, ComponentLogsRequest, GatewayLogsPage, GatewayLogsReq
 function sourceRequest<T extends { logLevels: string[] }>(req: T | null): T | null {
   return req && IS_CLOUD ? { ...req, logLevels: [] } : req;
 }
+
+// A refetch reloads every loaded page, so once older pages are open the live refresh stops rather than re-reading history.
+const liveHeadOnly =
+  (interval: number | false) =>
+  (query: { state: { data?: { pages: unknown[] } } }): number | false =>
+    (query.state.data?.pages.length ?? 0) > 1 ? false : interval;
 
 /**
  * The rows a panel renders: the loaded pages flattened, then narrowed by filters
@@ -60,7 +66,7 @@ export function useInfiniteLogs(req: LogsRequest | null, refetchInterval: number
       return lastPage[lastPage.length - 1]?.timestamp;
     },
     enabled: !!query && !!logsApiUrl,
-    refetchInterval,
+    refetchInterval: liveHeadOnly(refetchInterval),
   });
 }
 
@@ -78,7 +84,7 @@ export function useInfiniteComponentLogs(req: ComponentLogsRequest | null, refet
       return lastPage[lastPage.length - 1]?.timestamp;
     },
     enabled: !!query && !!logsApiUrl,
-    refetchInterval,
+    refetchInterval: liveHeadOnly(refetchInterval),
   });
 }
 
@@ -97,6 +103,33 @@ export function useInfiniteGatewayLogs(req: GatewayLogsRequest | null, refetchIn
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     select: gatewayRowPages,
     enabled: !!req,
-    refetchInterval,
+    refetchInterval: liveHeadOnly(refetchInterval),
+  });
+}
+
+const environmentRowPages = (data: InfiniteData<GatewayEnvironmentsPage>): InfiniteData<LogRow[]> => ({ ...data, pages: data.pages.map((page) => page.rows) });
+
+/** Gateway lines carry no environment name, so each environment (and each search phrase) is its own query, stamped onto its rows and paged on its own cursor. */
+export function useInfiniteGatewayLogsByEnvironment(req: GatewayLogsRequest | null, environmentIds: string[], searchPhrases: string[], refetchInterval: number | false = false) {
+  return useInfiniteQuery({
+    queryKey: ['gateway-logs-by-environment', req, environmentIds, searchPhrases],
+    queryFn: async ({ pageParam }): Promise<GatewayEnvironmentsPage> => {
+      const pages = await Promise.all(
+        pageParam.map(async ({ environmentId, searchPhrase, cursor }) => {
+          const window = cursor ? (req!.sort === 'desc' ? { endTime: cursor } : { startTime: cursor }) : {};
+          const page = await fetchGatewayLogs({ ...req!, ...window, environmentId, searchPhrase });
+          return { environmentId, searchPhrase, page };
+        }),
+      );
+      return {
+        rows: pages.flatMap(({ environmentId, page }) => page.rows.map((row) => ({ ...row, environment: environmentId }))),
+        next: pages.flatMap(({ environmentId, searchPhrase, page }) => (page.nextCursor ? [{ environmentId, searchPhrase, cursor: page.nextCursor }] : [])),
+      };
+    },
+    initialPageParam: environmentIds.flatMap((environmentId) => searchPhrases.map((searchPhrase): GatewayEnvironmentCursor => ({ environmentId, searchPhrase }))),
+    getNextPageParam: (lastPage) => (lastPage.next.length > 0 ? lastPage.next : undefined),
+    select: environmentRowPages,
+    enabled: !!req && environmentIds.length > 0 && searchPhrases.length > 0,
+    refetchInterval: liveHeadOnly(refetchInterval),
   });
 }

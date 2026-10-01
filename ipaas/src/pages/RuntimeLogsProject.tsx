@@ -28,16 +28,16 @@ import type { LogsRequest } from '../types/logs';
 import { choreologgingProjectLogsApiUrl } from '../config/runtimeConfig';
 import { IS_CLOUD } from '../features';
 import { AUTO_FETCH_INTERVAL, DEFAULT_DP_REGION, PAGE_SIZE } from '../utils/logs';
-import LogsFilters from '../components/Logs/LogsFilters';
 import LogsPageLayout from '../components/Logs/LogsPageLayout';
-import LogsPanel from '../components/Logs/LogsPanel';
-import LogEntry from '../components/Logs/LogEntry';
+import LogsToolbar from '../components/Logs/LogsToolbar';
+import LogsViewer from '../components/Logs/LogsViewer';
+import { logsSummary } from '../utils/logsView';
 import EmptyListing from '../components/EmptyListing';
 import { useLogsFilters } from '../hooks/useLogsFilters';
 import type { ProjectScope } from '../nav';
 
 export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
-  const filters = useLogsFilters();
+  const filters = useLogsFilters(`${scope.org}/${scope.project}`);
   const { envFilter, levelFilter, sortDir, searchPhrase, autoFetch, startTime, endTime } = filters;
 
   const { data: orgs, isLoading: loadingOrgs } = useOrgs();
@@ -138,12 +138,16 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
     <LogsPageLayout
       title="Runtime Logs"
       headerAction={integrationSelect}
-      filtersElement={<LogsFilters filters={filters} environments={environments} logs={logs} logsRequest={logsRequest} onRefetch={refetch} />}
+      filtersElement={<LogsToolbar filters={filters} environments={environments} logs={logs} canRefresh={!!logsRequest} onRefetch={refetch} />}
       logPanelElement={
-        <LogsPanel
-          items={logs}
-          getKey={(l, i) => `${i}-${l.timestamp}-${l.logLine.slice(0, 50)}`}
-          renderRow={(l, ex, tg) => <LogEntry log={l} expanded={ex} onToggle={tg} />}
+        <LogsViewer
+          rows={logs}
+          live={autoFetch && (data?.pages.length ?? 0) <= 1}
+          pausedNote={autoFetch ? 'paused while older lines are open' : undefined}
+          failure={error ? "Couldn't load logs" : undefined}
+          summary={logsSummary({ lines: logs.length })}
+          sortDir={sortDir}
+          onSortChange={filters.setSortDir}
           isLoading={isLoading}
           error={error}
           hasNextPage={hasNextPage}

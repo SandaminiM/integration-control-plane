@@ -17,7 +17,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import { copyLog, DISPLAY_FIELDS, downloadLogs, filterLogLines, filterLogRows, formatValue, LEVEL_COLORS, levelColor, statusCodeColor, toLocalInput, mergeLogRows, selectLogSources } from './logs';
+import { copyLog, DISPLAY_FIELDS, downloadLogs, filterLogLines, filterLogRows, formatValue, LEVEL_COLORS, levelColor, toLocalInput, mergeLogRows, selectLogSources, filterLogsByScope, findEnvironment, sortLogRows } from './logs';
 import type { LogRow } from '../types/logs';
 
 const makeLogRow = (overrides: Partial<LogRow> = {}): LogRow => ({
@@ -54,30 +54,6 @@ describe('levelColor', () => {
 
   it('falls back to the default color for an unknown level', () => {
     expect(levelColor('TRACE')).toEqual({ bg: '#eceff1', text: '#37474f' });
-  });
-});
-
-describe('statusCodeColor', () => {
-  it('returns blue for 2xx codes', () => {
-    expect(statusCodeColor('200')).toEqual({ bg: '#e3f2fd', text: '#0d47a1' });
-    expect(statusCodeColor('299')).toEqual({ bg: '#e3f2fd', text: '#0d47a1' });
-  });
-
-  it('returns orange for 3xx codes', () => {
-    expect(statusCodeColor('301')).toEqual({ bg: '#fff3e0', text: '#e65100' });
-  });
-
-  it('returns red for 4xx and 5xx codes', () => {
-    expect(statusCodeColor('404')).toEqual({ bg: '#ffebee', text: '#b71c1c' });
-    expect(statusCodeColor('500')).toEqual({ bg: '#ffebee', text: '#b71c1c' });
-  });
-
-  it('falls back to the default color for codes outside known ranges', () => {
-    expect(statusCodeColor('100')).toEqual({ bg: '#eceff1', text: '#37474f' });
-  });
-
-  it('falls back to the default color for null', () => {
-    expect(statusCodeColor(null)).toEqual({ bg: '#eceff1', text: '#37474f' });
   });
 });
 
@@ -279,5 +255,47 @@ describe('selectLogSources', () => {
 
   it('merges both streams for all logs', () => {
     expect(selectLogSources(component, gateway, 'all', 'desc').map((r) => r.source)).toEqual(['gateway', 'component']);
+  });
+});
+
+describe('filterLogsByScope', () => {
+  const row = (environment: string, source: 'component' | 'gateway', endpoint?: string): LogRow => makeLogRow({ logLine: `${source} ${environment} ${endpoint ?? ''}`, environment, source, endpoint });
+  const rows = [row('development', 'component'), row('production', 'component'), row('development', 'gateway', 'a'), row('development', 'gateway', 'b')];
+
+  it('keeps every row when nothing is selected', () => {
+    expect(filterLogsByScope(rows, { environments: [], endpoints: [] })).toBe(rows);
+  });
+
+  it('narrows both sources by environment, ignoring case', () => {
+    expect(filterLogsByScope(rows, { environments: [{ id: 'dev', name: 'Development' }], endpoints: [] })).toHaveLength(3);
+  });
+
+  it('narrows gateway rows by endpoint and leaves runtime rows, which have none', () => {
+    expect(filterLogsByScope(rows, { environments: [], endpoints: ['a'] }).map((r) => r.logLine)).toEqual(['component development ', 'component production ', 'gateway development a']);
+  });
+});
+
+describe('sortLogRows', () => {
+  const row = (timestamp: string): LogRow => makeLogRow({ timestamp, logLine: timestamp });
+
+  it('orders rows read from several environments into one timeline', () => {
+    const rows = [row('2026-09-28T10:00:01Z'), row('2026-09-28T10:00:03Z'), row('not-a-date'), row('2026-09-28T10:00:02Z')];
+    expect(sortLogRows(rows, 'desc').map((r) => r.timestamp)).toEqual(['2026-09-28T10:00:03Z', '2026-09-28T10:00:02Z', '2026-09-28T10:00:01Z', 'not-a-date']);
+  });
+});
+
+describe('findEnvironment', () => {
+  const environments = [
+    { id: 'development', name: 'Development' },
+    { id: 'prod', name: 'Production' },
+  ];
+
+  it.each([
+    ['the console id', 'prod', 'Production'],
+    ['the name the log source uses, ignoring case', 'production', 'Production'],
+    ['an unknown value', 'staging', undefined],
+    ['nothing', null, undefined],
+  ])('resolves %s', (_label, value, expected) => {
+    expect(findEnvironment(environments, value)?.name).toBe(expected);
   });
 });

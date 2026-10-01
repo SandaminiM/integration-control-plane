@@ -17,37 +17,52 @@
  */
 
 import { useMemo } from 'react';
-import { useComponentDeployment, useEnvEndpoints } from './useDeployments';
-import { useEndpointSecurity } from './useConsumers';
+import { useComponentDeployments, useEnvEndpoints } from './useDeployments';
+import { useEndpointSecurities } from './useConsumers';
 import { IS_CLOUD } from '../features';
-import { endpointContextPath, gatewayFrontedEndpoint } from '../utils/gatewayLogs';
+import { endpointContextPath, gatewayFrontedEndpoints, gatewaySearchPhrases } from '../utils/gatewayLogs';
 import type { ComponentDetail } from '../types/component';
+import type { GatewayLogEndpoint } from '../types/logs';
 
-/** What an integration needs before its gateway traffic can be read: an endpoint the gateway fronts, and its path. */
+/** What an integration needs before its gateway traffic can be read: the endpoints the gateway fronts, and their paths. */
 export interface GatewayLogScope {
-  /** The endpoint's context path, matched against the log line — the only narrowing the log backend offers. */
-  contextPath: string;
+  endpoints: GatewayLogEndpoint[];
+  /** Phrases that narrow the query to these endpoints — the only narrowing the log backend offers. */
+  searchPhrases: string[];
   /** False when nothing is exposed through the gateway, or on a product with no observability proxy. */
   available: boolean;
+  /** True while the lookups that decide `available` are still in flight. */
+  resolving: boolean;
 }
 
-export function useGatewayLogScope(orgHandler: string, orgUuid: string, component: ComponentDetail | null | undefined, environmentId: string): GatewayLogScope {
+// An endpoint's path is the same in every environment, so its endpoints are read from the first one it is deployed in.
+export function useGatewayLogScope(orgHandler: string, orgUuid: string, component: ComponentDetail | null | undefined, environmentIds: string[]): GatewayLogScope {
   const versionId = useMemo(() => {
     const versions = component?.apiVersions ?? [];
     return (versions.find((v) => v.latest) ?? versions[0])?.id ?? '';
   }, [component]);
 
   // The endpoint is the signal, not the type: wire type names differ from the console's vocabulary.
-  const { data: deployment } = useComponentDeployment(IS_CLOUD ? orgHandler : '', orgUuid, component?.id ?? '', versionId, environmentId);
-  const releaseId = deployment?.releaseId ?? '';
-  const { data: endpoints = [] } = useEnvEndpoints(IS_CLOUD ? (component?.id ?? '') : '', versionId, releaseId);
+  const deployments = useComponentDeployments(IS_CLOUD ? orgHandler : '', orgUuid, component?.id ?? '', versionId, environmentIds);
+  const deployedIndex = deployments.findIndex((q) => !!q.data?.releaseId);
+  const environmentId = deployedIndex >= 0 ? environmentIds[deployedIndex] : '';
+  const releaseId = deployedIndex >= 0 ? (deployments[deployedIndex].data?.releaseId ?? '') : '';
+  const { data: envEndpoints = [], isLoading: loadingEndpoints } = useEnvEndpoints(IS_CLOUD ? (component?.id ?? '') : '', versionId, releaseId);
 
-  const endpoint = gatewayFrontedEndpoint(endpoints);
-  const securityRef = IS_CLOUD && component && endpoint ? { componentName: component.id, environmentName: environmentId, endpointName: endpoint.id } : null;
-  const { data: security } = useEndpointSecurity(securityRef, !!securityRef);
+  const fronted = useMemo(() => (IS_CLOUD ? gatewayFrontedEndpoints(envEndpoints) : []), [envEndpoints]);
+  const refs = useMemo(() => (component ? fronted.map((e) => ({ componentName: component.id, environmentName: environmentId, endpointName: e.id })) : []), [component, fronted, environmentId]);
+  const securities = useEndpointSecurities(refs);
+  const publicUrlsKey = securities.map((q) => q.data?.publicUrl ?? '').join('|');
 
   // An API exposed through the platform gateway has no external URL on the release, only the security publicUrl.
-  const contextPath = endpoint ? endpointContextPath(endpoint.apiContext, security?.publicUrl || endpoint.publicUrl) : '';
+  const endpoints = useMemo<GatewayLogEndpoint[]>(
+    () => fronted.map((e, i) => ({ id: e.id, displayName: e.displayName || e.id, contextPath: endpointContextPath(e.apiContext, securities[i]?.data?.publicUrl || e.publicUrl) })).filter((e) => e.contextPath !== ''),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fronted, publicUrlsKey],
+  );
+  const searchPhrases = useMemo(() => gatewaySearchPhrases(endpoints.map((e) => e.contextPath)), [endpoints]);
 
-  return { contextPath, available: IS_CLOUD && contextPath !== '' };
+  const resolving = deployments.some((q) => q.isLoading) || loadingEndpoints || securities.some((q) => q.isLoading);
+
+  return { endpoints, searchPhrases, available: IS_CLOUD && searchPhrases.length > 0, resolving };
 }

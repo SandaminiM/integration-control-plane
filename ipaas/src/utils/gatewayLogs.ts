@@ -18,7 +18,7 @@
 
 /** Telling a proxied request apart from the gateway talking about itself, and reading the request out of it. */
 
-import type { AccessLogFields, LogRow } from '../types/logs';
+import type { AccessLogFields, GatewayLogEndpoint, LogRow } from '../types/logs';
 import { GATEWAY_LOG_RETENTION_DAYS } from '../constants/gatewayLogs';
 import type { EnvEndpoint } from '../types/component';
 
@@ -83,9 +83,27 @@ export function parseAccessLine(line: string): AccessLogFields | null {
   };
 }
 
+const SUMMARY_MAX_LENGTH = 120;
+// Envoy prefixes its text lines with bracketed time, thread, level, logger and source; the message follows them.
+const ENVOY_PREFIX = /^(\[[^\]]*\]\s*)+/;
+
+/** A one-line reading of a gateway line that is not a request: its message field, or the text after Envoy's prefixes. */
+export function summarizeGatewayLine(line: string): string {
+  const fields = parseJsonObject(line);
+  const message = fields ? pick(fields, asString, 'msg', 'message', 'error') : null;
+  const text = (message ?? line.trim().replace(STREAM_TAG, '').replace(ENVOY_PREFIX, '')).trim();
+  return text.length > SUMMARY_MAX_LENGTH ? `${text.slice(0, SUMMARY_MAX_LENGTH - 1)}…` : text;
+}
+
 // Kubernetes probes every few seconds and each probe is logged, so probes dominate a quiet org.
 const HEALTH_PROBE_PATH = '/_gateway-health/';
 const HEALTH_PROBE_AGENT = 'kube-probe';
+
+// Access lines carry no level of their own, so the log source labels every one INFO; the status is the real signal.
+export function gatewayRequestLevel(request: AccessLogFields | null, sourceLevel: string): string {
+  if (request?.status == null) return sourceLevel;
+  return request.status === 0 || request.status >= 400 ? 'ERROR' : sourceLevel;
+}
 
 /** A liveness or readiness probe rather than a caller's request. Operational lines are never probes. */
 export function isHealthProbe(request: AccessLogFields | null | undefined): boolean {
@@ -95,20 +113,52 @@ export function isHealthProbe(request: AccessLogFields | null | undefined): bool
 
 const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const contextPatterns = new Map<string, RegExp>();
+const contextPattern = (contextPath: string): RegExp => {
+  let pattern = contextPatterns.get(contextPath);
+  if (!pattern) {
+    pattern = new RegExp(`(^|[\\s"'=:])${escapeRegExp(contextPath)}(?=$|[/?#\\s"'])`);
+    contextPatterns.set(contextPath, pattern);
+  }
+  return pattern;
+};
+
 // The query's searchPhrase is a bare substring, so /greeting would also take /greeting-v2 and /internal/greeting.
 export function mentionsContextPath(line: string, contextPath: string): boolean {
   if (!contextPath) return true;
-  return new RegExp(`(^|[\\s"'=:])${escapeRegExp(contextPath)}(?=$|[/?#\\s"'])`).test(line);
+  return contextPattern(contextPath).test(line);
 }
 
 // Only Public endpoints are exposed through the gateway; Project and Organization traffic stays in-cluster.
-export function gatewayFrontedEndpoint(endpoints: EnvEndpoint[]): EnvEndpoint | undefined {
-  return endpoints.find((e) => e.networkVisibilities?.includes('Public'));
+export function gatewayFrontedEndpoints(endpoints: EnvEndpoint[]): EnvEndpoint[] {
+  return endpoints.filter((e) => e.networkVisibilities?.includes('Public'));
 }
+
+// Every endpoint path starts with the integration's (possibly shortened) handle, so the shared prefix narrows to it.
+export function longestCommonPrefix(values: string[]): string {
+  if (values.length === 0) return '';
+  let prefix = values[0];
+  for (const value of values.slice(1)) {
+    let i = 0;
+    while (i < prefix.length && i < value.length && prefix[i] === value[i]) i++;
+    prefix = prefix.slice(0, i);
+  }
+  return prefix;
+}
+
+/** What to search for: the shared prefix, or each path on its own when they share no more than '/' (which matches every line). */
+export function gatewaySearchPhrases(contextPaths: string[]): string[] {
+  const prefix = longestCommonPrefix(contextPaths);
+  if (prefix.replace(/\/+$/, '').length > 0) return [prefix];
+  return [...new Set(contextPaths.filter((p) => p.replace(/\/+$/, '').length > 0))];
+}
+
+/** The oldest moment the gateway still has lines for (epoch ms). */
+export const gatewayRetentionHorizon = (now = Date.now()): number => now - GATEWAY_LOG_RETENTION_DAYS * 24 * 3600_000;
 
 /** The range reaches past what the gateway keeps, so its older part returns nothing. */
 export function startsBeyondGatewayRetention(startTime: string, now = Date.now()): boolean {
-  return now - new Date(startTime).getTime() > GATEWAY_LOG_RETENTION_DAYS * 24 * 3600_000;
+  return new Date(startTime).getTime() < gatewayRetentionHorizon(now);
 }
 
 /** The context an access log records is the endpoint's own path, which is where a caller's URL starts. */
@@ -125,27 +175,32 @@ export function endpointContextPath(apiContext?: string | null, url?: string | n
 
 export interface GatewayRowFilter {
   hideHealthChecks: boolean;
-  /** Narrows the loaded rows, because the query's own searchPhrase already carries the endpoint's path. */
+  /** Narrows the loaded rows, because the query's own searchPhrase already carries the endpoints' shared prefix. */
   searchPhrase?: string;
-  /** Re-checks the query's substring match at a path boundary. */
-  contextPath?: string;
 }
 
 // A request line is matched on its own path, so an upstream path or header that happens to carry the context cannot pass.
 function isUnderContextPath(row: LogRow, contextPath: string): boolean {
-  if (!contextPath) return true;
+  if (!contextPath) return false;
   const path = row.request?.path;
   if (path == null) return mentionsContextPath(row.logLine, contextPath);
   return path === contextPath || path.startsWith(`${contextPath}/`) || path.startsWith(`${contextPath}?`);
 }
 
+// The query only matched a shared prefix, so a row that belongs to none of the endpoints (a lookalike handle) is dropped here.
+export function tagGatewayEndpoints(rows: LogRow[], endpoints: Pick<GatewayLogEndpoint, 'id' | 'contextPath'>[]): LogRow[] {
+  return rows.flatMap((row) => {
+    const endpoint = endpoints.find((e) => isUnderContextPath(row, e.contextPath));
+    return endpoint ? [{ ...row, endpoint: endpoint.id }] : [];
+  });
+}
+
 /** Runs after the fetch: the log backend can neither classify a line nor exclude a path. */
-export function filterGatewayRows(rows: LogRow[], { hideHealthChecks, searchPhrase = '', contextPath = '' }: GatewayRowFilter): LogRow[] {
+export function filterGatewayRows(rows: LogRow[], { hideHealthChecks, searchPhrase = '' }: GatewayRowFilter): LogRow[] {
   const phrase = searchPhrase.trim().toLowerCase();
-  if (!hideHealthChecks && !phrase && !contextPath) return rows;
+  if (!hideHealthChecks && !phrase) return rows;
   return rows.filter((row) => {
     if (hideHealthChecks && isHealthProbe(row.request)) return false;
-    if (!isUnderContextPath(row, contextPath)) return false;
     return !phrase || row.logLine.toLowerCase().includes(phrase);
   });
 }

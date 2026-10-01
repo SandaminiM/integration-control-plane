@@ -16,32 +16,31 @@
  * under the License.
  */
 
-import { Box, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Box, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
-import { statusDotSx, visuallyHiddenSx } from './LogsStatus.styles';
+import { AUTO_FETCH_INTERVAL } from '../../utils/logs';
+import { statusDotSx, statusPillSx } from './LogsStatus.styles';
 
 export interface LogsStatusProps {
-  /** Rows on screen, after every filter. */
-  count: number;
   live: boolean;
-  /** Set when a query fails: turns the dot red and becomes its tooltip. */
+  /** Set when a query fails: turns the dot red and replaces the refresh note. */
   failure?: string;
+  /** Why refresh is paused, when it is not simply switched off. */
+  pausedNote?: string;
 }
 
-export default function LogsStatus({ count, live, failure }: LogsStatusProps): JSX.Element {
+export default function LogsStatus({ live, failure, pausedNote = 'auto refresh is off' }: LogsStatusProps): JSX.Element {
+  const label = failure ? 'Error' : live ? 'Live' : 'Paused';
+  const note = failure ?? (live ? `refreshing every ${AUTO_FETCH_INTERVAL / 1000}s` : pausedNote);
   return (
-    <Stack direction="row" alignItems="center" gap={1} role="status" aria-live="polite" sx={{ mb: 1, mt: 1.5 }}>
-      <Tooltip title={failure ?? (live ? 'Refreshing automatically' : 'Auto fetch is off')}>
-        <Box component="span" aria-hidden sx={statusDotSx(failure ? 'error.main' : 'success.main')} />
-      </Tooltip>
-      <Typography variant="body2" color="text.secondary">
-        {live ? 'Live Logs' : 'Logs'} | {count} {count === 1 ? 'line' : 'lines'}
-        {failure ? (
-          <Box component="span" sx={visuallyHiddenSx}>
-            {` — ${failure}`}
-          </Box>
-        ) : null}
+    <Box role="status" aria-live="polite" sx={statusPillSx}>
+      <Box component="span" aria-hidden sx={statusDotSx(failure ? 'error' : live ? 'live' : 'paused')} />
+      <Typography component="span" variant="body2" sx={{ fontWeight: 600, ml: 0.5 }}>
+        {label}
       </Typography>
-    </Stack>
+      <Typography component="span" variant="body2" color="text.secondary">
+        {note}
+      </Typography>
+    </Box>
   );
 }

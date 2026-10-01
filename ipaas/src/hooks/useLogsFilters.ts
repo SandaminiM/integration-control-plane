@@ -29,6 +29,9 @@ export interface LogsFiltersState {
   setHideHealthChecks: (v: boolean) => void;
   envFilter: string[];
   setEnvFilter: (v: string[]) => void;
+  /** Integration panels only: endpoint ids to keep on gateway rows; empty keeps every endpoint. */
+  endpointFilter: string[];
+  setEndpointFilter: (v: string[]) => void;
   levelFilter: string[];
   setLevelFilter: (v: string[]) => void;
   timePreset: string;
@@ -48,8 +51,10 @@ export interface LogsFiltersState {
   clearFilters: () => void;
 }
 
-export function useLogsFilters(): LogsFiltersState {
+/** `scopeKey` names what the logs are for; a new one starts from no filters, since an endpoint or environment of one integration means nothing for the next. */
+export function useLogsFilters(scopeKey?: string): LogsFiltersState {
   const [envFilter, setEnvFilter] = useState<string[]>([]);
+  const [endpointFilter, setEndpointFilter] = useState<string[]>([]);
   const [levelFilter, setLevelFilter] = useState<string[]>([]);
   const [timePreset, setTimePreset] = useState<string>('Past 24 hours');
   const [customStart, setCustomStart] = useState(() => toLocalInput(new Date(Date.now() - 24 * 3600_000)));
@@ -79,12 +84,20 @@ export function useLogsFilters(): LogsFiltersState {
 
   const clearFilters = () => {
     setEnvFilter([]);
+    setEndpointFilter([]);
     setLevelFilter([]);
     setSearchPhrase('');
     setTimePreset('Past 24 hours');
     setSourceFilter('all');
     setHideHealthChecks(false);
   };
+
+  // Reset during render, not in an effect, so the new scope never renders once with the old filters.
+  const [lastScope, setLastScope] = useState(scopeKey);
+  if (lastScope !== scopeKey) {
+    setLastScope(scopeKey);
+    clearFilters();
+  }
 
   return {
     sourceFilter,
@@ -93,6 +106,8 @@ export function useLogsFilters(): LogsFiltersState {
     setHideHealthChecks,
     envFilter,
     setEnvFilter,
+    endpointFilter,
+    setEndpointFilter,
     levelFilter,
     setLevelFilter,
     timePreset,
