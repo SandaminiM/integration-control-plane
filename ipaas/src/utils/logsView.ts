@@ -19,6 +19,7 @@
 /** View helpers for the logs viewer: the filter chips it shows, where the retention divider goes, and how rows read. */
 
 import type { LogRow } from '../types/logs';
+import { GATEWAY_LOG_RETENTION_DAYS } from '../constants/gatewayLogs';
 import { DISPLAY_FIELDS, formatValue } from './logs';
 
 export type AppliedFilterField = 'level' | 'environment' | 'endpoint' | 'healthChecks';
@@ -55,6 +56,13 @@ export function retentionBoundaryIndex(rows: Pick<LogRow, 'timestamp'>[], sort: 
   const older = (row: Pick<LogRow, 'timestamp'>): boolean => new Date(row.timestamp).getTime() < horizonMs;
   const index = rows.findIndex((row) => (sort === 'desc' ? older(row) : !older(row)));
   return index > 0 ? index : -1;
+}
+
+/** The retention divider's wording, which names what sits on the other side of it: application rows, or nothing. */
+export function retentionNote(sort: 'asc' | 'desc', withApplicationLogs: boolean): string {
+  const kept = `Gateway logs are kept for ${GATEWAY_LOG_RETENTION_DAYS} days.`;
+  if (sort === 'desc') return withApplicationLogs ? `${kept} Only application logs continue below.` : `${kept} Older lines are no longer available.`;
+  return withApplicationLogs ? `${kept} Only application logs appear above; gateway logs start here.` : `${kept} Gateway logs start here.`;
 }
 
 const pad = (n: number, width = 2): string => String(n).padStart(width, '0');

@@ -37,7 +37,8 @@ const LEVEL_COLOR: Record<string, string> = {
   DEBUG: 'text.secondary',
 };
 
-const statusColor = (status: number): string => (status >= 500 ? 'error.main' : status >= 400 ? 'warning.main' : 'success.main');
+// 0 means no upstream response, which the row already marks as an error.
+const statusColor = (status: number): string => (status === 0 || status >= 500 ? 'error.main' : status >= 400 ? 'warning.main' : 'success.main');
 
 export const rowSx = (isError: boolean, expanded: boolean) =>
   ({

@@ -184,23 +184,26 @@ export function selectLogSources(component: LogRow[], gateway: LogRow[], source:
   return mergeLogRows(component, gateway, sort);
 }
 
-// A row whose timestamp will not parse sorts last rather than first.
-function byTimestamp(sort: 'asc' | 'desc'): (x: LogRow, y: LogRow) => number {
-  const at = (row: LogRow): number => {
+// Parsed once per row, not per comparison; a row whose timestamp will not parse sorts last rather than first.
+function sortByTimestamp(rows: LogRow[], sort: 'asc' | 'desc'): LogRow[] {
+  // Finite sentinels: two infinities subtract to NaN, which leaves sort's order unspecified.
+  const unreadable = sort === 'desc' ? Number.MIN_SAFE_INTEGER : Number.MAX_SAFE_INTEGER;
+  const keyed = rows.map((row) => {
     const ms = new Date(row.timestamp).getTime();
-    // Finite sentinels: two infinities subtract to NaN, which leaves sort's order unspecified.
-    return isNaN(ms) ? (sort === 'desc' ? Number.MIN_SAFE_INTEGER : Number.MAX_SAFE_INTEGER) : ms;
-  };
-  return (x, y) => (sort === 'desc' ? at(y) - at(x) : at(x) - at(y));
+    return { row, ms: isNaN(ms) ? unreadable : ms };
+  });
+  // Already-ordered runs (each source arrives sorted) are merged by the engine's run-aware sort in linear time.
+  keyed.sort((x, y) => (sort === 'desc' ? y.ms - x.ms : x.ms - y.ms));
+  return keyed.map((k) => k.row);
 }
 
 /** One source's rows in display order, for a source read as several separately paged queries. */
 export function sortLogRows(rows: LogRow[], sort: 'asc' | 'desc'): LogRow[] {
-  return [...rows].sort(byTimestamp(sort));
+  return sortByTimestamp(rows, sort);
 }
 
 export function mergeLogRows(a: LogRow[], b: LogRow[], sort: 'asc' | 'desc'): LogRow[] {
   if (b.length === 0) return a;
   if (a.length === 0) return b;
-  return [...a, ...b].sort(byTimestamp(sort));
+  return sortByTimestamp([...a, ...b], sort);
 }

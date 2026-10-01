@@ -21,6 +21,7 @@ import type { LogRow } from '../types/logs';
 import {
   endpointContextPath,
   filterGatewayRows,
+  gatewaySearchPhrases,
   gatewayFrontedEndpoints,
   gatewayRequestLevel,
   isHealthProbe,
@@ -210,6 +211,10 @@ describe('tagGatewayEndpoints', () => {
     expect(tagGatewayEndpoints([row('/other-api/cases', { upPath: '/covid19-status-covid-status-753fa897' })], endpoints)).toEqual([]);
   });
 
+  it('never lets an endpoint with no path claim every row', () => {
+    expect(tagGatewayEndpoints([row('/anything')], [{ id: 'blank', contextPath: '' }])).toEqual([]);
+  });
+
   it('attributes an operational line by the path it mentions', () => {
     const line = { logLine: 'deployed API /covid19-status-endpoint-9001-3778a43e to the router', source: 'gateway', request: null } as LogRow;
     expect(tagGatewayEndpoints([line], endpoints)[0]?.endpoint).toBe('endpoint-9001');
@@ -306,5 +311,19 @@ describe('gatewayRequestLevel', () => {
 
   it("keeps the source's level for a line that is not a request", () => {
     expect(gatewayRequestLevel(null, 'WARN')).toBe('WARN');
+  });
+});
+
+describe('gatewaySearchPhrases', () => {
+  it('uses the shared prefix when it narrows to the integration', () => {
+    expect(gatewaySearchPhrases(['/covid19-status-covid-status-753fa897', '/covid19-status-endpoint-9001-3778a43e'])).toEqual(['/covid19-status-']);
+  });
+
+  it("searches each path on its own when they share no more than '/'", () => {
+    expect(gatewaySearchPhrases(['/orders', '/payments', '/orders'])).toEqual(['/orders', '/payments']);
+  });
+
+  it('has nothing to search for without paths', () => {
+    expect(gatewaySearchPhrases([])).toEqual([]);
   });
 });

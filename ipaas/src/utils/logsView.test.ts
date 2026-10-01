@@ -17,7 +17,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { describeAppliedFilters, formatLogTimestamp, logDetailFields, logsSummary, retentionBoundaryIndex } from './logsView';
+import { describeAppliedFilters, formatLogTimestamp, logDetailFields, logsSummary, retentionBoundaryIndex, retentionNote } from './logsView';
 import type { LogRow } from '../types/logs';
 
 describe('describeAppliedFilters', () => {
@@ -108,5 +108,16 @@ describe('logDetailFields', () => {
   it('lists the source-supplied fields for an application line, without repeating the line itself', () => {
     const labels = logDetailFields({ ...base, source: 'component', containerName: 'main' } as LogRow, { envName: 'Production' }).map((f) => f.label);
     expect(labels).toEqual(['Timestamp', 'Level', 'Source', 'Environment', 'Container', 'Pod']);
+  });
+});
+
+describe('retentionNote', () => {
+  it.each([
+    ['newest first, merged with application logs', 'desc', true, 'Gateway logs are kept for 3 days. Only application logs continue below.'],
+    ['newest first, gateway logs only', 'desc', false, 'Gateway logs are kept for 3 days. Older lines are no longer available.'],
+    ['oldest first, merged with application logs', 'asc', true, 'Gateway logs are kept for 3 days. Only application logs appear above; gateway logs start here.'],
+    ['oldest first, gateway logs only', 'asc', false, 'Gateway logs are kept for 3 days. Gateway logs start here.'],
+  ] as const)('names what is on the other side: %s', (_label, sort, mixed, expected) => {
+    expect(retentionNote(sort, mixed)).toBe(expected);
   });
 });

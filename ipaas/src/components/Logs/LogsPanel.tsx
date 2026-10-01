@@ -116,7 +116,8 @@ export default function LogsPanel<T>({
     if (paginated) handleScroll();
   }, [paginated, items.length, handleScroll]);
 
-  if (isLoading) {
+  // A page can filter down to nothing while the next one loads; that is still loading, not empty.
+  if (isLoading || (items.length === 0 && isFetchingNextPage)) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', my: 6 }}>
         <CircularProgress size={28} />

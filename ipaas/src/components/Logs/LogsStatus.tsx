@@ -25,11 +25,13 @@ export interface LogsStatusProps {
   live: boolean;
   /** Set when a query fails: turns the dot red and replaces the refresh note. */
   failure?: string;
+  /** Why refresh is paused, when it is not simply switched off. */
+  pausedNote?: string;
 }
 
-export default function LogsStatus({ live, failure }: LogsStatusProps): JSX.Element {
+export default function LogsStatus({ live, failure, pausedNote = 'auto refresh is off' }: LogsStatusProps): JSX.Element {
   const label = failure ? 'Error' : live ? 'Live' : 'Paused';
-  const note = failure ?? (live ? `refreshing every ${AUTO_FETCH_INTERVAL / 1000}s` : 'auto refresh is off');
+  const note = failure ?? (live ? `refreshing every ${AUTO_FETCH_INTERVAL / 1000}s` : pausedNote);
   return (
     <Box role="status" aria-live="polite" sx={statusPillSx}>
       <Box component="span" aria-hidden sx={statusDotSx(failure ? 'error' : live ? 'live' : 'paused')} />

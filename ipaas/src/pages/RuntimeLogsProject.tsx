@@ -142,7 +142,8 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
       logPanelElement={
         <LogsViewer
           rows={logs}
-          live={autoFetch}
+          live={autoFetch && (data?.pages.length ?? 0) <= 1}
+          pausedNote={autoFetch ? 'paused while older lines are open' : undefined}
           failure={error ? "Couldn't load logs" : undefined}
           summary={logsSummary({ lines: logs.length })}
           sortDir={sortDir}

@@ -20,7 +20,7 @@ import { useMemo, type JSX } from 'react';
 import LogsPageLayout from '../components/Logs/LogsPageLayout';
 import LogsToolbar from '../components/Logs/LogsToolbar';
 import LogsViewer from '../components/Logs/LogsViewer';
-import { GATEWAY_LOGS_FAILED, GATEWAY_RETENTION_NOTE } from '../constants/gatewayLogs';
+import { GATEWAY_LOGS_FAILED } from '../constants/gatewayLogs';
 import { useInfiniteGatewayLogs, useVisibleLogs } from '../hooks/useLogs';
 import { useLogsFilters } from '../hooks/useLogsFilters';
 import type { GatewayLogsRequest } from '../types/logs';
@@ -48,7 +48,8 @@ export default function RuntimeLogsOrg(): JSX.Element {
       logPanelElement={
         <LogsViewer
           rows={logs}
-          live={autoFetch}
+          live={autoFetch && (data?.pages.length ?? 0) <= 1}
+          pausedNote={autoFetch ? 'paused while older lines are open' : undefined}
           failure={error ? GATEWAY_LOGS_FAILED : undefined}
           summary={logsSummary({ lines: logs.length })}
           sortDir={sortDir}
@@ -61,7 +62,6 @@ export default function RuntimeLogsOrg(): JSX.Element {
           onFetchNextPage={fetchNextPage}
           onClearFilters={filters.clearFilters}
           retentionHorizon={retentionHorizon}
-          retentionNote={GATEWAY_RETENTION_NOTE}
         />
       }
     />

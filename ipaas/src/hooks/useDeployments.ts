@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Query } from '@tanstack/react-query';
 import { fetchApimSwagger } from '#api/apim';
 import { fetchComponentByHandler } from '#api/components';
@@ -50,6 +50,18 @@ export function useComponentDeployment(orgHandler: string, orgUuid: string, comp
     enabled: !!orgHandler && !!orgUuid && !!componentId && !!versionId && !!environmentId,
     retry: false,
     refetchInterval: options?.refetchInterval,
+  });
+}
+
+/** One integration's deployment in each of several environments, sharing the single-environment cache. */
+export function useComponentDeployments(orgHandler: string, orgUuid: string, componentId: string, versionId: string, environmentIds: string[]) {
+  return useQueries({
+    queries: environmentIds.map((environmentId) => ({
+      queryKey: ['componentDeployment', orgHandler, orgUuid, componentId, versionId, environmentId],
+      queryFn: () => fetchComponentDeployment(orgHandler, orgUuid, componentId, versionId, environmentId),
+      enabled: !!orgHandler && !!orgUuid && !!componentId && !!versionId && !!environmentId,
+      retry: false,
+    })),
   });
 }
 

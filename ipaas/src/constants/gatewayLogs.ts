@@ -20,5 +20,3 @@
 export const GATEWAY_LOG_RETENTION_DAYS = 3;
 
 export const GATEWAY_LOGS_FAILED = "Couldn't load gateway logs";
-
-export const GATEWAY_RETENTION_NOTE = `Gateway logs older than ${GATEWAY_LOG_RETENTION_DAYS} days are no longer kept.`;

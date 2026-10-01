@@ -84,9 +84,10 @@ export interface GatewayLogEndpoint {
   contextPath: string;
 }
 
-/** Where one environment's gateway read continues; no cursor means its first page. */
+/** Where one environment and search phrase's gateway read continues; no cursor means its first page. */
 export interface GatewayEnvironmentCursor {
   environmentId: string;
+  searchPhrase: string;
   cursor?: string;
 }
 

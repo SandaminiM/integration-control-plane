@@ -113,10 +113,20 @@ export function isHealthProbe(request: AccessLogFields | null | undefined): bool
 
 const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const contextPatterns = new Map<string, RegExp>();
+const contextPattern = (contextPath: string): RegExp => {
+  let pattern = contextPatterns.get(contextPath);
+  if (!pattern) {
+    pattern = new RegExp(`(^|[\\s"'=:])${escapeRegExp(contextPath)}(?=$|[/?#\\s"'])`);
+    contextPatterns.set(contextPath, pattern);
+  }
+  return pattern;
+};
+
 // The query's searchPhrase is a bare substring, so /greeting would also take /greeting-v2 and /internal/greeting.
 export function mentionsContextPath(line: string, contextPath: string): boolean {
   if (!contextPath) return true;
-  return new RegExp(`(^|[\\s"'=:])${escapeRegExp(contextPath)}(?=$|[/?#\\s"'])`).test(line);
+  return contextPattern(contextPath).test(line);
 }
 
 // Only Public endpoints are exposed through the gateway; Project and Organization traffic stays in-cluster.
@@ -134,6 +144,13 @@ export function longestCommonPrefix(values: string[]): string {
     prefix = prefix.slice(0, i);
   }
   return prefix;
+}
+
+/** What to search for: the shared prefix, or each path on its own when they share no more than '/' (which matches every line). */
+export function gatewaySearchPhrases(contextPaths: string[]): string[] {
+  const prefix = longestCommonPrefix(contextPaths);
+  if (prefix.replace(/\/+$/, '').length > 0) return [prefix];
+  return [...new Set(contextPaths.filter((p) => p.replace(/\/+$/, '').length > 0))];
 }
 
 /** The oldest moment the gateway still has lines for (epoch ms). */
@@ -164,6 +181,7 @@ export interface GatewayRowFilter {
 
 // A request line is matched on its own path, so an upstream path or header that happens to carry the context cannot pass.
 function isUnderContextPath(row: LogRow, contextPath: string): boolean {
+  if (!contextPath) return false;
   const path = row.request?.path;
   if (path == null) return mentionsContextPath(row.logLine, contextPath);
   return path === contextPath || path.startsWith(`${contextPath}/`) || path.startsWith(`${contextPath}?`);

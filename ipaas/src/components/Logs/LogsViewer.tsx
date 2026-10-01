@@ -20,7 +20,7 @@ import { Box, IconButton, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronsDownUp, ChevronsUpDown } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import type { LogRow } from '../../types/logs';
-import { retentionBoundaryIndex } from '../../utils/logsView';
+import { retentionBoundaryIndex, retentionNote as endOfRetentionNote } from '../../utils/logsView';
 import LogEntry from './LogEntry';
 import LogsPanel from './LogsPanel';
 import LogsStatus from './LogsStatus';
@@ -30,6 +30,7 @@ export interface LogsViewerProps {
   rows: LogRow[];
   live: boolean;
   failure?: string;
+  pausedNote?: string;
   /** The line at the top right, e.g. "128 lines · 5 endpoints · 2 environments". */
   summary: string;
   sortDir: 'asc' | 'desc';
@@ -43,6 +44,7 @@ export interface LogsViewerProps {
   onClearFilters?: () => void;
   /** Rows older than this (epoch ms) lost their gateway lines; a divider marks where that starts. */
   retentionHorizon?: number | null;
+  /** The divider's wording; when no loaded row crosses the horizon the list's end says it instead. */
   retentionNote?: string;
   envNameOf?: (row: LogRow) => string | undefined;
   endpointNameOf?: (row: LogRow) => string | undefined;
@@ -53,6 +55,7 @@ export default function LogsViewer({
   rows,
   live,
   failure,
+  pausedNote,
   summary,
   sortDir,
   onSortChange,
@@ -64,7 +67,7 @@ export default function LogsViewer({
   onFetchNextPage,
   onClearFilters,
   retentionHorizon,
-  retentionNote = 'Older lines are no longer kept.',
+  retentionNote = endOfRetentionNote('desc', false),
   envNameOf,
   endpointNameOf,
 }: LogsViewerProps): JSX.Element {
@@ -75,7 +78,7 @@ export default function LogsViewer({
   return (
     <Box sx={viewerSx}>
       <Box sx={headerSx}>
-        <LogsStatus live={live} failure={failure} />
+        <LogsStatus live={live} failure={failure} pausedNote={pausedNote} />
         <Box sx={headerActionsSx}>
           <Typography variant="body2" color="text.secondary">
             {summary}
@@ -109,7 +112,7 @@ export default function LogsViewer({
           ) : null
         }
         expandAll={expandAll}
-        endLabel={retentionHorizon != null && boundary === -1 ? retentionNote : undefined}
+        endLabel={retentionHorizon != null && boundary === -1 ? endOfRetentionNote('desc', false) : undefined}
         isLoading={isLoading}
         error={error}
         hasNextPage={hasNextPage}
