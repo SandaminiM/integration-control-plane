@@ -18,7 +18,19 @@
 
 import { describe, expect, it } from 'vitest';
 import type { LogRow } from '../types/logs';
-import { endpointContextPath, filterGatewayRows, gatewayFrontedEndpoint, isHealthProbe, mentionsContextPath, parseAccessLine, startsBeyondGatewayRetention } from './gatewayLogs';
+import {
+  endpointContextPath,
+  filterGatewayRows,
+  gatewayFrontedEndpoints,
+  gatewayRequestLevel,
+  isHealthProbe,
+  longestCommonPrefix,
+  tagGatewayEndpoints,
+  mentionsContextPath,
+  parseAccessLine,
+  startsBeyondGatewayRetention,
+  summarizeGatewayLine,
+} from './gatewayLogs';
 import type { EnvEndpoint } from '../types/component';
 
 // Taken from a DEV gateway: the apip gateway tags every line `[rtr]` and logs abbreviated keys.
@@ -173,30 +185,62 @@ describe('filterGatewayRows', () => {
     expect(filterGatewayRows(rows, { hideHealthChecks: false, searchPhrase: 'GREETING' })).toHaveLength(1);
     expect(filterGatewayRows(rows, { hideHealthChecks: false, searchPhrase: '   ' })).toBe(rows);
   });
+});
 
-  it('matches a request on its own path, not on an upstream path that carries the context', () => {
-    const upstreamOnly = row('[rtr] ' + JSON.stringify({ meth: 'GET', path: '/other-api/greeting', upPath: '/hello-world-service-endpoint-90-37b21ad5', respCd: 200, t: 'x' }));
-    const kept = filterGatewayRows([...rows, upstreamOnly], { hideHealthChecks: false, contextPath: '/hello-world-service-endpoint-90-37b21ad5' });
-    expect(kept.map((r) => r.logLine)).toEqual([RTR_ACCESS_LINE]);
+describe('tagGatewayEndpoints', () => {
+  const row = (path: string, extra: Record<string, unknown> = {}): LogRow => {
+    const logLine = '[rtr] ' + JSON.stringify({ meth: 'GET', path, respCd: 200, t: 'x', ...extra });
+    return { logLine, source: 'gateway', request: parseAccessLine(logLine) } as LogRow;
+  };
+  const endpoints = [
+    { id: 'covid-status', contextPath: '/covid19-status-covid-status-753fa897' },
+    { id: 'endpoint-9001', contextPath: '/covid19-status-endpoint-9001-3778a43e' },
+  ];
+
+  it('stamps each request with the endpoint whose path it sits under', () => {
+    const tagged = tagGatewayEndpoints([row('/covid19-status-covid-status-753fa897/cases'), row('/covid19-status-endpoint-9001-3778a43e')], endpoints);
+    expect(tagged.map((r) => r.endpoint)).toEqual(['covid-status', 'endpoint-9001']);
   });
 
-  it('keeps only lines carrying the context path at a path boundary', () => {
-    const lookalike = row('[rtr] ' + JSON.stringify({ meth: 'GET', path: '/hello-world-service-endpoint-90-37b21ad5-v2/greeting', respCd: 200, t: 'x' }));
-    const kept = filterGatewayRows([...rows, lookalike], { hideHealthChecks: false, contextPath: '/hello-world-service-endpoint-90-37b21ad5' });
-    expect(kept.map((r) => r.logLine)).toEqual([RTR_ACCESS_LINE]);
+  it('drops a lookalike handle that only shares the prefix', () => {
+    expect(tagGatewayEndpoints([row('/covid19-status-v2-endpoint-9001-11111111/cases')], endpoints)).toEqual([]);
+  });
+
+  it('matches a request on its own path, not on an upstream path that carries the context', () => {
+    expect(tagGatewayEndpoints([row('/other-api/cases', { upPath: '/covid19-status-covid-status-753fa897' })], endpoints)).toEqual([]);
+  });
+
+  it('attributes an operational line by the path it mentions', () => {
+    const line = { logLine: 'deployed API /covid19-status-endpoint-9001-3778a43e to the router', source: 'gateway', request: null } as LogRow;
+    expect(tagGatewayEndpoints([line], endpoints)[0]?.endpoint).toBe('endpoint-9001');
   });
 });
 
-describe('gatewayFrontedEndpoint', () => {
+describe('gatewayFrontedEndpoints', () => {
   const endpoint = (id: string, networkVisibilities: string[]): EnvEndpoint => ({ id, networkVisibilities }) as EnvEndpoint;
 
-  it('picks the first Public endpoint, skipping ones the gateway never sees', () => {
-    const endpoints = [endpoint('project-only', ['Project']), endpoint('org-only', ['Organization']), endpoint('public', ['Public']), endpoint('public-2', ['Public'])];
-    expect(gatewayFrontedEndpoint(endpoints)?.id).toBe('public');
+  it('keeps every Public endpoint, skipping ones the gateway never sees', () => {
+    const endpoints = [endpoint('project-only', ['Project']), endpoint('public', ['Public']), endpoint('org-only', ['Organization']), endpoint('public-2', ['Public'])];
+    expect(gatewayFrontedEndpoints(endpoints).map((e) => e.id)).toEqual(['public', 'public-2']);
   });
 
   it('finds none when no endpoint is Public', () => {
-    expect(gatewayFrontedEndpoint([endpoint('project-only', ['Project']), endpoint('org-only', ['Organization'])])).toBeUndefined();
+    expect(gatewayFrontedEndpoints([endpoint('project-only', ['Project']), endpoint('org-only', ['Organization'])])).toEqual([]);
+  });
+});
+
+describe('longestCommonPrefix', () => {
+  it('narrows a multi-endpoint integration to its handle', () => {
+    const paths = ['/covid19-status-covid-commu-3e5-3fd28816', '/covid19-status-covid-status-753fa897', '/covid19-status-endpoint-9001-3778a43e', '/covid19-status-endpoint-9002-c7e280a0', '/covid19-status-endpoint-9097-50939cbc'];
+    expect(longestCommonPrefix(paths)).toBe('/covid19-status-');
+  });
+
+  it('keeps the one path whole when there is a single endpoint', () => {
+    expect(longestCommonPrefix(['/hr-assistant-chat-servic-867'])).toBe('/hr-assistant-chat-servic-867');
+  });
+
+  it('finds nothing to share in an empty list', () => {
+    expect(longestCommonPrefix([])).toBe('');
   });
 });
 
@@ -226,5 +270,41 @@ describe('startsBeyondGatewayRetention', () => {
     ['a range starting before the horizon', '2026-09-25T11:59:59Z', true],
   ])('reports %s', (_label, startTime, expected) => {
     expect(startsBeyondGatewayRetention(startTime, now)).toBe(expected);
+  });
+});
+
+describe('summarizeGatewayLine', () => {
+  it.each([
+    ["a structured line's message", '{"time":"2026-09-29T08:24:06.540760489Z","level":"INFO","source":"/build/pkg/policyxds/server.go:228","msg":"Policy xDS stream request","stream_id":1}', 'Policy xDS stream request'],
+    ['a tagged structured line', '[pe] {"level":"ERROR","message":"policy evaluation failed"}', 'policy evaluation failed'],
+    ['an Envoy text line, past its bracketed prefixes', RTR_OPERATIONAL_LINE, 'Deprecated field: envoy.config.cluster.v3.Cluster'],
+    ['plain text as it is', 'starting gateway controller', 'starting gateway controller'],
+    ['structured output with no message, as raw text', '{"level":"info","ts":"x"}', '{"level":"info","ts":"x"}'],
+  ])('reads %s', (_label, line, expected) => {
+    expect(summarizeGatewayLine(line)).toBe(expected);
+  });
+
+  it('shortens a long line to one readable row', () => {
+    const summary = summarizeGatewayLine('x'.repeat(500));
+    expect(summary).toHaveLength(120);
+    expect(summary.endsWith('…')).toBe(true);
+  });
+});
+
+describe('gatewayRequestLevel', () => {
+  const req = (status: number | null) => parseAccessLine(`[rtr] ${JSON.stringify({ meth: 'GET', path: '/a', respCd: status, t: 'x' })}`);
+
+  it.each([
+    ['a client error', 404, 'ERROR'],
+    ['a server error', 503, 'ERROR'],
+    ['no upstream response', 0, 'ERROR'],
+    ['a success, as the log source said', 200, 'INFO'],
+    ['a redirect, as the log source said', 302, 'INFO'],
+  ])('reads %s', (_label, status, expected) => {
+    expect(gatewayRequestLevel(req(status), 'INFO')).toBe(expected);
+  });
+
+  it("keeps the source's level for a line that is not a request", () => {
+    expect(gatewayRequestLevel(null, 'WARN')).toBe('WARN');
   });
 });

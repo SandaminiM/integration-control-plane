@@ -32,7 +32,8 @@ export interface LogsRequest {
 
 export interface ComponentLogsRequest {
   componentId: string;
-  environmentId: string;
+  /** Omitted on cloud to read every environment at once; each row then names its own. */
+  environmentId?: string;
   versionIdList: string[];
   logLevels: string[];
   startTime: string;
@@ -76,6 +77,25 @@ export interface GatewayLogsPage {
   nextCursor?: string;
 }
 
+/** One endpoint the gateway fronts: what the user picks it by, and the path its access log records. */
+export interface GatewayLogEndpoint {
+  id: string;
+  displayName: string;
+  contextPath: string;
+}
+
+/** Where one environment's gateway read continues; no cursor means its first page. */
+export interface GatewayEnvironmentCursor {
+  environmentId: string;
+  cursor?: string;
+}
+
+/** One page read across environments. Environments whose lines ran out are absent from `next`. */
+export interface GatewayEnvironmentsPage {
+  rows: LogRow[];
+  next: GatewayEnvironmentCursor[];
+}
+
 export interface LogRow {
   timestamp: string;
   level: string;
@@ -102,4 +122,8 @@ export interface LogRow {
   source?: 'component' | 'gateway';
   /** On a gateway row, the proxied request the line records; null for the gateway's own output. Parsed once at fetch. */
   request?: AccessLogFields | null;
+  /** The environment the line came from, as the log source names it. */
+  environment?: string | null;
+  /** On a gateway row, the id of the integration endpoint whose traffic it records. */
+  endpoint?: string | null;
 }

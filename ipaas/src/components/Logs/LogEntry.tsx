@@ -16,127 +16,98 @@
  * under the License.
  */
 
-import { Chip, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
-import { ChevronDown, ChevronRight, Copy } from '@wso2/oxygen-ui-icons-react';
-import type { JSX } from 'react';
+import { Box, ButtonBase, IconButton, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { ChevronRight, Copy } from '@wso2/oxygen-ui-icons-react';
+import { Fragment, type JSX } from 'react';
 import type { LogRow } from '../../types/logs';
-import { DISPLAY_FIELDS, copyLog, formatValue, levelColor, statusCodeColor } from '../../utils/logs';
-import { GATEWAY_CHIP_COLORS, logChipSx } from './LogEntry.styles';
+import { summarizeGatewayLine } from '../../utils/gatewayLogs';
+import { copyLog } from '../../utils/logs';
+import { formatLogTimestamp, logDetailFields } from '../../utils/logsView';
+import { chevronSx, copyButtonSx, detailLabelSx, detailValueSx, detailsSx, durationSx, levelSx, lineSx, messageSx, metaSx, rawLineSx, rowSx, sourceBadgeSx, statusSx, tagSx, timeSx, toggleSx } from './LogEntry.styles';
 
-export default function LogEntry({ log, expanded, onToggle, envName }: { log: LogRow; expanded: boolean; onToggle: () => void; envName?: string }): JSX.Element {
+export interface LogEntryProps {
+  log: LogRow;
+  expanded: boolean;
+  onToggle: () => void;
+  envName?: string;
+  endpointName?: string;
+}
+
+export default function LogEntry({ log, expanded, onToggle, envName, endpointName }: LogEntryProps): JSX.Element {
   const request = log.source === 'gateway' ? log.request : null;
+  const message = request ? `${request.method ?? ''} ${request.path ?? ''}`.trim() : log.source === 'gateway' ? summarizeGatewayLine(log.logLine) : log.logLine;
+  const level = log.level?.toUpperCase() ?? '';
 
   return (
-    <>
-      <Stack
-        direction="row"
-        alignItems="center"
-        onClick={onToggle}
-        sx={{
-          fontFamily: 'monospace',
-          fontSize: 12,
-          px: 0.5,
-          py: 0.25,
-          cursor: 'pointer',
-          borderRadius: 1,
-          minHeight: 32,
-          '&:hover': { bgcolor: 'action.hover' },
-          '&:hover .log-actions': { visibility: 'visible' },
-        }}>
-        <IconButton size="small" aria-label={expanded ? 'Collapse log entry' : 'Expand log entry'} sx={{ p: 0, mr: 0.5 }}>
-          {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        </IconButton>
-        <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, color: levelColor(log.level).text, '[data-color-scheme="dark"] &': { color: '#3D90E0' }, whiteSpace: 'nowrap', mr: 1 }}>
-          {new Date(log.timestamp).toLocaleString()}
-        </Typography>
-        {envName ? (
-          <Tooltip title="Environment">
-            <Chip label={envName} size="small" sx={logChipSx('action.selected', 'text.secondary', 600)} />
-          </Tooltip>
-        ) : null}
-        {log.level ? <Chip label={log.level} size="small" sx={logChipSx(levelColor(log.level).bg, levelColor(log.level).text)} /> : null}
-        {log.source === 'gateway' ? (
-          <Tooltip title="Logged by the API gateway, not by the integration">
-            <Chip label="Gateway" size="small" sx={logChipSx(GATEWAY_CHIP_COLORS.bgcolor, GATEWAY_CHIP_COLORS.color)} />
-          </Tooltip>
-        ) : null}
-        {request?.status != null ? <Chip label={request.status} size="small" sx={logChipSx(statusCodeColor(String(request.status)).bg, statusCodeColor(String(request.status)).text)} /> : null}
-        {log.gatewayCode ? <Chip label={log.gatewayCode} size="small" sx={logChipSx('#ede7f6', '#4527a0')} /> : null}
-        {log.statusCode ? <Chip label={log.statusCode} size="small" sx={logChipSx(statusCodeColor(log.statusCode).bg, statusCodeColor(log.statusCode).text)} /> : null}
-        {log.serviceType && (
-          <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, color: 'text.secondary', whiteSpace: 'nowrap', mr: 1 }}>
-            {log.serviceType}
-          </Typography>
-        )}
-        <Typography
-          component="span"
-          sx={{
-            fontFamily: 'monospace',
-            fontSize: 12,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            flex: 1,
-            minWidth: 0,
-          }}>
-          {request ? `${request.method ?? ''} ${request.path ?? ''}`.trim() : log.logLine}
-        </Typography>
-        {request?.durationMs !== null && request?.durationMs !== undefined ? (
-          <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, color: 'text.secondary', whiteSpace: 'nowrap', ml: 1, flexShrink: 0 }}>
-            {request.durationMs}ms
-          </Typography>
-        ) : null}
-        <Stack direction="row" className="log-actions" sx={{ visibility: 'hidden', ml: 1, flexShrink: 0 }}>
-          <Tooltip title="Copy">
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                copyLog(log);
-              }}>
-              <Copy size={14} />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      </Stack>
-      {expanded && (
-        <Stack
-          sx={{
-            pl: 5,
-            pb: 1,
-            fontFamily: 'monospace',
-            fontSize: 12,
-            bgcolor: 'background.default',
-            borderRadius: 1,
-            mx: 0.5,
-            mb: 0.5,
-          }}>
-          {request ? (
-            <Stack direction="row" sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 0.5, gap: 2 }}>
-              <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, minWidth: 160, flexShrink: 0 }}>
-                Request
-              </Typography>
-              <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-                {log.logLine}
-              </Typography>
-            </Stack>
+    <Box sx={rowSx(level === 'ERROR', expanded)}>
+      <Box sx={lineSx}>
+        <ButtonBase onClick={onToggle} aria-expanded={expanded} sx={toggleSx}>
+          <Box component="span" sx={chevronSx(expanded)}>
+            <ChevronRight size={13} />
+          </Box>
+          <Box component="span" sx={timeSx}>
+            {formatLogTimestamp(log.timestamp)}
+          </Box>
+          {level ? (
+            <Box component="span" sx={levelSx(level)}>
+              {level}
+            </Box>
           ) : null}
-          {DISPLAY_FIELDS.map(({ key, label }) => {
-            const val = formatValue(log[key]);
-            if (!val) return null;
-            return (
-              <Stack key={key} direction="row" sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 0.5, gap: 2 }}>
-                <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, minWidth: 160, flexShrink: 0 }}>
-                  {label}
-                </Typography>
-                <Typography component="span" sx={{ fontFamily: 'monospace', fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-                  {key === 'timestamp' ? new Date(val).toLocaleString() : val}
-                </Typography>
-              </Stack>
-            );
-          })}
-        </Stack>
-      )}
-    </>
+          {log.source ? (
+            <Box component="span" sx={sourceBadgeSx(log.source)}>
+              {log.source === 'gateway' ? 'GATEWAY' : 'APP'}
+            </Box>
+          ) : null}
+          {envName ? (
+            <Box component="span" sx={metaSx}>
+              {envName}
+            </Box>
+          ) : null}
+          {endpointName ? (
+            <Box component="span" sx={tagSx}>
+              {endpointName}
+            </Box>
+          ) : null}
+          {request?.status != null ? (
+            <Box component="span" sx={statusSx(request.status)}>
+              {request.status}
+            </Box>
+          ) : null}
+          <Box component="span" sx={messageSx}>
+            {message}
+          </Box>
+          {request?.durationMs != null ? (
+            <Box component="span" sx={durationSx}>
+              {request.durationMs}ms
+            </Box>
+          ) : null}
+        </ButtonBase>
+        <Tooltip title="Copy line">
+          <IconButton className="log-copy" size="small" aria-label="Copy log line" onClick={() => copyLog(log)} sx={copyButtonSx}>
+            <Copy size={14} />
+          </IconButton>
+        </Tooltip>
+      </Box>
+      {expanded ? (
+        <Box component="dl" sx={detailsSx}>
+          {logDetailFields(log, { envName, endpointName }).map((field) => (
+            <Fragment key={field.label}>
+              <Typography component="dt" sx={detailLabelSx}>
+                {field.label}
+              </Typography>
+              <Typography component="dd" sx={detailValueSx}>
+                {field.value}
+              </Typography>
+            </Fragment>
+          ))}
+          <Typography component="dt" sx={detailLabelSx}>
+            Raw line
+          </Typography>
+          <Box component="dd" sx={rawLineSx}>
+            {log.logLine}
+          </Box>
+        </Box>
+      ) : null}
+    </Box>
   );
 }

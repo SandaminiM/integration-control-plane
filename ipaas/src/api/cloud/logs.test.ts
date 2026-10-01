@@ -186,6 +186,15 @@ describe('fetchGatewayLogs', () => {
     expect((await fetchGatewayLogs(gatewayRequest(3))).nextCursor).toBeUndefined();
   });
 
+  it('leaves the environment out of the scope when none is given, and names each row by its own', async () => {
+    get.mockResolvedValue({ items: [{ projectName: 'default' }] });
+    post.mockResolvedValue({ logs: [{ timestamp: 't1', log: 'line', metadata: { environmentName: 'production' } }] });
+
+    const rows = await fetchComponentLogs(request({ environmentId: undefined }), 'ignored');
+    expect(post.mock.calls[0][1].searchScope).not.toHaveProperty('environment');
+    expect(rows[0].environment).toBe('production');
+  });
+
   it('fails a full page whose last entry has no timestamp instead of ending paging silently', async () => {
     post.mockResolvedValue({ logs: [entry('gateway-runtime', 't2'), { log: 'line', metadata: { containerName: 'main' } }] });
 

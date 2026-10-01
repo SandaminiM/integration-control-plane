@@ -16,21 +16,22 @@
  * under the License.
  */
 
-export const statusDotSx = (color: string) =>
+const DOT_COLORS = { live: '#23a36b', paused: '#8a94a6', error: '#d4553f' } as const;
+
+export const statusPillSx = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 1,
+  py: 0.5,
+  ml: 1,
+} as const;
+
+export const statusDotSx = (state: keyof typeof DOT_COLORS) =>
   ({
     width: 8,
     height: 8,
     borderRadius: '50%',
-    bgcolor: color,
     flexShrink: 0,
+    bgcolor: DOT_COLORS[state],
+    boxShadow: state === 'live' ? '0 0 0 4px rgba(35, 163, 107, 0.18)' : 'none',
   }) as const;
-
-// The dot's colour and tooltip reach sighted users only, so the failure is also spoken.
-export const visuallyHiddenSx = {
-  position: 'absolute',
-  width: 1,
-  height: 1,
-  overflow: 'hidden',
-  clip: 'rect(0 0 0 0)',
-  whiteSpace: 'nowrap',
-} as const;

@@ -17,6 +17,7 @@
  */
 
 import type { LogRow, LogSourceFilter } from '../types/logs';
+import type { Environment } from '../types/environment';
 import type { ExecutionLogEntry } from '../types/executions';
 
 export const LOG_LEVELS = ['INFO', 'WARN', 'ERROR', 'DEBUG'] as const;
@@ -68,14 +69,6 @@ export const DISPLAY_FIELDS: { key: keyof LogRow; label: string }[] = [
 
 export function levelColor(level: string): { bg: string; text: string } {
   return LEVEL_COLORS[level] ?? { bg: '#eceff1', text: '#37474f' };
-}
-
-export function statusCodeColor(code: string | null): { bg: string; text: string } {
-  const n = parseInt(code ?? '', 10);
-  if (n >= 200 && n < 300) return { bg: '#e3f2fd', text: '#0d47a1' };
-  if (n >= 300 && n < 400) return { bg: '#fff3e0', text: '#e65100' };
-  if (n >= 400 && n < 600) return { bg: '#ffebee', text: '#b71c1c' };
-  return { bg: '#eceff1', text: '#37474f' };
 }
 
 export function formatValue(value: unknown): string {
@@ -163,6 +156,27 @@ export function filterLogRows(rows: LogRow[], { levels, componentIds }: LogRowFi
   });
 }
 
+// Runtime rows name their environment as the log source does, gateway rows by the console's id, so either is accepted.
+export function findEnvironment<T extends Pick<Environment, 'id' | 'name'>>(environments: T[], value: string | null | undefined): T | undefined {
+  const wanted = value?.toLowerCase();
+  return wanted ? environments.find((e) => e.id.toLowerCase() === wanted || e.name.toLowerCase() === wanted) : undefined;
+}
+
+export interface LogScopeFilter {
+  /** The selected environments; empty keeps every environment. */
+  environments: Pick<Environment, 'id' | 'name'>[];
+  /** Endpoint ids to keep on gateway rows; runtime rows carry no endpoint, so they are never narrowed by it. */
+  endpoints: string[];
+}
+
+export function filterLogsByScope(rows: LogRow[], { environments, endpoints }: LogScopeFilter): LogRow[] {
+  if (environments.length === 0 && endpoints.length === 0) return rows;
+  return rows.filter((row) => {
+    if (environments.length > 0 && !findEnvironment(environments, row.environment)) return false;
+    return endpoints.length === 0 || row.source !== 'gateway' || endpoints.includes(row.endpoint ?? '');
+  });
+}
+
 /** The rows a source filter keeps, merged in time order when both streams are shown. */
 export function selectLogSources(component: LogRow[], gateway: LogRow[], source: LogSourceFilter, sort: 'asc' | 'desc'): LogRow[] {
   if (source === 'component') return component;
@@ -170,14 +184,23 @@ export function selectLogSources(component: LogRow[], gateway: LogRow[], source:
   return mergeLogRows(component, gateway, sort);
 }
 
-/** Two sources as one list; a row whose timestamp will not parse sorts last rather than first. */
-export function mergeLogRows(a: LogRow[], b: LogRow[], sort: 'asc' | 'desc'): LogRow[] {
-  if (b.length === 0) return a;
-  if (a.length === 0) return b;
+// A row whose timestamp will not parse sorts last rather than first.
+function byTimestamp(sort: 'asc' | 'desc'): (x: LogRow, y: LogRow) => number {
   const at = (row: LogRow): number => {
     const ms = new Date(row.timestamp).getTime();
     // Finite sentinels: two infinities subtract to NaN, which leaves sort's order unspecified.
     return isNaN(ms) ? (sort === 'desc' ? Number.MIN_SAFE_INTEGER : Number.MAX_SAFE_INTEGER) : ms;
   };
-  return [...a, ...b].sort((x, y) => (sort === 'desc' ? at(y) - at(x) : at(x) - at(y)));
+  return (x, y) => (sort === 'desc' ? at(y) - at(x) : at(x) - at(y));
+}
+
+/** One source's rows in display order, for a source read as several separately paged queries. */
+export function sortLogRows(rows: LogRow[], sort: 'asc' | 'desc'): LogRow[] {
+  return [...rows].sort(byTimestamp(sort));
+}
+
+export function mergeLogRows(a: LogRow[], b: LogRow[], sort: 'asc' | 'desc'): LogRow[] {
+  if (b.length === 0) return a;
+  if (a.length === 0) return b;
+  return [...a, ...b].sort(byTimestamp(sort));
 }

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createConsumer, createEndpointTestKey, deleteConsumer, fetchConsumers, getEndpointPolicies, getEndpointSecurity, regenerateConsumerToken, revokeConsumer, setEndpointPolicies, setEndpointSecurity } from '#api/consumers';
 import type { ApiKeyResult, Consumer, CreateConsumerInput, EndpointPolicyConfig, EndpointRef, SecurityConfig, ConsumerCredential } from '../types/consumers';
 
@@ -102,6 +102,19 @@ export function useEndpointSecurity(ref: EndpointRef | null | undefined, enabled
     enabled: enabled && isCompleteRef(ref),
     staleTime: 30_000,
     retry: false,
+  });
+}
+
+/** Several endpoints' security at once, sharing the single-endpoint cache. */
+export function useEndpointSecurities(refs: EndpointRef[]) {
+  return useQueries({
+    queries: refs.map((ref) => ({
+      queryKey: securityKey(ref),
+      queryFn: () => getEndpointSecurity(ref),
+      enabled: isCompleteRef(ref),
+      staleTime: 30_000,
+      retry: false,
+    })),
   });
 }
 

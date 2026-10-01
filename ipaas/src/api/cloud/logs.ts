@@ -27,7 +27,7 @@
  */
 
 import { bff, items, obsClient, seg, type ListResponse } from './_client';
-import { parseAccessLine } from '../../utils/gatewayLogs';
+import { gatewayRequestLevel, parseAccessLine } from '../../utils/gatewayLogs';
 import type { LogsRequest, ComponentLogsRequest, GatewayLogsPage, GatewayLogsRequest, LogRow } from '../../types/logs';
 
 const LOGS_QUERY_PATH = '/wso2cloud-obs/api/v1/logs/query';
@@ -108,6 +108,7 @@ const toLogRow = (e: ObsLogEntry): LogRow => ({
   componentName: e.metadata?.componentName ?? null,
   containerName: e.metadata?.containerName ?? null,
   podName: e.metadata?.podName ?? null,
+  environment: e.metadata?.environmentName ?? null,
 });
 
 // Raw entries, metadata intact. LogRow keeps only a flattened subset of the
@@ -166,11 +167,7 @@ export async function fetchComponentLogs(req: ComponentLogsRequest, _logsApiUrl:
   const project = await resolveComponentProject(req.componentId);
   if (!project) return [];
   return queryObsLogs({
-    searchScope: {
-      project,
-      component: req.componentId,
-      environment: req.environmentId.toLowerCase(),
-    },
+    searchScope: { project, component: req.componentId, ...(req.environmentId ? { environment: req.environmentId.toLowerCase() } : {}) },
     startTime: req.startTime,
     endTime: req.endTime,
     limit: req.limit,
@@ -193,7 +190,13 @@ export async function fetchGatewayLogs(req: GatewayLogsRequest): Promise<Gateway
     sortOrder: req.sort,
     searchPhrase: req.searchPhrase,
   });
-  const rows = entries.filter((entry) => isGatewayContainer(entry.metadata?.containerName)).map((entry) => ({ ...toLogRow(entry), source: 'gateway' as const, request: parseAccessLine(entry.log ?? '') }));
+  const rows = entries
+    .filter((entry) => isGatewayContainer(entry.metadata?.containerName))
+    .map((entry) => {
+      const row = toLogRow(entry);
+      const request = parseAccessLine(row.logLine);
+      return { ...row, source: 'gateway' as const, request, level: gatewayRequestLevel(request, row.level) };
+    });
   if (entries.length < req.limit) return { rows };
   // A full page is only continued from its last timestamp; without one the rest would be skipped silently.
   const nextCursor = entries[entries.length - 1]?.timestamp;

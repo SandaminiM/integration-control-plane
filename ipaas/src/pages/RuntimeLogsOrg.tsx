@@ -16,20 +16,17 @@
  * under the License.
  */
 
-import { Stack } from '@wso2/oxygen-ui';
 import { useMemo, type JSX } from 'react';
-import LogEntry from '../components/Logs/LogEntry';
-import LogsFilters from '../components/Logs/LogsFilters';
 import LogsPageLayout from '../components/Logs/LogsPageLayout';
-import LogsNotices from '../components/Logs/LogsNotices';
-import LogsStatus from '../components/Logs/LogsStatus';
-import LogsPanel from '../components/Logs/LogsPanel';
-import { GATEWAY_LOGS_FAILED } from '../constants/gatewayLogs';
+import LogsToolbar from '../components/Logs/LogsToolbar';
+import LogsViewer from '../components/Logs/LogsViewer';
+import { GATEWAY_LOGS_FAILED, GATEWAY_RETENTION_NOTE } from '../constants/gatewayLogs';
 import { useInfiniteGatewayLogs, useVisibleLogs } from '../hooks/useLogs';
 import { useLogsFilters } from '../hooks/useLogsFilters';
 import type { GatewayLogsRequest } from '../types/logs';
-import { filterGatewayRows, startsBeyondGatewayRetention } from '../utils/gatewayLogs';
+import { filterGatewayRows, gatewayRetentionHorizon, startsBeyondGatewayRetention } from '../utils/gatewayLogs';
 import { AUTO_FETCH_INTERVAL, PAGE_SIZE } from '../utils/logs';
+import { logsSummary } from '../utils/logsView';
 
 /** The organization's API gateway logs. The data has no project or component dimension, so this reads all of it. */
 export default function RuntimeLogsOrg(): JSX.Element {
@@ -42,30 +39,30 @@ export default function RuntimeLogsOrg(): JSX.Element {
   const rows = useVisibleLogs(data, { levels: levelFilter });
 
   const logs = useMemo(() => filterGatewayRows(rows, { hideHealthChecks }), [rows, hideHealthChecks]);
-
-  const beyondRetention = startsBeyondGatewayRetention(startTime);
+  const retentionHorizon = useMemo(() => (startsBeyondGatewayRetention(startTime) ? gatewayRetentionHorizon() : null), [startTime]);
 
   return (
     <LogsPageLayout
       title="Runtime Logs"
-      filtersElement={<LogsFilters filters={filters} environments={[]} logs={logs} logsRequest={logsRequest} onRefetch={refetch} gatewayControls />}
+      filtersElement={<LogsToolbar filters={filters} environments={[]} logs={logs} canRefresh onRefetch={refetch} gatewayControls />}
       logPanelElement={
-        <Stack sx={{ minHeight: 0, flex: 1 }}>
-          <LogsNotices beyondRetention={beyondRetention} />
-          <LogsStatus count={logs.length} live={autoFetch} failure={error ? GATEWAY_LOGS_FAILED : undefined} />
-          <LogsPanel
-            items={logs}
-            getKey={(l, i) => `${i}-${l.timestamp}-${l.logLine.slice(0, 50)}`}
-            renderRow={(l, ex, tg) => <LogEntry log={l} expanded={ex} onToggle={tg} />}
-            isLoading={isLoading}
-            error={error}
-            hasNextPage={hasNextPage}
-            isFetchingNextPage={isFetchingNextPage}
-            onRefetch={refetch}
-            onFetchNextPage={fetchNextPage}
-            onClearFilters={filters.clearFilters}
-          />
-        </Stack>
+        <LogsViewer
+          rows={logs}
+          live={autoFetch}
+          failure={error ? GATEWAY_LOGS_FAILED : undefined}
+          summary={logsSummary({ lines: logs.length })}
+          sortDir={sortDir}
+          onSortChange={filters.setSortDir}
+          isLoading={isLoading}
+          error={error}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onRefetch={refetch}
+          onFetchNextPage={fetchNextPage}
+          onClearFilters={filters.clearFilters}
+          retentionHorizon={retentionHorizon}
+          retentionNote={GATEWAY_RETENTION_NOTE}
+        />
       }
     />
   );

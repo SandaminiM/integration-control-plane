@@ -16,36 +16,35 @@
  * under the License.
  */
 
-import { Box, CircularProgress, PageContent, Stack } from '@wso2/oxygen-ui';
+import { Box, CircularProgress, PageContent } from '@wso2/oxygen-ui';
 import { ScrollText } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, type JSX } from 'react';
+import { IS_CLOUD } from '../features';
 import { useOrgs } from '../hooks/useOrg';
 import { useProjectsByOrg } from '../hooks/useProjects';
 import { useComponentByHandler } from '../hooks/useComponents';
 import { useEnvironments, useAllEnvironments } from '../hooks/useEnvironments';
-import { useInfiniteComponentLogs, useInfiniteGatewayLogs, useVisibleLogs } from '../hooks/useLogs';
+import { useInfiniteComponentLogs, useInfiniteGatewayLogsByEnvironment, useVisibleLogs } from '../hooks/useLogs';
 import { useGatewayLogScope } from '../hooks/useGatewayLogScope';
-import { filterGatewayRows, startsBeyondGatewayRetention } from '../utils/gatewayLogs';
-import { selectLogSources } from '../utils/logs';
-import type { ComponentLogsRequest, GatewayLogsRequest } from '../types/logs';
+import { filterGatewayRows, gatewayRetentionHorizon, startsBeyondGatewayRetention, tagGatewayEndpoints } from '../utils/gatewayLogs';
+import { logsSummary } from '../utils/logsView';
+import { filterLogsByScope, findEnvironment, selectLogSources, sortLogRows } from '../utils/logs';
+import type { ComponentLogsRequest, GatewayLogsRequest, LogRow } from '../types/logs';
 import { choreologgingComponentLogsApiUrl, choreologgingComponentGatewayLogsApiUrl } from '../config/runtimeConfig';
 import { GENERIC_SERVICE_TYPES } from '../constants/integrations';
-import { GATEWAY_LOGS_FAILED } from '../constants/gatewayLogs';
+import { GATEWAY_LOGS_FAILED, GATEWAY_RETENTION_NOTE } from '../constants/gatewayLogs';
 import { AUTO_FETCH_INTERVAL, DEFAULT_DP_REGION, PAGE_SIZE } from '../utils/logs';
-import LogsFilters from '../components/Logs/LogsFilters';
 import LogsPageLayout from '../components/Logs/LogsPageLayout';
-import LogsNotices from '../components/Logs/LogsNotices';
-import LogsStatus from '../components/Logs/LogsStatus';
-import LogsPanel from '../components/Logs/LogsPanel';
-import LogEntry from '../components/Logs/LogEntry';
+import LogsToolbar from '../components/Logs/LogsToolbar';
+import LogsViewer from '../components/Logs/LogsViewer';
 import EmptyListing from '../components/EmptyListing';
 import NotFound from '../components/NotFound';
 import { useLogsFilters } from '../hooks/useLogsFilters';
 import { broaden, resourceUrl, type ComponentScope } from '../nav';
 
 export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Element {
-  const filters = useLogsFilters();
-  const { envFilter, levelFilter, sortDir, searchPhrase, autoFetch, startTime, endTime, sourceFilter, hideHealthChecks } = filters;
+  const filters = useLogsFilters(`${scope.org}/${scope.project}/${scope.component}`);
+  const { envFilter, endpointFilter, levelFilter, sortDir, searchPhrase, autoFetch, startTime, endTime, sourceFilter, hideHealthChecks } = filters;
 
   const { data: orgs, isLoading: loadingOrgs } = useOrgs();
   const { data: projects, isLoading: loadingProjects } = useProjectsByOrg(scope.org);
@@ -65,7 +64,8 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
   const selectedEnvIds = envFilter.length > 0 ? envFilter : environments.map((e) => e.id);
   const primaryEnv = environments.find((e) => selectedEnvIds.includes(e.id));
 
-  const envIdsKey = selectedEnvIds.join(',');
+  // Cloud reads every environment in one pass and narrows on the rows, so the environment selection never re-queries.
+  const envIdsKey = IS_CLOUD ? '' : selectedEnvIds.join(',');
   const levelFilterKey = levelFilter.join(',');
 
   const isGenericService = GENERIC_SERVICE_TYPES.has(component?.displayType ?? '');
@@ -75,7 +75,7 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
     if (!component || !primaryEnv) return null;
     return {
       componentId: component.id,
-      environmentId: primaryEnv.id,
+      environmentId: IS_CLOUD ? undefined : primaryEnv.id,
       versionIdList: [],
       logLevels: levelFilter,
       startTime,
@@ -92,13 +92,12 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
 
   const { data, isLoading, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteComponentLogs(logsRequest, autoFetch ? AUTO_FETCH_INTERVAL : false, logsApiUrl);
 
-  // The gateway fronts the whole organization, so the endpoint's context path is what narrows its lines.
   const gateway = useGatewayLogScope(scope.org, orgUuid, component, primaryEnv?.id ?? '');
   const gatewayRequest = useMemo<GatewayLogsRequest | null>(() => {
-    if (!gateway.available || !primaryEnv) return null;
-    return { environmentId: primaryEnv.id, searchPhrase: gateway.contextPath, startTime, endTime, limit: PAGE_SIZE, sort: sortDir };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gateway.available, gateway.contextPath, primaryEnv?.id, startTime, endTime, sortDir]);
+    if (!gateway.available) return null;
+    return { searchPhrase: gateway.searchPrefix, startTime, endTime, limit: PAGE_SIZE, sort: sortDir };
+  }, [gateway.available, gateway.searchPrefix, startTime, endTime, sortDir]);
+  const environmentIds = useMemo(() => environments.map((e) => e.id), [environments]);
 
   const {
     data: gatewayData,
@@ -108,16 +107,24 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
     isFetchingNextPage: fetchingMoreGateway,
     fetchNextPage: fetchMoreGateway,
     refetch: refetchGateway,
-  } = useInfiniteGatewayLogs(gatewayRequest, autoFetch ? AUTO_FETCH_INTERVAL : false);
+  } = useInfiniteGatewayLogsByEnvironment(gatewayRequest, environmentIds, autoFetch ? AUTO_FETCH_INTERVAL : false);
 
-  const componentLogs = useVisibleLogs(data, { levels: levelFilter });
+  const componentRows = useVisibleLogs(data, { levels: levelFilter });
   const gatewayRows = useVisibleLogs(gatewayData, { levels: levelFilter });
 
-  // The query's searchPhrase carries the endpoint's path, so the user's own phrase narrows here instead.
-  const gatewayLogs = useMemo(() => filterGatewayRows(gatewayRows, { hideHealthChecks, searchPhrase, contextPath: gateway.contextPath }), [gatewayRows, hideHealthChecks, searchPhrase, gateway.contextPath]);
+  const scopeFilter = useMemo(() => ({ environments: IS_CLOUD ? environments.filter((e) => envFilter.includes(e.id)) : [], endpoints: endpointFilter }), [environments, envFilter, endpointFilter]);
+
+  const componentLogs = useMemo(() => filterLogsByScope(componentRows, scopeFilter), [componentRows, scopeFilter]);
+  const gatewayLogs = useMemo(
+    () => sortLogRows(filterLogsByScope(filterGatewayRows(tagGatewayEndpoints(gatewayRows, gateway.endpoints), { hideHealthChecks, searchPhrase }), scopeFilter), sortDir),
+    [gatewayRows, gateway.endpoints, hideHealthChecks, searchPhrase, scopeFilter, sortDir],
+  );
 
   // Merged for display only: a shared cursor would step past rows the other source had not fetched.
   const logs = useMemo(() => (gateway.available ? selectLogSources(componentLogs, gatewayLogs, sourceFilter, sortDir) : componentLogs), [gateway.available, componentLogs, gatewayLogs, sourceFilter, sortDir]);
+
+  const envNameOf = (row: LogRow): string | undefined => findEnvironment(environments, row.environment)?.name ?? primaryEnv?.name;
+  const endpointNameOf = (row: LogRow): string | undefined => (gateway.endpoints.length > 1 ? gateway.endpoints.find((e) => e.id === row.endpoint)?.displayName : undefined);
 
   const showsComponent = !gateway.available || sourceFilter !== 'gateway';
   const showsGateway = gateway.available && sourceFilter !== 'component';
@@ -125,17 +132,16 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
   const gatewayFailed = showsGateway && !!gatewayError;
   // One failed source leaves the other's rows on screen; the panel's error state is for when nothing selected loaded.
   const panelError = (componentFailed || !showsComponent) && (gatewayFailed || !showsGateway) ? (componentFailed ? error : gatewayError) : null;
+  // An integration whose gateway scope is still resolving may yet have gateway rows, so empty is not final until it settles.
+  const gatewayPending = sourceFilter !== 'component' && (gateway.resolving || (showsGateway && loadingGateway));
   // Only while nothing is on screen yet, so a source starting later never blanks rows already shown.
-  const panelLoading = logs.length === 0 && ((showsComponent && isLoading) || (showsGateway && loadingGateway));
-  const statusFailure = componentFailed && gatewayFailed ? "Couldn't load logs" : componentFailed ? "Couldn't load runtime logs" : gatewayFailed ? GATEWAY_LOGS_FAILED : undefined;
+  const panelLoading = logs.length === 0 && ((showsComponent && isLoading) || gatewayPending);
+  const statusFailure = componentFailed && gatewayFailed ? "Couldn't load logs" : componentFailed ? "Couldn't load application logs" : gatewayFailed ? GATEWAY_LOGS_FAILED : undefined;
 
-  // Gateway rows only: the integration's own logs outlive the gateway's, so the notice would misinform.
-  const beyondRetention = showsGateway && startsBeyondGatewayRetention(startTime);
+  // Gateway rows only: the integration's own logs outlive the gateway's, so the divider would misinform.
+  const retentionHorizon = useMemo(() => (showsGateway && startsBeyondGatewayRetention(startTime) ? gatewayRetentionHorizon() : null), [showsGateway, startTime]);
 
-  const refetchAll = (): void => {
-    void refetch();
-    if (gateway.available) void refetchGateway();
-  };
+  const refetchAll = (): Promise<unknown> => Promise.all([refetch(), gateway.available ? refetchGateway() : null]);
   const fetchNextAll = (): void => {
     if (showsComponent && hasNextPage) void fetchNextPage();
     if (showsGateway && hasMoreGateway) void fetchMoreGateway();
@@ -164,24 +170,27 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
   return (
     <LogsPageLayout
       title="Runtime Logs"
-      filtersElement={<LogsFilters filters={filters} environments={environments} logs={logs} logsRequest={logsRequest} onRefetch={refetchAll} gatewayControls={gateway.available} sourceControls={gateway.available} />}
+      filtersElement={<LogsToolbar filters={filters} environments={environments} endpoints={gateway.endpoints} logs={logs} canRefresh={!!logsRequest} onRefetch={refetchAll} sourceControls={gateway.available} gatewayControls={gateway.available} />}
       logPanelElement={
-        <Stack sx={{ minHeight: 0, flex: 1 }}>
-          <LogsNotices beyondRetention={beyondRetention} />
-          <LogsStatus count={logs.length} live={autoFetch} failure={statusFailure} />
-          <LogsPanel
-            items={logs}
-            getKey={(l, i) => `${i}-${l.timestamp}-${l.logLine.slice(0, 50)}`}
-            renderRow={(l, ex, tg) => <LogEntry log={l} expanded={ex} onToggle={tg} envName={primaryEnv?.name} />}
-            isLoading={panelLoading}
-            error={panelError}
-            hasNextPage={(showsComponent && hasNextPage) || (showsGateway && hasMoreGateway)}
-            isFetchingNextPage={isFetchingNextPage || fetchingMoreGateway}
-            onRefetch={refetchAll}
-            onFetchNextPage={fetchNextAll}
-            onClearFilters={filters.clearFilters}
-          />
-        </Stack>
+        <LogsViewer
+          rows={logs}
+          live={autoFetch}
+          failure={statusFailure}
+          summary={logsSummary({ lines: logs.length, endpoints: gateway.endpoints.length, environments: environments.length })}
+          sortDir={sortDir}
+          onSortChange={filters.setSortDir}
+          isLoading={panelLoading}
+          error={panelError}
+          hasNextPage={(showsComponent && hasNextPage) || (showsGateway && hasMoreGateway)}
+          isFetchingNextPage={isFetchingNextPage || fetchingMoreGateway}
+          onRefetch={refetchAll}
+          onFetchNextPage={fetchNextAll}
+          onClearFilters={filters.clearFilters}
+          retentionHorizon={retentionHorizon}
+          retentionNote={GATEWAY_RETENTION_NOTE}
+          envNameOf={envNameOf}
+          endpointNameOf={endpointNameOf}
+        />
       }
     />
   );

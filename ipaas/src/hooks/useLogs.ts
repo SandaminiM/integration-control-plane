@@ -22,7 +22,7 @@ import type { InfiniteData } from '@tanstack/react-query';
 import { fetchLogs, fetchComponentLogs, fetchGatewayLogs } from '#api/logs';
 import { IS_CLOUD } from '../features';
 import { filterLogRows, type LogRowFilter } from '../utils/logs';
-import type { LogsRequest, ComponentLogsRequest, GatewayLogsPage, GatewayLogsRequest, LogRow } from '../types/logs';
+import type { LogsRequest, ComponentLogsRequest, GatewayEnvironmentCursor, GatewayEnvironmentsPage, GatewayLogsPage, GatewayLogsRequest, LogRow } from '../types/logs';
 
 // The cloud log source cannot narrow by level, so leaving levels out of its
 // request keeps the query key — and the pages already loaded — stable while the
@@ -97,6 +97,33 @@ export function useInfiniteGatewayLogs(req: GatewayLogsRequest | null, refetchIn
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     select: gatewayRowPages,
     enabled: !!req,
+    refetchInterval,
+  });
+}
+
+const environmentRowPages = (data: InfiniteData<GatewayEnvironmentsPage>): InfiniteData<LogRow[]> => ({ ...data, pages: data.pages.map((page) => page.rows) });
+
+/** Gateway lines carry no environment name, so each environment is its own query, stamped onto its rows and paged on its own cursor. */
+export function useInfiniteGatewayLogsByEnvironment(req: GatewayLogsRequest | null, environmentIds: string[], refetchInterval: number | false = false) {
+  return useInfiniteQuery({
+    queryKey: ['gateway-logs-by-environment', req, environmentIds],
+    queryFn: async ({ pageParam }): Promise<GatewayEnvironmentsPage> => {
+      const pages = await Promise.all(
+        pageParam.map(async ({ environmentId, cursor }) => {
+          const window = cursor ? (req!.sort === 'desc' ? { endTime: cursor } : { startTime: cursor }) : {};
+          const page = await fetchGatewayLogs({ ...req!, ...window, environmentId });
+          return { environmentId, page };
+        }),
+      );
+      return {
+        rows: pages.flatMap(({ environmentId, page }) => page.rows.map((row) => ({ ...row, environment: environmentId }))),
+        next: pages.flatMap(({ environmentId, page }) => (page.nextCursor ? [{ environmentId, cursor: page.nextCursor }] : [])),
+      };
+    },
+    initialPageParam: environmentIds.map((environmentId): GatewayEnvironmentCursor => ({ environmentId })),
+    getNextPageParam: (lastPage) => (lastPage.next.length > 0 ? lastPage.next : undefined),
+    select: environmentRowPages,
+    enabled: !!req && environmentIds.length > 0,
     refetchInterval,
   });
 }

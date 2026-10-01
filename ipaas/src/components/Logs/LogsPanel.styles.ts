@@ -16,16 +16,18 @@
  * under the License.
  */
 
-import { Alert } from '@wso2/oxygen-ui';
-import type { JSX } from 'react';
-import { GATEWAY_LOG_RETENTION_DAYS } from '../../constants/gatewayLogs';
-import { noticeSx } from './LogsNotices.styles';
+export const framedListSx = {
+  bgcolor: 'background.paper',
+  borderRadius: 1,
+  border: '1px solid',
+  borderColor: 'divider',
+  overflow: 'auto',
+  maxHeight: 'calc(100vh - 300px)',
+  padding: '16px',
+} as const;
 
-export default function LogsNotices({ beyondRetention = false }: { beyondRetention?: boolean }): JSX.Element | null {
-  if (!beyondRetention) return null;
-  return (
-    <Alert severity="info" sx={noticeSx}>
-      Gateway logs are kept for {GATEWAY_LOG_RETENTION_DAYS} days. Anything older than that in the selected range is no longer available.
-    </Alert>
-  );
-}
+export const embeddedListSx = {
+  overflow: 'auto',
+  maxHeight: 'calc(100vh - 340px)',
+  py: 0.5,
+} as const;

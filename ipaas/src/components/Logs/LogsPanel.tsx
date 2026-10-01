@@ -19,6 +19,7 @@
 import { Box, Button, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
 import { AlertTriangle, RefreshCw, ScrollText } from '@wso2/oxygen-ui-icons-react';
 import { Fragment, useCallback, useEffect, useRef, useState, type JSX, type ReactNode } from 'react';
+import { embeddedListSx, framedListSx } from './LogsPanel.styles';
 
 interface LogsPanelProps<T> {
   isLoading: boolean;
@@ -42,6 +43,14 @@ interface LogsPanelProps<T> {
   /** Friendly error copy shown instead of the raw backend error. */
   errorTitle?: string;
   errorDescription?: string;
+  /** Every row starts expanded; a row the user toggles flips against it. */
+  expandAll?: boolean;
+  /** Renders something (a divider) above a row, inside the scrolling list. */
+  renderBefore?: (item: T, index: number) => ReactNode;
+  /** Drops the panel's own border and padding, for a list inside a card that draws them. */
+  embedded?: boolean;
+  /** Replaces "End of logs" under the last page, e.g. to say why older lines are missing. */
+  endLabel?: string;
 }
 
 /**
@@ -64,8 +73,14 @@ export default function LogsPanel<T>({
   emptyDescription = 'No log entries matched your current filters for the selected time range. Try widening the time range, clearing some filters, or refreshing.',
   errorTitle = "Couldn't load logs",
   errorDescription = 'The logging service is temporarily unavailable. Please try again in a moment.',
+  expandAll = false,
+  renderBefore,
+  embedded = false,
+  endLabel = 'End of logs',
 }: LogsPanelProps<T>): JSX.Element {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // Toggles are kept relative to the expand-all state, so switching it starts every row afresh.
+  useEffect(() => setExpanded(new Set()), [expandAll]);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const paginated = !!onFetchNextPage;
@@ -151,20 +166,15 @@ export default function LogsPanel<T>({
   }
 
   return (
-    <Stack
-      ref={scrollContainerRef}
-      sx={{
-        bgcolor: 'background.paper',
-        borderRadius: 1,
-        border: '1px solid',
-        borderColor: 'divider',
-        overflow: 'auto',
-        maxHeight: 'calc(100vh - 300px)',
-        padding: '16px',
-      }}>
+    <Stack ref={scrollContainerRef} sx={embedded ? embeddedListSx : framedListSx}>
       {items.map((item, index) => {
         const key = getKey(item, index);
-        return <Fragment key={key}>{renderRow(item, expanded.has(key), () => toggle(key))}</Fragment>;
+        return (
+          <Fragment key={key}>
+            {renderBefore?.(item, index)}
+            {renderRow(item, expanded.has(key) !== expandAll, () => toggle(key))}
+          </Fragment>
+        );
       })}
       {paginated && (
         <>
@@ -176,7 +186,7 @@ export default function LogsPanel<T>({
           )}
           {!hasNextPage && (
             <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 1 }}>
-              End of logs
+              {endLabel}
             </Typography>
           )}
         </>
