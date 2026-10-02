@@ -31,7 +31,7 @@ import { AUTO_FETCH_INTERVAL, DEFAULT_DP_REGION, PAGE_SIZE } from '../utils/logs
 import LogsPageLayout from '../components/Logs/LogsPageLayout';
 import LogsToolbar from '../components/Logs/LogsToolbar';
 import LogsViewer from '../components/Logs/LogsViewer';
-import { logsSummary } from '../utils/logsView';
+import { logsSummary, liveStatus } from '../utils/logsView';
 import EmptyListing from '../components/EmptyListing';
 import { useLogsFilters } from '../hooks/useLogsFilters';
 import type { ProjectScope } from '../nav';
@@ -101,6 +101,7 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
   const loaded = useVisibleLogs(data);
   const historyOpen = (data?.pages.length ?? 0) > 1;
   useResumeLiveOnAutoRefresh(autoFetch, backToLive);
+  const live = liveStatus({ autoFetch, historyOpen, sort: sortDir });
 
   if (loadingProject || loadingComponents || loadingEnvironments || loadingCdps) {
     return (
@@ -144,9 +145,9 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
       logPanelElement={
         <LogsViewer
           rows={logs}
-          live={autoFetch && !historyOpen}
-          pausedNote={autoFetch ? 'viewing older lines' : undefined}
-          onBackToLive={autoFetch && historyOpen ? backToLive : undefined}
+          live={live.live}
+          pausedNote={live.pausedNote}
+          onBackToLive={live.backToLive === 'newestFirst' ? () => filters.setSortDir('desc') : live.backToLive === 'newestPage' ? backToLive : undefined}
           failure={error ? "Couldn't load logs" : undefined}
           summary={logsSummary({ lines: logs.length, loaded: loaded.length })}
           sortDir={sortDir}

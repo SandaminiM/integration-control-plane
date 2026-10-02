@@ -32,11 +32,11 @@ function sourceRequest<T extends { logLevels: string[] }>(req: T | null): T | nu
   return req && IS_CLOUD ? { ...req, logLevels: [] } : req;
 }
 
-// A refetch reloads every loaded page, so once older pages are open the live refresh stops rather than re-reading history.
+// Live means the newest page, refetched: oldest-first lists start at the other end, and a refetch reloads every loaded page.
 const liveHeadOnly =
-  (interval: number | false) =>
+  (interval: number | false, sort: 'asc' | 'desc' | undefined) =>
   (query: { state: { data?: { pages: unknown[] } } }): number | false =>
-    (query.state.data?.pages.length ?? 0) > 1 ? false : interval;
+    sort === 'asc' || (query.state.data?.pages.length ?? 0) > 1 ? false : interval;
 
 // Keeps only the newest page, so the live refresh (paused while older pages are open) can resume.
 function useBackToLive(queryKey: QueryKey): () => void {
@@ -88,7 +88,7 @@ export function useInfiniteLogs(req: LogsRequest | null, refetchInterval: number
       return lastPage[lastPage.length - 1]?.timestamp;
     },
     enabled: !!query && !!logsApiUrl,
-    refetchInterval: liveHeadOnly(refetchInterval),
+    refetchInterval: liveHeadOnly(refetchInterval, query?.sort),
   });
   return { ...result, backToLive };
 }
@@ -109,7 +109,7 @@ export function useInfiniteComponentLogs(req: ComponentLogsRequest | null, refet
       return lastPage[lastPage.length - 1]?.timestamp;
     },
     enabled: !!query && !!logsApiUrl,
-    refetchInterval: liveHeadOnly(refetchInterval),
+    refetchInterval: liveHeadOnly(refetchInterval, query?.sort),
   });
   return { ...result, backToLive };
 }
@@ -131,7 +131,7 @@ export function useInfiniteGatewayLogs(req: GatewayLogsRequest | null, refetchIn
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     select: gatewayRowPages,
     enabled: !!req,
-    refetchInterval: liveHeadOnly(refetchInterval),
+    refetchInterval: liveHeadOnly(refetchInterval, req?.sort),
   });
   return { ...result, backToLive };
 }
@@ -161,7 +161,7 @@ export function useInfiniteGatewayLogsByEnvironment(req: GatewayLogsRequest | nu
     getNextPageParam: (lastPage) => (lastPage.next.length > 0 ? lastPage.next : undefined),
     select: environmentRowPages,
     enabled: !!req && environmentIds.length > 0 && searchPhrases.length > 0,
-    refetchInterval: liveHeadOnly(refetchInterval),
+    refetchInterval: liveHeadOnly(refetchInterval, req?.sort),
   });
   return { ...result, backToLive };
 }

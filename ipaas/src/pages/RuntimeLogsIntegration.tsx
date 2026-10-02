@@ -27,7 +27,7 @@ import { useEnvironments, useAllEnvironments } from '../hooks/useEnvironments';
 import { useInfiniteComponentLogs, useInfiniteGatewayLogsByEnvironment, useVisibleLogs, useResumeLiveOnAutoRefresh } from '../hooks/useLogs';
 import { useGatewayLogScope } from '../hooks/useGatewayLogScope';
 import { filterGatewayRows, gatewayRetentionHorizon, startsBeyondGatewayRetention, tagGatewayEndpoints } from '../utils/gatewayLogs';
-import { logsSummary, retentionNote } from '../utils/logsView';
+import { logsSummary, retentionNote, liveStatus } from '../utils/logsView';
 import { filterLogsByScope, findEnvironment, selectLogSources, sortLogRows } from '../utils/logs';
 import type { ComponentLogsRequest, GatewayLogsRequest, LogRow } from '../types/logs';
 import { choreologgingComponentLogsApiUrl, choreologgingComponentGatewayLogsApiUrl } from '../config/runtimeConfig';
@@ -160,6 +160,7 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
     if (gateway.available) gatewayBackToLive();
   }, [componentBackToLive, gatewayBackToLive, gateway.available]);
   useResumeLiveOnAutoRefresh(autoFetch, backToLive);
+  const live = liveStatus({ autoFetch, historyOpen, sort: sortDir });
 
   const refetchAll = (): Promise<unknown> => Promise.all([refetch(), gateway.available ? refetchGateway() : null]);
   const fetchNextAll = (): void => {
@@ -194,9 +195,9 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
       logPanelElement={
         <LogsViewer
           rows={logs}
-          live={autoFetch && !historyOpen}
-          pausedNote={autoFetch ? 'viewing older lines' : undefined}
-          onBackToLive={autoFetch && historyOpen ? backToLive : undefined}
+          live={live.live}
+          pausedNote={live.pausedNote}
+          onBackToLive={live.backToLive === 'newestFirst' ? () => filters.setSortDir('desc') : live.backToLive === 'newestPage' ? backToLive : undefined}
           failure={statusFailure}
           summary={logsSummary({ lines: logs.length, loaded: loadedCount, endpoints: gateway.endpoints.length, environments: environments.length })}
           sortDir={sortDir}

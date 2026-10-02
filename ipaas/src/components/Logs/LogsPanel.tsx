@@ -99,13 +99,6 @@ export default function LogsPanel<T>({
     if (el && el.scrollTop + el.clientHeight >= el.scrollHeight - 200) onFetchNextPage();
   }, [hasNextPage, isFetchingNextPage, onFetchNextPage]);
 
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container || !paginated) return;
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [handleScroll, paginated]);
-
   // A page can filter down to nothing while the next one loads; that is still loading, not empty.
   if (isLoading || (items.length === 0 && isFetchingNextPage)) {
     return (
@@ -166,7 +159,8 @@ export default function LogsPanel<T>({
   }
 
   return (
-    <Stack ref={scrollContainerRef} sx={embedded ? embeddedListSx : framedListSx}>
+    // onScroll, not a listener in an effect: the list unmounts behind the empty state, and React re-binds a prop on every mount.
+    <Stack ref={scrollContainerRef} onScroll={paginated ? handleScroll : undefined} sx={embedded ? embeddedListSx : framedListSx}>
       {items.map((item, index) => {
         const key = getKey(item, index);
         return (
