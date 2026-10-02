@@ -18,7 +18,7 @@
 
 import { Badge, Box, Button, Chip, IconButton, MenuItem, Select, TextField, Tooltip } from '@wso2/oxygen-ui';
 import { Clock, Download, ListFilter, RefreshCw } from '@wso2/oxygen-ui-icons-react';
-import { useMemo, useState, type JSX } from 'react';
+import { useMemo, useState, type JSX, type ReactNode } from 'react';
 import type { LogsFiltersState } from '../../hooks/useLogsFilters';
 import type { GatewayLogEndpoint, LogRow, LogSourceFilter } from '../../types/logs';
 import { TIME_PRESETS, downloadLogs, toLocalInput } from '../../utils/logs';
@@ -39,12 +39,14 @@ export interface LogsToolbarProps {
   onRefetch: () => unknown;
   /** Adds the application/gateway selector, for views that merge both streams. */
   sourceControls?: boolean;
+  /** Page-specific selectors, placed after the time range (e.g. the project page's integration picker). */
+  extraFilters?: ReactNode;
   /** Adds the gateway health-check option, for views that show gateway lines. */
   gatewayControls?: boolean;
 }
 
 /** Search, filters, time range and actions for a logs view, with the applied filters as chips below. */
-export default function LogsToolbar({ filters, environments, endpoints = [], logs, canRefresh, onRefetch, sourceControls = false, gatewayControls = false }: LogsToolbarProps): JSX.Element {
+export default function LogsToolbar({ filters, environments, endpoints = [], logs, canRefresh, onRefetch, sourceControls = false, extraFilters, gatewayControls = false }: LogsToolbarProps): JSX.Element {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const refresh = async (): Promise<void> => {
@@ -108,6 +110,7 @@ export default function LogsToolbar({ filters, environments, endpoints = [], log
           ))}
           <MenuItem value="custom">Custom range</MenuItem>
         </Select>
+        {extraFilters}
         {sourceControls ? (
           <Select value={filters.sourceFilter} onChange={(e) => filters.setSourceFilter(e.target.value as LogSourceFilter)} size="small" sx={sourceSelectSx} inputProps={{ 'aria-label': 'Log source' }}>
             <MenuItem value="all">All logs</MenuItem>
