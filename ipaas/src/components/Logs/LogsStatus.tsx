@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Box, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
 import { AUTO_FETCH_INTERVAL } from '../../utils/logs';
 import { statusDotSx, statusPillSx } from './LogsStatus.styles';
@@ -27,9 +27,11 @@ export interface LogsStatusProps {
   failure?: string;
   /** Why refresh is paused, when it is not simply switched off. */
   pausedNote?: string;
+  /** Offered while paused on older lines: drops them and resumes the live refresh. */
+  onBackToLive?: () => void;
 }
 
-export default function LogsStatus({ live, failure, pausedNote = 'auto refresh is off' }: LogsStatusProps): JSX.Element {
+export default function LogsStatus({ live, failure, pausedNote = 'auto refresh is off', onBackToLive }: LogsStatusProps): JSX.Element {
   const label = failure ? 'Error' : live ? 'Live' : 'Paused';
   const note = failure ?? (live ? `refreshing every ${AUTO_FETCH_INTERVAL / 1000}s` : pausedNote);
   return (
@@ -41,6 +43,11 @@ export default function LogsStatus({ live, failure, pausedNote = 'auto refresh i
       <Typography component="span" variant="body2" color="text.secondary">
         {note}
       </Typography>
+      {!live && !failure && onBackToLive ? (
+        <Button size="small" onClick={onBackToLive}>
+          Back to live
+        </Button>
+      ) : null}
     </Box>
   );
 }

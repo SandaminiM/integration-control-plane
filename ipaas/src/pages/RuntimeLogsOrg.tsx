@@ -21,7 +21,7 @@ import LogsPageLayout from '../components/Logs/LogsPageLayout';
 import LogsToolbar from '../components/Logs/LogsToolbar';
 import LogsViewer from '../components/Logs/LogsViewer';
 import { GATEWAY_LOGS_FAILED } from '../constants/gatewayLogs';
-import { useInfiniteGatewayLogs, useVisibleLogs } from '../hooks/useLogs';
+import { useInfiniteGatewayLogs, useVisibleLogs, useResumeLiveOnAutoRefresh } from '../hooks/useLogs';
 import { useLogsFilters } from '../hooks/useLogsFilters';
 import type { GatewayLogsRequest } from '../types/logs';
 import { filterGatewayRows, gatewayRetentionHorizon, startsBeyondGatewayRetention } from '../utils/gatewayLogs';
@@ -35,8 +35,11 @@ export default function RuntimeLogsOrg(): JSX.Element {
 
   const logsRequest: GatewayLogsRequest = useMemo(() => ({ searchPhrase, startTime, endTime, limit: PAGE_SIZE, sort: sortDir }), [searchPhrase, startTime, endTime, sortDir]);
 
-  const { data, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } = useInfiniteGatewayLogs(logsRequest, autoFetch ? AUTO_FETCH_INTERVAL : false);
+  const { data, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage, refetch, backToLive } = useInfiniteGatewayLogs(logsRequest, autoFetch ? AUTO_FETCH_INTERVAL : false);
   const rows = useVisibleLogs(data, { levels: levelFilter });
+  const loaded = useVisibleLogs(data);
+  const historyOpen = (data?.pages.length ?? 0) > 1;
+  useResumeLiveOnAutoRefresh(autoFetch, backToLive);
 
   const logs = useMemo(() => filterGatewayRows(rows, { hideHealthChecks }), [rows, hideHealthChecks]);
   const retentionHorizon = useMemo(() => (startsBeyondGatewayRetention(startTime) ? gatewayRetentionHorizon() : null), [startTime]);
@@ -48,10 +51,11 @@ export default function RuntimeLogsOrg(): JSX.Element {
       logPanelElement={
         <LogsViewer
           rows={logs}
-          live={autoFetch && (data?.pages.length ?? 0) <= 1}
-          pausedNote={autoFetch ? 'paused while older lines are open' : undefined}
+          live={autoFetch && !historyOpen}
+          pausedNote={autoFetch ? 'viewing older lines' : undefined}
+          onBackToLive={autoFetch && historyOpen ? backToLive : undefined}
           failure={error ? GATEWAY_LOGS_FAILED : undefined}
-          summary={logsSummary({ lines: logs.length })}
+          summary={logsSummary({ lines: logs.length, loaded: loaded.length })}
           sortDir={sortDir}
           onSortChange={filters.setSortDir}
           isLoading={isLoading}

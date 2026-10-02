@@ -23,7 +23,7 @@ import { useOrgs } from '../hooks/useOrg';
 import { useProjectsByOrg } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
 import { useEnvironments, useAllEnvironments, useCloudDataPlanes } from '../hooks/useEnvironments';
-import { useInfiniteLogs, useVisibleLogs } from '../hooks/useLogs';
+import { useInfiniteLogs, useVisibleLogs, useResumeLiveOnAutoRefresh } from '../hooks/useLogs';
 import type { LogsRequest } from '../types/logs';
 import { choreologgingProjectLogsApiUrl } from '../config/runtimeConfig';
 import { IS_CLOUD } from '../features';
@@ -95,9 +95,12 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [componentIdsKey, envIdsKey, levelFilterKey, startTime, endTime, searchPhrase, sortDir, projectId, logsApiUrl]);
 
-  const { data, isLoading, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteLogs(logsRequest, autoFetch ? AUTO_FETCH_INTERVAL : false, logsApiUrl);
+  const { data, isLoading, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage, backToLive } = useInfiniteLogs(logsRequest, autoFetch ? AUTO_FETCH_INTERVAL : false, logsApiUrl);
 
   const logs = useVisibleLogs(data, { levels: levelFilter, componentIds });
+  const loaded = useVisibleLogs(data);
+  const historyOpen = (data?.pages.length ?? 0) > 1;
+  useResumeLiveOnAutoRefresh(autoFetch, backToLive);
 
   if (loadingProject || loadingComponents || loadingEnvironments || loadingCdps) {
     return (
@@ -142,10 +145,11 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
       logPanelElement={
         <LogsViewer
           rows={logs}
-          live={autoFetch && (data?.pages.length ?? 0) <= 1}
-          pausedNote={autoFetch ? 'paused while older lines are open' : undefined}
+          live={autoFetch && !historyOpen}
+          pausedNote={autoFetch ? 'viewing older lines' : undefined}
+          onBackToLive={autoFetch && historyOpen ? backToLive : undefined}
           failure={error ? "Couldn't load logs" : undefined}
-          summary={logsSummary({ lines: logs.length })}
+          summary={logsSummary({ lines: logs.length, loaded: loaded.length })}
           sortDir={sortDir}
           onSortChange={filters.setSortDir}
           isLoading={isLoading}

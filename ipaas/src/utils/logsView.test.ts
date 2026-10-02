@@ -82,6 +82,11 @@ describe('logsSummary', () => {
     expect(logsSummary({ lines: 128, endpoints: 5, environments: 2 })).toBe('128 lines · 5 endpoints · 2 environments');
   });
 
+  it('says how many of the loaded lines the filters left', () => {
+    expect(logsSummary({ lines: 12, loaded: 300, endpoints: 5 })).toBe('12 of 300 lines · 5 endpoints');
+    expect(logsSummary({ lines: 300, loaded: 300 })).toBe('300 lines');
+  });
+
   it('uses the singular for one and drops empty parts', () => {
     expect(logsSummary({ lines: 1, endpoints: 0, environments: 1 })).toBe('1 line · 1 environment');
   });
