@@ -81,7 +81,6 @@ export default function LogsPanel<T>({
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   // Toggles are kept relative to the expand-all state, so switching it starts every row afresh.
   useEffect(() => setExpanded(new Set()), [expandAll]);
-  const sentinelRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const paginated = !!onFetchNextPage;
 
@@ -93,28 +92,12 @@ export default function LogsPanel<T>({
       return next;
     });
 
+  // Measured against the list's own scroll box, so only scrolling near its end asks for older lines.
   const handleScroll = useCallback(() => {
     if (!hasNextPage || isFetchingNextPage || !onFetchNextPage) return;
-    const el = sentinelRef.current;
-    if (!el) return;
-    if (el.getBoundingClientRect().top < window.innerHeight + 200) onFetchNextPage();
+    const el = scrollContainerRef.current;
+    if (el && el.scrollTop + el.clientHeight >= el.scrollHeight - 200) onFetchNextPage();
   }, [hasNextPage, isFetchingNextPage, onFetchNextPage]);
-
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container || !paginated) return;
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [handleScroll, paginated]);
-
-  useEffect(() => {
-    if (paginated && items.length === 0 && hasNextPage && !isFetchingNextPage) onFetchNextPage?.();
-  }, [paginated, items.length, hasNextPage, isFetchingNextPage, onFetchNextPage]);
-
-  // A page that filters down to a few rows never fills the panel, so no scroll would ever ask for the next one.
-  useEffect(() => {
-    if (paginated) handleScroll();
-  }, [paginated, items.length, handleScroll]);
 
   // A page can filter down to nothing while the next one loads; that is still loading, not empty.
   if (isLoading || (items.length === 0 && isFetchingNextPage)) {
@@ -142,20 +125,29 @@ export default function LogsPanel<T>({
     );
   }
 
+  // Older pages are only read on request, so an empty first page may still have matches further back.
+  const moreToRead = paginated && !!hasNextPage;
+
   if (items.length === 0) {
     return (
       <Stack alignItems="center" gap={2} sx={{ py: 8 }}>
         <ScrollText size={48} style={{ opacity: 0.3 }} />
         <Typography variant="h3" textAlign="center">
-          {emptyTitle}
+          {moreToRead ? 'No matching lines yet' : emptyTitle}
         </Typography>
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ maxWidth: 420 }}>
-          {emptyDescription}
+          {moreToRead ? 'None of the lines loaded so far match. Load older lines to keep looking, or change the filters.' : emptyDescription}
         </Typography>
         <Stack direction="row" gap={1}>
-          <Button variant="outlined" size="small" startIcon={<RefreshCw size={14} />} onClick={onRefetch}>
-            Refresh
-          </Button>
+          {moreToRead ? (
+            <Button variant="outlined" size="small" onClick={onFetchNextPage}>
+              Load older lines
+            </Button>
+          ) : (
+            <Button variant="outlined" size="small" startIcon={<RefreshCw size={14} />} onClick={onRefetch}>
+              Refresh
+            </Button>
+          )}
           {onClearFilters && (
             <Button variant="text" size="small" onClick={onClearFilters}>
               Clear filters
@@ -167,7 +159,8 @@ export default function LogsPanel<T>({
   }
 
   return (
-    <Stack ref={scrollContainerRef} sx={embedded ? embeddedListSx : framedListSx}>
+    // onScroll, not a listener in an effect: the list unmounts behind the empty state, and React re-binds a prop on every mount.
+    <Stack ref={scrollContainerRef} onScroll={paginated ? handleScroll : undefined} sx={embedded ? embeddedListSx : framedListSx}>
       {items.map((item, index) => {
         const key = getKey(item, index);
         return (
@@ -179,12 +172,17 @@ export default function LogsPanel<T>({
       })}
       {paginated && (
         <>
-          <div ref={sentinelRef} />
-          {isFetchingNextPage && (
+          {isFetchingNextPage ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
               <CircularProgress size={20} />
             </Box>
-          )}
+          ) : moreToRead ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+              <Button size="small" onClick={onFetchNextPage}>
+                Load older lines
+              </Button>
+            </Box>
+          ) : null}
           {!hasNextPage && (
             <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 1 }}>
               {endLabel}

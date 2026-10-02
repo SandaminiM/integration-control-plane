@@ -23,7 +23,7 @@ import { useOrgs } from '../hooks/useOrg';
 import { useProjectsByOrg } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
 import { useEnvironments, useAllEnvironments, useCloudDataPlanes } from '../hooks/useEnvironments';
-import { useInfiniteLogs, useVisibleLogs } from '../hooks/useLogs';
+import { useInfiniteLogs, useVisibleLogs, useResumeLiveOnAutoRefresh } from '../hooks/useLogs';
 import type { LogsRequest } from '../types/logs';
 import { choreologgingProjectLogsApiUrl } from '../config/runtimeConfig';
 import { IS_CLOUD } from '../features';
@@ -31,7 +31,7 @@ import { AUTO_FETCH_INTERVAL, DEFAULT_DP_REGION, PAGE_SIZE } from '../utils/logs
 import LogsPageLayout from '../components/Logs/LogsPageLayout';
 import LogsToolbar from '../components/Logs/LogsToolbar';
 import LogsViewer from '../components/Logs/LogsViewer';
-import { logsSummary } from '../utils/logsView';
+import { logsSummary, liveStatus } from '../utils/logsView';
 import EmptyListing from '../components/EmptyListing';
 import { useLogsFilters } from '../hooks/useLogsFilters';
 import type { ProjectScope } from '../nav';
@@ -95,9 +95,13 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [componentIdsKey, envIdsKey, levelFilterKey, startTime, endTime, searchPhrase, sortDir, projectId, logsApiUrl]);
 
-  const { data, isLoading, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteLogs(logsRequest, autoFetch ? AUTO_FETCH_INTERVAL : false, logsApiUrl);
+  const { data, isLoading, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage, backToLive } = useInfiniteLogs(logsRequest, autoFetch ? AUTO_FETCH_INTERVAL : false, logsApiUrl);
 
   const logs = useVisibleLogs(data, { levels: levelFilter, componentIds });
+  const loaded = useVisibleLogs(data);
+  const historyOpen = (data?.pages.length ?? 0) > 1;
+  useResumeLiveOnAutoRefresh(autoFetch, backToLive);
+  const live = liveStatus({ autoFetch, historyOpen, sort: sortDir });
 
   if (loadingProject || loadingComponents || loadingEnvironments || loadingCdps) {
     return (
@@ -124,7 +128,7 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
   }
 
   const integrationSelect = (
-    <Select value={integrationFilter} onChange={(e) => setIntegrationFilter(e.target.value as string)} size="small" sx={{ minWidth: 200 }} inputProps={{ 'aria-label': 'Integration' }}>
+    <Select value={integrationFilter} onChange={(e) => setIntegrationFilter(e.target.value as string)} size="small" sx={{ minWidth: 200, height: 40 }} inputProps={{ 'aria-label': 'Integration' }}>
       <MenuItem value="all">All Integrations</MenuItem>
       {allComponents.map((c) => (
         <MenuItem key={c.id} value={c.id}>
@@ -137,15 +141,15 @@ export default function RuntimeLogsProject(scope: ProjectScope): JSX.Element {
   return (
     <LogsPageLayout
       title="Runtime Logs"
-      headerAction={integrationSelect}
-      filtersElement={<LogsToolbar filters={filters} environments={environments} logs={logs} canRefresh={!!logsRequest} onRefetch={refetch} />}
+      filtersElement={<LogsToolbar filters={filters} environments={environments} logs={logs} canRefresh={!!logsRequest} onRefetch={refetch} extraFilters={integrationSelect} />}
       logPanelElement={
         <LogsViewer
           rows={logs}
-          live={autoFetch && (data?.pages.length ?? 0) <= 1}
-          pausedNote={autoFetch ? 'paused while older lines are open' : undefined}
+          live={live.live}
+          pausedNote={live.pausedNote}
+          onBackToLive={live.backToLive === 'newestFirst' ? () => filters.setSortDir('desc') : live.backToLive === 'newestPage' ? backToLive : undefined}
           failure={error ? "Couldn't load logs" : undefined}
-          summary={logsSummary({ lines: logs.length })}
+          summary={logsSummary({ lines: logs.length, loaded: loaded.length })}
           sortDir={sortDir}
           onSortChange={filters.setSortDir}
           isLoading={isLoading}

@@ -17,7 +17,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { describeAppliedFilters, formatLogTimestamp, logDetailFields, logsSummary, retentionBoundaryIndex, retentionNote } from './logsView';
+import { describeAppliedFilters, formatLogTimestamp, logDetailFields, liveStatus, logsSummary, retentionBoundaryIndex, retentionNote } from './logsView';
 import type { LogRow } from '../types/logs';
 
 describe('describeAppliedFilters', () => {
@@ -82,6 +82,11 @@ describe('logsSummary', () => {
     expect(logsSummary({ lines: 128, endpoints: 5, environments: 2 })).toBe('128 lines · 5 endpoints · 2 environments');
   });
 
+  it('says how many of the loaded lines the filters left', () => {
+    expect(logsSummary({ lines: 12, loaded: 300, endpoints: 5 })).toBe('12 of 300 lines · 5 endpoints');
+    expect(logsSummary({ lines: 300, loaded: 300 })).toBe('300 lines');
+  });
+
   it('uses the singular for one and drops empty parts', () => {
     expect(logsSummary({ lines: 1, endpoints: 0, environments: 1 })).toBe('1 line · 1 environment');
   });
@@ -119,5 +124,23 @@ describe('retentionNote', () => {
     ['oldest first, gateway logs only', 'asc', false, 'Gateway logs are kept for 3 days. Gateway logs start here.'],
   ] as const)('names what is on the other side: %s', (_label, sort, mixed, expected) => {
     expect(retentionNote(sort, mixed)).toBe(expected);
+  });
+});
+
+describe('liveStatus', () => {
+  it('is live on the newest page, newest first', () => {
+    expect(liveStatus({ autoFetch: true, historyOpen: false, sort: 'desc' })).toEqual({ live: true, backToLive: 'none' });
+  });
+
+  it('pauses on older pages and goes back by dropping them', () => {
+    expect(liveStatus({ autoFetch: true, historyOpen: true, sort: 'desc' })).toEqual({ live: false, pausedNote: 'viewing older lines', backToLive: 'newestPage' });
+  });
+
+  it('cannot follow new lines oldest first, so going back means newest first', () => {
+    expect(liveStatus({ autoFetch: true, historyOpen: false, sort: 'asc' })).toEqual({ live: false, pausedNote: 'oldest first', backToLive: 'newestFirst' });
+  });
+
+  it('offers nothing while auto refresh is off', () => {
+    expect(liveStatus({ autoFetch: false, historyOpen: true, sort: 'desc' })).toEqual({ live: false, backToLive: 'none' });
   });
 });

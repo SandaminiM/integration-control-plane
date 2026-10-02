@@ -65,6 +65,14 @@ export function retentionNote(sort: 'asc' | 'desc', withApplicationLogs: boolean
   return withApplicationLogs ? `${kept} Only application logs appear above; gateway logs start here.` : `${kept} Gateway logs start here.`;
 }
 
+/** What the status line says, and what "Back to live" must do: drop older pages, or leave oldest-first order. */
+export function liveStatus({ autoFetch, historyOpen, sort }: { autoFetch: boolean; historyOpen: boolean; sort: 'asc' | 'desc' }): { live: boolean; pausedNote?: string; backToLive: 'none' | 'newestPage' | 'newestFirst' } {
+  if (!autoFetch) return { live: false, backToLive: 'none' };
+  if (sort === 'asc') return { live: false, pausedNote: 'oldest first', backToLive: 'newestFirst' };
+  if (historyOpen) return { live: false, pausedNote: 'viewing older lines', backToLive: 'newestPage' };
+  return { live: true, backToLive: 'none' };
+}
+
 const pad = (n: number, width = 2): string => String(n).padStart(width, '0');
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -79,9 +87,10 @@ export function formatLogTimestamp(timestamp: string, now: Date = new Date()): s
 
 const count = (n: number, noun: string): string => `${n} ${noun}${n === 1 ? '' : 's'}`;
 
-/** The panel's summary line; a part is left out when it has nothing to count. */
-export function logsSummary({ lines, endpoints, environments }: { lines: number; endpoints?: number; environments?: number }): string {
-  return [count(lines, 'line'), endpoints ? count(endpoints, 'endpoint') : '', environments ? count(environments, 'environment') : ''].filter(Boolean).join(' · ');
+/** The panel's summary line; `loaded` is every line read so far, shown as "12 of 300 lines" when filters hide some. */
+export function logsSummary({ lines, loaded, endpoints, environments }: { lines: number; loaded?: number; endpoints?: number; environments?: number }): string {
+  const shown = loaded != null && loaded !== lines ? `${lines} of ${count(loaded, 'line')}` : count(lines, 'line');
+  return [shown, endpoints ? count(endpoints, 'endpoint') : '', environments ? count(environments, 'environment') : ''].filter(Boolean).join(' · ');
 }
 
 /** One label and value in an expanded row's field list. */

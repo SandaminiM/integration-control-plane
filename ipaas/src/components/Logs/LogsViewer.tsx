@@ -31,6 +31,7 @@ export interface LogsViewerProps {
   live: boolean;
   failure?: string;
   pausedNote?: string;
+  onBackToLive?: () => void;
   /** The line at the top right, e.g. "128 lines · 5 endpoints · 2 environments". */
   summary: string;
   sortDir: 'asc' | 'desc';
@@ -56,6 +57,7 @@ export default function LogsViewer({
   live,
   failure,
   pausedNote,
+  onBackToLive,
   summary,
   sortDir,
   onSortChange,
@@ -78,7 +80,7 @@ export default function LogsViewer({
   return (
     <Box sx={viewerSx}>
       <Box sx={headerSx}>
-        <LogsStatus live={live} failure={failure} pausedNote={pausedNote} />
+        <LogsStatus live={live} failure={failure} pausedNote={pausedNote} onBackToLive={onBackToLive} />
         <Box sx={headerActionsSx}>
           <Typography variant="body2" color="text.secondary">
             {summary}

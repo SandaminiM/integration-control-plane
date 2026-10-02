@@ -18,16 +18,16 @@
 
 import { Box, CircularProgress, PageContent } from '@wso2/oxygen-ui';
 import { ScrollText } from '@wso2/oxygen-ui-icons-react';
-import { useMemo, type JSX } from 'react';
+import { useCallback, useMemo, type JSX } from 'react';
 import { IS_CLOUD } from '../features';
 import { useOrgs } from '../hooks/useOrg';
 import { useProjectsByOrg } from '../hooks/useProjects';
 import { useComponentByHandler } from '../hooks/useComponents';
 import { useEnvironments, useAllEnvironments } from '../hooks/useEnvironments';
-import { useInfiniteComponentLogs, useInfiniteGatewayLogsByEnvironment, useVisibleLogs } from '../hooks/useLogs';
+import { useInfiniteComponentLogs, useInfiniteGatewayLogsByEnvironment, useVisibleLogs, useResumeLiveOnAutoRefresh } from '../hooks/useLogs';
 import { useGatewayLogScope } from '../hooks/useGatewayLogScope';
 import { filterGatewayRows, gatewayRetentionHorizon, startsBeyondGatewayRetention, tagGatewayEndpoints } from '../utils/gatewayLogs';
-import { logsSummary, retentionNote } from '../utils/logsView';
+import { logsSummary, retentionNote, liveStatus } from '../utils/logsView';
 import { filterLogsByScope, findEnvironment, selectLogSources, sortLogRows } from '../utils/logs';
 import type { ComponentLogsRequest, GatewayLogsRequest, LogRow } from '../types/logs';
 import { choreologgingComponentLogsApiUrl, choreologgingComponentGatewayLogsApiUrl } from '../config/runtimeConfig';
@@ -91,7 +91,7 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [component?.id, isGenericService, envIdsKey, environments.length, levelFilterKey, startTime, endTime, searchPhrase, sortDir, project?.region]);
 
-  const { data, isLoading, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteComponentLogs(logsRequest, autoFetch ? AUTO_FETCH_INTERVAL : false, logsApiUrl);
+  const { data, isLoading, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage, backToLive: componentBackToLive } = useInfiniteComponentLogs(logsRequest, autoFetch ? AUTO_FETCH_INTERVAL : false, logsApiUrl);
 
   const environmentIds = useMemo(() => environments.map((e) => e.id), [environments]);
   const gateway = useGatewayLogScope(scope.org, orgUuid, component, environmentIds);
@@ -113,10 +113,15 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
     isFetchingNextPage: fetchingMoreGateway,
     fetchNextPage: fetchMoreGateway,
     refetch: refetchGateway,
+    backToLive: gatewayBackToLive,
   } = useInfiniteGatewayLogsByEnvironment(gatewayRequest, queriedEnvIds, gatewayPhrases, autoFetch ? AUTO_FETCH_INTERVAL : false);
 
   const componentRows = useVisibleLogs(data, { levels: levelFilter });
   const gatewayRows = useVisibleLogs(gatewayData, { levels: levelFilter });
+  // Every line read so far, before any filter, for the "12 of 300 lines" count; gateway lines of other integrations are not counted.
+  const componentLoaded = useVisibleLogs(data);
+  const gatewayLoaded = useVisibleLogs(gatewayData);
+  const loadedCount = useMemo(() => componentLoaded.length + tagGatewayEndpoints(gatewayLoaded, gateway.endpoints).length, [componentLoaded, gatewayLoaded, gateway.endpoints]);
 
   const scopeFilter = useMemo(() => ({ environments: IS_CLOUD ? environments.filter((e) => envFilter.includes(e.id)) : [], endpoints: endpointFilter }), [environments, envFilter, endpointFilter]);
 
@@ -150,6 +155,12 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
 
   // Live refresh stops once older pages are loaded (see useLogs), so the status says why.
   const historyOpen = (data?.pages.length ?? 0) > 1 || (gatewayData?.pages.length ?? 0) > 1;
+  const backToLive = useCallback((): void => {
+    componentBackToLive();
+    if (gateway.available) gatewayBackToLive();
+  }, [componentBackToLive, gatewayBackToLive, gateway.available]);
+  useResumeLiveOnAutoRefresh(autoFetch, backToLive);
+  const live = liveStatus({ autoFetch, historyOpen, sort: sortDir });
 
   const refetchAll = (): Promise<unknown> => Promise.all([refetch(), gateway.available ? refetchGateway() : null]);
   const fetchNextAll = (): void => {
@@ -184,10 +195,11 @@ export default function RuntimeLogsIntegration(scope: ComponentScope): JSX.Eleme
       logPanelElement={
         <LogsViewer
           rows={logs}
-          live={autoFetch && !historyOpen}
-          pausedNote={autoFetch ? 'paused while older lines are open' : undefined}
+          live={live.live}
+          pausedNote={live.pausedNote}
+          onBackToLive={live.backToLive === 'newestFirst' ? () => filters.setSortDir('desc') : live.backToLive === 'newestPage' ? backToLive : undefined}
           failure={statusFailure}
-          summary={logsSummary({ lines: logs.length, endpoints: gateway.endpoints.length, environments: environments.length })}
+          summary={logsSummary({ lines: logs.length, loaded: loadedCount, endpoints: gateway.endpoints.length, environments: environments.length })}
           sortDir={sortDir}
           onSortChange={filters.setSortDir}
           isLoading={panelLoading}
