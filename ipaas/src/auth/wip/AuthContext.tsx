@@ -35,6 +35,7 @@ import {
   revokeToken,
   setOnAuthFailure,
   generateAndSaveOIDCState,
+  validateAndClearOIDCState,
   generatePKCE,
   saveCodeVerifier,
   getAndClearCodeVerifier,
@@ -140,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     });
   }, []);
 
-  const handleOIDCCallback = useCallback(async (code: string, _state: string | null): Promise<{ isNewUser: boolean }> => {
+  const handleOIDCCallback = useCallback(async (code: string): Promise<{ isNewUser: boolean; userId: string }> => {
     const { asgardeoClientId, asgardeoTokenEndpoint, asgardeoSignInRedirectUrl, stsTokenEndpoint, stsClientId, stsScope, choreoOrgApiUrl } = window.API_CONFIG;
 
     const codeVerifier = getAndClearCodeVerifier();
@@ -218,7 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       localStorage.setItem(USER_KEY, JSON.stringify(user));
       setUserInfo(user);
       setIsAuthenticated(true);
-      return { isNewUser: false };
+      return { isNewUser: false, userId };
     }
 
     // WSO2 Identity Platform's super-tenant — not a real ICP org, always skip.
@@ -294,7 +295,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       localStorage.setItem(USER_KEY, JSON.stringify(newUser));
       setUserInfo(newUser);
       setIsAuthenticated(true);
-      return { isNewUser: true };
+      return { isNewUser: true, userId };
     }
 
     if (stsTokenEndpoint && stsClientId) {
@@ -374,7 +375,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
             localStorage.setItem(USER_KEY, JSON.stringify(newUser));
             setUserInfo(newUser);
             setIsAuthenticated(true);
-            return { isNewUser: true };
+            return { isNewUser: true, userId };
           }
         } else {
           // STS unavailable — try orgs API with WSO2 Identity Platform token directly (best-effort).
@@ -393,7 +394,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
             localStorage.setItem(USER_KEY, JSON.stringify(newUser));
             setUserInfo(newUser);
             setIsAuthenticated(true);
-            return { isNewUser: true };
+            return { isNewUser: true, userId };
           }
           // If still null: fall through with no orgHandle — OIDCCallback will redirect to registerOrgUrl().
         }
@@ -429,11 +430,28 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     localStorage.setItem(USER_KEY, JSON.stringify(user));
     setUserInfo(user);
     setIsAuthenticated(true);
-    return { isNewUser: false };
+    return { isNewUser: false, userId };
   }, []);
 
   // After the user creates their first org, exchange for an org-scoped STS token
   // and persist the org handle so normal authenticated requests work.
+  const completeSignIn = useCallback(
+    async (params: URLSearchParams) => {
+      const oidcError = params.get('error');
+      if (oidcError) throw new Error(`Authentication failed: ${params.get('error_description') || oidcError}`);
+
+      const state = params.get('state');
+      if (!state) throw new Error('Missing state parameter. Please try logging in again.');
+      if (!validateAndClearOIDCState(state)) throw new Error('Invalid state parameter. This may indicate a CSRF attack. Please try logging in again.');
+
+      const code = params.get('code');
+      if (!code) throw new Error('Missing authorization code. Please try logging in again.');
+
+      return handleOIDCCallback(code);
+    },
+    [handleOIDCCallback],
+  );
+
   const completeOrgRegistration = useCallback(async (orgHandle: string) => {
     const { stsTokenEndpoint, stsClientId, stsScope } = window.API_CONFIG;
     const asgardeoToken = getAsgardeoToken();
@@ -517,11 +535,11 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       clearRequirePasswordChange,
       login,
       loginWithOIDC,
-      handleOIDCCallback,
+      completeSignIn,
       completeOrgRegistration,
       logout,
     }),
-    [isAuthenticated, userInfo, clearRequirePasswordChange, login, loginWithOIDC, handleOIDCCallback, completeOrgRegistration, logout],
+    [isAuthenticated, userInfo, clearRequirePasswordChange, login, loginWithOIDC, completeSignIn, completeOrgRegistration, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

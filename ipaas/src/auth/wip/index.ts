@@ -24,7 +24,7 @@
 import { getAccessToken as readAccessToken } from './tokenManager';
 
 export { AuthProvider, useAuth } from './AuthContext';
-export { authenticatedFetch, getOrgUuidFromToken, switchOrgToken, validateAndClearOIDCState } from './tokenManager';
+export { authenticatedFetch, getOrgUuidFromToken, switchOrgToken } from './tokenManager';
 export { saveRedirectUrl, getAndClearRedirectUrl } from '../shared/redirectUrl';
 export { generateAndSaveGitHubState, validateAndClearGitHubState } from '../shared/githubState';
 
