@@ -57,10 +57,9 @@ export default function OIDCCallback(): JSX.Element {
       try {
         const { isNewUser, userId } = await completeSignIn(searchParams);
 
-        if (isNewUser && !IS_CLOUD) {
-          // First-time user — no org yet; send to org registration.
-          // In cloud, Thunder has already provisioned the org at sign-up,
-          // so we fall through to the normal post-login routing below.
+        if (isNewUser) {
+          // First-time user — no org yet; send to org registration. Cloud never
+          // reports one: Thunder provisions the org at sign-up.
           navigate(registerOrgUrl(), { replace: true });
           return;
         }
@@ -124,14 +123,7 @@ export default function OIDCCallback(): JSX.Element {
 
           if (!navigatedToLastProject) {
             // Redirect to the projects/redirect route which shows the ToS welcome dialog.
-            // In cloud, if orgHandle is missing from localStorage we surface an
-            // error rather than route to RegisterOrganization (it is a no-op in
-            // cloud, and hitting it means the Thunder login flow did not seed
-            // the org handle).
-            if (!orgHandle && IS_CLOUD) {
-              setError('Missing organization context after sign-in. Please try logging in again.');
-              return;
-            }
+            // Cloud has an org handle here: its completeSignIn refuses a token without one.
             navigate(orgHandle ? projectsRedirectUrl(orgHandle) : registerOrgUrl(), { replace: true });
           }
         }

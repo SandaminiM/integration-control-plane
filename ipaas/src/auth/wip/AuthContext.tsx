@@ -22,16 +22,13 @@ import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { loginApiUrl } from '../../config/runtimeConfig';
 import { loginUrl } from '../../paths';
-import { IS_CLOUD } from '../../features';
 import type { AuthContextValue } from '../contract';
-import { buildAuthorizationUrl, buildLogoutUrl } from './authorizeUrl';
+import { buildAuthorizationUrl } from './authorizeUrl';
 import {
   saveTokens,
   clearTokens,
   getAccessToken,
   getRefreshToken,
-  saveIdToken,
-  getIdToken,
   revokeToken,
   setOnAuthFailure,
   generateAndSaveOIDCState,
@@ -185,41 +182,6 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       } catch {
         /* use defaults */
       }
-    }
-
-    // Cloud variant short-circuit: Thunder is the IdP and the access token
-    // already carries the org context. There is no /user-mgt/1.0.0/validate/user
-    // and no STS exchange to perform — read the org handle from the JWT
-    // (root-level ouHandle, or nested organization.handle) and persist it.
-    if (IS_CLOUD) {
-      // cloud: post-login routing keys off org_handle. Drop any stale org
-      // state up front so a failed/incomplete sign-in can't reuse it, and require
-      // a fresh handle from this token before completing the callback.
-      localStorage.removeItem('org_handle');
-      localStorage.removeItem('org_numeric_id');
-      let cloudOrgHandle: string | undefined;
-      try {
-        // base64url → base64 with padding restored so atob accepts the segment.
-        const normalized = asgardeoToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-        const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
-        const payload = JSON.parse(atob(padded)) as Record<string, unknown>;
-        const org = (payload.organization as Record<string, unknown> | undefined) ?? {};
-        cloudOrgHandle = (org.handle as string | undefined) ?? (payload.ouHandle as string | undefined);
-      } catch {
-        /* ignore */
-      }
-      if (!cloudOrgHandle) {
-        throw new Error('Missing organization context after sign-in. Please try logging in again.');
-      }
-      localStorage.setItem('org_handle', cloudOrgHandle);
-      saveTokens({ token: asgardeoToken, expiresIn: tokenData.expires_in ?? 3600, refreshToken: tokenData.refresh_token ?? '', refreshTokenExpiresIn: 86400 });
-      if (tokenData.id_token) saveIdToken(tokenData.id_token);
-      saveOidcAuthMetadata(cloudOrgHandle);
-      const user: UserInfo = { userId, username, displayName, pictureUrl, isOidcUser: true, requirePasswordChange: false };
-      localStorage.setItem(USER_KEY, JSON.stringify(user));
-      setUserInfo(user);
-      setIsAuthenticated(true);
-      return { isNewUser: false, userId };
     }
 
     // WSO2 Identity Platform's super-tenant — not a real ICP org, always skip.
@@ -433,8 +395,6 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     return { isNewUser: false, userId };
   }, []);
 
-  // After the user creates their first org, exchange for an org-scoped STS token
-  // and persist the org handle so normal authenticated requests work.
   const completeSignIn = useCallback(
     async (params: URLSearchParams) => {
       const oidcError = params.get('error');
@@ -452,6 +412,8 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     [handleOIDCCallback],
   );
 
+  // After the user creates their first org, exchange for an org-scoped STS token
+  // and persist the org handle so normal authenticated requests work.
   const completeOrgRegistration = useCallback(async (orgHandle: string) => {
     const { stsTokenEndpoint, stsClientId, stsScope } = window.API_CONFIG;
     const asgardeoToken = getAsgardeoToken();
@@ -498,22 +460,6 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   }, []);
 
   const logout = useCallback(async () => {
-    // if Cloud: clear local tokens, then redirect to the IdP logout endpoint to end the SSO session.
-    if (IS_CLOUD) {
-      const { asgardeoClientId, asgardeoAuthorizeEndpoint } = window.API_CONFIG;
-      const idTokenHint = getIdToken();
-      clearTokens();
-      clearOidcAuthMetadata();
-      localStorage.removeItem(USER_KEY);
-      window.location.href = buildLogoutUrl(asgardeoAuthorizeEndpoint, {
-        clientId: asgardeoClientId,
-        postLogoutRedirectUri: window.location.origin,
-        idTokenHint,
-      });
-      // Callers don't navigate over the redirect.
-      return new Promise<void>(() => {});
-    }
-
     await revokeToken();
     clearTokens();
     clearOidcAuthMetadata();
