@@ -55,6 +55,7 @@ type StageKey = 'init' | 'build' | 'deploy';
 const TASK_STAGE: Record<string, StageKey> = {
   'checkout-source': 'init',
   'build-image': 'build',
+  'unit-test': 'build',
   'publish-image': 'deploy',
   'convert-component-descriptor': 'deploy',
   'generate-workload-cr': 'deploy',
@@ -63,6 +64,16 @@ const TASK_STAGE: Record<string, StageKey> = {
 
 function stageForTask(name: string): StageKey {
   return TASK_STAGE[name] ?? 'build';
+}
+
+// Display names for workflow tasks.
+const TASK_STEP_NAME: Record<string, string> = {
+  'unit-test': 'Unit Test',
+};
+
+// Whether the task ran or will run (not skipped or omitted).
+function ranOrWillRun(task: BffWorkflowTask): boolean {
+  return task.phase !== 'Skipped' && task.phase !== 'Omitted';
 }
 
 // OpenChoreo task phase → the status/conclusion the stepper reads.
@@ -79,7 +90,8 @@ function stepFromTask(task: BffWorkflowTask, number: number): BuildStep {
     status = 'completed';
     conclusion = 'failure';
   }
-  return { number, name: task.name, status, conclusion, started_at: task.startedAt ?? null, completed_at: task.completedAt ?? null };
+  const name = TASK_STEP_NAME[task.name] ?? task.name;
+  return { number, name, status, conclusion, started_at: task.startedAt ?? null, completed_at: task.completedAt ?? null };
 }
 
 // The last task that runs for each stage. A stage is done only once
@@ -91,13 +103,14 @@ const STAGE_FINAL_TASK: Record<StageKey, string> = {
 };
 
 // Stage status from its steps: in_progress if any running, completed once
-// the stage's final task (STAGE_FINAL_TASK) has succeeded, otherwise null
-// (the card reads an unresolved/empty stage as "pending").
+// the stage's final task (STAGE_FINAL_TASK) and all its other tasks have
+// finished, otherwise null (the card reads an unresolved/empty stage as "pending").
 function stageStatus(steps: BuildStep[], stage: StageKey): string | null {
   if (steps.length === 0) return null;
   if (steps.some((s) => s.status === 'in_progress')) return 'in_progress';
   const finalTask = steps.find((s) => s.name === STAGE_FINAL_TASK[stage]);
-  return finalTask?.status === 'completed' ? 'completed' : null;
+  if (finalTask?.status !== 'completed') return null;
+  return steps.every((s) => s.status === 'completed') ? 'completed' : null;
 }
 
 // The card base64-decodes stage logs (safeAtob), but the BFF returns raw text;
@@ -112,9 +125,9 @@ function encodeLog(text: string | null | undefined): string | null {
   }
 }
 
-function buildRunLogsFromTasks(run: BffBuildRun, rawBuildLog: string | null): BuildRunLogs {
+export function buildRunLogsFromTasks(run: BffBuildRun, rawBuildLog: string | null): BuildRunLogs {
   const stages: Record<StageKey, BuildStep[]> = { init: [], build: [], deploy: [] };
-  (run.tasks ?? []).forEach((t, i) => stages[stageForTask(t.name)].push(stepFromTask(t, i + 1)));
+  (run.tasks ?? []).filter(ranOrWillRun).forEach((t, i) => stages[stageForTask(t.name)].push(stepFromTask(t, i + 1)));
   const mk = (key: StageKey, log: string | null): BuildStage => ({ log, status: stageStatus(stages[key], key), steps: stages[key] });
   return { init: mk('init', null), build: mk('build', encodeLog(rawBuildLog)), deploy: mk('deploy', null) };
 }
