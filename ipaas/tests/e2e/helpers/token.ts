@@ -27,7 +27,34 @@ export interface TokenClaims {
   name?: string;
   ouHandle: string;
   ouId: string;
+  /** The OAuth client the token was issued to; the SDK keys its session on it. */
+  clientId: string;
+  iat: number;
   exp: number;
+}
+
+/**
+ * Where the Thunder SDK keeps a signed-in session in localStorage. This is the SDK's own,
+ * internal format — read off a real sign-in with @thunderid/browser at this version, and not
+ * a public API. token.test.ts fails when package.json pins another version, so an upgrade
+ * re-checks these keys instead of finding out from a run that never signs in.
+ */
+export const SDK_STORAGE_VERSION = '1.1.0';
+export const SDK_SESSION_ACTIVE_KEY = 'thunderid-session-active';
+
+/** Instance 0 is the only SDK instance the console creates. */
+export function sdkSessionKey(clientId: string): string {
+  return `session_data-instance_0-${clientId}`;
+}
+
+/** The SDK's session record for an access token alone — no ID or refresh token. */
+export function sdkSession(token: string, claims: TokenClaims): string {
+  return JSON.stringify({
+    access_token: token,
+    token_type: 'Bearer',
+    created_at: claims.iat * 1000,
+    expires_in: claims.exp - claims.iat,
+  });
 }
 
 /**
@@ -72,9 +99,9 @@ export function decodeTokenClaims(token: string): TokenClaims {
     throw new Error('Token payload is not valid JSON.');
   }
 
-  // The console derives the org from ouHandle and keys terms-of-use acceptance on sub,
-  // so a token missing either cannot produce a usable session.
-  for (const claim of ['sub', 'ouHandle', 'ouId', 'exp'] as const) {
+  // The console derives the org from ouHandle and keys terms-of-use acceptance on sub, and the
+  // SDK keys its session on client_id, so a token missing any of them cannot sign in.
+  for (const claim of ['sub', 'ouHandle', 'ouId', 'client_id', 'iat', 'exp'] as const) {
     if (!payload[claim]) throw new Error(`Token has no '${claim}' claim.`);
   }
 
@@ -84,6 +111,8 @@ export function decodeTokenClaims(token: string): TokenClaims {
     name: payload.name ? String(payload.name) : undefined,
     ouHandle: String(payload.ouHandle),
     ouId: String(payload.ouId),
+    clientId: String(payload.client_id),
+    iat: Number(payload.iat),
     exp: Number(payload.exp),
   };
 }
@@ -99,33 +128,20 @@ export function assertUsableLifetime(claims: TokenClaims, nowMs: number): void {
   }
 }
 
-/** The localStorage a completed OIDC sign-in leaves behind, rebuilt from the token alone. */
+/**
+ * The localStorage a completed sign-in leaves behind, rebuilt from the token alone. The provider
+ * hands out no refresh token, so the SDK never refreshes this session; reseedSessionToken tops
+ * it up instead. The SDK writes its config and discovery keys itself when the console loads.
+ */
 export function buildStorageState(token: string, claims: TokenClaims, origin: string): StorageState {
-  const expiresAt = String(claims.exp * 1000);
   return {
     cookies: [],
     origins: [
       {
         origin,
         localStorage: [
-          { name: 'auth_token', value: token },
-          // No refresh token to hand over: the provider keeps its own and never
-          // exposes it. tokenManager treats the empty value as "cannot refresh".
-          { name: 'refresh_token', value: '' },
-          { name: 'token_expires_at', value: expiresAt },
-          { name: 'refresh_token_expires_at', value: expiresAt },
-          { name: 'auth_mode', value: 'oidc' },
-          { name: 'org_handle', value: claims.ouHandle },
-          {
-            name: 'user',
-            value: JSON.stringify({
-              userId: claims.sub,
-              username: claims.email,
-              displayName: claims.name ?? claims.email,
-              isOidcUser: true,
-              requirePasswordChange: false,
-            }),
-          },
+          { name: sdkSessionKey(claims.clientId), value: sdkSession(token, claims) },
+          { name: SDK_SESSION_ACTIVE_KEY, value: 'true' },
           // Acceptance is per user and org; without it ProjectsRedirect blocks on its dialog.
           { name: `tos_accepted:${claims.sub}:${claims.ouHandle}`, value: 'true' },
         ],

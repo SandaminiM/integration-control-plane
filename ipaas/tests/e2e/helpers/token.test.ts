@@ -24,10 +24,14 @@ import {
   isRetryableTokenFailure,
   MIN_TOKEN_LIFETIME_MS,
   parseTokenBody,
+  SDK_SESSION_ACTIVE_KEY,
+  SDK_STORAGE_VERSION,
+  sdkSessionKey,
   TOKEN_FETCH_ATTEMPTS,
   tokenRetryDelayMs,
   type TokenClaims,
 } from './token';
+import manifest from '../../../package.json';
 
 const NOW = 1_800_000_000_000;
 
@@ -42,6 +46,8 @@ const VALID_PAYLOAD = {
   name: 'Test Bot',
   ouHandle: 'e2e-org',
   ouId: 'org-uuid',
+  client_id: 'IPAAS_CONSOLE',
+  iat: NOW / 1000,
   exp: NOW / 1000 + 3600,
 };
 
@@ -51,6 +57,8 @@ const CLAIMS: TokenClaims = {
   name: 'Test Bot',
   ouHandle: 'e2e-org',
   ouId: 'org-uuid',
+  clientId: 'IPAAS_CONSOLE',
+  iat: NOW / 1000,
   exp: NOW / 1000 + 3600,
 };
 
@@ -82,7 +90,7 @@ describe('decodeTokenClaims', () => {
     expect(() => decodeTokenClaims('a.bm90LWpzb24.c')).toThrow(/not valid JSON/);
   });
 
-  it.each(['sub', 'ouHandle', 'ouId', 'exp'])('rejects a token with no %s claim', (claim) => {
+  it.each(['sub', 'ouHandle', 'ouId', 'client_id', 'iat', 'exp'])('rejects a token with no %s claim', (claim) => {
     const payload = { ...VALID_PAYLOAD, [claim]: undefined };
     expect(() => decodeTokenClaims(jwt(payload))).toThrow(new RegExp(`'${claim}' claim`));
   });
@@ -112,22 +120,37 @@ describe('buildStorageState', () => {
       ]),
     );
 
-  it('stores the token and its expiry in milliseconds', () => {
-    expect(entries().auth_token).toBe('the-token');
-    expect(entries().token_expires_at).toBe(String(CLAIMS.exp * 1000));
+  it('stores the token where the SDK keeps its session, keyed on the client', () => {
+    const session = JSON.parse(entries()['session_data-instance_0-IPAAS_CONSOLE']);
+    expect(session.access_token).toBe('the-token');
+    expect(session.token_type).toBe('Bearer');
+  });
+
+  it('dates the session from the token, in the units the SDK uses', () => {
+    const session = JSON.parse(entries()[sdkSessionKey('IPAAS_CONSOLE')]);
+    expect(session.created_at).toBe(NOW);
+    expect(session.expires_in).toBe(3600);
+  });
+
+  it('marks the SDK session active', () => {
+    expect(entries()[SDK_SESSION_ACTIVE_KEY]).toBe('true');
+  });
+
+  it('hands over no refresh or ID token, since the provider never shares one', () => {
+    const session = JSON.parse(entries()[sdkSessionKey('IPAAS_CONSOLE')]);
+    expect(session.refresh_token).toBeUndefined();
+    expect(session.id_token).toBeUndefined();
   });
 
   it('marks terms of use accepted for this user and org', () => {
     expect(entries()['tos_accepted:user-1:e2e-org']).toBe('true');
   });
 
-  it('leaves the refresh token empty, since the provider never shares one', () => {
-    expect(entries().refresh_token).toBe('');
-  });
-
-  it('records the org handle the console routes on', () => {
-    expect(entries().org_handle).toBe('e2e-org');
-    expect(JSON.parse(entries().user).userId).toBe('user-1');
+  // The console reads the token only through the SDK now; these would be dead weight.
+  it('writes none of the keys the pre-SDK console read', () => {
+    for (const key of ['auth_token', 'token_expires_at', 'refresh_token', 'auth_mode', 'user']) {
+      expect(entries()[key]).toBeUndefined();
+    }
   });
 
   it('scopes the storage to the console origin', () => {
@@ -159,5 +182,13 @@ describe('tokenRetryDelayMs', () => {
   it('spans under a minute across the full run of attempts', () => {
     const total = Array.from({ length: TOKEN_FETCH_ATTEMPTS - 1 }, (_, i) => tokenRetryDelayMs(i + 1)).reduce((a, b) => a + b, 0);
     expect(total).toBeLessThan(60_000);
+  });
+});
+
+describe('SDK storage format', () => {
+  // The seeded keys are the SDK's internal format, verified against one version. Bumping the
+  // pin should stop here until someone signs in with the new version and re-checks them.
+  it.each(['@thunderid/browser', '@thunderid/react'])('was verified against the %s version package.json pins', (pkg) => {
+    expect((manifest.dependencies as Record<string, string>)[pkg]).toBe(SDK_STORAGE_VERSION);
   });
 });

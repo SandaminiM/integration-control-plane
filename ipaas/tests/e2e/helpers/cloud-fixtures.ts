@@ -26,7 +26,7 @@
  */
 
 import { expect, type Page } from '@playwright/test';
-import { decodeTokenClaims, resolveToken } from './token.js';
+import { SDK_SESSION_ACTIVE_KEY, decodeTokenClaims, resolveToken, sdkSession, sdkSessionKey } from './token.js';
 
 export interface FixtureResult {
   status: number;
@@ -40,12 +40,24 @@ export async function waitForApiConfig(page: Page): Promise<void> {
   });
 }
 
+/**
+ * The console's access token, read where the Thunder SDK keeps it — which is also where token
+ * mode seeds it. Empty when the page has no session, so a fixture call reports the BFF's 401
+ * rather than throwing over a test's own failure.
+ */
+export async function readSessionToken(page: Page): Promise<string> {
+  const clientId = await page.evaluate(() => (window as unknown as { API_CONFIG: { asgardeoClientId: string } }).API_CONFIG.asgardeoClientId);
+  const raw = await page.evaluate((key) => localStorage.getItem(key), sdkSessionKey(clientId));
+  return raw ? ((JSON.parse(raw) as { access_token?: string }).access_token ?? '') : '';
+}
+
 // Resolves with the BFF's verdict rather than throwing, so a caller can record the handle first.
 export async function createFixtureProject(page: Page, name: string, description: string): Promise<FixtureResult> {
+  const token = await readSessionToken(page);
   return page.evaluate(
-    async ({ project, desc }) => {
+    async ({ project, desc, bearer }) => {
       const base = (window as unknown as { API_CONFIG: { choreoBaseApiUrl: string } }).API_CONFIG.choreoBaseApiUrl;
-      const headers = { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}`, 'Content-Type': 'application/json' };
+      const headers = { Authorization: `Bearer ${bearer}`, 'Content-Type': 'application/json' };
 
       // deploymentPipeline is required and its name is environment-specific, so it is looked up.
       const pipelineRes = await fetch(`${base}/deploymentpipelines`, { headers });
@@ -62,16 +74,17 @@ export async function createFixtureProject(page: Page, name: string, description
       });
       return { status: res.status, body: (await res.text()).slice(0, 200) };
     },
-    { project: name, desc: description },
+    { project: name, desc: description, bearer: token },
   );
 }
 
 // Builds and deploys are off: a row in the integrations table needs no running integration.
 export async function createFixtureComponent(page: Page, project: string, name: string, displayName: string): Promise<FixtureResult> {
+  const token = await readSessionToken(page);
   return page.evaluate(
-    async ({ projectName, componentName, display }) => {
+    async ({ projectName, componentName, display, bearer }) => {
       const base = (window as unknown as { API_CONFIG: { choreoBaseApiUrl: string } }).API_CONFIG.choreoBaseApiUrl;
-      const headers = { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}`, 'Content-Type': 'application/json' };
+      const headers = { Authorization: `Bearer ${bearer}`, 'Content-Type': 'application/json' };
 
       const res = await fetch(`${base}/projects/${projectName}/components`, {
         method: 'POST',
@@ -96,7 +109,7 @@ export async function createFixtureComponent(page: Page, project: string, name: 
       });
       return { status: res.status, body: (await res.text()).slice(0, 200) };
     },
-    { projectName: project, componentName: name, display: displayName },
+    { projectName: project, componentName: name, display: displayName, bearer: token },
   );
 }
 
@@ -104,9 +117,10 @@ export async function createFixtureComponent(page: Page, project: string, name: 
 // refused while children remain, and enumerating them covers integrations created by a test
 // that failed before it could record the handle.
 export async function deleteFixtureProjects(page: Page, projects: readonly string[]): Promise<string[]> {
-  return page.evaluate(async (handles) => {
+  const token = await readSessionToken(page);
+  return page.evaluate(async ({ handles, bearer }) => {
     const base = (window as unknown as { API_CONFIG: { choreoBaseApiUrl: string } }).API_CONFIG.choreoBaseApiUrl;
-    const headers = { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` };
+    const headers = { Authorization: `Bearer ${bearer}` };
 
     const out: string[] = [];
     for (const project of handles) {
@@ -121,7 +135,7 @@ export async function deleteFixtureProjects(page: Page, projects: readonly strin
       out.push(`${res.status} ${project}`);
     }
     return out;
-  }, [...projects]);
+  }, { handles: [...projects], bearer: token });
 }
 
 // Reports rather than throws: a throw here would replace the tests' own failures with a
@@ -132,7 +146,7 @@ export function reportTeardown(results: readonly string[]): void {
   }
 }
 
-// The console's own token refresh 400s on a token-mode session, which says nothing about the page.
+// Token-endpoint traffic is the SDK's business, not the page's.
 export function trackFailedRequests(page: Page): string[] {
   const failures: string[] = [];
   page.on('response', (r) => {
@@ -155,9 +169,9 @@ export async function expectPageRendered(page: Page, url: string): Promise<void>
  */
 /**
  * A reseeded token has to outlive the longest gap before the next reseed, with room to spare:
- * the console refreshes 30s before expiry, finds the empty refresh_token that token mode writes,
- * and then clears the session and redirects to sign-in (tokenManager.ts refreshAccessToken).
- * So installing a nearly-spent token does not merely lapse — it ends the run.
+ * a token-mode session has no refresh token, so the SDK never renews it, and the first 401 after
+ * it expires ends the session and redirects to sign-in (auth/cloud/session.ts). So installing a
+ * nearly-spent token does not merely lapse — it ends the run.
  */
 const RESEED_MIN_LIFETIME_MS = 6 * 60_000;
 
@@ -181,11 +195,12 @@ export async function reseedSessionToken(page: Page): Promise<void> {
     throw new Error(`The token provider keeps serving tokens with ${Math.round(remainingMs / 1000)}s of life, under the ${RESEED_MIN_LIFETIME_MS / 60_000} minutes a reseed needs. Its own refresh is likely failing.`);
   }
 
+  // The SDK reads its session from storage on every request, so the next call carries the new token.
   await page.evaluate(
-    ({ value, expiresAt }) => {
-      localStorage.setItem('auth_token', value);
-      localStorage.setItem('token_expires_at', expiresAt);
+    ({ key, session, activeKey }) => {
+      localStorage.setItem(key, session);
+      localStorage.setItem(activeKey, 'true');
     },
-    { value: token, expiresAt: String(claims.exp * 1000) },
+    { key: sdkSessionKey(claims.clientId), session: sdkSession(token, claims), activeKey: SDK_SESSION_ACTIVE_KEY },
   );
 }

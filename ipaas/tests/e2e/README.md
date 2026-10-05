@@ -238,6 +238,13 @@ Enrolling TOTP stops the emails, so set the secret only once the account actuall
 rebuilds the session from a platform-issued token instead of signing in, so no GitHub credentials
 are needed. It writes the same two files, and the specs cannot tell the difference.
 
+It rebuilds the session by writing the Thunder SDK's own localStorage entries
+(`session_data-instance_0-<client_id>` and `thunderid-session-active`), so the console under test
+is the unmodified production build. Those keys are the SDK's internal format, checked against the
+version `package.json` pins: `helpers/token.test.ts` fails when that pin changes, and the keys
+must be re-read off a real sign-in before the guard is bumped (`SDK_STORAGE_VERSION` in
+`helpers/token.ts`).
+
 The token comes from `E2E_TOKEN_URL` (wso2cloud's `monitoring-token-provider`) with
 `E2E_TOKEN_AUTH` sent as `X-Auth-Token`. `E2E_TOKEN_TLS_INSECURE` is needed for that hop: the
 internal gateway serves an in-cluster service name no certificate matches.

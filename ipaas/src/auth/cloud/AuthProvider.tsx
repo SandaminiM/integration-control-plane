@@ -31,7 +31,7 @@ import { THUNDER_INSTANCE_ID, signInParams, thunderConfig } from './thunderConfi
 const ORG_HANDLE_KEY = 'org_handle';
 const MISSING_ORG = 'Missing organization context after sign-in. Please try logging in again.';
 const SIGNED_OUT_USER: CloudUser = { userId: '', username: '', displayName: '' };
-// How long to wait for the SDK's startup refresh of an expired stored token.
+// How long a stored session may take to restore, including the SDK's startup refresh of an expired token.
 const REFRESH_WAIT_MS = 5_000;
 const RECHECK_MS = 250;
 
@@ -58,20 +58,26 @@ function sdkHasCode(): boolean {
   return isSignInLanding() && hasAuthParamsInUrl(search) && hasCalledForThisInstanceInUrl(THUNDER_INSTANCE_ID, search);
 }
 
-function toSession(accessToken: string, idClaims: Record<string, unknown>): CloudSession | null {
+/**
+ * The org comes from the access token, which the backend reads too. The profile prefers the ID
+ * token and falls back to the access token, which carries the same name and email claims — a
+ * session seeded from an access token alone, as E2E token mode does, has no ID token.
+ */
+function toSession(accessToken: string, idClaims: Record<string, unknown> | null): CloudSession | null {
   const access = decodeJwtPayload(accessToken);
+  const claim = (name: string): string | undefined => (idClaims ? stringClaim(idClaims, name) : undefined) ?? stringClaim(access, name);
   const orgHandle = stringClaim(access, 'ouHandle');
   const orgUuid = stringClaim(access, 'ouId');
-  const userId = stringClaim(idClaims, 'sub') ?? stringClaim(access, 'sub');
+  const userId = claim('sub');
   if (!orgHandle || !orgUuid || !userId) return null;
 
-  const username = stringClaim(idClaims, 'username') ?? stringClaim(idClaims, 'preferred_username') ?? stringClaim(idClaims, 'email') ?? userId;
+  const username = claim('username') ?? claim('preferred_username') ?? claim('email') ?? userId;
   return {
     user: {
       userId,
       username,
-      displayName: stringClaim(idClaims, 'name') ?? stringClaim(idClaims, 'given_name') ?? username,
-      pictureUrl: stringClaim(idClaims, 'picture'),
+      displayName: claim('name') ?? claim('given_name') ?? username,
+      pictureUrl: claim('picture'),
     },
     orgHandle,
     orgUuid,
@@ -125,10 +131,11 @@ function CloudSessionProvider({ children }: { children: ReactNode }): JSX.Elemen
       const accessToken = await getAccessToken();
       if (cancelled) return;
       if (!accessToken) return setStatus({ kind: 'signedOut', error: null });
-      // A stored session the SDK is still restoring — and refreshing, if it expired.
-      if (!isSignedIn) return;
-      if (isExpired(accessToken)) {
-        // The SDK may report the session before its startup refresh lands.
+      // The SDK's isSignedIn means "holds an unexpired token", so a stored session it has not
+      // confirmed is one it is still restoring — or refreshing, if the token expired. Neither
+      // outlasts the wait: a refresh that has not landed by then (the refresh token expired too,
+      // or there never was one) leaves nothing to restore.
+      if (!isSignedIn || isExpired(accessToken)) {
         if (Date.now() - mountedAt < REFRESH_WAIT_MS) {
           timer = setTimeout(() => setRecheck((n) => n + 1), RECHECK_MS);
           return;
@@ -136,7 +143,12 @@ function CloudSessionProvider({ children }: { children: ReactNode }): JSX.Elemen
         return endSession(null);
       }
 
-      const session = toSession(accessToken, (await getDecodedIdToken()) as Record<string, unknown>);
+      // The SDK throws rather than return nothing when the session holds no ID token.
+      const idClaims = await getDecodedIdToken().then(
+        (claims) => claims as Record<string, unknown>,
+        () => null,
+      );
+      const session = toSession(accessToken, idClaims);
       if (cancelled) return;
       if (!session) return endSession(MISSING_ORG);
 
