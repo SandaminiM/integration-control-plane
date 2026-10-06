@@ -102,6 +102,14 @@ export function decodeTokenClaims(token: string): TokenClaims {
     if (!payload[claim]) throw new Error(`Token has no '${claim}' claim.`);
   }
 
+  // The session's dates and the lifetime check are computed from these; a value that is not a
+  // number would turn into null dates and a lifetime check that always passes.
+  for (const claim of ['iat', 'exp'] as const) {
+    if (typeof payload[claim] !== 'number' || !Number.isFinite(payload[claim])) {
+      throw new Error(`Token has a non-numeric '${claim}' claim.`);
+    }
+  }
+
   return {
     sub: String(payload.sub),
     email: String(payload.email ?? ''),

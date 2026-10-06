@@ -95,6 +95,17 @@ describe('decodeTokenClaims', () => {
     const payload = { ...VALID_PAYLOAD, [claim]: undefined };
     expect(() => decodeTokenClaims(jwt(payload))).toThrow(new RegExp(`'${claim}' claim`));
   });
+
+  // A non-numeric date would serialize as null in the SDK session and slip past the lifetime check.
+  it.each([
+    ['iat', 'invalid'],
+    ['exp', 'invalid'],
+    ['iat', '1800000000'],
+    ['exp', { seconds: 1 }],
+  ])('rejects a non-numeric %s claim (%j)', (claim, value) => {
+    const payload = { ...VALID_PAYLOAD, [claim]: value };
+    expect(() => decodeTokenClaims(jwt(payload))).toThrow(`Token has a non-numeric '${claim}' claim.`);
+  });
 });
 
 describe('assertUsableLifetime', () => {
