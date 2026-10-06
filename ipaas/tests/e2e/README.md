@@ -152,7 +152,7 @@ card, and waiting out two real builds would double the suite's runtime for no ex
 
 - signing out redirects to the login page
 - the project picker opens a project's home
-- the footer shows Terms of Use, Privacy Policy and Support in that order
+- the footer shows Documentation, Support, Terms of Use and Privacy Policy in that order
 - footer links open in a new tab, and the WSO2 copyright notice is shown
 
 Specs that create anything create it themselves and delete it in teardown, so a run leaves the

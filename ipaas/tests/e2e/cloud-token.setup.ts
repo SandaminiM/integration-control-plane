@@ -30,7 +30,7 @@ const CONTEXT_FILE = path.join(AUTH_DIR, 'cloud-context.json');
 
 await mkdir(AUTH_DIR, { recursive: true });
 
-setup('seed the cloud session from a token', async ({ browser }, testInfo) => {
+setup('TC_IP_AUTH_005 seed the cloud session from a token', async ({ browser }, testInfo) => {
   const baseURL = testInfo.project.use.baseURL;
   if (!baseURL) throw new Error('No baseURL configured for the token setup project.');
 
