@@ -146,6 +146,7 @@ const CopilotDrawer = lazy(() => import('../components/AiCopilot/CopilotDrawer')
 import CopilotButton from '../components/CopilotButton';
 import UpgradeButton from '../components/UpgradeButton';
 import { useOrgUuid } from '../hooks/useOrgUuid';
+import { useLoadedImage } from '../hooks/useLoadedImage';
 import { IS_WIP, IS_CLOUD } from '../features';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions';
 import { DB_TRADEMARK_NOTICE } from '../constants/platformServices';
@@ -159,8 +160,9 @@ function AppLayoutInner(): JSX.Element {
   const queryClient = useQueryClient();
   const { username, displayName, pictureUrl, logout, userId, isOidcUser } = useAuth();
   const userName = displayName || username || 'User';
-  // Oxygen renders a non-URL avatar as text, and its own fallback is a single letter.
-  const userAvatar = pictureUrl || userInitials(userName);
+  // Oxygen falls back to one letter when a picture fails, so it only gets the picture once it has loaded.
+  const loadedPicture = useLoadedImage(pictureUrl);
+  const userAvatar = loadedPicture ?? userInitials(userName);
   const { hasAnyPermission, setOrgPermissions } = useAccessControl();
 
   // Cloud-only billing trial indicator. useBillingOrg is gated to IS_CLOUD, so
