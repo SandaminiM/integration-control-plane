@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Box, Chip, ListingTable, MenuItem, Skeleton, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Chip, ListingTable, MenuItem, Skeleton, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { PieChart } from '@wso2/oxygen-ui-charts-react';
 import { useState, type JSX, type ReactNode } from 'react';
 import { useApiInsights } from '../../hooks/useApiInsights';

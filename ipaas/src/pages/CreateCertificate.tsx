@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Button, Card, CardActionArea, Chip, CircularProgress, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Button, Card, CardActionArea, Chip, CircularProgress, PageContent, Stack, Typography } from '@wso2/oxygen-ui';
+import TextField from '../components/common/TextField';
 import { REQUIRED_FIELD_SX } from '../constants/styles';
 import { Upload } from '@wso2/oxygen-ui-icons-react';
 import { useRef, useState, type JSX } from 'react';

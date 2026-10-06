@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Grid, MenuItem, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Grid, MenuItem, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import TextField from '../../common/TextField';
 import { useMemo, type JSX } from 'react';
 import { blankVectorStore, ragLogoUrl, VECTOR_STORE_PROVIDERS } from '../../../constants/ragIngestion';
 import { chromaCollectionNameError, pineconeIndexNameError, postgresTableNameError, weaviateCollectionNameError } from '../../../utils/ragIngestion';

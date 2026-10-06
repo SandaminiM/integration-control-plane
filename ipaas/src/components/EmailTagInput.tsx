@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Box, Chip, TextField, Typography } from '@wso2/oxygen-ui';
+import { Box, Chip, Typography } from '@wso2/oxygen-ui';
+import TextField from './common/TextField';
 import { type JSX, type KeyboardEvent, useState } from 'react';
 import { emailErrorMessages, isValidEmailAddress } from '../utils/emailTagInput';
 

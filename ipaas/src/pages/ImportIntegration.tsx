@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Box, Button, CircularProgress, FormHelperText, Grid, IconButton, InputAdornment, Link, MenuItem, PageContent, Skeleton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, FormHelperText, FormLabel, Grid, IconButton, InputAdornment, Link, MenuItem, PageContent, Skeleton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import TextField from '../components/common/TextField';
 import { ArrowLeft, GitBranch, RefreshCw, GitHub } from '@wso2/oxygen-ui-icons-react';
 import { MENU_SEARCH_THRESHOLD } from '../components/MenuSearchField';
 import { useState, useEffect, useMemo, useRef, type JSX } from 'react';
@@ -678,7 +679,7 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
 
       {showBranchAndSubPath && (
         <Grid size={{ xs: 12, md: 3 }}>
-          <Stack direction="row" alignItems="flex-start" gap={0.5}>
+          <Stack direction="row" gap={0.5}>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <DirectoryPickerField
                 repo={activeRepo}
@@ -697,13 +698,20 @@ export default function ImportIntegration(scope: ProjectScope): JSX.Element {
               />
             </Box>
             {pathReady && (
-              <Tooltip title="Re-validate technology detection for the selected path" placement="top">
-                <span>
-                  <IconButton size="small" disabled={isValidating} onClick={handleRevalidate} sx={{ mt: 1, color: 'primary.main' }}>
-                    {isValidating ? <CircularProgress size={14} /> : <RefreshCw size={14} />}
-                  </IconButton>
-                </span>
-              </Tooltip>
+              // Hidden copies of the label and helper line leave the middle row the input's height, so the button centres on the box.
+              <Stack>
+                <FormLabel sx={{ visibility: 'hidden' }}>&nbsp;</FormLabel>
+                <Stack sx={{ flex: 1, justifyContent: 'center' }}>
+                  <Tooltip title="Re-validate technology detection for the selected path" placement="top">
+                    <span>
+                      <IconButton size="small" disabled={isValidating} onClick={handleRevalidate} sx={{ color: 'primary.main' }}>
+                        {isValidating ? <CircularProgress size={14} /> : <RefreshCw size={14} />}
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                </Stack>
+                <FormHelperText sx={{ visibility: 'hidden' }}>&nbsp;</FormHelperText>
+              </Stack>
             )}
           </Stack>
         </Grid>

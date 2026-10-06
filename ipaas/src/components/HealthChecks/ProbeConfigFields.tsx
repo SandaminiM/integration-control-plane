@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Box, Button, FormControlLabel, IconButton, Radio, RadioGroup, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, FormControlLabel, IconButton, Radio, RadioGroup, Stack, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { Plus, X } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import StringArrayInput from '../common/StringArrayInput';

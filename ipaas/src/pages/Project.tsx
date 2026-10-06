@@ -48,10 +48,10 @@ import {
   Popper,
   Stack,
   TablePagination,
-  TextField,
   Tooltip,
   Typography,
 } from '@wso2/oxygen-ui';
+import TextField from '../components/common/TextField';
 import ProjectHomeSkeleton from '../components/ProjectHomeSkeleton';
 import { ChevronDown, ChevronUp, Cloud, ExternalLink, FileText, Filter, GitHub, GitBranch, Info, Link2, Pencil, Plus, PlugZap, RefreshCw, Search, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import CreateIntegrationPanels from '../components/CreateIntegrationPanels';
@@ -707,8 +707,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
   const isEmpty = justProvisionedDefaultProject || (isComponentsSuccess ? components.length === 0 : cachedIsEmpty);
   const isWorkspace = project.type === 'MONO_REPO';
   // The editor clones the project repo, so only an integration that builds from it can open.
-  const openInCloudComponent =
-    components.find((c) => isSupportedIntegration(c.displayType, c.componentSubType, c.buildpackType) && !isExternalRepoIntegration(c, project.gitOrganization, project.repository)) ?? null;
+  const openInCloudComponent = components.find((c) => isSupportedIntegration(c.displayType, c.componentSubType, c.buildpackType) && !isExternalRepoIntegration(c, project.gitOrganization, project.repository)) ?? null;
   const projectRepoUrl = buildProjectRepoUrl(project.gitProvider, project.gitOrganization, project.repository, project.branch);
 
   const externalComponents = components.filter((c) => isExternalRepoIntegration(c, project.gitOrganization, project.repository));

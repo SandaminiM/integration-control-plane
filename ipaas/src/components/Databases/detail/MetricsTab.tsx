@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Grid, MenuItem, Paper, Skeleton, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Grid, MenuItem, Paper, Skeleton, Stack, Typography } from '@wso2/oxygen-ui';
+import TextField from '../../common/TextField';
 import { LineChart } from '@wso2/oxygen-ui-charts-react';
 import { useState, type JSX } from 'react';
 import { useServerMetrics } from '../../../hooks/usePlatformServices';

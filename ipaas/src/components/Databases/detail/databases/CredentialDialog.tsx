@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Autocomplete, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, Stack, TextField } from '@wso2/oxygen-ui';
+import { Alert, Autocomplete, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, Stack } from '@wso2/oxygen-ui';
+import TextField from '../../../common/TextField';
 import { Eye, EyeOff } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useCreateDbCredential, useDbCredential, useUpdateDbCredential } from '../../../../hooks/usePlatformServices';

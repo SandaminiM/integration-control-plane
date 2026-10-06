@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Autocomplete, Box, Collapse, Grid, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Autocomplete, Box, Collapse, Grid, Typography } from '@wso2/oxygen-ui';
+import TextField from '../../common/TextField';
 import { ChevronDown, ChevronUp } from '@wso2/oxygen-ui-icons-react';
 import { type JSX, useEffect, useState } from 'react';
 import {

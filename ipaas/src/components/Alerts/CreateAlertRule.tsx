@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Autocomplete, Box, Button, Grid, TextField, Typography } from '@wso2/oxygen-ui';
+import { Autocomplete, Box, Button, Grid, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { type JSX, useEffect, useState } from 'react';
 import type { Environment } from '../../types/environment';

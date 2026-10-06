@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Autocomplete, Checkbox, Chip, TextField } from '@wso2/oxygen-ui';
+import { Autocomplete, Checkbox, Chip } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import type { JSX } from 'react';
 import menuItems from './menuItems.json';
 

@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, InputAdornment, TextField } from '@wso2/oxygen-ui';
+import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, InputAdornment } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { Pencil } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { ACTION_LABEL, ACTION_PENDING_LABEL, CONFIRM_TEXT, isDestructiveAction, PUBLISH_ACTIONS } from '../../constants/lifecycle';

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, ListingTable, MenuItem, Select, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormLabel, IconButton, ListingTable, MenuItem, Select, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useCreateKafkaAcl, useDeleteKafkaAcl, useKafkaAcls, useKafkaTopics, useKafkaUsers } from '../../hooks/usePlatformServices';
@@ -172,29 +172,38 @@ export default function AclTab({ brokerId }: { brokerId: string }): JSX.Element 
           <DialogContent>
             <Stack gap={2} sx={{ mt: 1 }}>
               {addError && <Alert severity="error">{addError}</Alert>}
-              <Select label="Username" value={selectedUsername} onChange={(e) => setSelectedUsername(e.target.value)} size="small" fullWidth required>
-                <MenuItem value="">Select username</MenuItem>
-                {usernames.map((u) => (
-                  <MenuItem key={u} value={u}>
-                    {u}
-                  </MenuItem>
-                ))}
-              </Select>
-              <Select label="Topic" value={selectedTopic} onChange={(e) => setSelectedTopic(e.target.value)} size="small" fullWidth required>
-                <MenuItem value="">Select topic</MenuItem>
-                <MenuItem value="*">* (All Topics)</MenuItem>
-                {topicNames.map((t) => (
-                  <MenuItem key={t} value={t}>
-                    {t}
-                  </MenuItem>
-                ))}
-              </Select>
-              <Select label="Permission" value={selectedPermission} onChange={(e) => setSelectedPermission(e.target.value)} size="small" fullWidth required>
-                <MenuItem value="read">Consume</MenuItem>
-                <MenuItem value="write">Produce</MenuItem>
-                <MenuItem value="readwrite">Produce & Consume</MenuItem>
-                <MenuItem value="admin">Admin</MenuItem>
-              </Select>
+              <FormControl size="small" fullWidth required>
+                <FormLabel>Username</FormLabel>
+                <Select value={selectedUsername} onChange={(e) => setSelectedUsername(e.target.value)}>
+                  <MenuItem value="">Select username</MenuItem>
+                  {usernames.map((u) => (
+                    <MenuItem key={u} value={u}>
+                      {u}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl size="small" fullWidth required>
+                <FormLabel>Topic</FormLabel>
+                <Select value={selectedTopic} onChange={(e) => setSelectedTopic(e.target.value)}>
+                  <MenuItem value="">Select topic</MenuItem>
+                  <MenuItem value="*">* (All Topics)</MenuItem>
+                  {topicNames.map((t) => (
+                    <MenuItem key={t} value={t}>
+                      {t}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl size="small" fullWidth required>
+                <FormLabel>Permission</FormLabel>
+                <Select value={selectedPermission} onChange={(e) => setSelectedPermission(e.target.value)}>
+                  <MenuItem value="read">Consume</MenuItem>
+                  <MenuItem value="write">Produce</MenuItem>
+                  <MenuItem value="readwrite">Produce & Consume</MenuItem>
+                  <MenuItem value="admin">Admin</MenuItem>
+                </Select>
+              </FormControl>
             </Stack>
           </DialogContent>
           <DialogActions>

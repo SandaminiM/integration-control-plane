@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Box, Button, ListingTable, MenuItem, Paper, Skeleton, Stack, StatCard, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, ListingTable, MenuItem, Paper, Skeleton, Stack, StatCard, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { Download } from '@wso2/oxygen-ui-icons-react';
 import { AreaChart, BarChart } from '@wso2/oxygen-ui-charts-react';
 import type { JSX, ReactNode } from 'react';

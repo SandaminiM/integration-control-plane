@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Box, Card, CardContent, InputAdornment, Skeleton, Stack, Tab, Tabs, TextField } from '@wso2/oxygen-ui';
+import { Box, Card, CardContent, InputAdornment, Skeleton, Stack, Tab, Tabs } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { AlertTriangle, CheckCircle2, Info, Search, XCircle } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import type { RuleAdherenceResponse } from '../../types/governance';

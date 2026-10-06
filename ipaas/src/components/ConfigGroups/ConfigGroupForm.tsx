@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Checkbox, Chip, CircularProgress, IconButton, InputAdornment, ListItemText, MenuItem, Select, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Checkbox, Chip, CircularProgress, IconButton, InputAdornment, ListItemText, MenuItem, Select, Stack, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { Check, CircleAlert, Lock, Pencil, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useConfigGroupNameAvailability } from '../../hooks/useConfigGroups';

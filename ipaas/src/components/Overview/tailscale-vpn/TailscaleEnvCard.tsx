@@ -38,10 +38,10 @@ import {
   Radio,
   RadioGroup,
   Stack,
-  TextField,
   Tooltip,
   Typography,
 } from '@wso2/oxygen-ui';
+import TextField from '../../common/TextField';
 import { ArrowRight, ChevronDown, Copy, Eye, EyeOff, Pencil, Plus, RefreshCw, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import StatusDot from '../_shared/StatusDot';
