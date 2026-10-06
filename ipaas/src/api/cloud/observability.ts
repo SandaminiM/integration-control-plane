@@ -16,6 +16,8 @@
  * under the License.
  */
 
+import type { ComponentHttpMetricsPayload, ComponentUsageMetricsPayload, ProjectMetricsModel } from '../../types/observability';
+
 /**
  * Component / project observability metrics.
  *
@@ -39,6 +41,6 @@ const ni = (name: string): never => {
   throw new Error(`[cloud] observability.${name}: not implemented`);
 };
 
-export const fetchComponentHttpMetrics = (..._args: unknown[]): never => ni('fetchComponentHttpMetrics');
-export const fetchComponentUsageMetrics = (..._args: unknown[]): never => ni('fetchComponentUsageMetrics');
-export const fetchProjectMetricsModel = (..._args: unknown[]): never => ni('fetchProjectMetricsModel');
+export const fetchComponentHttpMetrics = (_releaseId: string, _fromIso: string, _toIso: string): Promise<ComponentHttpMetricsPayload | null> => ni('fetchComponentHttpMetrics');
+export const fetchComponentUsageMetrics = (_releaseId: string, _fromIso: string, _toIso: string): Promise<ComponentUsageMetricsPayload | null> => ni('fetchComponentUsageMetrics');
+export const fetchProjectMetricsModel = (_projectId: string, _environmentId: string, _fromIso: string, _toIso: string): Promise<ProjectMetricsModel | null> => ni('fetchProjectMetricsModel');

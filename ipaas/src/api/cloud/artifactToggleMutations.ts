@@ -16,12 +16,14 @@
  * under the License.
  */
 
+import type { ArtifactToggleKind, ArtifactToggleStatusInput } from '../../types/artifact';
+
 // TODO: implement using cloud APIs
 const ni = (name: string): never => {
   throw new Error(`[cloud] artifactToggleMutations.${name}: not implemented`);
 };
 
-export const toBackendArtifactType = (..._args: unknown[]): never => ni('toBackendArtifactType');
-export const updateArtifactToggleStatus = (..._args: unknown[]): never => ni('updateArtifactToggleStatus');
+export const toBackendArtifactType = (_artifactType: string): string => ni('toBackendArtifactType');
+export const updateArtifactToggleStatus = (_kind: ArtifactToggleKind, _input: ArtifactToggleStatusInput): Promise<{ status: string; message: string }> => ni('updateArtifactToggleStatus');
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 export const TOGGLE_CONFIG: any = {};
