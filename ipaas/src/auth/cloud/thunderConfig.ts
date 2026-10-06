@@ -35,8 +35,10 @@ export function thunderConfig(): ThunderIDProviderProps {
     afterSignInUrl: asgardeoSignInRedirectUrl,
     // The only post-logout URI the client registers: the bare origin.
     afterSignOutUrl: window.location.origin,
-    // Shared by every tab, and survives a reload, so neither costs a trip to the IdP.
-    storage: 'localStorage',
+    // Per tab, and gone when the tab closes (the cloud team's call). A reload keeps it; a new
+    // tab signs in again through Thunder, whose own session usually makes that a redirect.
+    // Each tab also refreshes its own tokens, so tabs never race on Thunder's rotating refresh token.
+    storage: 'sessionStorage',
     tokenLifecycle: { refreshToken: { autoRefresh: true } },
     // The SDK checks ID token signatures only with RSA/PS/ML-DSA algorithms, and
     // Thunder also signs with ES256. The ID token comes straight from the token

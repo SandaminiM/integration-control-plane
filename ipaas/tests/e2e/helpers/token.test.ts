@@ -31,6 +31,7 @@ import {
   tokenRetryDelayMs,
   type TokenClaims,
 } from './token';
+import { PARKED_SESSION_KEY } from './session-storage';
 import manifest from '../../../package.json';
 
 const NOW = 1_800_000_000_000;
@@ -120,16 +121,30 @@ describe('buildStorageState', () => {
       ]),
     );
 
-  it('stores the token where the SDK keeps its session, keyed on the client', () => {
-    const session = JSON.parse(entries()['session_data-instance_0-IPAAS_CONSOLE']);
-    expect(session.access_token).toBe('the-token');
-    expect(session.token_type).toBe('Bearer');
+  // The record goes in sessionStorage, which storageState cannot carry, so it is parked.
+  const parkedSession = (): Record<string, unknown> => {
+    const parked = JSON.parse(entries()[PARKED_SESSION_KEY]) as Array<{ name: string; value: string }>;
+    const record = parked.find((e) => e.name === sdkSessionKey('IPAAS_CONSOLE'));
+    if (!record) throw new Error('no parked SDK session');
+    return JSON.parse(record.value);
+  };
+
+  it('parks the token as the SDK session, keyed on the client', () => {
+    expect(parkedSession().access_token).toBe('the-token');
+    expect(parkedSession().token_type).toBe('Bearer');
   });
 
   it('dates the session from the token, in the units the SDK uses', () => {
-    const session = JSON.parse(entries()[sdkSessionKey('IPAAS_CONSOLE')]);
-    expect(session.created_at).toBe(NOW);
-    expect(session.expires_in).toBe(3600);
+    expect(parkedSession().created_at).toBe(NOW);
+    expect(parkedSession().expires_in).toBe(3600);
+  });
+
+  it('parks nothing but the session record', () => {
+    expect(JSON.parse(entries()[PARKED_SESSION_KEY]).map((e: { name: string }) => e.name)).toEqual(['session_data-instance_0-IPAAS_CONSOLE']);
+  });
+
+  it('leaves the session record out of localStorage, where the SDK no longer looks', () => {
+    expect(entries()[sdkSessionKey('IPAAS_CONSOLE')]).toBeUndefined();
   });
 
   it('marks the SDK session active', () => {
@@ -137,9 +152,8 @@ describe('buildStorageState', () => {
   });
 
   it('hands over no refresh or ID token, since the provider never shares one', () => {
-    const session = JSON.parse(entries()[sdkSessionKey('IPAAS_CONSOLE')]);
-    expect(session.refresh_token).toBeUndefined();
-    expect(session.id_token).toBeUndefined();
+    expect(parkedSession().refresh_token).toBeUndefined();
+    expect(parkedSession().id_token).toBeUndefined();
   });
 
   it('marks terms of use accepted for this user and org', () => {

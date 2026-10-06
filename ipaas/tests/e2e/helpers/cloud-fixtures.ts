@@ -26,6 +26,7 @@
  */
 
 import { expect, type Page } from '@playwright/test';
+import { updateParkedEntry } from './session-storage.js';
 import { SDK_SESSION_ACTIVE_KEY, decodeTokenClaims, resolveToken, sdkSession, sdkSessionKey } from './token.js';
 
 export interface FixtureResult {
@@ -41,13 +42,13 @@ export async function waitForApiConfig(page: Page): Promise<void> {
 }
 
 /**
- * The console's access token, read where the Thunder SDK keeps it — which is also where token
- * mode seeds it. Empty when the page has no session, so a fixture call reports the BFF's 401
+ * The console's access token, read from this tab's sessionStorage, where the Thunder SDK keeps it
+ * and where token mode's parked session is restored. Empty when the page has no session, so a fixture call reports the BFF's 401
  * rather than throwing over a test's own failure.
  */
 export async function readSessionToken(page: Page): Promise<string> {
   const clientId = await page.evaluate(() => (window as unknown as { API_CONFIG: { asgardeoClientId: string } }).API_CONFIG.asgardeoClientId);
-  const raw = await page.evaluate((key) => localStorage.getItem(key), sdkSessionKey(clientId));
+  const raw = await page.evaluate((key) => sessionStorage.getItem(key), sdkSessionKey(clientId));
   return raw ? ((JSON.parse(raw) as { access_token?: string }).access_token ?? '') : '';
 }
 
@@ -195,12 +196,15 @@ export async function reseedSessionToken(page: Page): Promise<void> {
     throw new Error(`The token provider keeps serving tokens with ${Math.round(remainingMs / 1000)}s of life, under the ${RESEED_MIN_LIFETIME_MS / 60_000} minutes a reseed needs. Its own refresh is likely failing.`);
   }
 
-  // The SDK reads its session from storage on every request, so the next call carries the new token.
+  // The SDK reads its session from storage on every request, so this tab's next call carries the
+  // new token; the parked copy is what tabs opened later in the context start from.
+  const entry = { name: sdkSessionKey(claims.clientId), value: sdkSession(token, claims) };
   await page.evaluate(
-    ({ key, session, activeKey }) => {
-      localStorage.setItem(key, session);
+    ({ next, activeKey }) => {
+      sessionStorage.setItem(next.name, next.value);
       localStorage.setItem(activeKey, 'true');
     },
-    { key: sdkSessionKey(claims.clientId), session: sdkSession(token, claims), activeKey: SDK_SESSION_ACTIVE_KEY },
+    { next: entry, activeKey: SDK_SESSION_ACTIVE_KEY },
   );
+  await updateParkedEntry(page, entry);
 }

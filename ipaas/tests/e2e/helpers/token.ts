@@ -19,6 +19,7 @@
 import { request as httpRequest } from 'http';
 import { request as httpsRequest } from 'https';
 import { readSecret } from './secrets.js';
+import { PARKED_SESSION_KEY, type StorageEntry } from './session-storage.js';
 
 /** Claims the console needs to reconstruct a signed-in session. */
 export interface TokenClaims {
@@ -34,7 +35,8 @@ export interface TokenClaims {
 }
 
 /**
- * Where the Thunder SDK keeps a signed-in session in localStorage. This is the SDK's own,
+ * Where the Thunder SDK keeps a signed-in session: the session record in sessionStorage (the
+ * console's configured storage), the active flag in localStorage. This is the SDK's own,
  * internal format — read off a real sign-in with @thunderid/browser at this version, and not
  * a public API. token.test.ts fails when package.json pins another version, so an upgrade
  * re-checks these keys instead of finding out from a run that never signs in.
@@ -67,11 +69,6 @@ export function sdkSession(token: string, claims: TokenClaims): string {
  * reseedSessionToken, because the provider hands out no refresh token for the console itself.
  */
 export const MIN_TOKEN_LIFETIME_MS = 10 * 60_000;
-
-interface StorageEntry {
-  name: string;
-  value: string;
-}
 
 export interface StorageState {
   cookies: never[];
@@ -129,9 +126,11 @@ export function assertUsableLifetime(claims: TokenClaims, nowMs: number): void {
 }
 
 /**
- * The localStorage a completed sign-in leaves behind, rebuilt from the token alone. The provider
- * hands out no refresh token, so the SDK never refreshes this session; reseedSessionToken tops
- * it up instead. The SDK writes its config and discovery keys itself when the console loads.
+ * The storage a completed sign-in leaves behind, rebuilt from the token alone. The session record
+ * belongs in sessionStorage, which storageState cannot carry, so it is parked for
+ * restoreSessionStorage to put back (session-storage.ts). The provider hands out no refresh
+ * token, so the SDK never refreshes this session; reseedSessionToken tops it up instead. The SDK
+ * writes its config and discovery keys itself when the console loads.
  */
 export function buildStorageState(token: string, claims: TokenClaims, origin: string): StorageState {
   return {
@@ -140,7 +139,7 @@ export function buildStorageState(token: string, claims: TokenClaims, origin: st
       {
         origin,
         localStorage: [
-          { name: sdkSessionKey(claims.clientId), value: sdkSession(token, claims) },
+          { name: PARKED_SESSION_KEY, value: JSON.stringify([{ name: sdkSessionKey(claims.clientId), value: sdkSession(token, claims) }]) },
           { name: SDK_SESSION_ACTIVE_KEY, value: 'true' },
           // Acceptance is per user and org; without it ProjectsRedirect blocks on its dialog.
           { name: `tos_accepted:${claims.sub}:${claims.ouHandle}`, value: 'true' },

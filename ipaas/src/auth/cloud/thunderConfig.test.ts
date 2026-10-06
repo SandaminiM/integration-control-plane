@@ -42,9 +42,9 @@ describe('thunderConfig', () => {
     });
   });
 
-  it('keeps tokens where every tab and a reload can reach them, and refreshes them itself', () => {
+  it('keeps tokens per tab, for as long as the tab is open, and refreshes them itself', () => {
     const config = thunderConfig();
-    expect(config.storage).toBe('localStorage');
+    expect(config.storage).toBe('sessionStorage');
     expect(config.tokenLifecycle?.refreshToken?.autoRefresh).toBe(true);
   });
 
