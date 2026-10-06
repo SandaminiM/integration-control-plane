@@ -151,6 +151,22 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe('cloud AuthProvider — upgrading from the pre-SDK console', () => {
+  it('clears the old session from storage when it mounts', async () => {
+    localStorage.setItem('auth_token', 'old-token');
+    localStorage.setItem('refresh_token', 'old-refresh');
+    localStorage.setItem('user', '{"userId":"u1"}');
+    localStorage.setItem('org_handle', 'acme');
+    sdkWith();
+    await render();
+
+    expect(localStorage.getItem('auth_token')).toBeNull();
+    expect(localStorage.getItem('refresh_token')).toBeNull();
+    expect(localStorage.getItem('user')).toBeNull();
+    expect(localStorage.getItem('org_handle')).toBe('acme');
+  });
+});
+
 describe('cloud AuthProvider — editor sign-in', () => {
   it('forwards an editor’s sign-in result without mounting the SDK', async () => {
     const state = btoa(JSON.stringify({ callbackUri: 'vscode://wso2.wso2-integrator/signin' }));

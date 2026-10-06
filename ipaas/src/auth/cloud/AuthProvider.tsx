@@ -25,6 +25,7 @@ import { oidcCallbackUrl } from '../../paths';
 import { editorSignInForwardUrl } from '../../utils/vscodeCallback';
 import type { AuthContextValue } from '../contract';
 import { decodeJwtPayload, isExpired, stringClaim } from './jwt';
+import { clearLegacySession } from './legacySession';
 import { connect, disconnect, type CloudSession, type CloudUser } from './session';
 import { THUNDER_INSTANCE_ID, signInParams, thunderConfig } from './thunderConfig';
 
@@ -87,6 +88,10 @@ function toSession(accessToken: string, idClaims: Record<string, unknown> | null
 export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
   const [editorUrl] = useState(editorForwardUrl);
   const [config] = useState(thunderConfig);
+
+  useEffect(() => {
+    clearLegacySession();
+  }, []);
 
   useEffect(() => {
     if (editorUrl) window.location.href = editorUrl;
