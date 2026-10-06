@@ -142,7 +142,7 @@ export default function RegisterOrganization(): JSX.Element {
     if (!orgName) return null;
     if (isValidating) return <CircularProgress size={18} />;
     if (localError || isNameAvailable === false) return <XCircle size={18} color="error" />;
-    if (isNameValid && isNameAvailable !== false) return <CheckCircle size={18} color="success" />;
+    if (isNameValid) return <CheckCircle size={18} color="success" />;
     return null;
   };
 

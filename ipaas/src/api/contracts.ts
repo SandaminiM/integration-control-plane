@@ -573,7 +573,7 @@ export interface DevopsConfigsApi {
   deleteConfigMap(orgUuid: string, projectId: string, environmentId: string, configMapId: string): Promise<void>;
   getContainerConfigMounts(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string): Promise<DevopsConfigMount[]>;
   mountConfig(orgUuid: string, projectId: string, componentId: string, data: ConfigMountWriteData): Promise<DevopsConfigMount>;
-  updateConfigMount(orgUuid: string, projectId: string, path: ConfigMountPath, data: Record<string, unknown>): Promise<DevopsConfigMount>;
+  updateConfigMount(orgUuid: string, projectId: string, path: ConfigMountPath, data: ConfigMountWriteData): Promise<DevopsConfigMount>;
   removeConfigMount(orgUuid: string, projectId: string, path: ConfigMountPath): Promise<void>;
 }
 

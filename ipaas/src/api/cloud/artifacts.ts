@@ -31,5 +31,4 @@ export const fetchArtifactParams = (_componentId: string, _artifactType: string,
 export const fetchArtifactWsdl = (_componentId: string, _artifactType: string, _artifactName: string, _envId: string, _runtimeId?: string): Promise<string> => ni('fetchArtifactWsdl');
 export const updateArtifactStatus = (_input: ArtifactStatusInput): Promise<{ status: string; message: string }> => ni('updateArtifactStatus');
 export const updateListenerState = (_input: ListenerStateInput): Promise<{ success: boolean; message: string; commandIds: string[] }> => ni('updateListenerState');
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-export const ARTIFACT_QUERY_MAP: any = {};
+export const ARTIFACT_QUERY_MAP: Record<string, { queryName: string; field: string; fields: string; gqlFields: string }> = {};

@@ -37,6 +37,7 @@ import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import NotFound from '../components/NotFound';
 import { useProjectId } from '../hooks/useProjects';
 import type { EndpointRef } from '../types/consumers';
+import type { EnvEndpoint } from '../types/component';
 import { broaden, resourceUrl, type ComponentScope } from '../nav';
 
 import NotDeployedAlert from '../components/NotDeployedAlert';
@@ -239,7 +240,8 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
                       size="small"
                       options={endpoints}
                       getOptionLabel={(ep) => ep.displayName}
-                      value={selectedEndpoint}
+                      // null only when there are no endpoints, which MUI renders as an empty field.
+                      value={selectedEndpoint as EnvEndpoint}
                       onChange={(_, ep) => {
                         if (ep) setSelectedEndpointId(ep.id);
                       }}

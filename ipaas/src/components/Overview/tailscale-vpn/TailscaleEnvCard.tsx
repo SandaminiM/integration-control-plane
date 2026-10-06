@@ -298,43 +298,43 @@ export default function TailscaleEnvCard({ orgHandler, projectId, component, ver
             ) : (
               <Stack divider={<Divider />} sx={{ mb: 1 }}>
                 <Grid container sx={{ py: 0.5, fontWeight: 600 }}>
-                  <Grid item xs={3}>
+                  <Grid size={{ xs: 3 }}>
                     <Typography variant="caption">Name</Typography>
                   </Grid>
-                  <Grid item xs={2}>
+                  <Grid size={{ xs: 2 }}>
                     <Typography variant="caption">Port</Typography>
                   </Grid>
-                  <Grid item xs={1} />
-                  <Grid item xs={3}>
+                  <Grid size={{ xs: 1 }} />
+                  <Grid size={{ xs: 3 }}>
                     <Typography variant="caption">Device IP</Typography>
                   </Grid>
-                  <Grid item xs={2}>
+                  <Grid size={{ xs: 2 }}>
                     <Typography variant="caption">Device Port</Typography>
                   </Grid>
-                  <Grid item xs={1} />
+                  <Grid size={{ xs: 1 }} />
                 </Grid>
                 {mappings.map((m, idx) => (
                   <Grid container alignItems="center" key={`${m.port}-${idx}`} sx={{ py: 0.5 }}>
-                    <Grid item xs={3}>
+                    <Grid size={{ xs: 3 }}>
                       <Typography variant="body2">{m.name}</Typography>
                     </Grid>
-                    <Grid item xs={2}>
+                    <Grid size={{ xs: 2 }}>
                       <Typography variant="body2">{m.port}</Typography>
                     </Grid>
-                    <Grid item xs={1}>
+                    <Grid size={{ xs: 1 }}>
                       <ArrowRight size={14} />
                     </Grid>
-                    <Grid item xs={3}>
+                    <Grid size={{ xs: 3 }}>
                       <Typography variant="body2" color={m.ip ? 'text.primary' : 'error'}>
                         {m.ip || 'Missing'}
                       </Typography>
                     </Grid>
-                    <Grid item xs={2}>
+                    <Grid size={{ xs: 2 }}>
                       <Typography variant="body2" color={m.targetPort ? 'text.primary' : 'error'}>
                         {m.targetPort || 'Missing'}
                       </Typography>
                     </Grid>
-                    <Grid item xs={1}>
+                    <Grid size={{ xs: 1 }}>
                       {canManage && (
                         <Stack direction="row">
                           <IconButton
@@ -363,22 +363,22 @@ export default function TailscaleEnvCard({ orgHandler, projectId, component, ver
                   {editingIndex !== null ? 'Edit endpoint' : 'Add endpoint'}
                 </Typography>
                 <Grid container spacing={1} alignItems="center">
-                  <Grid item xs={3}>
+                  <Grid size={{ xs: 3 }}>
                     <TextField size="small" fullWidth label="Name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
                   </Grid>
-                  <Grid item xs={2}>
+                  <Grid size={{ xs: 2 }}>
                     <TextField size="small" fullWidth type="number" label="Port" value={form.port || ''} onChange={(e) => setForm((f) => ({ ...f, port: Number(e.target.value) }))} />
                   </Grid>
-                  <Grid item xs={1} sx={{ textAlign: 'center' }}>
+                  <Grid size={{ xs: 1 }} sx={{ textAlign: 'center' }}>
                     <ArrowRight size={16} />
                   </Grid>
-                  <Grid item xs={3}>
+                  <Grid size={{ xs: 3 }}>
                     <TextField size="small" fullWidth label="Device IP" placeholder="100.108.78.93" value={form.ip} onChange={(e) => setForm((f) => ({ ...f, ip: e.target.value }))} />
                   </Grid>
-                  <Grid item xs={2}>
+                  <Grid size={{ xs: 2 }}>
                     <TextField size="small" fullWidth type="number" label="Device Port" value={form.targetPort || ''} onChange={(e) => setForm((f) => ({ ...f, targetPort: Number(e.target.value) }))} />
                   </Grid>
-                  <Grid item xs={1}>
+                  <Grid size={{ xs: 1 }}>
                     <Stack direction="row">
                       <Tooltip title={editingIndex !== null ? 'Update' : 'Add'}>
                         <span>

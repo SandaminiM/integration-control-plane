@@ -50,5 +50,5 @@ export const updateConfigMapData = (_orgUuid: string, _projectId: string, _confi
 export const deleteConfigMap = (_orgUuid: string, _projectId: string, _environmentId: string, _configMapId: string): Promise<void> => ni('deleteConfigMap');
 export const getContainerConfigMounts = (_orgUuid: string, _projectId: string, _componentId: string, _releaseId: string, _containerId: string): Promise<DevopsConfigMount[]> => ni('getContainerConfigMounts');
 export const mountConfig = (_orgUuid: string, _projectId: string, _componentId: string, _data: ConfigMountWriteData): Promise<DevopsConfigMount> => ni('mountConfig');
-export const updateConfigMount = (_orgUuid: string, _projectId: string, _path: ConfigMountPath, _data: Record<string, unknown>): Promise<DevopsConfigMount> => ni('updateConfigMount');
+export const updateConfigMount = (_orgUuid: string, _projectId: string, _path: ConfigMountPath, _data: ConfigMountWriteData): Promise<DevopsConfigMount> => ni('updateConfigMount');
 export const removeConfigMount = (_orgUuid: string, _projectId: string, _path: ConfigMountPath): Promise<void> => ni('removeConfigMount');

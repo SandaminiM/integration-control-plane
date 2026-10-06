@@ -63,7 +63,8 @@ export default function ApiChatMessage({ executionResults }: ApiChatMessageProps
         const safeOutput = parsed?.output ?? { code: 0, path: '', headers: {}, body: null };
         const safeResource = parsed?.resource ?? { method: '', inputs: {} };
         const safeInputs = safeResource.inputs ?? {};
-        const isSuccess = safeOutput.code >= 200 && safeOutput.code < 300;
+        const statusCode = safeOutput.code ?? 0;
+        const isSuccess = statusCode >= 200 && statusCode < 300;
         const isExpanded = expandedMap.get(result.id) ?? false;
         const showJson = showJsonMap.get(result.id) ?? false;
         const jsonPayload = showJson ? { input: safeInputs.requestBody ? { requestBody: safeInputs.requestBody } : undefined, output: safeOutput } : safeOutput.body;
