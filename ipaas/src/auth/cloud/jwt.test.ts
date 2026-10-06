@@ -37,6 +37,14 @@ describe('decodeJwtPayload', () => {
     expect(decodeJwtPayload(jwt(claims))).toEqual(claims);
   });
 
+  // Encoded the way a server encodes claims: UTF-8 bytes, then base64url.
+  it('reads non-ASCII claims as UTF-8', () => {
+    const claims = { name: 'José Müller', given_name: '李' };
+    const utf8 = String.fromCharCode(...new TextEncoder().encode(JSON.stringify(claims)));
+    const payload = btoa(utf8).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    expect(decodeJwtPayload(`${b64url({ alg: 'none' })}.${payload}.sig`)).toEqual(claims);
+  });
+
   it('throws on a value that is not a JWT', () => {
     expect(() => decodeJwtPayload('not-a-jwt')).toThrow();
   });

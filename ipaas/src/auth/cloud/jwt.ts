@@ -21,7 +21,9 @@ export function decodeJwtPayload(token: string): Record<string, unknown> {
   // base64url without padding; restore '+'/'/' and pad so atob accepts it.
   const normalized = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
   const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
-  return JSON.parse(atob(padded)) as Record<string, unknown>;
+  // atob yields one character per byte; the claims are UTF-8, so decode the bytes as such.
+  const bytes = Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes)) as Record<string, unknown>;
 }
 
 /** A string claim, or undefined when it is missing, empty or not a string. */
