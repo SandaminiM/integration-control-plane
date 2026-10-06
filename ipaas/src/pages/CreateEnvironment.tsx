@@ -124,8 +124,12 @@ export default function CreateEnvironment(scope: OrgScope): JSX.Element {
               )}
             </Box>
           )}
-          {/* Hidden on cloud: marking an environment critical does not take effect. */}
-          {!IS_CLOUD && <FormControlLabel control={<Checkbox checked={critical} onChange={(_, v) => setCritical(v)} />} label="Mark as Critical Environment" />}
+          <Box>
+            <Alert severity="info" sx={{ mt: 1 }}>
+              Mark production environments as critical. Integrations here are run rather than tested, and keys generated for testing are Production keys.
+            </Alert>
+            <FormControlLabel control={<Checkbox checked={critical} onChange={(_, v) => setCritical(v)} />} label="Mark as Critical Environment" />
+          </Box>
         </Stack>
       </BusyFields>
 

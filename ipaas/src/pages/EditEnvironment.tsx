@@ -18,7 +18,6 @@
 
 import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, PageContent, Stack, Typography } from '@wso2/oxygen-ui';
 import TextField from '../components/common/TextField';
-import { IS_CLOUD } from '../features';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useParams } from 'react-router';
@@ -68,8 +67,12 @@ function EditEnvironmentForm({ env, orgHandler }: { env: Environment; orgHandler
       <Stack gap={3} sx={{ maxWidth: 600, mb: 4 }}>
         <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
         <TextField label="Description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth />
-        {/* Hidden on cloud: marking an environment critical does not take effect. */}
-        {!IS_CLOUD && <FormControlLabel control={<Checkbox checked={critical} onChange={(_, v) => setCritical(v)} />} label="Mark as Critical Environment" />}
+        <Box>
+          <Alert severity="info" sx={{ mt: 1 }}>
+            Mark production environments as critical. Integrations here are run rather than tested, and keys generated for testing are Production keys.
+          </Alert>
+          <FormControlLabel control={<Checkbox checked={critical} onChange={(_, v) => setCritical(v)} />} label="Mark as Critical Environment" />
+        </Box>
       </Stack>
 
       <Stack direction="row" gap={2}>
