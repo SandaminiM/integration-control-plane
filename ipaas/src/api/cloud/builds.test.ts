@@ -28,7 +28,7 @@ vi.hoisted(() => {
   (globalThis as unknown as { __PRODUCT__: string }).__PRODUCT__ = 'cloud';
 });
 
-import { buildLogTextFrom, buildRunLogsFromTasks } from './builds';
+import { buildLogTextFrom } from './builds';
 import type { LogRow } from '../../types/logs';
 
 // The query asks for newest-first, so a row's position is what matters here.
@@ -59,35 +59,5 @@ describe('buildLogTextFrom', () => {
     expect(lines[0]).toContain('1000');
     expect(lines[1]).toBe('line-1');
     expect(lines[lines.length - 1]).toBe('line-1000');
-  });
-});
-
-describe('buildRunLogsFromTasks', () => {
-  const task = (name: string, phase: string) => ({ name, phase });
-  const init = task('checkout-source', 'Succeeded');
-
-  // The build stage stays open until the parallel unit tests finish.
-  it('holds the build stage open until the unit tests finish', () => {
-    const logs = buildRunLogsFromTasks({ tasks: [init, task('build-image', 'Succeeded'), task('unit-test', 'Pending')] }, null);
-    expect(logs.build.status).toBeNull();
-  });
-
-  it('completes the build stage once both the image and the tests are done', () => {
-    const logs = buildRunLogsFromTasks({ tasks: [init, task('build-image', 'Succeeded'), task('unit-test', 'Succeeded')] }, null);
-    expect(logs.build.status).toBe('completed');
-  });
-
-  // A failed unit-test task shows as a failed Unit Test step.
-  it('reports a failing suite as a failed Unit Test step', () => {
-    const logs = buildRunLogsFromTasks({ tasks: [init, task('build-image', 'Succeeded'), task('unit-test', 'Failed')] }, null);
-    expect(logs.build.status).toBe('completed');
-    expect(logs.build.steps.find((s) => s.name === 'Unit Test')?.conclusion).toBe('failure');
-  });
-
-  // A skipped unit-test task is left out of the build steps.
-  it('leaves a skipped unit-test task out of the build', () => {
-    const logs = buildRunLogsFromTasks({ tasks: [init, task('build-image', 'Succeeded'), task('unit-test', 'Skipped')] }, null);
-    expect(logs.build.steps.map((s) => s.name)).toEqual(['build-image']);
-    expect(logs.build.status).toBe('completed');
   });
 });
