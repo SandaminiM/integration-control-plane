@@ -28,6 +28,7 @@ import {
   SDK_SESSION_ACTIVE_KEY,
   SDK_STORAGE_VERSION,
   sdkSessionKey,
+  tokenSubject,
   TOKEN_FETCH_ATTEMPTS,
   tokenRetryDelayMs,
   type TokenClaims,
@@ -226,5 +227,20 @@ describe('assertClientMatchesConsole', () => {
 
   it('names both clients when they differ', () => {
     expect(() => assertClientMatchesConsole(CLAIMS, 'OTHER_CLIENT')).toThrow(/issued to client 'IPAAS_CONSOLE', but the console is configured for 'OTHER_CLIENT'/);
+  });
+});
+
+describe('tokenSubject', () => {
+  it('reads sub from a token that lacks the claims token mode requires', () => {
+    expect(tokenSubject(jwt({ sub: 'user-1', aud: 'IPAAS_CONSOLE', exp: NOW / 1000 + 3600 }))).toBe('user-1');
+  });
+
+  it.each([
+    ['an empty token', ''],
+    ['a value that is not a JWT', 'not-a-jwt'],
+    ['a payload that is not JSON', 'a.bm90LWpzb24.c'],
+    ['a token without sub', jwt({ ouHandle: 'acme' })],
+  ])('returns undefined for %s', (_label, token) => {
+    expect(tokenSubject(token)).toBeUndefined();
   });
 });

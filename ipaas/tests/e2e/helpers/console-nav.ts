@@ -2,7 +2,7 @@
 
 import { expect, type Page } from '@playwright/test';
 import { readSessionToken, reseedSessionToken } from './cloud-fixtures.js';
-import { decodeTokenClaims } from './token.js';
+import { tokenSubject } from './token.js';
 
 /** Collapsing the sidebar hides the page labels, so nothing asserts a nav item until this runs. */
 export async function expandSidebar(page: Page): Promise<void> {
@@ -29,9 +29,8 @@ export async function gotoOrgHome(page: Page, orgHandler: string): Promise<void>
   // (OrgHome.tsx:131). Mark it onboarded exactly as OrgHome does for itself (:130) and retry.
   // Seeded here, not in the token setup, which reads the project handle out of that redirect.
   // The console's user id is the token's subject.
-  const token = await readSessionToken(page);
-  if (token) {
-    const userId = decodeTokenClaims(token).sub;
+  const userId = tokenSubject(await readSessionToken(page));
+  if (userId) {
     await page.evaluate(({ org, user }) => localStorage.setItem(`persona:${user}:${org}`, 'developer'), { org: orgHandler, user: userId });
   }
 

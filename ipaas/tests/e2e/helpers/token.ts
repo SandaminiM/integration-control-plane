@@ -123,6 +123,20 @@ export function decodeTokenClaims(token: string): TokenClaims {
 }
 
 /**
+ * The token's subject, or undefined when it cannot be read. Lenient on purpose: for callers that
+ * only need the user id from whatever session the console holds, including one from a real
+ * sign-in, without the token-mode setup's full claim checks (decodeTokenClaims).
+ */
+export function tokenSubject(token: string): string | undefined {
+  try {
+    const payload = JSON.parse(Buffer.from(token.split('.')[1] ?? '', 'base64url').toString('utf8')) as { sub?: unknown };
+    return typeof payload.sub === 'string' && payload.sub ? payload.sub : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * The seeded session is keyed on the token's client, while the console's SDK (and
  * readSessionToken) look it up under the client the console is configured with. When the two
  * differ, the console finds no session and the run fails much later with nothing naming why.
