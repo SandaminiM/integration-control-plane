@@ -253,8 +253,9 @@ export async function fetchChoreoSampleImages(_orgUuid: string, _projectId: stri
   }
 }
 
-// awaits: PUT /components/{name}/buildpack-config.
-export async function updateBuildpackConfigs(_input: UpdateBuildpackConfigsInput): Promise<string> {
+// Saves the unit test opt-in; the BFF ignores the other build settings.
+export async function updateBuildpackConfigs(input: UpdateBuildpackConfigsInput): Promise<string> {
+  await bff.put(`/components/${seg(input.componentId)}/buildpack-config`, { isUnitTestEnabled: input.isUnitTestEnabled });
   return '';
 }
 
