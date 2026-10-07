@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useMemo, useState, type JSX } from 'react';
-import { isAuditLogsEnabled, useAuditLogs } from '../hooks/useAuditLogs';
+import { useAuditLogs } from '../hooks/useAuditLogs';
 import { useProjects } from '../hooks/useProjects';
 import { AUDIT_LOG_LIMIT, AUDIT_TIME_PRESETS, DEFAULT_AUDIT_TIME_PRESET } from '../constants/auditLogs';
 import { downloadAuditLogs, rangeFromPreset } from '../utils/auditLogs';
@@ -25,7 +25,6 @@ import LogsPageLayout from '../components/Logs/LogsPageLayout';
 import LogsPanel from '../components/Logs/LogsPanel';
 import AuditLogsFilters from '../components/AuditLogs/AuditLogsFilters';
 import AuditLogRow from '../components/AuditLogs/AuditLogRow';
-import ComingSoon from './ComingSoon';
 import type { AuditLogEntry, AuditLogOutcome, AuditLogsRequest, AuditLogSort } from '../types/auditLogs';
 
 export default function OrgAuditLogs(): JSX.Element {
@@ -63,10 +62,6 @@ export default function OrgAuditLogs(): JSX.Element {
     setSearchInput('');
     setPresetId(DEFAULT_AUDIT_TIME_PRESET);
   };
-
-  if (!isAuditLogsEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Audit Logs are currently under development." />;
-  }
 
   return (
     <LogsPageLayout

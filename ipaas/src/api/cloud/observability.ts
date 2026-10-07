@@ -23,7 +23,7 @@ import type { ComponentHttpMetricsPayload, ComponentUsageMetricsPayload, Project
  *
  * The OpenChoreo BFF exposes no metrics surface — these live on Devant's obs
  * API (choreoobsapi) on the systemapis gateway. Until the BFF closes that gap,
- * the fetchers throw via ni() (per the src/api/AGENTS.md stub contract) so an
+ * the fetchers throw via ni() so an
  * unsupported metrics read can never be mistaken for "no data".
  *
  * awaits: choreoobsapi (component http/usage metrics, project metrics model)

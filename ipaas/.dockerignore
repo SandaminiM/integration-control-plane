@@ -28,7 +28,6 @@ pnpm-debug.log*
 AGENTS.md
 HOUSE_RULES.md
 README.md
-RUNTIME_CONFIG.md
 
 # The Dockerfiles themselves don't need to be in the build context's COPY
 .dockerignore

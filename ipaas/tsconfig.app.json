@@ -23,8 +23,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "paths": {
-      "#api/*": ["./src/api/cloud/*"],
-      "#product/*": ["./src/product/cloud/*"]
+      "#api/*": ["./src/api/cloud/*"]
     }
   },
   "include": ["src"]

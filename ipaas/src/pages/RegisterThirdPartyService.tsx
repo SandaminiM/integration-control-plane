@@ -19,10 +19,9 @@
 import { PageContent } from '@wso2/oxygen-ui';
 import { useState, type JSX } from 'react';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { isThirdPartyServicesEnabled, useCreateThirdPartyService } from '../hooks/useThirdPartyServices';
+import { useCreateThirdPartyService } from '../hooks/useThirdPartyServices';
 import { useProjectId } from '../hooks/useProjects';
 import { thirdPartyServicesBase } from '../utils/thirdPartyServices';
-import ComingSoon from './ComingSoon';
 import ThirdPartyServiceWizard from '../components/ThirdPartyServices/ThirdPartyServiceWizard';
 import { HttpError } from '../types/http';
 import { hasProject, type OrgScope, type ProjectScope } from '../nav';
@@ -38,10 +37,6 @@ export default function RegisterThirdPartyService(scope: OrgScope | ProjectScope
 
   // In project scope, never submit until the project id has resolved.
   const projectNotReady = !!projectHandle && (resolvingProject || !projectId);
-
-  if (!isThirdPartyServicesEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Third Party Services management is currently under development." />;
-  }
 
   const onSubmit = (draft: ThirdPartyServiceDraft) => {
     if (projectNotReady) return;

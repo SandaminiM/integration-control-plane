@@ -27,7 +27,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '#api': path.resolve(__dirname, 'src/api/cloud'),
-      '#product': path.resolve(__dirname, 'src/product/cloud'),
     },
   },
 });

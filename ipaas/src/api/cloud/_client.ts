@@ -25,16 +25,7 @@
  */
 
 import { authenticatedFetch } from '../../auth/tokenManager';
-
-// Token-scope 403 retry helpers are product-agnostic shared HTTP infra; they
-// live alongside the base HTTP clients in wip/. Re-exported so cloud domain
-// files can wrap scope-sensitive BFF calls without reaching across folders.
-export { withStsRetry, withScopeRetry } from '../wip/httpClients';
-
-// Observability client (window.API_CONFIG.observabilityUrl). In the cloud
-// deployment that URL points at the wso2cloud observability proxy, which logs
-// and metrics are queried from directly rather than through the BFF.
-export { obsClient } from '../wip/httpClients';
+import { HttpError } from '../../types/http';
 
 /** Standard BFF list envelope: { items: T[] }. */
 export interface ListResponse<T> {
@@ -112,3 +103,22 @@ export function q(params: Record<string, string | number | boolean | undefined |
 
 /** Encode a single URL path segment. */
 export const seg = (s: string): string => encodeURIComponent(s);
+
+// Observability client (window.API_CONFIG.observabilityUrl). In the cloud
+// deployment that URL points at the wso2cloud observability proxy, which logs
+// and metrics are queried from directly rather than through the BFF.
+async function obsRequest<T>(path: string, init: RequestInit): Promise<T> {
+  const base = window.API_CONFIG?.observabilityUrl;
+  if (!base) throw new Error('Observability URL is not configured');
+  const res = await authenticatedFetch(`${base}${path}`, init);
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new HttpError(res.status, `HTTP ${res.status}: ${body || res.statusText}`);
+  }
+  const text = await res.text().catch(() => '');
+  return text ? (JSON.parse(text) as T) : (undefined as T);
+}
+
+export const obsClient = {
+  post: <T>(path: string, body?: unknown) => obsRequest<T>(path, { method: 'POST', ...(body !== undefined ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}) }),
+};

@@ -42,22 +42,15 @@ import {
   fetchEndpointRulesetAdherence,
   fetchEndpointRuleAdherence,
 } from '#api/governance';
-import { IS_CLOUD, IS_WIP } from '../features';
 import type { Ruleset, DocumentInfo, GovernancePolicyInfo } from '../types/governance';
 
 const ROOT_KEY = 'governance';
-
-/** Org admin Governance: fully wired on wip; read-only on cloud (list APIs no-op to empty; icp stubs throw). */
-export function isGovernanceEnabled(): boolean {
-  return IS_WIP || IS_CLOUD;
-}
 
 // Rulesets
 export function useRulesets() {
   return useQuery({
     queryKey: [ROOT_KEY, 'rulesets'],
     queryFn: () => listRulesets(),
-    enabled: isGovernanceEnabled(),
     retry: false,
   });
 }
@@ -66,7 +59,7 @@ export function useRuleset(rulesetId: string) {
   return useQuery({
     queryKey: [ROOT_KEY, 'ruleset', rulesetId],
     queryFn: () => getRuleset(rulesetId),
-    enabled: isGovernanceEnabled() && !!rulesetId,
+    enabled: !!rulesetId,
     retry: false,
   });
 }
@@ -75,7 +68,7 @@ export function useRulesetContent(rulesetId: string) {
   return useQuery({
     queryKey: [ROOT_KEY, 'ruleset', rulesetId, 'content'],
     queryFn: () => getRulesetContent(rulesetId),
-    enabled: isGovernanceEnabled() && !!rulesetId,
+    enabled: !!rulesetId,
     retry: false,
   });
 }
@@ -109,7 +102,6 @@ export function useDocuments() {
   return useQuery({
     queryKey: [ROOT_KEY, 'documents'],
     queryFn: () => listDocuments(),
-    enabled: isGovernanceEnabled(),
     retry: false,
   });
 }
@@ -118,7 +110,7 @@ export function useDocument(documentId: string) {
   return useQuery({
     queryKey: [ROOT_KEY, 'document', documentId],
     queryFn: () => getDocument(documentId),
-    enabled: isGovernanceEnabled() && !!documentId,
+    enabled: !!documentId,
     retry: false,
   });
 }
@@ -152,7 +144,6 @@ export function usePolicies() {
   return useQuery({
     queryKey: [ROOT_KEY, 'policies'],
     queryFn: () => listPolicies(),
-    enabled: isGovernanceEnabled(),
     retry: false,
   });
 }
@@ -161,7 +152,7 @@ export function usePolicy(policyId: string) {
   return useQuery({
     queryKey: [ROOT_KEY, 'policy', policyId],
     queryFn: () => getPolicy(policyId),
-    enabled: isGovernanceEnabled() && !!policyId,
+    enabled: !!policyId,
     retry: false,
   });
 }
@@ -196,7 +187,6 @@ export function useProjectCompliance() {
   return useQuery({
     queryKey: [ROOT_KEY, 'project-compliance'],
     queryFn: () => fetchProjectCompliance(),
-    enabled: isGovernanceEnabled(),
     retry: false,
     staleTime: 60_000,
   });
@@ -206,7 +196,6 @@ export function usePolicyAdherence() {
   return useQuery({
     queryKey: [ROOT_KEY, 'policy-adherence'],
     queryFn: () => fetchPolicyAdherence(),
-    enabled: isGovernanceEnabled(),
     retry: false,
     staleTime: 60_000,
   });
@@ -216,7 +205,7 @@ export function useProjectPolicyAdherence(projectId: string) {
   return useQuery({
     queryKey: [ROOT_KEY, 'project-policy-adherence', projectId],
     queryFn: () => fetchProjectPolicyAdherence(projectId),
-    enabled: isGovernanceEnabled() && !!projectId,
+    enabled: !!projectId,
     retry: false,
     staleTime: 60_000,
   });
@@ -226,7 +215,7 @@ export function useComponentCompliance(projectId: string) {
   return useQuery({
     queryKey: [ROOT_KEY, 'component-compliance', projectId],
     queryFn: () => fetchComponentCompliance(projectId),
-    enabled: isGovernanceEnabled() && !!projectId,
+    enabled: !!projectId,
     retry: false,
     staleTime: 60_000,
   });
@@ -236,7 +225,7 @@ export function useEndpointPolicyAdherence(projectId: string, componentId: strin
   return useQuery({
     queryKey: [ROOT_KEY, 'endpoint-policy-adherence', projectId, componentId, apimId],
     queryFn: () => fetchEndpointPolicyAdherence(projectId, componentId, apimId),
-    enabled: isGovernanceEnabled() && !!projectId && !!componentId && !!apimId,
+    enabled: !!projectId && !!componentId && !!apimId,
     retry: false,
     staleTime: 60_000,
   });
@@ -246,7 +235,7 @@ export function useEndpointRulesetAdherence(projectId: string, componentId: stri
   return useQuery({
     queryKey: [ROOT_KEY, 'endpoint-ruleset-adherence', projectId, componentId, apimId],
     queryFn: () => fetchEndpointRulesetAdherence(projectId, componentId, apimId),
-    enabled: isGovernanceEnabled() && !!projectId && !!componentId && !!apimId,
+    enabled: !!projectId && !!componentId && !!apimId,
     retry: false,
     staleTime: 60_000,
   });
@@ -256,7 +245,7 @@ export function useEndpointRuleAdherence(projectId: string, componentId: string,
   return useQuery({
     queryKey: [ROOT_KEY, 'endpoint-rule-adherence', projectId, componentId, apimId],
     queryFn: () => fetchEndpointRuleAdherence(projectId, componentId, apimId),
-    enabled: isGovernanceEnabled() && !!projectId && !!componentId && !!apimId,
+    enabled: !!projectId && !!componentId && !!apimId,
     retry: false,
     staleTime: 60_000,
   });

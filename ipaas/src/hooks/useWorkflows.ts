@@ -19,7 +19,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cancelWorkflowInstance, createWorkflowConfig, fetchPastWorkflowInstances, fetchWorkflowConfigs, fetchWorkflowDefinitions, fetchWorkflowInstances, fetchWorkflowReviewData, reviewWorkflowInstance, updateWorkflowConfig } from '#api/workflows';
 import type { OrgWorkflowConfig, ReviewerDecisionRequest, WorkflowConfigRequest, WorkflowDefinition, WorkflowInstanceResponse, WorkflowReviewData } from '../types/workflow';
-import { IS_CLOUD, IS_WIP } from '../features';
 
 const ROOT_KEY = 'workflows';
 
@@ -59,7 +58,6 @@ export function useWorkflowInstances() {
   return useQuery<WorkflowInstanceResponse[]>({
     queryKey: [ROOT_KEY, 'instances', 'pending'],
     queryFn: fetchWorkflowInstances,
-    enabled: isApprovalsEnabled(),
     retry: false,
   });
 }
@@ -68,7 +66,6 @@ export function usePastWorkflowInstances() {
   return useQuery<WorkflowInstanceResponse[]>({
     queryKey: [ROOT_KEY, 'instances', 'past'],
     queryFn: fetchPastWorkflowInstances,
-    enabled: isApprovalsEnabled(),
     retry: false,
   });
 }
@@ -96,9 +93,4 @@ export function useCancelWorkflowInstance() {
     mutationFn: (workflowId) => cancelWorkflowInstance(workflowId),
     onSuccess: () => qc.invalidateQueries({ queryKey: [ROOT_KEY, 'instances'] }),
   });
-}
-
-/** Approvals: fully wired on wip; read-only on cloud (instance-list APIs no-op to empty; icp stubs throw). */
-export function isApprovalsEnabled(): boolean {
-  return IS_WIP || IS_CLOUD;
 }

@@ -37,9 +37,8 @@ import type {
  *
  * The OpenChoreo BFF exposes no delivery/DORA surface — these live on Devant's
  * platform gateway as the CIO query API and incident configurator. Until the
- * BFF closes that gap, every function throws via ni() (per the
- * src/api/AGENTS.md stub contract) so an unsupported metric read or config
- * write can never be mistaken for a successful one.
+ * BFF closes that gap, every function throws via ni() so an unsupported
+ * metric read or config write can never be mistaken for a successful one.
  *
  * awaits: cio-query-api (DORA metrics) / cio-incident-configurator (config)
  */

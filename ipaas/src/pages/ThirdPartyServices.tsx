@@ -20,13 +20,12 @@ import { Alert, Box, Button, Chip, CircularProgress, IconButton, ListingTable, P
 import { Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState, type JSX } from 'react';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { isThirdPartyServicesEnabled, useDeleteThirdPartyService, useThirdPartyServices } from '../hooks/useThirdPartyServices';
+import { useDeleteThirdPartyService, useThirdPartyServices } from '../hooks/useThirdPartyServices';
 import { useProjectId } from '../hooks/useProjects';
 import { GENAI_DEFAULT_PAGE_SIZE, GENAI_PAGE_SIZE_OPTIONS, marketplaceStatusLabel } from '../constants/genaiServices';
 import { THIRD_PARTY_BANNER } from '../constants/thirdPartyServices';
 import { formatServiceCreatedTime } from '../utils/genaiServices';
 import { thirdPartyServicesBase } from '../utils/thirdPartyServices';
-import ComingSoon from './ComingSoon';
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog';
 import NoServicesBanner from '../components/ServiceCatalog/NoServicesBanner';
 import SearchField from '../components/SearchField';
@@ -65,10 +64,6 @@ export default function ThirdPartyServices(scope: OrgScope | ProjectScope): JSX.
   const base = thirdPartyServicesBase(scope);
   const goCreate = () => navigate(`${base}/new`);
   const goDetail = (serviceId: string) => navigate(`${base}/${serviceId}`);
-
-  if (!isThirdPartyServicesEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Third Party Services management is currently under development." />;
-  }
 
   const doDelete = () => {
     if (!toDelete) return;

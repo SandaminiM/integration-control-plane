@@ -22,11 +22,9 @@ import { useState, type JSX } from 'react';
 import { useParams } from 'react-router';
 import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useConfigGroup } from '../hooks/useConfigGroups';
-import { isCertificatesEnabled } from '../hooks/useCertificates';
 import { certificateValidity, certificateTypeLabel, formatCertificateDate } from '../utils/certificates';
 import { orgCertificatesUrl } from '../paths';
 import type { OrgScope } from '../nav';
-import ComingSoon from './ComingSoon';
 import CertificateUsageView from '../components/Certificates/CertificateUsageView';
 
 export default function CertificateDetail(scope: OrgScope): JSX.Element {
@@ -35,10 +33,6 @@ export default function CertificateDetail(scope: OrgScope): JSX.Element {
   const [tab, setTab] = useState<'metadata' | 'usage'>('metadata');
 
   const { data: group, isLoading, isError } = useConfigGroup(certificateId);
-
-  if (!isCertificatesEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Certificates management is currently under development." />;
-  }
 
   if (isLoading) {
     return (

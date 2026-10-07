@@ -19,10 +19,9 @@
 import { PageContent } from '@wso2/oxygen-ui';
 import { useState, type JSX } from 'react';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { isGenaiServicesEnabled, useCreateGenaiService } from '../hooks/useGenaiServices';
+import { useCreateGenaiService } from '../hooks/useGenaiServices';
 import { useProjectId } from '../hooks/useProjects';
 import { genaiServicesBase } from '../utils/genaiServices';
-import ComingSoon from './ComingSoon';
 import GenAIServiceWizard from '../components/GenAIServices/GenAIServiceWizard';
 import { HttpError } from '../types/http';
 import { hasProject, type OrgScope, type ProjectScope } from '../nav';
@@ -38,10 +37,6 @@ export default function RegisterGenAIService(scope: OrgScope | ProjectScope): JS
 
   // In project scope, never submit until the project id has resolved, or the service would be created without project context.
   const projectNotReady = !!projectHandle && (resolvingProject || !projectId);
-
-  if (!isGenaiServicesEnabled()) {
-    return <ComingSoon title="Coming Soon" description="GenAI Services management is currently under development." />;
-  }
 
   const onSubmit = (args: CreateGenAiServiceArgs) => {
     if (projectNotReady) return;

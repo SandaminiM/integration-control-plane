@@ -64,9 +64,8 @@ export async function changeLifecycleState(_apimId: string, _action: string): Pr
   throw new Error('Lifecycle management is not supported in this build.');
 }
 
-// Not wired to a cloud backend yet — per the src/api/AGENTS.md stub contract
-// these throw via ni() so callers can never mistake an unsupported read or
-// save for a successful one.
+// Not wired to a cloud backend yet. These throw via ni() so callers can never
+// mistake an unsupported read or save for a successful one.
 // TODO: implement using cloud APIs
 const ni = (name: string): never => {
   throw new Error(`[cloud] apim.${name}: not implemented`);

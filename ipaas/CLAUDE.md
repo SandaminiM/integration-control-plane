@@ -2,7 +2,7 @@
 
 ## What this app is
 
-The frontend for **WIP** (formerly Devant), WSO2's integration platform. Also builds as `cloud` and `icp` from the same source tree — controlled by the `PRODUCT` env var at build time.
+The frontend for WSO2's integration platform (formerly Devant).
 
 - Stack: Vite 7, React 19, React Router 7, TanStack Query 5, TypeScript 5, pnpm
 - Auth: WSO2 Identity Platform OIDC (PKCE flow) + local username/password fallback
@@ -18,8 +18,7 @@ src/
   layouts/       # AppLayout (authenticated shell), PublicLayout, PolicyLayout
   pages/         # One file per page/route (~51 pages)
   components/    # Shared and composite components
-  api/wip/       # WIP-specific API calls (resolved via #api/ alias)
-  product/wip/   # WIP-specific components (resolved via #product/ alias)
+  api/           # API call modules
 public/
   config.json    # Runtime config (API URLs, Asgardeo client ID, etc.)
 tests/e2e/       # Playwright smoke suite (see tests/e2e/README.md)
@@ -38,7 +37,7 @@ All authenticated routes are under `/organizations/:orgHandler/`. The `orgHandle
 /organizations/:org/projects/:project/home                      → Project home
 /organizations/:org/projects/:project/components/new            → Create integration options
 /organizations/:org/projects/:project/components/:comp/overview → Integration overview
-/organizations/:org/projects/:project/prebuilt-integrations     → Prebuilt integrations (WIP only)
+/organizations/:org/projects/:project/prebuilt-integrations     → Prebuilt integrations
 ```
 
 ## Auth flow
@@ -56,7 +55,6 @@ For tests, `global.setup.ts` logs in once and saves `storageState` to `.auth/use
 ```bash
 pnpm dev          # WIP on https://localhost:3000 (HTTPS)
 pnpm dev:cloud    # Cloud variant
-pnpm dev:icp      # ICP variant
 ```
 
 ## Running unit tests
@@ -87,8 +85,6 @@ See `tests/e2e/README.md` for full setup and troubleshooting.
 
 ## Things to know before changing code
 
-- **Product-specific code** lives under `src/api/wip/`, `src/api/cloud/`, `src/api/icp/` and is resolved via the `#api/` alias in `vite.config.ts`. Shared code goes in `src/api/`.
-- **`IS_WIP` flag** gates WIP-only routes like prebuilt integrations. Check `routes.tsx` before adding routes.
 - **`public/config.json`** is not committed with real credentials — it points to `preview-dv` by default. Each environment deploys its own config.
 - **React Router v7** — uses the new `<Route>` JSX API, not the v6 object config. Check `src/config/routes.tsx`.
 - **storageState in `.auth/`** is gitignored — it contains live session tokens. Never commit it.

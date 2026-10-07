@@ -18,7 +18,7 @@
 
 import type { ExternalCiToken } from '../../types/externalCi';
 
-// Intentionally a stub (the standard icp-stub contract — see src/api/AGENTS.md).
+// Intentionally a stub: the BFF has no endpoints for this yet, so every call throws via ni().
 const ni = (name: string): never => {
   throw new Error(`[cloud] externalCi.${name}: not implemented`);
 };
