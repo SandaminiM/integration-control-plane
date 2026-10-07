@@ -122,6 +122,20 @@ export function decodeTokenClaims(token: string): TokenClaims {
   };
 }
 
+/**
+ * The seeded session is keyed on the token's client, while the console's SDK (and
+ * readSessionToken) look it up under the client the console is configured with. When the two
+ * differ, the console finds no session and the run fails much later with nothing naming why.
+ */
+export function assertClientMatchesConsole(claims: TokenClaims, consoleClientId: string): void {
+  if (claims.clientId !== consoleClientId) {
+    throw new Error(
+      `Token was issued to client '${claims.clientId}', but the console is configured for '${consoleClientId}' (ASGARDEO_CLIENT_ID), ` +
+        'so the console will not find the seeded session. Request a token for the console client from the provider.',
+    );
+  }
+}
+
 export function assertUsableLifetime(claims: TokenClaims, nowMs: number): void {
   const remainingMs = claims.exp * 1000 - nowMs;
   if (remainingMs < MIN_TOKEN_LIFETIME_MS) {

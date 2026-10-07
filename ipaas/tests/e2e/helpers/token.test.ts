@@ -18,6 +18,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  assertClientMatchesConsole,
   assertUsableLifetime,
   buildStorageState,
   decodeTokenClaims,
@@ -215,5 +216,15 @@ describe('SDK storage format', () => {
   // pin should stop here until someone signs in with the new version and re-checks them.
   it.each(['@thunderid/browser', '@thunderid/react'])('was verified against the %s version package.json pins', (pkg) => {
     expect((manifest.dependencies as Record<string, string>)[pkg]).toBe(SDK_STORAGE_VERSION);
+  });
+});
+
+describe('assertClientMatchesConsole', () => {
+  it('accepts a token issued to the console client', () => {
+    expect(() => assertClientMatchesConsole(CLAIMS, 'IPAAS_CONSOLE')).not.toThrow();
+  });
+
+  it('names both clients when they differ', () => {
+    expect(() => assertClientMatchesConsole(CLAIMS, 'OTHER_CLIENT')).toThrow(/issued to client 'IPAAS_CONSOLE', but the console is configured for 'OTHER_CLIENT'/);
   });
 });
