@@ -21,7 +21,9 @@ import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { projectNameFor } from './helpers/journey-project.js';
-import { assertUsableLifetime, buildStorageState, decodeTokenClaims, resolveToken } from './helpers/token.js';
+import { newConsoleContext } from './helpers/session-storage.js';
+import { waitForApiConfig } from './helpers/cloud-fixtures.js';
+import { assertClientMatchesConsole, assertUsableLifetime, buildStorageState, decodeTokenClaims, resolveToken } from './helpers/token.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTH_DIR = path.join(__dirname, '../../.auth');
@@ -44,9 +46,11 @@ setup('seed the cloud session from a token', async ({ browser }, testInfo) => {
 
   // The project handle is not in the token. Loading the console resolves it, and on an
   // org whose home has never been opened it also provisions the default project.
-  const context = await browser.newContext({ storageState: AUTH_FILE, baseURL });
+  const context = await newConsoleContext(browser, { storageState: AUTH_FILE, baseURL });
   const page = await context.newPage();
   await page.goto('/');
+  await waitForApiConfig(page);
+  assertClientMatchesConsole(claims, await page.evaluate(() => (window as unknown as { API_CONFIG: { asgardeoClientId: string } }).API_CONFIG.asgardeoClientId));
   await expect(page, 'Token did not produce a signed-in session').toHaveURL(
     /\/organizations\/[^/]+\/projects\/[^/]+\/home/,
     { timeout: 120_000 },

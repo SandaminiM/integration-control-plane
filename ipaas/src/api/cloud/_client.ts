@@ -91,6 +91,27 @@ export const bff = {
   delete: <T>(path: string, body?: unknown, headers?: Record<string, string>) => request<T>('DELETE', path, body, headers),
 };
 
+// Observability client (window.API_CONFIG.observabilityUrl). In the cloud
+// deployment that URL points at the wso2cloud observability proxy, which logs
+// and metrics are queried from directly rather than through the BFF. Errors
+// match the wip clients' HttpError, since the proxy has no BFF envelope.
+async function obsPost<T>(path: string, body: unknown): Promise<T> {
+  const base = window.API_CONFIG?.observabilityUrl;
+  if (!base) throw new Error('Observability URL is not configured');
+  const res = await authenticatedFetch(`${base}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const text = await res.text().catch(() => '');
+  if (!res.ok) throw new HttpError(res.status, `HTTP ${res.status}: ${text || res.statusText}`);
+  return text ? (JSON.parse(text) as T) : (undefined as unknown as T);
+}
+
+export const obsClient = {
+  post: obsPost,
+};
+
 /** Build a "?k=v&k=v" string from a record, dropping undefined/null/empty values. */
 export function q(params: Record<string, string | number | boolean | undefined | null>): string {
   const parts: string[] = [];
@@ -103,22 +124,3 @@ export function q(params: Record<string, string | number | boolean | undefined |
 
 /** Encode a single URL path segment. */
 export const seg = (s: string): string => encodeURIComponent(s);
-
-// Observability client (window.API_CONFIG.observabilityUrl). In the cloud
-// deployment that URL points at the wso2cloud observability proxy, which logs
-// and metrics are queried from directly rather than through the BFF.
-async function obsRequest<T>(path: string, init: RequestInit): Promise<T> {
-  const base = window.API_CONFIG?.observabilityUrl;
-  if (!base) throw new Error('Observability URL is not configured');
-  const res = await authenticatedFetch(`${base}${path}`, init);
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new HttpError(res.status, `HTTP ${res.status}: ${body || res.statusText}`);
-  }
-  const text = await res.text().catch(() => '');
-  return text ? (JSON.parse(text) as T) : (undefined as T);
-}
-
-export const obsClient = {
-  post: <T>(path: string, body?: unknown) => obsRequest<T>(path, { method: 'POST', ...(body !== undefined ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}) }),
-};

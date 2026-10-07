@@ -17,9 +17,10 @@
  */
 
 /**
- * Cloud auth. Resolved through `#auth` when PRODUCT=cloud.
- *
- * Re-exports the WIP implementation until cloud moves to the Thunder SDK.
+ * Cloud auth, on the Thunder SDK. Resolved through `#auth` when PRODUCT=cloud.
  */
 
-export * from '../wip';
+export { AuthProvider, useAuth } from './AuthProvider';
+export { authenticatedFetch, getAccessToken, getOrgUuidFromToken, switchOrgToken } from './session';
+export { saveRedirectUrl, getAndClearRedirectUrl } from '../shared/redirectUrl';
+export { generateAndSaveGitHubState, validateAndClearGitHubState } from '../shared/githubState';

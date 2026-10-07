@@ -27,7 +27,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '#api': path.resolve(__dirname, 'src/api/cloud'),
-      '#auth': path.resolve(__dirname, 'src/auth/cloud'),
+      // Cloud auth loads the Thunder provider and its UI, which plain Node can't import;
+      // API-layer tests only need authenticatedFetch, so they keep the WIP module like upstream.
+      '#auth': path.resolve(__dirname, 'src/auth/wip'),
     },
   },
 });

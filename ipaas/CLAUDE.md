@@ -48,6 +48,8 @@ All authenticated routes are under `/organizations/:orgHandler/`. The `orgHandle
 4. `OIDCCallback` exchanges code → calls `validate/user` → STS token exchange
 5. Navigates to last project (localStorage) or projects/redirect
 
+Cloud differs: `/login` hands off to Thunder through the Thunder SDK (`@thunderid/react`), which exchanges the code and refreshes tokens itself; `OIDCCallback` only forwards Cloud Editor results and routes. See `src/auth/cloud/`.
+
 For tests, `global.setup.ts` logs in once and saves `storageState` to `.auth/user.json`. All specs reuse that state.
 
 ## Running the app

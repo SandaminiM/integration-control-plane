@@ -43,7 +43,11 @@ export interface AuthContextValue {
   clearRequirePasswordChange: () => void;
   login: (username: string, password: string) => Promise<void>;
   loginWithOIDC: (fidp?: string) => Promise<void>;
-  handleOIDCCallback: (code: string, state: string | null) => Promise<{ isNewUser: boolean }>;
+  /**
+   * Finishes sign-in on /signin from the query the IdP returned. Throws with a
+   * message for the user when sign-in did not succeed.
+   */
+  completeSignIn: (params: URLSearchParams) => Promise<{ isNewUser: boolean; userId: string }>;
   completeOrgRegistration: (orgHandle: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -60,8 +64,6 @@ export interface AuthModule {
   getOrgUuidFromToken: () => string | null;
   /** Re-scopes the session to another org. Rejects when that isn't possible. */
   switchOrgToken: (orgHandle: string, signal?: AbortSignal) => Promise<void>;
-  /** Checks the `state` returned to /signin against the one saved before sign-in. */
-  validateAndClearOIDCState: (state: string) => boolean;
 
   // shared/ — not auth, re-exported so app code has one import path.
   saveRedirectUrl: (url: string) => void;

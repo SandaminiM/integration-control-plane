@@ -238,6 +238,19 @@ Enrolling TOTP stops the emails, so set the secret only once the account actuall
 rebuilds the session from a platform-issued token instead of signing in, so no GitHub credentials
 are needed. It writes the same two files, and the specs cannot tell the difference.
 
+It rebuilds the session by writing the Thunder SDK's own entries — the session record
+`session_data-instance_0-<client_id>` in sessionStorage and the `thunderid-session-active` flag in
+localStorage — so the console under test is the unmodified production build. Those keys are the
+SDK's internal format, checked against the version `package.json` pins: `helpers/token.test.ts`
+fails when that pin changes, and the keys must be re-read off a real sign-in before the guard is
+bumped (`SDK_STORAGE_VERSION` in `helpers/token.ts`).
+
+**Cloud sessions live in sessionStorage**, which Playwright's `storageState` does not save. Both
+cloud setups park the console tab's sessionStorage in the `e2e:session-storage` localStorage entry,
+and `newConsoleContext` (`helpers/session-storage.ts`) copies it back into every tab before the
+console loads. Open cloud contexts with `newConsoleContext`, not `browser.newContext`: a plain
+context starts signed out.
+
 The token comes from `E2E_TOKEN_URL` (wso2cloud's `monitoring-token-provider`) with
 `E2E_TOKEN_AUTH` sent as `X-Auth-Token`. `E2E_TOKEN_TLS_INSECURE` is needed for that hop: the
 internal gateway serves an in-cluster service name no certificate matches.

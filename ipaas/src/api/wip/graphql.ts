@@ -33,7 +33,8 @@ export async function gql<T>(query: string, variables?: Record<string, unknown>)
     const stsConfigured = !!window.API_CONFIG.stsTokenEndpoint && !!window.API_CONFIG.stsClientId;
     const tokenIsUnscoped = stsConfigured && !getOrgUuidFromToken();
     if (tokenIsUnscoped) {
-      const { refreshAccessToken } = await import('#auth');
+      // WIP-only token refresh, outside the #auth contract.
+      const { refreshAccessToken } = await import('../../auth/wip/tokenManager');
       await refreshAccessToken();
       res = await authenticatedFetch(window.API_CONFIG.graphqlUrl, {
         method: 'POST',

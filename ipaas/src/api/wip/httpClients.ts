@@ -16,7 +16,10 @@
  * under the License.
  */
 
-import { authenticatedFetch, getOrgUuidFromToken, refreshAccessToken } from '#auth';
+import { authenticatedFetch, getOrgUuidFromToken } from '#auth';
+// WIP-only token refresh, outside the #auth contract; api/wip is removed with the product flags.
+// eslint-disable-next-line no-restricted-imports
+import { refreshAccessToken } from '../../auth/wip/tokenManager';
 import { HttpError } from '../../types/http';
 
 export interface HttpClient {

@@ -14,6 +14,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { getAuthContext } from '../../helpers/auth-context.js';
 import { authStatePath } from '../../helpers/product.js';
 import { expectPageRendered } from '../../helpers/cloud-fixtures.js';
+import { newConsoleContext } from '../../helpers/session-storage.js';
 import { BUILD_TIMEOUT_MS, waitForBuildToSettle } from '../../helpers/build.js';
 import { cardFor, expandSidebar, expectNavItems, openIntegration, openNavGroup, openProject } from '../../helpers/console-nav.js';
 import { fillSecret, readSecret } from '../../helpers/secrets.js';
@@ -99,7 +100,7 @@ let page: Page;
 
 test.beforeAll(async ({ browser }, testInfo) => {
   orgHandler = getAuthContext(testInfo.project.name).orgHandler;
-  context = await browser.newContext({
+  context = await newConsoleContext(browser, {
     storageState: authStatePath(testInfo.project.name),
     baseURL: testInfo.project.use.baseURL,
   });

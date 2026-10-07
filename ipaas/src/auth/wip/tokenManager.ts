@@ -17,11 +17,9 @@
  */
 
 import { refreshTokenApiUrl, revokeTokenApiUrl } from '../../config/runtimeConfig';
-import { IS_CLOUD } from '../../features';
 
 const ACCESS_TOKEN_KEY = 'auth_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
-const ID_TOKEN_KEY = 'id_token';
 const TOKEN_EXPIRES_AT_KEY = 'token_expires_at';
 const REFRESH_TOKEN_EXPIRES_AT_KEY = 'refresh_token_expires_at';
 const OIDC_STATE_KEY = 'oidc_state';
@@ -83,20 +81,10 @@ export function getRefreshToken(): string | null {
   return localStorage.getItem(REFRESH_TOKEN_KEY);
 }
 
-// Kept only as the id_token_hint for RP-initiated logout (cloud).
-export function saveIdToken(idToken: string): void {
-  localStorage.setItem(ID_TOKEN_KEY, idToken);
-}
-
-export function getIdToken(): string | null {
-  return localStorage.getItem(ID_TOKEN_KEY);
-}
-
 export function clearTokens(): void {
   asgardeoTokenMemory = null;
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
-  localStorage.removeItem(ID_TOKEN_KEY);
   localStorage.removeItem(TOKEN_EXPIRES_AT_KEY);
   localStorage.removeItem(REFRESH_TOKEN_EXPIRES_AT_KEY);
 }
@@ -498,10 +486,7 @@ export function getOrgUuidFromToken(): string | null {
   if (!token) return null;
   try {
     const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    // Choreo issues the org UUID under `organization.uuid`. Cloud's Thunder IdP
-    // issues it as the `ouId` claim instead, so the cloud build falls back to it.
-    const orgUuid = (payload.organization?.uuid as string) ?? null;
-    return IS_CLOUD ? (orgUuid ?? (payload.ouId as string) ?? null) : orgUuid;
+    return (payload.organization?.uuid as string) ?? null;
   } catch {
     return null;
   }
