@@ -138,12 +138,53 @@ async function emptyLegacyProject(page: Page): Promise<number> {
   return removed;
 }
 
+/** Empties and deletes the legacy project; throws with the reason when it cannot. */
+async function sweepLegacyProject(page: Page, note: (description: string) => void): Promise<void> {
+  const card = await filterToLegacyProject(page);
+  if (!(await card.first().isVisible({ timeout: 15_000 }).catch(() => false))) {
+    note(`no ${PROJECT} project to sweep`);
+    return;
+  }
+
+  // A project already being deleted keeps its card but loses the settings button, so it is only waited out.
+  const settings = page.getByRole('button', { name: `Settings for ${PROJECT}`, exact: true });
+  if (await settings.isVisible({ timeout: 15_000 }).catch(() => false)) {
+    // Delete Project stays disabled while integrations remain, so a disabled button sends the sweep back to the overview.
+    const deleteProject = page.getByRole('button', { name: 'Delete Project', exact: true });
+    let enabled = false;
+    for (let round = 0; round < 2 && !enabled; round++) {
+      note(`removed ${await emptyLegacyProject(page)} integration(s) from ${PROJECT}`);
+      await openLegacySettings(page);
+      enabled = await expect(deleteProject)
+        .toBeEnabled({ timeout: 30_000 })
+        .then(() => true)
+        .catch(() => false);
+    }
+    if (!enabled) throw new Error(`Delete Project stayed disabled — ${PROJECT} still holds integrations`);
+
+    await deleteProject.click();
+    await confirmRemoval(page, 'Enter project name to confirm', PROJECT);
+    const rejected = page.getByRole('alert').filter({ hasText: /Failed to delete the project/i });
+    if (await rejected.isVisible({ timeout: 10_000 }).catch(() => false)) {
+      throw new Error(`the console rejected the delete: ${(await rejected.textContent())?.trim()}`);
+    }
+  } else {
+    note(`${PROJECT} is already being deleted; waiting for it to finish`);
+  }
+
+  await filterToLegacyProject(page);
+  await expect(page.getByText(PROJECT, { exact: true }), `the ${PROJECT} card is still on the org home`).toHaveCount(0, { timeout: PROJECT_REMOVAL_TIMEOUT_MS });
+  note(`swept ${PROJECT}`);
+}
+
+// Below the test timeout, so a stuck sweep is skipped by its own deadline rather than failed by Playwright's.
+const LEGACY_SWEEP_BUDGET_MS = 2 * PROJECT_REMOVAL_TIMEOUT_MS;
+
 test.describe('00 sweep the legacy IPAAS-E2E project @smoke', () => {
   test.describe.configure({ mode: 'serial' });
 
   test('TC_IP_PROJ_008 a project named exactly IPAAS-E2E is emptied and deleted', async () => {
-    // Bounded so every wait inside fits: emptying twice, then the project's own removal.
-    test.setTimeout(3 * PROJECT_REMOVAL_TIMEOUT_MS);
+    test.setTimeout(LEGACY_SWEEP_BUDGET_MS + 2 * 60_000);
 
     // Housekeeping, not a product assertion, as in 08b: a sweep that cannot finish is skipped with its reason.
     const reason = (error: unknown): string => (error instanceof Error ? error.message.split('\n')[0] : String(error));
@@ -154,44 +195,21 @@ test.describe('00 sweep the legacy IPAAS-E2E project @smoke', () => {
     // A run pointed at this very project with E2E_PROJECT must not delete it out from under itself.
     test.skip(activeProject() === PROJECT, `this run's own project is ${PROJECT}, so it is not swept`);
 
+    // Its own tab, so closing it at the deadline aborts whatever is still in flight without touching the journey's page.
+    const sweepPage = await context.newPage();
+    let deadline: ReturnType<typeof setTimeout> | undefined;
     try {
-      const card = await filterToLegacyProject(page);
-      if (!(await card.first().isVisible({ timeout: 15_000 }).catch(() => false))) {
-        note(`no ${PROJECT} project to sweep`);
-        return;
-      }
-
-      // A project already being deleted keeps its card but loses the settings button, so it is only waited out.
-      const settings = page.getByRole('button', { name: `Settings for ${PROJECT}`, exact: true });
-      if (await settings.isVisible({ timeout: 15_000 }).catch(() => false)) {
-        // Delete Project stays disabled while integrations remain, so a disabled button sends the sweep back to the overview.
-        const deleteProject = page.getByRole('button', { name: 'Delete Project', exact: true });
-        let enabled = false;
-        for (let round = 0; round < 2 && !enabled; round++) {
-          note(`removed ${await emptyLegacyProject(page)} integration(s) from ${PROJECT}`);
-          await openLegacySettings(page);
-          enabled = await expect(deleteProject)
-            .toBeEnabled({ timeout: 30_000 })
-            .then(() => true)
-            .catch(() => false);
-        }
-        if (!enabled) throw new Error(`Delete Project stayed disabled — ${PROJECT} still holds integrations`);
-
-        await deleteProject.click();
-        await confirmRemoval(page, 'Enter project name to confirm', PROJECT);
-        const rejected = page.getByRole('alert').filter({ hasText: /Failed to delete the project/i });
-        if (await rejected.isVisible({ timeout: 10_000 }).catch(() => false)) {
-          throw new Error(`the console rejected the delete: ${(await rejected.textContent())?.trim()}`);
-        }
-      } else {
-        note(`${PROJECT} is already being deleted; waiting for it to finish`);
-      }
-
-      await filterToLegacyProject(page);
-      await expect(page.getByText(PROJECT, { exact: true }), `the ${PROJECT} card is still on the org home`).toHaveCount(0, { timeout: PROJECT_REMOVAL_TIMEOUT_MS });
-      note(`swept ${PROJECT}`);
+      await Promise.race([
+        sweepLegacyProject(sweepPage, note),
+        new Promise<never>((_, reject) => {
+          deadline = setTimeout(() => reject(new Error(`not finished within ${LEGACY_SWEEP_BUDGET_MS / 60_000} minutes`)), LEGACY_SWEEP_BUDGET_MS);
+        }),
+      ]);
     } catch (error) {
       test.skip(true, `${PROJECT} could not be swept, left for the next run: ${reason(error)}`);
+    } finally {
+      clearTimeout(deadline);
+      await sweepPage.close().catch(() => {});
     }
   });
 });

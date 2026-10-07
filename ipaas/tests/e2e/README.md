@@ -187,7 +187,8 @@ it empties the project from its overview, returning there if Delete Project is s
 deletes it. Every lookup matches the name exactly, so a dated `IPAAS-E2E-…` project is never
 touched, and a run pointed at `IPAAS-E2E` through `E2E_PROJECT` skips the sweep rather than delete
 its own project. Like 08b, it is housekeeping: a sweep that cannot finish is skipped with the
-reason annotated, not failed.
+reason annotated, not failed. It runs in its own tab under a deadline shorter than the test's
+timeout, so a stuck leftover is abandoned and skipped rather than timing the test out.
 
 08b is housekeeping, not a product assertion. Each project is swept on its own, so one that cannot
 be deleted does not cost the rest their turn, and a project already mid-deletion is left to finish.
