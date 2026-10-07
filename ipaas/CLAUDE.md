@@ -13,7 +13,7 @@ The frontend for WSO2's integration platform (formerly Devant).
 
 ```
 src/
-  auth/          # AuthContext, OIDC token flow, STS exchange
+  auth/          # Auth and token management — import it only via the #auth alias
   config/        # routes.tsx — all app routes defined here
   layouts/       # AppLayout (authenticated shell), PublicLayout, PolicyLayout
   pages/         # One file per page/route (~51 pages)

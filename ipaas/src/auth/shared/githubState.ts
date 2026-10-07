@@ -16,18 +16,17 @@
  * under the License.
  */
 
-import path from 'path';
-import { defineConfig } from 'vitest/config';
+// GitHub OAuth CSRF state — sessionStorage so it's scoped to the initiating tab
+const GITHUB_OAUTH_STATE_KEY = 'github_oauth_state';
 
-export default defineConfig({
-  test: {
-    environment: 'happy-dom',
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'tests/e2e/helpers/*.test.ts'],
-  },
-  resolve: {
-    alias: {
-      '#api': path.resolve(__dirname, 'src/api/cloud'),
-      '#auth': path.resolve(__dirname, 'src/auth/cloud'),
-    },
-  },
-});
+export function generateAndSaveGitHubState(): string {
+  const state = crypto.randomUUID();
+  sessionStorage.setItem(GITHUB_OAUTH_STATE_KEY, state);
+  return state;
+}
+
+export function validateAndClearGitHubState(state: string): boolean {
+  const saved = sessionStorage.getItem(GITHUB_OAUTH_STATE_KEY);
+  sessionStorage.removeItem(GITHUB_OAUTH_STATE_KEY);
+  return saved !== null && saved === state;
+}

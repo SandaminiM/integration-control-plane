@@ -16,18 +16,14 @@
  * under the License.
  */
 
-import path from 'path';
-import { defineConfig } from 'vitest/config';
+/**
+ * Compile-time assertion that this folder satisfies `src/auth/contract.ts`.
+ * Never imported at runtime; the underscore local is exempt from `noUnusedLocals`.
+ */
 
-export default defineConfig({
-  test: {
-    environment: 'happy-dom',
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'tests/e2e/helpers/*.test.ts'],
-  },
-  resolve: {
-    alias: {
-      '#api': path.resolve(__dirname, 'src/api/cloud'),
-      '#auth': path.resolve(__dirname, 'src/auth/cloud'),
-    },
-  },
-});
+import type { AuthModule } from '../contract';
+import * as cloud from './index';
+
+const _cloud: AuthModule = cloud;
+
+void _cloud;

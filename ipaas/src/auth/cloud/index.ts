@@ -16,18 +16,10 @@
  * under the License.
  */
 
-import path from 'path';
-import { defineConfig } from 'vitest/config';
+/**
+ * Cloud auth. Resolved through `#auth` when PRODUCT=cloud.
+ *
+ * Re-exports the WIP implementation until cloud moves to the Thunder SDK.
+ */
 
-export default defineConfig({
-  test: {
-    environment: 'happy-dom',
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'tests/e2e/helpers/*.test.ts'],
-  },
-  resolve: {
-    alias: {
-      '#api': path.resolve(__dirname, 'src/api/cloud'),
-      '#auth': path.resolve(__dirname, 'src/auth/cloud'),
-    },
-  },
-});
+export * from '../wip';

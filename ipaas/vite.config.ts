@@ -62,6 +62,7 @@ export default defineConfig({
     dedupe: ['react', 'react-dom', 'react/jsx-runtime'],
     alias: {
       '#api': path.resolve(__dirname, `src/api/${product}`),
+      '#auth': path.resolve(__dirname, `src/auth/${product}`),
     },
   },
   build: {
