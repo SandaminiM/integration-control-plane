@@ -142,7 +142,7 @@ Vite resolves `#auth` → `src/auth/cloud/` for `cloud`, and `src/auth/wip/` for
 | ---------------------- | ----------------------------------------------------------------------- |
 | `src/auth/contract.ts` | Types only — the `AuthModule` surface both implementations must satisfy |
 | `src/auth/wip/`        | WSO2 Identity Platform OIDC + STS exchange, and local login (ICP)       |
-| `src/auth/cloud/`      | Cloud (Thunder) auth                                                    |
+| `src/auth/cloud/`      | Thunder SDK (`@thunderid/react`), adapted to the contract               |
 | `src/auth/shared/`     | Non-auth helpers both re-export (redirect URL, GitHub OAuth state)      |
 
 The two implementations share no logic, only the contract. Each folder has a `_check.ts` that asserts its exports against `AuthModule`.
