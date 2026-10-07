@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Accordion, AccordionDetails, AccordionSummary, Box, Button, CircularProgress, FormControl, FormLabel, MenuItem, Select, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Button, CircularProgress, MenuItem, Tooltip, Typography } from '@wso2/oxygen-ui';
 import TextField from '../common/TextField';
 import { ChevronDown, CircleHelp, Pencil } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useRef, useState, type JSX } from 'react';
@@ -205,16 +205,13 @@ export default function DeveloperPortalTab({ apimId, apimInfo, onSave, onCancel,
           <TextField label="Description (Optional)" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline rows={4} size="small" placeholder='e.g. "This API allows you to connect to Salesforce."' />
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <FormControl fullWidth size="small">
-              <FormLabel>Visibility</FormLabel>
-              <Select value={visibility} onChange={(e) => setVisibility(e.target.value as string)}>
-                {VISIBILITY_OPTIONS.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <TextField select label="Visibility" fullWidth size="small" value={visibility} onChange={(e) => setVisibility(e.target.value as string)}>
+              {VISIBILITY_OPTIONS.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </TextField>
             <Tooltip
               title={
                 <Box>

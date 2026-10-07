@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormLabel, MenuItem, Select, Stack } from '@wso2/oxygen-ui';
+import { Alert, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack } from '@wso2/oxygen-ui';
 import TextField from '../common/TextField';
 import { useState, type JSX } from 'react';
 import { useCreateKafkaTopic, useKafkaTopics, useKafkaUserConfigs, useUpdateKafkaTopic } from '../../hooks/usePlatformServices';
@@ -194,14 +194,11 @@ export default function TopicDialog({ brokerId, topic, onClose }: TopicDialogPro
             helperText={getFieldError('retentionBytes', retentionBytes) || getHelperText('retentionBytes')}
           />
 
-          <FormControl size="small" fullWidth>
-            <FormLabel>Cleanup Policy</FormLabel>
-            <Select value={cleanupPolicy} onChange={(e) => setCleanupPolicy(e.target.value as 'delete' | 'compact' | 'compact,delete')}>
-              <MenuItem value="delete">Delete</MenuItem>
-              <MenuItem value="compact">Compact</MenuItem>
-              <MenuItem value="compact,delete">Compact and Delete</MenuItem>
-            </Select>
-          </FormControl>
+          <TextField select label="Cleanup Policy" size="small" fullWidth value={cleanupPolicy} onChange={(e) => setCleanupPolicy(e.target.value as 'delete' | 'compact' | 'compact,delete')}>
+            <MenuItem value="delete">Delete</MenuItem>
+            <MenuItem value="compact">Compact</MenuItem>
+            <MenuItem value="compact,delete">Compact and Delete</MenuItem>
+          </TextField>
         </Stack>
       </DialogContent>
       <DialogActions>

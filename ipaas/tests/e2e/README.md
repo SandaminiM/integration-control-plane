@@ -178,8 +178,16 @@ change mid-run and the later groups would look for a project nobody created.
 Group **08b** then sweeps what other runs left behind: any dated `IPAAS-E2E` project older
 than **two hours** is emptied and deleted. Two hours is deliberately longer than the suite's own
 worst case — the in-cluster Job is capped at two hours — so a slow run never has its project deleted
-from under it. A project this scheme cannot date, including a hand-made `IPAAS-E2E`, is left alone:
-nothing here knows whose it is.
+from under it. A project this scheme cannot date is left alone: nothing here knows whose it is.
+
+The one exception is a project named exactly `IPAAS-E2E`, with no date or suffix. That is the
+fixture name the suite used before runs took dated names, so it is the suite's own leftover, and
+08b can never collect it because it cannot be dated. Group **00** sweeps it at the start of a run:
+it empties the project from its overview, returning there if Delete Project is still disabled, then
+deletes it. Every lookup matches the name exactly, so a dated `IPAAS-E2E-…` project is never
+touched, and a run pointed at `IPAAS-E2E` through `E2E_PROJECT` skips the sweep rather than delete
+its own project. Like 08b, it is housekeeping: a sweep that cannot finish is skipped with the
+reason annotated, not failed.
 
 08b is housekeeping, not a product assertion. Each project is swept on its own, so one that cannot
 be deleted does not cost the rest their turn, and a project already mid-deletion is left to finish.

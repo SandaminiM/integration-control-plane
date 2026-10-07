@@ -17,15 +17,18 @@
  */
 
 import { FormControl, FormLabel, TextField as OxygenTextField, type TextFieldProps } from '@wso2/oxygen-ui';
-import { forwardRef, useId, type JSX } from 'react';
+import { forwardRef, useId, useState, type JSX } from 'react';
 
 /**
  * Oxygen's TextField with its label above the field, in a FormLabel, instead of
  * floating inside the outline. A drop-in replacement: same props, same root box.
+ * With a label, `ref` points to the outer FormControl (label and field); without one, to oxygen's own root.
  */
 const TextField = forwardRef<HTMLDivElement, TextFieldProps>(function TextField(props, ref): JSX.Element {
-  const { label, id: idProp, sx, className, style, fullWidth, margin, required, error, disabled, slotProps, ...rest } = props;
+  const { label, id: idProp, sx, className, style, fullWidth, margin, required, error, disabled, slotProps, onFocus, onBlur, ...rest } = props;
   const generatedId = useId();
+  // The inner field tracks its own focus, so it is lifted to the outer FormControl for the label to colour on focus.
+  const [focused, setFocused] = useState(false);
 
   if (label == null || label === '') return <OxygenTextField ref={ref} {...props} />;
 
@@ -36,11 +39,27 @@ const TextField = forwardRef<HTMLDivElement, TextFieldProps>(function TextField(
 
   return (
     // The layout props stay on the outer box so the field occupies the same space it did with a floating label.
-    <FormControl ref={ref} sx={sx} className={className} style={style} fullWidth={fullWidth} margin={margin} required={required} error={error} disabled={disabled}>
+    <FormControl ref={ref} sx={sx} className={className} style={style} fullWidth={fullWidth} margin={margin} required={required} error={error} disabled={disabled} focused={focused}>
       <FormLabel id={labelId} htmlFor={id}>
         {label}
       </FormLabel>
-      <OxygenTextField {...rest} id={id} fullWidth required={required} error={error} disabled={disabled} slotProps={{ ...slotProps, ...selectSlot }} />
+      <OxygenTextField
+        {...rest}
+        id={id}
+        fullWidth
+        required={required}
+        error={error}
+        disabled={disabled}
+        slotProps={{ ...slotProps, ...selectSlot }}
+        onFocus={(e) => {
+          setFocused(true);
+          onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocused(false);
+          onBlur?.(e);
+        }}
+      />
     </FormControl>
   );
 });

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Button, CircularProgress, FormControl, FormLabel, MenuItem, PageContent, Select, Stack, Typography } from '@wso2/oxygen-ui';
+import { Button, CircularProgress, MenuItem, PageContent, Stack, Typography } from '@wso2/oxygen-ui';
 import TextField from '../common/TextField';
 import { useState, type JSX } from 'react';
 import MarkdownEditorPane from '../MarkdownEditorPane';
@@ -58,16 +58,13 @@ export default function DocFormPage({ view, initialName, initialType, initialOth
 
       <Stack direction="row" gap={2} sx={{ mb: 2 }}>
         <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter document name here" required size="small" sx={{ width: 280, '& .MuiFormLabel-asterisk': { color: 'error.main' } }} />
-        <FormControl size="small" sx={{ width: 220 }}>
-          <FormLabel>Document Type</FormLabel>
-          <Select value={type} onChange={(e) => setType(e.target.value as string)}>
-            {DOC_TYPES.map((t) => (
-              <MenuItem key={t.value} value={t.value}>
-                {t.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <TextField select label="Document Type" size="small" sx={{ width: 220 }} value={type} onChange={(e) => setType(e.target.value as string)}>
+          {DOC_TYPES.map((t) => (
+            <MenuItem key={t.value} value={t.value}>
+              {t.label}
+            </MenuItem>
+          ))}
+        </TextField>
         {type === 'OTHER' && <TextField label="Custom Document Type" value={otherType} onChange={(e) => setOtherType(e.target.value)} placeholder="Enter custom document type here" required size="small" sx={{ width: 260 }} />}
       </Stack>
 

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, PageContent, Stack, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, FormHelperText, MenuItem, PageContent, Stack, Typography } from '@wso2/oxygen-ui';
 import TextField from '../components/common/TextField';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
@@ -29,12 +29,13 @@ import { IS_CLOUD } from '../features';
 import BusyFields from '../components/common/BusyFields';
 import { buildEnvironmentVhost, EnvironmentValidationError } from '../utils/environment';
 import { resourceUrl, type OrgScope } from '../nav';
+import { CRITICAL_ENVIRONMENT_HELP, CRITICAL_ENVIRONMENT_LABEL } from '../constants/environment';
 
 export default function CreateEnvironment(scope: OrgScope): JSX.Element {
   const navigate = useAppNavigate();
   const orgUuid = useOrgUuid();
   const listUrl = resourceUrl(scope, 'environments');
-  const { data: dataPlanes = [] } = useDataPlanes();
+  const { data: dataPlanes = [], isLoading: loadingDataPlanes, isError: dataPlanesError, refetch: refetchDataPlanes } = useDataPlanes();
   const create = useAddEnvironment();
 
   const [name, setName] = useState('My-New-Environment');
@@ -45,7 +46,7 @@ export default function CreateEnvironment(scope: OrgScope): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [errorSeverity, setErrorSeverity] = useState<'error' | 'warning'>('error');
 
-  // No picker: an org has one data plane in practice, so the first one is used.
+  // Defaults to the first data plane; the picker appears only when there is more than one to choose from.
   useEffect(() => {
     if (dataPlanes.length) setDataplaneId((prev) => (prev && dataPlanes.some((d) => d.id === prev) ? prev : dataPlanes[0].id));
   }, [dataPlanes]);
@@ -112,6 +113,27 @@ export default function CreateEnvironment(scope: OrgScope): JSX.Element {
       <BusyFields busy={create.isPending}>
         <Stack gap={3} sx={{ maxWidth: 600, mb: 4 }}>
           <TextField label="Name" required placeholder="e.g., staging" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
+          {loadingDataPlanes ? (
+            <CircularProgress size={20} />
+          ) : dataPlanesError ? (
+            <Alert
+              severity="error"
+              action={
+                <Button color="inherit" size="small" onClick={() => refetchDataPlanes()}>
+                  Retry
+                </Button>
+              }>
+              Failed to load data planes.
+            </Alert>
+          ) : dataPlanes.length > 1 ? (
+            <TextField select label="Data Plane" required value={dataplaneId} onChange={(e) => setDataplaneId(e.target.value)} fullWidth>
+              {dataPlanes.map((dp) => (
+                <MenuItem key={dp.id} value={dp.id}>
+                  {dp.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          ) : null}
           {IS_CLOUD ? (
             <TextField label="Description" placeholder="What this environment is for" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline minRows={2} />
           ) : (
@@ -125,10 +147,8 @@ export default function CreateEnvironment(scope: OrgScope): JSX.Element {
             </Box>
           )}
           <Box>
-            <Alert severity="info" sx={{ mt: 1 }}>
-              Mark production environments as critical. Integrations here are run rather than tested, and keys generated for testing are Production keys.
-            </Alert>
-            <FormControlLabel control={<Checkbox checked={critical} onChange={(_, v) => setCritical(v)} />} label="Mark as Critical Environment" />
+            <FormControlLabel control={<Checkbox checked={critical} onChange={(_, v) => setCritical(v)} />} label={CRITICAL_ENVIRONMENT_LABEL} />
+            <FormHelperText sx={{ mt: 0 }}>{CRITICAL_ENVIRONMENT_HELP}</FormHelperText>
           </Box>
         </Stack>
       </BusyFields>
