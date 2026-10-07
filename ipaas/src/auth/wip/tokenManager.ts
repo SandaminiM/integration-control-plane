@@ -16,15 +16,12 @@
  * under the License.
  */
 
-import { refreshTokenApiUrl, revokeTokenApiUrl } from '../config/runtimeConfig';
-import { IS_CLOUD } from '../features';
+import { refreshTokenApiUrl, revokeTokenApiUrl } from '../../config/runtimeConfig';
 
 const ACCESS_TOKEN_KEY = 'auth_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
-const ID_TOKEN_KEY = 'id_token';
 const TOKEN_EXPIRES_AT_KEY = 'token_expires_at';
 const REFRESH_TOKEN_EXPIRES_AT_KEY = 'refresh_token_expires_at';
-const REDIRECT_URL_KEY = 'redirect_url';
 const OIDC_STATE_KEY = 'oidc_state';
 const OIDC_AUTH_MODE_KEY = 'auth_mode';
 const OIDC_ORG_HANDLE_KEY = 'org_handle';
@@ -84,20 +81,10 @@ export function getRefreshToken(): string | null {
   return localStorage.getItem(REFRESH_TOKEN_KEY);
 }
 
-// Kept only as the id_token_hint for RP-initiated logout (cloud).
-export function saveIdToken(idToken: string): void {
-  localStorage.setItem(ID_TOKEN_KEY, idToken);
-}
-
-export function getIdToken(): string | null {
-  return localStorage.getItem(ID_TOKEN_KEY);
-}
-
 export function clearTokens(): void {
   asgardeoTokenMemory = null;
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
-  localStorage.removeItem(ID_TOKEN_KEY);
   localStorage.removeItem(TOKEN_EXPIRES_AT_KEY);
   localStorage.removeItem(REFRESH_TOKEN_EXPIRES_AT_KEY);
 }
@@ -451,24 +438,6 @@ export async function revokeToken(): Promise<void> {
   }
 }
 
-export function saveRedirectUrl(url: string): void {
-  // Never persist a redirect to the synthetic 'default' org — it isn't real and
-  // would loop back there on every subsequent login.
-  try {
-    const pathname = new URL(url).pathname;
-    if (pathname.startsWith('/organizations/default/') || pathname === '/organizations/default') return;
-  } catch {
-    /* ignore malformed URLs */
-  }
-  localStorage.setItem(REDIRECT_URL_KEY, url);
-}
-
-export function getAndClearRedirectUrl(): string | null {
-  const url = localStorage.getItem(REDIRECT_URL_KEY);
-  localStorage.removeItem(REDIRECT_URL_KEY);
-  return url;
-}
-
 export function generateAndSaveOIDCState(): string {
   const state = crypto.randomUUID();
   localStorage.setItem(OIDC_STATE_KEY, state);
@@ -479,21 +448,6 @@ export function validateAndClearOIDCState(state: string): boolean {
   const savedState = localStorage.getItem(OIDC_STATE_KEY);
   localStorage.removeItem(OIDC_STATE_KEY);
   return savedState === state;
-}
-
-// GitHub OAuth CSRF state — sessionStorage so it's scoped to the initiating tab
-const GITHUB_OAUTH_STATE_KEY = 'github_oauth_state';
-
-export function generateAndSaveGitHubState(): string {
-  const state = crypto.randomUUID();
-  sessionStorage.setItem(GITHUB_OAUTH_STATE_KEY, state);
-  return state;
-}
-
-export function validateAndClearGitHubState(state: string): boolean {
-  const saved = sessionStorage.getItem(GITHUB_OAUTH_STATE_KEY);
-  sessionStorage.removeItem(GITHUB_OAUTH_STATE_KEY);
-  return saved !== null && saved === state;
 }
 
 // ---------------------------------------------------------------------------
@@ -532,10 +486,7 @@ export function getOrgUuidFromToken(): string | null {
   if (!token) return null;
   try {
     const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    // Choreo issues the org UUID under `organization.uuid`. Cloud's Thunder IdP
-    // issues it as the `ouId` claim instead, so the cloud build falls back to it.
-    const orgUuid = (payload.organization?.uuid as string) ?? null;
-    return IS_CLOUD ? (orgUuid ?? (payload.ouId as string) ?? null) : orgUuid;
+    return (payload.organization?.uuid as string) ?? null;
   } catch {
     return null;
   }
