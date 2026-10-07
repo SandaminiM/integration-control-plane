@@ -47,8 +47,17 @@ export async function waitForApiConfig(page: Page): Promise<void> {
  * rather than throwing over a test's own failure.
  */
 export async function readSessionToken(page: Page): Promise<string> {
-  const clientId = await page.evaluate(() => (window as unknown as { API_CONFIG: { asgardeoClientId: string } }).API_CONFIG.asgardeoClientId);
-  const raw = await page.evaluate((key) => sessionStorage.getItem(key), sdkSessionKey(clientId));
+  // Off the console (the IdP after a rejected session, about:blank) there is no config to name
+  // the session by, and on about:blank reading storage itself throws; both mean "no session".
+  const clientId = await page.evaluate(() => (window as unknown as { API_CONFIG?: { asgardeoClientId?: string } }).API_CONFIG?.asgardeoClientId);
+  if (!clientId) return '';
+  const raw = await page.evaluate((key) => {
+    try {
+      return sessionStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }, sdkSessionKey(clientId));
   return raw ? ((JSON.parse(raw) as { access_token?: string }).access_token ?? '') : '';
 }
 
