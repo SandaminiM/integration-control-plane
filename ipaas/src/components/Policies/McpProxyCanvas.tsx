@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Box, IconButton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Box, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { Check, CodeXml, Copy, Settings, ShieldCheck, SlidersHorizontal, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { ApimApiOperation } from '../../types/apim';

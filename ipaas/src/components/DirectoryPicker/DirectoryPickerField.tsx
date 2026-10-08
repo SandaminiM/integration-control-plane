@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { CircularProgress, IconButton, InputAdornment, TextField, Tooltip } from '@wso2/oxygen-ui';
+import { CircularProgress, IconButton, InputAdornment, Tooltip } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { Folder, Edit } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import type { RepoTreeNode } from '../../types/repository';

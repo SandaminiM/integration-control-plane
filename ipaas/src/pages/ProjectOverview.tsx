@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Avatar, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, PageContent, Skeleton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Avatar, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, PageContent, Skeleton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import TextField from '../components/common/TextField';
 import { useEffect, useRef, useState, type JSX } from 'react';
 import { useAppNavigate } from '../hooks/useAppNavigate';
 import Authorized from '../components/Authorized';
@@ -86,7 +87,9 @@ function ProjectOverviewForm({ org, project }: { org: string; project: Project }
       )}
 
       <Stack component="header" direction="row" alignItems="center" gap={2} sx={{ my: 5 }}>
-        <Avatar sx={{ width: 56, height: 56, fontSize: 24, bgcolor: 'text.primary', color: 'background.paper' }}>{project.name?.[0]?.toUpperCase() ?? 'P'}</Avatar>
+        <Avatar variant="rounded" sx={{ width: 58, height: 58, borderRadius: 1, fontSize: 24, bgcolor: 'primary.main', color: 'primary.contrastText', flexShrink: 0 }}>
+          {project.name?.[0]?.toUpperCase() ?? 'P'}
+        </Avatar>
         <Box>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             {project.name}

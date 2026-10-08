@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { IconButton, MenuItem, Stack, TextField, Tooltip } from '@wso2/oxygen-ui';
+import { IconButton, MenuItem, Stack, Tooltip } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { RefreshCw } from '@wso2/oxygen-ui-icons-react';
 import type { JSX, ReactNode } from 'react';
 import { METRICS_RANGES, METRICS_REFRESH_INTERVALS, type MetricsRange } from '../../types/observability';

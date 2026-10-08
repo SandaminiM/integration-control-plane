@@ -17,7 +17,8 @@
  */
 
 import { useEffect, useMemo, useState, type Dispatch, type MouseEvent, type SetStateAction } from 'react';
-import { Box, Button, Chip, IconButton, InputAdornment, MenuItem, Popover, Stack, Switch, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, Chip, IconButton, InputAdornment, MenuItem, Popover, Stack, Switch, Tooltip, Typography } from '@wso2/oxygen-ui';
+import TextField from '../../common/TextField';
 import { Eye, EyeOff, Link2, Link2Off, Lock, Pencil, Unlock } from '@wso2/oxygen-ui-icons-react';
 import type { BaseType, JSONSchema } from '../../../types/schema';
 import { type LinkingInfo, isNumberType, typeDisplayName } from '../schemaUtils';

@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Avatar, Box, Button, CircularProgress, IconButton, ListingTable, PageContent, PageTitle, Stack, TablePagination, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Avatar, Box, Button, CircularProgress, IconButton, ListingTable, PageContent, PageTitle, Stack, TablePagination, Tooltip, Typography } from '@wso2/oxygen-ui';
+import TextField from '../components/common/TextField';
 import { Clock, Layers, Plus, Trash2, AlertTriangle } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useEffect, type JSX } from 'react';
 import { useLocation } from 'react-router';
@@ -224,12 +225,12 @@ export default function Environments(scope: OrgScope | ProjectScope): JSX.Elemen
                         </Stack>
                       </ListingTable.Cell>
                       <Authorized permissions={Permissions.ENVIRONMENT_MANAGE} fallback={<ListingTable.Cell align="right" />}>
-                          <ListingTable.Cell align="right">
-                            <Tooltip title="Delete">
-                              <IconButton size="small" color="error" aria-label={`Delete ${t.name}`} onClick={() => setDeleting(t)}>
-                                <Trash2 size={16} />
-                              </IconButton>
-                            </Tooltip>
+                        <ListingTable.Cell align="right">
+                          <Tooltip title="Delete">
+                            <IconButton size="small" color="error" aria-label={`Delete ${t.name}`} onClick={() => setDeleting(t)}>
+                              <Trash2 size={16} />
+                            </IconButton>
+                          </Tooltip>
                         </ListingTable.Cell>
                       </Authorized>
                     </ListingTable.Row>

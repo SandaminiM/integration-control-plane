@@ -46,11 +46,11 @@ import {
   Switch,
   Tab,
   Tabs,
-  TextField,
   Tooltip,
   Typography,
   type TabProps,
 } from '@wso2/oxygen-ui';
+import TextField from './common/TextField';
 import { Settings, Copy, Check, Play, RefreshCw, ShieldAlert, CalendarClock, ChevronDown, ChevronUp, X, Clock } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';

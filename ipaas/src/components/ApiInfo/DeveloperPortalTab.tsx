@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Accordion, AccordionDetails, AccordionSummary, Box, Button, CircularProgress, FormControl, InputLabel, MenuItem, Select, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Button, CircularProgress, MenuItem, Tooltip, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { ChevronDown, CircleHelp, Pencil } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useRef, useState, type JSX } from 'react';
 import type { ApimApiInfo } from '../../types/apim';
@@ -204,16 +205,13 @@ export default function DeveloperPortalTab({ apimId, apimInfo, onSave, onCancel,
           <TextField label="Description (Optional)" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline rows={4} size="small" placeholder='e.g. "This API allows you to connect to Salesforce."' />
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Visibility</InputLabel>
-              <Select label="Visibility" value={visibility} onChange={(e) => setVisibility(e.target.value as string)}>
-                {VISIBILITY_OPTIONS.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <TextField select label="Visibility" fullWidth size="small" value={visibility} onChange={(e) => setVisibility(e.target.value as string)}>
+              {VISIBILITY_OPTIONS.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </TextField>
             <Tooltip
               title={
                 <Box>
@@ -247,25 +245,8 @@ export default function DeveloperPortalTab({ apimId, apimInfo, onSave, onCancel,
               Business Owner
             </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-              <TextField
-                label="Name (Optional)"
-                value={bizInfo.businessOwner}
-                onChange={(e) => setBizInfo((prev) => ({ ...prev, businessOwner: e.target.value }))}
-                size="small"
-                fullWidth
-                placeholder='e.g. "John Doe"'
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-              <TextField
-                label="Email (Optional)"
-                type="email"
-                value={bizInfo.businessOwnerEmail}
-                onChange={(e) => setBizInfo((prev) => ({ ...prev, businessOwnerEmail: e.target.value }))}
-                size="small"
-                fullWidth
-                placeholder='e.g. "john@acme.com"'
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
+              <TextField label="Name (Optional)" value={bizInfo.businessOwner} onChange={(e) => setBizInfo((prev) => ({ ...prev, businessOwner: e.target.value }))} size="small" fullWidth placeholder='e.g. "John Doe"' />
+              <TextField label="Email (Optional)" type="email" value={bizInfo.businessOwnerEmail} onChange={(e) => setBizInfo((prev) => ({ ...prev, businessOwnerEmail: e.target.value }))} size="small" fullWidth placeholder='e.g. "john@acme.com"' />
             </Box>
           </Box>
 
@@ -275,25 +256,8 @@ export default function DeveloperPortalTab({ apimId, apimInfo, onSave, onCancel,
               Technical Owner
             </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-              <TextField
-                label="Name (Optional)"
-                value={bizInfo.technicalOwner}
-                onChange={(e) => setBizInfo((prev) => ({ ...prev, technicalOwner: e.target.value }))}
-                size="small"
-                fullWidth
-                placeholder='e.g. "Jane Doe"'
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-              <TextField
-                label="Email (Optional)"
-                type="email"
-                value={bizInfo.technicalOwnerEmail}
-                onChange={(e) => setBizInfo((prev) => ({ ...prev, technicalOwnerEmail: e.target.value }))}
-                size="small"
-                fullWidth
-                placeholder='e.g. "jane@acme.com"'
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
+              <TextField label="Name (Optional)" value={bizInfo.technicalOwner} onChange={(e) => setBizInfo((prev) => ({ ...prev, technicalOwner: e.target.value }))} size="small" fullWidth placeholder='e.g. "Jane Doe"' />
+              <TextField label="Email (Optional)" type="email" value={bizInfo.technicalOwnerEmail} onChange={(e) => setBizInfo((prev) => ({ ...prev, technicalOwnerEmail: e.target.value }))} size="small" fullWidth placeholder='e.g. "jane@acme.com"' />
             </Box>
           </Box>
         </AccordionDetails>

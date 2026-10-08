@@ -66,13 +66,3 @@ export const PILL_SELECT_SX = {
   '& .MuiOutlinedInput-notchedOutline': { borderRadius: 5 },
   '& .MuiSelect-select': { py: 0.5, px: 1.5 },
 } as const;
-
-/**
- * Cancels oxygen's `top: -7px` nudge on a resting select label. That correction is
- * calibrated for size="medium" (MUI rests those at translate(14px, 16px) versus
- * small's 9px), so on a small select it double-corrects and the label floats above
- * centre. Apply to any small Select/TextField that carries a label.
- */
-export const SMALL_SELECT_LABEL_SX = {
-  '& .MuiInputLabel-root:not(.MuiInputLabel-shrink)': { top: 0 },
-} as const;

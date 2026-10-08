@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Autocomplete, Box, Button, CircularProgress, Tab, Tabs, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Autocomplete, Box, Button, CircularProgress, Tab, Tabs, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { Plus } from '@wso2/oxygen-ui-icons-react';
 import { type JSX, useEffect, useMemo, useState } from 'react';
 import type { CloudDataPlane, Environment } from '../../types/environment';

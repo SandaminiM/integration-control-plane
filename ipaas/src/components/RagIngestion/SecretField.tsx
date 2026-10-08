@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { IconButton, InputAdornment, TextField } from '@wso2/oxygen-ui';
+import { IconButton, InputAdornment } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { Eye, EyeOff } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { REQUIRED_FIELD_SX } from '../../constants/styles';

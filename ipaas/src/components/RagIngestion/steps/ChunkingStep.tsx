@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { MenuItem, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { MenuItem, Stack, Typography } from '@wso2/oxygen-ui';
+import TextField from '../../common/TextField';
 import { type JSX } from 'react';
 import { CHUNKING_STRATEGIES } from '../../../constants/ragIngestion';
 import { fieldStackSx, stepHeadingSx } from '../styles';

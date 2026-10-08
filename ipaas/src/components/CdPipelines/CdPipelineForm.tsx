@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, FormControlLabel, PageContent, PageTitle, Stack, Switch, TextField } from '@wso2/oxygen-ui';
+import { Alert, Button, CircularProgress, FormControlLabel, PageContent, PageTitle, Stack, Switch } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { IS_CLOUD } from '../../features';
 import BusyFields from '../common/BusyFields';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';

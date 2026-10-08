@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Grid, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
+import { Grid, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@wso2/oxygen-ui';
+import TextField from '../../common/TextField';
 import { type JSX } from 'react';
 import { blankDatasource, DATASOURCES, GDRIVE_AUTH_TYPES, ragLogoUrl } from '../../../constants/ragIngestion';
 import { REQUIRED_FIELD_SX } from '../../../constants/styles';

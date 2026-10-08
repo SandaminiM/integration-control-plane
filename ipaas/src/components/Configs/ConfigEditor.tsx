@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, IconButton, Paper, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, IconButton, Paper, Stack, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { ArrowLeft, Trash2, Upload } from '@wso2/oxygen-ui-icons-react';
 import BusyFields from '../common/BusyFields';
 import { useEffect, useRef, useState, type JSX } from 'react';

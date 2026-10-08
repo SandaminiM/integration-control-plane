@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Box, Button, Card, Chip, CircularProgress, Divider, IconButton, InputAdornment, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Box, Button, Card, Chip, CircularProgress, Divider, IconButton, InputAdornment, Tooltip, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { Clock, Edit, Eye } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState, type JSX } from 'react';
 import type { ApimApiInfo } from '../../types/apim';

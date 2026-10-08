@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, FormGroup, IconButton, ListingTable, MenuItem, Select, Slider, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, FormGroup, IconButton, ListingTable, MenuItem, Select, Slider, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { ArrowLeft, Info, Pencil, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useRef, useState, type JSX } from 'react';
 import { useCreateVolume, useCreateVolumeMount, useDeleteVolumeMount, useStorageClasses, useUpdateVolumeMount } from '../../hooks/useStorage';

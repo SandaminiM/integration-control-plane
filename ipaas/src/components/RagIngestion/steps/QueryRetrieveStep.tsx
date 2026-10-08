@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Box, FormControlLabel, ListingTable, Stack, Switch, TextField, Typography } from '@wso2/oxygen-ui';
+import { Box, FormControlLabel, ListingTable, Stack, Switch, Typography } from '@wso2/oxygen-ui';
+import TextField from '../../common/TextField';
 import { useEffect, useState, type JSX } from 'react';
 import { MAX_RETRIEVE_CHUNKS } from '../../../constants/ragIngestion';
 import { REQUIRED_FIELD_SX } from '../../../constants/styles';

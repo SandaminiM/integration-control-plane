@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Autocomplete, Avatar, Box, Button, Chip, CircularProgress, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Autocomplete, Avatar, Box, Button, Chip, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
+import TextField from '../../common/TextField';
 import { ChevronDown, Database, Plus } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useDbCredentials, useServerDatabases } from '../../../hooks/usePlatformServices';

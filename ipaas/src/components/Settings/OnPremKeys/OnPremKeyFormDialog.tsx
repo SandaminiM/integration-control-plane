@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@wso2/oxygen-ui';
+import { Alert, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle } from '@wso2/oxygen-ui';
+import TextField from '../../common/TextField';
 import { useState, type JSX } from 'react';
 
 interface OnPremKeyFormDialogProps {

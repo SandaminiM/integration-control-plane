@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Autocomplete, Checkbox, Chip, Collapse, FormControlLabel, Stack, Switch, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Autocomplete, Checkbox, Chip, Collapse, FormControlLabel, Stack, Switch, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { Info } from '@wso2/oxygen-ui-icons-react';
 import type { ReactNode } from 'react';
 import { CORS_METHOD_OPTIONS, DEFAULT_CORS_HEADERS } from '../../constants/policy';
