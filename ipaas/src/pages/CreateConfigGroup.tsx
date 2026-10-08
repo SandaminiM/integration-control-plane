@@ -20,10 +20,9 @@ import { Button, PageContent, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { isConfigGroupsEnabled, useCreateConfigGroup } from '../hooks/useConfigGroups';
+import { useCreateConfigGroup } from '../hooks/useConfigGroups';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { buildCreatePayload } from '../utils/configGroups';
-import ComingSoon from './ComingSoon';
 import ConfigGroupForm from '../components/ConfigGroups/ConfigGroupForm';
 import { HttpError } from '../types/http';
 import type { ConfigGroupSubmitValues } from '../types/configGroups';
@@ -35,10 +34,6 @@ export default function CreateConfigGroup(scope: OrgScope): JSX.Element {
   const base = `/organizations/${scope.org}/admin/config-groups`;
   const create = useCreateConfigGroup();
   const [error, setError] = useState<string | null>(null);
-
-  if (!isConfigGroupsEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Config Groups management is currently under development." />;
-  }
 
   const onSubmit = (values: ConfigGroupSubmitValues) => {
     setError(null);

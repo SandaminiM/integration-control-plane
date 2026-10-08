@@ -21,10 +21,9 @@ import { ArrowLeft, Store } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useParams } from 'react-router';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { isGenaiServicesEnabled, useConnectionConfig, useGenaiService, useSetMarketplaceStatus } from '../hooks/useGenaiServices';
+import { useConnectionConfig, useGenaiService, useSetMarketplaceStatus } from '../hooks/useGenaiServices';
 import { GENAI_LOGO_BASE, GENAI_TEMPLATE_TYPE, marketplaceStatusLabel } from '../constants/genaiServices';
 import { genaiServicesBase, inferProviderLogo } from '../utils/genaiServices';
-import ComingSoon from './ComingSoon';
 import GeneralDetailsTab from '../components/ServiceCatalog/detail/GeneralDetailsTab';
 import ServiceDefinitionTab from '../components/ServiceCatalog/detail/ServiceDefinitionTab';
 import EndpointsTab from '../components/ServiceCatalog/detail/EndpointsTab';
@@ -46,10 +45,6 @@ export default function GenAIServiceDetail(scope: OrgScope | ProjectScope): JSX.
   const setStatus = useSetMarketplaceStatus(serviceId);
   const [tab, setTab] = useState<DetailTab>('general');
   const [error, setError] = useState<string | null>(null);
-
-  if (!isGenaiServicesEnabled()) {
-    return <ComingSoon title="Coming Soon" description="GenAI Services management is currently under development." />;
-  }
 
   const available = service ? marketplaceStatusLabel(service.status) === 'Available' : false;
   const hasEndpoints = Object.keys(config?.configs ?? {}).length > 0;

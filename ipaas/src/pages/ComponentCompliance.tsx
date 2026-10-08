@@ -19,7 +19,7 @@
 import { Alert, Box, CircularProgress, Grid, MenuItem, PageContent, PageTitle, Select } from '@wso2/oxygen-ui';
 import { useMemo, type JSX } from 'react';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { isGovernanceEnabled, useEndpointRuleAdherence, useEndpointPolicyAdherence, useEndpointRulesetAdherence, usePolicies } from '../hooks/useGovernance';
+import { useEndpointRuleAdherence, useEndpointPolicyAdherence, useEndpointRulesetAdherence, usePolicies } from '../hooks/useGovernance';
 import { useProjectId } from '../hooks/useProjects';
 import { useComponentByHandler } from '../hooks/useComponents';
 import { useEndpointSelection } from '../hooks/useEndpointSelection';
@@ -76,10 +76,6 @@ export default function ComponentCompliance(scope: ComponentScope): JSX.Element 
       })),
     [policyAdherence.data],
   );
-
-  if (!isGovernanceEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Compliance insights are currently under development." />;
-  }
 
   // API compliance evaluates a published API definition; automations expose none.
   if (identity?.type === 'automation') {

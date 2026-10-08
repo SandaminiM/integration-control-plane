@@ -21,10 +21,9 @@ import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useParams } from 'react-router';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { isConfigGroupsEnabled, useConfigGroup, useUpdateConfigGroup } from '../hooks/useConfigGroups';
+import { useConfigGroup, useUpdateConfigGroup } from '../hooks/useConfigGroups';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { buildEditPayload, configGroupToFormValues } from '../utils/configGroups';
-import ComingSoon from './ComingSoon';
 import ConfigGroupForm from '../components/ConfigGroups/ConfigGroupForm';
 import ConfigGroupUsageView from '../components/ConfigGroups/ConfigGroupUsageView';
 import type { ConfigGroupSubmitValues } from '../types/configGroups';
@@ -41,10 +40,6 @@ export default function EditConfigGroup(scope: OrgScope): JSX.Element {
   const [tab, setTab] = useState<'config' | 'usage'>('config');
 
   const initial = useMemo(() => (group ? configGroupToFormValues(group) : undefined), [group]);
-
-  if (!isConfigGroupsEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Config Groups management is currently under development." />;
-  }
 
   const onSubmit = (values: ConfigGroupSubmitValues) => {
     setError(null);

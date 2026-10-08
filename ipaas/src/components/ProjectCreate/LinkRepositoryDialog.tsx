@@ -39,7 +39,7 @@ import GitHubAuthArea from '../Import/GitHubAuthArea';
 /** `null` = provider not chosen yet; otherwise a credential provider, GitHub, or a public URL. */
 type LinkProvider = GitProvider | 'public' | null;
 
-const CREDENTIAL_PROVIDERS = [GitProvider.BITBUCKET_CLOUD, GitProvider.GITLAB_SELF_MANAGED];
+const CREDENTIAL_PROVIDERS: GitProvider[] = [GitProvider.BITBUCKET_CLOUD, GitProvider.GITLAB_SELF_MANAGED];
 
 const PROVIDER_CARDS: { key: LinkProvider; label: string; icon: JSX.Element }[] = [
   { key: GitProvider.GITHUB, label: 'Authorize with GitHub', icon: <GitHub size={26} /> },

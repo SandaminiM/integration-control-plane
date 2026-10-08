@@ -17,7 +17,7 @@
  */
 
 /**
- * WIP auth (also used by ICP): WSO2 Identity Platform OIDC + STS token
+ * WIP auth: WSO2 Identity Platform OIDC + STS token
  * exchange, and local username/password login. Resolved through `#auth`.
  */
 

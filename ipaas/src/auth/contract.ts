@@ -19,8 +19,8 @@
 /**
  * Auth contract — everything app code may import from `#auth`.
  *
- * Vite resolves `#auth` per product: `cloud` → `auth/cloud/`, `wip` and `icp`
- * → `auth/wip/`. Each folder has a `_check.ts` that asserts its exports satisfy
+ * Vite resolves `#auth` per product: `cloud` → `auth/cloud/`, `wip` →
+ * `auth/wip/`. Each folder has a `_check.ts` that asserts its exports satisfy
  * {@link AuthModule}, so drift between the two becomes a TypeScript error.
  *
  * Types only. The two implementations share no logic — only this shape. The

@@ -20,8 +20,7 @@ import { Alert, Button, Divider, Grid, PageContent, PageTitle, Skeleton, Stack, 
 import { Plus } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { isGovernanceEnabled, usePolicies, useRulesets, useDocuments, useDeletePolicy, useDeleteRuleset, useDeleteDocument } from '../hooks/useGovernance';
-import ComingSoon from './ComingSoon';
+import { usePolicies, useRulesets, useDocuments, useDeletePolicy, useDeleteRuleset, useDeleteDocument } from '../hooks/useGovernance';
 import AddPolicyDialog from '../components/Governance/AddPolicyDialog';
 import DeleteGovernanceDialog from '../components/Governance/DeleteGovernanceDialog';
 import GovernanceCard, { GOVERNANCE_CARD_HEIGHT } from '../components/Governance/GovernanceCard';
@@ -92,10 +91,6 @@ export default function OrgGovernance(scope: OrgScope): JSX.Element {
     if (!catalogQuery) return documents;
     return documents.filter((item) => [item.name, item.description].some((f) => (f ?? '').toLowerCase().includes(catalogQuery)));
   }, [documents, catalogQuery]);
-
-  if (!isGovernanceEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Governance management is currently under development." />;
-  }
 
   const handleAddPolicy = () => {
     setAddPolicyOpen(true);

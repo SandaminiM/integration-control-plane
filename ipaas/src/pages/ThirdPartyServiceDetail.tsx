@@ -22,10 +22,8 @@ import { useState, type JSX } from 'react';
 import { useParams } from 'react-router';
 import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useConnectionConfig, useGenaiService, useSetMarketplaceStatus } from '../hooks/useGenaiServices';
-import { isThirdPartyServicesEnabled } from '../hooks/useThirdPartyServices';
 import { marketplaceStatusLabel } from '../constants/genaiServices';
 import { thirdPartyServicesBase } from '../utils/thirdPartyServices';
-import ComingSoon from './ComingSoon';
 import GeneralDetailsTab from '../components/ServiceCatalog/detail/GeneralDetailsTab';
 import ServiceDefinitionTab from '../components/ServiceCatalog/detail/ServiceDefinitionTab';
 import EndpointsTab from '../components/ServiceCatalog/detail/EndpointsTab';
@@ -46,10 +44,6 @@ export default function ThirdPartyServiceDetail(scope: OrgScope | ProjectScope):
   const setStatus = useSetMarketplaceStatus(serviceId);
   const [tab, setTab] = useState<DetailTab>('general');
   const [error, setError] = useState<string | null>(null);
-
-  if (!isThirdPartyServicesEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Third Party Services management is currently under development." />;
-  }
 
   const available = service ? marketplaceStatusLabel(service.status) === 'Available' : false;
   const hasEndpoints = Object.keys(config?.configs ?? {}).length > 0;

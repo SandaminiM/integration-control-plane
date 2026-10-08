@@ -22,8 +22,7 @@ import { ArrowLeft, Eye, FileText, Pencil, Trash2, Upload } from '@wso2/oxygen-u
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useParams } from 'react-router';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { isGovernanceEnabled, useCreateRuleset, useRuleset, useRulesetContent, useRulesets, useUpdateRuleset } from '../hooks/useGovernance';
-import ComingSoon from './ComingSoon';
+import { useCreateRuleset, useRuleset, useRulesetContent, useRulesets, useUpdateRuleset } from '../hooks/useGovernance';
 import FieldLabel from '../components/Governance/FieldLabel';
 import GovernanceFormSkeleton from '../components/Governance/GovernanceFormSkeleton';
 import RulesetEditor from '../components/Governance/RulesetEditor';
@@ -106,10 +105,6 @@ export default function CreateRuleset(scope: OrgScope): JSX.Element {
   const rulesets = useMemo(() => rulesetListData?.list ?? [], [rulesetListData]);
   const isNameDuplicate = useMemo(() => rulesets.some((r) => r.name === name && r.id !== currentRuleset?.id), [rulesets, name, currentRuleset]);
   const isDocLinkValid = !docLink || urlRegex.test(docLink.trim());
-
-  if (!isGovernanceEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Governance management is currently under development." />;
-  }
 
   const goBack = () => navigate(orgGovernanceUrl(scope.org));
 

@@ -19,14 +19,13 @@
 import { Box, CircularProgress, Grid, PageContent, PageTitle } from '@wso2/oxygen-ui';
 import { useMemo, type JSX } from 'react';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { isGovernanceEnabled, useComponentCompliance, useProjectPolicyAdherence } from '../hooks/useGovernance';
+import { useComponentCompliance, useProjectPolicyAdherence } from '../hooks/useGovernance';
 import { useProjectId } from '../hooks/useProjects';
 import { useComponents } from '../hooks/useComponents';
 import { componentComplianceUrl, orgGovernancePolicyEditorUrl, orgGovernanceRulesetUrl } from '../paths';
 import type { ProjectScope } from '../nav';
 import type { ComplianceRow } from '../types/compliance';
 import { adherenceEntryToRow, adherenceSlices, buildPolicyTypeMap, complianceEntryToRow, complianceSlices } from '../utils/compliance';
-import ComingSoon from './ComingSoon';
 import CompliancePie from '../components/Compliance/CompliancePie';
 import ExpandableComplianceTable from '../components/Compliance/ExpandableComplianceTable';
 
@@ -67,10 +66,6 @@ export default function ProjectCompliance(scope: ProjectScope): JSX.Element {
       ),
     [adherence.data, componentMap],
   );
-
-  if (!isGovernanceEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Compliance insights are currently under development." />;
-  }
 
   if (loadingProject) {
     return (
