@@ -19,7 +19,9 @@
 import type { InsightsEnvironment, ComponentInsights, ProjectInsightsRaw, InsightsApiRef, InsightsAutomationRef, InsightsRange, OrgInsightsRaw, SlowestApiRow, ApiInsightsRaw, AutomationInsightsRaw } from '../../types/insights';
 
 // TODO: implement using cloud APIs
-const ni = (name: string): never => {
+const ni = (name: string): Promise<never> => Promise.reject(new Error(`[cloud] insights.${name}: not implemented`));
+// Synchronous stubs can't reject, so they throw.
+const niSync = (name: string): never => {
   throw new Error(`[cloud] insights.${name}: not implemented`);
 };
 
@@ -80,7 +82,7 @@ export const fetchErrorsByStatusCode = (
 ): Promise<{ proxy: { statusCode: string; count: number }[]; target: { statusCode: string; count: number }[] }> => ni('fetchErrorsByStatusCode');
 export const fetchErrorsDetails = (_queryApiUrl: string, _dataFilter: Record<string, unknown>, _apiId: string, _apiAliases: string[], _time: { from: string; to: string }): Promise<{ applicationName: string; reason: string; count: number }[]> =>
   ni('fetchErrorsDetails');
-export const apiRangeToTimeFilter = (_range: InsightsRange): { from: string; to: string; labelGranularity: 'hour' | 'day' | 'week'; queryGranularity: string } => ni('apiRangeToTimeFilter');
+export const apiRangeToTimeFilter = (_range: InsightsRange): { from: string; to: string; labelGranularity: 'hour' | 'day' | 'week'; queryGranularity: string } => niSync('apiRangeToTimeFilter');
 export const fetchApiInsights = (_orgUuid: string, _projectId: string, _insightsEnv: InsightsEnvironment, _apiRef: InsightsApiRef, _range: InsightsRange, _tab: 'overview' | 'traffic' | 'latency' | 'errors', _queryApiUrl: string): Promise<ApiInsightsRaw> =>
   ni('fetchApiInsights');
 export const fetchAutomationInsights = (_orgUuid: string, _projectId: string, _insightsEnv: InsightsEnvironment, _componentId: string, _range: InsightsRange, _queryApiUrl: string): Promise<AutomationInsightsRaw> => ni('fetchAutomationInsights');

@@ -29,7 +29,7 @@ export function useThirdPartyServices(params: { query: string; offset: number; l
   return useQuery({
     queryKey: [ROOT_KEY, 'list', params],
     queryFn: () => listThirdPartyServices(params),
-    enabled: enabled,
+    enabled,
     retry: false,
   });
 }

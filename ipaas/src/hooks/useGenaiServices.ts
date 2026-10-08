@@ -42,7 +42,7 @@ export function useGenaiServices(params: { query: string; offset: number; limit:
   return useQuery({
     queryKey: [ROOT_KEY, 'list', params],
     queryFn: () => listGenaiServices(params),
-    enabled: enabled,
+    enabled,
     retry: false,
   });
 }

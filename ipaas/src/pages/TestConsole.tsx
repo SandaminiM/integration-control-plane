@@ -38,7 +38,6 @@ import DeploymentTrackBar from '../components/DeploymentTrackBar';
 import NotFound from '../components/NotFound';
 import { useProjectId } from '../hooks/useProjects';
 import type { EndpointRef } from '../types/consumers';
-import type { EnvEndpoint } from '../types/component';
 import { broaden, resourceUrl, type ComponentScope } from '../nav';
 
 import NotDeployedAlert from '../components/NotDeployedAlert';
@@ -236,13 +235,12 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
                   </Typography>
                   {loadingEndpoints ? (
                     <CircularProgress size={20} />
-                  ) : (
+                  ) : selectedEndpoint ? (
                     <Autocomplete
                       size="small"
                       options={endpoints}
                       getOptionLabel={(ep) => ep.displayName}
-                      // null only when there are no endpoints, which MUI renders as an empty field.
-                      value={selectedEndpoint as EnvEndpoint}
+                      value={selectedEndpoint}
                       onChange={(_, ep) => {
                         if (ep) setSelectedEndpointId(ep.id);
                       }}
@@ -250,6 +248,10 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
                       sx={{ minWidth: 220 }}
                       renderInput={(params) => <TextField {...params} />}
                     />
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      No endpoints
+                    </Typography>
                   )}
                 </Stack>
 

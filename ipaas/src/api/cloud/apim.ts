@@ -67,9 +67,7 @@ export async function changeLifecycleState(_apimId: string, _action: string): Pr
 // Not wired to a cloud backend yet. These throw via ni() so callers can never
 // mistake an unsupported read or save for a successful one.
 // TODO: implement using cloud APIs
-const ni = (name: string): never => {
-  throw new Error(`[cloud] apim.${name}: not implemented`);
-};
+const ni = (name: string): Promise<never> => Promise.reject(new Error(`[cloud] apim.${name}: not implemented`));
 
 export const fetchApimOverview = (_apimId: string): Promise<string> => ni('fetchApimOverview');
 export const saveApimOverview = (_apimId: string, _content: string): Promise<void> => ni('saveApimOverview');

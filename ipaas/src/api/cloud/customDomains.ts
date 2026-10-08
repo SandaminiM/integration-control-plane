@@ -19,9 +19,7 @@
 import type { CreateUrlMappingInput, CustomDomain, CustomDomainType, CustomUrlMapping } from '../../types/customDomain';
 
 // Intentionally a stub: the BFF has no endpoints for this yet, so every call throws via ni().
-const ni = (name: string): never => {
-  throw new Error(`[cloud] customDomains.${name}: not implemented`);
-};
+const ni = (name: string): Promise<never> => Promise.reject(new Error(`[cloud] customDomains.${name}: not implemented`));
 
 export const fetchCustomDomains = (_type?: CustomDomainType): Promise<CustomDomain[]> => ni('fetchCustomDomains');
 export const fetchComponentUrlMappings = (_componentId: string): Promise<CustomUrlMapping[]> => ni('fetchComponentUrlMappings');

@@ -29,7 +29,7 @@ import { useApimApi, useUpdateApimApi } from '../hooks/useApim';
 import { broaden, resourceUrl, type ComponentScope } from '../nav';
 import { UUID_RE } from '../utils/string';
 import type { ApimApiInfo } from '../types/apim';
-import type { DeploymentTrack, EnvEndpoint } from '../types/component';
+import type { DeploymentTrack } from '../types/component';
 import { PILL_SELECT_SX } from '../constants/styles';
 
 function getMajorVersion(apiVersion: string): string {
@@ -74,7 +74,7 @@ export default function ComponentApiInfo(scope: ComponentScope): JSX.Element {
   const selectedTrackId = tracks.some((t) => t.id === selectedTrackIdState) ? selectedTrackIdState : (tracks.find((t) => t.latest)?.id ?? tracks[0]?.id ?? '');
 
   const { data: endpoints = [] } = useComponentEndpoints(component?.id ?? '', selectedTrackId);
-  const apimEndpoints = useMemo(() => Array.from(new Map(endpoints.filter((e): e is EnvEndpoint => !!e.apimId && 'id' in e).map((e) => [e.apimId, e])).values()), [endpoints]);
+  const apimEndpoints = useMemo(() => Array.from(new Map(endpoints.filter((e) => e.apimId).map((e) => [e.apimId, e])).values()), [endpoints]);
 
   const [selectedApimIdState, setSelectedApimId] = useState<string | null>(null);
   const selectedApimId = apimEndpoints.some((e) => e.apimId === selectedApimIdState) ? selectedApimIdState : (apimEndpoints[0]?.apimId ?? null);

@@ -20,9 +20,7 @@ import type { AlertRuleCountUsage, AlertRule, AlertHistoryResponse } from '../..
 import type { AlertComponentType } from '../../constants/alerts';
 
 // TODO: implement using cloud APIs
-const ni = (name: string): never => {
-  throw new Error(`[cloud] alerts.${name}: not implemented`);
-};
+const ni = (name: string): Promise<never> => Promise.reject(new Error(`[cloud] alerts.${name}: not implemented`));
 
 export const getAlertRulesCount = (_baseUrl: string, _componentId: string, _environmentId: string, _componentType: AlertComponentType): Promise<AlertRuleCountUsage> => ni('getAlertRulesCount');
 export const getAlertRules = (_baseUrl: string, _componentId: string, _environmentId: string, _componentType: AlertComponentType): Promise<AlertRule[]> => ni('getAlertRules');

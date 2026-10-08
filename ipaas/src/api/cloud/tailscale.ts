@@ -19,9 +19,7 @@
 import type { ByoiEndpointFileContents, CreateByoiComponentInput, CreateByoiComponentResult, DevopsVolume, DevopsVolumeMount, VolumeMountWriteData, VolumeWriteData } from '../../types/tailscale';
 
 // Intentionally a stub: the BFF has no endpoints for this yet, so every call throws via ni().
-const ni = (name: string): never => {
-  throw new Error(`[cloud] tailscale.${name}: not implemented`);
-};
+const ni = (name: string): Promise<never> => Promise.reject(new Error(`[cloud] tailscale.${name}: not implemented`));
 
 export const getSampleRegistryId = (_orgUuid: string): Promise<string> => ni('getSampleRegistryId');
 export const createByoiComponent = (_input: CreateByoiComponentInput): Promise<CreateByoiComponentResult> => ni('createByoiComponent');

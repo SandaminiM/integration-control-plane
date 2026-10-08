@@ -19,9 +19,7 @@
 import type { ThrottlingPolicy, ApiDocument, RuleAdherenceResponse } from '../../types/marketplace';
 
 // TODO: implement using cloud APIs
-const ni = (name: string): never => {
-  throw new Error(`[cloud] marketplace.${name}: not implemented`);
-};
+const ni = (name: string): Promise<never> => Promise.reject(new Error(`[cloud] marketplace.${name}: not implemented`));
 
 export const fetchThrottlingPolicies = (): Promise<ThrottlingPolicy[]> => ni('fetchThrottlingPolicies');
 export const fetchApiDocuments = (_apimId: string): Promise<ApiDocument[]> => ni('fetchApiDocuments');

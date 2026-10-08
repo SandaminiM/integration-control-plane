@@ -71,7 +71,6 @@ import type { CodeServerInstance, ContainerRegistry } from '../types/cloudEditor
 import type {
   Component,
   ComponentDetail,
-  Endpoint,
   EnvEndpoint,
   CreateComponentInput,
   UpdateComponentInput,
@@ -375,7 +374,7 @@ export interface CloudEditorApi {
 export interface ComponentsApi {
   fetchComponents(orgHandler: string, projectId: string): Promise<Component[]>;
   fetchComponentByHandler(projectId: string, componentHandler: string): Promise<ComponentDetail>;
-  fetchComponentEndpoints(componentId: string, versionId: string): Promise<Endpoint[]>;
+  fetchComponentEndpoints(componentId: string, versionId: string): Promise<EnvEndpoint[]>;
   createComponent(input: CreateComponentInput): Promise<Component>;
   deleteComponent(input: { orgHandler: string; componentId: string; projectId: string }): Promise<DeleteComponentResult>;
   updateComponent(input: UpdateComponentInput): Promise<Component>;

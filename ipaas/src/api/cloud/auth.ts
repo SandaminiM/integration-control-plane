@@ -46,9 +46,7 @@ import type {
 } from '../../types/auth';
 
 // TODO: implement using cloud APIs
-const ni = (name: string): never => {
-  throw new Error(`[cloud] auth.${name}: not implemented`);
-};
+const ni = (name: string): Promise<never> => Promise.reject(new Error(`[cloud] auth.${name}: not implemented`));
 
 export const fetchOrgPermissions = (_orgHandle: string, _userId: string): Promise<UserPermissionsResponse> => ni('fetchOrgPermissions');
 export const fetchProjectPermissions = (_orgHandle: string, _userId: string, _projectId: string): Promise<UserPermissionsResponse> => ni('fetchProjectPermissions');

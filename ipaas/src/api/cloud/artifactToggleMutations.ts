@@ -19,11 +19,13 @@
 import type { ArtifactToggleKind, ArtifactToggleStatusInput } from '../../types/artifact';
 
 // TODO: implement using cloud APIs
-const ni = (name: string): never => {
+const ni = (name: string): Promise<never> => Promise.reject(new Error(`[cloud] artifactToggleMutations.${name}: not implemented`));
+// Synchronous stubs can't reject, so they throw.
+const niSync = (name: string): never => {
   throw new Error(`[cloud] artifactToggleMutations.${name}: not implemented`);
 };
 
-export const toBackendArtifactType = (_artifactType: string): string => ni('toBackendArtifactType');
+export const toBackendArtifactType = (_artifactType: string): string => niSync('toBackendArtifactType');
 export const updateArtifactToggleStatus = (_kind: ArtifactToggleKind, _input: ArtifactToggleStatusInput): Promise<{ status: string; message: string }> => ni('updateArtifactToggleStatus');
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 export const TOGGLE_CONFIG: any = {};

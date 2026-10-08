@@ -8,7 +8,7 @@
     "dev:cloud": "PRODUCT=cloud vite",
     "build": "PRODUCT=wip vite build",
     "build:cloud": "PRODUCT=cloud vite build",
-    "build:check": "tsc -b && PRODUCT=cloud vite build",
+    "build:check": "tsc -b && tsc -p tsconfig.wip.json && PRODUCT=cloud vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",

@@ -21,7 +21,6 @@
 import type {
   Component,
   ComponentDetail,
-  Endpoint,
   EnvEndpoint,
   CreateComponentInput,
   UpdateComponentInput,
@@ -253,8 +252,8 @@ export const fetchComponentByHandler = async (projectId: string, componentHandle
   return { ...match, orgHandler: '', deploymentTracks, apiVersions };
 };
 
-// awaits: real /endpoints mapping in the BFF (currently returns an empty list).
-export const fetchComponentEndpoints = (componentId: string, _versionId: string): Promise<Endpoint[]> => bff.get<ListResponse<Endpoint>>(`/components/${seg(componentId)}/endpoints`).then(items);
+// awaits: real /endpoints mapping in the BFF (currently returns an empty list), which must yield EnvEndpoint.
+export const fetchComponentEndpoints = (componentId: string, _versionId: string): Promise<EnvEndpoint[]> => bff.get<ListResponse<EnvEndpoint>>(`/components/${seg(componentId)}/endpoints`).then(items);
 
 export const fetchComponentNameAvailability = (projectId: string, candidate: string): Promise<ComponentNameAvailability> => bff.get<ComponentNameAvailability>(`/projects/${seg(projectId)}/components/name-availability${q({ candidate })}`);
 

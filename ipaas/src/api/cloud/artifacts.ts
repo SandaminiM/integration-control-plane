@@ -19,9 +19,7 @@
 import type { ArtifactType, Artifact, ArtifactParam, ArtifactStatusInput, ListenerStateInput } from '../../types/artifact';
 
 // TODO: implement using cloud APIs
-const ni = (name: string): never => {
-  throw new Error(`[cloud] artifacts.${name}: not implemented`);
-};
+const ni = (name: string): Promise<never> => Promise.reject(new Error(`[cloud] artifacts.${name}: not implemented`));
 
 export const fetchArtifactTypes = (_componentId: string, _envId: string): Promise<ArtifactType[]> => ni('fetchArtifactTypes');
 export const fetchArtifacts = (_artifactType: string, _envId: string, _componentId: string): Promise<Artifact[]> => ni('fetchArtifacts');
@@ -31,4 +29,4 @@ export const fetchArtifactParams = (_componentId: string, _artifactType: string,
 export const fetchArtifactWsdl = (_componentId: string, _artifactType: string, _artifactName: string, _envId: string, _runtimeId?: string): Promise<string> => ni('fetchArtifactWsdl');
 export const updateArtifactStatus = (_input: ArtifactStatusInput): Promise<{ status: string; message: string }> => ni('updateArtifactStatus');
 export const updateListenerState = (_input: ListenerStateInput): Promise<{ success: boolean; message: string; commandIds: string[] }> => ni('updateListenerState');
-export const ARTIFACT_QUERY_MAP: Record<string, { queryName: string; field: string; fields: string; gqlFields: string }> = {};
+export const ARTIFACT_QUERY_MAP: Partial<Record<string, { queryName: string; field: string; fields: string; gqlFields: string }>> = {};

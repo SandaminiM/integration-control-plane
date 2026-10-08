@@ -44,9 +44,7 @@ import type {
  */
 
 // TODO: implement using cloud APIs
-const ni = (name: string): never => {
-  throw new Error(`[cloud] delivery.${name}: not implemented`);
-};
+const ni = (name: string): Promise<never> => Promise.reject(new Error(`[cloud] delivery.${name}: not implemented`));
 
 // DORA metrics (cio-query-api)
 export const fetchDeploymentFrequencySummary = (_from: string, _to: string, _granularity: DeliveryGranularity, _projectId?: string): Promise<DeploymentFrequencySummaryData | null> => ni('fetchDeploymentFrequencySummary');

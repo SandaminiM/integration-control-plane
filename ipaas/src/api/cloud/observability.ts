@@ -37,9 +37,7 @@ export function metricsBreakSize(fromIso: string, toIso: string): string {
 }
 
 // TODO: implement using cloud APIs
-const ni = (name: string): never => {
-  throw new Error(`[cloud] observability.${name}: not implemented`);
-};
+const ni = (name: string): Promise<never> => Promise.reject(new Error(`[cloud] observability.${name}: not implemented`));
 
 export const fetchComponentHttpMetrics = (_releaseId: string, _fromIso: string, _toIso: string): Promise<ComponentHttpMetricsPayload | null> => ni('fetchComponentHttpMetrics');
 export const fetchComponentUsageMetrics = (_releaseId: string, _fromIso: string, _toIso: string): Promise<ComponentUsageMetricsPayload | null> => ni('fetchComponentUsageMetrics');
