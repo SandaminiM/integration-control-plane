@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Checkbox, FormControlLabel, PageContent, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Checkbox, FormControlLabel, PageContent, Stack, Typography } from '@wso2/oxygen-ui';
+import TextField from '../components/common/TextField';
 import { ArrowLeft, ChevronDown, ChevronUp } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useParams } from 'react-router';

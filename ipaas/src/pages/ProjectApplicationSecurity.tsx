@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Autocomplete, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, ListingTable, PageContent, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Autocomplete, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, ListingTable, PageContent, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import TextField from '../components/common/TextField';
 import { KeyRound, Pencil, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import Authorized from '../components/Authorized';

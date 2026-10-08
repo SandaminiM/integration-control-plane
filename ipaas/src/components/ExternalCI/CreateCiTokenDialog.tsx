@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { Check, Copy } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useCreateExternalCiToken } from '../../hooks/useExternalCi';

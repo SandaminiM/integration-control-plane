@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, MenuItem, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, MenuItem, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import BusyFields from '../common/BusyFields';
 import { IS_CLOUD } from '../../features';
 import { CLOUD_COMING_SOON_PROVIDERS, providerComingSoonLabel } from '../../constants/gitProviders';

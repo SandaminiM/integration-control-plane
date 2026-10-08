@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { MenuItem, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { MenuItem, Stack, Typography } from '@wso2/oxygen-ui';
+import TextField from '../../common/TextField';
 import { useEffect, type JSX } from 'react';
 import { useActiveProjects } from '../../../hooks/useProjects';
 import { useComponentNameAvailability } from '../../../hooks/useRepository';

@@ -16,8 +16,9 @@
  * under the License.
  */
 
-import { Alert, Autocomplete, Box, Button, CircularProgress, MenuItem, PageContent, PageTitle, Stack, TextField, Typography } from '@wso2/oxygen-ui';
-import { ArrowLeft, Github } from '@wso2/oxygen-ui-icons-react';
+import { Alert, Autocomplete, Box, Button, CircularProgress, MenuItem, PageContent, PageTitle, Stack, Typography } from '@wso2/oxygen-ui';
+import TextField from '../components/common/TextField';
+import { ArrowLeft, GitHub } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useOrgUuid } from '../hooks/useOrgUuid';
@@ -153,7 +154,7 @@ export default function ConfigureDelivery(scope: OrgScope | ProjectScope): JSX.E
 
           {activeStep === 0 && (
             <Stack direction="row" gap={2}>
-              <TrackerTile name="GitHub" selected icon={<Github size={24} />} />
+              <TrackerTile name="GitHub" selected icon={<GitHub size={24} />} />
               {!isEdit && (
                 <>
                   <TrackerTile name="Service Now" disabled icon={<ServiceNowIcon size={24} />} />

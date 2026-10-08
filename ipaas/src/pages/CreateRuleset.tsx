@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Button, CircularProgress, IconButton, MenuItem, PageContent, Select, Stack, TextField, Tooltip, Typography } from '@wso2/oxygen-ui';
+import { Alert, Button, CircularProgress, IconButton, MenuItem, PageContent, Select, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
+import TextField from '../components/common/TextField';
 import { ArrowLeft, Eye, FileText, Pencil, Trash2, Upload } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useParams } from 'react-router';

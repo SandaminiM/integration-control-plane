@@ -36,13 +36,13 @@ import {
   Radio,
   RadioGroup,
   Stack,
-  TextField,
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
   Typography,
   PageContent,
 } from '@wso2/oxygen-ui';
+import TextField from '../components/common/TextField';
 import { ArrowLeft, ChevronDown, ChevronUp, Link2, Lock, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, useMemo, useCallback, type JSX } from 'react';
 import { useParams } from 'react-router';

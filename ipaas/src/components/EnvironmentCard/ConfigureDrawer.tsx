@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Box, Button, Checkbox, Chip, CircularProgress, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, Drawer, IconButton, MenuItem, Select as MuiSelect, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Box, Button, Checkbox, Chip, CircularProgress, Collapse, Dialog, DialogActions, DialogContent, DialogTitle, Drawer, IconButton, MenuItem, Select as MuiSelect, Stack, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { ChevronDown, ChevronUp, Link, Trash2, X } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';

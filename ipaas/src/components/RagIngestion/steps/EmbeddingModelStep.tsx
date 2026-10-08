@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Grid, MenuItem, Select, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Grid, MenuItem, Select, Stack, Typography } from '@wso2/oxygen-ui';
+import TextField from '../../common/TextField';
 import { type JSX } from 'react';
 import { blankEmbedding, EMBEDDING_PROVIDERS, ragLogoUrl } from '../../../constants/ragIngestion';
 import { REQUIRED_FIELD_SX } from '../../../constants/styles';

@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Button, CircularProgress, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Button, CircularProgress, Stack, Typography } from '@wso2/oxygen-ui';
+import TextField from '../../../common/TextField';
 import { useState, type JSX } from 'react';
 import { useDeployByoiImage } from '../../../../hooks/useRagIngestion';
 

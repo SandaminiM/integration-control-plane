@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Autocomplete, Box, CircularProgress, MenuItem, Select, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@wso2/oxygen-ui';
+import { Autocomplete, Box, CircularProgress, MenuItem, Select, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { type JSX, useMemo, useState } from 'react';
 import type { CloudDataPlane, Environment } from '../../types/environment';
 import { choreoAlertingApiUrl } from '../../config/runtimeConfig';

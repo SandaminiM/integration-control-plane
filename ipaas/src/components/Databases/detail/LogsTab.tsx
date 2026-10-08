@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Box, MenuItem, Stack, TextField } from '@wso2/oxygen-ui';
+import { Box, MenuItem, Stack } from '@wso2/oxygen-ui';
+import TextField from '../../common/TextField';
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { useFetchServerLogs } from '../../../hooks/usePlatformServices';
 import { LOG_TIME_RANGES } from '../../../constants/platformServices';

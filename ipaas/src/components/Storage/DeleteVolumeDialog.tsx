@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Box, TextField, Typography } from '@wso2/oxygen-ui';
+import { Box, Typography } from '@wso2/oxygen-ui';
+import TextField from '../common/TextField';
 import { useState, type JSX } from 'react';
 import { useDeleteVolume } from '../../hooks/useStorage';
 import ConfirmDeleteDialog from '../ConfirmDeleteDialog';

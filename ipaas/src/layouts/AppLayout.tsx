@@ -37,12 +37,12 @@ import {
   CircularProgress,
   Popover,
   Sidebar,
-  TextField,
   Tooltip,
   Typography,
   UserMenu,
   useAppShell,
 } from '@wso2/oxygen-ui';
+import TextField from '../components/common/TextField';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { JSX } from 'react';
@@ -145,10 +145,11 @@ const CopilotDrawer = lazy(() => import('../components/AiCopilot/CopilotDrawer')
 import CopilotButton from '../components/CopilotButton';
 import UpgradeButton from '../components/UpgradeButton';
 import { useOrgUuid } from '../hooks/useOrgUuid';
+import { useLoadedImage } from '../hooks/useLoadedImage';
 import { IS_WIP, IS_CLOUD } from '../features';
 import { ALL_USER_MGT_PERMISSIONS, Permissions } from '../constants/permissions';
 import { DB_TRADEMARK_NOTICE } from '../constants/platformServices';
-import { UUID_RE } from '../utils/string';
+import { UUID_RE, userInitials } from '../utils/string';
 
 function AppLayoutInner(): JSX.Element {
   const navigate = useNavigate();
@@ -157,6 +158,10 @@ function AppLayoutInner(): JSX.Element {
 
   const queryClient = useQueryClient();
   const { username, displayName, pictureUrl, logout, userId, isOidcUser } = useAuth();
+  const userName = displayName || username || 'User';
+  // Oxygen falls back to one letter when a picture fails, so it only gets the picture once it has loaded.
+  const loadedPicture = useLoadedImage(pictureUrl);
+  const userAvatar = loadedPicture ?? userInitials(userName);
   const { hasAnyPermission, setOrgPermissions } = useAccessControl();
 
   // Cloud-only billing trial indicator. useBillingOrg is gated to IS_CLOUD, so
@@ -872,8 +877,8 @@ function AppLayoutInner(): JSX.Element {
             {IS_WIP && <CopilotButton />}
             {IS_WIP && <UpgradeButton orgUuid={orgUuid ?? ''} />}
             <UserMenu>
-              <UserMenu.Trigger name={displayName || username || 'User'} avatar={pictureUrl} />
-              <UserMenu.Header name={displayName || username || 'User'} email={username} role="Admin" avatar={pictureUrl} />
+              <UserMenu.Trigger name={userName} avatar={userAvatar} />
+              <UserMenu.Header name={userName} email={username} role="Admin" avatar={userAvatar} />
               {!IS_CLOUD && <UserMenu.Item icon={<ScanEye size={18} />} label="Feature Preview" onClick={() => setFeaturePreviewOpen(true)} />}
               <UserMenu.Divider />
               <UserMenu.Logout icon={<LogOut size={18} />} label="Sign Out" onClick={() => setConfirmDialogOpen(true)} />
@@ -1654,14 +1659,14 @@ function AppLayoutInner(): JSX.Element {
           <Footer.Link href={documentationUrl()} target="_blank" rel="noopener noreferrer">
             Documentation
           </Footer.Link>
+          <Footer.Link href="https://discord.com/invite/wso2" target="_blank" rel="noopener noreferrer">
+            Support
+          </Footer.Link>
           <Footer.Link href={termsOfUseUrl()} target="_blank" rel="noopener noreferrer">
             Terms of Use
           </Footer.Link>
           <Footer.Link href={privacyPolicyUrl()} target="_blank" rel="noopener noreferrer">
             Privacy Policy
-          </Footer.Link>
-          <Footer.Link href="https://discord.com/invite/wso2" target="_blank" rel="noopener noreferrer">
-            Support
           </Footer.Link>
           <Footer.Copyright>&copy; {new Date().getFullYear()}, WSO2 LLC.</Footer.Copyright>
         </Footer>

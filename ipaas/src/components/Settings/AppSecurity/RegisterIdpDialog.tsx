@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import { Alert, Autocomplete, Box, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, FormControlLabel, IconButton, Stack, TextField, Typography } from '@wso2/oxygen-ui';
+import { Alert, Autocomplete, Box, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, FormControlLabel, IconButton, Stack, Typography } from '@wso2/oxygen-ui';
+import TextField from '../../common/TextField';
 import { X } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useCreateIdentityProvider, useUpdateIdentityProvider } from '../../../hooks/useAppSecurity';
