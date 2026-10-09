@@ -22,8 +22,7 @@ import { useState, type JSX } from 'react';
 import EmptyListing from '../components/EmptyListing';
 import ApprovalReviewDrawer from '../components/Approvals/ApprovalReviewDrawer';
 import ApprovalsTable, { type ApprovalsTab } from '../components/Approvals/ApprovalsTable';
-import ComingSoon from './ComingSoon';
-import { isApprovalsEnabled, usePastWorkflowInstances, useWorkflowInstances } from '../hooks/useWorkflows';
+import { usePastWorkflowInstances, useWorkflowInstances } from '../hooks/useWorkflows';
 import type { WorkflowInstanceResponse } from '../types/workflow';
 import type { OrgScope } from '../nav';
 
@@ -36,10 +35,6 @@ export default function OrgApprovals(_scope: OrgScope): JSX.Element {
   const past = usePastWorkflowInstances();
   const active = tab === 'pending' ? pending : past;
   const instances = active.data ?? [];
-
-  if (!isApprovalsEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Approvals management is currently under development." />;
-  }
 
   return (
     <PageContent>

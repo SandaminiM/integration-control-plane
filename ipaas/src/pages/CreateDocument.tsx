@@ -22,8 +22,7 @@ import { ArrowLeft, Download, FileText, Trash2, Upload } from '@wso2/oxygen-ui-i
 import { useEffect, useRef, useState, type JSX } from 'react';
 import { useParams } from 'react-router';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { isGovernanceEnabled, useCreateDocument, useDocument, useUpdateDocument } from '../hooks/useGovernance';
-import ComingSoon from './ComingSoon';
+import { useCreateDocument, useDocument, useUpdateDocument } from '../hooks/useGovernance';
 import FieldLabel from '../components/Governance/FieldLabel';
 import GovernanceFormSkeleton from '../components/Governance/GovernanceFormSkeleton';
 import { orgGovernanceUrl } from '../paths';
@@ -68,10 +67,6 @@ export default function CreateDocument(scope: OrgScope): JSX.Element {
       setFileName(`${currentDocument.name}.pdf`);
     }
   }, [currentDocument]);
-
-  if (!isGovernanceEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Governance management is currently under development." />;
-  }
 
   const goBack = () => navigate(orgGovernanceUrl(scope.org));
 

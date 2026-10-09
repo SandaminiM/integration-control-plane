@@ -22,8 +22,7 @@ import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import { useParams } from 'react-router';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { isGovernanceEnabled, useCreatePolicy, usePolicies, usePolicy, useRulesets, useUpdatePolicy } from '../hooks/useGovernance';
-import ComingSoon from './ComingSoon';
+import { useCreatePolicy, usePolicies, usePolicy, useRulesets, useUpdatePolicy } from '../hooks/useGovernance';
 import EnforcementDetailsTable from '../components/Governance/EnforcementDetailsTable';
 import FieldLabel from '../components/Governance/FieldLabel';
 import GovernanceCard from '../components/Governance/GovernanceCard';
@@ -74,10 +73,6 @@ export default function CreatePolicy(scope: OrgScope): JSX.Element {
   }, [rulesets, search]);
 
   const selectedIds = useMemo(() => new Set(selectedItems.map((r) => r.id)), [selectedItems]);
-
-  if (!isGovernanceEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Governance management is currently under development." />;
-  }
 
   const goBack = () => navigate(orgGovernanceUrl(scope.org));
 

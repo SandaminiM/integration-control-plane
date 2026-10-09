@@ -83,7 +83,7 @@ export function getOrgUuidFromToken(): string | null {
 }
 
 /** The token carries one org, chosen at sign-in, so there is nothing to switch to. */
-export async function switchOrgToken(orgHandle: string): Promise<void> {
+export async function switchOrgToken(orgHandle: string, _signal?: AbortSignal): Promise<void> {
   if (connection?.session.orgHandle === orgHandle) return;
   throw new Error(`Cannot switch to organization "${orgHandle}": the cloud session is scoped to the organization chosen at sign-in.`);
 }

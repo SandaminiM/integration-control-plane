@@ -18,23 +18,17 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { checkConfigGroupName, createConfigGroup, deleteConfigGroup, getConfigGroup, getConfigGroupUsage, listConfigGroups, updateConfigGroup } from '#api/configGroups';
-import { IS_CLOUD, IS_WIP } from '../features';
 import { useOrgUuid } from './useOrgUuid';
 import type { CreateConfigGroupRequest, EditConfigGroupRequest } from '../types/configGroups';
 
 const ROOT_KEY = 'configGroups';
-
-/** Org admin Config Groups: fully wired on wip; read-only on cloud (list API no-ops to empty; icp stubs throw). */
-export function isConfigGroupsEnabled(): boolean {
-  return IS_WIP || IS_CLOUD;
-}
 
 export function useConfigGroups() {
   const orgUuid = useOrgUuid();
   return useQuery({
     queryKey: [ROOT_KEY, 'list', orgUuid],
     queryFn: () => listConfigGroups(),
-    enabled: isConfigGroupsEnabled() && !!orgUuid,
+    enabled: !!orgUuid,
     retry: false,
   });
 }
@@ -47,7 +41,7 @@ export function useConfigGroupNameAvailability(candidate: string, enabled: boole
   return useQuery({
     queryKey: [ROOT_KEY, 'name-check', candidate],
     queryFn: () => checkConfigGroupName(candidate),
-    enabled: isConfigGroupsEnabled() && enabled && candidate.length > 0,
+    enabled: enabled && candidate.length > 0,
     retry: false,
     staleTime: 30 * 1000,
   });
@@ -57,7 +51,7 @@ export function useConfigGroup(groupUuid: string) {
   return useQuery({
     queryKey: [ROOT_KEY, 'detail', groupUuid],
     queryFn: () => getConfigGroup(groupUuid),
-    enabled: isConfigGroupsEnabled() && !!groupUuid,
+    enabled: !!groupUuid,
     retry: false,
   });
 }
@@ -66,7 +60,7 @@ export function useConfigGroupUsage(configGroupId: string, enabled = true) {
   return useQuery({
     queryKey: [ROOT_KEY, 'usage', configGroupId],
     queryFn: () => getConfigGroupUsage(configGroupId),
-    enabled: isConfigGroupsEnabled() && enabled && !!configGroupId,
+    enabled: enabled && !!configGroupId,
     retry: false,
   });
 }

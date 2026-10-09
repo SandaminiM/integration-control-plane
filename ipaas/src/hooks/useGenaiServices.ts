@@ -32,23 +32,17 @@ import {
   updateGenaiService,
   updateGenaiServiceIdl,
 } from '#api/genaiServices';
-import { IS_CLOUD, IS_WIP } from '../features';
 import { buildConnectionConfigPayload, buildCreateServiceRequest, buildUpdateServiceRequest } from '../utils/genaiServices';
 import { useOrgUuid } from './useOrgUuid';
 import type { ConnectionConfigRequest, CreateGenAiServiceArgs, GenAiService, GenAiServiceEdit, GenAiServiceStatus } from '../types/genaiServices';
 
 const ROOT_KEY = 'genaiServices';
 
-/** Org admin GenAI Services: fully wired on wip; read-only on cloud (list API no-ops to empty; icp stubs throw). */
-export function isGenaiServicesEnabled(): boolean {
-  return IS_WIP || IS_CLOUD;
-}
-
 export function useGenaiServices(params: { query: string; offset: number; limit: number; projectId?: string }, enabled = true) {
   return useQuery({
     queryKey: [ROOT_KEY, 'list', params],
     queryFn: () => listGenaiServices(params),
-    enabled: isGenaiServicesEnabled() && enabled,
+    enabled,
     retry: false,
   });
 }
@@ -57,7 +51,6 @@ export function useProviderTemplates() {
   return useQuery({
     queryKey: [ROOT_KEY, 'templates'],
     queryFn: () => listProviderTemplates(),
-    enabled: isGenaiServicesEnabled(),
     retry: false,
   });
 }
@@ -66,7 +59,7 @@ export function useProviderTemplate(templateId: string) {
   return useQuery({
     queryKey: [ROOT_KEY, 'template', templateId],
     queryFn: () => getProviderTemplate(templateId),
-    enabled: isGenaiServicesEnabled() && !!templateId,
+    enabled: !!templateId,
     retry: false,
   });
 }
@@ -115,7 +108,7 @@ export function useGenaiService(serviceId: string) {
   return useQuery({
     queryKey: [ROOT_KEY, 'detail', serviceId],
     queryFn: () => getGenaiService(serviceId),
-    enabled: isGenaiServicesEnabled() && !!serviceId,
+    enabled: !!serviceId,
     retry: false,
   });
 }
@@ -124,7 +117,7 @@ export function useGenaiServiceIdl(serviceId: string) {
   return useQuery({
     queryKey: [ROOT_KEY, 'idl', serviceId],
     queryFn: () => getGenaiServiceIdl(serviceId),
-    enabled: isGenaiServicesEnabled() && !!serviceId,
+    enabled: !!serviceId,
     retry: false,
   });
 }
@@ -133,7 +126,7 @@ export function useConnectionConfig(serviceId: string, schemaId: string | undefi
   return useQuery({
     queryKey: [ROOT_KEY, 'config', serviceId, schemaId],
     queryFn: () => getConnectionConfig(serviceId, schemaId!),
-    enabled: isGenaiServicesEnabled() && !!serviceId && !!schemaId,
+    enabled: !!serviceId && !!schemaId,
     retry: false,
   });
 }

@@ -20,11 +20,10 @@ import { Alert, Box, Button, Chip, CircularProgress, IconButton, ListingTable, P
 import { Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useState, type JSX } from 'react';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { isGenaiServicesEnabled, useDeleteGenaiService, useGenaiServices } from '../hooks/useGenaiServices';
+import { useDeleteGenaiService, useGenaiServices } from '../hooks/useGenaiServices';
 import { useProjectId } from '../hooks/useProjects';
 import { GENAI_DEFAULT_PAGE_SIZE, GENAI_PAGE_SIZE_OPTIONS, marketplaceStatusLabel } from '../constants/genaiServices';
 import { formatServiceCreatedTime, genaiServicesBase } from '../utils/genaiServices';
-import ComingSoon from './ComingSoon';
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog';
 import NoServicesBanner from '../components/ServiceCatalog/NoServicesBanner';
 import SearchField from '../components/SearchField';
@@ -61,10 +60,6 @@ export default function OrgGenAIServices(scope: OrgScope | ProjectScope): JSX.El
   const base = genaiServicesBase(scope);
   const goCreate = () => navigate(`${base}/new`);
   const goDetail = (serviceId: string) => navigate(`${base}/${serviceId}`);
-
-  if (!isGenaiServicesEnabled()) {
-    return <ComingSoon title="Coming Soon" description="GenAI Services management is currently under development." />;
-  }
 
   const doDelete = () => {
     if (!toDelete) return;

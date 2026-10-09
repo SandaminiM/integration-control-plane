@@ -71,7 +71,6 @@ import type { CodeServerInstance, ContainerRegistry } from '../types/cloudEditor
 import type {
   Component,
   ComponentDetail,
-  Endpoint,
   EnvEndpoint,
   CreateComponentInput,
   UpdateComponentInput,
@@ -375,7 +374,7 @@ export interface CloudEditorApi {
 export interface ComponentsApi {
   fetchComponents(orgHandler: string, projectId: string): Promise<Component[]>;
   fetchComponentByHandler(projectId: string, componentHandler: string): Promise<ComponentDetail>;
-  fetchComponentEndpoints(componentId: string, versionId: string): Promise<Endpoint[]>;
+  fetchComponentEndpoints(componentId: string, versionId: string): Promise<EnvEndpoint[]>;
   createComponent(input: CreateComponentInput): Promise<Component>;
   deleteComponent(input: { orgHandler: string; componentId: string; projectId: string }): Promise<DeleteComponentResult>;
   updateComponent(input: UpdateComponentInput): Promise<Component>;
@@ -573,7 +572,7 @@ export interface DevopsConfigsApi {
   deleteConfigMap(orgUuid: string, projectId: string, environmentId: string, configMapId: string): Promise<void>;
   getContainerConfigMounts(orgUuid: string, projectId: string, componentId: string, releaseId: string, containerId: string): Promise<DevopsConfigMount[]>;
   mountConfig(orgUuid: string, projectId: string, componentId: string, data: ConfigMountWriteData): Promise<DevopsConfigMount>;
-  updateConfigMount(orgUuid: string, projectId: string, path: ConfigMountPath, data: Record<string, unknown>): Promise<DevopsConfigMount>;
+  updateConfigMount(orgUuid: string, projectId: string, path: ConfigMountPath, data: ConfigMountWriteData): Promise<DevopsConfigMount>;
   removeConfigMount(orgUuid: string, projectId: string, path: ConfigMountPath): Promise<void>;
 }
 

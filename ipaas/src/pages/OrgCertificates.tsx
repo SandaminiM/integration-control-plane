@@ -21,12 +21,11 @@ import TextField from '../components/common/TextField';
 import { Plus, Search, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { isCertificatesEnabled, useCertificateGroups, useDeleteCertificate } from '../hooks/useCertificates';
+import { useCertificateGroups, useDeleteCertificate } from '../hooks/useCertificates';
 import { certificateValidity, certificateTypeLabel } from '../utils/certificates';
 import { orgNewCertificateUrl, orgCertificateUrl } from '../paths';
 import type { OrgScope } from '../nav';
 import type { ConfigGroup } from '../types/configGroups';
-import ComingSoon from './ComingSoon';
 
 export default function OrgCertificates(scope: OrgScope): JSX.Element {
   const navigate = useAppNavigate();
@@ -78,10 +77,6 @@ export default function OrgCertificates(scope: OrgScope): JSX.Element {
     setCertToDelete(null);
     del.reset();
   };
-
-  if (!isCertificatesEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Certificates management is currently under development." />;
-  }
 
   return (
     <PageContent>

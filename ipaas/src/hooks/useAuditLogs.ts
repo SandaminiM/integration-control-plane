@@ -18,14 +18,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchAuditLogs } from '#api/auditLogs';
-import { IS_CLOUD, IS_WIP } from '../features';
 import { useOrgUuid } from './useOrgUuid';
 import type { AuditLogEntry, AuditLogsRequest } from '../types/auditLogs';
-
-/** Audit Logs: fully wired on wip; read-only on cloud (list API no-ops to empty; icp stubs throw). */
-export function isAuditLogsEnabled(): boolean {
-  return IS_WIP || IS_CLOUD;
-}
 
 /**
  * Runs an audit-logs query for the current org. The `request` object is part of the query
@@ -36,7 +30,7 @@ export function useAuditLogs(request: AuditLogsRequest, enabled = true) {
   return useQuery<AuditLogEntry[]>({
     queryKey: ['auditLogs', orgUuid, request],
     queryFn: () => fetchAuditLogs(orgUuid!, request),
-    enabled: isAuditLogsEnabled() && enabled && !!orgUuid,
+    enabled: enabled && !!orgUuid,
     retry: false,
     refetchOnWindowFocus: false,
   });

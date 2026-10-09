@@ -22,13 +22,12 @@ import { REQUIRED_FIELD_SX } from '../constants/styles';
 import { Upload } from '@wso2/oxygen-ui-icons-react';
 import { useRef, useState, type JSX } from 'react';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { isCertificatesEnabled, useCreateCertificate } from '../hooks/useCertificates';
+import { useCreateCertificate } from '../hooks/useCertificates';
 import { useEnvironmentTemplates } from '../hooks/useEnvironments';
 import { useOrgs } from '../hooks/useOrg';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { orgCertificatesUrl } from '../paths';
 import type { OrgScope } from '../nav';
-import ComingSoon from './ComingSoon';
 
 export default function CreateCertificate(scope: OrgScope): JSX.Element {
   const navigate = useAppNavigate();
@@ -49,10 +48,6 @@ export default function CreateCertificate(scope: OrgScope): JSX.Element {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  if (!isCertificatesEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Certificates management is currently under development." />;
-  }
 
   const envTemplateIds = (templates ?? []).map((t) => t.id);
 

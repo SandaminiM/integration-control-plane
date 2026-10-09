@@ -20,8 +20,7 @@ import { Alert, Box, Button, Chip, CircularProgress, IconButton, ListingTable, P
 import { Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { isConfigGroupsEnabled, useConfigGroups } from '../hooks/useConfigGroups';
-import ComingSoon from './ComingSoon';
+import { useConfigGroups } from '../hooks/useConfigGroups';
 import NoConfigGroupsBanner from '../components/ConfigGroups/NoConfigGroupsBanner';
 import DeleteConfigGroupDialog from '../components/ConfigGroups/DeleteConfigGroupDialog';
 import SearchField from '../components/SearchField';
@@ -44,10 +43,6 @@ export default function OrgConfigGroups(scope: OrgScope): JSX.Element {
     if (!q) return groups ?? [];
     return (groups ?? []).filter((g) => [g.groupDisplayName, g.groupName, g.description].some((f) => (f ?? '').toLowerCase().includes(q)));
   }, [groups, search]);
-
-  if (!isConfigGroupsEnabled()) {
-    return <ComingSoon title="Coming Soon" description="Config Groups management is currently under development." />;
-  }
 
   return (
     <PageContent>

@@ -235,7 +235,7 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
                   </Typography>
                   {loadingEndpoints ? (
                     <CircularProgress size={20} />
-                  ) : (
+                  ) : selectedEndpoint ? (
                     <Autocomplete
                       size="small"
                       options={endpoints}
@@ -248,6 +248,10 @@ export default function TestConsole(scope: ComponentScope): JSX.Element {
                       sx={{ minWidth: 220 }}
                       renderInput={(params) => <TextField {...params} />}
                     />
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      No endpoints
+                    </Typography>
                   )}
                 </Stack>
 
