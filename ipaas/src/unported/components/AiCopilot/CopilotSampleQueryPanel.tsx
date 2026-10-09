@@ -20,8 +20,8 @@ import { Stack } from '@wso2/oxygen-ui';
 import { useContext } from 'react';
 import type { JSX } from 'react';
 import { CopilotContext } from '../../contexts/CopilotContext';
-import { MessageType, type QueryData } from '../../types/copilot';
-import { generateUUID } from '../../utils/string';
+import { MessageType, type QueryData } from '../../../types/copilot';
+import { generateUUID } from '../../../utils/string';
 import CopilotSampleQueryCard from './CopilotSampleQueryCard';
 
 const SAMPLE_QUERIES: QueryData[] = [

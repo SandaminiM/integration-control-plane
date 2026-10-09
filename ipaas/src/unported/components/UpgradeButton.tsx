@@ -19,8 +19,8 @@
 import { Box, Button, ButtonGroup, ClickAwayListener, Grow, MenuItem, MenuList, Paper, Popper, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { ChevronDown, ChevronUp } from '@wso2/oxygen-ui-icons-react';
 import { useRef, useState, type JSX } from 'react';
-import { useComponentLimits, useSubscriptions } from '../hooks/useSubscription';
-import { FREE_COMPONENT_LIMIT, PAID_SUBSCRIPTION_TYPE } from '../constants/subscription';
+import { useComponentLimits, useSubscriptions } from '../../hooks/useSubscription';
+import { FREE_COMPONENT_LIMIT, PAID_SUBSCRIPTION_TYPE } from '../../constants/subscription';
 
 interface UpgradeButtonProps {
   orgUuid: string;

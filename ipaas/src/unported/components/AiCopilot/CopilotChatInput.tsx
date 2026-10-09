@@ -17,13 +17,13 @@
  */
 
 import { Box, IconButton, InputAdornment } from '@wso2/oxygen-ui';
-import TextField from '../common/TextField';
+import TextField from '../../../components/common/TextField';
 import { SendHorizontal } from '@wso2/oxygen-ui-icons-react';
 import { useContext } from 'react';
 import type { JSX, KeyboardEvent } from 'react';
 import { CopilotContext } from '../../contexts/CopilotContext';
-import { MessageType } from '../../types/copilot';
-import { generateUUID } from '../../utils/string';
+import { MessageType } from '../../../types/copilot';
+import { generateUUID } from '../../../utils/string';
 
 interface CopilotChatInputProps {
   sendMessage: (message: string, messageId: string) => void;

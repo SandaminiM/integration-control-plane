@@ -17,12 +17,12 @@
  */
 
 import { Autocomplete, Box, Stack, Tooltip, Typography } from '@wso2/oxygen-ui';
-import TextField from '../common/TextField';
+import TextField from '../../../components/common/TextField';
 import { useContext } from 'react';
 import type { JSX } from 'react';
 import AIWelcomeIcon from '../../assets/icons/ai/AIWelcomeIcon';
 import { CopilotContext } from '../../contexts/CopilotContext';
-import type { CopilotRegion } from '../../types/copilot';
+import type { CopilotRegion } from '../../../types/copilot';
 
 export default function CopilotWelcomeBanner(): JSX.Element {
   const { selectedRegion, setSelectedRegion, isMultiRegionAvailable, availableRegions } = useContext(CopilotContext);

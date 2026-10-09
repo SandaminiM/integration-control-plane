@@ -25,7 +25,7 @@ import CiTokensTable from '../components/ExternalCI/CiTokensTable';
 import ComingSoon from '../../pages/ComingSoon';
 import { useAccessControl } from '../../contexts/AccessControlContext';
 import { Permissions } from '../../constants/permissions';
-import { isExternalCiEnabled } from '../../hooks/useExternalCi';
+import { isExternalCiEnabled } from '../hooks/useExternalCi';
 import { useComponentByHandler } from '../../hooks/useComponents';
 import { useProjectId } from '../../hooks/useProjects';
 import { isByoiComponent } from '../../constants/integrations';

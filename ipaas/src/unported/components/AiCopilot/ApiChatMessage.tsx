@@ -20,8 +20,8 @@ import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Divider, St
 import { AlertCircle, CheckCircle2, ChevronDown, Terminal } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
 import type { JSX } from 'react';
-import { SyntaxHighlighter, prism } from '../../utils/syntaxHighlighter';
-import type { ApiChatExecutionResult } from '../../types/copilot';
+import { SyntaxHighlighter, prism } from '../../../utils/syntaxHighlighter';
+import type { ApiChatExecutionResult } from '../../../types/copilot';
 
 interface ParsedResult {
   resource?: { method?: string; inputs?: { requestBody?: unknown } };

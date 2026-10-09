@@ -22,9 +22,9 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'r
 import type { JSX } from 'react';
 import { CopilotContext } from '../../contexts/CopilotContext';
 import useCopilot from '../../hooks/useCopilot';
-import { COPILOT_SESSION_ERROR_IDS_KEY } from '../../constants/copilot';
-import { generateUUID } from '../../utils/string';
-import { MessageType, type ApiChatExecutionResult } from '../../types/copilot';
+import { COPILOT_SESSION_ERROR_IDS_KEY } from '../../../constants/copilot';
+import { generateUUID } from '../../../utils/string';
+import { MessageType, type ApiChatExecutionResult } from '../../../types/copilot';
 import CopilotChatInput from './CopilotChatInput';
 import CopilotChatBody from './CopilotChatBody';
 import CopilotInitError from './CopilotInitError';

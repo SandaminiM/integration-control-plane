@@ -18,7 +18,7 @@
 
 import { ButtonBase, Typography } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
-import type { QueryData } from '../../types/copilot';
+import type { QueryData } from '../../../types/copilot';
 
 interface CopilotSampleQueryCardProps {
   queryData: QueryData;

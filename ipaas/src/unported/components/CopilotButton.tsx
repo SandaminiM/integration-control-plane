@@ -18,9 +18,9 @@
 
 import { Button } from '@wso2/oxygen-ui';
 import { useContext, type JSX } from 'react';
-import AIIcon from '../assets/icons/ai/AIIcon';
+import AIIcon from '../../assets/icons/ai/AIIcon';
 import { CopilotContext } from '../contexts/CopilotContext';
-import { useFeaturePreview } from '../contexts/FeaturePreviewContext';
+import { useFeaturePreview } from '../../contexts/FeaturePreviewContext';
 
 /** Top-navbar Copilot launcher. Shown only when the "Copilot" feature preview is enabled. */
 export default function CopilotButton(): JSX.Element | null {

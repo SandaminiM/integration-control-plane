@@ -18,7 +18,7 @@
 
 import { Box } from '@wso2/oxygen-ui';
 import type { JSX } from 'react';
-import type { IMessage } from '../../types/copilot';
+import type { IMessage } from '../../../types/copilot';
 import CopilotMessage from './CopilotMessage';
 
 interface CopilotChatBodyProps {

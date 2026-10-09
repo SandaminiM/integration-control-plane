@@ -18,7 +18,7 @@
 
 import { Box, Dialog, DialogContent, DialogTitle, Divider, FormControlLabel, IconButton, Stack, Switch, Typography } from '@wso2/oxygen-ui';
 import { X } from '@wso2/oxygen-ui-icons-react';
-import { useFeaturePreview } from '../../contexts/FeaturePreviewContext';
+import { useFeaturePreview } from '../../../contexts/FeaturePreviewContext';
 import previewFeatures from './previewFeatures.json';
 
 interface FeaturePreviewModalProps {

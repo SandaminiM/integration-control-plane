@@ -21,7 +21,7 @@ import { Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import ConfirmDeleteDialog from '../../../components/ConfirmDeleteDialog';
 import CreateCiTokenDialog from './CreateCiTokenDialog';
-import { useExternalCiTokens, useRevokeExternalCiToken } from '../../../hooks/useExternalCi';
+import { useExternalCiTokens, useRevokeExternalCiToken } from '../../hooks/useExternalCi';
 import { MAX_EXTERNAL_CI_TOKENS, tokenLastUsedLabel } from '../../utils/externalCi';
 import type { ExternalCiToken } from '../../../types/externalCi';
 

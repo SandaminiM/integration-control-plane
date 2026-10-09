@@ -20,11 +20,11 @@ import { Box, Button, Typography } from '@wso2/oxygen-ui';
 import { AlertCircle } from '@wso2/oxygen-ui-icons-react';
 import { lazy, Suspense, useContext, useEffect, useMemo, useState } from 'react';
 import type { JSX } from 'react';
-import { useAppNavigate } from '../../hooks/useAppNavigate';
+import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import { CopilotContext } from '../../contexts/CopilotContext';
 import { useGetCopilotDataCollectionPermission, useSendCopilotFeedback } from '../../hooks/useDataCollector';
-import { DataCollectorStatus, MessageType, type ApiChatExecutionResult, type IMessage, type NavigationResponse } from '../../types/copilot';
-const Markdown = lazy(() => import('../Markdown'));
+import { DataCollectorStatus, MessageType, type ApiChatExecutionResult, type IMessage, type NavigationResponse } from '../../../types/copilot';
+const Markdown = lazy(() => import('../../../components/Markdown'));
 const ApiChatMessage = lazy(() => import('./ApiChatMessage'));
 import FeedbackButtons, { type FeedbackValue } from './FeedbackButtons';
 

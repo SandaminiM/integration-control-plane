@@ -17,14 +17,14 @@
  */
 
 import { createContext, useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type JSX, type SetStateAction } from 'react';
-import { useCloudDataPlanes } from '../hooks/useEnvironments';
-import { useOrgs } from '../hooks/useOrg';
-import { copilotApiUrl } from '../config/runtimeConfig';
-import { IS_CLOUD } from '../features';
-import { COPILOT_REGION_DISPLAY_NAMES, COPILOT_SESSION_MESSAGES_KEY } from '../constants/copilot';
-import { useScope } from '../nav';
-import type { CopilotRegion, IMessage } from '../types/copilot';
-import { removeCopilotSessionId } from '../utils/copilot';
+import { useCloudDataPlanes } from '../../hooks/useEnvironments';
+import { useOrgs } from '../../hooks/useOrg';
+import { copilotApiUrl } from '../../config/runtimeConfig';
+import { IS_CLOUD } from '../../features';
+import { COPILOT_REGION_DISPLAY_NAMES, COPILOT_SESSION_MESSAGES_KEY } from '../../constants/copilot';
+import { useScope } from '../../nav';
+import type { CopilotRegion, IMessage } from '../../types/copilot';
+import { removeCopilotSessionId } from '../../utils/copilot';
 
 function loadMessagesFromSession(): IMessage[] {
   try {

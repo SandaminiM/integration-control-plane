@@ -20,7 +20,7 @@ import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogCont
 import TextField from '../../../components/common/TextField';
 import { Check, Copy } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
-import { useCreateExternalCiToken } from '../../../hooks/useExternalCi';
+import { useCreateExternalCiToken } from '../../hooks/useExternalCi';
 
 interface CreateCiTokenDialogProps {
   projectId: string;

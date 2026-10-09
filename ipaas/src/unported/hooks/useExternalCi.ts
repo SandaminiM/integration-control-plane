@@ -18,9 +18,9 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createExternalCiToken, getExternalCiTokens, revokeExternalCiToken } from '#api/externalCi';
-import { IS_WIP } from '../features';
-import type { ExternalCiToken } from '../types/externalCi';
-import { useOrgUuid } from './useOrgUuid';
+import { IS_WIP } from '../../features';
+import type { ExternalCiToken } from '../../types/externalCi';
+import { useOrgUuid } from '../../hooks/useOrgUuid';
 
 const ROOT = 'externalCi';
 
