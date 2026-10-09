@@ -146,7 +146,7 @@ export default function CreateProject(scope: OrgScope): JSX.Element {
 
   const nameError = displayName ? validateProjectName(displayName) : null;
   const handlerError = effectiveHandler ? validateProjectHandler(effectiveHandler) : null;
-  const handlerTaken = availability && !availability.handlerUnique ? 'This name is already taken.' : null;
+  const handlerTaken = availability && !availability.handlerUnique ? 'This project id is already taken.' : null;
 
   const gitReady = !attachGit || (showBranchAndSubPath && !!selectedBranch);
   // A failed availability check must not hard-block submit — the create call still validates uniqueness.
