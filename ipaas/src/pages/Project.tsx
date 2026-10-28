@@ -688,6 +688,10 @@ export default function Project(scope: ProjectScope): JSX.Element {
   const [descHovered, setDescHovered] = useState(false);
   const [descValue, setDescValue] = useState('');
   const descInputRef = useRef<HTMLInputElement>(null);
+  const [nameEditing, setNameEditing] = useState(false);
+  const [nameHovered, setNameHovered] = useState(false);
+  const [nameValue, setNameValue] = useState('');
+  const [nameError, setNameError] = useState('');
   const { userId } = useAuth();
   const { features } = useFeaturePreview();
   const openInIntegratorEnabled = !!features['Project level Open in local Integrator'];
@@ -783,6 +787,29 @@ export default function Project(scope: ProjectScope): JSX.Element {
     );
   };
 
+  const startNameEdit = () => {
+    setNameValue(project.name);
+    setNameError('');
+    setNameEditing(true);
+  };
+
+  const commitNameEdit = () => {
+    const trimmed = nameValue.trim();
+    if (trimmed === project.name) {
+      setNameEditing(false);
+      return;
+    }
+    if (!trimmed) return setNameError('Project name is required.');
+    if (allProjects.some((p) => p.id !== project.id && p.name.trim().toLowerCase() === trimmed.toLowerCase())) return setNameError('A project with this name already exists.');
+    updateProject.mutate(
+      { id: project.id, name: trimmed, description: project.description ?? '', version: project.version },
+      {
+        onSuccess: () => setNameEditing(false),
+        onError: () => setNameError('Failed to rename the project. Please try again.'),
+      },
+    );
+  };
+
   const cancelDescEdit = () => {
     setDescValue(project.description?.trim() ?? '');
     setDescEditing(false);
@@ -803,9 +830,46 @@ export default function Project(scope: ProjectScope): JSX.Element {
                 {project?.name?.[0]?.toUpperCase() ?? 'P'}
               </Avatar>
               <div>
-                <Typography variant="h1" mb={1}>
-                  {project.name}
-                </Typography>
+                {nameEditing ? (
+                  <Box sx={{ mb: 1 }}>
+                    <InputBase
+                      autoFocus
+                      value={nameValue}
+                      onChange={(e) => {
+                        setNameValue(e.target.value);
+                        setNameError('');
+                      }}
+                      onBlur={commitNameEdit}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') commitNameEdit();
+                        if (e.key === 'Escape') setNameEditing(false);
+                      }}
+                      inputProps={{ 'aria-label': 'Project name' }}
+                      disabled={updateProject.isPending}
+                      autoComplete="off"
+                      sx={(theme) => ({
+                        ...theme.typography.h1,
+                        px: 0.5,
+                        border: `2px solid ${nameError ? theme.palette.error.main : theme.palette.primary.main}`,
+                        borderRadius: `${theme.shape.borderRadius}px`,
+                      })}
+                    />
+                    {nameError && (
+                      <Typography variant="caption" color="error" component="p" sx={{ mt: 0.5 }}>
+                        {nameError}
+                      </Typography>
+                    )}
+                  </Box>
+                ) : (
+                  <Stack direction="row" alignItems="center" gap={0.5} mb={1} onMouseEnter={() => setNameHovered(true)} onMouseLeave={() => setNameHovered(false)}>
+                    <Typography variant="h1">{project.name}</Typography>
+                    <Tooltip title="Edit name">
+                      <IconButton size="small" aria-label="Edit project name" onClick={startNameEdit} sx={{ opacity: nameHovered ? 1 : 0, transition: 'opacity 0.15s' }}>
+                        <Pencil size={14} />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
+                )}
                 <Stack direction="row" alignItems="flex-start" gap={1} onMouseEnter={() => setDescHovered(true)} onMouseLeave={() => setDescHovered(false)}>
                   <Box
                     sx={{ position: 'relative', flex: 1, cursor: 'text', mt: 0.25 }}

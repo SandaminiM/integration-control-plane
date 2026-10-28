@@ -22,7 +22,7 @@ import { KeyRound, Pencil, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import Authorized from '../../components/Authorized';
 import EmptyListing from '../../components/EmptyListing';
-import ProjectSettingsTabs from '../../components/Settings/ProjectSettingsTabs';
+import ProjectSettingsTabs from '../components/Settings/ProjectSettingsTabs';
 import { Permissions } from '../../constants/permissions';
 import { useProjectId } from '../../hooks/useProjects';
 import { useAuthzRoles, useCreateAuthzRole, useDeleteAuthzRole, useUpdateAuthzRole } from '../hooks/useProjectAuthz';

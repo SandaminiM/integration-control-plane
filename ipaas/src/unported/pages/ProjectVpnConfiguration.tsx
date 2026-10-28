@@ -22,7 +22,7 @@ import { ArrowLeft, Network, Plus, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import { useMemo, useState, type JSX } from 'react';
 import Authorized from '../../components/Authorized';
 import EmptyListing from '../../components/EmptyListing';
-import ProjectSettingsTabs from '../../components/Settings/ProjectSettingsTabs';
+import ProjectSettingsTabs from '../components/Settings/ProjectSettingsTabs';
 import TailscaleOverview from '../../components/Overview/tailscale-vpn/TailscaleOverview';
 import { Permissions } from '../../constants/permissions';
 import { useAccessControl } from '../../contexts/AccessControlContext';

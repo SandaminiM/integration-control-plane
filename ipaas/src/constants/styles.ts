@@ -25,6 +25,24 @@ export const CARD_HOVER_SX = {
   },
 } as const;
 
+type PrimaryTheme = { palette: { primary: { main: string } } };
+
+/** The theme's primary colour at `percent` opacity. */
+export const primaryTint = (percent: number) => (t: PrimaryTheme) => `color-mix(in srgb, ${t.palette.primary.main} ${percent}%, transparent)`;
+
+/** An icon tile lit by a soft primary glow from its top-left. Size it where it is used. */
+export const LIT_ICON_SX = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+  borderRadius: 1,
+  border: 1,
+  borderColor: primaryTint(35),
+  background: (t: PrimaryTheme) => `radial-gradient(circle at 30% 25%, ${primaryTint(28)(t)}, ${primaryTint(8)(t)} 70%)`,
+  color: 'primary.main',
+} as const;
+
 export const PROVIDER_ICON_SX = {
   width: 40,
   height: 40,

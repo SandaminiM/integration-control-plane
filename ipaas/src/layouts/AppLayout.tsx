@@ -62,6 +62,7 @@ import {
   Hammer,
   HeartPulse,
   Layers,
+  FolderOpen,
   LayoutDashboard,
   LogOut,
   Logs,
@@ -103,7 +104,8 @@ import {
   type Scope,
 } from '../nav';
 import { isSettingsSectionVisible, type SettingsSectionDef } from '../constants/orgSettingsSections';
-import { componentOverviewUrl, documentationUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, termsOfUseUrl } from '../paths';
+import { recentComponentKey, recentProjectKey, recordRecent } from '../utils/recentAccess';
+import { componentOverviewUrl, documentationUrl, loginUrl, orgHomeUrl, orgOverviewUrl, privacyPolicyUrl, termsOfUseUrl } from '../paths';
 import { formatDocumentTitle, pageTitleFor } from '../utils/documentTitle';
 import { useAccessControl } from '../contexts/AccessControlContext';
 
@@ -244,6 +246,8 @@ export default function AppLayout(): JSX.Element {
   useEffect(() => {
     if (userId && hasProject(scope) && !orgAccessDenied) {
       localStorage.setItem(`last_project:${userId}`, JSON.stringify({ org: scope.org, project: scope.project }));
+      recordRecent(userId, 'projects', recentProjectKey(scope.org, scope.project));
+      if (hasComponent(scope)) recordRecent(userId, 'components', recentComponentKey(scope.org, scope.project, scope.component));
     }
   }, [userId, scope, orgAccessDenied]);
 
@@ -284,7 +288,7 @@ export default function AppLayout(): JSX.Element {
           <Header.Toggle collapsed={hideSidebarForEmptyProject || shell.sidebarCollapsed} onToggle={handleHeaderToggle} />
           <Header.Brand>
             <Header.BrandLogo>
-              <NavLink to={orgHomeUrl(scope.org)} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+              <NavLink to={orgOverviewUrl(scope.org)} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
                 <Logo />
               </NavLink>
             </Header.BrandLogo>
@@ -296,11 +300,11 @@ export default function AppLayout(): JSX.Element {
               role="button"
               tabIndex={0}
               sx={{ position: 'relative', display: 'inline-flex', alignSelf: 'center', cursor: 'pointer' }}
-              onClick={() => navigateTo(orgHomeUrl(scope.org))}
+              onClick={() => navigateTo(orgOverviewUrl(scope.org))}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  navigateTo(orgHomeUrl(scope.org));
+                  navigateTo(orgOverviewUrl(scope.org));
                 }
               }}>
               <ComplexSelect
@@ -676,11 +680,17 @@ export default function AppLayout(): JSX.Element {
                 ? /* Org-level nav */
                   [
                     <Sidebar.Category key="org-overview">
-                      <Sidebar.Item id="overview">
+                      <Sidebar.Item id="org-overview">
                         <Sidebar.ItemIcon>
                           <LayoutDashboard size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>Overview</Sidebar.ItemLabel>
+                      </Sidebar.Item>
+                      <Sidebar.Item id="org-projects">
+                        <Sidebar.ItemIcon>
+                          <FolderOpen size={20} />
+                        </Sidebar.ItemIcon>
+                        <Sidebar.ItemLabel>Projects</Sidebar.ItemLabel>
                       </Sidebar.Item>
                     </Sidebar.Category>,
 
@@ -983,13 +993,6 @@ export default function AppLayout(): JSX.Element {
                             </Sidebar.ItemIcon>
                             <Sidebar.ItemLabel>Pipelines</Sidebar.ItemLabel>
                           </Sidebar.Item>
-                        </Sidebar.Item>
-
-                        <Sidebar.Item id="proj-settings">
-                          <Sidebar.ItemIcon>
-                            <Cog size={20} />
-                          </Sidebar.ItemIcon>
-                          <Sidebar.ItemLabel>Settings</Sidebar.ItemLabel>
                         </Sidebar.Item>
                       </Sidebar.Category>,
                     ]}

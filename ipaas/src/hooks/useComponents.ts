@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   fetchComponents,
   fetchComponentByHandler,
@@ -43,6 +43,22 @@ export function useComponents(orgHandler: string, projectId: string) {
     queryFn: () => fetchComponents(orgHandler, projectId),
     enabled: !!orgHandler && !!projectId,
     refetchInterval: pollWhileDeleting,
+  });
+}
+
+/** Every listed project's integrations, sharing useComponents' cache, for org-wide counts. The BFF has no org-wide listing. */
+export function useOrgComponents(orgHandler: string, projectIds: string[]) {
+  return useQueries({
+    queries: projectIds.map((projectId) => ({
+      queryKey: ['components', orgHandler, projectId],
+      queryFn: () => fetchComponents(orgHandler, projectId),
+      enabled: !!orgHandler,
+      refetchInterval: pollWhileDeleting,
+    })),
+    combine: (results) => ({
+      byProject: new Map(projectIds.map((id, i) => [id, results[i].data])),
+      isLoading: results.some((r) => r.isLoading),
+    }),
   });
 }
 

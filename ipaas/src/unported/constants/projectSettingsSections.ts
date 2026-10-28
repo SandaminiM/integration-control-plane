@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import { Permissions } from './permissions';
-import { isSettingsSectionVisible, type SettingsSectionDef } from './orgSettingsSections';
+import { Permissions } from '../../constants/permissions';
+import { isSettingsSectionVisible, type SettingsSectionDef } from '../../constants/orgSettingsSections';
 
 /**
  * Project Settings sections, in display order. Only the Project section is backed by

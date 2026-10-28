@@ -18,25 +18,44 @@
 
 import { Alert, Avatar, Box, Button, Card, CardContent, CircularProgress, Grid, IconButton, ListingTable, PageContent, PageTitle, Stack, TablePagination, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@wso2/oxygen-ui';
 import { CARD_TABLE_SX } from '../constants/styles';
-import { Clock, Folder, FolderInput, LayoutGrid, List, Plus, RefreshCw, Settings } from '@wso2/oxygen-ui-icons-react';
+import { Clock, Folder, FolderInput, LayoutGrid, List, Plus, RefreshCw, Trash2 } from '@wso2/oxygen-ui-icons-react';
 import SearchField from '../components/SearchField';
 import { useLocation } from 'react-router';
 import { useAppNavigate } from '../hooks/useAppNavigate';
 import { useEffect, useState, type JSX } from 'react';
 import { useProjects } from '../hooks/useProjects';
+import { useOrgComponents } from '../hooks/useComponents';
 import { useRemovalNotice } from '../hooks/useRemovalNotice';
 import type { Project } from '../types/project';
 import EmptyListing from '../components/EmptyListing';
+import DeleteProjectDialog from '../components/DeleteProjectDialog';
 import { formatDistanceToNow } from '../utils/time';
-import ExploreMore from '../components/ExploreMore';
-import { newProjectUrl, importProjectUrl, projectSettingsSectionUrl, type OrgScope } from '../nav';
+import { projectDeleteBlockedMessage } from '../utils/projectDeletion';
+import { newProjectUrl, importProjectUrl, type OrgScope } from '../nav';
 import { projectHomeUrl } from '../paths';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { Permissions } from '../constants/permissions';
 import Authorized from '../components/Authorized';
 import * as styles from './Projects.styles';
 
-function ProjectCard({ project, onClick, onSettingsClick }: { project: Project; onClick: () => void; onSettingsClick: () => void }) {
+/** Disabled until the project's integrations are known to be gone, since the BFF refuses the delete before that. */
+function ProjectDeleteButton({ name, integrations, onClick }: { name: string; integrations: number | undefined; onClick: () => void }) {
+  const blocked = integrations !== 0;
+  return (
+    <Authorized permissions={Permissions.PROJECT_MANAGE}>
+      <Tooltip title={integrations ? projectDeleteBlockedMessage(integrations) : ''}>
+        {/* A disabled button fires no pointer events, so the tooltip and the click guard live on a wrapper. */}
+        <span onClick={(e) => e.stopPropagation()}>
+          <IconButton size="small" color="error" aria-label={`Delete ${name}`} disabled={blocked} onClick={onClick}>
+            <Trash2 size={16} />
+          </IconButton>
+        </span>
+      </Tooltip>
+    </Authorized>
+  );
+}
+
+function ProjectCard({ project, integrations, onClick, onDeleteClick }: { project: Project; integrations: number | undefined; onClick: () => void; onDeleteClick: () => void }) {
   const deleting = project.deleting === true;
   return (
     <Tooltip title={deleting ? 'This project is being deleted' : ''}>
@@ -61,15 +80,7 @@ function ProjectCard({ project, onClick, onSettingsClick }: { project: Project; 
                 <Clock size={14} />
                 {formatDistanceToNow(project.updatedAt)}
               </Typography>
-              <IconButton
-                size="small"
-                aria-label={`Settings for ${project.name}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSettingsClick();
-                }}>
-                <Settings size={16} />
-              </IconButton>
+              <ProjectDeleteButton name={project.name} integrations={integrations} onClick={onDeleteClick} />
             </>
           )}
         </Stack>
@@ -86,9 +97,14 @@ export default function Projects(scope: OrgScope): JSX.Element {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [alert, setAlert] = useState<string | null>(null);
+  const [deletingProject, setDeletingProject] = useState<Project | null>(null);
   const { hasOrgPermission } = useAccessControl();
   const canCreateProject = hasOrgPermission(Permissions.PROJECT_MANAGE);
   const { data: projects, isLoading, refetch } = useProjects();
+  const { byProject } = useOrgComponents(
+    scope.org,
+    (projects ?? []).map((p) => p.id),
+  );
 
   useEffect(() => {
     const state = location.state as { projectDeleted?: boolean } | null;
@@ -176,15 +192,7 @@ export default function Projects(scope: OrgScope): JSX.Element {
                           </Typography>
                         </Box>
                       ) : (
-                        <IconButton
-                          size="small"
-                          aria-label={`Settings for ${p.name}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(projectSettingsSectionUrl({ org: scope.org, project: p.handler }, 'project-overview'));
-                          }}>
-                          <Settings size={16} />
-                        </IconButton>
+                        <ProjectDeleteButton name={p.name} integrations={byProject.get(p.id)?.length} onClick={() => setDeletingProject(p)} />
                       )}
                     </ListingTable.Cell>
                   </ListingTable.Row>
@@ -198,7 +206,7 @@ export default function Projects(scope: OrgScope): JSX.Element {
       <Grid container spacing={2}>
         {paginated.map((p) => (
           <Grid key={p.id} size={{ xs: 12, sm: 6, md: 4 }}>
-            <ProjectCard project={p} onClick={() => navigate(projectHomeUrl(scope.org, p.handler))} onSettingsClick={() => navigate(projectSettingsSectionUrl({ org: scope.org, project: p.handler }, 'project-overview'))} />
+            <ProjectCard project={p} onClick={() => navigate(projectHomeUrl(scope.org, p.handler))} integrations={byProject.get(p.id)?.length} onDeleteClick={() => setDeletingProject(p)} />
           </Grid>
         ))}
       </Grid>
@@ -275,7 +283,7 @@ export default function Projects(scope: OrgScope): JSX.Element {
         </>
       )}
 
-      <ExploreMore />
+      {deletingProject && <DeleteProjectDialog org={scope.org} project={deletingProject} onClose={() => setDeletingProject(null)} />}
     </PageContent>
   );
 }

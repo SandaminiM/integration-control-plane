@@ -46,10 +46,9 @@ import {
   UNPORTED_SECTIONS,
 } from '../../helpers/journey-fixtures.js';
 import { activeProject, listFixtureProjects, STALE_AGE_MS, staleProjects, setActiveProject } from '../../helpers/journey-project.js';
-import { enterOrgHome, enterProject, enterProjectOrSkip, openProjectSettings, projectSettingsButton, reseedHere } from '../../helpers/journey-session.js';
+import { confirmProjectDelete, enterOrgHome, enterProject, enterProjectOrSkip, openProjectDeleteDialog, projectDeleteButton, projectDeleteConfirmField, reseedHere } from '../../helpers/journey-session.js';
 import {
   agentRow,
-  confirmRemoval,
   deleteAllIntegrations,
   deleteIntegration,
   deleteMatchingIntegrations,
@@ -121,12 +120,6 @@ async function filterToLegacyProject(page: Page): Promise<Locator> {
   return page.locator('.MuiCard-root').filter({ has: page.getByText(PROJECT, { exact: true }) });
 }
 
-async function openLegacySettings(page: Page): Promise<void> {
-  await filterToLegacyProject(page);
-  await page.getByRole('button', { name: `Settings for ${PROJECT}`, exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 30_000 });
-}
-
 /** Deletes every integration the overview still lists and waits the deletions out. */
 async function emptyLegacyProject(page: Page): Promise<number> {
   const card = await filterToLegacyProject(page);
@@ -151,28 +144,17 @@ async function sweepLegacyProject(page: Page, note: (description: string) => voi
     return;
   }
 
-  // A project already being deleted keeps its card but loses the settings button, so it is only waited out.
-  const settings = page.getByRole('button', { name: `Settings for ${PROJECT}`, exact: true });
-  if (await settings.isVisible({ timeout: 15_000 }).catch(() => false)) {
-    // Delete Project stays disabled while integrations remain, so a disabled button sends the sweep back to the overview.
-    const deleteProject = page.getByRole('button', { name: 'Delete Project', exact: true });
-    let enabled = false;
-    for (let round = 0; round < 2 && !enabled; round++) {
-      note(`removed ${await emptyLegacyProject(page)} integration(s) from ${PROJECT}`);
-      await openLegacySettings(page);
-      enabled = await expect(deleteProject)
-        .toBeEnabled({ timeout: 30_000 })
-        .then(() => true)
-        .catch(() => false);
-    }
-    if (!enabled) throw new Error(`Delete Project stayed disabled — ${PROJECT} still holds integrations`);
-
-    await deleteProject.click();
-    await confirmRemoval(page, 'Enter project name to confirm', PROJECT);
-    const rejected = page.getByRole('alert').filter({ hasText: /Failed to delete the project/i });
-    if (await rejected.isVisible({ timeout: 10_000 }).catch(() => false)) {
-      throw new Error(`the console rejected the delete: ${(await rejected.textContent())?.trim()}`);
-    }
+  // A project already being deleted keeps its card but loses its delete button, so it is only waited out.
+  if (
+    await projectDeleteButton(page, PROJECT)
+      .isVisible({ timeout: 15_000 })
+      .catch(() => false)
+  ) {
+    note(`removed ${await emptyLegacyProject(page)} integration(s) from ${PROJECT}`);
+    // The dialog refuses while integrations remain, and asks for the name once they are gone.
+    const dialog = await openProjectDeleteDialog(page, orgHandler, PROJECT, REMOVAL_TIMEOUT_MS);
+    await expect(projectDeleteConfirmField(dialog), `${PROJECT} still holds integrations`).toBeVisible({ timeout: 30_000 });
+    await confirmProjectDelete(dialog, PROJECT);
   } else {
     note(`${PROJECT} is already being deleted; waiting for it to finish`);
   }
@@ -933,7 +915,9 @@ test.describe('07 page availability @smoke', () => {
     await openNavGroup(page, 'Observe', 'Runtime Logs');
     await expectNavItems(page, ['Runtime Logs', 'Metrics']);
     await openNavGroup(page, 'Infrastructure', 'Environments');
-    await expectNavItems(page, ['Environments', 'Pipelines', 'Settings']);
+    await expectNavItems(page, ['Environments', 'Pipelines']);
+    // A project is renamed on its overview and deleted from the project list, so it has no Settings page.
+    await expect(page.getByRole('button', { name: 'Settings', exact: true })).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Overview', exact: true }).click();
     await expect(page.getByRole('heading', { name: activeProject() })).toBeVisible({ timeout: 30_000 });
@@ -1055,41 +1039,19 @@ test.describe('08 clean up @smoke', () => {
     await expect(page.getByRole('row').filter({ hasText: AGENT_NAME_PATTERN }), 'the imported agent is still listed').toHaveCount(0, { timeout: 60_000 });
   });
 
-  test('TC_IP_PROJ_005 Delete Project becomes available once the project is empty', async () => {
-    test.setTimeout(REMOVAL_TIMEOUT_MS + 3 * 60_000);
-    // Back to project scope: cloud's integration scope offers no Settings item (AppLayout.tsx:1424).
-    await openProjectSettings(page, orgHandler);
+  // Shared by 005 and 006: the dialog 005 opens is the one 006 confirms.
+  let deleteDialog: Locator;
 
-    // Disabled while integrations remain (ProjectOverview.tsx:120), so this also proves the
-    // deletions landed. Re-entered each attempt because the components query does not refetch.
-    const deleteProject = page.getByRole('button', { name: 'Delete Project', exact: true });
-    let enabled = false;
-    // 40 attempts at 15s, matching the budget a single integration's removal gets.
-    for (let attempt = 0; attempt < 40 && !enabled; attempt++) {
-      enabled = await expect(deleteProject)
-        .toBeEnabled({ timeout: 15_000 })
-        .then(() => true)
-        .catch(() => false);
-      if (!enabled) await openProjectSettings(page, orgHandler);
-    }
-    expect(enabled, 'Delete Project stayed disabled — an integration is still being removed').toBe(true);
+  test('TC_IP_PROJ_005 the project list offers Delete once the project is empty', async () => {
+    test.setTimeout(REMOVAL_TIMEOUT_MS + 3 * 60_000);
+    // Disabled while integrations remain (ProjectDeleteButton in Projects.tsx), so this also proves the deletions landed.
+    deleteDialog = await openProjectDeleteDialog(page, orgHandler, activeProject(), REMOVAL_TIMEOUT_MS);
+    await expect(projectDeleteConfirmField(deleteDialog), 'the dialog still refuses — an integration is still being removed').toBeVisible({ timeout: 30_000 });
   });
 
-  test('TC_IP_PROJ_006 deleting the project returns to the organization home without its card', async () => {
+  test('TC_IP_PROJ_006 deleting the project removes its card from the organization home', async () => {
     test.setTimeout(PROJECT_REMOVAL_TIMEOUT_MS + 3 * 60_000);
-    await page.getByRole('button', { name: 'Delete Project', exact: true }).click();
-    await confirmRemoval(page, 'Enter project name to confirm', activeProject());
-
-    // No success alert exists (ProjectOverview.tsx:72 navigates with state Projects.tsx:93
-    // clears), so the redirect is the signal. Raced against the failure branch (:76) so a
-    // rejected delete reports its reason instead of timing out on a heading.
-    const landed = page.getByRole('heading', { name: 'All Projects' });
-    const rejected = page.getByRole('alert').filter({ hasText: /Failed to delete the project/i });
-    await Promise.race([landed.waitFor({ state: 'visible', timeout: 2 * 60_000 }).catch(() => {}), rejected.waitFor({ state: 'visible', timeout: 2 * 60_000 }).catch(() => {})]);
-    if (await rejected.isVisible().catch(() => false)) {
-      throw new Error(`the console rejected the delete: ${(await rejected.textContent())?.trim()}`);
-    }
-    await expect(landed, 'the delete neither completed nor reported an error').toBeVisible({ timeout: 30_000 });
+    await confirmProjectDelete(deleteDialog, activeProject());
     await expect(page.getByText(activeProject(), { exact: true }), `the ${activeProject()} card is still on the org home`).toHaveCount(0, { timeout: PROJECT_REMOVAL_TIMEOUT_MS });
   });
 });
@@ -1128,9 +1090,9 @@ test.describe('08b sweep abandoned projects @smoke', () => {
         setActiveProject(project);
         await enterOrgHome(page, orgHandler);
 
-        // A project already being deleted keeps its card but loses the settings button, so it cannot be opened.
+        // A project already being deleted keeps its card but loses its delete button, so it cannot be opened.
         if (
-          !(await projectSettingsButton(page)
+          !(await projectDeleteButton(page)
             .isVisible({ timeout: 15_000 })
             .catch(() => false))
         ) {
@@ -1142,11 +1104,9 @@ test.describe('08b sweep abandoned projects @smoke', () => {
         await waitForIntegrationsToLoad(page);
         await deleteAllIntegrations(page);
 
-        await openProjectSettings(page, orgHandler);
-        const deleteProject = page.getByRole('button', { name: 'Delete Project', exact: true });
-        await expect(deleteProject).toBeEnabled({ timeout: PROJECT_REMOVAL_TIMEOUT_MS });
-        await deleteProject.click();
-        await confirmRemoval(page, 'Enter project name to confirm', project);
+        const dialog = await openProjectDeleteDialog(page, orgHandler, project, PROJECT_REMOVAL_TIMEOUT_MS);
+        await expect(projectDeleteConfirmField(dialog)).toBeVisible({ timeout: 30_000 });
+        await confirmProjectDelete(dialog, project);
         test.info().annotations.push({ type: 'fixture', description: `swept abandoned ${project}` });
       } catch (error) {
         failed.push(project);

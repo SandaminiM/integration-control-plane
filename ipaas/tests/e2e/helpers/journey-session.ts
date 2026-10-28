@@ -20,7 +20,7 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { reseedSessionToken, waitForApiConfig } from './cloud-fixtures.js';
-import { expandSidebar, gotoOrgHome, openProject } from './console-nav.js';
+import { gotoOrgHome, openProject } from './console-nav.js';
 import { dismissStrayDialog } from './journey-envcard.js';
 import { PROJECT_REMOVAL_TIMEOUT_MS } from './journey-fixtures.js';
 import { activeProject } from './journey-project.js';
@@ -62,24 +62,48 @@ export async function enterProject(page: Page, orgHandler: string): Promise<void
   await openProject(page, activeProject());
 }
 
-/** Reached through the sidebar each time: reloading the settings URL bounces the console back to the project home. */
-export async function openProjectSettings(page: Page, orgHandler: string): Promise<void> {
-  await enterProject(page, orgHandler);
-  await expandSidebar(page);
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 30_000 });
-}
-
-/** Narrows the org home to the fixture project: the list pages at ten cards, in no order we control. */
-export async function filterToProject(page: Page): Promise<void> {
+/** Narrows the org home to one project: the list pages at ten cards, in no order we control. */
+export async function filterToProject(page: Page, name = activeProject()): Promise<void> {
   const search = page.getByPlaceholder('Search projects');
   if (!(await search.isVisible({ timeout: 15_000 }).catch(() => false))) return;
-  await search.fill(activeProject());
+  await search.fill(name);
 }
 
 /** Present only on a card that is not being deleted — see ProjectCard in Projects.tsx. */
-export function projectSettingsButton(page: Page): Locator {
-  return page.getByRole('button', { name: `Settings for ${activeProject()}` }).first();
+export function projectDeleteButton(page: Page, name = activeProject()): Locator {
+  return page.getByRole('button', { name: `Delete ${name}`, exact: true }).first();
+}
+
+/**
+ * Opens the delete dialog from the org's project list, the only place a project is deleted from.
+ * The button stays disabled while the project holds integrations, so `emptyWithin` bounds the wait for them to go.
+ */
+export async function openProjectDeleteDialog(page: Page, orgHandler: string, name = activeProject(), emptyWithin = 60_000): Promise<Locator> {
+  await enterOrgHome(page, orgHandler);
+  await filterToProject(page, name);
+  const button = projectDeleteButton(page, name);
+  await expect(button, `${name} still holds integrations, so its delete button stayed disabled`).toBeEnabled({ timeout: emptyWithin });
+  await button.click();
+  const dialog = page.getByRole('dialog').filter({ hasText: 'Are you sure you want to remove the project' });
+  await expect(dialog).toBeVisible({ timeout: 30_000 });
+  return dialog;
+}
+
+/** The dialog asks for the name only once the project is empty. */
+export function projectDeleteConfirmField(dialog: Locator): Locator {
+  return dialog.getByPlaceholder('Enter project name to confirm');
+}
+
+/** Confirms an open delete dialog; throws with the console's reason when the delete is refused. */
+export async function confirmProjectDelete(dialog: Locator, name: string): Promise<void> {
+  await projectDeleteConfirmField(dialog).fill(name);
+  const confirm = dialog.getByRole('button', { name: 'Delete', exact: true });
+  await expect(confirm, 'Delete stayed disabled after the name was typed').toBeEnabled({ timeout: 15_000 });
+  await confirm.click();
+  const rejected = dialog.getByRole('alert').filter({ hasText: /Failed to delete the project/i });
+  await Promise.race([dialog.waitFor({ state: 'hidden', timeout: 60_000 }).catch(() => {}), rejected.waitFor({ state: 'visible', timeout: 60_000 }).catch(() => {})]);
+  if (await rejected.isVisible().catch(() => false)) throw new Error(`the console rejected the delete: ${(await rejected.textContent())?.trim()}`);
+  await expect(dialog, 'the delete dialog neither closed nor reported an error').toBeHidden({ timeout: 30_000 });
 }
 
 /** Asked of the page, not remembered: a worker restart resets any flag and would skip every group. */
@@ -91,7 +115,7 @@ export async function enterProjectOrSkip(page: Page, orgHandler: string): Promis
     await filterToProject(page);
     // Not the card's name: a deleting project keeps its card but is hidden from the switcher.
     if (
-      await projectSettingsButton(page)
+      await projectDeleteButton(page)
         .isVisible({ timeout: 15_000 })
         .catch(() => false)
     ) {
