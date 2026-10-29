@@ -74,10 +74,10 @@ import type { Component, ComponentDeletionError, ComponentSubscription, Subscrip
 import { useDeleteComponent } from '../hooks/useComponents';
 import NotFound from '../components/NotFound';
 import { formatDistanceToNow } from '../utils/time';
-import { resourceUrl, broaden, newComponentUrl, type ProjectScope } from '../nav';
+import { newComponentUrl, type ProjectScope } from '../nav';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useAuth } from '../auth';
-import { componentOverviewUrl } from '../paths';
+import { componentOverviewUrl, orgProjectsUrl } from '../paths';
 import { Permissions } from '../constants/permissions';
 import { isSupportedIntegration, getDisplayLabel, getNonIntegrationPlatform } from '../constants/integrations';
 import { identifyIntegration } from '../utils/identifyIntegration';
@@ -710,7 +710,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
     return <ProjectHomeSkeleton />;
   }
   if (!project) {
-    return <NotFound message="Project not found" backTo={resourceUrl(broaden(scope)!, 'overview')} backLabel="Back to Projects" />;
+    return <NotFound message="Project not found" backTo={orgProjectsUrl(scope.org)} backLabel="Back to Projects" />;
   }
 
   const isEmpty = justProvisionedDefaultProject || (isComponentsSuccess ? components.length === 0 : cachedIsEmpty);
@@ -847,11 +847,15 @@ export default function Project(scope: ProjectScope): JSX.Element {
                       inputProps={{ 'aria-label': 'Project name' }}
                       disabled={updateProject.isPending}
                       autoComplete="off"
+                      // Same box as the h1 it replaces: an outline (not a border) and no input padding, so the header does not jump.
                       sx={(theme) => ({
                         ...theme.typography.h1,
+                        display: 'flex',
                         px: 0.5,
-                        border: `2px solid ${nameError ? theme.palette.error.main : theme.palette.primary.main}`,
+                        mx: -0.5,
+                        outline: `2px solid ${nameError ? theme.palette.error.main : theme.palette.primary.main}`,
                         borderRadius: `${theme.shape.borderRadius}px`,
+                        '& .MuiInputBase-input': { p: 0, height: 'auto', lineHeight: 'inherit' },
                       })}
                     />
                     {nameError && (

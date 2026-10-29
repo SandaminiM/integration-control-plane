@@ -28,7 +28,7 @@ import { useCommitHistory, useComponentRepository } from '../hooks/useRepository
 import { useDeploymentStatus } from '../hooks/useDeployments';
 import NotFound from '../components/NotFound';
 import IntegrationOverviewSkeleton from '../components/IntegrationOverviewSkeleton';
-import { orgHomeUrl } from '../paths';
+import { orgProjectsUrl } from '../paths';
 import { ArtifactDetail } from '../components/ArtifactDetail';
 import Environment from '../components/EnvironmentCard';
 import PromoteButton from '../components/EnvironmentCard/PromoteButton';
@@ -104,7 +104,7 @@ export default function Component(scope: ComponentScope): JSX.Element {
 
   // A disabled query reports isLoading false; isPending stays true until the project resolves too.
   if (loadingProject || (projectId && pendingComponent)) return <IntegrationOverviewSkeleton />;
-  if (!project) return <NotFound message="Project not found" backTo={orgHomeUrl(scope.org)} backLabel="Back to Projects" />;
+  if (!project) return <NotFound message="Project not found" backTo={orgProjectsUrl(scope.org)} backLabel="Back to Projects" />;
   if (!component) return <NotFound message="Component not found" backTo={resourceUrl(broaden(scope)!, 'overview')} backLabel="Back to Project" />;
 
   const displayType = component.displayType ?? '';

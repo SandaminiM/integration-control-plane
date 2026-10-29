@@ -28,7 +28,7 @@ import { fetchProjects as fetchProjectsApi } from '../api/projects';
 import { projectHomeUrl } from '../paths';
 import { newComponentUrl } from '../nav';
 import { DEFAULT_PROJECT_HANDLER } from '../constants/project';
-import Projects from './Projects';
+import OrgOverview from './OrgOverview';
 
 function OnboardingShell({ children }: { children: React.ReactNode }) {
   return (
@@ -126,5 +126,5 @@ export default function OrgHome(): JSX.Element {
     );
   }
 
-  return <Projects level="organizations" org={orgHandler!} />;
+  return <OrgOverview level="organizations" org={orgHandler!} />;
 }

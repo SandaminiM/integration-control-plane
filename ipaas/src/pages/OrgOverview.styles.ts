@@ -71,15 +71,6 @@ export const summaryAction = {
   fontWeight: 600,
 } as const;
 
-// Projects and Recently accessed integrations are separate sections sharing one row.
-export const sectionsRow = {
-  display: 'grid',
-  gap: 3,
-  gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-  // Stretched, so the two cards stay the same height whichever lists more rows.
-  alignItems: 'stretch',
-} as const;
-
 // Matches Explore More's top margin, so the intro and the sections below it share one gap.
 export const intro = {
   mb: 5,
@@ -116,14 +107,6 @@ export const projectAvatar = {
   color: 'text.primary',
 } as const;
 
-export const lastAccessed = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 0.75,
-  flexShrink: 0,
-  color: 'text.secondary',
-} as const;
-
 // Fixed widths, so each column starts at the same x on every row whatever its text.
 export const integrationsColumn = {
   width: 112,
@@ -141,19 +124,14 @@ export const rowMeta = {
   color: 'text.secondary',
 } as const;
 
-export const typeChip = {
-  height: 18,
-  fontSize: 10,
-  flexShrink: 0,
-  '& .MuiChip-label': { px: 0.75 },
-} as const;
-
+// Same inset as the section header, so the link lines up with Create Project above it.
 export const allProjectsRow = {
   display: 'flex',
   justifyContent: 'flex-end',
+  px: 2.5,
+  py: 1.5,
 } as const;
 
 export const allProjectsLink = {
-  m: 1.5,
   fontWeight: 600,
 } as const;

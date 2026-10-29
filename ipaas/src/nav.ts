@@ -260,7 +260,7 @@ export interface NavEntry {
 const NAV: Record<Level, NavEntry[]> = {
   organizations: [
     { key: 'overview', navId: 'org-overview', segment: 'overview' },
-    { key: 'projects', navId: 'org-projects', segment: 'home' },
+    { key: 'projects', navId: 'org-projects', segment: 'projects' },
     { key: 'build', navId: 'build', segment: 'build' },
     { key: 'deploy', navId: 'org-deploy', segment: 'deploy' },
     { key: 'test', navId: 'org-test', segment: 'test' },

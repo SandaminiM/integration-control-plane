@@ -40,7 +40,9 @@ export default function ProjectPickerDialog({ open, projects, onClose, onSelect 
       <DialogContent>
         <Box sx={styles.dialogHeader}>
           <Box>
-            <Typography variant="h5">Choose a project</Typography>
+            <Typography variant="h5" fontWeight={700}>
+              Choose a project
+            </Typography>
             <Typography variant="body2" color="text.secondary">
               The integration will be created in this project.
             </Typography>

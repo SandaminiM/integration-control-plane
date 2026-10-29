@@ -62,7 +62,7 @@ import {
   Hammer,
   HeartPulse,
   Layers,
-  FolderOpen,
+  Box as BoxIcon,
   LayoutDashboard,
   LogOut,
   Logs,
@@ -104,8 +104,7 @@ import {
   type Scope,
 } from '../nav';
 import { isSettingsSectionVisible, type SettingsSectionDef } from '../constants/orgSettingsSections';
-import { recentComponentKey, recentProjectKey, recordRecent } from '../utils/recentAccess';
-import { componentOverviewUrl, documentationUrl, loginUrl, orgHomeUrl, orgOverviewUrl, privacyPolicyUrl, termsOfUseUrl } from '../paths';
+import { componentOverviewUrl, documentationUrl, loginUrl, orgHomeUrl, privacyPolicyUrl, termsOfUseUrl } from '../paths';
 import { formatDocumentTitle, pageTitleFor } from '../utils/documentTitle';
 import { useAccessControl } from '../contexts/AccessControlContext';
 
@@ -136,7 +135,7 @@ export default function AppLayout(): JSX.Element {
   // useAppShell's internal mobile-collapse effect keys off this options object's identity —
   // a fresh literal here re-triggers it (and its setState) on every render, which on a
   // sub-'md'-breakpoint viewport becomes an infinite render loop.
-  const appShellOptions = useMemo(() => ({ initialCollapsed: localStorage.getItem('sidebar:collapsed') !== 'false' }), []);
+  const appShellOptions = useMemo(() => ({ initialCollapsed: localStorage.getItem('sidebar:collapsed') === 'true' }), []);
   const { state: shell, actions } = useAppShell(appShellOptions);
 
   const handleToggleSidebar = () => {
@@ -246,8 +245,6 @@ export default function AppLayout(): JSX.Element {
   useEffect(() => {
     if (userId && hasProject(scope) && !orgAccessDenied) {
       localStorage.setItem(`last_project:${userId}`, JSON.stringify({ org: scope.org, project: scope.project }));
-      recordRecent(userId, 'projects', recentProjectKey(scope.org, scope.project));
-      if (hasComponent(scope)) recordRecent(userId, 'components', recentComponentKey(scope.org, scope.project, scope.component));
     }
   }, [userId, scope, orgAccessDenied]);
 
@@ -288,7 +285,7 @@ export default function AppLayout(): JSX.Element {
           <Header.Toggle collapsed={hideSidebarForEmptyProject || shell.sidebarCollapsed} onToggle={handleHeaderToggle} />
           <Header.Brand>
             <Header.BrandLogo>
-              <NavLink to={orgOverviewUrl(scope.org)} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+              <NavLink to={orgHomeUrl(scope.org)} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
                 <Logo />
               </NavLink>
             </Header.BrandLogo>
@@ -300,11 +297,11 @@ export default function AppLayout(): JSX.Element {
               role="button"
               tabIndex={0}
               sx={{ position: 'relative', display: 'inline-flex', alignSelf: 'center', cursor: 'pointer' }}
-              onClick={() => navigateTo(orgOverviewUrl(scope.org))}
+              onClick={() => navigateTo(orgHomeUrl(scope.org))}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  navigateTo(orgOverviewUrl(scope.org));
+                  navigateTo(orgHomeUrl(scope.org));
                 }
               }}>
               <ComplexSelect
@@ -688,7 +685,7 @@ export default function AppLayout(): JSX.Element {
                       </Sidebar.Item>
                       <Sidebar.Item id="org-projects">
                         <Sidebar.ItemIcon>
-                          <FolderOpen size={20} />
+                          <BoxIcon size={20} />
                         </Sidebar.ItemIcon>
                         <Sidebar.ItemLabel>Projects</Sidebar.ItemLabel>
                       </Sidebar.Item>
