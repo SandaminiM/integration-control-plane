@@ -44,7 +44,8 @@ export default function ServicePlanCard({ name, tagline, price, specs, note, not
   const ariaLabel = price ? `${name}, ${price.monthly} per month` : name;
   return (
     <Card variant="outlined" sx={styles.cardSx(selected, disabled)}>
-      <CardActionArea role="radio" aria-checked={selected} aria-label={ariaLabel} disabled={disabled} disableRipple onClick={onSelect} sx={styles.actionAreaSx}>
+      {/* Roving tab stop: Tab reaches the group through its selected card; the group's arrow keys move between the rest. */}
+      <CardActionArea role="radio" aria-checked={selected} aria-label={ariaLabel} tabIndex={selected ? 0 : -1} disabled={disabled} disableRipple onClick={onSelect} sx={styles.actionAreaSx}>
         <Box sx={styles.headerSx}>
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>

@@ -61,7 +61,7 @@ export const stepTitleSx = { fontWeight: 600, letterSpacing: '-0.015em' } as con
 export const chipsSx = { display: 'flex', flexWrap: 'wrap', gap: 1 } as const;
 
 // On the Chip itself, so it outranks the theme's own icon margin.
-export const chipSx = { '& .MuiChip-icon': { marginLeft: '8px' } } as const;
+export const chipSx = { '& .MuiChip-icon': { ml: 1 } } as const;
 
 export const nameInputSx = { fontFamily: 'monospace' } as const;
 

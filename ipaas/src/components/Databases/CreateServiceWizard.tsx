@@ -18,7 +18,7 @@
 
 import { Alert, Box, Button, Card, Chip, CircularProgress, Grid, InputAdornment, TextField, Typography } from '@wso2/oxygen-ui';
 import { ArrowLeft, ArrowRight, CircleCheck, Database, Server, Workflow } from '@wso2/oxygen-ui-icons-react';
-import { useRef, useState, type JSX } from 'react';
+import { useRef, useState, type JSX, type KeyboardEvent } from 'react';
 import SelectableCard from '../common/SelectableCard';
 import PlanCard from './PlanCard';
 import TemporalPlanCard from '../Temporal/TemporalPlanCard';
@@ -90,7 +90,7 @@ export default function CreateServiceWizard({ scope, onCancel, initialKind }: Cr
   const validateName = isTemporal ? temporalNameError : databaseNameError;
   const nameError = validateName(name, takenNames ?? [], offering.data?.maxNameLength);
   const nameReady = name !== '' && !nameError && takenNames !== null;
-  const allowLeave = useUnsavedChanges(name !== '' && !create.isSuccess);
+  const allowLeave = useUnsavedChanges((name !== '' || pickedPlan !== '') && !create.isSuccess);
   const canCreate = nameReady && !!planId && !offering.isError && !create.isPending;
   const createError = create.isError ? (isTemporal ? toCreateTemporalError(create.error) : toCreateDatabaseError(create.error)) : null;
 
@@ -102,6 +102,16 @@ export default function CreateServiceWizard({ scope, onCancel, initialKind }: Cr
     createTemporal.reset();
     setStep('service');
     stepHeadingRef.current?.focus();
+  };
+
+  // WAI-ARIA radio group: arrow keys move focus and selection together, wrapping at either end.
+  const onPlanKeyDown = (e: KeyboardEvent<HTMLElement>) => {
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (!step || create.isPending) return;
+    e.preventDefault();
+    const next = (planIds.indexOf(planId) + step + planIds.length) % planIds.length;
+    setPickedPlan(planIds[next]);
+    e.currentTarget.querySelectorAll<HTMLElement>('[role="radio"]')[next]?.focus();
   };
 
   const cancel = (leave: () => void) => () => {
@@ -197,7 +207,7 @@ export default function CreateServiceWizard({ scope, onCancel, initialKind }: Cr
   ) : !planIds.length ? (
     <Alert severity="info">No service plans are offered.</Alert>
   ) : (
-    <Box role="radiogroup" aria-labelledby="service-plan-title" sx={styles.planGridSx}>
+    <Box role="radiogroup" aria-labelledby="service-plan-title" onKeyDown={onPlanKeyDown} sx={styles.planGridSx}>
       {isTemporal
         ? temporalOffering.data?.plans.map((plan) => <TemporalPlanCard key={plan.id} plan={plan} selected={planId === plan.id} disabled={create.isPending} onSelect={() => setPickedPlan(plan.id)} />)
         : dbOffering.data?.plans.map((plan) => <PlanCard key={plan.id} plan={plan} selected={planId === plan.id} disabled={create.isPending} onSelect={() => setPickedPlan(plan.id)} />)}
