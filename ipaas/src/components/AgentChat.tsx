@@ -21,6 +21,7 @@ import { Check, Copy, Send, Sparkles, User } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useApiDefinition, useEnvEndpoints } from '../hooks/useDeployments';
 import { useEndpointTestAccess } from '../hooks/useEndpointTestAccess';
+import ApiKeyAuthOffer from './ApiKeyAuthOffer';
 import { generateUUID } from '../utils/string';
 import type { AgentConnectionStatus, ChatMessage } from '../types/agentChat';
 import type { EndpointRef } from '../types/consumers';
@@ -54,10 +55,11 @@ function formatTime(ts: number): string {
 export default function AgentChat({ projectId, componentId, versionId, releaseId, environmentName, envCritical, waitForConfig = false, variant = 'card', onConnectionChange }: AgentChatProps): ReactNode {
   const { data: endpoints = [] } = useEnvEndpoints(componentId, versionId, releaseId);
 
-  // Candidate chat endpoint: the first reachable one. (The `/chat` operation is
-  // confirmed below only as a hint; the endpoint is still used when its operations
-  // aren't discoverable.)
-  const candidate = useMemo(() => endpoints.find((e) => e.publicUrl) ?? null, [endpoints]);
+  // Candidate chat endpoint: the first one listed with a public URL, else the first one. Every agent is
+  // deployed to the AI gateway, and the chat URL comes from the endpoint's security below, so an endpoint
+  // the release listing reports without a public URL is still the agent's way in. (The `/chat` operation
+  // is confirmed below only as a hint; the endpoint is still used when its operations aren't discoverable.)
+  const candidate = useMemo(() => endpoints.find((e) => e.publicUrl) ?? endpoints[0] ?? null, [endpoints]);
 
   // The enforcing gateway URL, active auth mode and a short-lived test key, from the
   // same BFF routes the swagger console and the API security drawer use.
@@ -65,7 +67,7 @@ export default function AgentChat({ projectId, componentId, versionId, releaseId
     () => (candidate && environmentName ? { projectName: projectId, componentName: componentId, environmentName, endpointName: candidate.id, deploymentTrackId: versionId } : null),
     [projectId, componentId, environmentName, candidate, versionId],
   );
-  const access = useEndpointTestAccess(accessRef, !!accessRef);
+  const access = useEndpointTestAccess(accessRef, { enabled: !!accessRef, agent: true });
 
   // The endpoint's base64 OpenAPI arrives in `apimRevisionId`, so the operations come from the spec.
   const { data: chatSpec } = useApiDefinition(candidate?.apimRevisionId);
@@ -73,7 +75,7 @@ export default function AgentChat({ projectId, componentId, versionId, releaseId
   // An agent publishes no OpenAPI spec, so a missing `/chat` is unknown rather than absent.
   const operationsKnown = !!chatSpec;
 
-  // Chat invokes the apip gateway and nothing else. The endpoint's own external
+  // Chat invokes the AI gateway and nothing else. The endpoint's own external
   // route is open (the policy engine is not in its path), so falling back to it
   // would hand the test key to a host that never validates it and would make an
   // unenforced call look like a secured one.
@@ -84,9 +86,6 @@ export default function AgentChat({ projectId, componentId, versionId, releaseId
   const authError = !!access.keyError;
   // A `none`-mode endpoint is open and needs no credential at all.
   const isAuthorized = access.isAuthorized;
-  // jwt-secured endpoints are not auto-minted — the test-key route would flip
-  // enforcement to api-key auth, which must be a deliberate choice.
-  const needsManualKey = access.mode === 'jwt' && !access.apiKey;
 
   // Connection status, reported up to the host (Test page shows it as a chip). An
   // unreachable endpoint is terminal, so it reports `error` rather than spinning on
@@ -137,10 +136,11 @@ export default function AgentChat({ projectId, componentId, versionId, releaseId
       // enforcement to api-key auth — that stays an explicit user action.
       const canRefreshKey = access.mode === 'api-key';
       if (response.status === 401 && allowKeyRefresh && canRefreshKey) {
-        // Key likely expired — regenerate once and retry with the fresh key
-        // passed directly; a setApiKey state update wouldn't reach this
-        // closure in time. If we can't refresh, fall through to surface the 401.
-        const fresh = await access.mintKey();
+        // Key likely expired: renew it once and retry with the fresh key passed
+        // directly; a state update wouldn't reach this closure in time. The renewal
+        // reuses a key another view already renewed. If we can't refresh, fall
+        // through to surface the 401.
+        const fresh = await access.renewKey(key);
         if (fresh) {
           await send(message, false, fresh);
           return;
@@ -186,7 +186,7 @@ export default function AgentChat({ projectId, componentId, versionId, releaseId
   const notExposed = !!candidate && access.isUnavailable;
   const noEndpoint = endpoints.length > 0 && !chatUrl && !notExposed;
   // Passes the gateway's own reason through rather than replacing it with a generic line.
-  const authNotice = `Chat can’t authenticate with this agent: issuing a test key failed.${access.keyError ? ` ${access.keyError}` : ''}`;
+  const authNotice = `Chat can’t authenticate with this agent. ${access.keyError}`;
   const isPage = variant === 'page';
 
   return (
@@ -199,17 +199,7 @@ export default function AgentChat({ projectId, componentId, versionId, releaseId
       {authError && <Alert severity="warning">{authNotice}</Alert>}
       {noEndpoint && <Alert severity="info">No chat endpoint found for this agent.</Alert>}
       {notExposed && <Alert severity="info">This agent can&apos;t be chat-tested right now &mdash; its endpoint hasn&apos;t registered on the API gateway. Redeploy the agent, or check that its endpoint is exposed as an API.</Alert>}
-      {needsManualKey && (
-        <Alert
-          severity="info"
-          action={
-            <Button color="inherit" size="small" onClick={() => void access.mintKey()} disabled={access.isMinting}>
-              Use a test key
-            </Button>
-          }>
-          This agent is secured with OAuth. Chatting here needs a test key, which switches the endpoint to API key authentication.
-        </Alert>
-      )}
+      <ApiKeyAuthOffer access={access} />
       {isPage && operationsKnown && !noEndpoint && !hasChatOperation && chatUrl && messages.length === 0 && (
         <Typography variant="caption" color="text.secondary">
           No <code>/chat</code> operation was detected on this agent — messages are sent to <code>{chatUrl}/chat</code>.

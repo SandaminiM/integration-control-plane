@@ -24,9 +24,16 @@ import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import { withTrackParam } from '../../../hooks/useSelectedTrack';
 import { useLocation } from 'react-router';
 import { useRedeployDeployment, useStopDeployment } from '../../../hooks/useDeployments';
+import { Scopes } from '../../../constants/permissions';
+import { useCan } from '../../../hooks/useCan';
 import type { EnvCardActionsProps } from '../../../types/integration';
 import { isDeploymentHealthy } from '../../../utils/deploymentStatus';
 import ServiceLogsDrawer from './ServiceLogsDrawer';
+
+export interface ApiEnvCardActionsProps extends EnvCardActionsProps {
+  /** Types with no Test surface of their own (workflows) keep the rest of the actions. */
+  hideTest?: boolean;
+}
 
 /**
  * Integration-as-API's right-header slot: Test, View Logs, and Stop/Start —
@@ -49,13 +56,15 @@ export default function EnvCardActions({
   releaseMgtDeploymentId,
   onNotify,
   requestPoll,
-}: EnvCardActionsProps): ReactNode {
+  hideTest = false,
+}: ApiEnvCardActionsProps): ReactNode {
   const navigate = useAppNavigate();
   const location = useLocation();
   const [logsOpen, setLogsOpen] = useState(false);
   const stopMutation = useStopDeployment();
   const redeployMutation = useRedeployDeployment();
   const isActionPending = stopMutation.isPending || redeployMutation.isPending;
+  const canDeployHere = useCan()(Scopes.INTEGRATION_DEPLOY);
 
   const canStop = deploymentStatusV2 === 'ACTIVE';
   const canStart = deploymentStatusV2 === 'SUSPENDED';
@@ -94,7 +103,7 @@ export default function EnvCardActions({
 
   return (
     <>
-      {hasDeployment && !env.critical && (
+      {hasDeployment && !env.critical && !hideTest && (
         <Button
           variant="text"
           size="small"
@@ -110,7 +119,7 @@ export default function EnvCardActions({
           View logs
         </Button>
       )}
-      {(canStop || isInProgress) && (
+      {canDeployHere && (canStop || isInProgress) && (
         <Tooltip title="Stop deployment">
           <span>
             <Button variant="outlined" size="small" color="error" startIcon={<Square size={14} />} onClick={handleStop} disabled={isActionPending || isInProgress}>
@@ -119,7 +128,7 @@ export default function EnvCardActions({
           </span>
         </Tooltip>
       )}
-      {canStart && (
+      {canDeployHere && canStart && (
         <Tooltip title="Start deployment">
           <span>
             <Button variant="outlined" size="small" color="success" startIcon={<RotateCw size={14} />} onClick={handleRedeploy} disabled={isActionPending}>
@@ -128,7 +137,7 @@ export default function EnvCardActions({
           </span>
         </Tooltip>
       )}
-      {hasError && (
+      {canDeployHere && hasError && (
         <Tooltip title="Redeploy">
           <span>
             <Button variant="outlined" size="small" color="error" startIcon={<RotateCw size={14} />} onClick={handleRedeploy} disabled={isActionPending}>

@@ -31,6 +31,14 @@ interface ConnectionSidebarProps {
   onDisconnect: () => void;
   onReconnect: () => void;
   onGetTestKey?: () => void;
+  /**
+   * The page connects through ipaas-service's relay, which holds a key of its own, so connecting needs no
+   * token. A token field is still shown when `onGetTestKey` is given: it is for calling the URL from
+   * another MCP client.
+   */
+  keyless?: boolean;
+  /** The endpoint's visibility, shown read-only. */
+  visibility?: string;
 }
 
 const STATUS_META: Record<McpConnectionStatus, { label: string; color: string }> = {
@@ -43,7 +51,7 @@ const STATUS_META: Record<McpConnectionStatus, { label: string; color: string }>
 const readOnlyInputSx = { bgcolor: 'action.hover', fontFamily: 'monospace', fontSize: 12.5 } as const;
 
 /** The playground's left panel: the endpoint selector, the derived URL + test key, and connect controls. */
-export default function ConnectionSidebar({ url, token, status, isTokenFetching, endpointSwitcher, onConnect, onDisconnect, onReconnect, onGetTestKey }: ConnectionSidebarProps): JSX.Element {
+export default function ConnectionSidebar({ url, token, status, isTokenFetching, endpointSwitcher, onConnect, onDisconnect, onReconnect, onGetTestKey, keyless = false, visibility }: ConnectionSidebarProps): JSX.Element {
   const [showToken, setShowToken] = useState(false);
   const connected = status === 'connected';
   const connecting = status === 'connecting';
@@ -66,12 +74,16 @@ export default function ConnectionSidebar({ url, token, status, isTokenFetching,
         </Tooltip>
       )}
 
+      {visibility && <TextField labelPlacement="top" label="Visibility" size="small" fullWidth value={visibility} InputProps={{ readOnly: true, sx: readOnlyInputSx }} />}
+
       <TextField
         labelPlacement="top"
         label="URL"
         size="small"
         fullWidth
         value={url}
+        // The AI gateway gives the URL only once it has published the server; the relay calls it too.
+        placeholder={keyless ? 'Not published on the AI gateway yet' : undefined}
         InputProps={{
           readOnly: true,
           sx: readOnlyInputSx,
@@ -87,31 +99,37 @@ export default function ConnectionSidebar({ url, token, status, isTokenFetching,
         }}
       />
 
-      <TextField
-        labelPlacement="top"
-        label="Token"
-        size="small"
-        fullWidth
-        type={showToken ? 'text' : 'password'}
-        value={token}
-        InputProps={{
-          readOnly: true,
-          sx: readOnlyInputSx,
-          endAdornment: (
-            <InputAdornment position="end">
-              {isTokenFetching && <CircularProgress size={14} sx={{ mr: 0.5 }} />}
-              <IconButton size="small" aria-label={showToken ? 'Hide token' : 'Show token'} onClick={() => setShowToken((s) => !s)} edge="end">
-                {showToken ? <EyeOff size={14} /> : <Eye size={14} />}
-              </IconButton>
-              <Tooltip title="Copy token">
-                <IconButton size="small" aria-label="Copy token" onClick={() => copy(token)} edge="end">
-                  <Copy size={14} />
+      {(!keyless || onGetTestKey) && (
+        <TextField
+          labelPlacement="top"
+          label="Token"
+          size="small"
+          fullWidth
+          type={showToken ? 'text' : 'password'}
+          value={token}
+          placeholder={keyless ? 'Get a test key to call this URL yourself' : undefined}
+          InputProps={{
+            readOnly: true,
+            sx: readOnlyInputSx,
+            endAdornment: (
+              <InputAdornment position="end">
+                {isTokenFetching && <CircularProgress size={14} sx={{ mr: 0.5 }} />}
+                <IconButton size="small" aria-label={showToken ? 'Hide token' : 'Show token'} onClick={() => setShowToken((s) => !s)} edge="end">
+                  {showToken ? <EyeOff size={14} /> : <Eye size={14} />}
                 </IconButton>
-              </Tooltip>
-            </InputAdornment>
-          ),
-        }}
-      />
+                <Tooltip title="Copy token">
+                  {/* A disabled button fires no events, so the tooltip listens on its wrapper. */}
+                  <Box component="span">
+                    <IconButton size="small" aria-label="Copy token" onClick={() => copy(token)} edge="end" disabled={!token}>
+                      <Copy size={14} />
+                    </IconButton>
+                  </Box>
+                </Tooltip>
+              </InputAdornment>
+            ),
+          }}
+        />
+      )}
 
       {onGetTestKey && (
         <Button variant="outlined" size="small" onClick={onGetTestKey} disabled={isTokenFetching}>
@@ -129,7 +147,7 @@ export default function ConnectionSidebar({ url, token, status, isTokenFetching,
           </Button>
         </Stack>
       ) : (
-        <Button variant="contained" size="small" startIcon={connecting ? <CircularProgress size={14} color="inherit" /> : <Plug size={14} />} onClick={onConnect} disabled={connecting || !url || !token}>
+        <Button variant="contained" size="small" startIcon={connecting ? <CircularProgress size={14} color="inherit" /> : <Plug size={14} />} onClick={onConnect} disabled={connecting || !url || (!keyless && !token)}>
           {connecting ? 'Connecting…' : 'Connect'}
         </Button>
       )}

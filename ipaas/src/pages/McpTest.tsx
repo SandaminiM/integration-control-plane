@@ -16,11 +16,12 @@
  * under the License.
  */
 
-import { Alert, Box, MenuItem, PageContent, PageTitle, Select, Stack } from '@wso2/oxygen-ui';
+import { Alert, Box, CircularProgress, MenuItem, PageContent, PageTitle, Select, Stack } from '@wso2/oxygen-ui';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import ComingSoon from './ComingSoon';
 import McpPlayground from '../components/McpPlayground/McpPlayground';
 import { useEndpointTestAccess } from '../hooks/useEndpointTestAccess';
+import ApiKeyAuthOffer from '../components/ApiKeyAuthOffer';
 import { useComponentByHandler } from '../hooks/useComponents';
 import { useComponentDeployment, useEnvEndpoints } from '../hooks/useDeployments';
 import { useEnvironments } from '../hooks/useEnvironments';
@@ -32,12 +33,18 @@ import type { ComponentScope } from '../nav';
 import type { EndpointRef } from '../types/consumers';
 
 import NotDeployedAlert from '../components/NotDeployedAlert';
+import { mcpTestEndpoints } from '../utils/mcpGateway';
+import { mcpRelayUrl } from '../api/consumers';
+import { bffFetch } from '../api/_client';
 import { PILL_SELECT_SX } from '../constants/styles';
 
 /**
  * MCP Server "Test" page: resolves the deployed MCP endpoint's gateway URL + a test
  * credential for the selected environment, then hands them to the in-house
  * {@link McpPlayground} (the interactive connect / list-tools / invoke / ping surface).
+ * An MCP server on Agent Manager's AI gateway answers no browser's CORS preflight: the page
+ * connects through ipaas-service's relay, which holds a key of its own, and offers a test key only
+ * for calling the proxy URL from another MCP client.
  */
 export default function McpTest(scope: ComponentScope): JSX.Element {
   const orgUuid = useOrgUuid() ?? '';
@@ -60,7 +67,7 @@ export default function McpTest(scope: ComponentScope): JSX.Element {
   const releaseId = deployment?.releaseId ?? '';
   const { data: endpoints = [] } = useEnvEndpoints(component?.id ?? '', selectedTrackId, releaseId);
 
-  const testableEndpoints = useMemo(() => endpoints.filter((e) => e.publicUrl), [endpoints]);
+  const testableEndpoints = useMemo(() => mcpTestEndpoints(endpoints), [endpoints]);
   const [selectedEndpointId, setSelectedEndpointId] = useState('');
 
   const activeEndpointId = testableEndpoints.some((e) => e.id === selectedEndpointId) ? selectedEndpointId : (testableEndpoints[0]?.id ?? '');
@@ -73,18 +80,21 @@ export default function McpTest(scope: ComponentScope): JSX.Element {
     () => (component && selectedEnv && activeEndpoint ? { projectName: projectId, componentName: component.id, environmentName: selectedEnv.id, endpointName: activeEndpoint.id, deploymentTrackId: selectedTrackId } : null),
     [projectId, component, selectedEnv, activeEndpoint, selectedTrackId],
   );
-  const access = useEndpointTestAccess(accessRef, !!accessRef && isActive);
+  const access = useEndpointTestAccess(accessRef, { enabled: !!accessRef && isActive });
 
   // No gateway URL means nothing is testable: the endpoint's own route has no policy engine in its path.
-  const baseUrl = access.gatewayUrl;
-  const mcpUrl = baseUrl ? `${baseUrl}/mcp` : '';
+  const mcpUrl = access.mcpUrl;
+  // The AI gateway answers no browser's CORS preflight, so the page talks to an MCP server there through ipaas-service's relay.
+  const onAiGateway = !!access.aiGateway;
+  const relay = useMemo(() => (onAiGateway && accessRef ? { url: mcpRelayUrl(accessRef), fetch: bffFetch } : undefined), [onAiGateway, accessRef]);
 
   const endpointSwitcher = { options: testableEndpoints.map((e) => ({ label: e.displayName, value: e.id })), value: activeEndpointId, onChange: setSelectedEndpointId };
 
   const regenerate = () => void access.mintKey();
-  // Not offered for an open endpoint: the test-key route switches enforcement to api-key, so
-  // minting would secure an endpoint whose api-key scheme the user turned off.
-  const canMint = access.mode === 'api-key';
+  // Not offered for an open endpoint: on the API Platform the test-key route switches enforcement to api-key, so
+  // minting would secure an endpoint whose api-key scheme the user turned off, and an open AI gateway binding takes
+  // no key. On the AI gateway the key is for another MCP client: the relay holds one of its own.
+  const canMint = access.canCreateKey && access.mode === 'api-key';
 
   // Non-MCP components keep this route's previous Coming Soon behaviour.
   if (component && !isMcp) {
@@ -113,6 +123,31 @@ export default function McpTest(scope: ComponentScope): JSX.Element {
         </Stack>
         {!isActive ? (
           <NotDeployedAlert status={deployment?.deploymentStatusV2} />
+        ) : access.isResolving ? (
+          <Stack alignItems="center" sx={{ py: 6 }}>
+            <CircularProgress size={24} />
+          </Stack>
+        ) : relay ? (
+          // Keyed by where it connects: a session is to one environment's endpoint, and the environment can
+          // change while it is open, so a new target starts a new playground rather than reusing the old session.
+          <>
+            {access.keyError && (
+              <Alert severity="warning" sx={{ mb: 1.5 }}>
+                {access.keyError}
+              </Alert>
+            )}
+            <McpPlayground
+              key={relay.url}
+              url={mcpUrl}
+              token={access.apiKey}
+              headerName={access.authHeader}
+              isTokenFetching={access.isMinting}
+              onTokenRegenerate={canMint ? regenerate : undefined}
+              relay={relay}
+              visibility="Public"
+              endpointSwitcher={endpointSwitcher}
+            />
+          </>
         ) : !mcpUrl ? (
           // Deployed, but with no enforcing URL to call — a different state from "not deployed".
           <Alert severity="info">{access.isUnavailable ? 'This MCP server isn’t exposed as an API on the gateway yet, so it cannot be tested from here.' : 'No testable endpoint URL is available for this MCP server yet.'}</Alert>
@@ -123,6 +158,7 @@ export default function McpTest(scope: ComponentScope): JSX.Element {
                 {access.keyError}
               </Alert>
             )}
+            <ApiKeyAuthOffer access={access} sx={{ mb: 1.5 }} />
             <McpPlayground url={mcpUrl} token={access.apiKey || null} headerName={access.authHeader} isTokenFetching={access.isMinting} onTokenRegenerate={canMint ? regenerate : undefined} endpointSwitcher={endpointSwitcher} />
           </>
         )}

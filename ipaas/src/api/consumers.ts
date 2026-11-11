@@ -38,7 +38,8 @@ import type {
 } from '../types/consumers';
 import { normalizeConsumerStatus } from '../utils/apiConsumption';
 import { userFacingError } from '../utils/apiSecurity';
-import { bff, items, q, seg, type ListResponse } from './_client';
+import type { McpTool } from '../types/mcp';
+import { bff, bffAbsoluteUrl, items, q, seg, type ListResponse } from './_client';
 
 /** List routes return a bare array; other BFF routes use `{ items: [] }`. Accept both. */
 const asList = <T>(r: T[] | ListResponse<T> | null | undefined): T[] => (Array.isArray(r) ? r : items(r));
@@ -69,7 +70,10 @@ export const createEndpointApiKey = (ref: EndpointRef, input: CreateApiKeyInput)
 
 export const revokeEndpointApiKey = (ref: EndpointRef, keyName: string): Promise<void> => bff.delete<void>(endpointUrl(ref, `/api-keys/${seg(keyName)}`));
 
-/** One-click 1h credential. Also forces `api-key-auth` on (no-op when already on). */
+/**
+ * One-click 1h credential. On the API Platform it also forces `api-key-auth` on (no-op when already on). For an MCP
+ * server on the AI gateway it is an Agent Manager key, and only while the binding checks keys.
+ */
 export const createEndpointTestKey = (ref: EndpointRef): Promise<ApiKeyResult> => bff.post<ApiKeyResult>(endpointUrl(ref, '/test-key'));
 
 // ---------------------------------------------------------------------------
@@ -92,6 +96,19 @@ export const setEndpointJwtAuth = (ref: EndpointRef, enabled: boolean): Promise<
 
 /** Read the single active auth mode (+ options) of the exposed API. */
 export const getEndpointSecurity = (ref: EndpointRef): Promise<SecurityConfig> => bff.get<SecurityConfig>(endpointUrl(ref, '/security'));
+
+/**
+ * Where the Test page's MCP client connects for an MCP server on the AI gateway: ipaas-service relays each
+ * request to the server with a key of its own, since the AI gateway answers no browser's CORS preflight.
+ * Send with `bffFetch`, which carries the console's session.
+ */
+export const mcpRelayUrl = (ref: EndpointRef): string => bffAbsoluteUrl(endpointUrl(ref, '/mcp'));
+
+/**
+ * The tools an MCP server on the AI gateway exposes (`GET .../mcp-tools`), as Agent Manager listed them through
+ * the gateway after the server's last deploy or refresh.
+ */
+export const getMcpServerTools = (ref: EndpointRef): Promise<McpTool[]> => bff.get<{ tools?: McpTool[] }>(endpointUrl(ref, '/mcp-tools')).then((r) => r?.tools ?? []);
 
 /** Set the single active auth mode. The BFF clears the other mode + redeploys. */
 export const setEndpointSecurity = (ref: EndpointRef, cfg: SecurityConfig): Promise<SecurityConfig> => bff.put<SecurityConfig>(endpointUrl(ref, '/security'), cfg);

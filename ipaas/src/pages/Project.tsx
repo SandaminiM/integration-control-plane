@@ -55,7 +55,7 @@ import {
 } from '@wso2/oxygen-ui';
 import { CARD_TABLE_SX, SEARCH_STANDARD_WIDTH_SX } from '../constants/styles';
 import ProjectHomeSkeleton from '../components/ProjectHomeSkeleton';
-import { Box as BoxIcon, ChevronDown, ChevronUp, Cloud, ExternalLink, FileText, Filter, GitHub, GitBranch, Info, Link2, Pencil, Plus, PlugZap, Search, SlidersHorizontal, Trash2 } from '@wso2/oxygen-ui-icons-react';
+import { Box as BoxIcon, ChevronDown, ChevronUp, Cloud, ExternalLink, FileText, Filter, GitHub, GitBranch, Info, Link2, Pencil, Plus, PlugZap, Search } from '@wso2/oxygen-ui-icons-react';
 import CreateIntegrationPanels from '../components/CreateIntegrationPanels';
 import EmptyListing from '../components/EmptyListing';
 import IntegrationTypesCard from '../components/IntegrationTypesCard';
@@ -72,17 +72,20 @@ import { useOrgs, useOrgComponentLimits, useOrgSubscriptions } from '../hooks/us
 import { useChoreoSampleImages, useComponentRepositories } from '../hooks/useRepository';
 import type { Component, ComponentDeletionError, ComponentSubscription, SubscriptionInfo } from '../types/component';
 import { useDeleteComponent } from '../hooks/useComponents';
+import DeleteIntegrationButton from '../components/DeleteIntegrationButton';
+import { useLinkedVoiceAgents } from '../hooks/useVoiceAgents';
 import NotFound from '../components/NotFound';
 import { formatDateTime, formatDistanceToNow } from '../utils/time';
-import { newComponentUrl, editProjectUrl, linkRepositoryUrl, type ProjectScope } from '../nav';
+import { newComponentUrl, linkRepositoryUrl, type ProjectScope } from '../nav';
 import { useOrgUuid } from '../hooks/useOrgUuid';
 import { useAuth } from '../auth';
-import { componentOverviewUrl, orgProjectsUrl } from '../paths';
-import { Permissions, PROJECT_EDIT_PERMISSIONS } from '../constants/permissions';
+import { cloudConsoleProjectManageUrl, componentOverviewUrl, orgProjectsUrl } from '../paths';
+import { Scopes } from '../constants/permissions';
 import { isSupportedIntegration, getDisplayLabel, getNonIntegrationPlatform } from '../constants/integrations';
 import { identifyIntegration } from '../utils/identifyIntegration';
 import IntegrationIcon from '../components/IntegrationIcon';
 import Authorized from '../components/Authorized';
+import { useCan } from '../hooks/useCan';
 import { useFeaturePreview } from '../contexts/FeaturePreviewContext';
 import { UUID_RE } from '../utils/string';
 import { isExternalRepoIntegration } from '../utils/projectRepo';
@@ -145,21 +148,47 @@ function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { com
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [subscribers, setSubscribers] = useState<{ internal: ComponentSubscription[]; external: ComponentSubscription[] } | null>(null);
   const mutation = useDeleteComponent();
+  const voiceDelete = useDeleteComponent();
   const confirmed = confirmation === component.displayName;
+  const isAiAgent = identifyIntegration(component.displayType, component.componentSubType).type === 'ai-agent';
+  const voiceLookup = useLinkedVoiceAgents(scope.org, isAiAgent ? projectId : '', component.handler);
+  const { voiceAgents } = voiceLookup;
+  const [aiAgentDeleted, setAiAgentDeleted] = useState(false);
+  const busy = mutation.isPending || voiceDelete.isPending;
 
   // Escape and backdrop bypass the disabled Cancel button, so gate them too.
   const handleClose = () => {
-    if (!mutation.isPending) onClose();
+    if (!busy) onClose();
+  };
+
+  const deleteVoiceAgents = async (targets: Component[]) => {
+    const failures: string[] = [];
+    for (const target of targets) {
+      try {
+        const voiceResult = await voiceDelete.mutateAsync({ orgHandler: scope.org, componentId: target.id, projectId });
+        if (!voiceResult.canDelete) failures.push(`'${target.displayName}': ${voiceResult.message || 'try again.'}`);
+      } catch (e) {
+        failures.push(`'${target.displayName}': ${e instanceof Error ? e.message : 'try again.'}`);
+      }
+    }
+    if (failures.length === 0) onDeleted();
+    else setDeleteError(`The AI agent was deleted, but not all of its voice agents were. ${failures.join(' ')}`);
   };
 
   const handleDelete = () => {
     setDeleteError(null);
+    if (aiAgentDeleted && voiceAgents.length > 0) {
+      void deleteVoiceAgents(voiceAgents);
+      return;
+    }
     mutation.mutate(
       { orgHandler: scope.org, componentId: component.id, projectId },
       {
         onSuccess: (result) => {
           if (result.canDelete) {
-            onDeleted();
+            setAiAgentDeleted(true);
+            if (voiceAgents.length > 0) void deleteVoiceAgents(voiceAgents);
+            else onDeleted();
             return;
           }
           // The backend blocks deletion (e.g. active API subscribers) without throwing — canDelete must be checked explicitly.
@@ -229,6 +258,24 @@ function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { com
         Are you sure you want to remove the integration &lsquo;<strong>{component.displayName}</strong>&rsquo; ?
       </DialogTitle>
       <DialogContent>
+        {voiceLookup.isError && (
+          <Alert
+            severity="error"
+            sx={{ mb: 2 }}
+            action={
+              <Button color="inherit" size="small" onClick={() => voiceLookup.refetch()}>
+                Retry
+              </Button>
+            }>
+            Couldn&apos;t check whether this AI agent has a voice agent. Retry before deleting it.
+          </Alert>
+        )}
+        {voiceAgents.length > 0 && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            This AI agent is connected to the voice {voiceAgents.length === 1 ? 'agent' : 'agents'} <strong>{voiceAgents.map((v) => v.displayName || v.handler).join(', ')}</strong>. Deleting it will also delete{' '}
+            {voiceAgents.length === 1 ? 'the voice agent' : 'these voice agents'}.
+          </Alert>
+        )}
         <DialogContentText sx={{ mb: 2 }}>This action will be irreversible and all related details will be lost. Please type in the integration name below to confirm.</DialogContentText>
         {deleteError && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -238,11 +285,11 @@ function DeleteDialog({ component, scope, projectId, onClose, onDeleted }: { com
         <TextField autoFocus fullWidth placeholder="Enter integration name to confirm" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />
       </DialogContent>
       <DialogActions>
-        <Button variant="outlined" color="inherit" onClick={handleClose} disabled={mutation.isPending}>
+        <Button variant="outlined" color="inherit" onClick={handleClose} disabled={busy}>
           Cancel
         </Button>
-        <Button variant="contained" color="error" disabled={!confirmed || mutation.isPending} startIcon={mutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined} onClick={handleDelete}>
-          {mutation.isPending ? 'Deleting...' : 'Delete'}
+        <Button variant="contained" color="error" disabled={!confirmed || busy || voiceLookup.isLoading || voiceLookup.isError} startIcon={busy ? <CircularProgress size={16} color="inherit" /> : undefined} onClick={handleDelete}>
+          {busy ? 'Deleting...' : aiAgentDeleted ? (voiceAgents.length === 1 ? 'Delete voice agent' : 'Delete voice agents') : 'Delete'}
         </Button>
       </DialogActions>
     </Dialog>
@@ -405,7 +452,7 @@ function IntegrationsTable({
             },
           }}
         />
-        <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
+        <Authorized permissions={Scopes.INTEGRATION_CREATE}>
           <Tooltip title={quotaReached ? 'You have exceeded the allocated integration quota. Upgrade your subscription.' : ''} placement="top">
             <span>
               <Button variant="contained" startIcon={<Plus size={16} />} onClick={() => navigate(newComponentUrl(scope))} disabled={quotaReached}>
@@ -515,21 +562,8 @@ function IntegrationsTable({
                             ) : (
                               <Box className="row-swap" sx={lastUpdatedSwapSx}>
                                 <Box className="row-time">{!init && <RelativeTime time={formatDistanceToNow(c.lastBuildDate)} dateTime={c.lastBuildDate} tooltip={formatDateTime(c.lastBuildDate)} />}</Box>
-                                <Authorized permissions={Permissions.INTEGRATION_MANAGE}>
-                                  <Button
-                                    className="row-delete"
-                                    variant="outlined"
-                                    size="small"
-                                    color="error"
-                                    startIcon={<Trash2 size={14} />}
-                                    aria-label={`Delete ${c.displayName}`}
-                                    sx={rowDeleteSx}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setDeleting(c);
-                                    }}>
-                                    Delete
-                                  </Button>
+                                <Authorized permissions={Scopes.INTEGRATION_DELETE}>
+                                  <DeleteIntegrationButton component={c} onClick={() => setDeleting(c)} className="row-delete" sx={rowDeleteSx} />
                                 </Authorized>
                               </Box>
                             )}
@@ -578,7 +612,7 @@ function IntegrationsTable({
                     {filteredNonIntegrations.map((c) => {
                       const init = getInitProgress(c, isWorkspace);
                       return (
-                        <Tooltip key={c.id} followCursor title={`This component is not part of WSO2 Integration Platform. Switch to ${getNonIntegrationPlatform(c.originCloud)} to view and manage it.`}>
+                        <Tooltip key={c.id} followCursor title={`This component is not part of WSO2 Integration. Switch to ${getNonIntegrationPlatform(c.originCloud)} to view and manage it.`}>
                           <ListingTable.Row variant="card" aria-disabled tabIndex={-1} sx={{ opacity: 0.5, cursor: 'default' }}>
                             <ListingTable.Cell>
                               <ComponentNameCell component={c} isWorkspace={isWorkspace} external isExternalRepo={isExternalRepo(c)} />
@@ -632,6 +666,9 @@ function buildProjectRepoUrl(gitProvider?: string, gitOrganization?: string, rep
 
 export default function Project(scope: ProjectScope): JSX.Element {
   const navigate = useAppNavigate();
+  const can = useCan();
+  const canUpdate = can(Scopes.PROJECT_UPDATE);
+  const canUseEditor = can(Scopes.EDITOR_USE);
   const isUuid = UUID_RE.test(scope.project);
   const { data: projectById, isLoading: loadingById } = useProject(isUuid ? scope.project : '');
   const { data: projectByHandle, isLoading: loadingByHandle } = useProjectByHandler(isUuid ? '' : scope.project);
@@ -642,10 +679,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
   // list reports isLoading false with its data still pre-creation.
   const loadingProject = !project && (isUuid ? loadingById : loadingByHandle || loadingProjects || fetchingProjects);
   const projectId = project?.id ?? '';
-  // Shared with AppLayout's left-nav hiding, so both surfaces hide on exactly the same one-shot
-  // "just landed here right after onboarding" signal and can't drift out of sync. This only fires
-  // on that first landing — navigating elsewhere and back always shows the header again, even if
-  // the project is still empty, so it never vanishes on a repeat visit.
+  // Only the first landing after onboarding: navigating elsewhere and back shows the header again.
   const justProvisionedDefaultProject = useFreshDefaultProject();
   const { data: components = [], isLoading: loadingComponents, isSuccess: isComponentsSuccess } = useComponents(scope.org, projectId);
   // The component list carries no repository, so a linked project looks each integration's up.
@@ -718,7 +752,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
   // The editor clones the project repo, so only an integration that builds from it can open.
   const openInCloudComponent = components.find((c) => isSupportedIntegration(c.displayType, c.componentSubType, c.buildpackType) && !isExternalRepo(c) && (!isRepoLinked || repoByHandler.get(c.handler) !== undefined)) ?? null;
   const projectRepoUrl = buildProjectRepoUrl(project.gitProvider, project.gitOrganization, project.repository, project.branch);
-  const showEditor = !!openInCloudComponent && !!projectRepoUrl;
+  const showEditor = !!openInCloudComponent && !!projectRepoUrl && (canUseEditor || openInIntegratorEnabled);
 
   const externalComponents = components.filter(isExternalRepo);
 
@@ -871,7 +905,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
                 ) : (
                   <Stack direction="row" alignItems="center" gap={0.5} mb={1} onMouseEnter={() => setNameHovered(true)} onMouseLeave={() => setNameHovered(false)}>
                     <Typography variant="h1">{project.name}</Typography>
-                    <Authorized permissions={PROJECT_EDIT_PERMISSIONS}>
+                    <Authorized permissions={Scopes.PROJECT_UPDATE}>
                       <Tooltip title="Edit name">
                         <IconButton size="small" aria-label="Edit project name" onClick={startNameEdit} sx={{ opacity: nameHovered ? 1 : 0, transition: 'opacity 0.15s' }}>
                           <Pencil size={14} />
@@ -884,7 +918,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
                   <Box
                     sx={{ position: 'relative', flex: 1, cursor: 'text', mt: 0.25 }}
                     onClick={() => {
-                      if (!descEditing) {
+                      if (canUpdate && !descEditing) {
                         setDescEditing(true);
                         setTimeout(() => descInputRef.current?.focus(), 0);
                       }
@@ -904,8 +938,8 @@ export default function Project(scope: ProjectScope): JSX.Element {
                         overflow: 'hidden',
                       }}
                       title={!descEditing && descValue ? descValue : undefined}>
-                      {descValue || '+ Add Description'}
-                      {descValue && (
+                      {descValue || (canUpdate && '+ Add Description')}
+                      {descValue && canUpdate && (
                         <Box component="span" sx={{ display: 'inline-flex', verticalAlign: 'middle', ml: 0.5 }}>
                           <Tooltip title="Edit description">
                             <IconButton
@@ -969,7 +1003,7 @@ export default function Project(scope: ProjectScope): JSX.Element {
                     </Link>
                   </Stack>
                 ) : (
-                  <Authorized permissions={PROJECT_EDIT_PERMISSIONS}>
+                  <Authorized permissions={Scopes.PROJECT_UPDATE}>
                     <Button size="small" variant="text" color="primary" startIcon={<Link2 size={14} />} onClick={() => navigate(linkRepositoryUrl(scope))} sx={linkRepoButtonSx}>
                       Link a repository
                     </Button>
@@ -978,11 +1012,15 @@ export default function Project(scope: ProjectScope): JSX.Element {
               </div>
             </Stack>
           </Stack>
-          {/* Beside the editor, Manage project steps back to a link under it so the editor stays the one prominent action. */}
+          {/* Beside the editor, Edit project steps back to a link under it so the editor stays the one prominent action. */}
           <Stack direction={showEditor ? 'column' : 'row'} alignItems={showEditor ? 'flex-end' : 'center'} gap={showEditor ? 0.5 : 1.5} sx={{ flexShrink: 0 }}>
             {showEditor && (
               <Box sx={{ position: 'relative', flexShrink: 0 }}>
-                {openInIntegratorEnabled ? (
+                {!canUseEditor ? (
+                  <Button variant="outlined" size="small" startIcon={<IntegratorIcon width={16} height={16} />} onClick={handleOpenInIntegrator} sx={{ whiteSpace: 'nowrap' }}>
+                    Open in Integrator
+                  </Button>
+                ) : openInIntegratorEnabled ? (
                   <>
                     <ButtonGroup variant="outlined" size="small" ref={splitButtonRef}>
                       <Button
@@ -1041,9 +1079,9 @@ export default function Project(scope: ProjectScope): JSX.Element {
                 )}
               </Box>
             )}
-            <Authorized permissions={PROJECT_EDIT_PERMISSIONS}>
-              <Button variant={showEditor ? 'text' : 'outlined'} size="small" startIcon={<SlidersHorizontal size={14} />} onClick={() => navigate(editProjectUrl(scope))} sx={{ whiteSpace: 'nowrap' }}>
-                Manage project
+            <Authorized permissions={Scopes.PROJECT_UPDATE}>
+              <Button variant={showEditor ? 'text' : 'outlined'} size="small" startIcon={<Pencil size={14} />} href={cloudConsoleProjectManageUrl(scope.project)} sx={{ whiteSpace: 'nowrap' }}>
+                Edit project
               </Button>
             </Authorized>
           </Stack>

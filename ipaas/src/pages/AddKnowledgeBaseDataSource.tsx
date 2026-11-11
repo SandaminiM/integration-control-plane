@@ -21,10 +21,13 @@ import { ArrowLeft } from '@wso2/oxygen-ui-icons-react';
 import { useState, type JSX } from 'react';
 import { useParams } from 'react-router';
 import { useAppNavigate } from '../hooks/useAppNavigate';
+import { usePlanAccess } from '../hooks/useBillingOrg';
+import { SCHEDULE_POLICIES } from '../constants/scheduleLimits';
+import { Scopes } from '../constants/permissions';
+import { useCan } from '../hooks/useCan';
 import { useCreateKnowledgeBaseDataSource, useKnowledgeBase } from '../hooks/useKnowledgeBases';
 import { knowledgeBaseUrl, knowledgeBasesUrl, type OrgScope } from '../nav';
-import { DAILY_INGESTION } from '../constants/ragIngestion';
-import { buildDataSourceSettings, ingestionNotice, isNameValid, type NameFields } from '../utils/knowledgeBase';
+import { buildDataSourceSettings, isNameValid, type NameFields } from '../utils/knowledgeBase';
 import { isDatasourceValid } from '../utils/ragIngestion';
 import type { DatasourceConfig } from '../types/ragIngestion';
 import { isNotFoundError } from '../utils/apiErrors';
@@ -90,11 +93,12 @@ function DataSourceLoader({ scope, name }: { scope: OrgScope; name: string }): J
 function DataSourceWizard({ scope, knowledgeBase }: { scope: OrgScope; knowledgeBase: string }): JSX.Element {
   const navigate = useAppNavigate();
   const create = useCreateKnowledgeBaseDataSource(knowledgeBase);
+  const canManage = useCan()(Scopes.CONFIG_MANAGE);
   const [step, setStep] = useState(0);
   const [names, setNames] = useState<NameFields>({ displayName: '', name: '', description: '' });
   const [datasource, setDatasource] = useState<DatasourceConfig | null>(null);
   const [mode, setMode] = useState<IngestionMode>('scheduled');
-  const schedule = useScheduleForm(DAILY_INGESTION);
+  const schedule = useScheduleForm(null, usePlanAccess(), SCHEDULE_POLICIES.ingestion);
   const stepValid = [isNameValid(names), isDatasourceValid(datasource), mode === 'once' || schedule.isValid];
 
   const submit = () => {
@@ -107,7 +111,7 @@ function DataSourceWizard({ scope, knowledgeBase }: { scope: OrgScope; knowledge
         cronExpression: mode === 'scheduled' ? schedule.cron : '',
         cronTimezone: mode === 'scheduled' ? schedule.timezone : '',
       },
-      { onSuccess: (ds) => navigate(knowledgeBaseUrl(scope, knowledgeBase), { state: ingestionNotice([ds]) }) },
+      { onSuccess: () => navigate(knowledgeBaseUrl(scope, knowledgeBase)) },
     );
   };
 
@@ -136,7 +140,7 @@ function DataSourceWizard({ scope, knowledgeBase }: { scope: OrgScope; knowledge
               Next
             </Button>
           ) : (
-            <Button variant="contained" disabled={!stepValid[step] || create.isPending} startIcon={create.isPending ? <CircularProgress size={16} color="inherit" /> : undefined} onClick={submit}>
+            <Button variant="contained" disabled={!canManage || !stepValid[step] || create.isPending} startIcon={create.isPending ? <CircularProgress size={16} color="inherit" /> : undefined} onClick={submit}>
               {create.isPending ? 'Adding…' : 'Add Data Source'}
             </Button>
           )}

@@ -20,8 +20,7 @@ import { Alert, Box, Button, Card, CardContent, CircularProgress, IconButton, St
 import { ArrowRight, GitHub, Plus, GitBranch } from '@wso2/oxygen-ui-icons-react';
 import { useEffect, useRef, useState, type JSX, type ReactNode } from 'react';
 import { useAppNavigate } from '../hooks/useAppNavigate';
-import { useCreateComponent } from '../hooks/useComponents';
-import { isQuotaError } from '../utils/apiErrors';
+import { useDeploySample } from '../hooks/useDeploySample';
 import { useChoreoSampleImages } from '../hooks/useRepository';
 import { generateAndSaveGitHubState, useAuth, validateAndClearGitHubState } from '../auth';
 import { providerComingSoonLabel } from '../constants/gitProviders';
@@ -38,23 +37,23 @@ import GitLabIcon from '../assets/icons/GitLabIcon';
 import BitbucketIcon from '../assets/icons/BitbucketIcon';
 import AzureDevOpsIcon from '../assets/icons/AzureDevOpsIcon';
 import { GitProvider } from '../types/credentials';
-import { componentSubTypeFromSample, displayTypeFromSample, sampleId } from '../constants/integrations';
 import { GITHUB_AUTH } from '../constants/github';
 import { PROVIDER_ICON_SX, GITHUB_ICON_SX, SECTION_LABEL_SX } from '../constants/styles';
 import { resourceUrl, narrow, type ProjectScope } from '../nav';
 import { importComponentUrl, browseSamplesUrl, prebuiltIntegrationsUrl, componentsNewAiBuilderUrl, buildGitHubOAuthUrl } from '../paths';
 import type { Sample } from '../types/samples';
 import { sampleKey } from '../constants/samples';
-import { toHandler } from '../utils/string';
 import { buildCloudEditorUrl } from '../utils/cloudEditor';
 import { useProjectId } from '../hooks/useProjects';
 import { useAccessControl } from '../contexts/AccessControlContext';
 import { useOrgComponentLimits, useOrgSubscriptions } from '../hooks/useOrg';
-import { Permissions } from '../constants/permissions';
+import { Scopes } from '../constants/permissions';
+import { useCan } from '../hooks/useCan';
 import { FREE_COMPONENT_LIMIT } from '../constants/subscription';
 import { useSamples } from '../hooks/useSamples';
 import { trackEvent } from '../services/tracking/tracking';
 import { usePrebuiltIntegrations } from '../hooks/usePrebuiltIntegrations';
+
 
 /** Static, so the tab-click handler and the PillTabs `tabs` prop reference the same array. */
 const GET_STARTED_TABS = [{ label: 'Prebuilt integrations' }, { label: 'Samples' }];
@@ -94,8 +93,9 @@ export default function CreateIntegrationPanels({ scope, heading }: CreateIntegr
 
   const isUpgraded = (subscriptions ?? []).some((sub) => sub.subscriptionType === 'devant-subscription' && sub.subscriptionStatus === 'active');
   const quotaReached = !isUpgraded && (orgLimits?.billableComponentCount ?? 0) >= FREE_COMPONENT_LIMIT;
-  const canManage = hasAnyPermission([Permissions.INTEGRATION_MANAGE], projectId);
+  const canManage = hasAnyPermission([Scopes.INTEGRATION_CREATE], projectId);
   const creationBlocked = !canManage || quotaReached;
+  const canUseEditor = useCan()(Scopes.EDITOR_USE);
   const blockedTooltip = !canManage ? 'You do not have permission to create integrations.' : 'You have exceeded the allocated integration quota. Upgrade your subscription.';
   const { features } = useFeaturePreview();
   const aiBuilderEnabled = !!features['AI Integration Builder'];
@@ -112,7 +112,7 @@ export default function CreateIntegrationPanels({ scope, heading }: CreateIntegr
   const [isImportAuthenticating, setIsImportAuthenticating] = useState(false);
   const [pageError, setPageError] = useState<{ message: string; severity: 'error' | 'warning' } | null>(null);
 
-  const createComponent = useCreateComponent();
+  const sampleDeploy = useDeploySample();
 
   const handleOpenCloudEditor = () => {
     if (creationBlocked) return;
@@ -189,41 +189,29 @@ export default function CreateIntegrationPanels({ scope, heading }: CreateIntegr
     if (!projectId || creationBlocked) return;
     trackEvent('quick-deploy-click', { org: scope.org, project: scope.project, sample: sample.displayName, buildpack: sample.buildPack });
     setDeployingSample(sample);
-    createComponent.mutate(
-      {
-        displayName: sample.displayName,
-        name: toHandler(sample.displayName),
-        description: sample.description,
-        orgHandler: scope.org,
-        projectId,
-        displayType: displayTypeFromSample(sample.componentType, sample.buildPack),
-        componentSubType: componentSubTypeFromSample(sample.componentType, sample.buildPack),
-        srcGitRepoUrl: sample.repositoryUrl,
-        repositorySubPath: `${sample.subDirectory ?? ''}${sample.componentPath}`,
-        repositoryBranch: sample.branch ?? 'main',
-        isPublicRepo: true,
-        enableAutoDeploy: true,
-        creation: { method: 'from-sample', sampleId: sampleId(sample) },
-      },
-      {
-        onSuccess: (component) => navigate(resourceUrl(narrow(scope, component.handler), 'overview')),
-        onError: () => setDeployingSample(null),
-      },
-    );
+    void sampleDeploy.deploy({
+      sample,
+      orgHandler: scope.org,
+      projectId,
+      onSuccess: (handler) => navigate(resourceUrl(narrow(scope, handler), 'overview')),
+      onError: () => setDeployingSample(null),
+    });
   };
 
-  if (createComponent.isPending || createComponent.isSuccess || createComponent.isError) {
+  if (sampleDeploy.isActive) {
     return (
       <Box sx={{ pt: 5, display: 'flex', flexDirection: 'column', flex: 1 }}>
         <IntegrationCreationLoader
           label="Integration"
           subLabel={deployingSample?.displayName}
-          isPending={createComponent.isPending}
-          isSuccess={createComponent.isSuccess}
-          error={createComponent.isError ? (createComponent.error?.message ?? 'Something went wrong. Please try again.') : null}
-          errorSeverity={isQuotaError(createComponent.error) ? 'warning' : 'error'}
+          isPending={sampleDeploy.isPending}
+          isSuccess={sampleDeploy.isSuccess}
+          error={sampleDeploy.error}
+          errorSeverity={sampleDeploy.errorSeverity}
+          progress={sampleDeploy.progress}
+          stepLabel={sampleDeploy.stepLabel}
           onBack={() => {
-            createComponent.reset();
+            sampleDeploy.reset();
             setDeployingSample(null);
           }}
         />
@@ -265,21 +253,23 @@ export default function CreateIntegrationPanels({ scope, heading }: CreateIntegr
               </Box>
             </Box>
           ) : (
-            /* Cloud Editor card */
-            <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-              <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1.5 }}>
-                <Typography variant="body2" sx={SECTION_LABEL_SX}>
-                  {standalone ? 'Create an integration on Cloud' : 'Create on Cloud'}
-                </Typography>
-              </Stack>
-              <Card sx={{ flex: 1, boxShadow: 'none', borderColor: 'primary.main', ...(creationBlocked ? { opacity: 0.5, pointerEvents: 'none' } : {}) }}>
-                <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3, '&:last-child': { pb: 3 } }}>
-                  <Box sx={{ flex: 1, minHeight: 260, overflow: 'hidden' }}>
-                    <IDEMockup onOpenClick={handleOpenCloudEditor} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Box>
+            canUseEditor && (
+              /* Cloud Editor card */
+              <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1.5 }}>
+                  <Typography variant="body2" sx={SECTION_LABEL_SX}>
+                    {standalone ? 'Create an integration on Cloud' : 'Create on Cloud'}
+                  </Typography>
+                </Stack>
+                <Card inert={creationBlocked} sx={{ flex: 1, boxShadow: 'none', borderColor: 'primary.main', ...(creationBlocked ? { opacity: 0.5, pointerEvents: 'none' } : {}) }}>
+                  <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3, '&:last-child': { pb: 3 } }}>
+                    <Box sx={{ flex: 1, minHeight: 260, overflow: 'hidden' }}>
+                      <IDEMockup onOpenClick={handleOpenCloudEditor} />
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Box>
+            )
           )}
 
           {/* Import Integration card */}
@@ -293,7 +283,7 @@ export default function CreateIntegrationPanels({ scope, heading }: CreateIntegr
                 {standalone ? 'Import your own integration' : 'Import your own'}
               </Typography>
             )}
-            <Card sx={{ boxShadow: 'none', ...(isImportAuthenticating || creationBlocked ? { pointerEvents: 'none', opacity: creationBlocked ? 0.5 : 0.7 } : {}) }}>
+            <Card inert={creationBlocked} sx={{ boxShadow: 'none', ...(isImportAuthenticating || creationBlocked ? { pointerEvents: 'none', opacity: creationBlocked ? 0.5 : 0.7 } : {}) }}>
               <CardContent
                 sx={{
                   display: 'flex',
@@ -306,12 +296,16 @@ export default function CreateIntegrationPanels({ scope, heading }: CreateIntegr
                 {aiBuilderEnabled ? (
                   <>
                     {/* Create on Cloud affordance (view1: folded into the "Create it yourself" row) */}
-                    <Button variant="text" onClick={handleOpenCloudEditor} data-cyid="create-on-cloud-btn" startIcon={<Plus size={20} />} sx={{ flexShrink: 0, color: 'primary.main', fontWeight: 500, textTransform: 'none', '&:hover': { opacity: 0.85 } }}>
-                      Create on Cloud
-                    </Button>
+                    {canUseEditor && (
+                      <>
+                        <Button variant="text" onClick={handleOpenCloudEditor} data-cyid="create-on-cloud-btn" startIcon={<Plus size={20} />} sx={{ flexShrink: 0, color: 'primary.main', fontWeight: 500, textTransform: 'none', '&:hover': { opacity: 0.85 } }}>
+                          Create on Cloud
+                        </Button>
 
-                    {/* Vertical divider */}
-                    <Box sx={{ width: '2px', alignSelf: 'stretch', bgcolor: 'divider', flexShrink: 0 }} />
+                        {/* Vertical divider */}
+                        <Box sx={{ width: '2px', alignSelf: 'stretch', bgcolor: 'divider', flexShrink: 0 }} />
+                      </>
+                    )}
 
                     {/* Import label */}
                     <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1 }}>

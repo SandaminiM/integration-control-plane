@@ -17,13 +17,19 @@
  */
 
 import { Button, Tooltip } from '@wso2/oxygen-ui';
-import { List, RotateCw, Square, Funnel } from '@wso2/oxygen-ui-icons-react';
+import { List, Mic, RotateCw, Square, Funnel } from '@wso2/oxygen-ui-icons-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useAppNavigate } from '../../../hooks/useAppNavigate';
 import { withTrackParam } from '../../../hooks/useSelectedTrack';
 import { useLocation } from 'react-router';
-import { useRedeployDeployment, useStopDeployment } from '../../../hooks/useDeployments';
+import { useEnvEndpoints, useRedeployDeployment, useStopDeployment } from '../../../hooks/useDeployments';
+import { Scopes } from '../../../constants/permissions';
+import { useCan } from '../../../hooks/useCan';
+import { useLinkedVoiceAgents } from '../../../hooks/useVoiceAgents';
+import { voiceAgentTestUrl } from '../../../paths';
+import { isVoiceEndpoint } from '../../../utils/voiceAgent';
+import { useSelectedAgentEndpoint } from './selectedEndpoint';
 import type { EnvCardActionsProps } from '../../../types/integration';
 import { isDeploymentHealthy } from '../../../utils/deploymentStatus';
 import ServiceLogsDrawer from '../integration-as-api/ServiceLogsDrawer';
@@ -57,6 +63,7 @@ export default function EnvCardActions({
   const stopMutation = useStopDeployment();
   const redeployMutation = useRedeployDeployment();
   const isActionPending = stopMutation.isPending || redeployMutation.isPending;
+  const canDeployHere = useCan()(Scopes.INTEGRATION_DEPLOY);
 
   const canStop = deploymentStatusV2 === 'ACTIVE';
   const canStart = deploymentStatusV2 === 'SUSPENDED';
@@ -67,6 +74,12 @@ export default function EnvCardActions({
   const buildDisabled = !!isBuildInProgress && !hasDeployment;
   // The agent chat opens a live connection, so only a running workload qualifies.
   const canTest = isDeploymentHealthy(deploymentStatusV2);
+
+  const { data: endpoints = [] } = useEnvEndpoints(component.id, versionId, releaseId);
+  const [selectedId] = useSelectedAgentEndpoint(component.id, env.id);
+  const selectedEndpoint = endpoints.find((e) => e.id === selectedId) ?? endpoints[0];
+  const voiceSelected = isVoiceEndpoint(selectedEndpoint);
+  const voiceAgent = useLinkedVoiceAgents(orgHandler, projectId, componentHandler).voiceAgents.at(0);
 
   const handleStop = () => {
     stopMutation.mutate(
@@ -97,7 +110,16 @@ export default function EnvCardActions({
 
   return (
     <>
-      {hasDeployment && !env.critical && (
+      {hasDeployment && !env.critical && voiceSelected && (
+        <Tooltip title={!voiceAgent ? 'Enable the voice agent for this AI agent first.' : canTest ? 'Talk to this AI agent through its voice agent.' : 'Deploy and start this AI agent to test it by voice.'}>
+          <span>
+            <Button variant="text" size="small" startIcon={<Mic size={14} />} onClick={() => voiceAgent && navigate(voiceAgentTestUrl(orgHandler, projectHandler, voiceAgent.handler))} disabled={!voiceAgent || !canTest}>
+              Test voice
+            </Button>
+          </span>
+        </Tooltip>
+      )}
+      {hasDeployment && !env.critical && !voiceSelected && (
         <Button
           variant="text"
           size="small"
@@ -113,7 +135,7 @@ export default function EnvCardActions({
           View logs
         </Button>
       )}
-      {(canStop || isInProgress) && (
+      {canDeployHere && (canStop || isInProgress) && (
         <Tooltip title="Stop deployment">
           <span>
             <Button variant="outlined" size="small" color="error" startIcon={<Square size={14} />} onClick={handleStop} disabled={isActionPending || isInProgress}>
@@ -122,7 +144,7 @@ export default function EnvCardActions({
           </span>
         </Tooltip>
       )}
-      {canStart && (
+      {canDeployHere && canStart && (
         <Tooltip title="Start deployment">
           <span>
             <Button variant="outlined" size="small" color="success" startIcon={<RotateCw size={14} />} onClick={handleRedeploy} disabled={isActionPending}>
@@ -131,7 +153,7 @@ export default function EnvCardActions({
           </span>
         </Tooltip>
       )}
-      {hasError && (
+      {canDeployHere && hasError && (
         <Tooltip title="Redeploy">
           <span>
             <Button variant="outlined" size="small" color="error" startIcon={<RotateCw size={14} />} onClick={handleRedeploy} disabled={isActionPending}>

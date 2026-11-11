@@ -17,7 +17,9 @@
  */
 
 import { AZURE_DEFAULT_API_VERSION, CHUNKING_STRATEGIES, DATASOURCES, DEFAULT_CHUNKING, EMBEDDING_PROVIDERS, RAG_SECRET_KEYS, VECTOR_STORE_PROVIDERS } from '../constants/ragIngestion';
-import type { KnowledgeBase, KnowledgeBaseDataSource, KnowledgeBaseSettings } from '../types/knowledgeBase';
+import type { EndpointTestAccess } from '../hooks/useEndpointTestAccess';
+import { httpStatusOf } from './apiErrors';
+import type { KnowledgeBase, KnowledgeBaseApiStatus, KnowledgeBaseSettings } from '../types/knowledgeBase';
 import type { ChunkingConfig, ChunkingStrategy, DatasourceConfig, EmbeddingConfig, EmbeddingProvider, VectorStoreConfig } from '../types/ragIngestion';
 import { datasourceEnvVars, embeddingEnvVars, isEmbeddingValid, isVectorStoreValid, vectorStoreEnvVars } from './ragIngestion';
 
@@ -206,23 +208,50 @@ export function isManualSchedule(cronExpression: string): boolean {
   return cron === '' || cron === NEVER_FIRES_CRON;
 }
 
-/** Navigation state carrying a warning from a create to the knowledge base page. */
-export interface IngestionNoticeState {
-  ingestionNotice: string;
-}
-
-/** The warning for sources just created whose first run did not start, or null when every one started. */
-export function ingestionNotice(sources: readonly Pick<KnowledgeBaseDataSource, 'displayName' | 'ingestionStarted' | 'ingestionError'>[]): IngestionNoticeState | null {
-  const failed = sources.filter((s) => s.ingestionStarted === false);
-  if (failed.length === 0) return null;
-  return { ingestionNotice: failed.map((s) => `${s.displayName}: ${s.ingestionError || 'its first ingestion could not be started. Run it with Ingest.'}`).join(' ') };
+/**
+ * Why a knowledge base takes no write yet, or null when it does: while its create runs it takes
+ * none, and once the create failed it can only be deleted. The BFF refuses these with 409 too.
+ */
+export function knowledgeBaseWriteBlockedReason(kb: Pick<KnowledgeBase, 'status'>, write: 'add-data-source' | 'save' | 'delete'): string | null {
+  if (kb.status === 'CREATING') return 'The knowledge base is still being created. Try again once it is.';
+  if (kb.status === 'FAILED' && write !== 'delete') return 'The knowledge base could not be created. Delete it and create it again.';
+  return null;
 }
 
 /** Why a knowledge base cannot be queried yet, or null when it can. */
-export function retrievalUnavailableReason(kb: Pick<KnowledgeBase, 'status' | 'serviceUrl'>): string | null {
+export function retrievalUnavailableReason(kb: Pick<KnowledgeBase, 'status'>): string | null {
+  if (kb.status === 'CREATING') return 'The knowledge base is still being created. You can query it once it is active.';
+  if (kb.status === 'FAILED') return 'The knowledge base could not be created, so it cannot be queried.';
   if (kb.status === 'ERROR') return 'The knowledge base service failed to deploy, so it cannot be queried.';
   if (kb.status === 'SUSPENDED') return 'The knowledge base service is stopped, so it cannot be queried.';
   if (kb.status !== 'ACTIVE') return 'The knowledge base service is still deploying. You can query it once it is active.';
-  if (!kb.serviceUrl) return 'The knowledge base service has no public URL yet.';
   return null;
+}
+
+/** Why an active knowledge base cannot be queried on the gateway with a test key yet, or null when it can. */
+export function retrievalAccessReason(access: Pick<EndpointTestAccess, 'keyError' | 'needsApiKeyAuth' | 'securityError' | 'mode' | 'gatewayUrl' | 'isAuthorized' | 'isMinting'>, apiStatus?: KnowledgeBaseApiStatus): string | null {
+  if (access.keyError) return access.keyError;
+  if (access.needsApiKeyAuth) return "The knowledge base's API takes another kind of credential, so it can't be queried with a test key.";
+  if (access.securityError) {
+    // Only a 409 says the API is not on the gateway; anything else is a read that failed, read again.
+    if (httpStatusOf(access.securityError) === 409) return notOnGatewayReason(apiStatus);
+    return "Could not check the knowledge base's API on the gateway. Trying again…";
+  }
+  if (access.mode === null) return "Checking the knowledge base's API on the gateway…";
+  if (!access.gatewayUrl) return notOnGatewayReason(apiStatus);
+  if (access.isAuthorized) return null;
+  if (access.isMinting) return 'Getting a test key for the knowledge base…';
+  // The hook leaves a permission refusal out of keyError: it is what stops a key without saying why.
+  return "Your role can't create test keys for this knowledge base, so it can't be queried here.";
+}
+
+/** Why the knowledge base's API is not on the gateway, from how putting it there is going. */
+function notOnGatewayReason(apiStatus: KnowledgeBaseApiStatus | undefined): string {
+  // No run recorded: a knowledge base from before they were put on the gateway.
+  if (!apiStatus) return 'The knowledge base is not on the API gateway yet. Saving its configuration again puts it there.';
+  if (apiStatus.error === 'GATEWAY_UNAVAILABLE' || apiStatus.error === 'GATEWAY_PROVISIONING') {
+    return 'The API gateway for this environment is being set up. The knowledge base can be queried once it is published there.';
+  }
+  if (apiStatus.status === 'FAILED' || apiStatus.status === 'DEGRADED') return 'Publishing the knowledge base on the API gateway failed. It is retried automatically.';
+  return 'The knowledge base is being published on the API gateway.';
 }

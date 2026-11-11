@@ -18,13 +18,19 @@
 
 /** What the cloud journey is written against: its fixtures, their copy, and its budgets. */
 
-export const PROJECT = 'IPAAS-E2E';
 export const SAMPLE = 'Hello World Service';
-/** Derived by the import from the sub path's last segment, so it is fixed. */
-export const AUTOMATION = 'Mi Automation';
-export const AUTOMATION_REPO_URL = 'https://github.com/Dilhasha/mi-cloud-samples';
-export const AUTOMATION_SUB_PATH = 'mi-automation';
+/**
+ * The scheduled-task sample second in wso2/integration-samples' .metadata/samples.json, so the Samples tab
+ * features it next to SAMPLE. Both publish an image, so they deploy without a build. The deploy names the
+ * integration after the sample, so a rename there breaks 04d.
+ */
+export const AUTOMATION = 'Scheduled Logger';
 export const MI_TECHNOLOGY = 'WSO2 Integrator: MI';
+/** The MI samples publish no runnable image, so 04e imports one from source and builds it. */
+export const MI_AUTOMATION_REPO_URL = 'https://github.com/wso2/integration-samples';
+export const MI_AUTOMATION_SUB_PATH = ['integrator-mi-profile', 'PersonLookupAutomation'] as const;
+/** formatRepoNameToDisplayName of the sub path's last segment, which the import form derives. */
+export const MI_AUTOMATION = 'PersonLookupAutomation';
 export const AGENT_TYPE = 'AI Agent';
 export const ENV = 'Development';
 
@@ -45,7 +51,7 @@ export const FOOTER_LINKS = [
   ['Privacy Policy', 'https://wso2.com/privacy-policy'],
 ] as const;
 
-export const CLOUD_SECTIONS = ['Package registries'] as const;
+export const CLOUD_SECTIONS = ['Package registries', 'User Portal'] as const;
 export const UNPORTED_SECTIONS = ['Access Control', 'Egress Control', 'Workflows', 'Credentials', 'On-Prem Keys', 'Application Security'] as const;
 
 /** Deleting an integration is asynchronous: the row greys out, then goes. Observed at ~3 minutes on DEV. */
@@ -53,6 +59,8 @@ export const REMOVAL_TIMEOUT_MS = 10 * 60_000;
 /** A project goes only once its integrations are gone, so it is given longer than any one of them. */
 export const PROJECT_REMOVAL_TIMEOUT_MS = 15 * 60_000;
 export const DEPLOY_TIMEOUT_MS = 7 * 60_000;
+/** deployLatestBuild's worst case: two card waits and a reload, the enable, the started alert and Deploy hiding (about 8.2 minutes). */
+export const DEPLOY_ACTION_MS = 9 * 60_000;
 /** MI deployments run longer than Ballerina ones. */
 export const MI_DEPLOY_TIMEOUT_MS = 10 * 60_000;
 /** The card reports the previous deployment for a moment after Apply, so the status waits it out. */
@@ -72,7 +80,9 @@ export const EXECUTE_GAP_MS = 8_000;
 export const PROBE_TIMEOUT_MS = 3 * 60_000;
 export const PROBE_GAP_MS = 10_000;
 
-/** A one-minute schedule fires eight times in the budget, so five survives a late first fire. */
-export const EXECUTIONS_TARGET = 5;
-export const EXECUTIONS_WATCH_MS = 8 * 60_000;
+/** The free plan's shortest schedule interval, from the billing limits (scheduleValidation.ts); a shorter one disables Update. */
+export const SCHEDULE_INTERVAL_MINUTES = 5;
+/** A five-minute schedule fires four times in the budget, so three survives a late first fire. */
+export const EXECUTIONS_TARGET = 3;
+export const EXECUTIONS_WATCH_MS = 20 * 60_000;
 export const EXECUTIONS_POLL_MS = 45_000;

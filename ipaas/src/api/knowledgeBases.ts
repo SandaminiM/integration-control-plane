@@ -19,9 +19,12 @@
 // RAG knowledge bases (`/knowledge-bases`). A data source is also an ordinary
 // scheduled integration, so its schedule, runs and deletion go through the
 // component, schedule and execution APIs.
-import type { CreateKnowledgeBaseDataSourceInput, CreateKnowledgeBaseInput, KnowledgeBase, KnowledgeBaseDataSource, UpdateKnowledgeBaseInput } from '../types/knowledgeBase';
+import type { CreateKnowledgeBaseDataSourceInput, CreateKnowledgeBaseInput, KnowledgeBase, KnowledgeBaseApiStatus, KnowledgeBaseDataSource, UpdateKnowledgeBaseInput } from '../types/knowledgeBase';
 import type { RetrievalQuery, RetrievedChunk, RetrieveResponse } from '../types/ragIngestion';
 import { bff, items, seg, type ListResponse, type MessageResponse } from './_client';
+
+/** The KB Service's endpoint, the one its API on the API Platform gateway fronts. */
+export const KB_SERVICE_ENDPOINT = 'knowledge-base';
 
 // The BFF omits empty strings and the subtype-specific fields it has no value for.
 interface BffKnowledgeBaseDataSource {
@@ -32,10 +35,10 @@ interface BffKnowledgeBaseDataSource {
   cronExpression?: string;
   cronTimezone?: string;
   status?: string;
+  error?: string;
+  firstRunError?: string;
   releaseName?: string;
   createdAt?: string;
-  ingestionStarted?: boolean;
-  ingestionError?: string;
 }
 
 interface BffKnowledgeBase {
@@ -47,7 +50,9 @@ interface BffKnowledgeBase {
   config?: Record<string, string>;
   secretKeys?: string[];
   status?: string;
+  error?: string;
   serviceUrl?: string;
+  apiStatus?: KnowledgeBaseApiStatus;
   dataSources?: BffKnowledgeBaseDataSource[];
   createdAt?: string;
   updatedAt?: string;
@@ -62,9 +67,10 @@ export function toKnowledgeBaseDataSource(d: BffKnowledgeBaseDataSource): Knowle
     cronExpression: d.cronExpression ?? '',
     cronTimezone: d.cronTimezone ?? '',
     status: d.status ?? '',
+    error: d.error ?? '',
+    firstRunError: d.firstRunError ?? '',
     releaseName: d.releaseName ?? '',
     createdAt: d.createdAt ?? '',
-    ...(d.ingestionStarted === undefined ? {} : { ingestionStarted: d.ingestionStarted, ingestionError: d.ingestionError ?? '' }),
   };
 }
 
@@ -78,7 +84,9 @@ export function toKnowledgeBase(kb: BffKnowledgeBase): KnowledgeBase {
     config: kb.config ?? {},
     secretKeys: kb.secretKeys ?? [],
     status: kb.status ?? '',
+    error: kb.error ?? '',
     serviceUrl: kb.serviceUrl ?? '',
+    ...(kb.apiStatus ? { apiStatus: kb.apiStatus } : {}),
     dataSources: (kb.dataSources ?? []).map(toKnowledgeBaseDataSource),
     createdAt: kb.createdAt ?? '',
     updatedAt: kb.updatedAt ?? '',
@@ -100,18 +108,30 @@ export const createKnowledgeBaseDataSource = (knowledgeBase: string, input: Crea
 
 export const RETRIEVE_TIMEOUT_MS = 30_000;
 
+/** The key the gateway takes, in the header it reads it from; no key for an API that takes none. */
+export interface GatewayCredential {
+  header: string;
+  apiKey: string | null;
+}
+
 /**
- * Query a knowledge base through the BFF, which forwards to its KB Service. The
- * service reads a form-encoded query and identifies the caller by
+ * Query a knowledge base on the API Platform gateway, as the console tests any API: with the
+ * endpoint's test key. The service reads a form-encoded query and identifies the caller by
  * `rag_component_id`, the integration the query is made from.
+ * A refusal carries its HTTP status as `status`.
  */
-export const retrieveFromKnowledgeBase = (name: string, componentId: string, query: Pick<RetrievalQuery, 'userQuery' | 'maxChunks' | 'minSimilarity'>): Promise<RetrievedChunk[]> => {
+export async function retrieveFromKnowledgeBase(gatewayUrl: string, credential: GatewayCredential, componentId: string, query: Pick<RetrievalQuery, 'userQuery' | 'maxChunks' | 'minSimilarity'>): Promise<RetrievedChunk[]> {
   const body = new URLSearchParams({
     rag_component_id: componentId,
     user_query: query.userQuery,
     max_retrieve_chunks: String(query.maxChunks),
     min_similarity_threshold: String(query.minSimilarity),
   });
-  // Bounded, so a request the BFF never answers fails instead of holding the chat busy.
-  return bff.post<RetrieveResponse>(`/knowledge-bases/${seg(name)}/retrieve`, body, undefined, AbortSignal.timeout(RETRIEVE_TIMEOUT_MS)).then((r) => r.retrieved_chunks ?? []);
-};
+  const headers: Record<string, string> = { 'Content-Type': 'application/x-www-form-urlencoded' };
+  if (credential.apiKey) headers[credential.header] = credential.apiKey;
+  // Bounded, so a request the gateway never answers fails instead of holding the chat busy.
+  const res = await fetch(`${gatewayUrl.replace(/\/+$/, '')}/retrieve`, { method: 'POST', headers, body, signal: AbortSignal.timeout(RETRIEVE_TIMEOUT_MS) });
+  if (!res.ok) throw Object.assign(new Error(`The knowledge base answered HTTP ${res.status}`), { status: res.status });
+  const out = (await res.json()) as RetrieveResponse;
+  return out.retrieved_chunks ?? [];
+}

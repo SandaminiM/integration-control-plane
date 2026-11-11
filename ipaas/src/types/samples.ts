@@ -22,11 +22,13 @@ export interface Sample {
   componentType: string;
   buildPack: string;
   repositoryUrl: string;
-  subDirectory: string;
+  subDirectory?: string;
   componentPath: string;
   thumbnailPath: string;
   tags: string[];
   branch?: string;
+  /** Prebuilt image for the sample. When set the sample deploys this image instead of building from source. */
+  imageUrl?: string;
 }
 
 export interface SamplesData {

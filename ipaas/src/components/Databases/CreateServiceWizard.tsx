@@ -24,10 +24,13 @@ import PlanCard from './PlanCard';
 import TemporalPlanCard from '../Temporal/TemporalPlanCard';
 import { DatabasePlansSkeleton } from './DatabaseSkeletons';
 import { useAppNavigate } from '../../hooks/useAppNavigate';
+import { Scopes } from '../../constants/permissions';
+import { useCan } from '../../hooks/useCan';
 import { useUnsavedChanges } from '../../contexts/UnsavedChangesContext';
 import { useCreateDatabaseServer, useDatabaseOffering, useDatabaseServers } from '../../hooks/useDatabases';
 import { useCreateTemporalServer, useTemporalOffering, useTemporalServers } from '../../hooks/useTemporal';
-import { PLATFORM_SERVICE_TYPES, type PlatformServiceKind } from '../../constants/databases';
+import { usePlanAccess } from '../../hooks/useBillingOrg';
+import { FREE_PLAN_TIER, PLATFORM_SERVICE_TYPES, type PlatformServiceKind } from '../../constants/databases';
 import { REQUIRED_FIELD_SX } from '../../constants/styles';
 import { databaseNameError, toCreateDatabaseError } from '../../utils/databases';
 import { temporalNameError, toCreateTemporalError } from '../../utils/temporal';
@@ -71,6 +74,7 @@ export default function CreateServiceWizard({ scope, onCancel, initialKind }: Cr
   const createDatabase = useCreateDatabaseServer();
   const createTemporal = useCreateTemporalServer();
   const create = isTemporal ? createTemporal : createDatabase;
+  const canManage = useCan()(Scopes.CONFIG_MANAGE);
 
   const [name, setName] = useState('');
   // An unset pick falls back to the default plan, so the choice is always a valid offering.
@@ -79,9 +83,15 @@ export default function CreateServiceWizard({ scope, onCancel, initialKind }: Cr
   const offering = isTemporal ? temporalOffering : dbOffering;
   const plans = offering.data?.plans ?? [];
   const planIds = plans.map((p) => p.id);
+  // Only a paid plan may provision beyond the dev tier, and the BFF refuses the rest, so the other plans stay locked
+  // until billing confirms the plan is paid: while it loads or when it cannot be read, the BFF could not verify it either.
+  const planAccess = usePlanAccess();
+  const freeTierOnly = planAccess?.state === 'free';
+  const planLocked = (id: string): boolean => planAccess?.state !== 'paid' && id !== FREE_PLAN_TIER;
+  const selectableIds = planIds.filter((id) => !planLocked(id));
   const defaultPlan = offering.data?.defaultPlan;
-  const fallbackPlan = defaultPlan && planIds.includes(defaultPlan) ? defaultPlan : (planIds[0] ?? '');
-  const planId = planIds.includes(pickedPlan) ? pickedPlan : fallbackPlan;
+  const fallbackPlan = defaultPlan && selectableIds.includes(defaultPlan) ? defaultPlan : (selectableIds[0] ?? '');
+  const planId = selectableIds.includes(pickedPlan) ? pickedPlan : fallbackPlan;
 
   // A name can only be judged unique once both lists are in; the format is still checked as the user types.
   const takenNames = databases.data && temporals.data ? [...databases.data, ...temporals.data].map((s) => s.name) : null;
@@ -91,7 +101,7 @@ export default function CreateServiceWizard({ scope, onCancel, initialKind }: Cr
   const nameError = validateName(name, takenNames ?? [], offering.data?.maxNameLength);
   const nameReady = name !== '' && !nameError && takenNames !== null;
   const allowLeave = useUnsavedChanges((name !== '' || pickedPlan !== '') && !create.isSuccess);
-  const canCreate = nameReady && !!planId && !offering.isError && !create.isPending;
+  const canCreate = canManage && nameReady && !!planId && !offering.isError && !create.isPending;
   const createError = create.isError ? (isTemporal ? toCreateTemporalError(create.error) : toCreateDatabaseError(create.error)) : null;
 
   // The heading stays mounted across steps, so it can take focus at once; the details step focuses its name field itself.
@@ -209,8 +219,8 @@ export default function CreateServiceWizard({ scope, onCancel, initialKind }: Cr
   ) : (
     <Box role="radiogroup" aria-labelledby="service-plan-title" onKeyDown={onPlanKeyDown} sx={styles.planGridSx}>
       {isTemporal
-        ? temporalOffering.data?.plans.map((plan) => <TemporalPlanCard key={plan.id} plan={plan} selected={planId === plan.id} disabled={create.isPending} onSelect={() => setPickedPlan(plan.id)} />)
-        : dbOffering.data?.plans.map((plan) => <PlanCard key={plan.id} plan={plan} selected={planId === plan.id} disabled={create.isPending} onSelect={() => setPickedPlan(plan.id)} />)}
+        ? temporalOffering.data?.plans.map((plan) => <TemporalPlanCard key={plan.id} plan={plan} selected={planId === plan.id} disabled={create.isPending || planLocked(plan.id)} onSelect={() => setPickedPlan(plan.id)} />)
+        : dbOffering.data?.plans.map((plan) => <PlanCard key={plan.id} plan={plan} selected={planId === plan.id} disabled={create.isPending || planLocked(plan.id)} onSelect={() => setPickedPlan(plan.id)} />)}
     </Box>
   );
 
@@ -219,6 +229,9 @@ export default function CreateServiceWizard({ scope, onCancel, initialKind }: Cr
       <Typography id="service-plan-title" variant="subtitle1" component="h3" sx={{ fontWeight: 600 }}>
         Service plan
       </Typography>
+      {freeTierOnly && (
+        <Alert severity="info">Free plans can only create {isTemporal ? 'Temporal servers' : 'databases'} on the {FREE_PLAN_TIER} tier. Upgrade your subscription to choose another tier.</Alert>
+      )}
       {planCards}
     </Box>
   );
